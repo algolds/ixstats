@@ -33,6 +33,7 @@ import {
   StatsReport as BarChart3,
   Group as Users,
 } from "iconoir-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "\u26BD",
@@ -46,7 +47,7 @@ const SPORT_EMOJIS: Record<string, string> = {
 
 const MATCH_STATUS_ICON: Record<string, React.ReactNode> = {
   scheduled: <Clock className="text-muted-foreground h-4 w-4" />,
-  in_progress: <Clock className="h-4 w-4 animate-pulse text-amber-500" />,
+  in_progress: <Clock className="h-4 w-4 text-amber-500" />,
   completed: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
 };
 
@@ -311,9 +312,9 @@ export default function MyClubSeasonDetailPage() {
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <Eyebrow className="block">
               Record
-            </p>
+            </Eyebrow>
             <p className="mt-1 text-2xl font-bold tabular-nums">
               {teamStanding
                 ? `${teamStanding.wins}-${teamStanding.losses}${teamStanding.draws > 0 ? `-${teamStanding.draws}` : ""}`
@@ -323,17 +324,17 @@ export default function MyClubSeasonDetailPage() {
         </Card>
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <Eyebrow className="block">
               Points
-            </p>
+            </Eyebrow>
             <p className="mt-1 text-2xl font-bold tabular-nums">{teamStanding?.points ?? "-"}</p>
           </CardContent>
         </Card>
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <Eyebrow className="block">
               PF / PA
-            </p>
+            </Eyebrow>
             <p className="mt-1 text-2xl font-bold tabular-nums">
               {teamStanding ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}` : "-"}
             </p>
@@ -341,9 +342,9 @@ export default function MyClubSeasonDetailPage() {
         </Card>
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <Eyebrow className="block">
               Position
-            </p>
+            </Eyebrow>
             <p className="mt-1 flex items-center justify-center gap-1 text-2xl font-bold">
               {finishPosition ? (
                 <>

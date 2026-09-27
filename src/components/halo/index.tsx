@@ -348,7 +348,7 @@ function CommandPaletteContent({
                 className="flex h-10 w-full items-center justify-center gap-2 px-3 text-neutral-200"
               >
                 <IOSActivityIndicator size="sm" />
-                <span className="animate-pulse text-xs font-semibold tracking-wide">
+                <span className="text-xs font-semibold tracking-wide">
                   Loading...
                 </span>
               </div>

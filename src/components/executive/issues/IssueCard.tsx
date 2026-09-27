@@ -179,7 +179,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
         </div>
 
         {(issue.severity === "critical" || issue.severity === "CRITICAL") && (
-          <AlertTriangle className="h-4 w-4 shrink-0 animate-pulse text-red-400" />
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
         )}
       </div>
     </div>

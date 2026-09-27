@@ -54,7 +54,7 @@ export function MatchCommentary({
     return (
       <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/5 bg-black/10 py-10 text-xs backdrop-blur-md">
         <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
-        <span className="animate-pulse font-semibold tracking-wide">
+        <span className="font-semibold tracking-wide">
           Retrieving match event timeline...
         </span>
       </div>

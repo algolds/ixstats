@@ -224,7 +224,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         workspacePanel={
           isLoadingActiveGroup && selectedGroupId ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
-              <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
               <p className="text-muted-foreground text-xs font-semibold">Loading group...</p>

@@ -325,7 +325,7 @@ export function NarratorPlaygroundTab() {
             <div className="absolute top-0 left-0 h-full w-[3px] bg-amber-500/80" />
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
-                <ScrollText className="h-4 w-4 animate-pulse" />
+                <ScrollText className="h-4 w-4" />
                 <span>The Chronicle</span>
               </div>
               <span className="text-muted-foreground/60 font-mono text-xs uppercase italic">

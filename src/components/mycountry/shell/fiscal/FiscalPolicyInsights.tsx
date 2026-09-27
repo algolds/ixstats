@@ -20,6 +20,7 @@ import {
   parseRateFromJson,
   deriveSectorWeights,
 } from "./taxChannels";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface FiscalSystemConfig {
   corporateTaxRates?: string | null;
@@ -254,17 +255,17 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
 
         <div className="grid grid-cols-3 gap-2">
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+            <Eyebrow className="block">
               Efficiency
-            </p>
+            </Eyebrow>
             <p className="mt-0.5 font-mono text-base font-bold text-emerald-400 tabular-nums">
               <PercentageFlow value={collectionEfficiency} decimalPlaces={0} />
             </p>
           </div>
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+            <Eyebrow className="block">
               Budget Δ
-            </p>
+            </Eyebrow>
             <p
               className={cn(
                 "mt-0.5 font-mono text-base font-bold tabular-nums",
@@ -280,9 +281,9 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             </p>
           </div>
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+            <Eyebrow className="block">
               Burden
-            </p>
+            </Eyebrow>
             <p
               className={cn(
                 "mt-1 font-mono text-xs font-semibold tabular-nums",

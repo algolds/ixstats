@@ -79,6 +79,11 @@ export interface FacetContainerProps extends React.HTMLAttributes<HTMLDivElement
   blur?: "none" | "light" | "medium" | "heavy" | string;
   gradient?: "none" | "subtle" | "dynamic" | string;
   hover?: boolean;
+  /**
+   * `"solid"` renders an opaque `bg-card` surface with no backdrop blur. Use it for a Facet
+   * nested inside another glass surface (sheet, dialog, parent card) so blur never stacks.
+   */
+  surface?: "glass" | "solid";
   children: React.ReactNode;
 }
 
@@ -98,6 +103,7 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
       blur,
       gradient: _gradient,
       hover: _hover,
+      surface = "glass",
       className,
       children,
       onMouseEnter,
@@ -159,14 +165,15 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
     };
 
     // Construct class lists mapped to new Facet style selectors
+    // A solid surface drops the variant/depth classes: those carry the glass fill and backdrop-filter.
+    const isSolid = surface === "solid";
     const themeClass = theme && themeStyles[theme] ? themeStyles[theme] : "";
-    const blurClass = blur && blurStyles[blur] ? blurStyles[blur] : "";
+    const blurClass = !isSolid && blur && blurStyles[blur] ? blurStyles[blur] : "";
     const isClickable = interactive === "click" || Boolean(onClick);
     const hasInteractionState = interactive !== "none" || Boolean(onClick);
     const facetClasses = cn(
       "facet-container relative",
-      `facet-${variant}`,
-      `facet-depth-${currentDepth}`,
+      isSolid ? "border-border bg-card border" : [`facet-${variant}`, `facet-depth-${currentDepth}`],
       isClickable && "facet-interactive cursor-pointer active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
       enableRefraction && "facet-refract",
       adaptToBackground && "facet-adapt",

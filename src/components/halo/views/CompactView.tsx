@@ -184,7 +184,7 @@ function CompactViewComponent({
                   transition={{ type: "spring", stiffness: 420, damping: 38 }}
                   className="flex items-center gap-1.5 px-2 py-0.5"
                 >
-                  <Bell className="h-3 w-3 animate-pulse text-amber-400" />
+                  <Bell className="h-3 w-3 text-amber-400" />
                   <span className="text-foreground/90 max-w-[160px] truncate text-xs font-medium whitespace-nowrap">
                     <PreText whiteSpace="nowrap">{peekText}</PreText>
                   </span>
@@ -246,7 +246,7 @@ function CompactViewComponent({
                     transition={{ type: "spring", stiffness: 420, damping: 38 }}
                     className="flex items-center gap-1.5 px-2 py-1"
                   >
-                    <Bell className="h-3 w-3 animate-pulse text-amber-400" />
+                    <Bell className="h-3 w-3 text-amber-400" />
                     <span className="text-foreground/90 max-w-[200px] truncate text-xs font-medium whitespace-nowrap">
                       <PreText whiteSpace="nowrap">{peekText}</PreText>
                     </span>

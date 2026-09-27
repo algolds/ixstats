@@ -244,14 +244,14 @@ export function GlassCanvasComposer({
                     src={repostData.originalPost.account?.profileImageUrl}
                     alt={repostData.originalPost.account?.displayName}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-[0.6rem] font-semibold text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-xs font-semibold text-white">
                     {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-xs font-semibold">
                   {repostData.originalPost.account?.displayName || "Unknown"}
                 </span>
-                <span className="text-muted-foreground text-[0.65rem]">
+                <span className="text-muted-foreground text-xs">
                   @{repostData.originalPost.account?.username || "unknown"}
                 </span>
               </div>

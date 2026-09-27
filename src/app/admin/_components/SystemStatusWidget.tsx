@@ -111,7 +111,7 @@ export function SystemStatusWidget() {
             <span
               className={cn(
                 "h-1.5 w-1.5 shrink-0 rounded-full",
-                botAvailable ? "animate-pulse bg-green-500" : "bg-red-500"
+                botAvailable ? "bg-green-500" : "bg-red-500"
               )}
             />
             <span className="text-muted-foreground truncate font-semibold whitespace-nowrap">
@@ -169,7 +169,7 @@ export function SystemStatusWidget() {
                 <span
                   className={cn(
                     "h-2 w-2 rounded-full",
-                    botAvailable ? "animate-pulse bg-green-500" : "bg-red-500"
+                    botAvailable ? "bg-green-500" : "bg-red-500"
                   )}
                 />
                 <span className="text-xs font-medium">

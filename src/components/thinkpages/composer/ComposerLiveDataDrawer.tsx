@@ -74,7 +74,7 @@ export function ComposerLiveDataDrawer({
             isLoadingDiplomatic ||
             isLoadingTrade ||
             isLoadingVitality) && (
-            <div className="flex items-center gap-1 text-[0.65rem] font-semibold text-blue-500 dark:text-blue-400">
+            <div className="flex items-center gap-1 text-xs font-semibold text-blue-500 dark:text-blue-400">
               <Loader2 className="h-2.5 w-2.5 animate-spin" />
               <span>Loading...</span>
             </div>
@@ -94,7 +94,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <TrendingUp className="mb-1 h-4 w-4 text-emerald-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">Economic</span>
+            <span className="text-xs font-bold tracking-tight">Economic</span>
           </Button>
 
           <Button
@@ -109,7 +109,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <Globe className="mb-1 h-4 w-4 text-cyan-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">Diplomatic</span>
+            <span className="text-xs font-bold tracking-tight">Diplomatic</span>
           </Button>
 
           <Button
@@ -124,7 +124,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <BarChart3 className="mb-1 h-4 w-4 text-amber-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">Trade</span>
+            <span className="text-xs font-bold tracking-tight">Trade</span>
           </Button>
 
           <Button
@@ -139,7 +139,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <BarChart3 className="mb-1 h-4 w-4 text-emerald-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">GDP</span>
+            <span className="text-xs font-bold tracking-tight">GDP</span>
           </Button>
 
           <Button
@@ -154,7 +154,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <Users className="mb-1 h-4 w-4 text-cyan-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">Demographics</span>
+            <span className="text-xs font-bold tracking-tight">Demographics</span>
           </Button>
 
           <Button
@@ -169,7 +169,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <BarChart3 className="mb-1 h-4 w-4 text-red-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">Budget & Debt</span>
+            <span className="text-xs font-bold tracking-tight">Budget & Debt</span>
           </Button>
 
           <Button
@@ -184,7 +184,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <Briefcase className="mb-1 h-4 w-4 text-cyan-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">Labor Market</span>
+            <span className="text-xs font-bold tracking-tight">Labor Market</span>
           </Button>
 
           <Button
@@ -199,7 +199,7 @@ export function ComposerLiveDataDrawer({
             ) : (
               <Activity className="mb-1 h-4 w-4 text-red-500" />
             )}
-            <span className="text-[0.65rem] font-bold tracking-tight">Vitality Rings</span>
+            <span className="text-xs font-bold tracking-tight">Vitality Rings</span>
           </Button>
         </div>
       </div>

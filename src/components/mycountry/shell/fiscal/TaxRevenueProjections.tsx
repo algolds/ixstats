@@ -6,6 +6,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { TAX_CHANNELS, ACCENT_BORDER } from "./taxChannels";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface TaxRevenueProjectionsProps {
   yields: Record<string, number>;
@@ -35,9 +36,9 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
               ACCENT_BORDER[ch.accent] ?? "border-border/20"
             )}
           >
-            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+            <Eyebrow className="block">
               {ch.shortLabel} Yield
-            </p>
+            </Eyebrow>
             <p className={cn("font-mono text-base font-bold tabular-nums", ch.accentClass)}>
               <CurrencyFlow value={yields[ch.key] ?? 0} decimalPlaces={2} />
             </p>

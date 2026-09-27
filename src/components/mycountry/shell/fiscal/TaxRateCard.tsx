@@ -66,7 +66,7 @@ function TaxRateCardComponent({
               "flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
               isLocked
                 ? "border-border/40 bg-muted/30 text-muted-foreground/70 hover:border-border/70 hover:text-foreground"
-                : "animate-pulse border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30"
+                : "border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30"
             )}
           >
             {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
@@ -76,7 +76,7 @@ function TaxRateCardComponent({
 
         <div className="flex items-center gap-1.5">
           {!isLocked && (
-            <span className="animate-pulse text-xs font-semibold tracking-wider text-amber-400 uppercase">
+            <span className="text-xs font-semibold tracking-wider text-amber-400 uppercase">
               Editing
             </span>
           )}

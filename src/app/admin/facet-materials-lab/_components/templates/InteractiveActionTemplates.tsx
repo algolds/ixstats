@@ -59,7 +59,7 @@ export function InteractiveActionTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10 flex items-center gap-2">
-            <Sparkles className="h-4.5 w-4.5 animate-pulse" style={{ color: customAccent }} />
+            <Sparkles className="h-4.5 w-4.5" style={{ color: customAccent }} />
             <span>Simulate Trigger Command</span>
           </div>
         </div>

@@ -173,7 +173,7 @@ function makeChip(key: string, value: string): string {
 
   return (
     `<span class="wikios-stat-resolved inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-mono font-medium align-middle my-0 mx-0.5 whitespace-nowrap ${style.className}" data-key="${escapeAttr(key)}">` +
-    `<span class="opacity-70 text-[10px]">${style.icon}</span> ` +
+    `<span class="opacity-70 text-xs">${style.icon}</span> ` +
     `${escapeHtml(value)}</span>`
   );
 }

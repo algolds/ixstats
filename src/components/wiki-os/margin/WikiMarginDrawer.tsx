@@ -292,7 +292,7 @@ export function WikiMarginDrawer({
                       />
                       <span className="relative z-10">{tab.label}</span>
                       {tab.badge !== undefined && (
-                        <span className="py-0.2 bg-margin-accent relative z-10 ml-0.5 rounded-full px-1.5 text-[8.5px] leading-none font-black text-stone-950 shadow-xs">
+                        <span className="py-0.2 bg-margin-accent relative z-10 ml-0.5 rounded-full px-1.5 text-xs leading-none font-black text-stone-950 shadow-xs">
                           {tab.badge}
                         </span>
                       )}

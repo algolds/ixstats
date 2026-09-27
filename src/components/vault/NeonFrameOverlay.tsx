@@ -44,18 +44,7 @@ export function NeonFrameOverlay({ neonFrame, className }: NeonFrameOverlayProps
       {style && (
         <CosmeticParticles style={style} containerType="frame" className="rounded-[inherit]" />
       )}
-      {/* Winter Frost particles / snowflakes */}
-      {style === "winter" && (
-        <div className="absolute inset-0 overflow-hidden rounded-2xl">
-          <span className="absolute top-1 left-2 animate-bounce text-xs text-blue-200/50 select-none">
-            ❄
-          </span>
-          <span className="absolute right-3 bottom-2 animate-pulse text-xs text-blue-200/60 select-none">
-            ❄
-          </span>
-          <span className="absolute top-1/2 right-1 text-[7px] text-blue-100/40 select-none">❄</span>
-        </div>
-      )}
+      {/* Winter snowflakes come from CosmeticParticles (SVG_SNOWFLAKE) above. */}
       {/* Ruby gem shimmer sweep effect */}
       {style === "ruby" && (
         <div className="absolute inset-0 overflow-hidden rounded-2xl">

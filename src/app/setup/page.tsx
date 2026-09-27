@@ -302,9 +302,9 @@ export default function SetupPage() {
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-400/20 opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-100" />
 
                         {/* Floating particles effect */}
-                        <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-amber-400/60 opacity-0 transition-opacity duration-300 group-hover:animate-pulse group-hover:opacity-100" />
-                        <div className="absolute top-8 right-8 h-1 w-1 rounded-full bg-yellow-400/60 opacity-0 transition-opacity delay-100 duration-500 group-hover:animate-pulse group-hover:opacity-100" />
-                        <div className="absolute top-12 right-12 h-1.5 w-1.5 rounded-full bg-amber-300/60 opacity-0 transition-opacity delay-200 duration-700 group-hover:animate-pulse group-hover:opacity-100" />
+                        <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-amber-400/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                        <div className="absolute top-8 right-8 h-1 w-1 rounded-full bg-yellow-400/60 opacity-0 transition-opacity delay-100 duration-500 group-hover:opacity-100" />
+                        <div className="absolute top-12 right-12 h-1.5 w-1.5 rounded-full bg-amber-300/60 opacity-0 transition-opacity delay-200 duration-700 group-hover:opacity-100" />
 
                         <div className="relative z-10">
                           <div className="mb-8 flex items-center">

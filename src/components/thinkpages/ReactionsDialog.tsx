@@ -147,7 +147,7 @@ export function ReactionsDialog({
                 <div className="relative flex flex-1 flex-col items-center justify-center space-y-6 p-8 text-center">
                   {/* Glowing Discord Icon container */}
                   <div className="border-discord/30 bg-discord/15 shadow-discord/25 relative flex h-16 w-16 items-center justify-center rounded-2xl border shadow-lg">
-                    <div className="from-discord/20 absolute inset-0 animate-pulse rounded-2xl bg-gradient-to-tr to-transparent" />
+                    <div className="from-discord/20 absolute inset-0 rounded-2xl bg-gradient-to-tr to-transparent" />
                     <svg
                       className="text-discord relative z-10 h-8 w-8"
                       fill="currentColor"

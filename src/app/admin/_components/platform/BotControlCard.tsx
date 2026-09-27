@@ -321,7 +321,7 @@ export function BotControlCard({
             )}
             {isAvailable ? (
               <Badge className="border-green-500/20 bg-green-500/10 text-xs font-semibold tracking-wide text-green-500 uppercase dark:text-green-400">
-                <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+                <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-500" />
                 Daemon Active
               </Badge>
             ) : (
@@ -1140,7 +1140,7 @@ export function BotControlCard({
                   </pre>
                 ) : (
                   <div className="text-muted-foreground/60 flex flex-col items-center justify-center py-20 select-none">
-                    <Terminal className="mb-2 h-6 w-6 animate-pulse opacity-40" />
+                    <Terminal className="mb-2 h-6 w-6 opacity-40" />
                     <span>No process logs output recorded.</span>
                     <span className="mt-0.5 text-xs">
                       Ensure process is started and writing output logs.

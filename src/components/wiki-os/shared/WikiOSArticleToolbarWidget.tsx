@@ -188,7 +188,7 @@ export function WikiOSArticleToolbarWidget({
                   key={opt.value}
                   type="button"
                   onClick={() => setMediaThemeMode(opt.value)}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-md px-1 py-1 text-[9.5px] font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-md px-1 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     isSelected
                       ? "border border-blue-500/30 bg-blue-500/20 text-blue-300 shadow-sm"
                       : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"

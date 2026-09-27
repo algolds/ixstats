@@ -154,7 +154,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           </Link>
 
           <div className="space-y-1 text-center">
-            <div className="text-muted-foreground/70 flex items-center justify-center gap-1.5 text-[9.5px]">
+            <div className="text-muted-foreground/70 flex items-center justify-center gap-1.5 text-xs">
               <Link
                 href="/privacy"
                 className="hover:text-foreground transition-colors hover:underline"
@@ -180,7 +180,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 Terms
               </Link>
             </div>
-            <p className="text-muted-foreground/50 text-[8.5px] tracking-tight">
+            <p className="text-muted-foreground/50 text-xs tracking-tight">
               &copy; {new Date().getFullYear()} IxStates
             </p>
           </div>

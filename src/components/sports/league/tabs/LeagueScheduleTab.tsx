@@ -247,7 +247,7 @@ export function LeagueScheduleTab({
                     : isCompleted
                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                       : isCurrentActive
-                        ? "border-amber-500/50 bg-amber-500/10 text-amber-400 animate-pulse"
+                        ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
                         : "border-border/40 bg-card/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                 )}
               >

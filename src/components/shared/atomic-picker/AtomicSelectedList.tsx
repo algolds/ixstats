@@ -12,7 +12,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Xmark as X, Package, Check } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn, formatCurrency } from "~/lib/utils";
 import type { BaseAtomicComponent } from "./types";
 
 export interface AtomicSelectedListProps<TType extends string = string> {
@@ -25,19 +25,12 @@ export interface AtomicSelectedListProps<TType extends string = string> {
   emptySubtitle?: string;
 }
 
-function defaultCurrency(amount: number): string {
-  if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
-  if (amount >= 1e6) return `$${(amount / 1e6).toFixed(1)}M`;
-  if (amount >= 1e3) return `$${(amount / 1e3).toFixed(0)}K`;
-  return `$${amount}`;
-}
-
 function AtomicSelectedListComponent<TType extends string = string>({
   selectedComponents,
   onDeselect,
   maxComponents = 10,
   isReadOnly = false,
-  currencyFormatter = defaultCurrency,
+  currencyFormatter = formatCurrency,
   emptyTitle = "No components selected yet",
   emptySubtitle = "Select components from the library to configure your structure.",
 }: AtomicSelectedListProps<TType>) {
@@ -59,7 +52,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
   if (selectedComponents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-10 text-center">
-        <Package className="mx-auto mb-2.5 h-9 w-9 text-muted-foreground/60 animate-pulse" />
+        <Package className="mx-auto mb-2.5 h-9 w-9 text-muted-foreground/60" />
         <p className="text-xs font-semibold text-foreground">{emptyTitle}</p>
         <p className="mt-0.5 max-w-[220px] text-xs text-muted-foreground">{emptySubtitle}</p>
       </div>

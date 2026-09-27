@@ -101,7 +101,7 @@ export function MatchTickerSim({
       <CardContent className="relative z-10 space-y-6 p-6">
         {/* Header Live / Sim control panel */}
         <div className="flex items-center justify-between">
-          <Badge className="flex animate-pulse items-center gap-1 bg-red-600 px-2 py-0.5 font-bold text-white dark:bg-red-500">
+          <Badge className="flex items-center gap-1 bg-red-600 px-2 py-0.5 font-bold text-white dark:bg-red-500">
             <span className="h-1.5 w-1.5 rounded-full bg-white" />
             LIVE SIMULATOR
           </Badge>

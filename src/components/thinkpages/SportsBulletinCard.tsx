@@ -53,7 +53,11 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
       <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-black/5 bg-black/[0.02] px-4 py-3.5 dark:border-white/10 dark:bg-white/[0.02]">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 shadow-xs dark:bg-amber-500/15">
-            <span className="text-xl select-none">{sportEmoji || "🏆"}</span>
+            {sportEmoji ? (
+              <span className="text-xl select-none">{sportEmoji}</span>
+            ) : (
+              <Trophy className="h-5 w-5 text-amber-500" aria-hidden="true" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -129,7 +133,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
         <div className="m-3.5 flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 shadow-lg backdrop-blur-md dark:bg-amber-500/15">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/40 bg-amber-400/20 text-amber-500 shadow-sm dark:text-amber-300">
-              <Trophy className="h-6 w-6 animate-pulse" />
+              <Trophy className="h-6 w-6" />
             </div>
             <div>
               <span className="text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400/90">

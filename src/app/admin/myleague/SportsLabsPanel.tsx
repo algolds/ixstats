@@ -364,7 +364,7 @@ export default function SportsLabsPanel() {
       <div className="facet-hierarchy-parent border-border/60 bg-card/40 flex flex-col justify-between gap-4 rounded-xl border p-6 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
           <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-amber-500">
-            <FlaskConical className="h-6 w-6 animate-pulse" />
+            <FlaskConical className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-foreground flex items-center gap-2 text-2xl font-bold">

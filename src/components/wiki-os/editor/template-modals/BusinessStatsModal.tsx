@@ -293,7 +293,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                 <button
                   onClick={handleInsertBusiness}
                   disabled={!selectedBusiness}
-                  className="animate-pulse-subtle rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
+                  className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
                 >
                   Insert Business Data
                 </button>

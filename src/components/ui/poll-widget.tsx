@@ -489,7 +489,7 @@ export function PollWidgetTrigger({
       {label ?? "Poll"}
       {totalVotes > 0 && (
         <span
-          className="bg-primary text-primary-foreground inline-flex min-w-4 items-center justify-center rounded-full px-1 text-[0.625rem]"
+          className="bg-primary text-primary-foreground inline-flex min-w-4 items-center justify-center rounded-full px-1 text-xs"
           data-slot="poll-widget-vote-count"
         >
           {totalVotes}

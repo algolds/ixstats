@@ -239,7 +239,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           </div>
 
           {/* Sector Output Distribution Matrix */}
-          <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
+          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <PieChart className="h-4 w-4 text-emerald-400" />
@@ -286,7 +286,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           </FacetCard>
 
           {/* Labor Force & Employment Matrix */}
-          <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
+          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4 text-cyan-400" />
@@ -349,7 +349,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           </FacetCard>
 
           {/* Income Inequality & Wealth Distribution */}
-          <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
+          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <Scale className="h-4 w-4 text-indigo-500" />
@@ -401,7 +401,8 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           {/* Revenue Integration Banner */}
           <FacetCard
             depth={1}
-            className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            surface="solid"
+            className="border-border/30 space-y-3 border p-4 shadow-lg"
           >
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">

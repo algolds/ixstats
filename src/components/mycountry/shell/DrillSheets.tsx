@@ -139,7 +139,7 @@ function IntentBranchingTree({
   if (isLoading || !data?.roots?.length) return null;
 
   return (
-    <FacetCard depth={1} className="bg-card/20 flex flex-col gap-3 p-4 backdrop-blur-md">
+    <FacetCard depth={1} surface="solid" className="flex flex-col gap-3 p-4">
       <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
         <GitBranch className="h-4 w-4" />
         <span>Executive Decision Tree (Branching Lineage)</span>
@@ -164,7 +164,7 @@ function IntentBranchingTree({
                     it.status === "completed"
                       ? "bg-emerald-400"
                       : it.status === "active"
-                        ? "animate-pulse bg-amber-400"
+                        ? "bg-amber-400"
                         : "bg-muted-foreground"
                   )}
                 />
@@ -266,7 +266,7 @@ function IntentDetail({
   return (
     <div className="space-y-5 pb-4">
       {/* Directive Hero Header */}
-      <FacetCard depth={1} className="bg-card/40 flex flex-col gap-3 p-5 backdrop-blur-md">
+      <FacetCard depth={1} surface="solid" className="flex flex-col gap-3 p-5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span
@@ -304,7 +304,7 @@ function IntentDetail({
                   ? "bg-emerald-400"
                   : intent.status === "abandoned"
                     ? "bg-red-400"
-                    : "animate-pulse bg-amber-400"
+                    : "bg-amber-400"
               )}
             />
             {intent.status || "active"}
@@ -391,7 +391,7 @@ function IntentDetail({
 
       {/* Executive Narrative Summary */}
       {intent.summary && (
-        <FacetCard depth={1} className="bg-card/20 flex flex-col gap-2 p-4 backdrop-blur-md">
+        <FacetCard depth={1} surface="solid" className="flex flex-col gap-2 p-4">
           <div className="flex items-center gap-2 text-xs font-bold text-amber-500 dark:text-amber-400">
             <BookOpen className="h-4 w-4" />
             <span>Executive Narrative Summary</span>
@@ -403,7 +403,7 @@ function IntentDetail({
       )}
 
       {/* Resistance Progress (linked national issues) */}
-      <FacetCard depth={1} className="bg-card/20 flex flex-col gap-3 p-4 backdrop-blur-md">
+      <FacetCard depth={1} surface="solid" className="flex flex-col gap-3 p-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs font-bold text-amber-500 dark:text-amber-400">
             <Shield className="h-4 w-4" />
@@ -486,7 +486,8 @@ function IntentDetail({
       {/* Aligned Power Broker Telemetry */}
       <FacetCard
         depth={1}
-        className="bg-card/20 flex items-center justify-between p-4 backdrop-blur-md"
+        surface="solid"
+        className="flex items-center justify-between p-4"
       >
         <div className="flex items-center gap-3">
           <div
@@ -519,7 +520,8 @@ function IntentDetail({
               <FacetCard
                 key={idx}
                 depth={1}
-                className="bg-card/20 flex items-center justify-between p-3.5 text-xs backdrop-blur-md"
+                surface="solid"
+                className="flex items-center justify-between p-3.5 text-xs"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-xs font-bold text-amber-500">
@@ -562,7 +564,8 @@ function IntentDetail({
               </div>
               <FacetCard
                 depth={1}
-                className="bg-card/20 flex items-center justify-between border-l-2 border-l-amber-500 p-3 text-xs backdrop-blur-md"
+                surface="solid"
+                className="flex items-center justify-between border-l-2 border-l-amber-500 p-3 text-xs"
               >
                 <span className="text-foreground font-bold">{parent.goal}</span>
                 <span className="text-xs font-bold text-amber-400 uppercase">
@@ -582,7 +585,8 @@ function IntentDetail({
                   <FacetCard
                     key={kid.id}
                     depth={1}
-                    className="bg-card/20 flex items-center justify-between border-l-2 border-l-blue-500 p-3 pl-4 text-xs backdrop-blur-md"
+                    surface="solid"
+                    className="flex items-center justify-between border-l-2 border-l-blue-500 p-3 pl-4 text-xs"
                   >
                     <div className="flex items-center gap-2">
                       <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-blue-400" />

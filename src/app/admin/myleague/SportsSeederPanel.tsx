@@ -165,7 +165,7 @@ export default function SportsSeederPanel() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-indigo-400">
-              <Database className="h-6 w-6 animate-pulse" />
+              <Database className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-foreground flex items-center gap-2 text-2xl font-bold">

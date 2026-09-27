@@ -278,7 +278,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             <span>Narrator</span>
             <span
               className={cn(
-                "py-0.2 rounded-full px-1.5 text-[8.5px] font-bold tracking-widest uppercase transition-colors",
+                "py-0.2 rounded-full px-1.5 text-xs font-bold tracking-widest uppercase transition-colors",
                 wikiTab === "narrator"
                   ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
                   : "border border-white/5 bg-white/10 text-zinc-400"

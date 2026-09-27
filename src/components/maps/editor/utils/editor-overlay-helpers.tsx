@@ -25,7 +25,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
         <div className="relative h-24 w-24">
           <div className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full border-2 border-dashed border-emerald-500/30" />
           <div className="absolute inset-3 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
-          <div className="absolute inset-6 animate-pulse rounded-full border border-emerald-300/15" />
+          <div className="absolute inset-6 rounded-full border border-emerald-300/15" />
           <div className="absolute inset-0 flex items-center justify-center">
             <Map className="h-8 w-8 text-emerald-400" />
           </div>

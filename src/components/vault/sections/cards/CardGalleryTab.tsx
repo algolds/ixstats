@@ -196,12 +196,12 @@ export function CardGalleryTab({
             <span className="text-xs font-bold text-foreground">
               <NumberFlow value={libraryStats.totalCards} />
             </span>
-            <span className="text-muted-foreground text-[0.65rem]">cards in library</span>
+            <span className="text-muted-foreground text-xs">cards in library</span>
           </div>
           {libraryStats.cardsByRegion?.length > 0 && (
             <div className="flex items-center gap-1.5">
               <MapPin className="text-muted-foreground h-3 w-3" />
-              <span className="text-muted-foreground text-[0.65rem]">
+              <span className="text-muted-foreground text-xs">
                 Top:{" "}
                 <span className="text-foreground/80 font-semibold">
                   {libraryStats.cardsByRegion[0]?.region}

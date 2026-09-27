@@ -213,7 +213,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   return (
     <div className="space-y-5 pb-4">
       {/* Issue Hero */}
-      <FacetCard depth={1} className="bg-card/40 flex flex-col gap-3 p-5 backdrop-blur-md">
+      <FacetCard depth={1} surface="solid" className="flex flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="border-border/40 bg-muted/20 text-muted-foreground flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase">
             <DomainIcon className="h-3 w-3" />
@@ -272,7 +272,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       {(isResolved || showOutcome) && (issue.consequenceLog || options.length > 0) && (
         <FacetCard
           depth={1}
-          className="flex flex-col gap-2.5 border-emerald-500/20 bg-emerald-500/5 p-4 backdrop-blur-md"
+          surface="solid"
+          className="flex flex-col gap-2.5 border-emerald-500/20 bg-emerald-500/5 p-4"
         >
           <div className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-emerald-400" />
@@ -316,7 +317,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       {!isResolved && !showOutcome && reconQuery.data && reconQuery.data.status !== "disabled" && (
         <FacetCard
           depth={1}
-          className="flex flex-col gap-2.5 border-cyan-500/20 bg-cyan-500/[0.03] p-4 backdrop-blur-md"
+          surface="solid"
+          className="flex flex-col gap-2.5 border-cyan-500/20 bg-cyan-500/[0.03] p-4"
         >
           <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
             <Sliders className="h-4 w-4" />
@@ -340,7 +342,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           )}
           {reconQuery.data.status === "pending" && (
             <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-              <Clock className="h-3.5 w-3.5 animate-pulse text-cyan-400" />
+              <Clock className="h-3.5 w-3.5 text-cyan-400" />
               Your team is researching — findings land in{" "}
               {Math.max(
                 1,
@@ -506,8 +508,9 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 <FacetCard
                   key={option.id}
                   depth={1}
+                  surface="solid"
                   className={cn(
-                    "flex items-start justify-between gap-3 p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    "flex items-start justify-between gap-3 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     isConfirming
                       ? option.isRisky
                         ? "border-red-500/50 bg-red-500/10"
@@ -568,7 +571,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
 
                     {option.isRisky && (
                       <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 p-2 text-xs text-red-400">
-                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span className="text-xs leading-snug">
                           Risky choice — carries risk of negative outcomes or stability backlash.
                         </span>

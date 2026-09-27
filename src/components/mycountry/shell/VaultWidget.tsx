@@ -34,6 +34,7 @@ import { PreText } from "~/components/ui/pretext";
 import { useTheme } from "~/context/theme-context";
 
 import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 export function VaultWidget() {
   const { userId } = useAuth();
@@ -113,9 +114,9 @@ export function VaultWidget() {
             <>
               {/* Balance */}
               <div>
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                <Eyebrow className="block">
                   IxCredits
-                </p>
+                </Eyebrow>
                 <div className="flex items-center gap-1.5 pt-0.5">
                   <IxCreditsSymbol className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                   <p className="text-base font-bold tracking-tight text-amber-700 tabular-nums sm:text-lg dark:text-amber-400">

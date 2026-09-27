@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 const FIELD_NAMES = ["Minute", "Hour", "Day (Month)", "Month", "Day (Week)"] as const;
 const FIELD_RANGES: [number, number][] = [
@@ -280,9 +281,9 @@ function CronSchedule({
 
           return (
             <div key={FIELD_NAMES[i]} className="flex flex-col items-center gap-1.5 px-2 py-3">
-              <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <Eyebrow>
                 {FIELD_NAMES[i]}
-              </span>
+              </Eyebrow>
               <span className="text-foreground font-mono text-sm font-semibold">{field}</span>
               <span className="text-muted-foreground text-center text-xs">{description}</span>
             </div>

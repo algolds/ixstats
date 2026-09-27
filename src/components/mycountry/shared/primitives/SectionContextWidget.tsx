@@ -80,7 +80,7 @@ export function SectionContextWidget({
           <HeaderIcon className={cn("h-3.5 w-3.5", a.text)} />
           <span className="text-xs font-semibold">{title}</span>
         </div>
-        <Badge variant="outline" className="px-1.5 py-0 text-[0.65rem]">
+        <Badge variant="outline" className="px-1.5 py-0 text-xs">
           {recent.length}
         </Badge>
       </div>

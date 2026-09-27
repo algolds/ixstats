@@ -257,7 +257,7 @@ export function MarginMarkupTab({
                         <Bookmark className="h-2.5 w-2.5" /> Quote
                       </span>
                     ) : (
-                      <span className="text-[9.5px] font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+                      <span className="text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
                         Highlight
                       </span>
                     )}
@@ -311,14 +311,14 @@ export function MarginMarkupTab({
                 </div>
 
                 {/* Excerpt Quote Text */}
-                <p className="pl-1 text-[11.5px] leading-relaxed text-[var(--wikios-text)] italic">
+                <p className="pl-1 text-xs leading-relaxed text-[var(--wikios-text)] italic">
                   &ldquo;{ann.selectedText}&rdquo;
                 </p>
 
                 {/* User Note if present */}
                 {ann.comment && !isStashedQuote && (
                   <div className="ml-1 space-y-0.5 rounded-xl border border-yellow-400/40 bg-[var(--wikios-surface)]/80 p-2 text-xs text-[var(--wikios-text-muted)] shadow-2xs">
-                    <div className="flex items-center gap-1 text-[9.5px] font-bold text-[var(--wikios-text)]">
+                    <div className="flex items-center gap-1 text-xs font-bold text-[var(--wikios-text)]">
                       <MessageSquare className="dark:text-margin-accent h-2.5 w-2.5 text-yellow-600" />
                       <span>Lore Significance</span>
                     </div>

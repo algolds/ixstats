@@ -256,7 +256,7 @@ export function ArticleCompanionHUD({
                     >
                       <span>{contrib.username}</span>
                       {contrib.editCount && contrib.editCount > 1 && (
-                        <span className="text-muted-foreground/70 text-[8.5px] tabular-nums">
+                        <span className="text-muted-foreground/70 text-xs tabular-nums">
                           ({contrib.editCount})
                         </span>
                       )}
@@ -268,7 +268,7 @@ export function ArticleCompanionHUD({
                   <button
                     type="button"
                     onClick={() => setShowAllContributors((v) => !v)}
-                    className="cursor-pointer px-1 py-0.5 text-[9.5px] font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
+                    className="cursor-pointer px-1 py-0.5 text-xs font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
                   >
                     {showAllContributors ? "Show less" : `+${otherContributors.length - 3} more`}
                   </button>
@@ -315,7 +315,7 @@ export function ArticleCompanionHUD({
                 <span className="h-2 w-0.5 animate-[bounce_1s_infinite_300ms] rounded-full bg-cyan-400" />
               </span>
             ) : (
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/15 px-1.5 py-0.5 text-[8.5px] leading-none font-bold tracking-wider text-cyan-400 uppercase">
+              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/15 px-1.5 py-0.5 text-xs leading-none font-bold tracking-wider text-cyan-400 uppercase">
                 Beta
               </span>
             )}

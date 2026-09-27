@@ -408,7 +408,7 @@ function ExecutiveAgendaComponent({
                 animate={{ opacity: 1 }}
                 className="border-border/50 bg-card/30 text-muted-foreground flex flex-col items-center justify-center rounded-xl border p-7 text-center backdrop-blur-xs dark:border-white/5 dark:bg-white/[0.01]"
               >
-                <Calendar className="text-muted-foreground/40 mb-2 h-7 w-7 animate-pulse" />
+                <Calendar className="text-muted-foreground/40 mb-2 h-7 w-7" />
                 <div className="text-foreground text-xs font-bold">No Events Scheduled</div>
                 <div className="text-muted-foreground/80 mt-0.5 max-w-xs text-xs">
                   No scheduled statecraft events or active directives match the selected day and

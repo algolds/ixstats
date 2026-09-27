@@ -169,7 +169,7 @@ export function LeagueMasthead({
                 className={cn(
                   "h-2 w-2 rounded-full",
                   isSeasonActive
-                    ? "bg-emerald-500 animate-pulse"
+                    ? "bg-emerald-500"
                     : "bg-muted-foreground/50"
                 )}
               />

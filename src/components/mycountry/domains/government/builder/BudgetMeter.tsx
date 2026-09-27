@@ -57,7 +57,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             {isOverBudget ? (
-              <AlertTriangle className="h-5 w-5 animate-pulse text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-red-500" />
             ) : isWarning ? (
               <TrendingUp className="h-5 w-5 text-amber-500" />
             ) : (

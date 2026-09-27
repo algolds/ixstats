@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Clock, OpenNewWindow as ExternalLink, RssFeed as Rss } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { formatTimeAgo } from "~/lib/utils";
+import { timeAgo } from "~/lib/format/compact";
 import {
   WikiHtmlContent,
   WikiLinkPreview,
@@ -109,7 +109,7 @@ export function FeedItemHeader({
           <Badge
             variant="outline"
             className={cn(
-              "shrink-0 rounded-full border-current/30 text-[8.5px] font-medium tracking-wider uppercase",
+              "shrink-0 rounded-full border-current/30 text-xs font-medium tracking-wider uppercase",
               resolvedConfig.color
             )}
           >
@@ -121,7 +121,7 @@ export function FeedItemHeader({
         {isWiki && isGrouped && activity._totalBytes !== undefined && (
           <span
             className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[8.5px] font-medium tracking-tight tabular-nums shadow-xs",
+              "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium tracking-tight tabular-nums shadow-xs",
               activity._totalBytes > 0
                 ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 : activity._totalBytes < 0
@@ -137,7 +137,7 @@ export function FeedItemHeader({
         {/* Timestamp */}
         <span className="text-muted-foreground/70 flex items-center gap-1 text-xs font-normal tracking-normal tabular-nums">
           <Clock className="h-3 w-3" />
-          {formatTimeAgo(new Date(activity.timestamp))}
+          {timeAgo(new Date(activity.timestamp))}
         </span>
 
         {/* External open link */}

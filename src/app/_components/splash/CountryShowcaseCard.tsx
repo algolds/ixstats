@@ -16,6 +16,7 @@ import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { splashGold } from "~/lib/splash/mycountry-gold";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 /** Country row from getAll — intentionally loose for carousel display */
 export function CountryShowcaseCard({ country }: { country: Record<string, unknown> }) {
@@ -207,9 +208,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-xs tracking-wider uppercase">
+                <Eyebrow>
                   Total GDP
-                </span>
+                </Eyebrow>
               </div>
               <div className={`text-lg font-bold ${splashGold.text}`}>
                 {formatCurrency(currentTotalGdp)}
@@ -218,9 +219,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-xs tracking-wider uppercase">
+                <Eyebrow>
                   Population
-                </span>
+                </Eyebrow>
               </div>
               <div className={`text-lg font-bold ${splashGold.text}`}>
                 {formatPopulation(currentPopulation)}
@@ -229,9 +230,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-xs tracking-wider uppercase">
+                <Eyebrow>
                   Per Capita
-                </span>
+                </Eyebrow>
               </div>
               <div className={`text-lg font-bold ${splashGold.text}`}>
                 {formatCurrency(currentGdpPerCapita)}
@@ -242,9 +243,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
                 />
-                <span className="text-muted-foreground text-xs tracking-wider uppercase">
+                <Eyebrow>
                   Growth
-                </span>
+                </Eyebrow>
               </div>
               <div
                 className={`text-lg font-bold ${growthPositive ? splashGold.text : "text-destructive"}`}
@@ -371,9 +372,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  <Eyebrow>
                     Country Health
-                  </span>
+                  </Eyebrow>
                 </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className={`text-2xl font-bold ${healthColor}`}>{overallHealth}</span>

@@ -164,7 +164,7 @@ export function MessageTrayItem({
                     </span>
                   )}
                 </div>
-                <span className="text-muted-foreground/70 shrink-0 text-[9.5px] font-medium tabular-nums">
+                <span className="text-muted-foreground/70 shrink-0 text-xs font-medium tabular-nums">
                   {relativeTime(timestamp)}
                 </span>
               </div>

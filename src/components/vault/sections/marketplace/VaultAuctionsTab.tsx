@@ -346,7 +346,7 @@ export function VaultAuctionsTab() {
             {activeLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 animate-pulse rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
                 ))}
               </div>
             ) : activeAuctions.length === 0 ? (
@@ -399,7 +399,7 @@ export function VaultAuctionsTab() {
             {endingSoonLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 animate-pulse rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
                 ))}
               </div>
             ) : endingSoon.length === 0 ? (
@@ -430,7 +430,7 @@ export function VaultAuctionsTab() {
             {myListingsLoading ? (
               <div className="space-y-2">
                 {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-20 animate-pulse rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
                 ))}
               </div>
             ) : myListings.length === 0 ? (

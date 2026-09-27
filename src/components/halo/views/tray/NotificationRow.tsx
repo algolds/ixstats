@@ -154,7 +154,7 @@ export function NotificationRow({
       {/* Expanded detail panel */}
       <SwipeableRow.Expanded>
         <div className="border-border/30 bg-accent/5 space-y-3 rounded-b-xl border-t px-3.5 pt-3 pb-3.5 pl-[18px]">
-          <p className="text-foreground/95 text-[11.5px] leading-relaxed font-medium whitespace-pre-wrap select-text selection:bg-amber-500/30">
+          <p className="text-foreground/95 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text selection:bg-amber-500/30">
             {n.description || n.message}
           </p>
 

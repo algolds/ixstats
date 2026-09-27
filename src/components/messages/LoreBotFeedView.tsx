@@ -269,17 +269,17 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Source badge */}
                     {item.type === "new" ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-emerald-500 uppercase">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold tracking-wider text-emerald-500 uppercase">
                         <FilePlus className="h-3 w-3" />
                         New Article
                       </span>
                     ) : item.type === "watchlist" ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-amber-500 uppercase">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
                         <Eye className="h-3 w-3" />
                         Watchlist
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-cyan-400 uppercase">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-bold tracking-wider text-cyan-400 uppercase">
                         <Edit3 className="h-3 w-3" />
                         Revision
                       </span>
@@ -301,7 +301,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                     {/* Watched tag */}
                     {item.isWatched && item.type !== "watchlist" && (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-amber-400">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs font-semibold text-amber-400">
                         <Eye className="h-2.5 w-2.5" />
                         Watched
                       </span>

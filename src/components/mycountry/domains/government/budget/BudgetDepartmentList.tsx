@@ -4,6 +4,7 @@ import React from "react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import type { GovernmentDepartment, BudgetAllocation } from "~/types/government";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface BudgetDepartmentItem {
   department: GovernmentDepartment;
@@ -73,25 +74,25 @@ export function BudgetDepartmentList({
               <Progress value={utilizationRate} className="h-1.5" />
               <div className="grid grid-cols-3 gap-3 pt-1 text-xs">
                 <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
-                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  <Eyebrow className="block">
                     Allocated
-                  </p>
+                  </Eyebrow>
                   <p className="text-foreground mt-0.5 font-mono font-semibold tabular-nums">
                     {formatNumber(allocatedAmount)}
                   </p>
                 </div>
                 <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
-                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  <Eyebrow className="block">
                     Spent
-                  </p>
+                  </Eyebrow>
                   <p className="mt-0.5 font-mono font-semibold text-amber-400 tabular-nums">
                     {formatNumber(spentAmount)}
                   </p>
                 </div>
                 <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
-                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  <Eyebrow className="block">
                     Remaining
-                  </p>
+                  </Eyebrow>
                   <p className="mt-0.5 font-mono font-semibold text-cyan-400 tabular-nums">
                     {formatNumber(availableAmount)}
                   </p>

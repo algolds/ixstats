@@ -292,7 +292,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 <span
                   className={cn(
                     "animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xs font-semibold text-white tabular-nums shadow-md",
-                    urgentCount > 0 ? "animate-pulse bg-red-600" : "bg-amber-600 dark:bg-amber-500"
+                    urgentCount > 0 ? "bg-red-600" : "bg-amber-600 dark:bg-amber-500"
                   )}
                 >
                   {urgentCount > 0 ? urgentCount : issueCount}
@@ -371,7 +371,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/15 py-1.5 text-xs font-semibold tracking-wider text-red-700 uppercase shadow-sm shadow-red-500/10 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-red-500/25 active:scale-[0.96] dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
               title={`${crisesCount} active crises! Click to view.`}
             >
-              <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-600 dark:text-red-400" />
+              <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
               <span>{crisesCount} Crises Active</span>
             </Link>
           </div>

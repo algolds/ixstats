@@ -434,7 +434,7 @@ export const DepartmentList = React.memo(function DepartmentList({
         {departments.length === 0 && (
           <div className="relative col-span-full rounded-xl border border-zinc-200 bg-zinc-100/50 p-12 text-center backdrop-blur-md dark:border-white/[0.08] dark:bg-zinc-950/40">
             <TextureOverlay texture="chevron" opacity={0.03} />
-            <Users className="mx-auto mb-3 h-10 w-10 animate-pulse text-zinc-400 dark:text-zinc-600" />
+            <Users className="mx-auto mb-3 h-10 w-10 text-zinc-400 dark:text-zinc-600" />
             <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-300">
               No Departments Active
             </h3>

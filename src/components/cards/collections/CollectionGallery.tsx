@@ -213,7 +213,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <Grid3x3 className="mx-auto mb-3 h-12 w-12 animate-pulse text-white/20" />
+            <Grid3x3 className="mx-auto mb-3 h-12 w-12 text-white/20" />
             <p className="text-sm text-white/50">Loading collections...</p>
           </div>
         </div>

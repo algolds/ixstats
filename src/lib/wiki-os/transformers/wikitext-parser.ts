@@ -130,7 +130,7 @@ function stripWikitextTemplates(input: string, preserve = false): string {
     (_match, target: string) => {
       const t = target.trim();
       const route = titleToWikiOSRoute(t);
-      return `\n\n<p class="text-[11px] italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${t}</a></p>\n\n`;
+      return `\n\n<p class="text-xs italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${t}</a></p>\n\n`;
     }
   );
 
@@ -306,7 +306,7 @@ function convertWikitextImages(text: string, wikiSource: string): string {
       <img src="${imageUrl}" alt="${caption || rawFileName}" class="max-h-48 w-full object-cover rounded-t-xl" loading="lazy" />
       ${
         caption
-          ? `<figcaption class="p-2 text-[11px] text-muted-foreground font-medium bg-muted/20 border-t border-border/40 leading-tight">${caption}</figcaption>`
+          ? `<figcaption class="p-2 text-xs text-muted-foreground font-medium bg-muted/20 border-t border-border/40 leading-tight">${caption}</figcaption>`
           : ""
       }
     </figure>\n\n`;
@@ -508,7 +508,7 @@ export function parseWikitextToHtml(
   // 20. Convert code/tt: <code>text</code>, <tt>text</tt>
   text = text.replace(/<code>([\s\S]*?)<\/code>|<tt>([\s\S]*?)<\/tt>/gi, (_m, g1, g2) => {
     const inner = g1 || g2 || "";
-    return `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-[11px] text-primary">${inner}</code>`;
+    return `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-xs text-primary">${inner}</code>`;
   });
 
   // 21. Convert pre blocks: <pre>text</pre>

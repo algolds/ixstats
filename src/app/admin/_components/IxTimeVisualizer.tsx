@@ -31,6 +31,7 @@ import { Switch } from "~/components/ui/switch";
 import { IxTime } from "~/lib/ixtime";
 import { IxTimeAccuracyVerifier, type TimeSimulationResult } from "~/lib/ixtime";
 import { IxTimeSyncManager, type MasterTimeState, type SyncStatus } from "~/lib/ixtime";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface TimeVisualizationData {
   currentIxTime: number;
@@ -476,7 +477,7 @@ export function IxTimeVisualizer() {
                       >
                         <td className="px-3 py-2">
                           {m.label === "Current" && (
-                            <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                            <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
                           )}
                           {m.label}
                         </td>
@@ -604,7 +605,7 @@ export function IxTimeVisualizer() {
                       </div>
                       {syncStatuses.length === 0 ? (
                         <div className="text-muted-foreground flex flex-col items-center justify-center py-6 text-center text-xs">
-                          <Timer className="mb-1.5 h-5 w-5 animate-pulse opacity-40" />
+                          <Timer className="mb-1.5 h-5 w-5 opacity-40" />
                           <span>No sync targets configured</span>
                         </div>
                       ) : (
@@ -694,33 +695,33 @@ export function IxTimeVisualizer() {
                               <div className="text-sm font-bold text-green-500">
                                 {simulationResults.passedTests}
                               </div>
-                              <div className="text-muted-foreground text-xs tracking-wider uppercase">
+                              <Eyebrow className="block">
                                 Passed
-                              </div>
+                              </Eyebrow>
                             </div>
                             <div>
                               <div className="text-sm font-bold text-red-500">
                                 {simulationResults.failedTests}
                               </div>
-                              <div className="text-muted-foreground text-xs tracking-wider uppercase">
+                              <Eyebrow className="block">
                                 Failed
-                              </div>
+                              </Eyebrow>
                             </div>
                             <div>
                               <div className="font-mono text-sm font-bold">
                                 {simulationResults.overallAccuracy.toFixed(1)}%
                               </div>
-                              <div className="text-muted-foreground text-xs tracking-wider uppercase">
+                              <Eyebrow className="block">
                                 Accuracy
-                              </div>
+                              </Eyebrow>
                             </div>
                             <div>
                               <div className="font-mono text-sm font-bold">
                                 {simulationResults.averageExecutionTime.toFixed(0)}ms
                               </div>
-                              <div className="text-muted-foreground text-xs tracking-wider uppercase">
+                              <Eyebrow className="block">
                                 Avg Time
-                              </div>
+                              </Eyebrow>
                             </div>
                           </div>
                           {simulationResults.criticalIssues.length > 0 && (

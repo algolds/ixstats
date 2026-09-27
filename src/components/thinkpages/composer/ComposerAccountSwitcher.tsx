@@ -114,7 +114,7 @@ export function ComposerAccountSwitcher({
                 >
                   <Avatar className="dark:border-border h-7 w-7 border border-white/20">
                     <AvatarImage src={getAccountAvatar(acc)} />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-[0.6rem]">
+                    <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                       {acc.displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>

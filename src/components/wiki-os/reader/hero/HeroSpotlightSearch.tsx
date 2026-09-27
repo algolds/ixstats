@@ -399,7 +399,7 @@ export function HeroSpotlightSearch({
             )}
 
             {/* Micro navigation tip footer */}
-            <div className="text-muted-foreground/60 border-border/20 mt-1 flex items-center justify-between border-t px-2.5 pt-1.5 pb-0.5 text-[9.5px] select-none">
+            <div className="text-muted-foreground/60 border-border/20 mt-1 flex items-center justify-between border-t px-2.5 pt-1.5 pb-0.5 text-xs select-none">
               <span>↑↓ Navigate</span>
               <span>↵ Select / Create</span>
               <span>Esc Close</span>

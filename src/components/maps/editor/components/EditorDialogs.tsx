@@ -120,7 +120,7 @@ export const EditorDialogs = React.memo(function EditorDialogs({
         <div className="fixed inset-0 z-[100] flex animate-[fadeIn_0.15s_ease-out] items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="border-border/40 bg-card/95 w-full max-w-sm space-y-4 rounded-2xl border p-6 shadow-2xl backdrop-blur-md">
             <div className="border-border/30 flex items-center gap-2 border-b pb-2">
-              <AlertCircle className="h-5 w-5 animate-pulse text-amber-500" />
+              <AlertCircle className="h-5 w-5 text-amber-500" />
               <h3 className="text-foreground text-lg font-bold">Unsaved Changes</h3>
             </div>
             <p className="text-muted-foreground text-xs leading-relaxed">

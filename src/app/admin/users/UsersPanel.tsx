@@ -488,7 +488,7 @@ export function UsersPanel() {
                                 onClick={handleStopPlayAs}
                                 className="h-7 gap-1 rounded-lg border-red-500/40 bg-red-500/10 px-2 text-xs font-semibold text-red-600 transition-transform hover:bg-red-500/20 active:scale-[0.98] dark:text-red-400"
                               >
-                                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                                 Active (Stop)
                               </Button>
                             ) : (

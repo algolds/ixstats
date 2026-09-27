@@ -98,7 +98,7 @@ export function MarginCategoryHelpModal({
 
             {/* Scrollable Category Cards */}
             <div className="scrollbar-thin space-y-3 overflow-y-auto p-5 text-xs">
-              <p className="pb-1 text-[11.5px] leading-relaxed text-[var(--wikios-text-muted)]">
+              <p className="pb-1 text-xs leading-relaxed text-[var(--wikios-text-muted)]">
                 Discussions in Margin are categorized into five core dimensions to keep
                 worldbuilding structured and easy to search:
               </p>

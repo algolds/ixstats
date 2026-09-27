@@ -17,6 +17,7 @@ import {
 } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import type { BorderEditorState, BorderEditorActions } from "~/hooks/useBorderEditor";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface BorderEditorToolOptionsProps {
   countryName?: string;
@@ -53,9 +54,9 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         {/* Tool-specific configuration */}
         {borderState.mode === "brush" && (
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+            <Eyebrow>
               Brush Size
-            </span>
+            </Eyebrow>
             <input
               type="range"
               min="1"
@@ -72,7 +73,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         )}
 
         {borderState.mode === "split" && borderState.splitLine.length > 0 && (
-          <span className="animate-pulse text-xs font-medium text-amber-500">
+          <span className="text-xs font-medium text-amber-500">
             Split Line: {borderState.splitLine.length} points
           </span>
         )}

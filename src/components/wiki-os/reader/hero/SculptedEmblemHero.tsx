@@ -373,7 +373,7 @@ export function SculptedEmblemHero({
                   className="group/event block transition-transform active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className="py-0.2 shrink-0 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 text-[9.5px] font-bold text-amber-600 tabular-nums dark:text-amber-400">
+                    <span className="py-0.2 shrink-0 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 text-xs font-bold text-amber-600 tabular-nums dark:text-amber-400">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].year}
                     </span>
                     <span className="text-foreground truncate text-xs leading-tight font-semibold transition-colors group-hover/event:text-amber-500 sm:text-[13px]">
@@ -413,7 +413,7 @@ export function SculptedEmblemHero({
               <div className="flex items-center gap-1">
                 {activePrompt._count?.responses !== undefined &&
                 activePrompt._count.responses > 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
                     <span className="tabular-nums">{activePrompt._count.responses}</span>
                     <span className="opacity-75">
                       {activePrompt._count.responses === 1 ? "response" : "responses"}
@@ -421,7 +421,7 @@ export function SculptedEmblemHero({
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
                     <span>Respond now</span>
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
@@ -457,7 +457,7 @@ export function SculptedEmblemHero({
               <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+              <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
                 <span>View prompts</span>
                 <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
               </span>

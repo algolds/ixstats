@@ -280,7 +280,7 @@ export function ThinktankDirectorySidebar({
                       title="Active discussions in last 48 hours"
                       className="ring-background absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 shadow-xs ring-2"
                     >
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     </span>
                   )}
                 </div>

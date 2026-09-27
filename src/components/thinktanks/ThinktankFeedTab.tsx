@@ -246,7 +246,7 @@ export function ThinktankFeedTab({
         <div className="space-y-4">
           {isLoadingFeed ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
-              <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
               <p className="text-muted-foreground text-xs font-medium">Loading group timeline...</p>

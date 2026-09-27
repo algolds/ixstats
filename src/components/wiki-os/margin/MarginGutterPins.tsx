@@ -412,7 +412,7 @@ export function MarginGutterPins({
                 )}
               >
                 {isCluster ? (
-                  <div className="flex items-center gap-0.5 text-[9.5px] font-black">
+                  <div className="flex items-center gap-0.5 text-xs font-black">
                     <span>💬{pin.threadCount}</span>
                     {pin.annotationCount ? <span>🖍️{pin.annotationCount}</span> : null}
                   </div>

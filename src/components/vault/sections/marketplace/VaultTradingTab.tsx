@@ -167,7 +167,7 @@ export function VaultTradingTab() {
           <TabsContent value="active" className="space-y-3 outline-none">
             {activeLoading ? (
               <div className="flex items-center justify-center py-10">
-                <Skeleton className="h-20 w-full animate-pulse rounded-lg bg-white/5" />
+                <Skeleton className="h-20 w-full rounded-lg bg-white/5" />
               </div>
             ) : activeTrades && activeTrades.length > 0 ? (
               activeTrades.map((trade: ActiveTradeItem) => (

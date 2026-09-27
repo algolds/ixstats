@@ -446,7 +446,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           </div>
                         )}
                         <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-background ring-2 ring-background">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         </span>
                       </div>
 

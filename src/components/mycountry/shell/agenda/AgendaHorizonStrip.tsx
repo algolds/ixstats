@@ -75,7 +75,7 @@ export function AgendaHorizonStrip({
                 {dayNum}
               </span>
               {hasEvent && (
-                <span className="relative z-10 mt-1 h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-500 dark:bg-cyan-400" />
+                <span className="relative z-10 mt-1 h-1.5 w-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400" />
               )}
             </button>
           );

@@ -346,7 +346,7 @@ function ThreadCard({
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             {dimensionInfo && (
               <span
-                className="py-0.2 inline-flex items-center gap-1 rounded-md px-1.5 text-[8.5px] font-bold shadow-xs"
+                className="py-0.2 inline-flex items-center gap-1 rounded-md px-1.5 text-xs font-bold shadow-xs"
                 style={{
                   backgroundColor: `color-mix(in srgb, ${dimensionInfo.color === "#fef036" ? "var(--margin-accent)" : dimensionInfo.color} 18%, transparent)`,
                   color:
@@ -366,14 +366,14 @@ function ThreadCard({
             </span>
 
             {thread.createdBy.country && (
-              <span className="py-0.2 inline-flex items-center gap-1 rounded border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] px-1 text-[8.5px] font-semibold text-[var(--margin-accent-text)]">
+              <span className="py-0.2 inline-flex items-center gap-1 rounded border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] px-1 text-xs font-semibold text-[var(--margin-accent-text)]">
                 <Crown className="h-2.5 w-2.5" />
                 <span className="max-w-[75px] truncate">{thread.createdBy.country.name}</span>
               </span>
             )}
 
             {thread.sectionAnchor && (
-              <span className="py-0.2 max-w-28 truncate rounded border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/60 px-1 text-[8.5px] font-semibold text-[var(--wikios-text-dim)]">
+              <span className="py-0.2 max-w-28 truncate rounded border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/60 px-1 text-xs font-semibold text-[var(--wikios-text-dim)]">
                 #{thread.sectionAnchor}
               </span>
             )}
@@ -439,7 +439,7 @@ function ThreadCard({
                       />
                       <span className="text-xs">{comment.author.username}</span>
                       {comment.author.country?.name && (
-                        <span className="text-[9.5px] font-medium text-[var(--margin-accent-text)]">
+                        <span className="text-xs font-medium text-[var(--margin-accent-text)]">
                           ({comment.author.country.name})
                         </span>
                       )}
@@ -478,7 +478,7 @@ function ThreadCard({
                         <button
                           type="button"
                           onClick={() => handleCopyReplacement(comment.id, comment.suggestedEdit!)}
-                          className="flex cursor-pointer items-center gap-1 rounded border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] px-1.5 py-0.5 text-[9.5px] text-[var(--margin-accent-text)] transition-transform duration-100 hover:bg-[var(--margin-accent-bg)]/80 active:scale-95"
+                          className="flex cursor-pointer items-center gap-1 rounded border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] px-1.5 py-0.5 text-xs text-[var(--margin-accent-text)] transition-transform duration-100 hover:bg-[var(--margin-accent-bg)]/80 active:scale-95"
                         >
                           {copiedReplacementId === comment.id ? (
                             <>
@@ -852,7 +852,7 @@ export function MarginThreadsTab({
 
           {draftQuote && (
             <div className="bg-margin-accent/15 space-y-1 rounded-xl border border-yellow-400/40 p-2.5 text-xs text-[var(--wikios-text-muted)]">
-              <span className="text-[9.5px] font-bold tracking-wider text-[var(--wikios-text)] uppercase">
+              <span className="text-xs font-bold tracking-wider text-[var(--wikios-text)] uppercase">
                 Referenced passage:
               </span>
               <p className="line-clamp-2 text-xs text-[var(--wikios-text)] italic">

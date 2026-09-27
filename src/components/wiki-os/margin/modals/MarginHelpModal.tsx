@@ -108,7 +108,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   <Compass className="dark:text-margin-accent h-4 w-4 text-yellow-600" />
                   <span>1. Selecting text</span>
                 </div>
-                <p className="text-[11.5px] leading-relaxed text-[var(--wikios-text-muted)]">
+                <p className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
                   Select prose in the article to highlight, start a discussion, suggest an edit, or
                   save a quote:
                 </p>
@@ -138,7 +138,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   <MessageSquare className="h-4 w-4" />
                   <span>2. Discussions</span>
                 </div>
-                <p className="text-[11.5px] leading-relaxed text-[var(--wikios-text-muted)]">
+                <p className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
                   Talk through lore details, dispute claims, or suggest edits. Long-press
                   &ldquo;Hold to resolve&rdquo; when a discussion is settled.
                 </p>
@@ -150,7 +150,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   <Highlighter className="h-4 w-4" />
                   <span>3. Highlights & quotes</span>
                 </div>
-                <p className="text-[11.5px] leading-relaxed text-[var(--wikios-text-muted)]">
+                <p className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
                   Highlights appear in the Markup tab. Click &ldquo;Jump&rdquo; to scroll to the
                   passage in the article.
                 </p>

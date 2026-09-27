@@ -97,7 +97,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             <Headphones className="h-3.5 w-3.5" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="text-muted-foreground text-[9.5px] font-bold tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Now Playing · Narrator
             </span>
             <span

@@ -323,7 +323,7 @@ export function WikiNarratorPlayer({
                     }
                   />
                   {/* Tooltip */}
-                  <span className="border-border/50 bg-popover/95 text-popover-foreground pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 rounded-md border px-2 py-1 text-[9.5px] font-bold whitespace-nowrap opacity-0 shadow-2xl backdrop-blur-md transition-opacity duration-150 group-hover/tick:opacity-100">
+                  <span className="border-border/50 bg-popover/95 text-popover-foreground pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 rounded-md border px-2 py-1 text-xs font-bold whitespace-nowrap opacity-0 shadow-2xl backdrop-blur-md transition-opacity duration-150 group-hover/tick:opacity-100">
                     {entry.text}
                   </span>
                 </div>

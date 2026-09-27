@@ -202,7 +202,7 @@ export function getGlassClasses(
     glassConfig.border,
     glassConfig.shadow,
     "rounded-lg",
-    "transition-all duration-200 ease-out",
+    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
     "hover:shadow-lg hover:bg-[var(--color-bg-secondary)]/80",
     "dark:hover:bg-[var(--color-bg-secondary)]/95",
     "focus-within:shadow-lg focus-within:bg-[var(--color-bg-secondary)]/85",

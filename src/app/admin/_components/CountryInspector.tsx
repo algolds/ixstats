@@ -48,6 +48,7 @@ import {
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { formatCompact } from "~/lib/format/compact";
 import { useAdminNavigation } from "./AdminNavigationContext";
 
 // Economic configurations and tiers duplication
@@ -162,18 +163,7 @@ export function CountryInspector() {
     // oxlint-disable-next-line
   }, [selectedCountryId]);
 
-  // Format helper functions
-  const fmtBig = (n: number) => {
-    if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
-    if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-    if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
-    return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-  };
-
-  const fmtPop = (n: number) => {
-    if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
-    return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  };
+  const fmtBig = (n: number) => `$${formatCompact(n)}`;
 
   const getEconTier = (gdpPerCapita: number): EconomicTier => {
     if (gdpPerCapita >= 65000) return EconomicTier.EXTRAVAGANT;
@@ -437,7 +427,7 @@ export function CountryInspector() {
           category: "baseline",
           title: "Baseline State",
           mainValue: `GDP PC: $${calculation.baseline.gdppc.toLocaleString()}`,
-          subValue: `Pop: ${fmtPop(calculation.baseline.pop)} | Area: ${calculation.baseline.landArea.toLocaleString()} km²`,
+          subValue: `Pop: ${formatCompact(calculation.baseline.pop)} | Area: ${calculation.baseline.landArea.toLocaleString()} km²`,
           inputs: [],
           outputs: ["right"],
         },
@@ -1799,7 +1789,7 @@ export function CountryInspector() {
         </div>
       ) : (
         <div className="border-border/40 rounded-xl border border-dashed py-24 text-center">
-          <Calculator className="text-muted-foreground mx-auto mb-3 h-10 w-10 animate-pulse opacity-60" />
+          <Calculator className="text-muted-foreground mx-auto mb-3 h-10 w-10 opacity-60" />
           <h4 className="text-foreground text-sm font-bold">No Country Loaded</h4>
           <p className="text-muted-foreground mt-1 text-xs">
             Search and select a country from the dropdown to start inspecting calculations.

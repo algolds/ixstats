@@ -31,7 +31,7 @@ export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMet
   const cardSize = variant === "compact" ? "p-4" : "p-4";
   const textSize =
     variant === "compact" ? "text-xs" : variant === "executive" ? "text-lg" : "text-xl";
-  const labelSize = variant === "compact" ? "text-[0.65rem]" : "text-sm";
+  const labelSize = variant === "compact" ? "text-xs" : "text-sm";
 
   return (
     <Card

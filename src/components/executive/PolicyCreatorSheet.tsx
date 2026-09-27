@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { formatCurrency } from "~/lib/utils/format-utils";
 import { useUser } from "~/context/auth-context";
 import {
   Dialog,
@@ -38,7 +39,6 @@ import {
   POLICY_TYPES,
   POLICY_CATEGORIES,
   PRIORITY_OPTIONS,
-  formatPolicyCurrency,
   getMatchingDepartmentCategory,
 } from "./policies/policy-creator-constants";
 import { PolicyTargetMetrics, type TargetMetric } from "./policies/PolicyTargetMetrics";
@@ -84,7 +84,7 @@ function CollapsibleSection({
           <Icon className="text-muted-foreground h-4 w-4" />
           <span>{title}</span>
           {badge && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-[0.65rem]">
+            <Badge variant="secondary" className="px-1.5 py-0 text-xs">
               {badge}
             </Badge>
           )}
@@ -393,13 +393,13 @@ export function PolicyCreatorSheet({
                   <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Setup Cost:</span>
                     <span className="font-semibold">
-                      {formatPolicyCurrency(calculatedEffects.implementationCost)}
+                      {formatCurrency(calculatedEffects.implementationCost)}
                     </span>
                   </div>
                   <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Annual Maint:</span>
                     <span className="font-semibold">
-                      {formatPolicyCurrency(calculatedEffects.maintenanceCost)}
+                      {formatCurrency(calculatedEffects.maintenanceCost)}
                     </span>
                   </div>
                   <div className="border-border/30 flex justify-between border-b pb-1">
@@ -450,13 +450,13 @@ export function PolicyCreatorSheet({
                     <div className="flex flex-col gap-0.5">
                       <span className="text-muted-foreground">Setup Cost (Implementation):</span>
                       <span className="text-sm font-semibold text-white">
-                        {formatPolicyCurrency(parseFloat(formImplCost) || 0)}
+                        {formatCurrency(parseFloat(formImplCost) || 0)}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <span className="text-muted-foreground">Annual Maintenance:</span>
                       <span className="text-sm font-semibold text-white">
-                        {formatPolicyCurrency(parseFloat(formMaintCost) || 0)}
+                        {formatCurrency(parseFloat(formMaintCost) || 0)}
                       </span>
                     </div>
                   </div>

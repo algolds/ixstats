@@ -130,7 +130,7 @@ export function ArchetypeGrid({
               )}
               <span className="text-muted-foreground/40">•</span>
               <span className="flex items-center gap-1.5 text-amber-400">
-                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
                 Step 2: Archetype
               </span>
             </div>

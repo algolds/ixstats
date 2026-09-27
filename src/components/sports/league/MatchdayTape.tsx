@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
+import { Airplane, Home } from "iconoir-react";
 
 export interface MatchdayTapeItem {
   id: string;
@@ -95,7 +96,7 @@ export function MatchdayTape({
                   {match.homeTeam.logo ? (
                     <img src={match.homeTeam.logo} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-xs font-bold">🏠</span>
+                    <Home className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
                 </div>
                 <span className="font-bold text-foreground truncate text-xs">
@@ -135,7 +136,7 @@ export function MatchdayTape({
                   {match.awayTeam.logo ? (
                     <img src={match.awayTeam.logo} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-xs font-bold">✈️</span>
+                    <Airplane className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
                 </div>
               </div>

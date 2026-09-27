@@ -261,14 +261,6 @@ export function BuilderWelcomeModal({
                           <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-black/15 to-transparent dark:via-white/35" />
                           {/* Right Highlight Edge */}
                           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/10 to-transparent dark:via-white/25" />
-                          {/* Inner shimmer pulsing */}
-                          <div
-                            className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10"
-                            style={{
-                              animationDuration: "3s",
-                              animationTimingFunction: "ease-in-out",
-                            }}
-                          />
                         </div>
 
                         {/* Content */}

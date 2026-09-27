@@ -20,6 +20,7 @@ import {
 import type { ClientPointQueryResult } from "~/lib/maps/map-point-query";
 import type { PinPosition } from "~/hooks/useMapPinInfo";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface PointInfoServerResult {
   coordinates: { lng: number; lat: number };
@@ -84,9 +85,9 @@ function InfoRow({
         <Icon className="text-muted-foreground h-3.5 w-3.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+        <Eyebrow className="block">
           {label}
-        </div>
+        </Eyebrow>
         {loading ? (
           <div className="bg-muted mt-0.5 h-4 w-24 animate-pulse rounded" />
         ) : (

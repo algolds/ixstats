@@ -14,6 +14,7 @@ import { useSystemValidation } from "~/hooks/useSystemValidation";
 import { getStatusColor, getStatusBgColor } from "~/lib/system/system-validation";
 import { ValidationCategory } from "./validation/ValidationCategory";
 import { AuditProgressBar } from "./validation/AuditProgressBar";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 export function SystemValidationDashboard() {
   const {
@@ -123,9 +124,9 @@ export function SystemValidationDashboard() {
           <CardContent className="p-6">
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-5">
               <div>
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <Eyebrow className="block">
                   Total Checks
-                </p>
+                </Eyebrow>
                 <p className="text-foreground text-2xl font-bold tabular-nums">
                   {summary.totalChecks}
                 </p>
@@ -143,7 +144,7 @@ export function SystemValidationDashboard() {
                 <p className="text-2xl font-bold text-red-400 tabular-nums">{summary.failures}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">Duration</p>
+                <Eyebrow className="block">Duration</Eyebrow>
                 <p className="text-foreground text-2xl font-bold tabular-nums">
                   {summary.duration}ms
                 </p>

@@ -84,7 +84,7 @@ export function ChampionshipRevealOverlay({
           >
             {/* Top Trophy & Sparks */}
             <div className="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl border border-amber-500/40 bg-gradient-to-br from-amber-400/20 to-amber-600/10 shadow-lg backdrop-blur-xl">
-              <Trophy className="h-12 w-12 text-amber-400 animate-pulse" />
+              <Trophy className="h-12 w-12 text-amber-400" />
               <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-amber-300" />
               <Star className="absolute -bottom-1 -left-1 h-5 w-5 fill-amber-400 text-amber-400" />
             </div>

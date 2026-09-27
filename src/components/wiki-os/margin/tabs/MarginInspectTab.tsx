@@ -18,6 +18,7 @@ import {
 } from "iconoir-react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { api } from "~/trpc/react";
+import { formatCompact } from "~/lib/format/compact";
 
 interface MarginInspectTabProps {
   articleTitle: string;
@@ -110,17 +111,12 @@ export function MarginInspectTab({
 
   const formattedGdp = useMemo(() => {
     if (!matchedCountry?.currentTotalGdp) return null;
-    const gdpVal = Number(matchedCountry.currentTotalGdp);
-    if (gdpVal >= 1_000_000_000_000) return `$${(gdpVal / 1_000_000_000_000).toFixed(2)}T`;
-    if (gdpVal >= 1_000_000_000) return `$${(gdpVal / 1_000_000_000).toFixed(2)}B`;
-    return `$${(gdpVal / 1_000_000).toFixed(2)}M`;
+    return `$${formatCompact(Number(matchedCountry.currentTotalGdp))}`;
   }, [matchedCountry]);
 
   const formattedPop = useMemo(() => {
     if (!matchedCountry?.currentPopulation) return null;
-    const popVal = Number(matchedCountry.currentPopulation);
-    if (popVal >= 1_000_000) return `${(popVal / 1_000_000).toFixed(2)}M`;
-    return `${(popVal / 1_000).toFixed(1)}k`;
+    return formatCompact(Number(matchedCountry.currentPopulation));
   }, [matchedCountry]);
 
   const handleGenerateFactDiff = () => {
@@ -151,19 +147,19 @@ export function MarginInspectTab({
         {/* Structural Spec Inset */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="space-y-0.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2">
-            <span className="text-[9.5px] font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+            <span className="text-xs font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
               Hierarchy Tier
             </span>
-            <p className="truncate text-[11.5px] font-bold text-[var(--wikios-text)]">
+            <p className="truncate text-xs font-bold text-[var(--wikios-text)]">
               {pageTierInfo.levelName}
             </p>
           </div>
 
           <div className="space-y-0.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2">
-            <span className="text-[9.5px] font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+            <span className="text-xs font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
               Editorial Scope
             </span>
-            <p className="truncate text-[11.5px] font-bold text-[var(--wikios-text)]">
+            <p className="truncate text-xs font-bold text-[var(--wikios-text)]">
               {pageTierInfo.scopeName}
             </p>
           </div>
@@ -174,7 +170,7 @@ export function MarginInspectTab({
         </p>
 
         <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/70 bg-[var(--wikios-surface)]/70 p-2.5 text-xs text-[var(--wikios-text-muted)]">
-          <span className="text-margin-accent block text-[9.5px] font-bold tracking-wider uppercase">
+          <span className="text-margin-accent block text-xs font-bold tracking-wider uppercase">
             Linkage Recommendation
           </span>
           <p className="leading-snug text-[var(--wikios-text-dim)]">{pageTierInfo.guideline}</p>

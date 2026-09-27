@@ -32,8 +32,7 @@ export function FieldIndicator({
         <div
           className={cn(
             "absolute top-1 right-1 z-10 h-2 w-2 rounded-full",
-            dotColor[severity],
-            severity === "error" && "animate-pulse"
+            dotColor[severity]
           )}
           title={tooltip}
         />

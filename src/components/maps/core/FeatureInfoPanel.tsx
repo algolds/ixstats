@@ -24,6 +24,7 @@ import type { SelectedFeature } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { formatPopulation } from "~/lib/utils/format-utils";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface FeatureInfoPanelProps {
   feature: SelectedFeature;
@@ -162,9 +163,9 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
           <div className="bg-muted mb-3 rounded-lg px-3 py-2">
-            <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+            <Eyebrow className="block">
               Description
-            </div>
+            </Eyebrow>
             <p className="text-foreground mt-0.5 text-xs leading-relaxed">{feature.description}</p>
           </div>
         )}

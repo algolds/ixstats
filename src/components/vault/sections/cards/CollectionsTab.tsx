@@ -111,7 +111,7 @@ export function CollectionsTab({
                   <Folder className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <div>
                     <span className="text-xs font-bold">{collection.name}</span>
-                    <p className="text-muted-foreground text-[0.6rem]">
+                    <p className="text-muted-foreground text-xs">
                       {collection._count?.items ?? 0} cards
                       {collection.isPublic && " • Public"}
                     </p>

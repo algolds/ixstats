@@ -190,7 +190,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             disabled={disabled}
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
               isPickingLocation
-                ? "bg-primary text-primary-foreground border-primary shadow-sm animate-pulse"
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
                 : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground"
             }`}
             title={

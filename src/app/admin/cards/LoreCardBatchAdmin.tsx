@@ -817,7 +817,8 @@ export function LoreCardBatchAdmin() {
         <FacetContainer
           depth={1}
           enableRefraction={true}
-          className="bg-card/60 border-border flex items-center gap-1 rounded-xl border p-1 backdrop-blur-md"
+          surface="solid"
+          className="border-border flex items-center gap-1 rounded-xl border p-1"
         >
           <button
             onClick={() => setActiveTab("generator")}
@@ -851,7 +852,8 @@ export function LoreCardBatchAdmin() {
           <FacetContainer
             depth={1}
             enableRefraction={true}
-            className="border-border bg-card/60 space-y-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md"
+            surface="solid"
+            className="border-border space-y-4 rounded-2xl border p-4 shadow-sm"
           >
             <div className="text-foreground flex items-center gap-2 text-xs font-semibold">
               <Sliders className="h-4 w-4 text-purple-500" />
@@ -1013,7 +1015,8 @@ export function LoreCardBatchAdmin() {
           <FacetContainer
             depth={1}
             enableRefraction={true}
-            className="border-border bg-card/60 space-y-3 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md"
+            surface="solid"
+            className="border-border space-y-3 rounded-2xl border p-3.5 shadow-xs"
           >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               {/* Category Search Input with Autocomplete Dropdown */}
@@ -1103,7 +1106,8 @@ export function LoreCardBatchAdmin() {
           <FacetContainer
             depth={1}
             enableRefraction={true}
-            className="border-border bg-card/60 space-y-3 rounded-2xl border p-4 backdrop-blur-md"
+            surface="solid"
+            className="border-border space-y-3 rounded-2xl border p-4"
           >
             <div className="flex items-center justify-between">
               <label className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -1139,7 +1143,8 @@ export function LoreCardBatchAdmin() {
             <FacetContainer
               depth={1}
               enableRefraction={true}
-              className="border-border bg-card/40 space-y-3 overflow-hidden rounded-2xl border p-4 shadow-inner backdrop-blur-md"
+              surface="solid"
+              className="border-border space-y-3 overflow-hidden rounded-2xl border p-4 shadow-inner"
             >
               <div className="border-border flex flex-col gap-2.5 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
@@ -1550,7 +1555,8 @@ export function LoreCardBatchAdmin() {
               <FacetCard
                 depth={1}
                 interactive="hover"
-                className="border-border bg-card/70 rounded-xl border p-3 backdrop-blur-md"
+                surface="solid"
+                className="border-border rounded-xl border p-3"
               >
                 <div className="text-muted-foreground text-xs">Total Requests</div>
                 <div className="text-foreground mt-0.5 text-lg font-bold">
@@ -1560,7 +1566,8 @@ export function LoreCardBatchAdmin() {
               <FacetCard
                 depth={1}
                 interactive="hover"
-                className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-md"
+                surface="solid"
+                className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3"
               >
                 <div className="text-muted-foreground text-xs">Pending Approval</div>
                 <div className="mt-0.5 text-lg font-bold text-amber-500 dark:text-amber-300">
@@ -1570,7 +1577,8 @@ export function LoreCardBatchAdmin() {
               <FacetCard
                 depth={1}
                 interactive="hover"
-                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 backdrop-blur-md"
+                surface="solid"
+                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3"
               >
                 <div className="text-muted-foreground text-xs">Generated Cards</div>
                 <div className="mt-0.5 text-lg font-bold text-emerald-600 dark:text-emerald-400">
@@ -1580,7 +1588,8 @@ export function LoreCardBatchAdmin() {
               <FacetCard
                 depth={1}
                 interactive="hover"
-                className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 backdrop-blur-md"
+                surface="solid"
+                className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3"
               >
                 <div className="text-muted-foreground text-xs">Rejected</div>
                 <div className="mt-0.5 text-lg font-bold text-rose-600 dark:text-rose-400">
@@ -1632,7 +1641,8 @@ export function LoreCardBatchAdmin() {
             <FacetContainer
               depth={1}
               enableRefraction={true}
-              className="border-border bg-card/40 overflow-hidden rounded-2xl border shadow-inner backdrop-blur-md"
+              surface="solid"
+              className="border-border overflow-hidden rounded-2xl border shadow-inner"
             >
               <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
                 <table className="w-full text-left text-xs">

@@ -50,7 +50,7 @@ function BuilderCompactLabel({ step, countryName }: BuilderCompactLabelProps) {
       className="flex min-w-0 max-w-[130px] items-center gap-1.5 overflow-hidden select-none sm:max-w-[180px]"
       title={`Builder: ${fullLabel}`}
     >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" />
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
       <PreText
         className="text-foreground/90 shrink-0 text-xs font-semibold tracking-tight"
         whiteSpace="nowrap"

@@ -51,7 +51,7 @@ export function FoundationPathSelector({
         {/* Segmented Step Indicator with Skip Button */}
         <div className="flex items-center gap-2 rounded-full border border-border/40 bg-card/40 p-1 pl-3.5 text-xs font-semibold backdrop-blur-md select-none">
           <span className="flex items-center gap-1.5 text-amber-400">
-            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
             Step 1: Benchmark Country
           </span>
           <span className="text-muted-foreground/30">•</span>

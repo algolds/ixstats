@@ -74,7 +74,7 @@ export function ComposerActionBar({
       className={cn("overflow-hidden", !showActionBar && "pointer-events-none")}
     >
       <div className="space-y-2 pt-1">
-        <div className="flex justify-end text-[0.65rem]">
+        <div className="flex justify-end text-xs">
           <span
             className={cn(
               "font-semibold tracking-tight transition-colors duration-150",

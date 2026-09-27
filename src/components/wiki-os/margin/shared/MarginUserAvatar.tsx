@@ -44,8 +44,8 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
   const flagUrl = author.country?.flag;
 
   const sizeClasses = {
-    xs: "w-5 h-5 text-[8.5px]",
-    sm: "w-6 h-6 text-[9.5px]",
+    xs: "w-5 h-5 text-xs",
+    sm: "w-6 h-6 text-xs",
     md: "w-8 h-8 text-xs",
   }[size];
 

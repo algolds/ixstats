@@ -16,6 +16,7 @@ import { Progress } from "~/components/ui/progress";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TabHeroBanner } from "~/components/mycountry/shared/primitives/TabHeroBanner";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface BorderThreatPanelProps {
   countryId: string;
@@ -158,7 +159,7 @@ function MetricItem({
     <div className="bg-background/50 flex items-center gap-2 rounded-md px-2 py-1.5">
       <Icon className="text-muted-foreground h-3.5 w-3.5" />
       <div className="min-w-0">
-        <div className="text-muted-foreground text-xs tracking-wider uppercase">{label}</div>
+        <Eyebrow className="block">{label}</Eyebrow>
         <div className="text-sm font-semibold">{value ?? 0}</div>
       </div>
     </div>

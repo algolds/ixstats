@@ -242,7 +242,7 @@ function GroupedSeriesCard({
             {/* Ultra-Rare Diamond Pill */}
             {isUltraRare && (
               <span className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 font-mono text-xs font-extrabold text-cyan-600 uppercase shadow-sm backdrop-blur-md dark:text-cyan-300">
-                <Diamond className="h-3 w-3 animate-pulse text-cyan-500 dark:text-cyan-300" />
+                <Diamond className="h-3 w-3 text-cyan-500 dark:text-cyan-300" />
                 <span>{activeLevel.globalUnlockPercent}% Ultra-Rare</span>
               </span>
             )}

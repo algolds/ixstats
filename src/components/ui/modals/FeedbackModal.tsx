@@ -202,7 +202,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
                       >
                         <span
                           className={cn(
-                            "shrink-0 rounded-sm px-1 text-[7px] font-bold uppercase select-none",
+                            "shrink-0 rounded-sm px-1 text-xs font-bold uppercase select-none",
                             log.type === "error"
                               ? "border border-red-500/30 bg-red-500/20 text-red-400"
                               : log.type === "warn"

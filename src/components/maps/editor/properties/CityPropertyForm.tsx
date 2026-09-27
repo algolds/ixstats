@@ -88,7 +88,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
             className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
               isPickingLocation
-                ? "animate-pulse font-bold text-amber-500 hover:text-amber-400"
+                ? "font-bold text-amber-500 hover:text-amber-400"
                 : "text-emerald-500 hover:text-emerald-400"
             }`}
           >

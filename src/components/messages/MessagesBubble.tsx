@@ -307,7 +307,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               {/* Timestamp & Delivery Indicators */}
               <div
                 className={cn(
-                  "mt-1 flex items-center gap-1.5 text-[9.5px] font-medium tabular-nums select-none",
+                  "mt-1 flex items-center gap-1.5 text-xs font-medium tabular-nums select-none",
                   isOwn ? "justify-end text-white/70" : "text-muted-foreground/65 justify-start"
                 )}
               >

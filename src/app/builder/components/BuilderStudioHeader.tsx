@@ -34,6 +34,7 @@ import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
 import { useBuilderGuide } from "./builder-guide-context";
 import { BuilderModeToggle } from "./BuilderModeToggle";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 const SECTION_ICONS: Record<BuilderSection, React.ComponentType<{ className?: string }>> = {
   foundation: Globe,
@@ -177,9 +178,9 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
               <div className="h-4 w-px shrink-0 bg-border/60" />
 
               <div className="hidden items-center gap-1.5 px-1 md:flex">
-                <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                <Eyebrow>
                   Step {stepIndex + 1} of {steps.length}
-                </span>
+                </Eyebrow>
               </div>
 
             </div>
@@ -267,7 +268,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                   )}
                   title={`${activeErrors.length} errors, ${activeWarnings.length} warnings`}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
                   <span>{activeErrors.length > 0 ? `${activeErrors.length} req` : `${activeWarnings.length} tip`}</span>
                 </div>
               )}
