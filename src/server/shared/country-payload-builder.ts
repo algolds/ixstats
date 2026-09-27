@@ -5,7 +5,9 @@ import { z } from "zod";
  * Zero "any" or "unknown" types adhering to strict codebase quality constraints.
  */
 export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+// Object values may be undefined: superjson preserves `undefined` keys from the client
+// (e.g. `parentDepartmentId: undefined`); JSON serialization drops them on write.
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
 
 export const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 
@@ -13,11 +15,11 @@ export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     jsonLiteralSchema,
     z.array(jsonValueSchema),
-    z.record(z.string(), jsonValueSchema),
+    z.record(z.string(), jsonValueSchema.optional()),
   ])
 );
 
-export const jsonRecordSchema = z.record(z.string(), jsonValueSchema);
+export const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
 
 /**
  * Shared Zod schema for economic inputs submitted through Country Builder / Editor.
