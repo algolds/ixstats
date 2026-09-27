@@ -33,7 +33,7 @@ export async function batchResolveMessagingAccounts(
     const users =
       (await db.user.findMany({
         where: { clerkUserId: { in: realIds } },
-        include: { country: true },
+        include: { country: { select: { slug: true, name: true, flag: true } } },
       })) ?? [];
     for (const u of users) {
       map.set(u.clerkUserId, {
@@ -50,6 +50,7 @@ export async function batchResolveMessagingAccounts(
       const countries =
         (await db.country.findMany({
           where: { id: { in: unresolvedReal } },
+          select: { id: true, slug: true, name: true, flag: true },
         })) ?? [];
       for (const c of countries) {
         map.set(c.id, {
@@ -69,7 +70,7 @@ export async function batchResolveMessagingAccounts(
       const forumUsers =
         (await db.user.findMany({
           where: { forumUserId: { in: numericIds } },
-          include: { country: true },
+          include: { country: { select: { slug: true, name: true, flag: true } } },
         })) ?? [];
       for (const u of forumUsers) {
         map.set(`forum:${u.forumUserId}`, {

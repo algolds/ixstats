@@ -18,6 +18,8 @@ import {
   getCountryComponentsStatsData,
 } from "./utils";
 
+const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
+
 export const economyProcedures = {
   getByIdWithEconomicData: rateLimitedPublicProcedure
     .input(
@@ -67,6 +69,7 @@ export const economyProcedures = {
           where: {
             OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
           },
+          omit: HEAVY_COUNTRY_GEO_OMIT,
           include: includeObject,
         });
       } catch {
@@ -75,6 +78,7 @@ export const economyProcedures = {
           where: {
             OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
           },
+          omit: HEAVY_COUNTRY_GEO_OMIT,
           include: {
             storytellerEffects: {
               where: { isActive: true },
@@ -308,6 +312,7 @@ export const economyProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
+        omit: HEAVY_COUNTRY_GEO_OMIT,
         include: {
           storytellerEffects: { where: { isActive: true } },
           nationalIdentity: true,

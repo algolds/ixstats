@@ -71,7 +71,7 @@ export const notificationsUserRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
@@ -146,7 +146,7 @@ export const notificationsUserRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
@@ -204,7 +204,7 @@ export const notificationsUserRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
@@ -257,7 +257,7 @@ export const notificationsUserRouter = createTRPCRouter({
         where: {
           OR: [{ clerkUserId: userId }, { id: userId }],
         },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       const matchedUserId = userProfile?.id ?? userId;
@@ -453,7 +453,7 @@ export const notificationsUserRouter = createTRPCRouter({
       where: {
         OR: [{ clerkUserId: userId }, { id: userId }],
       },
-      include: { country: true },
+      select: { id: true, clerkUserId: true, countryId: true },
     });
 
     const matchedUserId = userProfile?.id ?? userId;

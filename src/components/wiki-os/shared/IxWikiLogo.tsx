@@ -15,7 +15,8 @@ export function IxWikiLogo({ className, size, ...props }: IxWikiLogoProps) {
       viewBox="0 0 135 135"
       fill="none"
       className={cn("inline-block shrink-0", className)}
-      style={{ width: size, height: size }}
+      width={size}
+      height={size}
       {...props}
     >
       <path

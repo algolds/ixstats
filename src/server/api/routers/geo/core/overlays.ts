@@ -6,6 +6,7 @@ import {
   deriveNetTradeBalance,
   type HealthInput,
 } from "~/lib/maps/overlay-metrics";
+import { parseAffectedCountries } from "~/lib/maps/crisis-affected-countries";
 
 /**
  * Weighted canon sources used by the Canon Density overlay. Each source is
@@ -385,6 +386,14 @@ export const overlayProcedures = {
       const profiles = await ctx.db.countryGeoProfile.findMany({
         select: {
           countryId: true,
+          climateDistribution: true,
+          elevationProfile: true,
+          arableLandPercent: true,
+          coastlineKm: true,
+          isLandlocked: true,
+          neighborCount: true,
+          terrainRoughness: true,
+          meanElevation: true,
           country: {
             select: { name: true, slug: true, geometry: true },
           },
@@ -411,31 +420,15 @@ export const overlayProcedures = {
         if (!p.country.geometry) continue;
 
         // Re-compute risk factors from the stored profile data
-        const geoProfile = await ctx.db.countryGeoProfile.findUnique({
-          where: { countryId: p.countryId },
-          select: {
-            climateDistribution: true,
-            elevationProfile: true,
-            arableLandPercent: true,
-            coastlineKm: true,
-            isLandlocked: true,
-            neighborCount: true,
-            terrainRoughness: true,
-            meanElevation: true,
-          },
-        });
-
-        if (!geoProfile) continue;
-
         const risk = computeCrisisRiskFactors({
-          coastlineKm: geoProfile.coastlineKm ?? 0,
-          isLandlocked: geoProfile.isLandlocked ?? false,
+          coastlineKm: p.coastlineKm ?? 0,
+          isLandlocked: p.isLandlocked ?? false,
           isIsland: false,
-          arableLandPercent: geoProfile.arableLandPercent ?? 50,
+          arableLandPercent: p.arableLandPercent ?? 50,
           climateDiversity: 0.5,
-          terrainRoughness: geoProfile.terrainRoughness ?? 0,
-          meanElevation: geoProfile.meanElevation ?? 200,
-          neighborCount: geoProfile.neighborCount ?? 0,
+          terrainRoughness: p.terrainRoughness ?? 0,
+          meanElevation: p.meanElevation ?? 200,
+          neighborCount: p.neighborCount ?? 0,
           dominantClimate: "",
           dominantElevation: "",
           drainageDensity: 0,
@@ -458,30 +451,42 @@ export const overlayProcedures = {
         });
       }
 
-      // Crisis event points (using affected country centroids as fallback locations)
+      // Crisis event points (using affected country centroids as fallback locations).
+      // affectedCountries holds country IDs (JSON array; legacy rows comma-separated);
+      // names are matched too in case older rows stored names.
+      const refsByCrisis = activeCrises.map((ce) => parseAffectedCountries(ce.affectedCountries));
+      const allRefs = [...new Set(refsByCrisis.flat())];
+      const refCountries =
+        allRefs.length > 0
+          ? await ctx.db.country.findMany({
+              where: { OR: [{ id: { in: allRefs } }, { name: { in: allRefs } }] },
+              select: { id: true, name: true, centroid: true },
+            })
+          : [];
+      const countryByRef = new Map<string, (typeof refCountries)[number]>();
+      for (const c of refCountries) {
+        countryByRef.set(c.id, c);
+        countryByRef.set(c.name, c);
+      }
+
       const crisisPoints = [];
-      for (const ce of activeCrises) {
-        const affected = ce.affectedCountries as string[] | null;
-        if (affected && affected.length > 0) {
-          const country = await ctx.db.country.findFirst({
-            where: { name: { in: affected } },
-            select: { centroid: true, name: true },
-          });
-          if (country?.centroid) {
-            const coords = (country.centroid as { coordinates: [number, number] }).coordinates;
-            crisisPoints.push({
-              type: "Feature" as const,
-              geometry: { type: "Point" as const, coordinates: coords },
-              properties: {
-                id: ce.id,
-                title: ce.title,
-                type: ce.type,
-                severity: ce.severity,
-                countryName: country.name,
-              },
-            });
-          }
-        }
+      for (const [i, ce] of activeCrises.entries()) {
+        const country = (refsByCrisis[i] ?? [])
+          .map((ref) => countryByRef.get(ref))
+          .find((c) => c?.centroid);
+        if (!country?.centroid) continue;
+        const coords = (country.centroid as { coordinates: [number, number] }).coordinates;
+        crisisPoints.push({
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: coords },
+          properties: {
+            id: ce.id,
+            title: ce.title,
+            type: ce.type,
+            severity: ce.severity,
+            countryName: country.name,
+          },
+        });
       }
 
       return {
