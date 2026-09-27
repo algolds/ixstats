@@ -11,12 +11,18 @@ import { Redis } from "ioredis";
 let shared: Redis | null = null;
 let lastErrorMessage = "";
 
+/** REDIS_URL when REDIS_ENABLED is "true", else null. */
+export function getEnabledRedisUrl(): string | null {
+  const url = process.env.REDIS_URL;
+  return url && process.env.REDIS_ENABLED === "true" ? url : null;
+}
+
 /** Single process-wide ioredis client for caches. Connects eagerly; null when Redis is disabled. */
 export function getSharedRedis(): Redis | null {
   if (shared) return shared;
 
-  const url = process.env.REDIS_URL;
-  if (!url || process.env.REDIS_ENABLED !== "true") return null;
+  const url = getEnabledRedisUrl();
+  if (!url) return null;
 
   shared = new Redis(url, { maxRetriesPerRequest: 3, enableOfflineQueue: false });
   shared.on("error", (err: Error) => {

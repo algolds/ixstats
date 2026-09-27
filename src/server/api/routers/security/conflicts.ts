@@ -274,6 +274,39 @@ export const securityConflictsRouter = createTRPCRouter({
       }));
     }),
 
+  // Related nations the caller may strike via resolvePvNPCConflict: those no user has claimed.
+  getPvNPCTargets: premiumProcedure.query(async ({ ctx }) => {
+    const userProfile = await ctx.db.user.findUnique({
+      where: { clerkUserId: ctx.auth.userId },
+      select: { countryId: true },
+    });
+    const countryId = userProfile?.countryId;
+    if (!countryId) return [];
+
+    const relations = await ctx.db.diplomaticRelation.findMany({
+      where: { OR: [{ country1: countryId }, { country2: countryId }] },
+      select: { country1: true, country2: true },
+    });
+    const partnerIds = [
+      ...new Set(relations.map((r) => (r.country1 === countryId ? r.country2 : r.country1))),
+    ];
+    if (partnerIds.length === 0) return [];
+
+    const [claimedBy, countries] = await Promise.all([
+      ctx.db.user.findMany({
+        where: { countryId: { in: partnerIds } },
+        select: { countryId: true },
+      }),
+      ctx.db.country.findMany({
+        where: { id: { in: partnerIds } },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+    const claimedIds = new Set(claimedBy.map((u) => u.countryId));
+    return countries.filter((c) => !claimedIds.has(c.id));
+  }),
+
   // Resolve a PvNPC conflict automatically
   resolvePvNPCConflict: premiumProcedure
     .input(

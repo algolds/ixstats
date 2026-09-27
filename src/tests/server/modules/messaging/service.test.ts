@@ -161,22 +161,16 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       mockDb.conversationParticipant.findMany.mockResolvedValue([
         {
           conversationId: "c_1",
-          isArchived: false,
-          isMuted: false,
           lastReadAt: new Date(0),
           conversation: { source: "thinkshare" },
         },
         {
           conversationId: "c_2",
-          isArchived: true,
-          isMuted: false,
           lastReadAt: new Date(0),
           conversation: { source: "thinkshare" },
         },
         {
           conversationId: "c_3",
-          isArchived: false,
-          isMuted: false,
           lastReadAt: new Date(0),
           conversation: { source: "diplomatic" },
         },
@@ -188,9 +182,11 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       ]);
 
       const counts = await service.getFolderCounts("user_1");
-      expect(counts.archive).toBe(1);
-      expect(counts.inbox).toBe(3);
+      expect(counts.inbox).toBe(4);
       expect(counts.diplomatic).toBe(1);
+      // No archive/trash state exists on ConversationParticipant, so no counts are reported.
+      expect(counts).not.toHaveProperty("archive");
+      expect(counts).not.toHaveProperty("trash");
     });
 
     test("6b. getFolderCounts does not load message rows", async () => {

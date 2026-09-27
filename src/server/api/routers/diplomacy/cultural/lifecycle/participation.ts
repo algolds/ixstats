@@ -103,19 +103,35 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify user's country participates in this exchange
-      const participation = await ctx.db.culturalExchangeParticipant.findFirst({
-        where: {
-          exchangeId: input.exchangeId,
-          countryId: ctx.user?.countryId || "",
-        },
-      });
-
-      if (!participation) {
+      const countryId = ctx.user?.countryId;
+      if (!countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Your country is not participating in this cultural exchange",
         });
+      }
+
+      const exchange = await ctx.db.culturalExchange.findUnique({
+        where: { id: input.exchangeId },
+        select: { hostCountryId: true, hostCountryName: true, type: true },
+      });
+
+      if (!exchange) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Cultural exchange not found" });
+      }
+
+      // The host never gets a participant row (createCulturalExchange only adds the
+      // invited country), so it is allowed alongside participants.
+      if (exchange.hostCountryId !== countryId) {
+        const participation = await ctx.db.culturalExchangeParticipant.findFirst({
+          where: { exchangeId: input.exchangeId, countryId },
+        });
+        if (!participation) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Your country is not participating in this cultural exchange",
+          });
+        }
       }
 
       // Create cultural artifact
@@ -128,32 +144,24 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           thumbnailUrl: input.thumbnailUrl,
           fileUrl: input.fileUrl,
           contributor: input.contributor,
-          countryId: ctx.user?.countryId || "",
+          countryId,
         },
       });
 
-      // Get exchange for tracking
-      const exchange = await ctx.db.culturalExchange.findUnique({
-        where: { id: input.exchangeId },
-        select: { hostCountryId: true, hostCountryName: true, type: true },
-      });
-
       // Track artifact upload (cultural engagement)
-      if (exchange) {
-        await DiplomaticChoiceTracker.recordChoice({
-          countryId: ctx.user?.countryId || "",
-          type: "upload_cultural_artifact",
-          targetCountry: exchange.hostCountryName,
-          targetCountryId: exchange.hostCountryId,
-          details: {
-            exchangeId: input.exchangeId,
-            artifactType: input.type,
-            artifactTitle: input.title,
-            exchangeType: exchange.type,
-          },
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
-        });
-      }
+      await DiplomaticChoiceTracker.recordChoice({
+        countryId,
+        type: "upload_cultural_artifact",
+        targetCountry: exchange.hostCountryName,
+        targetCountryId: exchange.hostCountryId,
+        details: {
+          exchangeId: input.exchangeId,
+          artifactType: input.type,
+          artifactTitle: input.title,
+          exchangeType: exchange.type,
+        },
+        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+      });
 
       return artifact;
     }),

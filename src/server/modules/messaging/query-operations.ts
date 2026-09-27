@@ -187,11 +187,10 @@ export class MessagingQueryOperations {
   }
 
   public async getFolderCounts(actorId: string) {
+    // ConversationParticipant has no archive/trash state (archive and mute are client-side
+    // only), so those folders carry no counts.
     const counts = {
       inbox: 0,
-      sent: 0,
-      archive: 0,
-      trash: 0,
       thinktank: 0,
       diplomatic: 0,
       wiki: 0,
@@ -227,20 +226,13 @@ export class MessagingQueryOperations {
 
     for (const p of activeParticipants) {
       const unread = convUnreadCounts.get(p.conversationId) || 0;
-      if (p.isArchived) {
-        if (unread > 0) counts.archive += unread;
-      } else if (p.isMuted) {
-        if (unread > 0) counts.trash += unread;
-      } else {
-        if (unread > 0) {
-          counts.inbox += unread;
-          const src = p.conversation?.source;
-          if (src === "thinktank") counts.thinktank += unread;
-          else if (src === "diplomatic") counts.diplomatic += unread;
-          else if (src === "wiki") counts.wiki += unread;
-          else if (src === "forum") counts.forum += unread;
-        }
-      }
+      if (unread === 0) continue;
+      counts.inbox += unread;
+      const src = p.conversation?.source;
+      if (src === "thinktank") counts.thinktank += unread;
+      else if (src === "diplomatic") counts.diplomatic += unread;
+      else if (src === "wiki") counts.wiki += unread;
+      else if (src === "forum") counts.forum += unread;
     }
 
     return counts;

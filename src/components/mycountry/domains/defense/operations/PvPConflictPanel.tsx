@@ -37,6 +37,7 @@ interface PvPConflictPanelProps {
 
 export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   const [challengeOpen, setChallengeOpen] = useState(false);
+  const [strikeOpen, setStrikeOpen] = useState(false);
   const [targetId, setTargetId] = useState("");
   const [reason, setReason] = useState("");
 
@@ -49,6 +50,16 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     { countryId },
     { enabled: challengeOpen }
   );
+
+  // Only unclaimed (NPC) related nations; resolvePvNPCConflict rejects player nations.
+  const { data: npcTargets } = api.security.getPvNPCTargets.useQuery(undefined, {
+    enabled: strikeOpen,
+  });
+
+  const handleStrikeOpenChange = (open: boolean) => {
+    setStrikeOpen(open);
+    setTargetId("");
+  };
 
   const proposeMutation = api.security.proposePvPConflict.useMutation({
     onSuccess: () => {
@@ -95,7 +106,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
         </h3>
         <div className="flex gap-2">
           {/* PvNPC quick action */}
-          <Dialog>
+          <Dialog open={strikeOpen} onOpenChange={handleStrikeOpenChange}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
                 PvNPC Strike
@@ -114,10 +125,16 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   <Label>Target NPC Nation</Label>
                   <Select value={targetId} onValueChange={setTargetId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select target..." />
+                      <SelectValue
+                        placeholder={
+                          npcTargets?.length === 0
+                            ? "No NPC nations among your relations"
+                            : "Select target..."
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {targetCountries.map((c) => (
+                      {(npcTargets ?? []).map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
                         </SelectItem>

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { createMessagingService } from "~/server/modules/messaging";
 import { notificationAPI } from "~/lib/notifications/api";
-import { getThinkPagesServer } from "~/server/websocket-server";
+import { getThinkPagesBroadcaster } from "~/server/websocket-server";
 import { forumBridge } from "~/server/modules/forum";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
 
@@ -51,7 +51,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       const messagingService = createMessagingService({
         db: ctx.db,
         notifications: notificationAPI,
-        websocket: getThinkPagesServer(),
+        websocket: getThinkPagesBroadcaster(),
         forumBridge,
         wikiBridge: wikiTalkBridge,
       });
@@ -72,7 +72,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       const messagingService = createMessagingService({
         db: ctx.db,
         notifications: notificationAPI,
-        websocket: getThinkPagesServer(),
+        websocket: getThinkPagesBroadcaster(),
         forumBridge,
         wikiBridge: wikiTalkBridge,
       });
@@ -89,7 +89,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       const messagingService = createMessagingService({
         db: ctx.db,
         notifications: notificationAPI,
-        websocket: getThinkPagesServer(),
+        websocket: getThinkPagesBroadcaster(),
         forumBridge,
         wikiBridge: wikiTalkBridge,
       });
@@ -104,7 +104,7 @@ export const messagesConversationsRouter = createTRPCRouter({
     const messagingService = createMessagingService({
       db: ctx.db,
       notifications: notificationAPI,
-      websocket: getThinkPagesServer(),
+      websocket: getThinkPagesBroadcaster(),
       forumBridge,
       wikiBridge: wikiTalkBridge,
     });
@@ -134,7 +134,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       const messagingService = createMessagingService({
         db: ctx.db,
         notifications: notificationAPI,
-        websocket: getThinkPagesServer(),
+        websocket: getThinkPagesBroadcaster(),
         forumBridge,
         wikiBridge: wikiTalkBridge,
       });

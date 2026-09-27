@@ -181,11 +181,9 @@ function MessagesRouterInner() {
     }
   );
 
-  const unreadCounts = useMemo(
-    () =>
-      (folderCounts as Record<MessageFolder, number> | undefined) ?? {
-        conversations: 0,
-      },
+  // The UI has a single "conversations" folder; its badge is the server's total unread (inbox).
+  const unreadCounts = useMemo<Record<MessageFolder, number>>(
+    () => ({ conversations: folderCounts?.inbox ?? 0 }),
     [folderCounts]
   );
 
