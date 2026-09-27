@@ -135,6 +135,18 @@ export const baseInitialState: BuilderState = {
   economyBuilderState: null,
 };
 
+/**
+ * The guided/expert choice saved by the mode toggle ("editor-mode", shared by
+ * the builder and the editor), or null when the user has never picked one.
+ */
+export function readStoredViewMode(): "standard" | "expert" | null {
+  if (typeof window === "undefined") return null;
+  const saved =
+    safeGetItemSync("ixstates:builder-advanced-mode") || safeGetItemSync("editor-mode");
+  if (!saved) return null;
+  return saved === "advanced" || saved === "expert" ? "expert" : "standard";
+}
+
 export const getInitialState = (mode: "create" | "edit" = "create"): BuilderState => {
   const isAdvancedInitial =
     typeof window !== "undefined"
@@ -149,7 +161,8 @@ export const getInitialState = (mode: "create" | "edit" = "create"): BuilderStat
       completedSteps: ["foundation"],
       activeCoreTab: "identity",
       activeIdentitySubTab: "basic",
-      showAdvancedMode: true,
+      // The editor opens in expert view unless the user chose standard.
+      showAdvancedMode: readStoredViewMode() !== "standard",
     };
   }
 

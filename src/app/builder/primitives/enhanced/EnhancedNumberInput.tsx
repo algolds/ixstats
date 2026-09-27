@@ -15,6 +15,7 @@ import { useFormattedAnimatedValue, DEFAULT_ANIMATIONS } from "./animation-utils
 import { parseNumberInput } from "~/lib/utils";
 import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
+import { ChangedFieldDot } from "../ChangedFieldDot";
 
 interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, "value" | "onChange"> {
   value: number | string;
@@ -442,6 +443,7 @@ export function EnhancedNumberInput({
             <label className="text-foreground flex items-center gap-2 text-sm font-medium">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
+              <ChangedFieldDot name={label} value={value} />
               {required && <span className="text-red-400">*</span>}
               {helpContent && <FieldHelpTooltip content={helpContent} title={helpTitle || label} />}
             </label>

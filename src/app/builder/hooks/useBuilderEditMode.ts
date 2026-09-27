@@ -495,7 +495,7 @@ export function useBuilderEditMode({
         activeIdentitySubTab: "basic",
         activeGovernmentTab: "components",
         activeEconomicsTab: "components",
-        showAdvancedMode: true,
+        showAdvancedMode: prev.showAdvancedMode,
         economyBuilderState: loadedEconomyBuilderState,
       }));
     }
@@ -614,7 +614,6 @@ export function useBuilderEditMode({
                 activeIdentitySubTab: "basic",
                 activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
                 activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
-                showAdvancedMode: true,
               };
             });
             setHasRestoredState(true);

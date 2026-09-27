@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import type { RealCountryData } from "~/app/builder/lib/economy-data-service";
 import type { BuilderSection } from "~/app/builder/lib/builder-theme";
-import { safeGetItemSync, safeSetItemSync } from "~/lib/system/local-storage-mutex";
+import { safeSetItemSync } from "~/lib/system/local-storage-mutex";
+import { readStoredViewMode } from "~/app/builder/hooks/builderStateTypes";
 
 export interface BuilderFilterState {
   searchTerm: string;
@@ -40,9 +41,12 @@ const BuilderFilterCtx = createContext<BuilderFilterState | null>(null);
 export function BuilderFilterProvider({
   children,
   onNavigate,
+  defaultViewMode = "standard",
 }: {
   children: React.ReactNode;
   onNavigate?: (section: BuilderSection) => void;
+  /** View mode until the user picks one with the toggle. */
+  defaultViewMode?: "standard" | "expert";
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedArchetypes, setSelectedArchetypes] = useState<string[]>([]);
@@ -54,12 +58,9 @@ export function BuilderFilterProvider({
   const [foundationPath, setFoundationPath] = useState<"hero" | "template" | "archetype" | "country">("hero");
   const [heroHeight, setHeroHeight] = useState<number>(0);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
-  const [viewMode, setViewModeState] = useState<"standard" | "expert">(() => {
-    if (typeof window === "undefined") return "standard";
-    const saved =
-      safeGetItemSync("ixstates:builder-advanced-mode") || safeGetItemSync("editor-mode");
-    return saved === "advanced" || saved === "expert" ? "expert" : "standard";
-  });
+  const [viewMode, setViewModeState] = useState<"standard" | "expert">(
+    () => readStoredViewMode() ?? defaultViewMode
+  );
 
   const setViewMode = useCallback((mode: "standard" | "expert") => {
     setViewModeState(mode);

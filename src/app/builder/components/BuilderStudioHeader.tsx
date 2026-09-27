@@ -273,7 +273,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                 </div>
               )}
 
-              {mode === "create" && <BuilderModeToggle />}
+              <BuilderModeToggle />
 
               <Tooltip>
                 <TooltipTrigger asChild>

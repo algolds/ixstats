@@ -7,6 +7,7 @@ import { cn, debounce } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
+import { ChangedFieldDot } from "../ChangedFieldDot";
 import { EditPencil as Edit3, ControlSlider as Sliders } from "iconoir-react";
 
 interface SliderWithDirectInputProps extends EnhancedInputProps {
@@ -196,6 +197,7 @@ export function SliderWithDirectInput({
               >
                 {Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />}
                 <span>{label}</span>
+                <ChangedFieldDot name={label} value={numericValue} />
                 {required && <span className="text-red-400">*</span>}
                 {helpContent && (
                   <FieldHelpTooltip content={helpContent} title={helpTitle || label} />

@@ -25,11 +25,14 @@ import { BuilderGuideSheet } from "./BuilderGuideSheet";
 import { BuilderStudioHeader } from "./BuilderStudioHeader";
 import { BuilderStepFooter } from "./BuilderStepFooter";
 import { BuilderResetConfirmDialog } from "./BuilderResetConfirmDialog";
+import { EditorSaveBar } from "./EditorSaveBar";
+import { EditChangesProvider } from "../primitives/ChangedFieldDot";
 import { SectionAlerts } from "../primitives/SectionAlert";
 import { useBuilderActions } from "../hooks/useBuilderActions";
 import { useBuilderAlerts } from "../hooks/useBuilderAlerts";
 import { useStepCompletion } from "../hooks/useStepCompletion";
 import { useBuilderKeyboardShortcuts } from "../hooks/useBuilderKeyboardShortcuts";
+import { useEditChanges } from "../hooks/useEditChanges";
 import {
   type BuilderSection,
   BUILD_STEPS,
@@ -125,7 +128,16 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     isSubmittingGlobal,
     applyImportedData,
     clearDraft,
+    isLoadingCountry,
+    triggerManualSave,
   } = useBuilderContext();
+
+  const editChanges = useEditChanges({
+    enabled: mode === "edit",
+    isLoadingCountry,
+    builderState,
+    setBuilderState,
+  });
 
   // Initialize section from URL - default to foundation/identity
   const [activeSection, setActiveSection] = useState<BuilderSection>(() => getSectionFromUrl(mode));
@@ -158,14 +170,13 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   });
 
   const handleToggleAdvanced = useCallback(() => {
-    if (mode === "edit") return;
     const nextIsAdvanced = !(builderState.showAdvancedMode || filter.viewMode === "expert");
     filter.setViewMode(nextIsAdvanced ? "expert" : "standard");
     setBuilderState((prev) => ({
       ...prev,
       showAdvancedMode: nextIsAdvanced,
     }));
-  }, [mode, builderState.showAdvancedMode, filter, setBuilderState]);
+  }, [builderState.showAdvancedMode, filter, setBuilderState]);
 
   useBuilderKeyboardShortcuts({
     onSave: submitFn,
@@ -518,10 +529,15 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
               transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
               className="flex h-full min-h-0 w-full flex-1 flex-col"
             >
-              <Suspense fallback={<SectionSkeleton />}>{renderSection()}</Suspense>
+              <Suspense fallback={<SectionSkeleton />}>
+                <EditChangesProvider changes={editChanges.changes}>
+                  {renderSection()}
+                </EditChangesProvider>
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </BuilderSidebarLayout>
+        {mode === "edit" && <EditorSaveBar edit={editChanges} onPersist={triggerManualSave} />}
       </div>
       <BuilderResetConfirmDialog
         open={isResetDialogOpen}
@@ -539,7 +555,7 @@ export function BuilderRouter({ mode = "create", countryId }: BuilderRouterProps
   return (
     <BuilderErrorBoundary>
       <BuilderStateProvider mode={mode} countryId={countryId}>
-        <BuilderFilterProvider>
+        <BuilderFilterProvider defaultViewMode={mode === "edit" ? "expert" : "standard"}>
           <BuilderRouterInner mode={mode} countryId={countryId} />
         </BuilderFilterProvider>
       </BuilderStateProvider>

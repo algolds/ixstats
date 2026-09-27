@@ -205,7 +205,7 @@ export const StepRenderer = memo(function StepRenderer({
         governmentComponents={builderState.governmentComponents}
         governmentBuilderData={builderState.governmentStructure}
         countryId={countryId ?? builderState.selectedCountry?.countryCode}
-        showAdvanced={mode === "edit" || builderState.showAdvancedMode}
+        showAdvanced={builderState.showAdvancedMode}
         persistedEconomyBuilder={builderState.economyBuilderState}
         onPersistEconomyBuilder={handlePersistEconomyBuilder}
         activeTab={builderState.activeEconomicsTab}

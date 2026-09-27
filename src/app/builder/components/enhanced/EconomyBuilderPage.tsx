@@ -76,11 +76,9 @@ export function EconomyBuilderPage({
   activeTab,
   onTabChange,
   selectedArchetypeId: _selectedArchetypeId,
-  mode: propMode,
+  mode: _mode,
 }: EconomyBuilderPageProps) {
   const { openGuide, isSectionSeen } = useBuilderGuide();
-  const builderCtx = useBuilderContextOptional();
-  const effectiveMode = propMode ?? builderCtx?.mode ?? "create";
 
   // Auto-slide open the Companion Sheet on first visit
   useEffect(() => {
@@ -100,7 +98,7 @@ export function EconomyBuilderPage({
   });
 
   const { viewMode } = useBuilderFilter();
-  const isExpertOrEdit = effectiveMode === "edit" || viewMode === "expert";
+  const isExpertOrEdit = viewMode === "expert";
 
   const currentTab = useMemo(() => {
     const raw = activeTab || "components";

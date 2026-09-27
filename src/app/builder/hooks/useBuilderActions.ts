@@ -146,19 +146,15 @@ export function useBuilderActions({
       : ["foundation", "core", "government", "economics", "preview"];
   }, [mode, isScratchOrImport]);
 
-  // Government sub-tabs vary by viewMode: standard mode is components-only; expert or edit mode exposes departments and budget
+  // Government sub-tabs vary by viewMode: standard mode is components-only; expert mode (the editor's default) exposes departments and budget
   const govTabs = useMemo(() => {
-    return mode === "edit" || viewMode === "expert"
-      ? ["components", "structure", "spending"]
-      : ["components"];
-  }, [mode, viewMode]);
+    return viewMode === "expert" ? ["components", "structure", "spending"] : ["components"];
+  }, [viewMode]);
 
-  // Economics sub-tabs vary by viewMode: standard mode is components-only; expert or edit mode exposes sectors and workforce
+  // Economics sub-tabs vary by viewMode: standard mode is components-only; expert mode (the editor's default) exposes sectors and workforce
   const econTabs = useMemo(() => {
-    return mode === "edit" || viewMode === "expert"
-      ? ["components", "sectors", "workforce"]
-      : ["components"];
-  }, [mode, viewMode]);
+    return viewMode === "expert" ? ["components", "sectors", "workforce"] : ["components"];
+  }, [viewMode]);
 
   // Handle tab navigation within steps
   const handleTabChange = useCallback(

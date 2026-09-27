@@ -207,7 +207,7 @@ export function NationalIdentitySection({
               inputs={inputs}
               onInputsChange={onInputsChange}
               referenceCountry={referenceCountry}
-              showAdvanced={mode === "edit" || builderState.showAdvancedMode}
+              showAdvanced={builderState.showAdvancedMode}
               mode={mode}
               countryId={countryId}
             />

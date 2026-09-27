@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Autocomplete } from "~/components/ui/autocomplete";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
+import { ChangedFieldDot } from "../../../primitives/ChangedFieldDot";
 
 interface IdentityAutocompleteProps {
   fieldName: string;
@@ -74,6 +75,7 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
             <Icon className={cn("h-3.5 w-3.5", iconClassName || "text-muted-foreground")} />
           )}
           <span>{label || formatFieldLabel(fieldName)}</span>
+          <ChangedFieldDot name={fieldName} value={value} />
         </span>
         {extraLabelElement}
       </label>
