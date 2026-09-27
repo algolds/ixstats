@@ -38,6 +38,7 @@ import {
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 
 // Register host-app template data provider
@@ -236,10 +237,11 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
         const authorInfo = await getArticleAuthors(resolvedTitle, "ixwiki");
 
+        // Native articles hold user-authored HTML (and compiled wikitext): sanitize on serve.
         return {
-          contentHtml,
-          infoboxHtml,
-          noticesHtml,
+          contentHtml: sanitizeWikiArticleHtml(contentHtml),
+          infoboxHtml: infoboxHtml ? sanitizeWikiArticleHtml(infoboxHtml) : infoboxHtml,
+          noticesHtml: noticesHtml ? sanitizeWikiArticleHtml(noticesHtml) : noticesHtml,
           toc: transformed.toc,
           title: nativeArticle.title,
           categories: [] as string[],
@@ -432,6 +434,11 @@ export const wikiosPageContentRouter = createTRPCRouter({
       const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
       return { exists: !!article, resolvedTitle };
     }),
+
+  /** Batched existence check for rendered wiki links: returns the titles with no article. */
+  getMissingPages: publicProcedure
+    .input(z.object({ titles: z.array(z.string().min(1).max(255)).max(200) }))
+    .query(({ input }) => ArticleRepository.findMissingTitles(input.titles, "ixwiki")),
 
   /**
    * Get Parsoid HTML for the visual editor.

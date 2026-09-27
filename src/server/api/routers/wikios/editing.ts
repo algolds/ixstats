@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -22,12 +23,44 @@ import {
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
-import { resolveWikiUsername } from "~/lib/wiki-os/auth";
+import {
+  canEditProtectedArticle,
+  getWikiAuth,
+  isWikiAdmin,
+  resolveWikiUsername,
+  type WikiAuthContext,
+  type WikiAuthIdentity,
+} from "~/lib/wiki-os/auth";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 
 import {
   cleanHtmlForParsoid,
   executeMediaWikiWrite,
 } from "~/lib/wiki-os/adapters/mediawiki/write-service";
+
+/** Throws FORBIDDEN unless the caller may edit `title` at its current protection level. */
+async function assertCanEditArticle(
+  ctx: WikiAuthContext,
+  title: string,
+  realm = "ixwiki"
+): Promise<WikiAuthIdentity> {
+  const identity = getWikiAuth(ctx);
+  const existing = await ArticleRepository.findBySlug(title, realm);
+  if (!canEditProtectedArticle(existing, identity)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "This page is protected." });
+  }
+  return identity;
+}
+
+/** Archive/restore mirror MediaWiki delete/undelete, which are sysop rights. */
+function assertWikiAdmin(ctx: WikiAuthContext): void {
+  if (!isWikiAdmin(ctx)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Only wiki administrators can archive or restore pages.",
+    });
+  }
+}
 
 export const wikiosEditingRouter = createTRPCRouter({
   /**
@@ -104,6 +137,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertCanEditArticle(ctx, input.title);
+
       // 1. Verify Cloudflare Turnstile if token is provided
       if (input.turnstileToken) {
         await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
@@ -118,7 +153,8 @@ export const wikiosEditingRouter = createTRPCRouter({
         {
           slug: input.title,
           title: input.title,
-          contentHtml: cleanedHtml,
+          // Parsoid gets the unsanitized HTML above; readers get the sanitized copy.
+          contentHtml: sanitizeWikiArticleHtml(cleanedHtml),
           wikitext,
           summary: input.summary,
           minor: input.minor,
@@ -162,6 +198,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertCanEditArticle(ctx, input.title);
+
       if (input.turnstileToken) {
         await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
       }
@@ -209,11 +247,13 @@ export const wikiosEditingRouter = createTRPCRouter({
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        revid: z.number(),
+        revid: z.string().min(1).max(64),
         summary: z.string().max(500).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertCanEditArticle(ctx, input.title);
+
       const oldRev = await getRevisionWikitextShadow(input.revid);
       if (!oldRev) {
         throw new Error(`Revision ${input.revid} not found`);
@@ -259,18 +299,18 @@ export const wikiosEditingRouter = createTRPCRouter({
   rollback: protectedProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .mutation(async ({ input, ctx }) => {
+      await assertCanEditArticle(ctx, input.title);
+
       // Read-through: serve from shadow history with MySQL fallback
       const history = await getArticleHistoryShadow(input.title, 50);
       const revisions = history.revisions;
       if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
 
       const lastEditor = revisions[0]!.user;
-      const targetRev = revisions.find(
-        (r: { user: string; revid: number }) => r.user !== lastEditor
-      );
+      const targetRev = revisions.find((r) => r.user !== lastEditor);
       if (!targetRev) throw new Error("All revisions are by the same user");
 
-      const oldContent = await getRevisionWikitextShadow(targetRev.revid, "ixwiki");
+      const oldContent = await getRevisionWikitextShadow(targetRev.revid);
       if (!oldContent) throw new Error("Could not fetch target revision content");
 
       const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
@@ -382,6 +422,15 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      // MediaWiki's move right is autoconfirmed-level (approximated as a linked wiki account).
+      // PageManagementService.movePage already rejects an existing destination.
+      const identity = await assertCanEditArticle(ctx, input.oldTitle, input.realm);
+      if (!identity.isAdmin && !identity.hasLinkedWikiAccount) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Moving pages requires a linked wiki account.",
+        });
+      }
       const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
       return PageManagementService.movePage(
         input.oldTitle,
@@ -404,6 +453,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      assertWikiAdmin(ctx);
       const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
       return PageManagementService.archiveArticle(
         input.title,
@@ -424,6 +474,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      assertWikiAdmin(ctx);
       const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
       return PageManagementService.restoreArticle(
         input.title,

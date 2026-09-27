@@ -5,43 +5,50 @@
  * - sanitizeUserContent(): Strictest - for user posts, comments, collaborative docs
  * - sanitizeWikiContent(): Moderate - for external wiki HTML with allowed styling
  * - sanitizeHtml(): Balanced - for general use cases
+ * - sanitizeWikiArticleHtml(): WikiOS article HTML (Parsoid/MediaWiki markup, no <style>)
  *
- * Uses DOMPurify with isomorphic support for SSR/CSR compatibility
+ * Uses DOMPurify in the browser and DOMPurify + jsdom on the server (SSR, tRPC, API routes).
  */
 
-import * as DOMPurifyModule from "dompurify";
-const DOMPurify = DOMPurifyModule.default || DOMPurifyModule;
+import DOMPurify, { type Config } from "dompurify";
 
-// Register hook to block data: URIs in src/href attributes
-if (typeof window !== "undefined" && typeof (DOMPurify as any)?.addHook === "function") {
-  (DOMPurify as any).addHook("uponSanitizeAttribute", (_node: any, event: any) => {
+type Purifier = typeof DOMPurify;
+
+/**
+ * DOMPurify needs a DOM. Browsers (and Jest's jsdom environment) provide one; on the
+ * server (SSR, tRPC, route handlers) it is backed by one jsdom window, created on first
+ * use. `typeof window` is a compile-time constant per bundle, so browser bundles drop
+ * the jsdom branch.
+ */
+function createPurifier(): Purifier {
+  if (typeof window === "undefined") {
+    const { JSDOM } = require("jsdom") as typeof import("jsdom");
+    return DOMPurify(new JSDOM("").window);
+  }
+  return DOMPurify;
+}
+
+let purifier: Purifier | null = null;
+
+function getPurifier(): Purifier {
+  if (purifier) return purifier;
+  const created = createPurifier();
+  // Block data: URIs in src/href attributes
+  created.addHook("uponSanitizeAttribute", (_node, event) => {
     if (
       (event.attrName === "src" || event.attrName === "href") &&
-      event.attrValue?.trim().toLowerCase().startsWith("data:")
+      event.attrValue.trim().toLowerCase().startsWith("data:")
     ) {
       event.attrValue = "";
     }
   });
+  purifier = created;
+  return created;
 }
 
-// Type definition for the sanitize function
-type SanitizeFunc = (html: string, config?: any) => string;
-
-const getPurify = (): { sanitize: SanitizeFunc } => {
-  if (
-    typeof window === "undefined" ||
-    !DOMPurify ||
-    typeof (DOMPurify as any).sanitize !== "function"
-  ) {
-    // Server-side / test runner: pass through HTML as-is (sanitized on client hydration)
-    return {
-      sanitize: (html: string, _config?: any) => html,
-    };
-  }
-  return DOMPurify as any as { sanitize: SanitizeFunc };
+const purify = {
+  sanitize: (html: string, config: Config): string => getPurifier().sanitize(html, config),
 };
-
-const purify = getPurify();
 
 /**
  * STRICT sanitization for user-generated content
@@ -53,7 +60,7 @@ const purify = getPurify();
 export function sanitizeUserContent(html: string): string {
   if (!html) return "";
 
-  const config = {
+  const config: Config = {
     ALLOWED_TAGS: [
       "p",
       "br",
@@ -107,8 +114,113 @@ export function sanitizeUserContent(html: string): string {
     RETURN_TRUSTED_TYPE: false,
   };
 
-  return purify.sanitize(html, config) as string;
+  return purify.sanitize(html, config);
 }
+
+/**
+ * Config for sanitizeWikiContent(): wiki HTML with allowed styling.
+ */
+export const WIKI_CONTENT_SANITIZE_CONFIG = {
+  ALLOWED_TAGS: [
+    "p",
+    "br",
+    "span",
+    "div",
+    "section",
+    "article",
+    "b",
+    "i",
+    "em",
+    "strong",
+    "u",
+    "s",
+    "sub",
+    "sup",
+    "small",
+    "mark",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "ul",
+    "ol",
+    "li",
+    "dl",
+    "dt",
+    "dd",
+    "blockquote",
+    "pre",
+    "code",
+    "a",
+    "img",
+    "figure",
+    "figcaption",
+    "table",
+    "thead",
+    "tbody",
+    "tfoot",
+    "tr",
+    "th",
+    "td",
+    "caption",
+    "hr",
+    "abbr",
+    "cite",
+    "q",
+    "time",
+  ],
+  ALLOWED_ATTR: [
+    "href",
+    "title",
+    "target",
+    "rel",
+    "src",
+    "alt",
+    "width",
+    "height",
+    "class",
+    "id",
+    "style", // Allow styling for wiki content
+    "colspan",
+    "rowspan",
+    "scope", // Table attributes
+    "datetime",
+    "cite", // Semantic attributes
+    "data-wikiembed",
+    "data-title",
+    "data-summary",
+    "data-imageurl",
+    "data-source",
+  ],
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|ftp):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+  FORBID_TAGS: [
+    "script",
+    "iframe",
+    "object",
+    "embed",
+    "form",
+    "input",
+    "button",
+    "select",
+    "textarea",
+  ],
+  FORBID_ATTR: [
+    "onerror",
+    "onload",
+    "onclick",
+    "onmouseover",
+    "onfocus",
+    "onblur",
+    "onchange",
+    "onsubmit",
+  ],
+  ALLOW_DATA_ATTR: true,
+  ALLOW_UNKNOWN_PROTOCOLS: false,
+  SAFE_FOR_TEMPLATES: true,
+  KEEP_CONTENT: true,
+} satisfies Config;
 
 /**
  * MODERATE sanitization for wiki content
@@ -119,110 +231,49 @@ export function sanitizeUserContent(html: string): string {
  */
 export function sanitizeWikiContent(html: string): string {
   if (!html) return "";
+  return purify.sanitize(html, WIKI_CONTENT_SANITIZE_CONFIG);
+}
 
-  const config = {
-    ALLOWED_TAGS: [
-      "p",
-      "br",
-      "span",
-      "div",
-      "section",
-      "article",
-      "b",
-      "i",
-      "em",
-      "strong",
-      "u",
-      "s",
-      "sub",
-      "sup",
-      "small",
-      "mark",
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "ul",
-      "ol",
-      "li",
-      "dl",
-      "dt",
-      "dd",
-      "blockquote",
-      "pre",
-      "code",
-      "a",
-      "img",
-      "figure",
-      "figcaption",
-      "table",
-      "thead",
-      "tbody",
-      "tfoot",
-      "tr",
-      "th",
-      "td",
-      "caption",
-      "hr",
-      "abbr",
-      "cite",
-      "q",
-      "time",
-    ],
-    ALLOWED_ATTR: [
-      "href",
-      "title",
-      "target",
-      "rel",
-      "src",
-      "alt",
-      "width",
-      "height",
-      "class",
-      "id",
-      "style", // Allow styling for wiki content
-      "colspan",
-      "rowspan",
-      "scope", // Table attributes
-      "datetime",
-      "cite", // Semantic attributes
-      "data-wikiembed",
-      "data-title",
-      "data-summary",
-      "data-imageurl",
-      "data-source",
-    ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|ftp):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
-    FORBID_TAGS: [
-      "script",
-      "iframe",
-      "object",
-      "embed",
-      "form",
-      "input",
-      "button",
-      "select",
-      "textarea",
-    ],
-    FORBID_ATTR: [
-      "onerror",
-      "onload",
-      "onclick",
-      "onmouseover",
-      "onfocus",
-      "onblur",
-      "onchange",
-      "onsubmit",
-    ],
-    ALLOW_DATA_ATTR: true,
-    ALLOW_UNKNOWN_PROTOCOLS: false,
-    SAFE_FOR_TEMPLATES: true,
-    KEEP_CONTENT: true,
-  };
+const WIKI_ARTICLE_SANITIZE_CONFIG: Config = {
+  ...WIKI_CONTENT_SANITIZE_CONFIG,
+  ALLOWED_TAGS: [
+    ...WIKI_CONTENT_SANITIZE_CONFIG.ALLOWED_TAGS,
+    "aside",
+    "nav",
+    "details",
+    "summary",
+    "bdi",
+    "wbr",
+  ],
+  ALLOWED_ATTR: [
+    ...WIKI_CONTENT_SANITIZE_CONFIG.ALLOWED_ATTR,
+    "typeof",
+    "about",
+    "property",
+    "lang",
+    "dir",
+    "srcset",
+    "loading",
+    "decoding",
+    "referrerpolicy", // added to <img> by transformArticleHtml
+    "role",
+  ],
+  // RDFa values such as typeof="mw:Transclusion" look like URI schemes; they are inert.
+  ADD_URI_SAFE_ATTR: ["typeof", "about", "property"],
+  FORBID_TAGS: [...WIKI_CONTENT_SANITIZE_CONFIG.FORBID_TAGS, "style"],
+  // SAFE_FOR_TEMPLATES would drop every data-* attribute (Parsoid data-mw, template chips)
+  // and blank {{MyCountry:...}} placeholders. This HTML never goes through a template engine.
+  SAFE_FOR_TEMPLATES: false,
+};
 
-  return purify.sanitize(html, config) as string;
+/**
+ * WikiOS article sanitization (stored or compiled article HTML, served to every reader).
+ * Wiki config plus the MediaWiki/Parsoid markup articles need; <style> blocks are removed
+ * (the style attribute stays allowed).
+ */
+export function sanitizeWikiArticleHtml(html: string): string {
+  if (!html) return "";
+  return purify.sanitize(html, WIKI_ARTICLE_SANITIZE_CONFIG);
 }
 
 /**
@@ -235,7 +286,7 @@ export function sanitizeWikiContent(html: string): string {
 export function sanitizeHtml(html: string): string {
   if (!html) return "";
 
-  const config = {
+  const config: Config = {
     ALLOWED_TAGS: [
       "p",
       "br",
@@ -285,7 +336,7 @@ export function sanitizeHtml(html: string): string {
     KEEP_CONTENT: true,
   };
 
-  return purify.sanitize(html, config) as string;
+  return purify.sanitize(html, config);
 }
 
 /**

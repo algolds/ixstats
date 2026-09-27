@@ -6,6 +6,7 @@ import {
   NextResponse,
 } from "next/server";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
+import { buildCSPTemplate, renderCsp } from "~/lib/security/csp";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -43,53 +44,6 @@ const isPublicRoute = createRouteMatcher([
 
 // Note: Clerk configuration check is now performed dynamically in getClerkMiddleware()
 
-/**
- * Content Security Policy — pre-computed at module load time.
- *
- * SECURITY: Uses nonce-based script execution to prevent XSS attacks.
- * - Scripts must have the correct nonce attribute to execute
- * - unsafe-inline is ONLY used for styles (required by many UI libraries)
- * - unsafe-eval is REMOVED to prevent dynamic code execution attacks
- *
- * The static template is built once and the __NONCE__ placeholder is replaced
- * per-request. This avoids rebuilding ~1KB of string concatenation on every request.
- *
- * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-function buildCSPTemplate(standalone: boolean): string {
-  const isDevelopment = process.env.NODE_ENV === "development";
-
-  // Use nonce-based script-src for both main app and standalone IxWorld
-  // strict-dynamic allows scripts with a valid nonce to load additional scripts
-  const scriptSrc = isDevelopment
-    ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
-    : `script-src 'self' 'unsafe-inline' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`;
-
-  const directives = [
-    `default-src 'self'`,
-    scriptSrc,
-    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `img-src 'self' data: blob: https: http:`,
-    `font-src 'self' https://fonts.gstatic.com data:`,
-    `connect-src 'self' https: wss: ws:`,
-    `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://maps.ixwiki.com`,
-    `worker-src 'self' blob:`,
-    `media-src 'self' https://ixwiki.com data: blob:`,
-    `object-src 'none'`,
-    `base-uri 'self'`,
-    `form-action 'self'`,
-    `frame-ancestors 'none'`,
-    `upgrade-insecure-requests`,
-  ];
-
-  if (isDevelopment) {
-    directives.push(`script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev`);
-  }
-
-  return directives.join("; ");
-}
-
 // Pre-compute both CSP templates at module load — select per-request by hostname
 const CSP_TEMPLATE_APP = buildCSPTemplate(false);
 const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
@@ -125,7 +79,7 @@ function enhanceResponse(
   const isEmbeddablePath =
     isEmbeddablePathFn(req.nextUrl.pathname) || isStandaloneRequest(req.headers);
   const cspTemplate = isStandaloneRequest(req.headers) ? CSP_TEMPLATE_STANDALONE : CSP_TEMPLATE_APP;
-  let csp = cspTemplate.replaceAll("__NONCE__", nonce);
+  let csp = renderCsp(cspTemplate, nonce);
   if (isForumWidget) {
     // Allow iframe embedding from forum.ixwiki.com for widget pages
     csp = csp.replace("frame-ancestors 'none'", "frame-ancestors https://forum.ixwiki.com");
@@ -183,6 +137,15 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
   }
 
   return null;
+}
+
+/**
+ * /admin and /settings are only gated inside the Clerk callback. When Clerk is
+ * unavailable, those routes must fail closed instead of falling through unauthenticated.
+ */
+function protectedRouteUnavailable(req: NextRequest): NextResponse | null {
+  if (!isProtectedRoute(req)) return null;
+  return new NextResponse("Service temporarily unavailable", { status: 503 });
 }
 
 // If Clerk is not configured, use a simple middleware that doesn't handle auth
@@ -324,10 +287,15 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
         "[Middleware] Clerk middleware execution failed, falling back to simple middleware:",
         error
       );
-      return simpleMiddleware(req);
+      return protectedRouteUnavailable(req) ?? simpleMiddleware(req);
     }
   }
 
+  // Dev without Clerk keys keeps working; production never serves protected routes unauthenticated.
+  if (process.env.NODE_ENV === "production") {
+    const unavailable = protectedRouteUnavailable(req);
+    if (unavailable) return unavailable;
+  }
   return simpleMiddleware(req);
 }
 

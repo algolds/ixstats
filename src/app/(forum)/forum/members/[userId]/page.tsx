@@ -15,6 +15,7 @@ import {
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { api } from "~/trpc/react";
+import { sanitizeHtml } from "~/lib/utils";
 
 function formatDate(unixTimestamp: number): string {
   return new Date(unixTimestamp * 1000).toLocaleDateString("en-US", {
@@ -114,7 +115,7 @@ export default function MemberProfilePage() {
               <h2 className="mb-2 text-sm font-semibold text-[var(--forum-text)]">About</h2>
               <div
                 className="forum-post-content text-sm"
-                dangerouslySetInnerHTML={{ __html: member.about }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(member.about) }}
               />
             </div>
           )}

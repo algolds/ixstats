@@ -168,6 +168,12 @@ export async function processImageSelection(
       return proxyUrl;
     }
 
+    // SVGs are never copied to our origin (they can carry script); hotlink them instead.
+    // An SVG rendered through <img> cannot run script.
+    if (isExternalImageUrl(imageUrl) && new URL(imageUrl).pathname.toLowerCase().endsWith(".svg")) {
+      return imageUrl;
+    }
+
     // Check if URL needs downloading
     if (isExternalImageUrl(imageUrl)) {
       options?.onProgress?.("Downloading image...");
