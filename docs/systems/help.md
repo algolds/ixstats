@@ -11,8 +11,9 @@ The in-app help system delivers rich, interactive, and contextual documentation 
 ## Architecture & Routing
 
 - `src/app/help/page.tsx` – Main help center hub with full-text search, category filters, and quick links
-- `src/app/help/_components/ArticleLayout.tsx` – Shared presentation layout (table of contents, breadcrumbs, related links, feedback widget)
-- Article routes follow the canonical directory structure: `src/app/help/<category>/<slug>/page.tsx`
+- `src/components/documents/DocumentPage.tsx` / `DocumentLayout.tsx` – one markdown layout (breadcrumb, table of contents, share/print) shared with `/terms` and `/privacy`
+- Articles are markdown files at `src/content/help/<category>/<slug>.md`, served by the single dynamic route `src/app/help/[category]/[slug]/page.tsx` (404 when the file is missing)
+- Headings take an id from a trailing `{#id}` or a slug of their text; `> [!WARNING]` blockquotes render as warning callouts, other blockquotes as info callouts
 
 ---
 
@@ -36,7 +37,7 @@ The in-app help system delivers rich, interactive, and contextual documentation 
 ## Authoring Workflow
 
 1. **Update System Guide**: Maintain or update the primary Markdown specification under `docs/systems/`.
-2. **Author In-App Article**: Create or update the corresponding React page under `src/app/help/<category>/<slug>/page.tsx` using `<ArticleLayout>`.
+2. **Author In-App Article**: Create or update `src/content/help/<category>/<slug>.md` (no React code needed), and add it to the hub's list in `src/app/help/page.tsx`.
 3. **Register in Hub Config**: Update the `helpSections` array in `src/app/help/config.ts` with metadata (title, description, icon, keywords).
 4. **Contextual Tooltips**: Wire in-app question mark icons (`<HelpTooltip topic="..." />`) directly to the relevant help slug.
 
