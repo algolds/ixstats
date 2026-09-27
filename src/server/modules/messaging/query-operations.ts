@@ -209,33 +209,21 @@ export class MessagingQueryOperations {
 
     if (activeParticipants.length === 0) return counts;
 
-    const conversationIds = activeParticipants.map((p: any) => p.conversationId);
-    const unreadMessages = await this.db.thinkshareMessage.findMany({
-      where: {
-        conversationId: { in: conversationIds },
-        userId: { not: actorId },
-        deletedAt: null,
-      },
-      select: {
-        conversationId: true,
-        ixTimeTimestamp: true,
-      },
-    });
-
-    const participantMap = new Map<string, any>(
-      activeParticipants.map((p: any) => [p.conversationId, p])
-    );
-    const convUnreadCounts = new Map<string, number>();
-
-    for (const msg of unreadMessages) {
-      const p = participantMap.get(msg.conversationId);
-      if (p && (!p.lastReadAt || msg.ixTimeTimestamp > p.lastReadAt)) {
-        convUnreadCounts.set(
-          msg.conversationId,
-          (convUnreadCounts.get(msg.conversationId) || 0) + 1
-        );
-      }
-    }
+    // Count unread per conversation in SQL: loading every received message row hit the
+    // 1000-row findMany guard and undercounted badges for busy users.
+    const rows: { conversationId: string; unread: number }[] = await this.db.$queryRaw`
+      SELECT m."conversationId" AS "conversationId", COUNT(*)::int AS unread
+      FROM "ThinkshareMessage" m
+      JOIN "ConversationParticipant" p
+        ON p."conversationId" = m."conversationId"
+       AND p."userId" = ${actorId}
+       AND p."isActive" = true
+      WHERE m."userId" <> ${actorId}
+        AND m."deletedAt" IS NULL
+        AND m."ixTimeTimestamp" > p."lastReadAt"
+      GROUP BY m."conversationId"
+    `;
+    const convUnreadCounts = new Map(rows.map((r) => [r.conversationId, Number(r.unread)]));
 
     for (const p of activeParticipants) {
       const unread = convUnreadCounts.get(p.conversationId) || 0;

@@ -252,34 +252,48 @@ export const sportsStandingsRouter = createTRPCRouter({
       }
     }),
 
-  getLiveMatches: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const matches = await ctx.db.sportMatch.findMany({
-        where: { status: { in: ["in_progress", "completed", "scheduled"] } },
-        include: {
-          homeTeam: { select: { id: true, name: true, shortName: true, color: true } },
-          awayTeam: { select: { id: true, name: true, shortName: true, color: true } },
-        },
-        orderBy: { resolvedIxTime: "desc" },
-        take: 10,
-      });
+  getLiveMatches: publicProcedure
+    .input(z.object({ teamId: z.string().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      try {
+        const teamId = input?.teamId;
+        const matches = await ctx.db.sportMatch.findMany({
+          where: {
+            status: { in: ["in_progress", "completed", "scheduled"] },
+            ...(teamId ? { OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }] } : {}),
+          },
+          select: {
+            id: true,
+            homeTeamId: true,
+            awayTeamId: true,
+            homeScore: true,
+            awayScore: true,
+            status: true,
+            matchStats: true,
+            homeTeam: { select: { id: true, name: true, shortName: true, color: true } },
+            awayTeam: { select: { id: true, name: true, shortName: true, color: true } },
+          },
+          // Scheduled matches have a null resolvedIxTime; keep them behind finished ones.
+          orderBy: { resolvedIxTime: { sort: "desc", nulls: "last" } },
+          take: 10,
+        });
 
-      return matches.map((m) => {
-        const stats = (m.matchStats as Record<string, unknown> | null) ?? {};
-        return {
-          id: m.id,
-          homeTeamId: m.homeTeamId,
-          awayTeamId: m.awayTeamId,
-          homeTeam: m.homeTeam,
-          awayTeam: m.awayTeam,
-          trace: stats.trace ?? [],
-          finalHomeScore: m.homeScore,
-          finalAwayScore: m.awayScore,
-          status: m.status,
-        };
-      });
-    } catch (_err) {
-      return [];
-    }
-  }),
+        return matches.map((m) => {
+          const stats = (m.matchStats as Record<string, unknown> | null) ?? {};
+          return {
+            id: m.id,
+            homeTeamId: m.homeTeamId,
+            awayTeamId: m.awayTeamId,
+            homeTeam: m.homeTeam,
+            awayTeam: m.awayTeam,
+            trace: stats.trace ?? [],
+            finalHomeScore: m.homeScore,
+            finalAwayScore: m.awayScore,
+            status: m.status,
+          };
+        });
+      } catch (_err) {
+        return [];
+      }
+    }),
 });

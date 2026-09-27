@@ -6,21 +6,19 @@
  *
  * Domains:
  *  - officials:  government officials CRUD (get/create/update/delete)
- *  - meetings:   cabinet meetings + meeting decisions/action items lifecycle
+ *  - meetings:   cabinet meeting scheduling + listing
  *  - policies:   policy CRUD + economic effect tracking + policy recommendations
  *  - activities: activity schedule (planner) + dashboard / meeting-outcome summaries
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { quickActionsOfficialsRouter } from "./officials";
 import { quickActionsMeetingsRouter } from "./meetings";
-import { quickActionsDecisionsRouter } from "./decisions";
 import { quickActionsPoliciesRouter } from "./policies";
 import { quickActionsActivitiesRouter } from "./activities";
 
 export const quickActionsRouter = mergeRouters(
   quickActionsOfficialsRouter,
   quickActionsMeetingsRouter,
-  quickActionsDecisionsRouter,
   quickActionsPoliciesRouter,
   quickActionsActivitiesRouter
 );

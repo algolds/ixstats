@@ -19,6 +19,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
   beforeEach(() => {
     mockDb = {
       $transaction: jest.fn().mockImplementation((cb: any) => cb(mockDb)),
+      $queryRaw: jest.fn().mockResolvedValue([]),
       user: {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(null),
@@ -180,17 +181,41 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
           conversation: { source: "diplomatic" },
         },
       ]);
-      mockDb.thinkshareMessage.findMany.mockResolvedValue([
-        { conversationId: "c_1", ixTimeTimestamp: new Date(1000) },
-        { conversationId: "c_1", ixTimeTimestamp: new Date(2000) },
-        { conversationId: "c_2", ixTimeTimestamp: new Date(1000) },
-        { conversationId: "c_3", ixTimeTimestamp: new Date(1000) },
+      mockDb.$queryRaw.mockResolvedValue([
+        { conversationId: "c_1", unread: 2 },
+        { conversationId: "c_2", unread: 1 },
+        { conversationId: "c_3", unread: 1 },
       ]);
 
       const counts = await service.getFolderCounts("user_1");
       expect(counts.archive).toBe(1);
       expect(counts.inbox).toBe(3);
       expect(counts.diplomatic).toBe(1);
+    });
+
+    test("6b. getFolderCounts does not load message rows", async () => {
+      mockDb.conversationParticipant.findMany.mockResolvedValue([
+        {
+          conversationId: "c_1",
+          lastReadAt: new Date(0),
+          conversation: { source: "thinkshare" },
+        },
+      ]);
+      mockDb.$queryRaw.mockResolvedValue([{ conversationId: "c_1", unread: 4 }]);
+
+      const counts = await service.getFolderCounts("user_1");
+      expect(mockDb.thinkshareMessage.findMany).not.toHaveBeenCalled();
+      expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1);
+      expect(counts.inbox).toBe(4);
+    });
+
+    test("6c. getFolderCounts returns zeros without querying messages when user has no active participants", async () => {
+      mockDb.conversationParticipant.findMany.mockResolvedValue([]);
+
+      const counts = await service.getFolderCounts("user_1");
+      expect(Object.values(counts).every((n) => n === 0)).toBe(true);
+      expect(mockDb.$queryRaw).not.toHaveBeenCalled();
+      expect(mockDb.thinkshareMessage.findMany).not.toHaveBeenCalled();
     });
 
     test("7. getConversationsLegacy returns expected legacy ThinkPages format", async () => {
