@@ -29,10 +29,17 @@ import {
   Check,
   Coins,
   PathArrow as Route,
+  Wind,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { getRouteFamily } from "~/lib/economy/transport-costs";
-import { calculateRouteTravelTime, resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
+import {
+  calculateRouteTravelTime,
+  resolveRouteBaseSpeed,
+  KMH_PER_KNOT,
+  type LngLat,
+} from "~/lib/economy/travel-time";
 
 interface RouteInfoPanelProps {
   routeId: string;
@@ -48,6 +55,25 @@ interface RouteDisplayProperties {
   costBillion?: number | string;
   maintenanceCost?: number | string;
   [key: string]: string | number | boolean | null | undefined;
+}
+
+interface RouteGeometry {
+  type?: string;
+  coordinates?: LngLat[] | LngLat[][];
+}
+
+/** Route vertices for the sea current/wind model; null when the geometry is not a line. */
+function routeGeometryPath(geometry: RouteGeometry | null | undefined): LngLat[] | null {
+  if (!geometry || !Array.isArray(geometry.coordinates)) return null;
+  if (geometry.type === "LineString") return geometry.coordinates as LngLat[];
+  if (geometry.type === "MultiLineString") return (geometry.coordinates as LngLat[][]).flat();
+  return null;
+}
+
+function formatSignedSpeed(kmh: number): string {
+  const sign = kmh >= 0 ? "+" : "−";
+  const abs = Math.abs(kmh);
+  return `${sign}${abs.toFixed(1)} km/h (${sign}${(abs / KMH_PER_KNOT).toFixed(1)} kn)`;
 }
 
 interface ResolvedStop {
@@ -142,6 +168,11 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
     });
   }, [routeSpeedKmh, route?.properties, route?.routeType]);
 
+  const seaPath = useMemo(
+    () => routeGeometryPath(route?.geometry as RouteGeometry | null | undefined),
+    [route?.geometry]
+  );
+
   const travelTime = useMemo(() => {
     return calculateRouteTravelTime({
       lengthKm: route?.lengthKm ?? 0,
@@ -149,8 +180,9 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
       routeType: route?.routeType ?? "rail",
       terrainDifficulty: route?.terrainDifficulty,
       stopsCount: route?.stopsResolved?.length ?? 0,
+      seaPath,
     });
-  }, [route?.lengthKm, baseSpeed, route?.routeType, route?.terrainDifficulty, route?.stopsResolved?.length]);
+  }, [route?.lengthKm, baseSpeed, route?.routeType, route?.terrainDifficulty, route?.stopsResolved?.length, seaPath]);
 
   if (isLoading) {
     return (
@@ -178,6 +210,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
   const statusClass = STATUS_COLORS[route.status] ?? STATUS_COLORS.operational!;
   const props = (route.properties as RouteDisplayProperties | null) ?? {};
   const modalFamily = getRouteFamily(route.routeType);
+  const largestSeaEffect = travelTime.sea?.largestEffect ?? null;
 
   const intermodalBadge = (() => {
     if (modalFamily === "maritime") {
@@ -397,6 +430,51 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, c
           </div>
         )}
       </div>
+
+      {/* Transit details (sea routes: currents & prevailing winds) */}
+      {travelTime.sea && (
+        <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
+          <Eyebrow className="mb-1.5 block">Transit details</Eyebrow>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Clock className="h-3 w-3" /> Total time
+            </span>
+            <span className="font-semibold font-mono tabular-nums text-foreground">
+              {travelTime.formattedTime}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Gauge className="h-3 w-3" /> Avg. speed
+            </span>
+            <span className="font-medium font-mono tabular-nums">
+              {`${travelTime.sea.averageSpeedKmh.toFixed(1)} km/h (${(travelTime.sea.averageSpeedKmh / KMH_PER_KNOT).toFixed(1)} kn)`}
+            </span>
+          </div>
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-muted-foreground flex shrink-0 items-center gap-1.5">
+              <Wind className="h-3 w-3" /> Largest effect
+            </span>
+            {largestSeaEffect ? (
+              <span className="min-w-0 text-right">
+                <span className="block truncate font-medium">{largestSeaEffect.name}</span>
+                <span
+                  className={`block font-mono tabular-nums ${
+                    largestSeaEffect.averageChangeKmh >= 0 ? "text-emerald-500" : "text-amber-500"
+                  }`}
+                >
+                  {formatSignedSpeed(largestSeaEffect.averageChangeKmh)}
+                </span>
+                <span className="text-muted-foreground block">
+                  {largestSeaEffect.kind} · over {Math.round(largestSeaEffect.distanceKm).toLocaleString()} km
+                </span>
+              </span>
+            ) : (
+              <span className="text-muted-foreground">None on this path</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Cost breakdown */}
       {Boolean(props.costBillion || props.maintenanceCost) && (

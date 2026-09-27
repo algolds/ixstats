@@ -5,7 +5,10 @@ import {
   resolveRouteBaseSpeed,
   getSpeedPresets,
   isInstantaneousRoute,
+  KMH_PER_KNOT,
+  type LngLat,
 } from "~/lib/economy/travel-time";
+import { bearing, distanceKm } from "~/lib/maps/geo-math";
 
 describe("Travel Time Engine", () => {
   describe("resolveRouteBaseSpeed", () => {
@@ -172,6 +175,169 @@ describe("Travel Time Engine", () => {
       expect(isInstantaneousRoute("power_grid")).toBe(true);
       expect(isInstantaneousRoute("rail")).toBe(false);
       expect(isInstantaneousRoute(null)).toBe(false);
+    });
+  });
+
+  describe("sea current & wind model", () => {
+    // shipping_lane defaults to 30 km/h still-water speed.
+    const sail = (seaPath: LngLat[], speedKmh?: number) =>
+      calculateRouteTravelTime({
+        lengthKm: distanceKm(seaPath[0]!, seaPath[seaPath.length - 1]!),
+        routeType: "shipping_lane",
+        speedKmh,
+        seaPath,
+      });
+
+    // 95°E between 30.5°N and 34.5°N: inside the Dolong Warm Current, in the calm horse latitudes.
+    const DOLONG_NORTH: LngLat[] = [
+      [95, 30.5],
+      [95, 34.5],
+    ];
+    const DOLONG_SOUTH: LngLat[] = [...DOLONG_NORTH].reverse();
+
+    it("computes segment bearings, including across the antimeridian", () => {
+      expect(bearing([0, 0], [0, 10])).toBeCloseTo(0, 6);
+      expect(bearing([0, 0], [10, 0])).toBeCloseTo(90, 6);
+      expect(bearing([0, 10], [0, 0])).toBeCloseTo(180, 6);
+      expect(bearing([179.5, 0], [-179.5, 0])).toBeCloseTo(90, 6);
+      expect(bearing([-179.5, 0], [179.5, 0])).toBeCloseTo(270, 6);
+    });
+
+    it("speeds up a ship riding a current and slows it against the current", () => {
+      const assist = KMH_PER_KNOT * 2.0;
+      const north = sail(DOLONG_NORTH);
+      const south = sail(DOLONG_SOUTH);
+
+      expect(north.sea?.averageSpeedKmh).toBeCloseTo(30 + assist, 3);
+      expect(south.sea?.averageSpeedKmh).toBeCloseTo(30 - assist, 3);
+      expect(north.effectiveSpeedKmh).toBe(33.7);
+      expect(south.effectiveSpeedKmh).toBe(26.3);
+      expect(north.totalMinutes).toBeLessThan(south.totalMinutes);
+
+      expect(north.sea?.largestEffect).toMatchObject({
+        name: "Dolong Warm Current",
+        kind: "current",
+      });
+      expect(north.sea?.largestEffect?.averageChangeKmh).toBeCloseTo(assist, 3);
+      expect(south.sea?.largestEffect?.averageChangeKmh).toBeCloseTo(-assist, 3);
+    });
+
+    it("applies following, beam and head seas inside a wind belt", () => {
+      // Mid-Odoneru, 23–25°N: NE Trade Winds, no modelled current.
+      const following = sail([
+        [-30, 25],
+        [-32, 23],
+      ]); // heading ~SW, with the wind
+      const head = sail([
+        [-32, 23],
+        [-30, 25],
+      ]); // heading ~NE, into the wind
+      const beam = sail([
+        [-30, 23],
+        [-32, 25],
+      ]); // heading ~NW, across the wind
+
+      expect(following.sea?.averageSpeedKmh).toBeCloseTo(30 + 1.25 * KMH_PER_KNOT, 3);
+      expect(head.sea?.averageSpeedKmh).toBeCloseTo(30 - 1.75 * KMH_PER_KNOT, 3);
+      expect(beam.sea?.averageSpeedKmh).toBeCloseTo(30 - 0.75 * KMH_PER_KNOT, 3);
+      expect(following.sea?.largestEffect).toMatchObject({ name: "NE Trade Winds", kind: "wind" });
+    });
+
+    it("reports the system with the largest net effect", () => {
+      // NE-bound through the Dolong box inside the NE Trades: current assist < head-sea drag.
+      const result = sail([
+        [91, 20],
+        [99, 29],
+      ]);
+      expect(result.sea?.largestEffect).toMatchObject({ name: "NE Trade Winds", kind: "wind" });
+    });
+
+    it("handles a segment that crosses the antimeridian", () => {
+      // 20°S, heading ~NW across 180°: SE Trade Winds blow toward the NW, so following seas.
+      const path: LngLat[] = [
+        [-179.5, -20],
+        [179.5, -19],
+      ];
+      const result = sail(path);
+
+      expect(result.sea?.distanceKm).toBeCloseTo(distanceKm(path[0]!, path[1]!), 6);
+      expect(result.sea?.distanceKm).toBeLessThan(200);
+      expect(result.sea?.averageSpeedKmh).toBeCloseTo(30 + 1.25 * KMH_PER_KNOT, 3);
+      expect(result.sea?.largestEffect?.name).toBe("SE Trade Winds");
+      expect(result.totalMinutes).toBeGreaterThan(0);
+      expect(Number.isFinite(result.totalMinutes)).toBe(true);
+    });
+
+    it("never lets a head current stop or reverse a slow ship", () => {
+      const result = sail(DOLONG_SOUTH, 2);
+      expect(result.sea?.averageSpeedKmh).toBeCloseTo(1, 6);
+      expect(result.totalMinutes).toBeGreaterThan(0);
+      expect(Number.isFinite(result.totalMinutes)).toBe(true);
+    });
+
+    it("falls back to the plain model when the path has bad coordinates", () => {
+      const result = calculateRouteTravelTime({
+        lengthKm: 600,
+        routeType: "shipping_lane",
+        seaPath: [
+          [95, Number.NaN],
+          [95, 34],
+        ],
+      });
+      expect("sea" in result).toBe(false);
+      expect(result.totalMinutes).toBe(1220);
+    });
+
+    it("matches the plain model where no current or wind applies", () => {
+      // 32°N in the Odoneru: horse latitudes, no modelled current.
+      const path: LngLat[] = [
+        [-40, 32],
+        [-30, 32],
+      ];
+      const lengthKm = distanceKm(path[0]!, path[1]!);
+      const withModel = calculateRouteTravelTime({
+        lengthKm,
+        routeType: "shipping_lane",
+        seaPath: path,
+      });
+      const plain = calculateRouteTravelTime({ lengthKm, routeType: "shipping_lane" });
+
+      expect(withModel.sea?.largestEffect).toBeNull();
+      expect(withModel.sea?.averageSpeedKmh).toBeCloseTo(30, 6);
+      expect(withModel.totalMinutes).toBe(plain.totalMinutes);
+    });
+
+    it("leaves non-sea routes and path-less sea routes unchanged", () => {
+      const highway = {
+        lengthKm: 300,
+        speedKmh: 100,
+        routeType: "highway",
+        terrainDifficulty: 0.4,
+        stopsCount: 3,
+      };
+      const highwayWithPath = calculateRouteTravelTime({ ...highway, seaPath: DOLONG_NORTH });
+      expect(highwayWithPath).toEqual(calculateRouteTravelTime(highway));
+      expect("sea" in highwayWithPath).toBe(false);
+
+      const canal = calculateRouteTravelTime({
+        lengthKm: 120,
+        routeType: "canal",
+        seaPath: DOLONG_NORTH,
+      });
+      expect("sea" in canal).toBe(false);
+      expect(canal.effectiveSpeedKmh).toBe(15);
+
+      const noPath = calculateRouteTravelTime({ lengthKm: 600, routeType: "shipping_lane" });
+      expect("sea" in noPath).toBe(false);
+      expect(noPath.effectiveSpeedKmh).toBe(30);
+      expect(noPath.totalMinutes).toBe(1220); // 600 km / 30 km/h = 1200 min + 20 min docking
+
+      const onePoint = calculateRouteTravelTime({
+        lengthKm: 600,
+        routeType: "shipping_lane",
+        seaPath: [[95, 30]],
+      });
+      expect(onePoint).toEqual(noPath);
     });
   });
 });

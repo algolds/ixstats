@@ -7,7 +7,14 @@
  *  3. Topographic elevation drag (terrain difficulty gradient penalty)
  *  4. Intermediate node dwell overhead (rail acceleration/stops, flight clearance, docking)
  *  5. Instantaneous network transmission exceptions (fiber optic, electric grid)
+ *  6. Sea routes only, when a path is given: ocean currents and prevailing winds
+ *     along each segment's bearing (docs/reference/oceanography-report.md)
  */
+
+import { bearing, distanceKm } from "~/lib/maps/geo-math";
+
+/** A route vertex as [longitude, latitude] in degrees. */
+export type LngLat = [number, number];
 
 export interface TravelTimeCalculationInput {
   lengthKm?: number | null;
@@ -16,6 +23,32 @@ export interface TravelTimeCalculationInput {
   terrainDifficulty?: number | null; // 0 to 1
   stopsCount?: number | null;
   properties?: Record<string, unknown> | object | null;
+  /**
+   * Route vertices. For sea route types (shipping_lane, ferry, military_naval) with two or
+   * more vertices this turns on the current/wind model; other routes ignore it.
+   */
+  seaPath?: LngLat[] | null;
+}
+
+/** One current or wind system's net effect on a sea route. */
+export interface SeaConditionEffect {
+  name: string;
+  kind: "current" | "wind";
+  /** Distance-weighted mean along-track speed change where it applies (km/h, signed). */
+  averageChangeKmh: number;
+  /** Route distance over which it applies (km). */
+  distanceKm: number;
+}
+
+export interface SeaTransitSummary {
+  /** Great-circle length of the path (km). */
+  distanceKm: number;
+  /** Ship speed through still water (km/h). */
+  shipSpeedKmh: number;
+  /** Path distance divided by total sailing time (km/h). */
+  averageSpeedKmh: number;
+  /** The system with the largest net speed × distance effect, or null when none apply. */
+  largestEffect: SeaConditionEffect | null;
 }
 
 export interface TravelTimeResult {
@@ -29,6 +62,8 @@ export interface TravelTimeResult {
   terrainPenaltyPercent: number;
   dwellTimeMinutes: number;
   isInstantaneous: boolean;
+  /** Present only when the sea current/wind model was applied. */
+  sea?: SeaTransitSummary;
 }
 
 export interface SpeedPreset {
@@ -263,6 +298,271 @@ export function formatTravelDuration(totalMinutes: number): string {
   return `${days}d ${remHours.toString().padStart(2, "0")}h`;
 }
 
+// ─── Sea current & wind model ───────────────────────────────────────────────
+// Numbers come from docs/reference/oceanography-report.md and stay in knots as
+// the report gives them; they become km/h only through KMH_PER_KNOT.
+
+/** §2.2: 1 nautical mile = 1.852 km, so 1 knot = 1.852 km/h. */
+export const KMH_PER_KNOT = 1.852;
+
+const DEG_TO_RAD = Math.PI / 180;
+const RAD_TO_DEG = 180 / Math.PI;
+
+/** Route types sailed on open water. Canals are inland and keep the plain model. */
+const SEA_ROUTE_TYPES = new Set(["shipping_lane", "ferry", "military_naval"]);
+
+/** Segments are cut into great-circle pieces no longer than this before sampling. */
+const SAMPLE_STEP_KM = 50;
+
+/** Safety floor so a strong head current can never stop or reverse a slow ship. */
+const MIN_SEA_SPEED_KMH = 1;
+
+interface OceanCurrent {
+  name: string;
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+  /** Direction the water flows toward, degrees clockwise from north. */
+  towardDeg: number;
+  speedKn: number;
+}
+
+/**
+ * Only currents the report places with numbers. First match wins, so the
+ * Barbary box sits ahead of the counter-current band it overlaps.
+ */
+const OCEAN_CURRENTS: readonly OceanCurrent[] = [
+  // §4.2, §12.2: Barbary Straits at 115°E 2°N, 85 km wide, westward 1.2 kn (85 km square box).
+  {
+    name: "Barbary Straits current",
+    minLat: 1.62,
+    maxLat: 2.38,
+    minLng: 114.62,
+    maxLng: 115.38,
+    towardDeg: 270,
+    speedKn: 1.2,
+  },
+  // §10.1.1, §10.3: Dolong Warm Current, northward 2.0 kn, 18°N–45°N; 90°E–100°E per plan 049.
+  {
+    name: "Dolong Warm Current",
+    minLat: 18,
+    maxLat: 45,
+    minLng: 90,
+    maxLng: 100,
+    towardDeg: 0,
+    speedKn: 2.0,
+  },
+  // §3.1, §5.2.1: Levantine Counter-Current, eastward 0.5–0.8 kn, 2°N–8°N inside the Levantine Ocean (70°E–160°E).
+  {
+    name: "Levantine Counter-Current",
+    minLat: 2,
+    maxLat: 8,
+    minLng: 70,
+    maxLng: 160,
+    towardDeg: 90,
+    speedKn: 0.65,
+  },
+];
+
+interface WindBelt {
+  name: string;
+  minLat: number;
+  maxLat: number;
+  /** Direction the wind blows toward, degrees clockwise from north. */
+  towardDeg: number;
+}
+
+/** §6.1 wind belts. Doldrums (0°–10°) and horse latitudes (30°–35°) are calm/variable: no effect. */
+const WIND_BELTS: readonly WindBelt[] = [
+  { name: "NE Trade Winds", minLat: 10, maxLat: 30, towardDeg: 225 },
+  { name: "SE Trade Winds", minLat: -30, maxLat: -10, towardDeg: 315 },
+  { name: "Prevailing Westerlies", minLat: 35, maxLat: 60, towardDeg: 45 },
+  { name: "Roaring Forties", minLat: -60, maxLat: -35, towardDeg: 135 },
+  { name: "Polar Easterlies", minLat: 60, maxLat: 90, towardDeg: 225 },
+  { name: "Polar Easterlies", minLat: -90, maxLat: -60, towardDeg: 315 },
+];
+
+/**
+ * §11.2 V_wind_effect in knots, midpoint of each range: following seas +0.5 to +2.0,
+ * beam seas −0.5 to −1.0, head seas −0.5 to −3.0. Following = wind within 45° of the
+ * heading, head = within 45° of the reverse heading, beam = anything between.
+ */
+const WIND_EFFECT_KN = { following: 1.25, beam: -0.75, head: -1.75 } as const;
+
+interface PathPiece {
+  km: number;
+  headingDeg: number;
+  lng: number;
+  lat: number;
+}
+
+interface SeaCondition {
+  name: string;
+  kind: "current" | "wind";
+  changeKmh: number;
+}
+
+interface EffectTally {
+  kind: "current" | "wind";
+  /** Σ (speed change × piece km) */
+  kmhKm: number;
+  km: number;
+}
+
+function toUnitVector([lng, lat]: LngLat): [number, number, number] {
+  const lambda = lng * DEG_TO_RAD;
+  const phi = lat * DEG_TO_RAD;
+  return [Math.cos(phi) * Math.cos(lambda), Math.cos(phi) * Math.sin(lambda), Math.sin(phi)];
+}
+
+/**
+ * Point at fraction `f` along the great circle from `a` to `b`. Output longitude is
+ * always in [-180, 180], so segments that cross the antimeridian sample correctly.
+ */
+function greatCirclePoint(a: LngLat, b: LngLat, f: number): LngLat {
+  const va = toUnitVector(a);
+  const vb = toUnitVector(b);
+  const dot = Math.min(1, Math.max(-1, va[0] * vb[0] + va[1] * vb[1] + va[2] * vb[2]));
+  const delta = Math.acos(dot);
+  const sinDelta = Math.sin(delta);
+  const wa = sinDelta < 1e-9 ? 1 - f : Math.sin((1 - f) * delta) / sinDelta;
+  const wb = sinDelta < 1e-9 ? f : Math.sin(f * delta) / sinDelta;
+  const x = wa * va[0] + wb * vb[0];
+  const y = wa * va[1] + wb * vb[1];
+  const z = wa * va[2] + wb * vb[2];
+  return [Math.atan2(y, x) * RAD_TO_DEG, Math.atan2(z, Math.hypot(x, y)) * RAD_TO_DEG];
+}
+
+/** Cuts a path into short great-circle pieces with their own heading and midpoint. */
+function splitSeaPath(path: LngLat[]): PathPiece[] {
+  const pieces: PathPiece[] = [];
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1]!;
+    const b = path[i]!;
+    const segmentKm = distanceKm(a, b);
+    const count = Math.max(1, Math.ceil(segmentKm / SAMPLE_STEP_KM));
+    for (let p = 0; p < count; p++) {
+      const start = greatCirclePoint(a, b, p / count);
+      const end = greatCirclePoint(a, b, (p + 1) / count);
+      const [lng, lat] = greatCirclePoint(a, b, (p + 0.5) / count);
+      pieces.push({ km: segmentKm / count, headingDeg: bearing(start, end), lng, lat });
+    }
+  }
+  return pieces;
+}
+
+/** Smallest angle between two directions, 0–180°. */
+function angleBetween(a: number, b: number): number {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+function windEffectKn(offDeg: number): number {
+  if (offDeg <= 45) return WIND_EFFECT_KN.following;
+  if (offDeg >= 135) return WIND_EFFECT_KN.head;
+  return WIND_EFFECT_KN.beam;
+}
+
+function conditionsAt(piece: PathPiece): SeaCondition[] {
+  const { lng, lat, headingDeg } = piece;
+  const conditions: SeaCondition[] = [];
+  const current = OCEAN_CURRENTS.find(
+    (c) => lat >= c.minLat && lat <= c.maxLat && lng >= c.minLng && lng <= c.maxLng
+  );
+  if (current) {
+    // Along-track component: V_current · cos(θ_bearing − θ_current)
+    const alongKn = current.speedKn * Math.cos((headingDeg - current.towardDeg) * DEG_TO_RAD);
+    conditions.push({ name: current.name, kind: "current", changeKmh: alongKn * KMH_PER_KNOT });
+  }
+  const belt = WIND_BELTS.find((w) => lat >= w.minLat && lat <= w.maxLat);
+  if (belt) {
+    const kn = windEffectKn(angleBetween(headingDeg, belt.towardDeg));
+    conditions.push({ name: belt.name, kind: "wind", changeKmh: kn * KMH_PER_KNOT });
+  }
+  return conditions;
+}
+
+function largestEffect(tallies: Map<string, EffectTally>): SeaConditionEffect | null {
+  let best: SeaConditionEffect | null = null;
+  let bestImpact = 0;
+  for (const [name, tally] of tallies) {
+    if (tally.km <= 0 || Math.abs(tally.kmhKm) <= bestImpact) continue;
+    bestImpact = Math.abs(tally.kmhKm);
+    best = {
+      name,
+      kind: tally.kind,
+      averageChangeKmh: tally.kmhKm / tally.km,
+      distanceKm: tally.km,
+    };
+  }
+  return best;
+}
+
+/**
+ * Sails `path` at `shipSpeedKmh` through still water plus the currents and winds met on
+ * each piece: V_effective = V_ship + V_current·cos(θ_bearing − θ_current) + V_wind_effect.
+ */
+function calculateSeaTransit(path: LngLat[], shipSpeedKmh: number): SeaTransitSummary | null {
+  let totalKm = 0;
+  let totalHours = 0;
+  const tallies = new Map<string, EffectTally>();
+
+  for (const piece of splitSeaPath(path)) {
+    const conditions = conditionsAt(piece);
+    const change = conditions.reduce((sum, c) => sum + c.changeKmh, 0);
+    totalKm += piece.km;
+    totalHours += piece.km / Math.max(MIN_SEA_SPEED_KMH, shipSpeedKmh + change);
+    for (const c of conditions) {
+      const tally = tallies.get(c.name) ?? { kind: c.kind, kmhKm: 0, km: 0 };
+      tally.kmhKm += c.changeKmh * piece.km;
+      tally.km += piece.km;
+      tallies.set(c.name, tally);
+    }
+  }
+
+  // Non-finite hours means bad coordinates; fall back to the still-water model.
+  if (!Number.isFinite(totalHours) || totalHours <= 0) return null;
+  return {
+    distanceKm: totalKm,
+    shipSpeedKmh,
+    averageSpeedKmh: totalKm / totalHours,
+    largestEffect: largestEffect(tallies),
+  };
+}
+
+function seaTransitFor(
+  routeType: string | null | undefined,
+  seaPath: LngLat[] | null | undefined,
+  shipSpeedKmh: number
+): SeaTransitSummary | null {
+  if (!routeType || !SEA_ROUTE_TYPES.has(routeType) || !seaPath || seaPath.length < 2) {
+    return null;
+  }
+  return calculateSeaTransit(seaPath, shipSpeedKmh);
+}
+
+/** Port, station and terminal overhead in minutes. */
+function dwellMinutesFor(
+  routeType: string | null | undefined,
+  stopsCount: number | null | undefined
+): number {
+  const intermediateStops = Math.max(0, (stopsCount ?? 2) - 2);
+  if (routeType === "high_speed_rail" || routeType === "rail" || routeType === "commuter_rail") {
+    const dwellPerStop = routeType === "commuter_rail" ? 2 : 5;
+    return intermediateStops * dwellPerStop;
+  }
+  if (routeType === "air_corridor") {
+    // Air routes include terminal departure & arrival approach time
+    return 45;
+  }
+  if (routeType === "shipping_lane" || routeType === "ferry") {
+    // Maritime routes include port docking maneuvers
+    return 20 + intermediateStops * 15;
+  }
+  return 0;
+}
+
 /**
  * Primary calculation engine: Computes estimated travel time and effective velocity.
  */
@@ -274,6 +574,7 @@ export function calculateRouteTravelTime(input: TravelTimeCalculationInput): Tra
     terrainDifficulty = 0,
     stopsCount = 2,
     properties,
+    seaPath,
   } = input;
 
   // Instantaneous networks (power grid, fiber optics)
@@ -316,25 +617,18 @@ export function calculateRouteTravelTime(input: TravelTimeCalculationInput): Tra
   const terrainDragFactor = Math.round((1 - terrainPenaltyFraction) * 100) / 100;
   const terrainPenaltyPercent = Math.round(terrainPenaltyFraction * 100);
 
+  const cruiseSpeedKmh = baseSpeed * (1 - terrainPenaltyFraction);
+
+  // 1b. Sea routes with a path: currents and winds along each segment's bearing
+  const sea = seaTransitFor(routeType, seaPath, cruiseSpeedKmh);
+
   const effectiveSpeedKmh = Math.max(
     5,
-    Math.round(baseSpeed * (1 - terrainPenaltyFraction) * 10) / 10
+    Math.round((sea?.averageSpeedKmh ?? cruiseSpeedKmh) * 10) / 10
   );
 
   // 2. Dwell time from stops and station approaches
-  let dwellTimeMinutes = 0;
-  const intermediateStops = Math.max(0, (stopsCount ?? 2) - 2);
-
-  if (routeType === "high_speed_rail" || routeType === "rail" || routeType === "commuter_rail") {
-    const dwellPerStop = routeType === "commuter_rail" ? 2 : 5;
-    dwellTimeMinutes = intermediateStops * dwellPerStop;
-  } else if (routeType === "air_corridor") {
-    // Air routes include terminal departure & arrival approach time
-    dwellTimeMinutes = 45;
-  } else if (routeType === "shipping_lane" || routeType === "ferry") {
-    // Maritime routes include port docking maneuvers
-    dwellTimeMinutes = 20 + intermediateStops * 15;
-  }
+  const dwellTimeMinutes = dwellMinutesFor(routeType, stopsCount);
 
   // 3. Transit duration
   const cruisingMinutes = (lengthKm / effectiveSpeedKmh) * 60;
@@ -356,5 +650,6 @@ export function calculateRouteTravelTime(input: TravelTimeCalculationInput): Tra
     terrainPenaltyPercent,
     dwellTimeMinutes,
     isInstantaneous: false,
+    ...(sea ? { sea } : {}),
   };
 }

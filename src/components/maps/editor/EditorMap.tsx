@@ -104,6 +104,8 @@ interface EditorMapProps {
   onZoomChange?: (zoom: number) => void;
   /** In-progress route waypoints for visual rendering */
   routeWaypoints?: [number, number][];
+  /** Route type picked for the in-progress route (live travel estimate) */
+  drawRouteType?: string;
   /** Layer visibility state — controls which feature types are rendered */
   layerVisibility?: Record<string, boolean>;
   /** Layer opacity state — controls opacity of lines, labels, etc. */
@@ -180,6 +182,7 @@ const EditorMap = memo(
       showGrid,
       onZoomChange,
       routeWaypoints,
+      drawRouteType,
       layerVisibility,
       layerOpacity,
       editingRouteId,
@@ -1432,6 +1435,10 @@ const EditorMap = memo(
           mode={mode}
           onRouteEditCommit={onRouteEditCommit}
           onRouteEditCancel={onRouteEditCancel}
+          routeWaypoints={routeWaypoints}
+          drawRouteType={drawRouteType}
+          editingRouteVertices={editingRouteVertices}
+          editingRoute={selectedFeature?.type === "route" ? selectedFeature : null}
         />
 
         {/* Floating mode hint pill */}

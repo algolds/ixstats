@@ -532,6 +532,7 @@ export default function MapEditorOverlay({
                   editorVisibleLayers={editorVisibleLayers}
                   showGrid={showGrid}
                   routeWaypoints={editor.routeWaypoints}
+                  drawRouteType={editor.routeType}
                   editingRouteId={editor.editingRouteId}
                   editingRouteVertices={editor.editingRouteVertices}
                   onRouteVerticesUpdate={editor.setEditingRouteVertices}
