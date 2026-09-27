@@ -42,6 +42,12 @@ export function MapPickerModal({
     initialCoordinates ? [initialCoordinates[0], initialCoordinates[1]] : null
   );
   const [isValid, setIsValid] = useState<boolean | null>(null);
+  // initMap reads the latest selection for its initial view/marker only; keeping it out of the
+  // initMap deps stops every click from rebuilding the whole map.
+  const selectedCoordsRef = useRef(selectedCoords);
+  useEffect(() => {
+    selectedCoordsRef.current = selectedCoords;
+  }, [selectedCoords]);
 
   const {
     geometry,
@@ -78,196 +84,204 @@ export function MapPickerModal({
   }, [selectedCoords, geometry, validateCoords]);
 
   // Map initialization
-  const initMap = useCallback(async () => {
-    if (!containerRef.current || !geometry || !isOpen) return;
+  const initMap = useCallback(
+    async (isCancelled: () => boolean) => {
+      if (!containerRef.current || !geometry || !isOpen) return;
 
-    // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
-    // named exports (Map, Popup, …).
-    const maplibregl = await loadMaplibre();
-    await import("maplibre-gl/dist/maplibre-gl.css");
+      // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
+      // named exports (Map, Popup, …).
+      const maplibregl = await loadMaplibre();
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      // Closed/unmounted (or deps changed) while MapLibre was loading — don't create an orphan map.
+      if (isCancelled() || !containerRef.current) return;
 
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-    const baseStyle = buildBaseStyle() as any;
-    delete baseStyle.projection; // Ensure flat Mercator projection for local picking
-
-    const initialCenter: [number, number] = selectedCoords
-      ? selectedCoords
-      : centroid
-        ? [centroid.lng, centroid.lat]
-        : [10, 5];
-
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: baseStyle,
-      center: initialCenter,
-      zoom: selectedCoords ? 6 : 4,
-      attributionControl: false,
-    });
-
-    mapRef.current = map;
-
-    map.on("load", () => {
-      // ── Gray out other countries ──
-      if (worldPolitical && worldPolitical.features.length > 0) {
-        const otherCountries = {
-          type: "FeatureCollection",
-          features: worldPolitical.features.filter((f) => f.properties?._countryId !== countryId),
-        };
-
-        map.addSource("source-world-political", {
-          type: "geojson",
-          data: otherCountries as any,
-        });
-
-        map.addLayer({
-          id: "world-political-fill",
-          type: "fill",
-          source: "source-world-political",
-          paint: {
-            "fill-color": "#94a3b8",
-            "fill-opacity": 0.15,
-          },
-        });
-
-        map.addLayer({
-          id: "world-political-stroke",
-          type: "line",
-          source: "source-world-political",
-          paint: {
-            "line-color": "#64748b",
-            "line-width": 0.5,
-            "line-opacity": 0.3,
-          },
-        });
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
 
-      // ── Active Country borders and fill ──
-      const countryColor = fillColor || (featureId ? getCountryColor(featureId) : "#c5cae9");
-      const countryGeo = {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { _fillColor: countryColor },
-            geometry: geometry as any,
-          },
-        ],
-      };
+      const baseStyle = buildBaseStyle() as any;
+      delete baseStyle.projection; // Ensure flat Mercator projection for local picking
 
-      map.addSource("source-country", { type: "geojson", data: countryGeo as any });
+      const initialCoords = selectedCoordsRef.current;
+      const initialCenter: [number, number] = initialCoords
+        ? initialCoords
+        : centroid
+          ? [centroid.lng, centroid.lat]
+          : [10, 5];
 
-      map.addLayer({
-        id: "country-fill",
-        type: "fill",
-        source: "source-country",
-        paint: {
-          "fill-color": countryColor,
-          "fill-opacity": 0.35,
-        },
+      const map = new maplibregl.Map({
+        container: containerRef.current,
+        style: baseStyle,
+        center: initialCenter,
+        zoom: initialCoords ? 6 : 4,
+        attributionControl: false,
       });
 
-      map.addLayer({
-        id: "country-stroke",
-        type: "line",
-        source: "source-country",
-        paint: {
-          "line-color": "#1e293b",
-          "line-width": 1.5,
-        },
-      });
+      mapRef.current = map;
 
-      // ── Subdivisions ──
-      if (subdivisions && subdivisions.length > 0) {
-        const subGeo = {
+      map.on("load", () => {
+        if (isCancelled()) return;
+        // ── Gray out other countries ──
+        if (worldPolitical && worldPolitical.features.length > 0) {
+          const otherCountries = {
+            type: "FeatureCollection",
+            features: worldPolitical.features.filter((f) => f.properties?._countryId !== countryId),
+          };
+
+          map.addSource("source-world-political", {
+            type: "geojson",
+            data: otherCountries as any,
+          });
+
+          map.addLayer({
+            id: "world-political-fill",
+            type: "fill",
+            source: "source-world-political",
+            paint: {
+              "fill-color": "#94a3b8",
+              "fill-opacity": 0.15,
+            },
+          });
+
+          map.addLayer({
+            id: "world-political-stroke",
+            type: "line",
+            source: "source-world-political",
+            paint: {
+              "line-color": "#64748b",
+              "line-width": 0.5,
+              "line-opacity": 0.3,
+            },
+          });
+        }
+
+        // ── Active Country borders and fill ──
+        const countryColor = fillColor || (featureId ? getCountryColor(featureId) : "#c5cae9");
+        const countryGeo = {
           type: "FeatureCollection",
-          features: subdivisions
-            .filter((s: any) => s.geometry)
-            .map((s: any) => ({
+          features: [
+            {
               type: "Feature",
-              properties: { name: s.name },
-              geometry: s.geometry as any,
-            })),
+              properties: { _fillColor: countryColor },
+              geometry: geometry as any,
+            },
+          ],
         };
 
-        map.addSource("source-subdivisions", { type: "geojson", data: subGeo as any });
+        map.addSource("source-country", { type: "geojson", data: countryGeo as any });
 
         map.addLayer({
-          id: "subdivision-stroke",
-          type: "line",
-          source: "source-subdivisions",
+          id: "country-fill",
+          type: "fill",
+          source: "source-country",
           paint: {
-            "line-color": "#64748b",
-            "line-width": 0.5,
-            "line-dasharray": [3, 2],
-            "line-opacity": 0.5,
+            "fill-color": countryColor,
+            "fill-opacity": 0.35,
           },
         });
-      }
 
-      // Fit bounds
-      if (bbox) {
-        map.fitBounds(
-          [
-            [bbox.minLng, bbox.minLat],
-            [bbox.maxLng, bbox.maxLat],
-          ],
-          { padding: 30, maxZoom: 10, duration: 0 }
-        );
-      }
+        map.addLayer({
+          id: "country-stroke",
+          type: "line",
+          source: "source-country",
+          paint: {
+            "line-color": "#1e293b",
+            "line-width": 1.5,
+          },
+        });
 
-      // Add a marker if we have coordinates
-      if (selectedCoords) {
-        const marker = new maplibregl.Marker({ color: "#ef4444" })
-          .setLngLat(selectedCoords)
-          .addTo(map);
-        markerRef.current = marker;
-      }
+        // ── Subdivisions ──
+        if (subdivisions && subdivisions.length > 0) {
+          const subGeo = {
+            type: "FeatureCollection",
+            features: subdivisions
+              .filter((s: any) => s.geometry)
+              .map((s: any) => ({
+                type: "Feature",
+                properties: { name: s.name },
+                geometry: s.geometry as any,
+              })),
+          };
 
-      // Handle map clicks
-      map.on("click", (e: any) => {
-        const clickedCoords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-        setSelectedCoords(clickedCoords);
+          map.addSource("source-subdivisions", { type: "geojson", data: subGeo as any });
 
-        // Run validation
-        const valid = validateCoords(clickedCoords);
-        setIsValid(valid);
+          map.addLayer({
+            id: "subdivision-stroke",
+            type: "line",
+            source: "source-subdivisions",
+            paint: {
+              "line-color": "#64748b",
+              "line-width": 0.5,
+              "line-dasharray": [3, 2],
+              "line-opacity": 0.5,
+            },
+          });
+        }
 
-        // Update or create marker
-        if (markerRef.current) {
-          markerRef.current.setLngLat(clickedCoords);
-        } else {
+        // Fit bounds
+        if (bbox) {
+          map.fitBounds(
+            [
+              [bbox.minLng, bbox.minLat],
+              [bbox.maxLng, bbox.maxLat],
+            ],
+            { padding: 30, maxZoom: 10, duration: 0 }
+          );
+        }
+
+        // Add a marker if we have coordinates
+        if (initialCoords) {
           const marker = new maplibregl.Marker({ color: "#ef4444" })
-            .setLngLat(clickedCoords)
+            .setLngLat(initialCoords)
             .addTo(map);
           markerRef.current = marker;
         }
-      });
 
-      setMapReady(true);
-    });
-  }, [
-    geometry,
-    centroid,
-    bbox,
-    fillColor,
-    subdivisions,
-    worldPolitical,
-    countryId,
-    isOpen,
-    selectedCoords,
-    validateCoords,
-    featureId,
-  ]);
+        // Handle map clicks
+        map.on("click", (e: any) => {
+          const clickedCoords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+          setSelectedCoords(clickedCoords);
+
+          // Run validation
+          const valid = validateCoords(clickedCoords);
+          setIsValid(valid);
+
+          // Update or create marker
+          if (markerRef.current) {
+            markerRef.current.setLngLat(clickedCoords);
+          } else {
+            const marker = new maplibregl.Marker({ color: "#ef4444" })
+              .setLngLat(clickedCoords)
+              .addTo(map);
+            markerRef.current = marker;
+          }
+        });
+
+        setMapReady(true);
+      });
+    },
+    [
+      geometry,
+      centroid,
+      bbox,
+      fillColor,
+      subdivisions,
+      worldPolitical,
+      countryId,
+      isOpen,
+      validateCoords,
+      featureId,
+    ]
+  );
 
   // Initialize/remove map
   useEffect(() => {
     if (isOpen && geometry) {
-      const timer = setTimeout(() => initMap(), 50);
+      let cancelled = false;
+      const timer = setTimeout(() => void initMap(() => cancelled), 50);
       return () => {
+        cancelled = true;
         clearTimeout(timer);
         if (mapRef.current) {
           mapRef.current.remove();

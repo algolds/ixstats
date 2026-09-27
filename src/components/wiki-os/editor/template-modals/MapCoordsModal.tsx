@@ -102,161 +102,169 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
   };
 
   // Initialize MapLibre
-  const initMapLibre = useCallback(async () => {
-    if (!mapContainerRef.current || !isOpen) return;
+  const initMapLibre = useCallback(
+    async (isCancelled: () => boolean) => {
+      if (!mapContainerRef.current || !isOpen) return;
 
-    // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
-    // named exports (Map, Popup, …).
-    const maplibregl = await loadMaplibre();
-    await import("maplibre-gl/dist/maplibre-gl.css");
+      // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
+      // named exports (Map, Popup, …).
+      const maplibregl = await loadMaplibre();
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      // Closed/unmounted (or deps changed) while MapLibre was loading — don't create an orphan map.
+      if (isCancelled() || !mapContainerRef.current) return;
 
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-    const baseStyle = buildBaseStyle() as any;
-    delete baseStyle.projection; // Enforce Mercator projection
-
-    const mapCenterLat = parseFloat(lat) || (centroid ? centroid.lat : 0);
-    const mapCenterLng = parseFloat(lng) || (centroid ? centroid.lng : 0);
-
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: baseStyle,
-      center: [mapCenterLng, mapCenterLat],
-      zoom: centroid ? 5 : 2,
-      attributionControl: false,
-    });
-
-    mapRef.current = map;
-
-    map.on("load", () => {
-      // 1. Overlay world bounds and gray out non-owned countries
-      if (worldPolitical && worldPolitical.features && viewerCountryId) {
-        const otherCountries = {
-          type: "FeatureCollection",
-          features: worldPolitical.features.filter(
-            (f) => f.properties?._countryId !== viewerCountryId
-          ),
-        };
-
-        map.addSource("other-countries", { type: "geojson", data: otherCountries as any });
-        map.addLayer({
-          id: "other-countries-fill",
-          type: "fill",
-          source: "other-countries",
-          paint: {
-            "fill-color": "#475569",
-            "fill-opacity": 0.2,
-          },
-        });
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
 
-      // 2. Active Country borders
-      if (geometry && viewerCountryId) {
-        const activeColor = fillColor || (featureId ? getCountryColor(featureId) : "#6366f1");
-        const activeGeo = {
-          type: "FeatureCollection",
+      const baseStyle = buildBaseStyle() as any;
+      delete baseStyle.projection; // Enforce Mercator projection
 
-          features: [{ type: "Feature", properties: {}, geometry: geometry as any }],
-        };
+      const mapCenterLat = parseFloat(lat) || (centroid ? centroid.lat : 0);
+      const mapCenterLng = parseFloat(lng) || (centroid ? centroid.lng : 0);
 
-        map.addSource("active-country", { type: "geojson", data: activeGeo as any });
-        map.addLayer({
-          id: "active-country-stroke",
-          type: "line",
-          source: "active-country",
-          paint: {
-            "line-color": activeColor,
-            "line-width": 2,
-          },
-        });
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: baseStyle,
+        center: [mapCenterLng, mapCenterLat],
+        zoom: centroid ? 5 : 2,
+        attributionControl: false,
+      });
 
-        // 3. Subdivisions
-        if (subdivisions && subdivisions.length > 0) {
-          const subGeo = {
+      mapRef.current = map;
+
+      map.on("load", () => {
+        if (isCancelled()) return;
+        // 1. Overlay world bounds and gray out non-owned countries
+        if (worldPolitical && worldPolitical.features && viewerCountryId) {
+          const otherCountries = {
             type: "FeatureCollection",
-            features: subdivisions
-
-              .filter((s: any) => s.geometry)
-
-              .map((s: any) => ({
-                type: "Feature",
-                properties: {},
-
-                geometry: s.geometry as any,
-              })),
+            features: worldPolitical.features.filter(
+              (f) => f.properties?._countryId !== viewerCountryId
+            ),
           };
 
-          map.addSource("active-subdivisions", { type: "geojson", data: subGeo as any });
+          map.addSource("other-countries", { type: "geojson", data: otherCountries as any });
           map.addLayer({
-            id: "active-subdivisions-stroke",
-            type: "line",
-            source: "active-subdivisions",
+            id: "other-countries-fill",
+            type: "fill",
+            source: "other-countries",
             paint: {
-              "line-color": "#475569",
-              "line-width": 0.5,
-              "line-dasharray": [3, 2],
-              "line-opacity": 0.5,
+              "fill-color": "#475569",
+              "fill-opacity": 0.2,
             },
           });
         }
-      }
 
-      // 4. Fit bounds of owned country
-      if (bbox) {
-        map.fitBounds(
-          [
-            [bbox.minLng, bbox.minLat],
-            [bbox.maxLng, bbox.maxLat],
-          ],
-          { padding: 20, maxZoom: 8, duration: 0 }
-        );
-      }
+        // 2. Active Country borders
+        if (geometry && viewerCountryId) {
+          const activeColor = fillColor || (featureId ? getCountryColor(featureId) : "#6366f1");
+          const activeGeo = {
+            type: "FeatureCollection",
 
-      // 5. Place Marker at starting coordinates
-      const startMarker = new maplibregl.Marker({ color: "#f43f5e" })
-        .setLngLat([mapCenterLng, mapCenterLat])
-        .addTo(map);
-      markerRef.current = startMarker;
+            features: [{ type: "Feature", properties: {}, geometry: geometry as any }],
+          };
 
-      // Click listener to grab coordinates
+          map.addSource("active-country", { type: "geojson", data: activeGeo as any });
+          map.addLayer({
+            id: "active-country-stroke",
+            type: "line",
+            source: "active-country",
+            paint: {
+              "line-color": activeColor,
+              "line-width": 2,
+            },
+          });
 
-      map.on("click", (e: any) => {
-        const clickedLng = e.lngLat.lng;
-        const clickedLat = e.lngLat.lat;
+          // 3. Subdivisions
+          if (subdivisions && subdivisions.length > 0) {
+            const subGeo = {
+              type: "FeatureCollection",
+              features: subdivisions
 
-        setLat(clickedLat.toFixed(5));
-        setLng(clickedLng.toFixed(5));
+                .filter((s: any) => s.geometry)
 
-        if (markerRef.current) {
-          markerRef.current.setLngLat([clickedLng, clickedLat]);
+                .map((s: any) => ({
+                  type: "Feature",
+                  properties: {},
+
+                  geometry: s.geometry as any,
+                })),
+            };
+
+            map.addSource("active-subdivisions", { type: "geojson", data: subGeo as any });
+            map.addLayer({
+              id: "active-subdivisions-stroke",
+              type: "line",
+              source: "active-subdivisions",
+              paint: {
+                "line-color": "#475569",
+                "line-width": 0.5,
+                "line-dasharray": [3, 2],
+                "line-opacity": 0.5,
+              },
+            });
+          }
         }
-      });
 
-      setMapLoaded(true);
-    });
+        // 4. Fit bounds of owned country
+        if (bbox) {
+          map.fitBounds(
+            [
+              [bbox.minLng, bbox.minLat],
+              [bbox.maxLng, bbox.maxLat],
+            ],
+            { padding: 20, maxZoom: 8, duration: 0 }
+          );
+        }
+
+        // 5. Place Marker at starting coordinates
+        const startMarker = new maplibregl.Marker({ color: "#f43f5e" })
+          .setLngLat([mapCenterLng, mapCenterLat])
+          .addTo(map);
+        markerRef.current = startMarker;
+
+        // Click listener to grab coordinates
+
+        map.on("click", (e: any) => {
+          const clickedLng = e.lngLat.lng;
+          const clickedLat = e.lngLat.lat;
+
+          setLat(clickedLat.toFixed(5));
+          setLng(clickedLng.toFixed(5));
+
+          if (markerRef.current) {
+            markerRef.current.setLngLat([clickedLng, clickedLat]);
+          }
+        });
+
+        setMapLoaded(true);
+      });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    centroid,
-    geometry,
-    worldPolitical,
-    bbox,
-    viewerCountryId,
-    fillColor,
-    featureId,
-    subdivisions,
-    isOpen,
-  ]);
+    [
+      centroid,
+      geometry,
+      worldPolitical,
+      bbox,
+      viewerCountryId,
+      fillColor,
+      featureId,
+      subdivisions,
+      isOpen,
+    ]
+  );
 
   // Load/Unload map
   useEffect(() => {
     if (isOpen && !isMapBundleLoading) {
+      let cancelled = false;
       const timer = setTimeout(() => {
-        initMapLibre();
+        void initMapLibre(() => cancelled);
       }, 100);
       return () => {
+        cancelled = true;
         clearTimeout(timer);
         if (mapRef.current) {
           mapRef.current.remove();

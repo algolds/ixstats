@@ -11,7 +11,7 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
-import { useIxMedia } from "~/components/media/MediaContext";
+import { useIxMediaActions } from "~/components/media/MediaContext";
 import type { Media } from "~/lib/media/types";
 import { withBasePath } from "~/lib/base-path";
 import type { PlaybackBlock } from "./narrator/narrator-types";
@@ -32,7 +32,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     setActiveSectionId,
   } = useWikiContext() as any;
 
-  const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMedia();
+  const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMediaActions();
   const hasNarratorAccess = useHasNarratorAccess();
 
   const [blocks, setBlocks] = useState<PlaybackBlock[]>([]);

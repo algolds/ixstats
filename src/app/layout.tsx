@@ -22,15 +22,12 @@ import { withBasePath } from "~/lib/base-path";
 import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
-import { GlobalLinkTooltipProvider } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
-import { MediaContextProvider } from "~/components/media/MediaContext";
-import { MiniPlayer } from "~/components/media/MiniPlayer";
+import { GlobalLinkTooltips } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
 
 import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { IxTimeProvider } from "~/context/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
-import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
 
@@ -70,37 +67,34 @@ function AppContent({
 }) {
   return (
     <TRPCReactProvider>
-      <GlobalLinkTooltipProvider>
-        <ThemeProvider>
-          {/* One switch honours prefers-reduced-motion for every `motion` element in the tree. */}
-          <MotionConfig reducedMotion="user">
-            <AbilityProvider>
-              <IxTimeProvider>
-                <ExecutiveNotificationProvider>
-                  <WikiContextProvider>
-                    <MediaThemeProvider>
-                      <ToastProvider>
-                        <LazyGameProviders>
-                          <WebGLErrorHandler />
-                          <MapPrefetcher />
-                          <NavigationTransitionHandler />
-                          <CuelumeSoundProvider />
-                          <div className="flex min-h-screen flex-col">
-                            <Navigation />
-                            {!isStandalone && <SetupRedirect />}
-                            <main className="flex flex-1 flex-col">{children}</main>
-                            {!isStandalone && <MiniPlayer />}
-                          </div>
-                        </LazyGameProviders>
-                      </ToastProvider>
-                    </MediaThemeProvider>
-                  </WikiContextProvider>
-                </ExecutiveNotificationProvider>
-              </IxTimeProvider>
-            </AbilityProvider>
-          </MotionConfig>
-        </ThemeProvider>
-      </GlobalLinkTooltipProvider>
+      <ThemeProvider>
+        {/* One switch honours prefers-reduced-motion for every `motion` element in the tree. */}
+        <MotionConfig reducedMotion="user">
+          <AbilityProvider>
+            <IxTimeProvider>
+              <ExecutiveNotificationProvider>
+                <WikiContextProvider>
+                  <ToastProvider>
+                    <LazyGameProviders>
+                      <WebGLErrorHandler />
+                      <MapPrefetcher />
+                      <GlobalLinkTooltips />
+                      <NavigationTransitionHandler />
+                      <CuelumeSoundProvider />
+                      <div className="flex min-h-screen flex-col">
+                        <Navigation />
+                        {!isStandalone && <SetupRedirect />}
+                        {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
+                        <main className="flex flex-1 flex-col">{children}</main>
+                      </div>
+                    </LazyGameProviders>
+                  </ToastProvider>
+                </WikiContextProvider>
+              </ExecutiveNotificationProvider>
+            </IxTimeProvider>
+          </AbilityProvider>
+        </MotionConfig>
+      </ThemeProvider>
     </TRPCReactProvider>
   );
 }
@@ -136,9 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             appearance={facetClerkAppearance}
           >
             <AuthProvider>
-              <MediaContextProvider>
-                <AppContent isStandalone={isStandalone}>{children}</AppContent>
-              </MediaContextProvider>
+              <AppContent isStandalone={isStandalone}>{children}</AppContent>
             </AuthProvider>
           </ClerkProvider>
         </ChunkLoadErrorBoundary>

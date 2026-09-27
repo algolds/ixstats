@@ -21,6 +21,15 @@ export interface CoordinatesMapEmbedProps {
   options?: string; // height=400|width=100%|interactive=yes|title=My Title
 }
 
+/** Popup title as a text node: the title comes from wiki markup, so it is never parsed as HTML. */
+export function buildPopupTitleNode(title: string): HTMLDivElement {
+  const titleEl = document.createElement("div");
+  titleEl.textContent = title;
+  titleEl.style.cssText =
+    "color: #000; font-family: sans-serif; font-size: 12px; font-weight: bold; padding: 2px;";
+  return titleEl;
+}
+
 export function CoordinatesMapEmbed({
   lat,
   lng,
@@ -84,113 +93,121 @@ export function CoordinatesMapEmbed({
     return () => observer.disconnect();
   }, []);
 
-  const initMap = useCallback(async () => {
-    if (!containerRef.current) return;
+  const initMap = useCallback(
+    async (isCancelled: () => boolean) => {
+      if (!containerRef.current) return;
 
-    // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
-    // named exports (Map, Popup, …).
-    const maplibregl = await loadMaplibre();
-    await import("maplibre-gl/dist/maplibre-gl.css");
+      // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
+      // named exports (Map, Popup, …).
+      const maplibregl = await loadMaplibre();
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      // Unmounted (or deps changed) while MapLibre was loading — don't create an orphan map.
+      if (isCancelled() || !containerRef.current) return;
 
-    // Clean up existing
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-    const baseStyle: any = buildBaseStyle();
-    // Force Mercator projection for embeds
-    delete baseStyle.projection;
-
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: baseStyle,
-      center: [lng, lat],
-      zoom: zoom,
-      attributionControl: false,
-      interactive: interactiveVal,
-    });
-
-    mapRef.current = map;
-
-    map.on("load", () => {
-      // 1. Add world political borders
-      if (worldPolitical && worldPolitical.features && worldPolitical.features.length > 0) {
-        map.addSource("source-world-political", {
-          type: "geojson",
-          data: worldPolitical,
-        });
-
-        // Fill color layer with colors from feature properties
-        map.addLayer({
-          id: "world-political-fill",
-          type: "fill",
-          source: "source-world-political",
-          paint: {
-            "fill-color": ["coalesce", ["get", "_fillColor"], ["get", "fillColor"], "#c5cae9"],
-            "fill-opacity": 0.45,
-          },
-        });
-
-        // Country border line layer
-        map.addLayer({
-          id: "world-political-stroke",
-          type: "line",
-          source: "source-world-political",
-          paint: {
-            "line-color": "#475569",
-            "line-width": 0.8,
-            "line-opacity": 0.5,
-          },
-        });
-
-        // Country name labels layer
-        map.addLayer({
-          id: "world-political-labels",
-          type: "symbol",
-          source: "source-world-political",
-          layout: {
-            "text-field": [
-              "coalesce",
-              ["get", "_displayName"],
-              ["get", "name"],
-              "",
-            ] as unknown as string,
-            "text-size": 10,
-            "text-allow-overlap": false,
-            "text-optional": true,
-            "text-font": [...MAP_SYMBOL_FONTS.regular],
-          },
-          paint: {
-            "text-color": "#475569",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.5,
-            "text-opacity": 0.8,
-          },
-          minzoom: 2,
-        });
+      // Clean up existing
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
 
-      // 2. Add Red marker/pin at [lng, lat]
-      const marker = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
+      const baseStyle: any = buildBaseStyle();
+      // Force Mercator projection for embeds
+      delete baseStyle.projection;
 
-      // 3. Add popup if title is available
-      if (titleVal) {
-        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(
-          `<div style="color: #000; font-family: sans-serif; font-size: 12px; font-weight: bold; padding: 2px;">${titleVal}</div>`
-        );
-        marker.setPopup(popup);
-      }
+      const map = new maplibregl.Map({
+        container: containerRef.current,
+        style: baseStyle,
+        center: [lng, lat],
+        zoom: zoom,
+        attributionControl: false,
+        interactive: interactiveVal,
+      });
 
-      setMapReady(true);
-    });
-  }, [lat, lng, zoom, interactiveVal, titleVal, worldPolitical]);
+      mapRef.current = map;
+
+      map.on("load", () => {
+        if (isCancelled()) return;
+        // 1. Add world political borders
+        if (worldPolitical && worldPolitical.features && worldPolitical.features.length > 0) {
+          map.addSource("source-world-political", {
+            type: "geojson",
+            data: worldPolitical,
+          });
+
+          // Fill color layer with colors from feature properties
+          map.addLayer({
+            id: "world-political-fill",
+            type: "fill",
+            source: "source-world-political",
+            paint: {
+              "fill-color": ["coalesce", ["get", "_fillColor"], ["get", "fillColor"], "#c5cae9"],
+              "fill-opacity": 0.45,
+            },
+          });
+
+          // Country border line layer
+          map.addLayer({
+            id: "world-political-stroke",
+            type: "line",
+            source: "source-world-political",
+            paint: {
+              "line-color": "#475569",
+              "line-width": 0.8,
+              "line-opacity": 0.5,
+            },
+          });
+
+          // Country name labels layer
+          map.addLayer({
+            id: "world-political-labels",
+            type: "symbol",
+            source: "source-world-political",
+            layout: {
+              "text-field": [
+                "coalesce",
+                ["get", "_displayName"],
+                ["get", "name"],
+                "",
+              ] as unknown as string,
+              "text-size": 10,
+              "text-allow-overlap": false,
+              "text-optional": true,
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
+            },
+            paint: {
+              "text-color": "#475569",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1.5,
+              "text-opacity": 0.8,
+            },
+            minzoom: 2,
+          });
+        }
+
+        // 2. Add Red marker/pin at [lng, lat]
+        const marker = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
+
+        // 3. Add popup if title is available
+        if (titleVal) {
+          const popup = new maplibregl.Popup({ offset: 25 }).setDOMContent(
+            buildPopupTitleNode(titleVal)
+          );
+          marker.setPopup(popup);
+        }
+
+        setMapReady(true);
+      });
+    },
+    [lat, lng, zoom, interactiveVal, titleVal, worldPolitical]
+  );
 
   useEffect(() => {
     if (isInViewport) {
+      let cancelled = false;
       // Small delay to ensure container has layout dimensions
-      const timer = setTimeout(() => initMap(), 50);
+      const timer = setTimeout(() => void initMap(() => cancelled), 50);
       return () => {
+        cancelled = true;
         clearTimeout(timer);
         if (mapRef.current) {
           mapRef.current.remove();

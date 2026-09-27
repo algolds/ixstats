@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { useIxMedia } from "./MediaContext";
+import { useIxMediaActions, useIxMediaState } from "./MediaContext";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Play, Trash as Trash2, XmarkCircle as XCircle } from "iconoir-react";
 
 export function QueuePanel() {
-  const { queue, currentIndex, playTrack, removeFromQueue, clearQueue } = useIxMedia();
+  const { queue, currentIndex } = useIxMediaState();
+  const { playTrack, removeFromQueue, clearQueue } = useIxMediaActions();
 
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || seconds === null) return "0:00";

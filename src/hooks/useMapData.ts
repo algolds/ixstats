@@ -34,6 +34,18 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
  * Climate excluded — lazy-loaded on toggle to save ~2MB on initial bundle. */
 const ALL_PREFETCH_LAYERS: MapLayerType[] = [...DEFAULT_VISIBLE];
 
+/** Critical layers load first — altitudes are the terrain base, must render with map.
+ * Shared with useMapDataBatched so useMapPrefetch fills the exact bundle key /maps reads first. */
+export const CRITICAL_LAYERS: MapLayerType[] = [
+  "background",
+  "altitudes",
+  "political",
+  "country_labels",
+  "rivers",
+  "lakes",
+  "icecaps",
+];
+
 /** Shared query options for map data - long cache, no refetching */
 export const MAP_QUERY_OPTIONS = {
   staleTime: 30 * 60 * 1000, // 30 min - map data rarely changes
@@ -166,19 +178,14 @@ export function useMapPrefetch() {
   const utils = api.useUtils();
   const warmedRef = useRef(false);
 
-  useEffect(() => {
-    // Fire-and-forget prefetch using batched bundle endpoint (single request)
-    utils.geoCore.getMapBundle.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
-    // Also prefetch individual endpoints for backward compatibility with non-batched consumers
-    utils.geoCore.getWorldMap.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
-    // oxlint-disable-next-line
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // After political layer is available, warm ALL per-country data
-  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
-    { layers: ALL_PREFETCH_LAYERS },
+  // Same key useMapDataBatched requests first (zoom omitted = undefined), so /maps reads this entry.
+  const { data: bundle } = api.geoCore.getMapBundle.useQuery(
+    { layers: CRITICAL_LAYERS },
     { ...MAP_QUERY_OPTIONS, enabled: !warmedRef.current }
   );
+  const worldMap = bundle?.worldMap;
+
+  // After political layer is available, warm ALL per-country data
 
   useEffect(() => {
     if (warmedRef.current || !worldMap) return;

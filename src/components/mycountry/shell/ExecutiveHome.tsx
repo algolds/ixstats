@@ -47,6 +47,20 @@ function formatCooldownTime(cooldownUntil: number | null | undefined, now = Date
   return `${mins}m ${secs}s`;
 }
 
+/** Leaf countdown — ticks every second without re-rendering the whole executive home. */
+export const CooldownTimer = React.memo(function CooldownTimer({
+  cooldownUntil,
+}: {
+  cooldownUntil: number | null | undefined;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <>{formatCooldownTime(cooldownUntil, now)}</>;
+});
+
 export function ExecutiveHomeComponent({
   countryId,
   onDeclare,
@@ -80,13 +94,6 @@ export function ExecutiveHomeComponent({
     { enabled: !!countryId }
   );
   const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
-
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!status?.data?.onCooldown) return;
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, [status?.data?.onCooldown]);
 
   const items = useMemo(() => feed.data ?? [], [feed.data]);
   const canCommit = status?.data?.canCommit ?? true;
@@ -179,7 +186,7 @@ export function ExecutiveHomeComponent({
                 <div className="border-border/30 text-foreground flex items-center justify-between border-t pt-1.5 font-mono text-xs font-bold">
                   <span>Next Available Slot:</span>
                   <span className="text-amber-500 dark:text-amber-400">
-                    {formatCooldownTime(status?.data?.cooldownUntil, now)}
+                    <CooldownTimer cooldownUntil={status?.data?.cooldownUntil} />
                   </span>
                 </div>
               </TooltipContent>

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * GlobalLinkTooltipProvider — Intercepts ALL link hovers across the entire app.
+ * GlobalLinkTooltips — Intercepts ALL link hovers across the entire app.
  *
  * Uses document-level event delegation to detect any <a> pointing to:
  * - ixwiki.com/wiki/*       → Wiki article preview tooltip
@@ -9,9 +9,9 @@
  * - forum.ixwiki.com/threads/* → Forum thread preview tooltip
  * - maps.ixwiki.com/*       → Map link indicator
  *
- * Mount once in the root layout — every link gets tooltips automatically,
- * no per-component wrapping needed. Future wiki/forum links added anywhere
- * in the app will automatically get tooltip coverage.
+ * Mount once in the root layout as a sibling (it wraps nothing) — every link gets
+ * tooltips automatically, no per-component wrapping needed. Future wiki/forum links
+ * added anywhere in the app will automatically get tooltip coverage.
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -104,10 +104,10 @@ function clampX(rect: DOMRect): number {
 }
 
 // ──────────────────────────────────────────────
-// Provider component
+// Tooltip host component
 // ──────────────────────────────────────────────
 
-export function GlobalLinkTooltipProvider({ children }: { children: React.ReactNode }) {
+export function GlobalLinkTooltips() {
   const [activeLink, setActiveLink] = useState<DetectedLink | null>(null);
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -185,30 +185,25 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
     };
   }, [show, hide, keepOpen]);
 
-  return (
-    <>
-      {children}
-      {activeLink &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            className="global-link-tooltip border-border bg-card animate-in fade-in-0 zoom-in-95 fixed z-[9999] w-80 rounded-xl border p-3 shadow-xl duration-150"
-            style={{ left: activeLink.x, top: activeLink.y }}
-            onMouseEnter={keepOpen}
-            onMouseLeave={() => {
-              setActiveLink(null);
-              activeElementRef.current = null;
-            }}
-          >
-            {activeLink.kind === "wiki" ? (
-              <WikiTooltipBody title={activeLink.title} wiki={activeLink.wiki} />
-            ) : (
-              <ForumTooltipBody threadId={activeLink.threadId} />
-            )}
-          </div>,
-          document.body
-        )}
-    </>
+  if (!activeLink || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="global-link-tooltip border-border bg-card animate-in fade-in-0 zoom-in-95 fixed z-[9999] w-80 rounded-xl border p-3 shadow-xl duration-150"
+      style={{ left: activeLink.x, top: activeLink.y }}
+      onMouseEnter={keepOpen}
+      onMouseLeave={() => {
+        setActiveLink(null);
+        activeElementRef.current = null;
+      }}
+    >
+      {activeLink.kind === "wiki" ? (
+        <WikiTooltipBody title={activeLink.title} wiki={activeLink.wiki} />
+      ) : (
+        <ForumTooltipBody threadId={activeLink.threadId} />
+      )}
+    </div>,
+    document.body
   );
 }
 

@@ -74,16 +74,16 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     markAllAsRead: markAllExecutiveAsRead,
   } = useExecutiveNotifications();
 
-  const { data: notificationsData, refetch: refetchNotifications } =
-    api.notifications.getUserNotifications.useQuery(
-      { limit: 8, unreadOnly: false },
-      {
-        enabled: !!user?.id,
-        staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-        refetchOnMount: false,
-      }
-    );
+  const utils = api.useUtils();
+  const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
+    { limit: 8, unreadOnly: false },
+    {
+      enabled: !!user?.id,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    }
+  );
 
   const { data: messagesData, refetch: refetchMessages } =
     api.messages.getConversationsByFolder.useQuery(
@@ -95,16 +95,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       }
     );
 
+  // No input → invalidates every getUserNotifications list size (Halo, dashboard, messages).
+  const invalidateNotifications = () => {
+    void utils.notifications.getUserNotifications.invalidate();
+    void utils.notifications.getUnreadCount.invalidate();
+  };
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
-    onSuccess: () => void refetchNotifications(),
+    onSettled: invalidateNotifications,
   });
   const dismissMutation = api.notifications.dismissNotification.useMutation({
-    onSuccess: () => void refetchNotifications(),
+    onSettled: invalidateNotifications,
   });
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
-    onSuccess: () => {
-      void refetchNotifications();
-    },
+    onSettled: invalidateNotifications,
   });
   const markAllMessagesMutation = api.messages.markAllAsRead.useMutation({
     onSuccess: () => {

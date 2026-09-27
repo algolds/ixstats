@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { IxMediaEngine } from "~/lib/media/IxMediaEngine";
 import type { Media } from "~/lib/media/types";
 
@@ -38,7 +46,35 @@ export interface MediaContextState {
   ) => void;
 }
 
-const MediaContext = createContext<MediaContextState>({} as any);
+/** The playback commands — stable across `timeupdate` ticks. */
+export type MediaActions = Pick<
+  MediaContextState,
+  | "playTrack"
+  | "pauseTrack"
+  | "resumeTrack"
+  | "seekTrack"
+  | "changeVolume"
+  | "changeSpeed"
+  | "addToQueue"
+  | "removeFromQueue"
+  | "clearQueue"
+  | "skipNext"
+  | "skipPrevious"
+  | "registerPlaybackDelegate"
+  | "updatePlaybackState"
+>;
+
+/** Everything except `currentTime`, which changes ~4×/s while playing. */
+export type MediaPlaybackState = Pick<
+  MediaContextState,
+  "activeTrack" | "isPlaying" | "duration" | "volume" | "speed" | "queue" | "currentIndex"
+>;
+
+// Split so a consumer that only needs actions (e.g. the article narrator) doesn't
+// re-render on every playback tick.
+const MediaActionsContext = createContext<MediaActions | null>(null);
+const MediaStateContext = createContext<MediaPlaybackState | null>(null);
+const MediaTimeContext = createContext<number | null>(null);
 
 export function MediaContextProvider({ children }: { children: React.ReactNode }) {
   const engineRef = useRef<IxMediaEngine | null>(null);
@@ -295,37 +331,79 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
     }
   }, [queue, currentIndex, activeTrack, hasLoaded]);
 
+  const actions = useMemo<MediaActions>(
+    () => ({
+      playTrack,
+      pauseTrack,
+      resumeTrack,
+      seekTrack,
+      changeVolume,
+      changeSpeed,
+      addToQueue,
+      removeFromQueue,
+      clearQueue,
+      skipNext,
+      skipPrevious,
+      registerPlaybackDelegate,
+      updatePlaybackState,
+    }),
+    [
+      playTrack,
+      pauseTrack,
+      resumeTrack,
+      seekTrack,
+      changeVolume,
+      changeSpeed,
+      addToQueue,
+      removeFromQueue,
+      clearQueue,
+      skipNext,
+      skipPrevious,
+      registerPlaybackDelegate,
+      updatePlaybackState,
+    ]
+  );
+
+  const playbackState = useMemo<MediaPlaybackState>(
+    () => ({ activeTrack, isPlaying, duration, volume, speed, queue, currentIndex }),
+    [activeTrack, isPlaying, duration, volume, speed, queue, currentIndex]
+  );
+
   return (
-    <MediaContext.Provider
-      value={{
-        activeTrack,
-        isPlaying,
-        currentTime,
-        duration,
-        volume,
-        speed,
-        queue,
-        currentIndex,
-        playTrack,
-        pauseTrack,
-        resumeTrack,
-        seekTrack,
-        changeVolume,
-        changeSpeed,
-        addToQueue,
-        removeFromQueue,
-        clearQueue,
-        skipNext,
-        skipPrevious,
-        registerPlaybackDelegate,
-        updatePlaybackState,
-      }}
-    >
-      {children}
-    </MediaContext.Provider>
+    <MediaActionsContext.Provider value={actions}>
+      <MediaStateContext.Provider value={playbackState}>
+        <MediaTimeContext.Provider value={currentTime}>{children}</MediaTimeContext.Provider>
+      </MediaStateContext.Provider>
+    </MediaActionsContext.Provider>
   );
 }
 
-export function useIxMedia() {
-  return useContext(MediaContext);
+function requireMedia<T>(value: T | null, hook: string): T {
+  if (value === null) {
+    throw new Error(`[${hook}] must be used within <MediaContextProvider>.`);
+  }
+  return value;
+}
+
+/** Playback commands only — unaffected by `currentTime` ticks and play/pause toggles. */
+export function useIxMediaActions(): MediaActions {
+  return requireMedia(useContext(MediaActionsContext), "useIxMediaActions");
+}
+
+/** Track/queue/volume state without the per-tick `currentTime`. */
+export function useIxMediaState(): MediaPlaybackState {
+  return requireMedia(useContext(MediaStateContext), "useIxMediaState");
+}
+
+/** Current playback position in seconds (updates ~4×/s while playing). */
+export function useIxMediaTime(): number {
+  return requireMedia(useContext(MediaTimeContext), "useIxMediaTime");
+}
+
+/** Everything at once — re-renders on every tick. Prefer the narrower hooks above. */
+export function useIxMedia(): MediaContextState {
+  const actions = useIxMediaActions();
+  const state = useIxMediaState();
+  const currentTime = useIxMediaTime();
+  return { ...state, ...actions, currentTime };
 }

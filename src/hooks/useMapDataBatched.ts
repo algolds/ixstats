@@ -22,7 +22,7 @@ import type {
 } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
 import { getCachedMapLayers, setCachedMapLayers } from "~/lib/maps/map-idb-cache";
-import { LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
+import { CRITICAL_LAYERS, LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
 
 const DEFAULT_VISIBLE: MapLayerType[] = [
   "background",
@@ -31,17 +31,6 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
   "rivers",
   "lakes",
   "country_labels",
-];
-
-/** Critical layers load first — altitudes are the terrain base, must render with map */
-const CRITICAL_LAYERS: MapLayerType[] = [
-  "background",
-  "altitudes",
-  "political",
-  "country_labels",
-  "rivers",
-  "lakes",
-  "icecaps",
 ];
 
 /** Decorative layers load in a deferred second request */

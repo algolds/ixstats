@@ -3,7 +3,15 @@
 // Context for passing WikiOS state (TOC, current article) to the Dynamic Island.
 // Provides article metadata, TOC entries, and session tracking for wiki mode.
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { navigateWithBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
@@ -297,35 +305,55 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     return;
   }, [articleTitle]);
 
-  return (
-    <WikiContext.Provider
-      value={{
-        isWikiPage: articleTitle !== null,
-        articleTitle,
-        tocEntries,
-        themeColors,
-        activeSectionId,
-        recentArticles,
-        setWikiPage,
-        setActiveSectionId,
-        navigateToSection,
-        restoreSession,
-        activeModal,
-        setActiveModal,
-        isMarginOpen,
-        setIsMarginOpen,
-        marginTab,
-        setMarginTab,
-        toggleMargin,
-        narratorState,
-        setNarratorState,
-        narratorActions,
-        registerNarratorActions,
-      }}
-    >
-      {children}
-    </WikiContext.Provider>
+  const value = useMemo<WikiContextState>(
+    () => ({
+      isWikiPage: articleTitle !== null,
+      articleTitle,
+      tocEntries,
+      themeColors,
+      activeSectionId,
+      recentArticles,
+      setWikiPage,
+      setActiveSectionId,
+      navigateToSection,
+      restoreSession,
+      activeModal,
+      setActiveModal,
+      isMarginOpen,
+      setIsMarginOpen,
+      marginTab,
+      setMarginTab,
+      toggleMargin,
+      narratorState,
+      setNarratorState,
+      narratorActions,
+      registerNarratorActions,
+    }),
+    [
+      articleTitle,
+      tocEntries,
+      themeColors,
+      activeSectionId,
+      recentArticles,
+      setWikiPage,
+      setActiveSectionId,
+      navigateToSection,
+      restoreSession,
+      activeModal,
+      setActiveModal,
+      isMarginOpen,
+      setIsMarginOpen,
+      marginTab,
+      setMarginTab,
+      toggleMargin,
+      narratorState,
+      setNarratorState,
+      narratorActions,
+      registerNarratorActions,
+    ]
   );
+
+  return <WikiContext.Provider value={value}>{children}</WikiContext.Provider>;
 }
 
 export function useWikiContext() {
