@@ -8,7 +8,7 @@ import {
   StatUp as TrendingUp,
   StatsReport as BarChart3,
 } from "iconoir-react";
-import { formatCurrency } from "~/lib/utils";
+import { formatCompactNumber, formatCurrency } from "~/lib/utils";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 
 interface PreviewCoreIndicatorsProps {
@@ -21,14 +21,6 @@ interface IndicatorItem {
   value: string;
   subValue?: string;
   label: string;
-}
-
-function formatCompactPopulation(pop?: number | null): string {
-  if (pop === null || pop === undefined || Number.isNaN(pop)) return "N/A";
-  if (pop >= 1e9) return `${(pop / 1e9).toFixed(1)}B`;
-  if (pop >= 1e6) return `${(pop / 1e6).toFixed(1)}M`;
-  if (pop >= 1e3) return `${(pop / 1e3).toFixed(1)}K`;
-  return pop.toLocaleString("en-US");
 }
 
 function extractCurrencySymbol(curr: string): string {
@@ -56,7 +48,7 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
   const items: IndicatorItem[] = [
     {
       icon: Users,
-      value: formatCompactPopulation(coreIndicators.totalPopulation),
+      value: formatCompactNumber(coreIndicators.totalPopulation),
       subValue:
         coreIndicators.totalPopulation && coreIndicators.totalPopulation >= 1e6
           ? `${coreIndicators.totalPopulation.toLocaleString()}`

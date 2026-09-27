@@ -12,7 +12,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Plus, Check, Flash as Zap, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { cn } from "~/lib/utils";
+import { cn, formatCurrency } from "~/lib/utils";
 import type { BaseAtomicComponent, InteractionInfo } from "./types";
 
 export interface AtomicCardProps<TType extends string = string> {
@@ -99,13 +99,6 @@ const COLOR_MAP: Record<string, { bg: string; text: string; border: string; acti
 
 const defaultColor = COLOR_MAP.blue!;
 
-function formatDefaultCurrency(amount: number): string {
-  if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
-  if (amount >= 1e6) return `$${(amount / 1e6).toFixed(1)}M`;
-  if (amount >= 1e3) return `$${(amount / 1e3).toFixed(0)}K`;
-  return `$${amount}`;
-}
-
 function AtomicCardComponent<TType extends string = string>({
   component,
   isSelected,
@@ -116,7 +109,7 @@ function AtomicCardComponent<TType extends string = string>({
   canSelectMore = true,
   synergisticWith = [],
   conflictingWith = [],
-  currencyFormatter = formatDefaultCurrency,
+  currencyFormatter = formatCurrency,
 }: AtomicCardProps<TType>) {
   const Icon = component.icon;
   const colorKey = component.color?.toLowerCase() ?? "blue";

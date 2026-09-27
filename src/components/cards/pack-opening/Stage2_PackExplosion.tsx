@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import type { CardInstance } from "~/types/pack-opening";
 import type { CardRarity } from "@prisma/client";
 import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
+import { getRarityTier } from "~/lib/cards/display-utils";
 import { getParticleConfig } from "~/lib/themes";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
@@ -41,20 +42,11 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
 
     // Detect highest rarity in pack for color theming
     const highestRarity = useMemo(() => {
-      const rarityOrder: Record<CardRarity, number> = {
-        COMMON: 0,
-        UNCOMMON: 1,
-        RARE: 2,
-        ULTRA_RARE: 3,
-        EPIC: 4,
-        LEGENDARY: 5,
-      };
-
       let highest: CardRarity = "COMMON";
       let highestValue = 0;
 
       cards.forEach((card) => {
-        const value = rarityOrder[card.rarity] || 0;
+        const value = getRarityTier(card.rarity);
         if (value > highestValue) {
           highestValue = value;
           highest = card.rarity;

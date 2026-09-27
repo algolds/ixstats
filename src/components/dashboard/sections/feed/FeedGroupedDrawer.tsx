@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { NavArrowDown as ChevronDown } from "iconoir-react";
-import { formatTimeAgo } from "~/lib/utils";
+import { timeAgo } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 
 export interface FeedGroupedDrawerProps {
@@ -49,7 +49,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
                   <span className="text-foreground/80 truncate">{display}</span>
                 </div>
                 <span className="text-muted-foreground/70 ml-2 shrink-0 font-medium tabular-nums">
-                  {formatTimeAgo(new Date(sub.timestamp))}
+                  {timeAgo(new Date(sub.timestamp))}
                 </span>
               </div>
             );

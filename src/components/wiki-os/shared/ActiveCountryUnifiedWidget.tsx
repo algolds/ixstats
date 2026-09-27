@@ -3,7 +3,7 @@
 // Active Country context widget displaying flag, status, and detail popovers.
 
 import { useState, useEffect, useRef } from "react";
-import { cn } from "~/lib/utils";
+import { cn, formatCurrency } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
@@ -65,14 +65,6 @@ export function ActiveCountryUnifiedWidget({
   );
 
   if (!activeCountry) return null;
-
-  const formatGdp = (n: number) => {
-    if (!n) return "...";
-    if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
-    if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    return n.toLocaleString();
-  };
 
   const viewerCountryId = userProfile?.countryId ?? undefined;
   const isOwnCountry = myCountry?.id === activeCountry.id;
@@ -200,7 +192,7 @@ export function ActiveCountryUnifiedWidget({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total GDP:</span>
               <span className="text-foreground font-semibold">
-                {totalGdpVal != null ? `$${formatGdp(totalGdpVal)}` : "..."}
+                {totalGdpVal != null ? formatCurrency(totalGdpVal) : "..."}
               </span>
             </div>
 

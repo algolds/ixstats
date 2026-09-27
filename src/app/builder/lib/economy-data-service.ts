@@ -8,6 +8,7 @@
  */
 
 import type { RealCountryData, EconomicInputs, EconomicComparison } from "./economy-types";
+import { formatPopulation } from "~/lib/utils/format-utils";
 
 // Re-export all types and default generator
 export * from "./economy-types";
@@ -55,7 +56,7 @@ export function generateEconomicComparisons(
       name: "Population",
       userValue: inputs.coreIndicators.totalPopulation,
       getValue: (c) => c.population,
-      formatValue: (v) => formatPopulationDisplay(v),
+      formatValue: (v) => formatPopulation(v),
       getTier: (v) =>
         v >= 100000000 ? "Very Large" : v >= 25000000 ? "Large" : v >= 5000000 ? "Medium" : "Small",
     },
@@ -201,14 +202,6 @@ function generateAnalysisText(
   analysis += ".";
 
   return analysis;
-}
-
-function formatPopulationDisplay(population: number): string {
-  if (isNaN(population)) return "N/A";
-  if (population >= 1000000000) return `${Math.round(population / 1000000000)}B`;
-  if (population >= 1000000) return `${Math.round(population / 1000000)}M`;
-  if (population >= 1000) return `${(population / 1000).toFixed(0)}K`;
-  return population.toString();
 }
 
 export function saveBaselineToStorage(inputs: EconomicInputs): void {

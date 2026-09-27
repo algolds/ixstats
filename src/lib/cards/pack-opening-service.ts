@@ -1,20 +1,9 @@
 // src/lib/pack-opening-service.ts
 // Pack opening service with animation helpers
 
-import type { CardRarity } from "@prisma/client";
 import type { Particle, HapticPattern } from "~/types/pack-opening";
-
-/**
- * Rarity color mapping for particles and effects
- */
-const RARITY_COLORS: Record<CardRarity, string> = {
-  COMMON: "#9ca3af", // gray-400
-  UNCOMMON: "#3b82f6", // blue-500
-  RARE: "#8b5cf6", // violet-500
-  ULTRA_RARE: "#ec4899", // pink-500
-  EPIC: "#f59e0b", // amber-500
-  LEGENDARY: "#eab308", // yellow-500
-};
+import { CardRarity } from "./enums";
+import { getRarityHex } from "./display-utils";
 
 /**
  * Sound file paths for different rarities
@@ -95,9 +84,9 @@ export class PackOpeningService {
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
       const velocity = 3 + Math.random() * 5;
 
-      // Random color from rarity palette
-      const colors = Object.values(RARITY_COLORS);
-      const color = colors[Math.floor(Math.random() * colors.length)]!;
+      // Random color from the canonical rarity palette
+      const rarities = Object.values(CardRarity);
+      const color = getRarityHex(rarities[Math.floor(Math.random() * rarities.length)]);
 
       particles.push({
         id: `particle-${i}`,
@@ -117,7 +106,7 @@ export class PackOpeningService {
    * Get color for rarity
    */
   getRarityColor(rarity: CardRarity): string {
-    return RARITY_COLORS[rarity] ?? RARITY_COLORS.COMMON;
+    return getRarityHex(rarity);
   }
 
   /**

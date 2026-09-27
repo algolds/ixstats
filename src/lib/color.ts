@@ -132,6 +132,18 @@ export function rgbToHsl(r: number, g: number, b: number): [number, number, numb
 }
 
 /**
+ * Converts RGB values to hex string "#rrggbb". Channels are rounded and clamped to [0, 255];
+ * NaN becomes 0.
+ */
+export function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (v: number) =>
+    Math.round(Math.max(0, Math.min(255, Number.isNaN(v) ? 0 : v)))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
  * Converts hex color string to RGB object { r, g, b }
  */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {

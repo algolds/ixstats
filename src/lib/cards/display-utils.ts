@@ -22,6 +22,7 @@ import {
   formatCompactValue,
 } from "./stat-config";
 import { computeSpecialStats, type SpecialStats } from "~/lib/country-geo";
+import { rgbToHex } from "~/lib/color";
 
 /**
  * Rarity constants (matching database string values)
@@ -151,6 +152,17 @@ export function getRarityTheme(rarity?: string | null): {
     text: config.color,
     badgeStyle: config.badgeStyle,
   };
+}
+
+/** `#rrggbb` rarity colour for effects that append a hex alpha (pack-opening glows, particles). */
+export function getRarityHex(rarity?: string | null): string {
+  const [r = 0, g = 0, b = 0] = RARITY_COLORS[normalizeRarity(rarity)]!.rgb.split(",").map(Number);
+  return rgbToHex(r, g, b);
+}
+
+/** Rank in schema order: 1 (COMMON) … 6 (LEGENDARY); 0 for anything else. */
+export function getRarityTier(rarity?: string | null): number {
+  return (Object.values(CardRarity) as string[]).indexOf(rarity ?? "") + 1;
 }
 
 /**

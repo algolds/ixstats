@@ -1,8 +1,6 @@
 // src/components/halo/plugins/wiki/types.ts
 // Shared types, constants, and utilities for the Halo Wiki plugin.
 
-import { timeAgo } from "~/lib/format/compact";
-
 export const NARRATOR_ACCENT = "#3b82f6";
 
 export const NARRATOR_SPEEDS = [0.8, 1.0, 1.25, 1.5, 2.0];
@@ -30,5 +28,3 @@ export interface PausedSession {
   scrollPercent: number;
   updatedAt: number;
 }
-
-export const formatTimeAgo = (timestamp: number): string => timeAgo(timestamp);

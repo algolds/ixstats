@@ -13,6 +13,7 @@ import {
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
+import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
 import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/ui/charts";
 
@@ -111,13 +112,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
   const trade = preloadedData?.tradeData ?? tradeQuery.data;
   const vitality = preloadedData?.vitalityData ?? vitalityQuery.data;
 
-  // Format Helper for large values
-  const formatMoney = (val: number) => {
-    if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
-    return `$${val.toLocaleString()}`;
-  };
+  const formatMoney = (val: number) => `$${formatCompact(val)}`;
 
   // 1. GDP Growth Trajectory
   if (type === "economic_chart") {

@@ -4,7 +4,9 @@ import {
   hslToRgb,
   rgbToHsl,
   hexToRgb,
+  hexToRgbArray,
   hexToHsl,
+  rgbToHex,
   parseColorToHsl,
 } from "~/lib/color";
 
@@ -32,6 +34,13 @@ describe("src/lib/color.ts", () => {
   it("converts Hex to RGB and Hex to HSL", () => {
     expect(hexToRgb("#ff0000")).toEqual({ r: 255, g: 0, b: 0 });
     expect(hexToHsl("#00ff00")).toEqual({ h: 120, s: 100, l: 50 });
+  });
+
+  it("converts RGB to Hex with rounding, clamping and a NaN guard", () => {
+    expect(rgbToHex(255, 0, 0)).toBe("#ff0000");
+    expect(rgbToHex(17.4, 34.6, 51)).toBe("#112333");
+    expect(rgbToHex(-5, 300, Number.NaN)).toBe("#00ff00");
+    expect(rgbToHex(...hexToRgbArray("#1a2b3c"))).toBe("#1a2b3c");
   });
 
   it("parses multiple color formats to HSLA", () => {

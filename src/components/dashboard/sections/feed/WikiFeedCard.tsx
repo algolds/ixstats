@@ -24,7 +24,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { formatTimeAgo, formatThinkpagesContentForDisplay, cn } from "~/lib/utils";
+import { formatThinkpagesContentForDisplay, cn } from "~/lib/utils";
+import { timeAgo } from "~/lib/format/compact";
 import {
   normalizeWikiImageUrl,
   extractLeadImageFromWikitext,
@@ -373,7 +374,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
         {/* Top Right: Timestamp & Open Button */}
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-muted-foreground/80 text-xs font-medium tabular-nums">
-            {formatTimeAgo(new Date(activity.timestamp))}
+            {timeAgo(new Date(activity.timestamp))}
           </span>
           <Link
             href={wikiHref}
@@ -453,7 +454,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                       <span className="text-foreground/80 truncate">{subDesc}</span>
                     </div>
                     <span className="text-muted-foreground/70 ml-2 shrink-0 text-xs font-medium tabular-nums">
-                      {formatTimeAgo(new Date(sub.timestamp))}
+                      {timeAgo(new Date(sub.timestamp))}
                     </span>
                   </div>
                 );

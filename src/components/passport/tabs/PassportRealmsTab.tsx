@@ -17,6 +17,7 @@ import {
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { getScaledValue } from "~/lib/utils/format-utils";
 import type { RealmItem } from "../types";
 
 interface PassportRealmsTabProps {
@@ -24,52 +25,22 @@ interface PassportRealmsTabProps {
   cleanUsername: string;
 }
 
-/**
- * Format population in uppercase passport information grammar
- */
-function formatPopulationPassport(num: number | null | undefined): string {
-  if (!num || num <= 0) return "0";
-  if (num >= 1e12) {
-    const val = num / 1e12;
-    return `${val >= 10 ? val.toFixed(1) : val.toFixed(2)} TRILLION`;
-  }
-  if (num >= 1e9) {
-    const val = num / 1e9;
-    return `${val >= 10 ? val.toFixed(1) : val.toFixed(2)} BILLION`;
-  }
-  if (num >= 1e6) {
-    const val = num / 1e6;
-    return `${val >= 10 ? val.toFixed(1) : val.toFixed(2)} MILLION`;
-  }
-  if (num >= 1e3) {
-    const val = num / 1e3;
-    return `${val >= 10 ? val.toFixed(1) : val.toFixed(2)} THOUSAND`;
-  }
-  return num.toLocaleString();
-}
+const PASSPORT_SCALE_WORDS: Record<string, string> = {
+  T: "TRILLION",
+  B: "BILLION",
+  M: "MILLION",
+  K: "THOUSAND",
+};
 
 /**
- * Format GDP in uppercase passport information grammar
+ * Format an amount in uppercase passport information grammar ("1.25 BILLION"), scaled by
+ * the shared `getScaledValue`. `prefix` is "$" for GDP.
  */
-function formatCurrencyPassport(num: number | null | undefined): string {
-  if (!num || num <= 0) return "$0";
-  if (num >= 1e12) {
-    const val = num / 1e12;
-    return `$${val >= 10 ? val.toFixed(1) : val.toFixed(2)} TRILLION`;
-  }
-  if (num >= 1e9) {
-    const val = num / 1e9;
-    return `$${val >= 10 ? val.toFixed(1) : val.toFixed(2)} BILLION`;
-  }
-  if (num >= 1e6) {
-    const val = num / 1e6;
-    return `$${val >= 10 ? val.toFixed(1) : val.toFixed(2)} MILLION`;
-  }
-  if (num >= 1e3) {
-    const val = num / 1e3;
-    return `$${val >= 10 ? val.toFixed(1) : val.toFixed(2)} THOUSAND`;
-  }
-  return `$${num.toLocaleString()}`;
+function formatPassportAmount(num: number | null | undefined, prefix = ""): string {
+  if (!num || num <= 0) return `${prefix}0`;
+  const { value, suffix } = getScaledValue(num);
+  if (!suffix) return `${prefix}${num.toLocaleString()}`;
+  return `${prefix}${value >= 10 ? value.toFixed(1) : value.toFixed(2)} ${PASSPORT_SCALE_WORDS[suffix]}`;
 }
 
 /**
@@ -274,7 +245,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                             POPULATION
                           </span>
                           <strong className="text-foreground font-mono text-sm font-bold tracking-tight">
-                            {formatPopulationPassport(country.currentPopulation)}
+                            {formatPassportAmount(country.currentPopulation)}
                           </strong>
                         </div>
                       </div>
@@ -285,7 +256,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                             GROSS DOMESTIC PRODUCT
                           </span>
                           <strong className="font-mono text-sm font-bold tracking-tight text-emerald-500 dark:text-emerald-400">
-                            {formatCurrencyPassport(country.currentTotalGdp)}
+                            {formatPassportAmount(country.currentTotalGdp, "$")}
                           </strong>
                         </div>
                         <DollarSign className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />

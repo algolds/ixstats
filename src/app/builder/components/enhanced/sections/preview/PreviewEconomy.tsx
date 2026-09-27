@@ -7,7 +7,7 @@ import {
   StatUp as TrendingUp,
   Industry as Factory,
 } from "iconoir-react";
-import { formatCurrency } from "~/lib/utils";
+import { formatCompactNumber, formatCurrency } from "~/lib/utils";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { GovernmentStructure } from "~/types/government";
@@ -18,14 +18,6 @@ interface PreviewEconomyProps {
   economyBuilderState?: EconomyBuilderState | null;
   normalizedGovernmentStructure?: GovernmentStructure | null;
   currency?: string;
-}
-
-function formatCompactCount(num?: number | null): string {
-  if (num === null || num === undefined || Number.isNaN(num)) return "N/A";
-  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-  if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-  return num.toLocaleString("en-US");
 }
 
 export const PreviewEconomy = memo(function PreviewEconomy({
@@ -95,7 +87,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
               }
             >
               <div className="text-base font-bold text-foreground">
-                {formatCompactCount(laborEmployment.totalWorkforce)}
+                {formatCompactNumber(laborEmployment.totalWorkforce)}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">Workforce</div>
               {laborEmployment.totalWorkforce && laborEmployment.totalWorkforce >= 1e6 && (

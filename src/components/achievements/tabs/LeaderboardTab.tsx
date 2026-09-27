@@ -20,7 +20,8 @@ import {
   Trophy as Award,
   SystemRestart as Loader2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn, formatPercent, formatYears } from "~/lib/utils";
+import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
@@ -100,19 +101,10 @@ type FilterId = (typeof FILTERS)[number]["id"];
 
 function fmt(type: string, val?: number | null) {
   if (val === undefined || val === null) return "—";
-  if (type === "currency") {
-    if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
-    return `$${val.toLocaleString()}`;
-  }
-  if (type === "percent") return `${val.toFixed(1)}%`;
-  if (type === "years") return `${val.toFixed(1)} yrs`;
-  if (type === "number") {
-    if (val >= 1e9) return `${(val / 1e9).toFixed(2)}B`;
-    if (val >= 1e6) return `${(val / 1e6).toFixed(2)}M`;
-    return val.toLocaleString();
-  }
+  if (type === "currency") return `$${formatCompact(val)}`;
+  if (type === "percent") return formatPercent(val);
+  if (type === "years") return formatYears(val);
+  if (type === "number") return formatCompact(val);
   return String(val);
 }
 

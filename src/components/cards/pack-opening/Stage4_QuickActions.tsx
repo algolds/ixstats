@@ -9,6 +9,16 @@ import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 
+/** Placeholder quick-sell estimate per rarity, in IxCredits. */
+const RARITY_ESTIMATED_VALUE: Record<string, number> = {
+  COMMON: 10,
+  UNCOMMON: 25,
+  RARE: 75,
+  ULTRA_RARE: 200,
+  EPIC: 500,
+  LEGENDARY: 1500,
+};
+
 interface Stage4_QuickActionsProps {
   cards: CardInstance[];
   onAction: (event: QuickActionEvent) => void;
@@ -34,18 +44,8 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
 
     // Calculate estimated value
     const estimatedValue = useMemo(() => {
-      // Rarity value multipliers (placeholder)
-      const rarityValues: Record<string, number> = {
-        COMMON: 10,
-        UNCOMMON: 25,
-        RARE: 75,
-        ULTRA_RARE: 200,
-        EPIC: 500,
-        LEGENDARY: 1500,
-      };
-
       return cards.reduce((total, card) => {
-        return total + (rarityValues[card.rarity] ?? 10);
+        return total + (RARITY_ESTIMATED_VALUE[card.rarity] ?? 10);
       }, 0);
     }, [cards]);
 
@@ -234,16 +234,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
   ({ card, index, isSelected, bulkMode, action, onToggleSelect, onAction, service }) => {
     const rarityColor = service.getRarityColor(card.rarity);
 
-    // Rarity value estimates
-    const rarityValues: Record<string, number> = {
-      COMMON: 10,
-      UNCOMMON: 25,
-      RARE: 75,
-      ULTRA_RARE: 200,
-      EPIC: 500,
-      LEGENDARY: 1500,
-    };
-    const estimatedValue = rarityValues[card.rarity] ?? 10;
+    const estimatedValue = RARITY_ESTIMATED_VALUE[card.rarity] ?? 10;
 
     return (
       <motion.div

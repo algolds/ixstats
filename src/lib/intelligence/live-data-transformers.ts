@@ -9,6 +9,7 @@ import type {
   TrendingInsight,
 } from "~/types/intelligence-live";
 import { Activity, Dollar as DollarSign, Group as Users, Building, Globe } from "iconoir-react";
+import { formatNumber } from "~/lib/utils/format-utils";
 
 // Real country data interface (from tRPC API)
 interface ApiCountryData {
@@ -178,7 +179,7 @@ export function transformApiDataToVitalityIntelligence(
         {
           id: "total-population",
           label: "Population",
-          value: formatLargeNumber(country.currentPopulation),
+          value: formatNumber(country.currentPopulation),
           unit: "",
           trend: calculateTrend(country.currentPopulation, previousCountry?.currentPopulation),
           changeValue: previousCountry
@@ -637,13 +638,6 @@ function getMetricStatus(
     default:
       return "good";
   }
-}
-
-function formatLargeNumber(num: number): string {
-  if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num.toString();
 }
 
 function mapSeverity(

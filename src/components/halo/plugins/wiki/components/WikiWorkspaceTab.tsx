@@ -16,7 +16,8 @@ import {
 import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
-import { formatTimeAgo, type LocalDraft, type PausedSession } from "../types";
+import { timeAgo } from "~/lib/format/compact";
+import { type LocalDraft, type PausedSession } from "../types";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;
@@ -120,7 +121,7 @@ export function WikiWorkspaceTab({
                     {session.title}
                   </PreText>
                   <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
-                    {`Last read ${formatTimeAgo(session.updatedAt)}`}
+                    {`Last read ${timeAgo(session.updatedAt)}`}
                   </PreText>
                 </div>
                 <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-xs font-semibold tabular-nums">

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
+import { formatFullWordNumber } from "~/app/builder/components/enhanced/steps/foundation/foundationUtils";
 import { Globe, Check, Xmark as X } from "iconoir-react";
 
 export interface CountryCardData {
@@ -25,22 +26,6 @@ interface CountryFocusCardProps {
   softSelectedCountryId?: string | null;
   /** Pre-resolved flag URL from server cache. If provided, skips browser-side Commons API call. */
   flagUrl?: string | null;
-}
-
-function formatFullWordNumber(num: number): string {
-  if (num >= 1_000_000_000) {
-    const formatted = (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "");
-    return `${formatted} billion`;
-  }
-  if (num >= 1_000_000) {
-    const formatted = (num / 1_000_000).toFixed(1).replace(/\.0$/, "");
-    return `${formatted} million`;
-  }
-  if (num >= 1_000) {
-    const formatted = (num / 1_000).toFixed(1).replace(/\.0$/, "");
-    return `${formatted} thousand`;
-  }
-  return num.toLocaleString();
 }
 
 export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(

@@ -51,14 +51,6 @@ export const PRIORITY_OPTIONS = [
   { value: "critical", label: "Critical" },
 ] as const;
 
-export function formatPolicyCurrency(value: number | null | undefined): string {
-  if (value == null) return "N/A";
-  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
-  return `$${value.toLocaleString()}`;
-}
-
 export function getMatchingDepartmentCategory(policyCategory: string): string {
   const mapping: Record<string, string> = {
     fiscal: "finance",

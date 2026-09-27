@@ -14,6 +14,7 @@ import {
   type IxWorldClimate,
 } from "~/lib/worldgen/climate-system";
 import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { hexToRgbArray, rgbToHex } from "~/lib/color";
 
 /** Available map layer types matching GeoJSON files */
 export const MAP_LAYER_TYPES = [
@@ -340,46 +341,10 @@ export const SOVEREIGNTY_TYPE_MAP = Object.fromEntries(
   SOVEREIGNTY_TYPES.map((t) => [t.value, t])
 ) as Record<SovereigntyType, (typeof SOVEREIGNTY_TYPES)[number]>;
 
-/** Parse hex color to [r, g, b]. Returns [0,0,0] if invalid. */
-function hexToRgb(hex: string): [number, number, number] {
-  if (!hex || typeof hex !== "string") return [0, 0, 0];
-  const h = hex.replace("#", "");
-  if (h.length !== 6 && h.length !== 3) return [0, 0, 0];
-
-  if (h.length === 3) {
-    return [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)];
-  }
-
-  return [
-    parseInt(h.substring(0, 2), 16) || 0,
-    parseInt(h.substring(2, 4), 16) || 0,
-    parseInt(h.substring(4, 6), 16) || 0,
-  ];
-}
-
-/** Convert [r, g, b] to hex string */
-function rgbToHex(r: number, g: number, b: number): string {
-  // Guard against NaN
-  const safeR = isNaN(r) ? 0 : r;
-  const safeG = isNaN(g) ? 0 : g;
-  const safeB = isNaN(b) ? 0 : b;
-
-  return (
-    "#" +
-    [safeR, safeG, safeB]
-      .map((v) =>
-        Math.round(Math.max(0, Math.min(255, v)))
-          .toString(16)
-          .padStart(2, "0")
-      )
-      .join("")
-  );
-}
-
 /** Interpolate between two hex colors. ratio=0 → color1, ratio=1 → color2 */
 export function blendColors(color1: string, color2: string, ratio: number): string {
-  const [r1, g1, b1] = hexToRgb(color1);
-  const [r2, g2, b2] = hexToRgb(color2);
+  const [r1, g1, b1] = hexToRgbArray(color1);
+  const [r2, g2, b2] = hexToRgbArray(color2);
   const safeRatio = isNaN(ratio) ? 0 : Math.max(0, Math.min(1, ratio));
 
   return rgbToHex(

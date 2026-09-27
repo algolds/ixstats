@@ -13,7 +13,7 @@ import {
 } from "iconoir-react";
 import { motion } from "motion/react";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
-import { cn, toTitleCase } from "~/lib/utils";
+import { cn, formatCurrency, toTitleCase } from "~/lib/utils";
 import { useBuilderActions } from "~/app/builder/hooks/useBuilderActions";
 import type { BuilderFilterState } from "~/app/builder/components/builder-filter-context";
 import type { BuilderContextValue } from "~/app/builder/components/enhanced/context/BuilderStateContext";
@@ -83,13 +83,6 @@ const DEFAULT_STEP_THEME: StepTheme = {
   color: "text-amber-400 border-amber-500/30",
   bg: "bg-amber-500/10",
 };
-
-function formatCurrencyValue(val: number): string {
-  if (val >= 1e12) return `$${(val / 1e12).toFixed(1)}T`;
-  if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
-  if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-  return `$${val.toLocaleString()}`;
-}
 
 function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgressViewProps) {
   const [isConfirmingRestart, setIsConfirmingRestart] = useState(false);
@@ -308,7 +301,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
                 </span>
                 <span className="font-bold text-foreground">
                   {builderState?.governmentStructure?.structure?.totalBudget
-                    ? formatCurrencyValue(builderState.governmentStructure.structure.totalBudget)
+                    ? formatCurrency(builderState.governmentStructure.structure.totalBudget)
                     : "Not configured"}
                 </span>
               </div>

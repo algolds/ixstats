@@ -16,6 +16,7 @@ import {
   KeyCommand,
 } from "iconoir-react";
 import type { EditorAction, EditorHistory } from "~/hooks/map-editor/useMapHistory";
+import { timeAgo } from "~/lib/format/compact";
 
 interface HistoryPanelProps {
   history: EditorHistory;
@@ -43,16 +44,6 @@ function getFeatureIcon(type: string) {
     default:
       return Map;
   }
-}
-
-function formatRelativeTime(timestamp?: number): string {
-  if (!timestamp) return "";
-  const diffSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (diffSec < 10) return "Just now";
-  if (diffSec < 60) return `${diffSec}s ago`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  return `${Math.floor(diffMin / 60)}h ago`;
 }
 
 export const HistoryPanel = React.memo(function HistoryPanel({
@@ -145,7 +136,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
             const isActive = idx <= position;
             const isCurrent = idx === position;
             const Icon = getFeatureIcon(action.featureType);
-            const timeStr = formatRelativeTime(action.timestamp);
+            const timeStr = timeAgo(action.timestamp);
 
             return (
               <button

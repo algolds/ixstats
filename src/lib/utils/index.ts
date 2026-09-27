@@ -10,6 +10,5 @@ export * from "./sanitize-html";
 export * from "./text-formatter";
 export * from "./slug-utils";
 export * from "./url-utils";
-export * from "./time-utils";
 export * from "./math";
 export * from "./common";

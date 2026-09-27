@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { formatCurrency } from "~/lib/utils/format-utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -581,13 +582,6 @@ function Step4Preview({
     );
   }
 
-  const fmtBig = (n: number) => {
-    if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
-    return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-  };
-
   return (
     <div>
       <h3 className="text-foreground mb-1 text-lg font-semibold">Impact Preview</h3>
@@ -617,7 +611,7 @@ function Step4Preview({
         <div className="border-border/50 rounded-lg border p-3 text-center">
           <div className="text-muted-foreground text-xs">GDP at Risk</div>
           <div className="text-foreground text-lg font-bold">
-            {fmtBig(simulation.summary.totalGdpAtRisk)}
+            {formatCurrency(simulation.summary.totalGdpAtRisk)}
           </div>
         </div>
       </div>

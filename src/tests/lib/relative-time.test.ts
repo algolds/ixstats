@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, jest } from "@jest/globals";
 import { timeAgo } from "~/lib/format/compact";
-import { formatTimeAgo } from "~/lib/utils/time-utils";
 
 const NOW = new Date("2026-09-25T12:00:00Z").getTime();
 const ago = (ms: number) => new Date(NOW - ms);
@@ -37,9 +36,5 @@ describe("timeAgo (single relative-time formatter, plan 345)", () => {
   it("falls back to a short date after 30 days and to an empty string for invalid input", () => {
     expect(timeAgo(ago(45 * DAY))).toMatch(/[A-Z][a-z]{2} \d{1,2}/);
     expect(timeAgo("not a date")).toBe("");
-  });
-
-  it("keeps the historical formatTimeAgo name as an alias", () => {
-    expect(formatTimeAgo).toBe(timeAgo);
   });
 });

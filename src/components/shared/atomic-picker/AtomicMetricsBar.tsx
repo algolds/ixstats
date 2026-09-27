@@ -17,7 +17,7 @@ import {
   Package,
   Archery as Target,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn, formatCurrency } from "~/lib/utils";
 import type { AtomicMetrics } from "./types";
 
 export interface AtomicMetricsBarProps {
@@ -31,16 +31,9 @@ export interface AtomicMetricsBarProps {
   onConflictsClick?: () => void;
 }
 
-function defaultCurrency(amount: number): string {
-  if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
-  if (amount >= 1e6) return `$${(amount / 1e6).toFixed(1)}M`;
-  if (amount >= 1e3) return `$${(amount / 1e3).toFixed(0)}K`;
-  return `$${amount}`;
-}
-
 export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
   metrics,
-  currencyFormatter = defaultCurrency,
+  currencyFormatter = formatCurrency,
   onComponentsClick,
   onEffectivenessClick,
   onImplementationClick,

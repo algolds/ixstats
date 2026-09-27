@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { formatCurrency } from "~/lib/utils/format-utils";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
@@ -57,13 +58,6 @@ export function SandboxMode() {
       refetchOnWindowFocus: false,
     }
   );
-
-  const fmtBig = (n: number) => {
-    if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
-    return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-  };
 
   return (
     <div className="space-y-6">
@@ -198,7 +192,7 @@ export function SandboxMode() {
                 <div className="border-border/50 rounded-lg border p-3 text-center">
                   <div className="text-muted-foreground text-xs">At Risk</div>
                   <div className="text-foreground text-xl font-bold">
-                    {fmtBig(simulation.data.summary.totalGdpAtRisk)}
+                    {formatCurrency(simulation.data.summary.totalGdpAtRisk)}
                   </div>
                 </div>
               </div>
@@ -214,7 +208,7 @@ export function SandboxMode() {
                       <div>
                         <div className="text-foreground text-sm font-medium">{p.countryName}</div>
                         <div className="text-muted-foreground text-xs">
-                          {p.economicTier} - GDP: {fmtBig(p.current.gdp)}
+                          {p.economicTier} - GDP: {formatCurrency(p.current.gdp)}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-right">
@@ -237,7 +231,7 @@ export function SandboxMode() {
                         <div>
                           <div className="text-muted-foreground text-xs">Projected</div>
                           <div className="text-foreground text-sm font-medium">
-                            {fmtBig(p.projected.gdp)}
+                            {formatCurrency(p.projected.gdp)}
                           </div>
                         </div>
                       </div>
