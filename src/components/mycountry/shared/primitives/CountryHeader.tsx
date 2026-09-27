@@ -18,12 +18,6 @@ export function CountryHeader({
   countryName,
   countryId,
   countrySlug,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  economicTier,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  populationTier,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  variant = "unified",
 }: CountryHeaderProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

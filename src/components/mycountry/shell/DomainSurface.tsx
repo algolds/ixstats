@@ -11,8 +11,6 @@ import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { soundEffects } from "~/lib/sound/cuelume";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -74,8 +72,6 @@ function DomainSurfaceComponent({
   countryId,
   section,
   onDeclare,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onNavigate,
 }: DomainSurfaceProps): React.JSX.Element {
   const ability = useAbility();
   const domain = SECTION_TO_DOMAIN[section];

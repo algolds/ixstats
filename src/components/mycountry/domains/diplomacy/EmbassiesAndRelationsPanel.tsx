@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   City as Building2,
   Group as Users,
@@ -9,7 +8,6 @@ import {
   Page as FileText,
   Palette,
   Plus,
-  NavArrowRight as ChevronRight,
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
@@ -60,14 +58,6 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     "embassies" | "relations" | "alliances" | "exchanges" | "events"
   >("embassies");
 
-  // Collapsible sections
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [relationsExpanded, setRelationsExpanded] = useState(false);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [exchangesExpanded, setExchangesExpanded] = useState(false);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [eventsExpanded, setEventsExpanded] = useState(false);
-
   // Determine ownership
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
   const isOwner = userProfile?.countryId === countryId;
@@ -84,7 +74,6 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     isLoading: embassiesLoading,
     refetch: refetchEmbassies,
   } = useEmbassyNetworkData(countryId, isOwner);
-  // oxlint-disable-next-line eslint/no-unused-vars
   const networkMetrics = useNetworkMetrics(embassiesWithSynergies);
 
   // Shared data modal (embassy synergy detail — legacy)
@@ -386,30 +375,6 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           />
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-/* ─── Stats Cell ─── */
-// oxlint-disable-next-line eslint/no-unused-vars
-function StatCell({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: typeof Building2;
-  label: string;
-  value: string | number;
-  color: string;
-}) {
-  return (
-    <div className="facet-hierarchy-child rounded-lg p-2.5">
-      <div className="flex items-center gap-1.5">
-        <Icon className={`h-3.5 w-3.5 shrink-0 ${color}`} />
-        <span className="text-muted-foreground text-xs font-medium">{label}</span>
-      </div>
-      <div className="mt-0.5 text-lg font-bold">{value}</div>
     </div>
   );
 }

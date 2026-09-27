@@ -35,8 +35,7 @@ interface ExpandedCardContentProps {
 type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
 
 export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
-  // oxlint-disable-next-line eslint/no-unused-vars
-  ({ country, viewerCountryId, isOwnCountry, onCountryClick }) => {
+  ({ country, viewerCountryId, isOwnCountry }) => {
     const notify = useNotify();
     const router = useRouter();
     const targetCountryId = country.id;

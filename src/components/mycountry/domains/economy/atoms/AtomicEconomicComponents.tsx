@@ -81,15 +81,12 @@ export function AtomicEconomicComponentSelector({
   selectedComponents,
   onComponentChange,
   maxComponents = 15,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  isReadOnly = false,
   governmentComponents = [],
   hideSelectedList = false,
   standalone = false,
 }: AtomicEconomicComponentSelectorProps) {
   // Use database hook for component data
   const {
-    // oxlint-disable-next-line eslint/no-unused-vars
     components: _dbComponents,
     isLoading,
     isUsingFallback,

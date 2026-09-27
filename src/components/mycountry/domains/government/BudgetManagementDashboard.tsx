@@ -40,9 +40,7 @@ export function BudgetManagementDashboard({
   departments: propDepts,
   budgetAllocations: propAllocations,
   revenueSources: propRevenue,
-  // oxlint-disable-next-line eslint/no-unused-vars
   onUpdateBudget: _onUpdateBudget,
-  // oxlint-disable-next-line eslint/no-unused-vars
   isReadOnly: _isReadOnly = false,
 }: BudgetManagementDashboardProps) {
   const { data: fetchedGov } = api.government.getFullByCountryId.useQuery(

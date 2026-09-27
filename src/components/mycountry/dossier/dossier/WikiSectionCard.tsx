@@ -46,10 +46,6 @@ export function WikiSectionCard({
   onToggle,
   onShowFullContent,
   handleWikiLinkClick,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  flagColors,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  countryName,
   wikiSource = "ixwiki",
 }: WikiSectionCardProps): React.ReactElement {
   const router = useRouter();

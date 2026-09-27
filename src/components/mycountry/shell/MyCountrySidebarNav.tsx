@@ -11,8 +11,6 @@ import {
   Lock,
   EditPencil as Edit2,
   StatUp as TrendingUp,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  ShieldCheck,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { usePremium } from "~/hooks/usePremium";

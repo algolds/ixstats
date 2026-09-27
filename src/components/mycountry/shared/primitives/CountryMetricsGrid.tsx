@@ -20,14 +20,6 @@ interface CountryMetricsGridProps {
 }
 
 export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMetricsGridProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const gridCols =
-    variant === "executive"
-      ? "grid-cols-2 md:grid-cols-6"
-      : variant === "compact"
-        ? "grid-cols-2 md:grid-cols-4"
-        : "grid-cols-2 md:grid-cols-4";
-
   const cardSize = variant === "compact" ? "p-4" : "p-4";
   const textSize =
     variant === "compact" ? "text-xs" : variant === "executive" ? "text-lg" : "text-xl";

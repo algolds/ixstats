@@ -257,8 +257,7 @@ function ImpactPreview({
   );
 }
 
-// oxlint-disable-next-line eslint/no-unused-vars
-export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEventsHubProps) {
+export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedEvent, setSelectedEvent] = useState<DiplomaticEvent | null>(null);
   const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
@@ -302,7 +301,6 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
     if (!scenarioHistory) return [];
     if (historyFilter === "all") return scenarioHistory;
     return scenarioHistory.filter((s) => s.type === historyFilter);
-    // oxlint-disable-next-line
   }, [scenarioHistory, historyFilter]);
 
   // Handle event response

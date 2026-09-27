@@ -18,7 +18,6 @@ import {
 import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
-import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import type { CountryInfobox } from "~/types/dossier";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
@@ -103,14 +102,10 @@ function categorizeTitle(title: string, source: "wiki" | "native"): string {
 
 export function DossierTocSidebar({
   countryName,
-  infobox,
   sections,
   nativeDocs = [],
   activeSectionId,
   onSelectSection,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  flagColors,
-  wikiSource = "ixwiki",
 }: DossierTocSidebarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -242,18 +237,6 @@ export function DossierTocSidebar({
       onSelectSection(item.id);
     }
   };
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const flagUrl =
-    infobox?.image_flag || infobox?.flag
-      ? resolveImageUrl(infobox.image_flag || infobox.flag, wikiSource)
-      : undefined;
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const coatUrl =
-    infobox?.image_coat || infobox?.coat_of_arms
-      ? resolveImageUrl(infobox?.image_coat || infobox?.coat_of_arms, wikiSource)
-      : undefined;
 
   const totalEntries = Object.values(groupedFolders).reduce((acc, arr) => acc + arr.length, 0);
 

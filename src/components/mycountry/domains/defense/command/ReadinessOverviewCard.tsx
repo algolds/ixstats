@@ -13,8 +13,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   Dialog,
   DialogContent,
@@ -69,8 +67,6 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   averageReadiness,
   averageTechnology,
   averageMorale,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  branches,
 }: ReadinessOverviewCardProps) {
   const [defcon, setDefcon] = React.useState<number>(4);
   const [projection, setProjection] = React.useState<string>("regional");
