@@ -107,9 +107,9 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       (e) => e.status === "ACTIVE" || e.status === "active"
     ).length;
 
-    const relationsTargetIds = new Set(relations?.map((r: any) => r.targetCountryId) ?? []);
+    const relationsTargetIds = new Set(relations?.map((r) => r.targetCountryId) ?? []);
     let additionalRelationsCount = 0;
-    embassiesWithSynergies.forEach((e: any) => {
+    embassiesWithSynergies.forEach((e) => {
       if (e.status === "ACTIVE" || e.status === "active") {
         const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
         if (!relationsTargetIds.has(partnerId)) {

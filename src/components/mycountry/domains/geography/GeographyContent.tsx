@@ -9,6 +9,7 @@ import {
   SystemRestart as Loader2,
   Label as Tag,
 } from "iconoir-react";
+import type { City, PointOfInterest, Subdivision } from "@prisma/client";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { SearchableList } from "~/components/mycountry/shared/primitives";
@@ -65,7 +66,11 @@ export function GeographyContent() {
     return <p className="text-muted-foreground text-sm">No geographic data found.</p>;
   }
 
-  const { cities, subdivisions, pois, rollups, country: countryData } = bundle;
+  // The bundle builder queries through an untyped client; rows are these Prisma models.
+  const cities: City[] = bundle.cities;
+  const subdivisions: Subdivision[] = bundle.subdivisions;
+  const pois: PointOfInterest[] = bundle.pois;
+  const { rollups, country: countryData } = bundle;
 
   if (!bundle.geometry) {
     return (
@@ -191,7 +196,7 @@ export function GeographyContent() {
         searchPlaceholder="Search cities, mayors, specializations…"
         emptyMessage="No cities yet. Use the map editor to place some."
         noMatchMessage="No cities match your search."
-        renderItem={(city: any) => (
+        renderItem={(city) => (
           <CityEditor city={city} countryId={countryId} onSaved={() => refetch()} />
         )}
       />
@@ -206,7 +211,7 @@ export function GeographyContent() {
         searchPlaceholder="Search subdivisions, governors, government…"
         emptyMessage="No subdivisions yet. Generate some from the action buttons above."
         noMatchMessage="No subdivisions match your search."
-        renderItem={(sub: any) => (
+        renderItem={(sub) => (
           <SubdivisionEditor subdivision={sub} countryId={countryId} onSaved={() => refetch()} />
         )}
       />
@@ -221,7 +226,7 @@ export function GeographyContent() {
         searchPlaceholder="Search POIs, categories…"
         emptyMessage="No points of interest yet."
         noMatchMessage="No POIs match your search."
-        renderItem={(poi: any) => (
+        renderItem={(poi) => (
           <PoiCard poi={poi} countryId={countryId} onApplied={() => refetch()} />
         )}
       />
@@ -230,7 +235,7 @@ export function GeographyContent() {
 }
 
 interface CityEditorProps {
-  city: any;
+  city: City;
   countryId: string;
   onSaved: () => void;
 }
@@ -362,7 +367,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
 }
 
 interface SubdivisionEditorProps {
-  subdivision: any;
+  subdivision: Subdivision;
   countryId: string;
   onSaved: () => void;
 }
@@ -399,10 +404,7 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
       <div className="mb-2 flex items-center justify-between">
         <div>
           <div className="text-foreground text-xs font-semibold">{subdivision.name}</div>
-          <div className="text-muted-foreground text-xs">
-            {subdivision.type}
-            {subdivision.wikiPageTitle ? ` · wiki: ${subdivision.wikiPageTitle}` : ""}
-          </div>
+          <div className="text-muted-foreground text-xs">{subdivision.type}</div>
         </div>
         {editing && !isPublicReadOnly ? (
           <div className="flex gap-1">
@@ -431,7 +433,6 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
                 countryId={countryId}
                 kind="subdivision"
                 id={subdivision.id}
-                wikiTitle={subdivision.wikiPageTitle}
                 onApplied={onSaved}
               />
               <button
@@ -503,7 +504,7 @@ function PoiCard({
   countryId,
   onApplied,
 }: {
-  poi: any;
+  poi: PointOfInterest;
   countryId: string;
   onApplied?: () => void;
 }) {

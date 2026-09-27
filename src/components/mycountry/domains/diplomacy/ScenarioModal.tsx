@@ -11,7 +11,7 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 
-interface ResponseOption {
+export interface ResponseOption {
   id?: string;
   label: string;
   description: string;
@@ -28,7 +28,7 @@ interface ResponseOption {
   };
 }
 
-interface Scenario {
+export interface Scenario {
   title: string;
   narrative: string;
   responseOptions?: ResponseOption[];

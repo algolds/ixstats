@@ -99,7 +99,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
               <button
                 key={value}
                 type="button"
-                onClick={() => setFormData((prev) => ({ ...prev, type: value as any }))}
+                onClick={() => setFormData((prev) => ({ ...prev, type: value }))}
                 className={cn(
                   "flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors",
                   formData.type === value

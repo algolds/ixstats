@@ -175,8 +175,8 @@ export function EmbassyDetailSheet({
     );
   };
 
-  const missions = (embassy as any)?.missions ?? [];
-  const activeMissions = missions.filter((m: any) => m.status === "active");
+  const missions = embassy?.missions ?? [];
+  const activeMissions = missions.filter((m) => m.status === "active");
 
   return (
     <Dialog
@@ -224,12 +224,12 @@ export function EmbassyDetailSheet({
               <div className="space-y-2">
                 <InfoRow
                   label="Host Country"
-                  value={(embassy as any).hostCountryName ?? embassy.hostCountryId}
+                  value={embassy.hostCountryName ?? embassy.hostCountryId}
                   icon={MapPin}
                 />
                 <InfoRow
                   label="Guest Country"
-                  value={(embassy as any).guestCountryName ?? embassy.guestCountryId}
+                  value={embassy.guestCountryName ?? embassy.guestCountryId}
                   icon={Building2}
                 />
                 {embassy.ambassadorName && (
@@ -296,7 +296,7 @@ export function EmbassyDetailSheet({
                       Active Missions ({activeMissions.length})
                     </h4>
                     <div className="space-y-2">
-                      {activeMissions.map((m: any) => (
+                      {activeMissions.map((m) => (
                         <div
                           key={m.id}
                           className="border-border/40 bg-muted/30 rounded-md border p-2 text-xs"

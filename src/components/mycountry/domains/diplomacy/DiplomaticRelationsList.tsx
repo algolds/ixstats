@@ -17,12 +17,37 @@ import {
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { useUser } from "~/context/auth-context";
+import { formatExactCurrency } from "~/lib/utils/format-utils";
 
 interface DiplomaticRelationsListProps {
   countryId: string;
   /** When set, scroll to + highlight the relation with this target country id. */
   focusId?: string | null;
 }
+
+/** A diplomatic relation, or a relation derived from an embassy with no relation record. */
+interface RelationRow {
+  id: string;
+  targetCountryId: string;
+  targetCountry?: string;
+  targetCountryName: string;
+  targetCountryFlag: string | null;
+  flagUrl?: string | null;
+  relationship: string;
+  strength: number;
+  establishedAt?: string;
+  lastContact?: string;
+  tradeVolume: number;
+  goalSelf?: string | null;
+  goalTarget?: string | null;
+  recentActivity?: string | null;
+  isEmbassyDerived?: boolean;
+}
+
+const DIPLOMATIC_GOALS = ["ALLY", "COEXIST", "HEGEMONY", "RIVAL"] as const;
+type DiplomaticGoal = (typeof DIPLOMATIC_GOALS)[number];
+const isDiplomaticGoal = (value: string): value is DiplomaticGoal =>
+  DIPLOMATIC_GOALS.some((goal) => goal === value);
 
 const STATUS_THEMES: Record<string, { badge: string; text: string; progress: string }> = {
   allied: {
@@ -79,7 +104,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
   });
 
   const allRelations = React.useMemo(() => {
-    const list: any[] = [...(relations ?? [])];
+    const list: RelationRow[] = [...(relations ?? [])];
     const seenIds = new Set<string>();
     list.forEach((r) => {
       if (r.targetCountryId) seenIds.add(r.targetCountryId.toLowerCase());
@@ -87,10 +112,9 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
       if (r.targetCountryName) seenIds.add(r.targetCountryName.toLowerCase());
     });
 
-    (rawEmbassies ?? []).forEach((e: any) => {
+    (rawEmbassies ?? []).forEach((e) => {
       const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
-      const partnerName =
-        e.country ?? (e.guestCountryId === countryId ? e.hostCountry : e.guestCountry) ?? "Partner Nation";
+      const partnerName = e.country;
       const partnerFlag =
         e.countryFlag ?? (e.guestCountryId === countryId ? e.hostCountryFlag : e.guestCountryFlag);
 
@@ -107,9 +131,9 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
           targetCountryName: partnerName,
           targetCountryFlag: partnerFlag,
           relationship: e.status === "ACTIVE" ? "FRIENDLY" : "NEUTRAL",
-          strength: e.relationshipStrength ?? e.strength ?? 65,
+          strength: e.strength,
           establishedAt: e.establishedAt,
-          tradeVolume: e.tradeVolume ?? (e.economicBonus ? e.economicBonus * 1_000_000_000 : 0),
+          tradeVolume: 0,
           goalSelf: null,
           goalTarget: null,
           isEmbassyDerived: true,
@@ -122,20 +146,9 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   useScrollToFocus(focusId, [allRelations]);
 
-  const handleGoalChange = (
-    relationId: string,
-    goal: "ALLY" | "COEXIST" | "HEGEMONY" | "RIVAL"
-  ) => {
+  const handleGoalChange = (relationId: string, goal: DiplomaticGoal) => {
     if (relationId.startsWith("embassy-rel-")) return;
     setGoalMutation.mutate({ relationId, goal });
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const formatDate = (dateString: string | Date | undefined | null) => {
@@ -193,9 +206,9 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
         const targetName = rel.targetCountryName || rel.targetCountry || "Unknown Nation";
 
         // Check if nation shares a Bloc / Alliance
-        const sharedBloc = (alliances ?? []).find((a: any) =>
+        const sharedBloc = (alliances ?? []).find((a) =>
           a.members?.some(
-            (m: any) =>
+            (m) =>
               m.country?.name?.toLowerCase() === targetName.toLowerCase() ||
               m.countryId === rel.targetCountryId
           )
@@ -264,7 +277,10 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                 {isOwner ? (
                   <select
                     value={rel.goalSelf || ""}
-                    onChange={(e) => handleGoalChange(rel.id, e.target.value as any)}
+                    onChange={(e) => {
+                      const goal = e.target.value;
+                      if (isDiplomaticGoal(goal)) handleGoalChange(rel.id, goal);
+                    }}
                     disabled={setGoalMutation.isPending}
                     className="bg-background border-border/40 text-foreground rounded border px-1.5 py-0.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   >
@@ -301,9 +317,9 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
             )}
 
             {/* Recent Activity / Pain Points */}
-            {(rel as any).recentActivity && (
+            {rel.recentActivity && (
               <div className="bg-muted/40 border-border/20 text-muted-foreground mt-2 rounded border px-2 py-1 text-xs italic">
-                Status: {(rel as any).recentActivity}
+                Status: {rel.recentActivity}
               </div>
             )}
 
@@ -315,7 +331,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                   Bilateral Trade
                 </span>
                 <span className="text-foreground font-bold">
-                  {rel.tradeVolume ? formatCurrency(rel.tradeVolume) : "$0"}
+                  {rel.tradeVolume ? formatExactCurrency(rel.tradeVolume) : "$0"}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5">

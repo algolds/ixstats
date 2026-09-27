@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useCallback } from "react";
-import { formatExactCurrency } from "~/lib/utils";
+import { formatExactCurrency, formatNumber } from "~/lib/utils";
 import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -91,21 +91,21 @@ export function BudgetAllocationForm({
   totalBudgetRef.current = totalBudget;
 
   const handleChange = useCallback(
-    (field: keyof BudgetAllocationInput, value: any) => {
-      const updatedData = {
-        ...dataRef.current,
-        [field]: value,
-      };
+    <K extends keyof BudgetAllocationInput>(field: K, value: BudgetAllocationInput[K]) => {
+      const updatedData: BudgetAllocationInput = { ...dataRef.current };
+      updatedData[field] = value;
 
       // Auto-calculate percentage when amount changes
       if (field === "allocatedAmount" && totalBudgetRef.current > 0) {
         updatedData.allocatedPercent =
-          Math.round((value / totalBudgetRef.current) * 100 * 1000) / 1000; // Round to 3 decimal places
+          Math.round((updatedData.allocatedAmount / totalBudgetRef.current) * 100 * 1000) / 1000; // Round to 3 decimal places
       }
 
       // Auto-calculate amount when percentage changes
       if (field === "allocatedPercent") {
-        updatedData.allocatedAmount = Math.round((totalBudgetRef.current * value) / 100); // Round to nearest dollar
+        updatedData.allocatedAmount = Math.round(
+          (totalBudgetRef.current * updatedData.allocatedPercent) / 100
+        ); // Round to nearest dollar
       }
 
       onChange(updatedData);
@@ -115,13 +115,6 @@ export function BudgetAllocationForm({
 
   const formatCurrency = (amount: number) => {
     return formatExactCurrency(amount, currency);
-  };
-
-  const formatNumber = (num: number) => {
-    if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-    return num.toFixed(0);
   };
 
   const utilizationRate =

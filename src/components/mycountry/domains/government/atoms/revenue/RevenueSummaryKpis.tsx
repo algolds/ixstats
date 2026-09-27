@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { RevenueSourceInput } from "~/types/government";
+import { formatNumber } from "~/lib/utils/format-utils";
 import {
   revenueCategories,
   revenueCategoryIcons,
@@ -11,13 +12,6 @@ import {
 interface RevenueSummaryKpisProps {
   data: RevenueSourceInput[];
   totalCalculated: number;
-}
-
-function formatNumber(num: number) {
-  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-  if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-  return num.toFixed(0);
 }
 
 export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpisProps) {

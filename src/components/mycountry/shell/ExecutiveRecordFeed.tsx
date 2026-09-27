@@ -10,6 +10,7 @@ import {
   ArrowUpRight,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
+import { timeAgo } from "~/lib/format/compact";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
@@ -23,18 +24,6 @@ export interface CanonFeedItem {
   description?: string | null;
   deltaValue?: number | null;
   targetField?: string | null;
-}
-
-function relativeTime(ts: number | string | Date): string {
-  const timeMs = typeof ts === "number" ? ts : new Date(ts).getTime();
-  const diffSec = Math.max(0, Math.floor((Date.now() - timeMs) / 1000));
-  if (diffSec < 60) return "just now";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d ago`;
 }
 
 function formatDeltaValue(val: number | null | undefined): string {
@@ -298,7 +287,7 @@ export function ExecutiveRecordFeed({
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
                       <span className="text-muted-foreground font-semibold">{meta.label}</span>
                       <span className="text-muted-foreground/40">•</span>
-                      <span className="text-muted-foreground">{relativeTime(item.timestamp)}</span>
+                      <span className="text-muted-foreground">{timeAgo(item.timestamp)}</span>
                       {item.kind === "ledger" && item.targetField && (
                         <>
                           <span className="text-muted-foreground/40">•</span>

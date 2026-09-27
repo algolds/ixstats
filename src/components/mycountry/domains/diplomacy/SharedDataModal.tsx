@@ -38,6 +38,20 @@ import {
   AllDataTab,
 } from "./shared-data/shared-data-views";
 
+type SharedDataTab = SharedDataType | "all" | "overview";
+
+const SHARED_DATA_TABS: readonly SharedDataTab[] = [
+  "overview",
+  "all",
+  "economic",
+  "intelligence",
+  "research",
+  "cultural",
+  "policy",
+];
+const isSharedDataTab = (value: string): value is SharedDataTab =>
+  SHARED_DATA_TABS.some((tab) => tab === value);
+
 interface SharedDataModalProps {
   embassyId: string;
   onClose: () => void;
@@ -46,7 +60,7 @@ interface SharedDataModalProps {
 
 export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModalProps) {
   const notify = useNotify();
-  const [activeTab, setActiveTab] = useState<SharedDataType | "all" | "overview">("overview");
+  const [activeTab, setActiveTab] = useState<SharedDataTab>("overview");
   const [mounted, setMounted] = useState(false);
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [overviewData, setOverviewData] = useState({
@@ -242,7 +256,12 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                 )}
 
                 {/* Tabs */}
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => {
+                    if (isSharedDataTab(v)) setActiveTab(v);
+                  }}
+                >
                   <TabsList className="grid w-full grid-cols-7">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="all" disabled={!hasDataAccess}>

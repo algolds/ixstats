@@ -47,8 +47,24 @@ import {
   Eye,
   Sparks as Sparkles,
 } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+
+/** Fields this hub reads from a scenario's `responseOptions` (stored as untyped JSON). */
+interface ScenarioResponseOption {
+  id?: string;
+  label?: string;
+  description?: string;
+  difficulty?: string;
+  relationshipEffect?: number;
+  economicImpact?: number;
+  culturalImpact?: number;
+}
+
+type ScenarioRecord = RouterOutputs["diplomaticScenarios"]["getAllScenarios"]["scenarios"][number];
+type DiplomaticEvent = Omit<ScenarioRecord, "responseOptions"> & {
+  responseOptions: ScenarioResponseOption[];
+};
 
 interface DiplomaticEventsHubProps {
   countryId: string;
@@ -244,7 +260,7 @@ function ImpactPreview({
 // oxlint-disable-next-line eslint/no-unused-vars
 export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEventsHubProps) {
   const [activeTab, setActiveTab] = useState("active");
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<DiplomaticEvent | null>(null);
   const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<string>("all");
 
@@ -268,9 +284,9 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
     });
 
   // Extract scenarios from API response
-  const activeScenarios = activeData?.scenarios || [];
+  const activeScenarios: DiplomaticEvent[] = activeData?.scenarios || [];
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const scenarioHistory = historyData?.scenarios || [];
+  const scenarioHistory: DiplomaticEvent[] = historyData?.scenarios || [];
 
   // Response mutation
   const respondMutation = api.diplomaticScenarios.recordChoice.useMutation({
@@ -285,7 +301,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
   const filteredHistory = useMemo(() => {
     if (!scenarioHistory) return [];
     if (historyFilter === "all") return scenarioHistory;
-    return scenarioHistory.filter((s: any) => s.type === historyFilter);
+    return scenarioHistory.filter((s) => s.type === historyFilter);
     // oxlint-disable-next-line
   }, [scenarioHistory, historyFilter]);
 
@@ -300,21 +316,21 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
     if (action === "accept") {
       selectedOption =
         responseOptions.find(
-          (opt: any) =>
+          (opt) =>
             opt.label?.toLowerCase().includes("accept") ||
             opt.label?.toLowerCase().includes("agree")
         ) || responseOptions[0];
     } else if (action === "reject") {
       selectedOption =
         responseOptions.find(
-          (opt: any) =>
+          (opt) =>
             opt.label?.toLowerCase().includes("reject") ||
             opt.label?.toLowerCase().includes("decline")
         ) || responseOptions[1];
     } else if (action === "negotiate") {
       selectedOption =
         responseOptions.find(
-          (opt: any) =>
+          (opt) =>
             opt.label?.toLowerCase().includes("negotiate") ||
             opt.label?.toLowerCase().includes("counter")
         ) || responseOptions[2];
@@ -329,7 +345,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
   };
 
   // Open response dialog
-  const openResponseDialog = (event: any) => {
+  const openResponseDialog = (event: DiplomaticEvent) => {
     setSelectedEvent(event);
     setIsResponseDialogOpen(true);
   };
@@ -367,7 +383,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
               <div>
                 <p className="text-muted-foreground text-sm">Urgent Events</p>
                 <p className="text-3xl font-bold">
-                  {activeScenarios?.filter((s: any) => {
+                  {activeScenarios?.filter((s) => {
                     const hours = (new Date(s.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60);
                     return hours < 24;
                   }).length || 0}
@@ -408,7 +424,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
         <TabsContent value="active" className="space-y-4">
           {activeScenarios && activeScenarios.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {activeScenarios.map((event: any) => {
+              {activeScenarios.map((event) => {
                 const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
                   color: "bg-gray-100 text-gray-800",
                   icon: <FileText className="h-4 w-4" />,
@@ -441,7 +457,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                     </CardHeader>
                     <CardContent>
                       <p className="text-muted-foreground mb-4 line-clamp-3 text-sm">
-                        {event.description}
+                        {event.narrative}
                       </p>
 
                       {/* Quick Impact Preview */}
@@ -520,7 +536,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
             </div>
           ) : filteredHistory.length > 0 ? (
             <div className="space-y-3">
-              {filteredHistory.map((event: any) => {
+              {filteredHistory.map((event) => {
                 const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
                   color: "bg-gray-100 text-gray-800",
                   icon: <FileText className="h-4 w-4" />,
@@ -549,7 +565,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                           )}
                         </div>
                         <div className="text-muted-foreground text-right text-xs">
-                          {new Date(event.updatedAt).toLocaleDateString()}
+                          {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                     </CardContent>
@@ -588,7 +604,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
               {/* Event Details */}
               <div>
                 <h4 className="mb-2 font-semibold">Situation</h4>
-                <p className="text-muted-foreground text-sm">{selectedEvent.description}</p>
+                <p className="text-muted-foreground text-sm">{selectedEvent.narrative}</p>
               </div>
 
               {/* Response Options */}
@@ -596,7 +612,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                 <div>
                   <h4 className="mb-3 font-semibold">Response Options</h4>
                   <div className="space-y-3">
-                    {selectedEvent.responseOptions.map((option: any, idx: number) => (
+                    {selectedEvent.responseOptions.map((option, idx) => (
                       <div key={idx} className="bg-muted/30 rounded-lg border p-4">
                         <div className="mb-2 flex items-start justify-between">
                           <h5 className="font-medium">{option.label || `Option ${idx + 1}`}</h5>

@@ -220,7 +220,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     title: s.title,
     source: "wiki",
     pageTitle: s.sourcePage,
-    classification: s.classification as any,
+    classification: s.classification,
   }));
 
   const nativeTocItems: TocItem[] = nativeDocs.map((d) => ({

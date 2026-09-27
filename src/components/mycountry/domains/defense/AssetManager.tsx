@@ -61,18 +61,23 @@ interface Asset {
   imageUrl?: string | null;
 }
 
-export interface EquipmentPreset {
-  key: string;
-  type: string;
+/** One entry of `EXPANDED_MILITARY_DATABASE` (see equipment-extended.json). */
+interface EquipmentSpec {
   name: string;
-  category?: string;
+  category: string;
   era?: string;
   manufacturer?: string;
+  role?: string;
+  /** Kilometres, or a label such as "Unlimited (nuclear)". */
+  range?: number | string;
   acquisitionCost?: number;
   maintenanceCost?: number;
-  capability?: string;
   imageUrl?: string | null;
-  [key: string]: any;
+}
+
+export interface EquipmentPreset extends EquipmentSpec {
+  key: string;
+  type: AssetTypeKey;
 }
 
 export interface AssetManagerProps {
@@ -97,6 +102,67 @@ const STATUS_CONFIG = {
   reserve: { label: "Reserve", color: "bg-blue-500" },
   retired: { label: "Retired", color: "bg-muted-foreground" },
 } as const;
+
+/** Matches the `assetType` enum of `security.createMilitaryAsset`. */
+type AssetTypeKey = keyof typeof ASSET_TYPE_CONFIG;
+/** Matches the `status` enum of `security.createMilitaryAsset`. */
+type AssetStatusKey = keyof typeof STATUS_CONFIG;
+
+const isAssetTypeKey = (value: string): value is AssetTypeKey => value in ASSET_TYPE_CONFIG;
+const isAssetStatusKey = (value: string): value is AssetStatusKey => value in STATUS_CONFIG;
+
+/** Form state; `range` and `payload` are display-only and are not persisted. */
+interface AssetFormData {
+  assetType: AssetTypeKey;
+  category: string;
+  name: string;
+  quantity: number;
+  operational: number;
+  capability: string;
+  range: number;
+  payload: number;
+  status: AssetStatusKey;
+  modernizationLevel: number;
+  acquisitionCost: number;
+  maintenanceCost: number;
+  imageUrl: string;
+}
+
+function toFormData(asset: Asset | null): AssetFormData {
+  return {
+    assetType: asset && isAssetTypeKey(asset.assetType) ? asset.assetType : "aircraft",
+    category: asset?.category ?? "",
+    name: asset?.name ?? "",
+    quantity: asset?.quantity ?? 1,
+    operational: asset?.operational ?? 1,
+    capability: asset?.capability ?? "",
+    range: 0,
+    payload: 0,
+    status: asset && isAssetStatusKey(asset.status) ? asset.status : "operational",
+    modernizationLevel: asset?.modernizationLevel ?? 50,
+    acquisitionCost: asset?.acquisitionCost ?? 0,
+    maintenanceCost: asset?.maintenanceCost ?? 0,
+    imageUrl: asset?.imageUrl || "",
+  };
+}
+
+const EQUIPMENT_GROUPS: ReadonlyArray<readonly [string, AssetTypeKey]> = [
+  ["fighters_gen5", "aircraft"],
+  ["fighters_gen4_5", "aircraft"],
+  ["attack_aircraft", "aircraft"],
+  ["bombers", "aircraft"],
+  ["transport", "aircraft"],
+  ["helicopters", "aircraft"],
+  ["naval_ships", "ship"],
+  ["ground_vehicles", "vehicle"],
+  ["weapon_systems", "weapon_system"],
+];
+
+// The full equipment catalogue (250+ items with images), flattened once.
+const ALL_EQUIPMENT: EquipmentPreset[] = EQUIPMENT_GROUPS.flatMap(([group, type]) => {
+  const specs: Record<string, EquipmentSpec> = EXPANDED_MILITARY_DATABASE[group] ?? {};
+  return Object.entries(specs).map(([key, spec]) => ({ ...spec, key, type }));
+});
 
 export function AssetManager({
   countryId: _countryId,
@@ -419,11 +485,11 @@ export function AssetManager({
 interface AssetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  asset: any | null;
+  asset: Asset | null;
   branchId: string;
   branchType: string;
-  onCreate: (data: any) => void;
-  onUpdate: (id: string, data: any) => void;
+  onCreate: (data: AssetFormData) => void;
+  onUpdate: (id: string, data: AssetFormData) => void;
 }
 
 function AssetDialog({
@@ -443,29 +509,12 @@ function AssetDialog({
   const [selectedEra, setSelectedEra] = useState<string>("all");
   const [selectedManufacturer, setSelectedManufacturer] = useState<string>("all");
 
-  const [formData, setFormData] = useState({
-    assetType: asset?.assetType ?? "aircraft",
-    category: asset?.category ?? "",
-    name: asset?.name ?? "",
-    quantity: asset?.quantity ?? 1,
-    operational: asset?.operational ?? 1,
-    capability: asset?.capability ?? "",
-    range: asset?.range ?? 0,
-    payload: asset?.payload ?? 0,
-    status: asset?.status ?? "operational",
-    modernizationLevel: asset?.modernizationLevel ?? 50,
-    acquisitionCost: asset?.acquisitionCost ?? 0,
-    maintenanceCost: asset?.maintenanceCost ?? 0,
-    imageUrl: asset?.imageUrl || "",
-  });
+  const [formData, setFormData] = useState<AssetFormData>(() => toFormData(asset));
 
   React.useEffect(() => {
     if (asset) {
       // oxlint-disable-next-line
-      setFormData({
-        ...asset,
-        imageUrl: asset.imageUrl || "",
-      });
+      setFormData(toFormData(asset));
     }
     // oxlint-disable-next-line
   }, [asset, open]);
@@ -483,14 +532,14 @@ function AssetDialog({
     }
   };
 
-  const loadEquipment = (equipment: any) => {
+  const loadEquipment = (equipment: EquipmentPreset) => {
     setFormData({
       ...formData,
       name: equipment.name,
       category: equipment.category,
       capability: equipment.role ?? equipment.category,
-      range: equipment.range ?? 0,
-      payload: equipment.payload ?? 0,
+      range: typeof equipment.range === "number" ? equipment.range : 0,
+      payload: 0,
       acquisitionCost: equipment.acquisitionCost ?? 0,
       maintenanceCost: equipment.maintenanceCost ?? 0,
       modernizationLevel:
@@ -501,75 +550,7 @@ function AssetDialog({
     notify.success("Equipment template loaded" + (equipment.imageUrl ? " with image" : ""));
   };
 
-  // Filter equipment database - now includes all 150+ items from expanded database
-  const allEquipment: EquipmentPreset[] = [
-    // Expanded database with 250+ items and images
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.fighters_gen5 as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "aircraft",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.fighters_gen4_5 as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "aircraft",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.attack_aircraft as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "aircraft",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.bombers as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "aircraft",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.transport as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "aircraft",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.helicopters as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "aircraft",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.naval_ships as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "ship",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.ground_vehicles as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "vehicle",
-    })),
-    ...Object.entries(
-      (EXPANDED_MILITARY_DATABASE.weapon_systems as Record<string, any>) ?? {}
-    ).map(([key, value]): EquipmentPreset => ({
-      ...(value as any),
-      key,
-      type: "weapon_system",
-    })),
-  ];
-
-  const filteredEquipment = allEquipment.filter((eq) => {
+  const filteredEquipment = ALL_EQUIPMENT.filter((eq) => {
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !q ||
@@ -649,7 +630,7 @@ function AssetDialog({
                     equipment.manufacturer as keyof typeof DEFENSE_MANUFACTURERS
                   ];
                 const era = MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS];
-                const imageUrl = (equipment as any).imageUrl;
+                const imageUrl = equipment.imageUrl;
 
                 return (
                   <div
@@ -691,10 +672,10 @@ function AssetDialog({
                                 format="compact"
                               />
                             </span>
-                            {(equipment as any).range && (
+                            {equipment.range && (
                               <span>
                                 <span className="text-muted-foreground">Range:</span>{" "}
-                                {(equipment as any).range} km
+                                {equipment.range} km
                               </span>
                             )}
                           </div>
@@ -721,7 +702,9 @@ function AssetDialog({
               <Label>Asset Type</Label>
               <Select
                 value={formData.assetType}
-                onValueChange={(value) => setFormData({ ...formData, assetType: value })}
+                onValueChange={(value) => {
+                  if (isAssetTypeKey(value)) setFormData({ ...formData, assetType: value });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -820,7 +803,9 @@ function AssetDialog({
               <Label>Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                onValueChange={(value) => {
+                  if (isAssetStatusKey(value)) setFormData({ ...formData, status: value });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />

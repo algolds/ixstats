@@ -26,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
+import { formatCurrency } from "~/lib/utils/format-utils";
 
 interface ActiveOperationsProps {
   countryId: string;
@@ -58,12 +59,6 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
   const endMutation = api.security.endOperation.useMutation({
     onSuccess: () => void refetch(),
   });
-
-  const formatCurrency = (val: number) => {
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-    return `$${val.toLocaleString()}`;
-  };
 
   if (!operations || operations.length === 0) {
     return (

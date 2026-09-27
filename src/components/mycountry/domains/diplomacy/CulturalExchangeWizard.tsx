@@ -211,7 +211,8 @@ const COMMON_OBJECTIVES = [
   "Develop youth programs",
 ];
 
-const getCountryFlagUrl = (country: any) => country?.flagUrl ?? country?.flag ?? undefined;
+const getCountryFlagUrl = (country?: { flagUrl?: string | null; flag?: string | null }) =>
+  country?.flagUrl ?? country?.flag ?? undefined;
 
 interface CulturalExchangeWizardProps {
   hostCountry: {
@@ -282,9 +283,7 @@ export function CulturalExchangeWizard({
 
   // Auto-generate placeholder narrative
   const narrativePlaceholder = useMemo(() => {
-    const selectedCountry = countriesData?.countries?.find(
-      (c: any) => c.id === participantCountryId
-    );
+    const selectedCountry = countriesData?.countries?.find((c) => c.id === participantCountryId);
     const selectedCountryName = selectedCountry?.name ?? "the participating country";
     const typeConfig = EXCHANGE_TYPES[type];
 
@@ -292,13 +291,13 @@ export function CulturalExchangeWizard({
   }, [type, participantCountryId, countriesData, hostCountry.name]);
 
   // Get selected country data
-  const selectedCountry = countriesData?.countries?.find((c: any) => c.id === participantCountryId);
+  const selectedCountry = countriesData?.countries?.find((c) => c.id === participantCountryId);
 
   // Filter countries excluding host
   const availableCountries = useMemo(() => {
     return (countriesData?.countries ?? [])
-      .filter((c: any) => c.id !== hostCountry.id)
-      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+      .filter((c) => c.id !== hostCountry.id)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [countriesData, hostCountry.id]);
 
   // Toggle objective
@@ -529,7 +528,7 @@ export function CulturalExchangeWizard({
                   <p className="text-muted-foreground text-sm">No countries found</p>
                 </div>
               ) : (
-                availableCountries.map((country: any) => {
+                availableCountries.map((country) => {
                   const isSelected = participantCountryId === country.id;
                   return (
                     <div

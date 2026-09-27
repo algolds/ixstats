@@ -30,6 +30,9 @@ interface EmbassyWithSynergies {
   guestCountryFlag?: string | null;
   status: string;
   strength: number;
+  /** Economic tiers for the asymmetry badge; not yet supplied by getEmbassies. */
+  hostCountryTier?: string | null;
+  guestCountryTier?: string | null;
   totalSynergyScore: number;
   economicBonus: number;
   diplomaticBonus: number;
@@ -95,8 +98,8 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
   const asymmetry = React.useMemo(() => {
     return calculateRelativeDevelopment(
-      (embassy as any).guestCountryTier || "DEVELOPED",
-      (embassy as any).hostCountryTier || "DEVELOPED"
+      embassy.guestCountryTier || "DEVELOPED",
+      embassy.hostCountryTier || "DEVELOPED"
     );
   }, [embassy]);
 

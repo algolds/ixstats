@@ -55,6 +55,18 @@ interface PopulationChartDataPoint {
   date: string;
 }
 
+/**
+ * Fields this modal reads from `countries.getByIdWithEconomicData`, whose router
+ * output is currently untyped (the procedure casts its return value).
+ */
+interface PopulationCountryData {
+  currentPopulation: number;
+  populationGrowthRate: number;
+  populationDensity?: number | null;
+  landArea?: number | null;
+  economicTier: string;
+}
+
 interface PopulationDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,7 +107,7 @@ export function PopulationDetailsModal({
     }
   );
 
-  const { data: historicalDataRaw, isLoading: isHistoricalLoading } =
+  const { data: historicalData, isLoading: isHistoricalLoading } =
     api.historical.getCountryHistory.useQuery(
       { countryId },
       {
@@ -104,13 +116,13 @@ export function PopulationDetailsModal({
       }
     );
 
-  const { data: globalStatsRaw, isLoading: isGlobalLoading } =
+  const { data: globalStats, isLoading: isGlobalLoading } =
     api.countries.getGlobalStats.useQuery(undefined, {
       enabled: isOpen,
       staleTime: 5 * 60 * 1000,
     });
 
-  const { data: topCountriesByPopulationRaw, isLoading: isTopCountriesLoading } =
+  const { data: topCountriesByPopulation, isLoading: isTopCountriesLoading } =
     api.countries.getTopCountriesByPopulation.useQuery(
       { limit: 15 },
       {
@@ -119,19 +131,15 @@ export function PopulationDetailsModal({
       }
     );
 
-  // Type assertions to access computed fields
-  const economicData = economicDataRaw as any;
-  const historicalData = historicalDataRaw as any;
-  const globalStats = globalStatsRaw as any;
-  const topCountriesByPopulation = topCountriesByPopulationRaw as any;
+  const economicData: PopulationCountryData | null | undefined = economicDataRaw;
 
   const isLoading = isEconomicLoading || isHistoricalLoading || isGlobalLoading;
 
   const processChartData = (timeRange: TimeRange): PopulationChartDataPoint[] => {
-    return filterAndSortHistory<any, PopulationChartDataPoint>(
+    return filterAndSortHistory(
       historicalData,
       timeRange,
-      (point, _, rawTimestamp) => {
+      (point, _, rawTimestamp): PopulationChartDataPoint => {
         const tsNum = IxTime.toTimestamp(rawTimestamp as string | number | Date) as number;
         const pop = Number(point?.population ?? 0);
         const rawGrowthRate = Number(point?.populationGrowthRate ?? 0);
@@ -139,8 +147,8 @@ export function PopulationDetailsModal({
           year: IxTime.getCurrentGameYear(tsNum),
           population: pop,
           populationGrowthRate: rawGrowthRate * 100,
-          populationDensity: (point?.populationDensity as number | undefined) ?? null,
-          totalGdp: (point?.totalGdp as number | undefined) ?? 0,
+          populationDensity: point.populationDensity ?? null,
+          totalGdp: point.totalGdp ?? 0,
           timestamp: tsNum,
           date: IxTime.formatIxTime(tsNum, true),
         };
@@ -178,7 +186,7 @@ export function PopulationDetailsModal({
   const comparisonData = useMemo(() => {
     if (!topCountriesByPopulation || !economicData) return [];
 
-    return (topCountriesByPopulation as Array<{ id: string; name: string; currentPopulation: number; populationTier: string }>)
+    return topCountriesByPopulation
       .map((country) => ({
         name: country.name.length > 12 ? country.name.substring(0, 9) + "..." : country.name,
         fullName: country.name,
@@ -323,9 +331,9 @@ export function PopulationDetailsModal({
     let rank = 1;
     let totalCountries = 1;
 
-    if (globalStats) {
-      globalAverage = globalStats.averagePopulation;
-      globalComparison = ((currentPop - globalAverage) / globalAverage) * 100;
+    if (globalStats && globalStats.count > 0) {
+      globalAverage = globalStats.totalPopulation / globalStats.count;
+      globalComparison = globalAverage > 0 ? ((currentPop - globalAverage) / globalAverage) * 100 : 0;
     }
 
     if (comparisonData.length > 0) {

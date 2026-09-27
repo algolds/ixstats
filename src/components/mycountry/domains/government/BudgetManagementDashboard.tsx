@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { safeFormatCurrency, toTitleCase } from "~/lib/utils";
+import { formatNumber, safeFormatCurrency, toTitleCase } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
 import type {
   GovernmentStructure,
@@ -17,7 +17,6 @@ import { api } from "~/trpc/react";
 import {
   REVENUE_CHART_COLORS,
   getBudgetHealthStatus,
-  formatBudgetMetricNumber,
   BudgetKeyMetrics,
   BudgetOverviewCharts,
   BudgetDepartmentList,
@@ -298,7 +297,7 @@ export function BudgetManagementDashboard({
         <TabsContent value="departments" className="space-y-3">
           <BudgetDepartmentList
             departments={budgetSummary.topSpendingDepartments}
-            formatNumber={formatBudgetMetricNumber}
+            formatNumber={formatNumber}
           />
         </TabsContent>
 
@@ -306,7 +305,7 @@ export function BudgetManagementDashboard({
         <TabsContent value="revenue" className="space-y-4">
           <BudgetRevenueAnalysis
             revenueSummary={revenueSummary}
-            formatNumber={formatBudgetMetricNumber}
+            formatNumber={formatNumber}
           />
         </TabsContent>
 

@@ -14,7 +14,14 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
-import type { SharedDataCollection } from "~/types/diplomatic-network";
+import type {
+  SharedCulturalData,
+  SharedDataCollection,
+  SharedEconomicData,
+  SharedIntelligenceData,
+  SharedPolicyData,
+  SharedResearchData,
+} from "~/types/diplomatic-network";
 
 export const DATA_TYPE_CONFIG = {
   economic: {
@@ -94,7 +101,7 @@ export function EmptyState({ type }: { type: string }) {
   );
 }
 
-export function EconomicDataTab({ data }: { data: any }) {
+export function EconomicDataTab({ data }: { data: SharedEconomicData | undefined }) {
   if (!data) return <EmptyState type="economic" />;
 
   return (
@@ -134,7 +141,7 @@ export function IntelligenceDataTab({
   data,
   isOwner,
 }: {
-  data: any[] | undefined;
+  data: SharedIntelligenceData[] | undefined;
   isOwner: boolean;
 }) {
   if (!data || data.length === 0) return <EmptyState type="intelligence" />;
@@ -182,7 +189,7 @@ export function IntelligenceDataTab({
   );
 }
 
-export function ResearchDataTab({ data }: { data: any[] | undefined }) {
+export function ResearchDataTab({ data }: { data: SharedResearchData[] | undefined }) {
   if (!data || data.length === 0) return <EmptyState type="research" />;
 
   return (
@@ -216,7 +223,7 @@ export function ResearchDataTab({ data }: { data: any[] | undefined }) {
   );
 }
 
-export function CulturalDataTab({ data }: { data: any }) {
+export function CulturalDataTab({ data }: { data: SharedCulturalData | undefined }) {
   if (!data) return <EmptyState type="cultural" />;
 
   return (
@@ -254,7 +261,7 @@ export function CulturalDataTab({ data }: { data: any }) {
   );
 }
 
-export function PolicyDataTab({ data }: { data: any[] | undefined }) {
+export function PolicyDataTab({ data }: { data: SharedPolicyData[] | undefined }) {
   if (!data || data.length === 0) return <EmptyState type="policy" />;
 
   return (

@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { formatCurrency, formatNumber } from "~/lib/utils/format-utils";
 import { CollectiveActionsPanel } from "./CollectiveActionsPanel";
 
 interface AllianceDashboardProps {
@@ -81,13 +82,6 @@ export function AllianceDashboard({
   if (!alliance) return null;
 
   const canInvite = myRole === "founder" || myRole === "leader";
-  const formatNumber = (n: number) => {
-    if (n >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-    return n.toLocaleString();
-  };
-
   const targetCountries = relationships
     ? [
         ...new Map(
@@ -194,7 +188,7 @@ export function AllianceDashboard({
           <p className="text-muted-foreground text-xs">Members</p>
         </div>
         <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalGdp)}</p>
+          <p className="text-lg font-bold">{formatCurrency(alliance.calculatedTotalGdp)}</p>
           <p className="text-muted-foreground text-xs">Combined GDP</p>
         </div>
         <div className="rounded-lg border p-2">
@@ -239,7 +233,7 @@ export function AllianceDashboard({
         </span>
         <span className="flex items-center gap-1">
           <FileText className="h-3 w-3" />
-          {(alliance as any)._count?.documents ?? 0} documents
+          {alliance.documents.length} documents
         </span>
       </div>
     </div>

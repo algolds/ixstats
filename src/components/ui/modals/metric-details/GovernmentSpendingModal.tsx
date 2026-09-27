@@ -663,22 +663,10 @@ export function GovernmentSpendingModal({
             </CardHeader>
             <CardContent className="flex-1 p-0">
               <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
-                {((governmentData as any)?.priorityPolicies?.length ?? 0) > 0 ? (
-                  (((governmentData as any).priorityPolicies ?? []) as string[])
-                    .slice(0, 6)
-                    .map((policy: string, index: number) => (
-                      <div
-                        key={index}
-                        className="rounded-xl border border-white/5 bg-white/5 p-2 text-center text-xs font-semibold text-amber-400"
-                      >
-                        {policy}
-                      </div>
-                    ))
-                ) : (
-                  <div className="py-8 text-center">
-                    <p className="text-muted-foreground text-xs">No priority policies defined</p>
-                  </div>
-                )}
+                {/* The government API has no priority-policy field, so this card only has an empty state. */}
+                <div className="py-8 text-center">
+                  <p className="text-muted-foreground text-xs">No priority policies defined</p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -93,7 +93,7 @@ export function LaborDetailsModal({
       historicalData,
       timeRange,
       (point, formattedDate, timestamp) => {
-        const gdpGrowth = point.gdpGrowthRate || (point as any).gdpGrowth || 0;
+        const gdpGrowth = point.gdpGrowthRate || 0;
         const workingAgeFraction = 0.65;
         const laborForce = Math.round(
           (point.population || 0) * workingAgeFraction * (currentParticipation / 100)
@@ -593,13 +593,13 @@ export function LaborDetailsModal({
     }
 
     const labor = economyData?.labor;
-    const sectors = labor?.employmentBySector || {};
+    const sectors: Record<string, number> = labor?.employmentBySector || {};
 
     const sectorData = Object.entries(sectors)
       .slice(0, 8)
-      .map(([name, value]: [string, any]) => ({
+      .map(([name, value]) => ({
         name: name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        value: typeof value === "number" ? parseFloat(value.toFixed(1)) : parseFloat(value),
+        value: parseFloat(value.toFixed(1)),
       }))
       .sort((a, b) => b.value - a.value);
 

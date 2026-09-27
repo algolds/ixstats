@@ -3,7 +3,7 @@
 import React from "react";
 import { Dollar as DollarSign, StatUp as TrendingUp, StatsReport as BarChart3, Archery as Target } from "iconoir-react";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
-import { formatBudgetMetricNumber } from "./budgetTypes";
+import { formatNumber } from "~/lib/utils/format-utils";
 
 interface BudgetKeyMetricsProps {
   budgetSummary: BudgetSummary;
@@ -25,7 +25,7 @@ export function BudgetKeyMetrics({
               Total Budget
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400 tabular-nums">
-              {formatBudgetMetricNumber(budgetSummary.totalBudget)}
+              {formatNumber(budgetSummary.totalBudget)}
             </p>
           </div>
           <DollarSign className="h-6 w-6 shrink-0 text-emerald-400" />
@@ -44,7 +44,7 @@ export function BudgetKeyMetrics({
               Allocated
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400 tabular-nums">
-              {formatBudgetMetricNumber(budgetSummary.totalAllocated)}
+              {formatNumber(budgetSummary.totalAllocated)}
             </p>
           </div>
           <Target className="h-6 w-6 shrink-0 text-cyan-400" />
@@ -66,7 +66,7 @@ export function BudgetKeyMetrics({
               Utilized
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400 tabular-nums">
-              {formatBudgetMetricNumber(budgetSummary.totalSpent)}
+              {formatNumber(budgetSummary.totalSpent)}
             </p>
           </div>
           <TrendingUp className="h-6 w-6 shrink-0 text-amber-400" />
@@ -85,7 +85,7 @@ export function BudgetKeyMetrics({
               Revenue
             </p>
             <p className="mt-1 font-mono text-xl font-bold tracking-tight text-indigo-400 tabular-nums">
-              {formatBudgetMetricNumber(revenueSummary.totalRevenue)}
+              {formatNumber(revenueSummary.totalRevenue)}
             </p>
           </div>
           <BarChart3 className="h-6 w-6 shrink-0 text-indigo-400" />

@@ -97,8 +97,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
           totalGdp: (point.totalGdp || 0) / 1e12,
           gdpPerCapita: point.gdpPerCapita,
           gdpGrowth: (() => {
-            const rate =
-              point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : (point as any).gdpGrowth || 0;
+            const rate = point.gdpGrowthRate ?? 0;
             const abs = Math.abs(rate);
             if (abs < 0.01) return rate * 100;
             if (abs <= 0.5) return rate * 100;
@@ -654,16 +653,12 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   vs Global Avg GDP/Capita
                 </span>
                 <span className="text-xl font-bold text-cyan-400">
-                  {countryData?.currentGdpPerCapita &&
-                  typeof globalStats === "object" &&
-                  globalStats !== null &&
-                  "averageGdpPerCapita" in globalStats &&
-                  typeof (globalStats as any).averageGdpPerCapita === "number"
-                    ? `${((countryData.currentGdpPerCapita / (globalStats as any).averageGdpPerCapita - 1) * 100).toFixed(1)}%`
+                  {countryData?.currentGdpPerCapita && globalStats.avgGdpPerCapita > 0
+                    ? `${((countryData.currentGdpPerCapita / globalStats.avgGdpPerCapita - 1) * 100).toFixed(1)}%`
                     : "N/A"}
                 </span>
                 <span className="text-muted-foreground mt-1 text-xs">
-                  Avg: {formatCurrency((globalStats as any).averageGdpPerCapita)}
+                  Avg: {formatCurrency(globalStats.avgGdpPerCapita)}
                 </span>
               </div>
               <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
@@ -683,16 +678,12 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   Global GDP Share
                 </span>
                 <span className="text-xl font-bold text-indigo-400">
-                  {countryData?.currentTotalGdp &&
-                  typeof globalStats === "object" &&
-                  globalStats !== null &&
-                  "totalGdp" in globalStats &&
-                  typeof (globalStats as any).totalGdp === "number"
-                    ? `${((countryData.currentTotalGdp / (globalStats as any).totalGdp) * 100).toFixed(3)}%`
+                  {countryData?.currentTotalGdp && globalStats.totalGdp > 0
+                    ? `${((countryData.currentTotalGdp / globalStats.totalGdp) * 100).toFixed(3)}%`
                     : "N/A"}
                 </span>
                 <span className="text-muted-foreground mt-1 text-xs">
-                  Global: {formatCurrency((globalStats as any).totalGdp / 1e12)}T
+                  Global: {formatCurrency(globalStats.totalGdp / 1e12)}T
                 </span>
               </div>
             </div>

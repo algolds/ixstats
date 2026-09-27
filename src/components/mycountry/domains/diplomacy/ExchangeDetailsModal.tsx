@@ -68,6 +68,12 @@ interface CulturalExchange {
     title: string;
     thumbnailUrl?: string;
   }>;
+  // Optional program details (columns on the CulturalExchange model).
+  narrative?: string | null;
+  /** JSON-encoded string[] */
+  objectives?: string | null;
+  isPublic?: boolean;
+  maxParticipants?: number | null;
 }
 
 interface NPCResponse {
@@ -106,7 +112,15 @@ interface ExchangeDetailsModalProps {
     name: string;
   };
   npcResponses?: NPCResponse[];
-  exchangeTypes: Record<string, { icon: any; label: string; color: string; emoji: string }>;
+  exchangeTypes: Record<
+    string,
+    {
+      icon: React.ComponentType<{ className?: string }>;
+      label: string;
+      color: string;
+      emoji: string;
+    }
+  >;
   isGeneratingScenario?: boolean;
   isSharing?: boolean;
   isCancelling?: boolean;
@@ -137,6 +151,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
     if (!exchange) return null;
 
     const typeConfig = exchangeTypes[exchange.type];
+    const objectives: string[] = exchange.objectives ? JSON.parse(exchange.objectives) : [];
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -165,38 +180,35 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 </div>
 
                 {/* Narrative */}
-                {(exchange as any).narrative && (
+                {exchange.narrative && (
                   <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
                     <div className="mb-2 flex items-center gap-2">
                       <EditPencil className="h-4 w-4 text-indigo-400" />
                       <h6 className="text-foreground font-medium">Exchange Narrative</h6>
                     </div>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      {(exchange as any).narrative}
+                      {exchange.narrative}
                     </p>
                   </div>
                 )}
 
                 {/* Objectives */}
-                {(exchange as any).objectives &&
-                  JSON.parse((exchange as any).objectives || "[]").length > 0 && (
-                    <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
-                      <div className="mb-3 flex items-center gap-2">
-                        <WhiteFlag className="h-4 w-4 text-green-400" />
-                        <h6 className="text-foreground font-medium">Program Objectives</h6>
-                      </div>
-                      <div className="space-y-2">
-                        {JSON.parse((exchange as any).objectives || "[]").map(
-                          (objective: string, idx: number) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
-                              <span className="text-sm text-muted-foreground">{objective}</span>
-                            </div>
-                          )
-                        )}
-                      </div>
+                {objectives.length > 0 && (
+                  <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <WhiteFlag className="h-4 w-4 text-green-400" />
+                      <h6 className="text-foreground font-medium">Program Objectives</h6>
                     </div>
-                  )}
+                    <div className="space-y-2">
+                      {objectives.map((objective, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
+                          <span className="text-sm text-muted-foreground">{objective}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* AI Diplomatic Analysis */}
                 <div className="facet-hierarchy-child rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-4">
@@ -280,7 +292,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Visibility</span>
                       <span className="text-foreground flex items-center gap-1">
-                        {(exchange as any).isPublic !== false ? (
+                        {exchange.isPublic !== false ? (
                           <>
                             <Eye className="h-3.5 w-3.5 text-green-400" />
                             Public
@@ -293,10 +305,10 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                         )}
                       </span>
                     </div>
-                    {(exchange as any).maxParticipants && (
+                    {exchange.maxParticipants && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Max Participants</span>
-                        <span className="text-foreground">{(exchange as any).maxParticipants}</span>
+                        <span className="text-foreground">{exchange.maxParticipants}</span>
                       </div>
                     )}
                   </div>

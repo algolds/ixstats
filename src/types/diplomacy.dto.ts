@@ -18,6 +18,7 @@ export interface DiplomaticRelationDto {
   establishedAt?: string;
   goalSelf?: string | null;
   goalTarget?: string | null;
+  recentActivity?: string | null;
 }
 
 export interface EmbassyDto {

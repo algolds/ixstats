@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { formatCompactCurrency } from "~/lib/utils";
+import { formatCompactCurrency, formatPopulation } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
@@ -56,16 +56,6 @@ function formatCurrency(
 ): string {
   if (value == null || !isFinite(value)) return "0";
   return formatCompactCurrency(value, "N/A", currency);
-}
-
-// Format people/population counts without decimals
-function formatPeopleCount(value: number | undefined | null): string {
-  if (value == null || !isFinite(value) || value === 0) return "0";
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `${Math.round(value / 1_000_000_000)}B`;
-  if (abs >= 1_000_000) return `${Math.round(value / 1_000_000)}M`;
-  if (abs >= 1_000) return `${Math.round(value / 1_000)}K`;
-  return Math.round(value).toLocaleString();
 }
 
 // Get color classes for a given color name
@@ -269,7 +259,7 @@ export function SectorBreakdownCard({
                           className={cn("text-lg font-bold", hasImage ? "text-white" : colors.text)}
                         >
                           {valueAsPeople
-                            ? formatPeopleCount(sector.value)
+                            ? formatPopulation(sector.value, "0")
                             : formatCurrency(sector.value, "compact", _currency)}
                         </div>
                       )}
@@ -328,7 +318,7 @@ export function SectorBreakdownCard({
                           <span className="text-muted-foreground text-sm">•</span>
                           <span className={cn("text-sm font-medium", colors.text)}>
                             {valueAsPeople
-                              ? formatPeopleCount(sector.value)
+                              ? formatPopulation(sector.value, "0")
                               : formatCurrency(sector.value, "compact", _currency)}
                           </span>
                         </>
@@ -359,7 +349,7 @@ export function SectorBreakdownCard({
             <span className="text-muted-foreground text-sm font-medium">Total</span>
             <span className="text-lg font-bold">
               {valueAsPeople
-                ? formatPeopleCount(totalValue)
+                ? formatPopulation(totalValue, "0")
                 : formatCurrency(totalValue, "compact", _currency)}
             </span>
           </div>

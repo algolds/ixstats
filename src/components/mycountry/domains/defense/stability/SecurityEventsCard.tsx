@@ -12,7 +12,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 interface SecurityEvent {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   severity: string;
   casualties: number;
   arrested: number;
@@ -22,7 +22,7 @@ interface SecurityEvent {
 }
 
 interface ResolveEventMutation {
-  mutate: (input: { id: string; resolutionNotes: string }) => void;
+  mutate: (input: { id: string; resolutionNotes?: string }) => void;
 }
 
 interface SecurityEventsCardProps {

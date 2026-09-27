@@ -13,10 +13,13 @@ import { ExchangeFilters } from "./ExchangeFilters";
 import { ExchangeCard } from "./ExchangeCard";
 import { ExchangeDetailsModal } from "./ExchangeDetailsModal";
 import { EditExchangeModal } from "./EditExchangeModal";
-import { ScenarioModal } from "./ScenarioModal";
+import { ScenarioModal, type ResponseOption, type Scenario } from "./ScenarioModal";
 import { ImpactVisualizationModal } from "./ImpactVisualizationModal";
 import { ArtifactUploadModal } from "./ArtifactUploadModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+
+const isExchangeStatus = (value: string): value is keyof typeof STATUS_STYLES =>
+  value in STATUS_STYLES;
 
 const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> = ({
   primaryCountry,
@@ -33,7 +36,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const [votedExchanges, setVotedExchanges] = useState<Set<string>>(new Set());
   const [showScenarioModal, setShowScenarioModal] = useState(false);
   const [showImpactVisualization, setShowImpactVisualization] = useState(false);
-  const [selectedScenario, setSelectedScenario] = useState<any>(null);
+  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [editFormData, setEditFormData] = useState({ title: "", description: "" });
 
   // Fetch live cultural exchanges
@@ -44,7 +47,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   } = api.diplomaticCultural.getCulturalExchanges.useQuery(
     {
       countryId: primaryCountry.id,
-      status: filterStatus !== "all" ? (filterStatus as any) : undefined,
+      status: isExchangeStatus(filterStatus) ? filterStatus : undefined,
       type: filterType !== "all" ? filterType : undefined,
     },
     {
@@ -102,7 +105,11 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Generate cultural scenario mutation
   const generateScenarioMutation = api.diplomaticCultural.generateCulturalScenario.useMutation({
     onSuccess: (data) => {
-      setSelectedScenario(data);
+      setSelectedScenario({
+        title: data.scenario.title,
+        narrative: data.scenario.narrative,
+        responseOptions: data.responseOptions,
+      });
       setShowScenarioModal(true);
       notify.success("Cultural scenario generated!");
     },
@@ -330,6 +337,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   );
 
   const handleUploadArtifact = useCallback(
+    // TODO(types): uploadCulturalArtifact requires fileUrl + contributor; the form supplies a File and neither field.
     (artifactData: any) => {
       if (!selectedExchange) return;
       uploadArtifactMutation.mutate({
@@ -501,7 +509,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     }
   }, [selectedExchange, primaryCountry.id, cancelExchangeMutation]);
 
-  const handleSelectScenarioResponse = useCallback((option: any) => {
+  const handleSelectScenarioResponse = useCallback((option: ResponseOption) => {
     console.log("Selected scenario response:", option);
     notify.success(`Selected: ${option.label}`);
     setShowScenarioModal(false);
