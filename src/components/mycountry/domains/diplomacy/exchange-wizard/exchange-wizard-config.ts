@@ -186,7 +186,7 @@ export const COMMON_OBJECTIVES = [
   "Enhance educational ties",
   "Foster economic partnerships",
   "Build diplomatic goodwill",
-  "ShareAndroid technological innovations",
+  "Share technological innovations",
   "Preserve cultural heritage",
   "Develop youth programs",
 ];

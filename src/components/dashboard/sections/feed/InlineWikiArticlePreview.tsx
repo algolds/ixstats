@@ -90,6 +90,10 @@ export function InlineWikiArticlePreview({
     enabled: !!user,
     staleTime: 60_000,
   });
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!user,
+    staleTime: 60_000,
+  });
 
   // ─── State ───────────────────────────────────────────────────────────────────
   const [isStashPopoverOpen, setIsStashPopoverOpen] = useState(false);
@@ -530,7 +534,7 @@ export function InlineWikiArticlePreview({
             type="button"
             onClick={handleShare}
             className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
-            title="ShareAndroid article link"
+            title="Share article link"
           >
             {copied ? (
               <Check className="h-3.5 w-3.5 text-cyan-500" />
@@ -629,9 +633,7 @@ export function InlineWikiArticlePreview({
             author: { name: "WikiOS", username: "wikios" },
             title: cleanTitle,
           }}
-          countryId={
-            ((user as any)?.publicMetadata?.countryId as string) || (user as any)?.countryId || ""
-          }
+          countryId={userProfile?.countryId ?? ""}
           selectedAccount={accounts[0] || null}
           accounts={accounts}
           isOwner={true}
