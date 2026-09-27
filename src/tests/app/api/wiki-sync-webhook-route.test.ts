@@ -5,12 +5,10 @@ import { NextRequest } from "next/server";
 jest.mock("~/env", () => ({ env: {} }));
 jest.mock("~/lib/wiki-os/services/auto-sync-service", () => ({
   syncSinglePage: jest.fn().mockResolvedValue(true),
+  runAutoSyncCycle: jest.fn().mockResolvedValue({ pagesChecked: 0 }),
 }));
 jest.mock("~/lib/cache/rate-limiter", () => ({
   rateLimiter: { check: jest.fn() },
-}));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/inbound-sync", () => ({
-  InboundMediaWikiSyncService: { pollRecentChanges: jest.fn().mockResolvedValue({ polled: 0 }) },
 }));
 
 import { POST } from "~/app/api/wiki/sync-webhook/route";
@@ -18,9 +16,8 @@ import {
   GET as inboundGet,
   POST as inboundPost,
 } from "~/app/api/wikios/inbound-sync/route";
-import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
+import { runAutoSyncCycle, syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 import { rateLimiter } from "~/lib/cache/rate-limiter";
-import { InboundMediaWikiSyncService } from "~/lib/wiki-os/adapters/mediawiki/inbound-sync";
 import { env } from "~/env";
 
 const SECRET = randomBytes(24).toString("hex");
@@ -117,7 +114,7 @@ describe("/api/wikios/inbound-sync", () => {
   it("rejects a header-less POST", async () => {
     const res = await inboundPost(request(url, {}, { realm: "ixwiki" }));
     expect(res.status).toBe(401);
-    expect(InboundMediaWikiSyncService.pollRecentChanges).not.toHaveBeenCalled();
+    expect(runAutoSyncCycle).not.toHaveBeenCalled();
   });
 
   it("rejects the old hard-coded fallback token", async () => {
@@ -130,7 +127,7 @@ describe("/api/wikios/inbound-sync", () => {
   it("rejects an unauthenticated GET without polling", async () => {
     const res = await inboundGet(request(url, {}));
     expect(res.status).toBe(401);
-    expect(InboundMediaWikiSyncService.pollRecentChanges).not.toHaveBeenCalled();
+    expect(runAutoSyncCycle).not.toHaveBeenCalled();
   });
 
   it("fails closed when no secret is configured", async () => {
@@ -139,11 +136,17 @@ describe("/api/wikios/inbound-sync", () => {
     expect(res.status).toBe(503);
   });
 
-  it("polls with the correct secret", async () => {
+  it("runs the shared recent-changes sync cycle with the correct secret", async () => {
     const res = await inboundPost(
       request(url, { "x-wiki-webhook-secret": SECRET }, { realm: "ixwiki" })
     );
     expect(res.status).toBe(200);
-    expect(InboundMediaWikiSyncService.pollRecentChanges).toHaveBeenCalledWith("ixwiki", 50);
+    expect(runAutoSyncCycle).toHaveBeenCalledWith(50);
+  });
+
+  it("runs the shared recent-changes sync cycle on an authenticated GET", async () => {
+    const res = await inboundGet(request(url, { Authorization: `Bearer ${SECRET}` }));
+    expect(res.status).toBe(200);
+    expect(runAutoSyncCycle).toHaveBeenCalledWith(25);
   });
 });

@@ -266,6 +266,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
+      const ixNow = new Date(IxTime.getCurrentIxTime());
       const newCountry = await ctx.db.country.create({
         data: {
           name: input.name,
@@ -277,7 +278,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
           areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
           economicTier: "developing",
           isDemo: false,
-          baselineDate: new Date(IxTime.getCurrentIxTime()),
+          baselineDate: ixNow,
+          lastCalculated: ixNow,
         } as any,
       });
       await ctx.db.mapLayer.update({

@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
- * Plan 339 Step 4: the calculator treats Country.baselineDate as IxTime, so every country create
- * must set it explicitly (the schema default `now()` is real time, years behind IxTime).
+ * Plan 339 Step 4: the calculator treats Country.baselineDate and Country.lastCalculated as
+ * IxTime, so every country create must set both explicitly, from one IxTime value (the schema
+ * default `now()` is real time, years behind IxTime).
  */
 import fs from "fs";
 import path from "path";
@@ -40,12 +41,15 @@ function listTsFiles(dir: string): string[] {
   });
 }
 
-describe("country creation stores an IxTime baselineDate", () => {
-  it.each(CREATE_SITES)("%s sets baselineDate on every country write", (file) => {
-    const blocks = countryWriteBlocks(fs.readFileSync(path.join(srcDir, file), "utf-8"));
+describe("country creation stores an IxTime baselineDate and lastCalculated", () => {
+  it.each(CREATE_SITES)("%s sets both from one IxTime value on every country write", (file) => {
+    const source = fs.readFileSync(path.join(srcDir, file), "utf-8");
+    expect(source).toMatch(/const ixNow = new Date\(IxTime\.getCurrentIxTime\(\)\);/);
+    const blocks = countryWriteBlocks(source);
     expect(blocks.length).toBeGreaterThan(0);
     for (const block of blocks) {
-      expect(block).toMatch(/baselineDate:\s*new Date\(IxTime\.getCurrentIxTime\(\)\)/);
+      expect(block).toMatch(/baselineDate:\s*ixNow\b/);
+      expect(block).toMatch(/lastCalculated:\s*ixNow\b/);
     }
   });
 

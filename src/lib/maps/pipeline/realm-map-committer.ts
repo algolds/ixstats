@@ -109,6 +109,7 @@ export async function commitRealmMapToDatabase(
 
     // 3. Upsert Skeleton Country records for the realm
     const countryMap = new Map<string, string>(); // featureId -> Country.id
+    const ixNow = new Date(IxTime.getCurrentIxTime());
 
     for (const c of countries) {
       const slug = c.name
@@ -131,7 +132,8 @@ export async function commitRealmMapToDatabase(
           realmId,
           baselinePopulation: 1000000,
           baselineGdpPerCapita: 10000,
-          baselineDate: new Date(IxTime.getCurrentIxTime()),
+          baselineDate: ixNow,
+          lastCalculated: ixNow,
           maxGdpGrowthRate: 0.05,
           adjustedGdpGrowth: 0.03,
           populationGrowthRate: 0.01,

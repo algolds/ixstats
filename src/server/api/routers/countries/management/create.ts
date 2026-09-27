@@ -251,6 +251,7 @@ export const managementCreateProcedures = {
 
       try {
         const result = await ctx.db.$transaction(async (tx) => {
+          const ixNow = new Date(IxTime.getCurrentIxTime());
           const country = await tx.country.create({
             data: {
               name: input.name,
@@ -269,7 +270,7 @@ export const managementCreateProcedures = {
               coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
               baselinePopulation: population,
               baselineGdpPerCapita: gdpPerCapita,
-              baselineDate: new Date(IxTime.getCurrentIxTime()),
+              baselineDate: ixNow,
               currentPopulation: population,
               currentGdpPerCapita: gdpPerCapita,
               currentTotalGdp: totalGdp,
@@ -336,7 +337,7 @@ export const managementCreateProcedures = {
                 ? population / foundationData.landArea
                 : undefined,
               gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
-              lastCalculated: new Date(),
+              lastCalculated: ixNow,
             },
           });
 

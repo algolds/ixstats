@@ -436,23 +436,10 @@ export class IxTimeSyncManager {
 
     try {
       if (target.type === "discord-bot") {
-        // Send time override to Discord bot
-        const response = await fetch(`${target.endpoint}/ixtime/override`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ixTimeMs: this.masterState!.currentIxTime,
-            multiplier: this.masterState!.multiplier,
-          }),
-          signal: AbortSignal.timeout(10000),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log(`[IxTime Sync] Drift corrected for ${target.name}:`, result.message);
+        // The Discord bot is the source of truth for IxTime: on drift, adopt the bot's clock
+        // locally instead of overwriting the bot with ours.
+        const result = await IxTime.syncWithBot();
+        console.log(`[IxTime Sync] Adopted ${target.name} clock after drift:`, result);
 
         // Proactive alert notification in production
         if (

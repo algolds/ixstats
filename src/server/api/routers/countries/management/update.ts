@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { IxTime } from "~/lib/ixtime";
 import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
@@ -242,7 +243,7 @@ export const managementUpdateProcedures = {
                 demographics?.literacyRate !== undefined
                   ? demographics.literacyRate
                   : existingCountry.literacyRate,
-              lastCalculated: new Date(),
+              lastCalculated: new Date(IxTime.getCurrentIxTime()),
             },
           });
 

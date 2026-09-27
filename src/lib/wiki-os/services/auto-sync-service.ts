@@ -1,8 +1,10 @@
 /**
- * src/lib/wiki-os/services/auto-sync-service.ts — Continuous WikiOS Real-Time Sync Daemon
+ * src/lib/wiki-os/services/auto-sync-service.ts — WikiOS recent-changes sync
  *
- * Automatically monitors MediaWiki / MariaDB for all live changes, edits, and page creations,
- * and incrementally synchronizes articles, revisions, and categories into PostgreSQL.
+ * Reads MediaWiki recentchanges and incrementally synchronizes articles, revisions, and
+ * categories into PostgreSQL. runAutoSyncCycle runs from the `wiki-recentchanges` cron job
+ * (src/server/cron/jobs.ts) and from the /api/wikios/inbound-sync webhook; there is no
+ * in-process daemon.
  */
 
 import { db } from "~/server/db";
@@ -142,7 +144,6 @@ export function isIrlOrMaintenanceCategory(name: string): boolean {
 }
 
 let isSyncing = false;
-let syncTimer: NodeJS.Timeout | null = null;
 
 export interface AutoSyncStats {
   pagesChecked: number;
@@ -481,32 +482,4 @@ export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
   }
 
   return lastStats;
-}
-
-export function startWikiAutoSyncDaemon(intervalMs = 45000): void {
-  if (syncTimer) return;
-  if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
-    return;
-  }
-  console.log(
-    `[WikiAutoSync] 🚀 MediaWiki auto-sync daemon initialized (Interval: ${intervalMs / 1000}s).`
-  );
-
-  // Run first cycle immediately in background
-  const initialTimer = setTimeout(() => {
-    runAutoSyncCycle().catch(() => {});
-  }, 3000);
-  if (initialTimer?.unref) initialTimer.unref();
-
-  syncTimer = setInterval(() => {
-    runAutoSyncCycle().catch(() => {});
-  }, intervalMs);
-  if (syncTimer?.unref) syncTimer.unref();
-}
-
-export function stopWikiAutoSyncDaemon(): void {
-  if (syncTimer) {
-    clearInterval(syncTimer);
-    syncTimer = null;
-  }
 }

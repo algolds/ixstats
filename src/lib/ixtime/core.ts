@@ -4,6 +4,12 @@
 import { env } from "~/env";
 import type { BotTimeResponse, BotEndpointStatusResponse } from "~/types/ixstats";
 
+/** The part of the Discord bot's reported state that decides the local clock. */
+type BotClockState = Pick<
+  BotTimeResponse,
+  "ixTimeTimestamp" | "multiplier" | "isPaused" | "hasTimeOverride" | "hasMultiplierOverride"
+>;
+
 export class IxTime {
   // Real-world epoch: October 4, 2020 UTC
   private static readonly REAL_WORLD_EPOCH = Date.UTC(2020, 9, 4, 0, 0, 0, 0);
@@ -329,8 +335,7 @@ export class IxTime {
     const botData = await this.fetchFromBot();
 
     if (botData) {
-      this.timeOverride = null;
-      this.multiplierOverride = null;
+      this.applyBotState(botData);
 
       return {
         success: true,
@@ -342,6 +347,33 @@ export class IxTime {
         success: false,
         message: "Failed to sync with Discord bot - using fallback time",
       };
+    }
+  }
+
+  /**
+   * Adopt the Discord bot's clock — the bot is the source of truth for IxTime.
+   * A natural bot (no overrides, not paused) clears the local overrides; otherwise the
+   * local clock takes the bot's time and speed through the continuity-safe setters.
+   */
+  static applyBotState(state: BotClockState): void {
+    if (!state.isPaused && !state.hasTimeOverride && !state.hasMultiplierOverride) {
+      this.clearMultiplierOverride();
+      this.clearTimeOverride();
+      return;
+    }
+    this.adoptBotClock(state.ixTimeTimestamp, state.isPaused ? 0 : state.multiplier);
+  }
+
+  /**
+   * Move the local clock to the bot's time and, when given, its speed. The speed goes first
+   * so the time anchor lands last: the clock only ever reads the bot's reported time.
+   */
+  static adoptBotClock(ixTime: number | null, multiplier: number | null): void {
+    if (multiplier !== null) {
+      this.setNaturalMultiplier(multiplier);
+    }
+    if (ixTime !== null) {
+      this.setTimeOverride(ixTime);
     }
   }
 
