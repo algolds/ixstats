@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useState, useEffect } from "react";
+import React, { use, useCallback, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -9,6 +9,7 @@ import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/Dashboard
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { MidRibbonPassportDocument } from "~/components/passport/MidRibbonPassportDocument";
+import { DEFAULT_PASSPORT_TAB, parsePassportTab } from "~/components/passport/passport-tabs";
 import type { PassportTabType } from "~/components/passport/types";
 
 export default function UnifiedIxnayIdProfilePage({
@@ -25,64 +26,51 @@ export default function UnifiedIxnayIdProfilePage({
 function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
   const { user: currentClerkUser } = useUser();
   const searchParams = useSearchParams();
-  const rawTabParam = searchParams.get("tab");
-  const initialTab: PassportTabType =
-    rawTabParam === "work" || rawTabParam === "wiki" || rawTabParam === "lore"
-      ? "lore"
-      : (rawTabParam as PassportTabType) || "realms";
-  const [activeTab, setActiveTab] = useState<PassportTabType>(initialTab);
+  const [activeTab, setActiveTab] = useState<PassportTabType>(
+    () => parsePassportTab(searchParams.get("tab")) ?? DEFAULT_PASSPORT_TAB
+  );
 
   // Sync tab from URL if present
   useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam) {
-      if (tabParam === "work" || tabParam === "wiki" || tabParam === "lore") {
-        setActiveTab("lore");
-      } else if (tabParam === "realms" || tabParam === "history" || tabParam === "vault") {
-        setActiveTab(tabParam as PassportTabType);
-      }
-    }
+    const tab = parsePassportTab(searchParams.get("tab"));
+    if (tab) setActiveTab(tab);
   }, [searchParams]);
 
-  const { data, isLoading, error } = api.ixnayid.getUnifiedProfile.useQuery(
-    { identifier: cleanUsername },
+  const { data, isLoading, error } = api.ixnayid.getPassport.useQuery(
+    { handle: cleanUsername },
     { enabled: Boolean(cleanUsername) }
   );
 
-  const isOwner = Boolean(data?.account?.isOwner);
+  const isOwner = Boolean(data?.account.isOwner);
 
   // Authoritatively sync Display Name & Avatar exclusively from Clerk
   const displayName =
     (isOwner && currentClerkUser ? currentClerkUser.fullName || currentClerkUser.username : null) ||
-    data?.account?.clerkDisplayName ||
-    data?.account?.clerkUsername ||
+    data?.account.clerkDisplayName ||
+    data?.account.clerkUsername ||
     cleanUsername;
-
-  const bio = data?.thinkpages?.bio || data?.forum?.aboutHtml || null;
 
   const avatarUrl =
     (isOwner && currentClerkUser ? currentClerkUser.imageUrl : null) ||
-    data?.account?.clerkImageUrl ||
+    data?.account.clerkImageUrl ||
     null;
-
-  const realms = data?.realms ?? [];
 
   usePageTitle({
     title: `${displayName} (@${cleanUsername}) · Identity Passport`,
   });
 
-  const handleSelectTab = (tab: PassportTabType) => {
+  const handleSelectTab = useCallback((tab: PassportTabType) => {
     setActiveTab(tab);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      if (tab === "realms") {
+      if (tab === DEFAULT_PASSPORT_TAB) {
         url.searchParams.delete("tab");
       } else {
         url.searchParams.set("tab", tab);
       }
       window.history.replaceState({}, "", url.toString());
     }
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -130,9 +118,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
           cleanUsername={cleanUsername}
           displayName={displayName}
           avatarUrl={avatarUrl}
-          bio={bio}
           data={data}
-          realms={realms}
           isOwner={isOwner}
           activeTab={activeTab}
           onSelectTab={handleSelectTab}

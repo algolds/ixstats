@@ -8,12 +8,11 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import type { CardInstance } from "~/types/cards-display";
-import type { PassportVault, UnifiedProfilePayload } from "../types";
+import type { PassportVault } from "../types";
 
 interface PassportVaultTabProps {
-  vault: PassportVault | null | undefined;
+  vault: PassportVault;
   cleanUsername: string;
-  data?: UnifiedProfilePayload | null;
 }
 
 function formatDeckValue(n: number): string {
@@ -25,10 +24,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
   vault,
   cleanUsername,
 }: PassportVaultTabProps) {
-  const totalCards = vault?.totalCards ?? 0;
-  const deckValue = vault?.deckValue ?? 0;
-  const level = vault?.collectorLevel ?? 1;
-  const xp = vault?.collectorXp ?? 0;
+  const { totalCards, deckValue, collectorLevel: level, collectorXp: xp } = vault;
   const nextLevelXp = level * 1000;
   const xpPct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
   const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
@@ -40,7 +36,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
     setIsModalOpen(true);
   };
 
-  if (!vault || totalCards === 0) {
+  if (totalCards === 0) {
     return (
       <div className="space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-10 text-center dark:border-white/10 dark:bg-white/[0.02]">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
@@ -62,12 +58,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
     );
   }
 
-  const rawTopCards = (vault as any)?.topCards as Array<any> | undefined;
-  // Live-wire: normalize to CardInstance for 3D rendering
-  const topCards: CardInstance[] = (rawTopCards ?? [])
-    .map((c) => (c.card ?? c) as CardInstance)
-    .filter(Boolean)
-    .slice(0, 6);
+  const topCards = vault.topCards.slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -144,7 +135,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {topCards.map((card) => (
               <CardDisplay
-                key={`${card.id}-${(card as any).ownershipId ?? ""}`}
+                key={`${card.id}-${card.ownershipId ?? ""}`}
                 card={card}
                 size="small"
                 enable3D={!shouldReduceMotion}

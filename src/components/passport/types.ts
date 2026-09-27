@@ -1,22 +1,26 @@
 import type { RouterOutputs } from "~/trpc/react";
 
-export type UnifiedProfilePayload = NonNullable<RouterOutputs["ixnayid"]["getUnifiedProfile"]>;
+type PassportOutputs = RouterOutputs["ixnayid"];
 
-export type RealmItem = UnifiedProfilePayload["realms"][number];
+export type PassportPayload = NonNullable<PassportOutputs["getPassport"]>;
 
-export type WorkPayload = UnifiedProfilePayload["work"];
-export type LorePayload = UnifiedProfilePayload["work"];
+export type RealmItem = PassportOutputs["getRealms"][number];
 
-export type HistoryItem = UnifiedProfilePayload["history"][number];
+export type WorkPayload = PassportOutputs["getWork"];
 
-export type PassportAccount = UnifiedProfilePayload["account"];
+export type HistoryItem = PassportOutputs["getHistory"]["items"][number];
 
-export type PassportWiki = UnifiedProfilePayload["wiki"];
+export type PassportWiki = PassportPayload["wiki"];
 
-export type PassportForum = UnifiedProfilePayload["forum"];
+export type PassportVault = PassportPayload["vault"];
 
-export type PassportVault = UnifiedProfilePayload["vault"];
+export type PassportTabType = "overview" | "realms" | "work" | "vault" | "history";
 
-export type PassportThinkPages = UnifiedProfilePayload["thinkpages"];
-
-export type PassportTabType = "realms" | "lore" | "work" | "wiki" | "history" | "vault";
+/** Owner's display toggles on the passport's back face (session-only, not persisted). */
+export interface PassportVisibility {
+  accolades: boolean;
+  impact: boolean;
+  forumStats: boolean;
+  vaultCards: boolean;
+  historyStream: boolean;
+}
