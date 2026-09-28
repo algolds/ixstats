@@ -55,11 +55,15 @@ describe("wiki link verification — start()", () => {
     });
   });
 
-  it("refuses a username another user has verified, and never upserts", async () => {
+  it("refuses a username another user has verified — checked inside the transaction, not before it", async () => {
     const { db, service } = setup();
-    db.wikiAccountLink.findUnique.mockResolvedValue({ userId: "other", verifiedAt: NOW });
+    // Outer (pre-tx) client sees no holder; only the tx-scoped client sees the verified one, so this
+    // only passes if the TAKEN check runs via `tx`, not via `db` before $transaction is entered.
+    db.wikiAccountLink.findUnique.mockResolvedValue(null);
+    const tx = { wikiAccountLink: { findUnique: jest.fn().mockResolvedValue({ userId: "other", verifiedAt: NOW }), deleteMany: jest.fn(), upsert: jest.fn() } };
+    db.$transaction.mockImplementation((cb: any) => cb(tx));
     await expect(service.start("u1", "iiwiki", "Kir")).rejects.toMatchObject({ code: "TAKEN" });
-    expect(db.wikiAccountLink.upsert).not.toHaveBeenCalled();
+    expect(tx.wikiAccountLink.upsert).not.toHaveBeenCalled();
   });
 
   it("does not block start when the existing holder is unverified — takes it over with a fresh token", async () => {
@@ -217,11 +221,14 @@ describe("wiki link verification — confirm()", () => {
 });
 
 describe("wiki link verification — adminVerify() (admin authority substitutes for the token)", () => {
-  it("refuses when another user already holds a verified row for that username", async () => {
+  it("refuses when another user already holds a verified row — checked inside the transaction, not before it", async () => {
     const { db, service } = setup();
-    db.wikiAccountLink.findUnique.mockResolvedValue({ userId: "other", verifiedAt: NOW });
+    // Same trap as start()'s equivalent test: only the tx-scoped client sees the verified holder.
+    db.wikiAccountLink.findUnique.mockResolvedValue(null);
+    const tx = { wikiAccountLink: { findUnique: jest.fn().mockResolvedValue({ userId: "other", verifiedAt: NOW }), deleteMany: jest.fn(), upsert: jest.fn() }, user: { updateMany: jest.fn(), update: jest.fn() } };
+    db.$transaction.mockImplementation((cb: any) => cb(tx));
     await expect(service.adminVerify("u1", "ixwiki", "Kir", 7)).rejects.toMatchObject({ code: "TAKEN" });
-    expect(db.wikiAccountLink.upsert).not.toHaveBeenCalled();
+    expect(tx.wikiAccountLink.upsert).not.toHaveBeenCalled();
   });
 
   it("writes a verified row and the ixwiki legacy columns without ever issuing a token", async () => {
