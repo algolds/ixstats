@@ -1,98 +1,63 @@
-# Realms Platform & Multi-Tenant World Architecture
+# Realms — Product Model & Decisions
 
-**Platform Model**: Realms (External-Facing Multi-Tenant Platform)  
-**Default Instance**: IxWorld (`realm="default"`, private community tenant)  
-**Spatial Foundation**: UPG v2 (Unified Physical Geography, 100,000-cell Voronoi Mesh)
+**Status:** Decided 2026-09-27 (design Q&A with the owner). Supersedes the earlier multi-tenant PRD
+(`docs/archive/superpowers/specs/2026-07-21-realms-platform-prd.md`), which is historical only.
+**Build phases:** 1 Foundation → 2 Founding → 3 Playing → 4 Social & governance.
+Phase 1 spec: `docs/superpowers/specs/2026-09-27-realms-foundation-design.md`.
 
----
+## What a realm is
 
-## 1. Product Philosophy: IxWorld vs. Realms
+A realm is a **separate world**: its own nations, map, lore and calendar. IxWorld is a realm — tenant 0,
+the Ixnay community's world (`Realm.id = "default"`, slug `ixworld`). First outside community planned as a
+live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurth`; equirectangular map).
 
-- **IxWorld** is the internal, private default realm for the two-decade-old Ixnay geopolitical worldbuilding community. It is a closed instance (`realm="default"`).
-- **Realms** is the external-facing multi-tenant product. External communities, tabletop groups, and worldbuilders create their own independent realms with bespoke maps, nations, and simulations.
-- **Architectural Tenet**: Always build **"realm-first"**. Every data model, router, and map layer is scoped by `realmId` (`worldId`). IxWorld benefits from these abstractions as Tenant 0, but is not the entry point for new external players.
+## The one rule
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           REALMS PLATFORM                               │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Realm Tenant Context (realmId / slug)                                   │
-│ Controls: MediaWiki endpoint, map projection, climate, custom currencies│
-├──────────────────────┬──────────────────────┬───────────────────────────┤
-│ Map Engine (UPG v2)  │ Simulation Engine    │ WikiOS Engine             │
-│ 100k Voronoi mesh,   │ Statecraft loop,     │ Headless MediaWiki /      │
-│ 7 GeoJSON layers     │ civCap, economics    │ PlateJS article render    │
-├──────────────────────┴──────────────────────┴───────────────────────────┤
-│ MapLibre GL JS Renderer (Globe / 2D Mercator Projections)               │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+> **The realm wall is the country.** Anything a country owns is realm-scoped. Anything a person owns
+> travels with their passport.
 
----
+- Only *root* records carry a realm: `Country.realmId`, map layers (`MapLayer`, `TransportRoute`,
+  `SharedVertex`), WikiOS `source`. Everything with a `countryId` inherits its realm through the country.
+- Every query that lists **across** countries (leaderboards, rankings, directories, diplomacy lists) must
+  filter by realm.
+- **One backend.** No per-realm infrastructure. A realm is a tag, not a partition.
 
-## 2. Multi-Tenant Data Scoping
+## Decisions
 
-All geographic, demographic, and simulation models in Prisma are tenant-scoped:
+| # | Topic | Decision |
+|---|---|---|
+| 1 | Meaning | Separate worlds; IxWorld is tenant 0 |
+| 2 | Scope | Country stuff → realm. Passport, messages, notifications, settings, **Vault (global)**, **achievements (per account)** → passport |
+| 2 | ThinkPages | One feed per realm; a user setting shows one global feed |
+| 3 | WikiOS / forum | Shared app, content tagged per realm (`WikiArticle.source` = realm), one backend; the WikiOS front page is a portal to all lore. Forum follows the same model |
+| 4 | Realm context | The **active nation** decides the realm. `?realm=` only on pages with no nation of their own |
+| 5 | Country names | Unique per realm. Slugs stay globally unique; a colliding slug gets a realm-qualified suffix. `/countries/[slug]` unchanged |
+| 6 | Founding | Apply → site admin approves |
+| 7 | Seed lore | Application may link an iiwiki or althistory page; on approval it is imported **once**, crawling sub-categories (visited-set, depth ≤ 5, ≤ 2,000 pages, no wiki-global categories, admin preview first) |
+| 8 | Imported nations | Tagged *claimable*; a `Country` row is created only when someone claims one (builder, prefilled) |
+| 9 | Map | Generated (UPG v2) or an uploaded image |
+| 10–11 | Image maps | Auto-vectorised by the IxMap pipeline (`runMapPipeline`: PNG → potrace → SVG → GeoJSON); the admin runs `PipelineWizard` at approval and maps colours → nations. Founders supply a clean flat-colour political PNG |
+| 12 | Membership | Owning a nation in a realm = membership. Founder = `Realm.ownerId`; no other roles yet |
+| 13–14 | Claims | Claim anything that already exists (nation page, territory, existing country); create new nations freely. Founder (site admins for IxWorld) approves; **auto-approved** when the claimant is the verified creator of the nation's wiki page. Wiki accounts are verified by a token on the user page (ixwiki, iiwiki, althistory) |
+| 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) |
+| 16 | Vault income | Only the active nation pays |
+| 17 | Simulation | Identical in every realm |
+| 18 | Time | One shared IxTime clock; per-realm calendar label via `Realm.settings.yearOffset` (display only) |
+| 19 | Visibility | `public` or `unlisted` only — never private |
+| 20 | Founder powers | Settings, claim queue, remove nations (data kept → claimable; appeal to site admin), moderate their realm's WikiOS articles and feed posts. One check: `canModerateRealm(user, realmId)` = site admin ∨ `realm.ownerId === user.id` |
+| 21 | Lifecycle | Automatic founder succession (60 days unseen → earliest active nation owner; admin override); archived realms are read-only, excluded from crons and payouts |
+| 22 | Passport | The passport is the hub: realms, nations, switching, claims, verification, applications, founder queue. A nav chip shows the active nation and opens it |
+| 23 | IxWorld | Uses the same claim flow as every realm |
+| 25 | Ownership | `Country.ownerUserId`; `User.countryId` becomes the *active* nation pointer |
 
-```prisma
-model Country {
-  id        String   @id @default(cuid())
-  realmId   String   @default("default")
-  slug      String
-  name      String
-  // ...
-  @@unique([realmId, slug])
-  @@index([realmId])
-}
+## Explicitly not doing
 
-model MapLayer {
-  id        String   @id @default(cuid())
-  realmId   String   @default("default")
-  layerType String
-  data      Json
-  @@index([realmId])
-}
-```
+Private realms · per-realm clocks/speeds · founder-tunable simulation (presets may come later — Eurth's
+starting-stat caps are the first pressure) · Azgaar import · co-owned nations · realm dormancy handling ·
+Clerk Organizations as realms.
 
-### URL Routing Conventions:
-- **Default Realm (IxWorld)**: `/maps`, `/mycountry`, `/dashboard`, `/vault`, `/thinkpages`
-- **External Realms**: `/realms/[realmSlug]/maps`, `/realms/[realmSlug]/mycountry`, `/realms/[realmSlug]/admin`
+## Known risks
 
----
-
-## 3. Standardized Map Layers (7 GeoJSON Layers)
-
-Every realm renders 7 standardized vector topology layers generated from UPG v2:
-
-| Layer | Type | zIndex | Description |
-| :--- | :--- | :---: | :--- |
-| **`ocean-bathymetry`** | Polygon | 1 | Deep ocean trenches and continental shelf hypsometry |
-| **`landmass-terrain`** | Polygon | 2 | Base continent elevation zones (`zone_0` to `zone_8`) |
-| **`climate-biomes`** | Polygon | 3 | Trewartha 12-zone climate classifications |
-| **`political-countries`**| Polygon | 4 | Sovereign national borders and maritime exclusive economic zones (EEZ) |
-| **`subdivisions`** | Polygon | 5 | Provincial and administrative territories |
-| **`lakes-water`** | Polygon | 6 | Inland freshwater lakes (renders *above* political borders) |
-| **`rivers-hydrography`**| LineString | 7 | Dynamic branching river networks (renders *above* political borders) |
-
-### Layer Stacking Invariant:
-> [!IMPORTANT]
-> Inland water features (Rivers `zIndex: 7` and Lakes `zIndex: 6`) MUST always render **above** Political Countries (`zIndex: 4`) so natural drainage geography is never masked by territory fills.
-
----
-
-## 4. Vector Geometry Processing Pipeline
-
-```
-┌─────────────────────────┐     ┌─────────────────────────┐
-│  Voronoi Graph (UPG v2) │ ──> │   Catmull-Rom Splines   │
-│  100,000 spatial cells  │     │   4-pass subdivision    │
-└─────────────────────────┘     └────────────┬────────────┘
-                                             │
-                                             ▼
-┌─────────────────────────┐     ┌─────────────────────────┐
-│ Response-Boundary 6 DP  │ <── │ Visvalingam Compression │
-│ Coordinate Truncation   │     │ Topology-preserving     │
-└─────────────────────────┘     └─────────────────────────┘
-```
-
-1. **Catmull-Rom Spline Subdivision**: All GeoJSON layers apply 4-pass Catmull-Rom smoothing ($\tau = 0.5$) along shared vertex topology to eliminate Voronoi polygon angularity.
-2. **Coordinate Truncation (`src/lib/maps/geojson-compress.ts`)**: Truncates output coordinates to 6 decimal places ($\sim 0.11\text{m}$ precision), reducing network transfer payloads by 30–50%.
+- iiwiki's Cloudflare challenge blocked `IxStats-Builder` from a dev machine (2026-09-27); the allowlist may
+  be IP-bound to production. Phase 2 imports may only run on prod.
+- Hand-drawn / textured maps will vectorise poorly; flat-colour political PNGs are required.
