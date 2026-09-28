@@ -180,9 +180,6 @@ export function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
   }
 }
 
-/** Ocean background color for the globe */
-export const OCEAN_COLOR = "#b3cde0";
-
 // ─── Route Styles (single source of truth) ───────────────────────────────────
 
 /**
