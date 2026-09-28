@@ -505,7 +505,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
    *  Requires PostGIS. Returns the number of features updated and pairs found.
    *  Safe to re-run; overwrites existing neighbors values. */
   rebuildAdjacency: adminProcedure
-    .input(z.object({ worldId: z.string().default("default") }))
+    .input(z.object({ realmId: z.string().default("default") }))
     .mutation(async ({ ctx }) => {
       const { isPostGISAvailable } = await import("~/lib/maps/geo-validation");
       if (!(await isPostGISAvailable(ctx.db))) return { features: 0, pairs: 0, skipped: true };

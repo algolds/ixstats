@@ -32,7 +32,7 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | [architecture/backend.md](architecture/backend.md) | tRPC router patterns, modular sub-routers, middleware, rate limiting, and auth context |
 | [architecture/data.md](architecture/data.md) | Prisma schema domains (15 schema files), PostGIS models, seeders, and data lifecycle |
 | [architecture/autosave.md](architecture/autosave.md) | Universal autosave engine (`useGenericAutoSync`), debounced delta sync, and conflict handling |
-| [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) | IxWorld & Realms multi-tenant platform architecture and schema isolation |
+| [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) | Realms — separate worlds; the realm wall is the country |
 | [architecture/ts-graph-isolation.md](architecture/ts-graph-isolation.md) | TypeScript partitioned sub-project checks (`typecheck:ui`, `server`, `trpc`, `db`) and safe heap bounds |
 | [architecture/caching.md](architecture/caching.md) | Multi-tier caching architecture (in-memory layer-cache, Redis rate-limiting, WikiOS shadow store) |
 

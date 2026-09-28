@@ -12,16 +12,9 @@ import type {
   WikiActivityType,
 } from "./identity.types";
 
-const DEFAULT_REALM_ID = "default";
-
-/** Countries on the default realm have no Realm row; they belong to IxEarth. */
+/** The realm a country belongs to. `realm` is always selected; the FK guarantees the row exists. */
 export function realmOf(country: IdentityCountry): { id: string; name: string; slug: string } {
-  const isDefault = !country.realmId || country.realmId === DEFAULT_REALM_ID;
-  return {
-    id: country.realmId || DEFAULT_REALM_ID,
-    name: country.realm?.name ?? (isDefault ? "IxEarth" : "Custom Realm"),
-    slug: country.realm?.slug ?? (isDefault ? "ixearth" : "custom-realm"),
-  };
+  return country.realm ?? { id: country.realmId, name: country.realmId, slug: country.realmId };
 }
 
 export function countrySlug(country: { slug: string | null; name: string }): string {

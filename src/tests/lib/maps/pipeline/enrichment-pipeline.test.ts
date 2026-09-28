@@ -63,7 +63,7 @@ describe("enrichment-pipeline", () => {
     expect(result.geoProfiles.length).toBe(2);
     expect(result.resources.length).toBeGreaterThan(0);
     expect(result.sharedVertices.length).toBeGreaterThan(0);
-    expect(result.sharedVertices[0]).toHaveProperty("worldId", "test_realm");
+    expect(result.sharedVertices[0]).toHaveProperty("realmId", "test_realm");
   });
 });
 

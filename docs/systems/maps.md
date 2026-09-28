@@ -118,6 +118,6 @@ Geography serves as the foundational data source across the platform:
 
 - [Oceanography Report](../IXWORLD_OCEANOGRAPHY_REPORT.md)
 - [Autosave Architecture](../AUTOSAVE_ARCHITECTURE.md)
-- [Framework Specification (Realms)](../FRAMEWORK_SPEC.md)
+- [Framework Specification (Realms)](../architecture/realms-framework-spec.md)
 - [API Reference: Geo Routers](../reference/api-complete.md#geo-routers)
 

@@ -107,10 +107,10 @@ export const transportRouteQueriesRouter = createTRPCRouter({
    * Get ALL transport routes as GeoJSON for map overlay.
    */
   getAllRoutesGeoJSON: cachedPublicProcedure
-    .input(z.object({ worldId: z.string().default("default") }).optional())
+    .input(z.object({ realmId: z.string().default("default") }).optional())
     .query(async ({ ctx, input }) => {
       const routes = await ctx.db.transportRoute.findMany({
-        where: { worldId: input?.worldId ?? "default" },
+        where: { realmId: input?.realmId ?? "default" },
         select: {
           id: true,
           routeType: true,

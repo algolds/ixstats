@@ -62,7 +62,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       z.object({
         layers: z.record(z.string(), z.unknown()),
         mode: z.enum(["replace", "merge"]).default("merge"),
-        worldId: z.string().default("default"),
+        realmId: z.string().default("default"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -73,7 +73,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
         if (input.mode === "replace") {
           // Deactivate existing layers for this world
           await tx.mapLayer.updateMany({
-            where: { worldId: input.worldId, isActive: true },
+            where: { realmId: input.realmId, isActive: true },
             data: { isActive: false },
           });
         }
@@ -95,7 +95,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
                 geometry: feature.geometry as any,
                 properties: (feature.properties ?? {}) as any,
                 isActive: true,
-                worldId: input.worldId,
+                realmId: input.realmId,
               },
               create: {
                 layerType,
@@ -103,7 +103,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
                 geometry: feature.geometry as any,
                 properties: (feature.properties ?? {}) as any,
                 isActive: true,
-                worldId: input.worldId,
+                realmId: input.realmId,
               },
             });
             imported++;
@@ -126,7 +126,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
 
           // Clear existing shared vertices for this world
           await ctx.db.sharedVertex.deleteMany({
-            where: { worldId: input.worldId },
+            where: { realmId: input.realmId },
           });
 
           // Insert new shared vertices
@@ -136,7 +136,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
                 lng: sv.lng,
                 lat: sv.lat,
                 featureRefs: sv.featureRefs as any,
-                worldId: input.worldId,
+                realmId: input.realmId,
               })),
             });
           }

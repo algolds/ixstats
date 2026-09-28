@@ -50,11 +50,6 @@ export default function MapPipelineLabPage() {
   // Active Projection Mode
   const [projectionMode, setProjectionMode] = useState<"dynamic" | "globe" | "mercator">("globe");
 
-  // Territory Claims State
-  const [pendingClaims, setPendingClaims] = useState<
-    Array<{ id: string; featureId: string; nationName: string; userId: string }>
-  >([]);
-
   // Initial Run / Manual Trigger
   const runPipeline = () => {
     startTransition(() => {
@@ -91,44 +86,6 @@ export default function MapPipelineLabPage() {
     setActiveLayers((prev) => ({ ...prev, [layerId]: !prev[layerId] }));
   };
 
-  const handleClaimSubmit = (featureId: string, nationName: string) => {
-    setPendingClaims((prev) => [
-      ...prev,
-      {
-        id: `claim_${Date.now()}`,
-        featureId,
-        nationName,
-        userId: "user_demo",
-      },
-    ]);
-  };
-
-  const handleReviewClaim = (claimId: string, action: "approve" | "reject") => {
-    setPendingClaims((prev) => prev.filter((c) => c.id !== claimId));
-
-    if (action === "approve" && mapData) {
-      const claim = pendingClaims.find((c) => c.id === claimId);
-      if (claim) {
-        // Update feature in political layer
-        const updatedCountries = mapData.countries.map((c) =>
-          c.featureId === claim.featureId ? { ...c, name: claim.nationName } : c
-        );
-        setMapData({ ...mapData, countries: updatedCountries });
-      }
-    }
-  };
-
-  // Compute unclaimed nation options for claim tester
-  const unclaimedNations = useMemo(() => {
-    if (!mapData || !mapData.countries) return [];
-    return mapData.countries
-      .filter((c) => c && c.featureId)
-      .map((c) => ({
-        featureId: c.featureId,
-        name: c.name || c.featureId,
-      }));
-  }, [mapData]);
-
   // Compute formatted MapLayers array to pass to IxWorldMap
   const mapLayersProp = useMemo(() => {
     if (!mapData) return [];
@@ -152,10 +109,6 @@ export default function MapPipelineLabPage() {
           isGenerating={isPending}
           activeLayers={activeLayers}
           onToggleLayer={handleToggleLayer}
-          unclaimedNations={unclaimedNations}
-          onClaimSubmit={handleClaimSubmit}
-          pendingClaims={pendingClaims}
-          onReviewClaim={handleReviewClaim}
           projectionMode={projectionMode}
           onChangeProjection={setProjectionMode}
         />

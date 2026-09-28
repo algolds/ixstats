@@ -103,7 +103,7 @@ export function MidRibbonPassportDocument({
   const handleOpenLorewards = useCallback(() => setIsLorewardsModalOpen(true), []);
   const handleOpenVault = useCallback(() => onSelectTab("vault"), [onSelectTab]);
 
-  const realmName = featuredRealm?.name || "IxEarth";
+  const realmName = featuredRealm?.name ?? "—";
   const passportNumber = `IX-${cleanUsername.toUpperCase().substring(0, 4)}-${data.account.userId ? data.account.userId.substring(0, 4).toUpperCase() : "882"}`;
   const entryDate = data.account.createdAt
     ? new Date(data.account.createdAt)
