@@ -11,8 +11,6 @@ function targetsDb() {
   return {
     user: {
       findUnique: jest.fn().mockResolvedValue({ countryId: CALLER_COUNTRY }),
-      // Only FOREIGN_COUNTRY is claimed by a player.
-      findMany: jest.fn().mockResolvedValue([{ countryId: FOREIGN_COUNTRY }]),
     },
     diplomaticRelation: {
       findMany: jest.fn().mockResolvedValue([
@@ -21,10 +19,8 @@ function targetsDb() {
       ]),
     },
     country: {
-      findMany: jest.fn().mockResolvedValue([
-        { id: FOREIGN_COUNTRY, name: "Playerland" },
-        { id: NPC_COUNTRY, name: "Npcland" },
-      ]),
+      // FOREIGN_COUNTRY is owned by a player, so the unowned filter leaves only the NPC nation.
+      findMany: jest.fn().mockResolvedValue([{ id: NPC_COUNTRY, name: "Npcland" }]),
     },
   };
 }
@@ -41,8 +37,10 @@ describe("security.getPvNPCTargets lists only NPC nations", () => {
     const targets = await premiumCaller(db).getPvNPCTargets();
 
     expect(targets).toEqual([{ id: NPC_COUNTRY, name: "Npcland" }]);
-    expect(db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: { in: [FOREIGN_COUNTRY, NPC_COUNTRY] } } })
+    expect(db.country.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: { in: [FOREIGN_COUNTRY, NPC_COUNTRY] }, ownerUserId: null },
+      })
     );
   });
 

@@ -210,10 +210,31 @@ describe("Plan 332: security.resolvePvNPCConflict only strikes NPC nations", () 
       caller.resolvePvNPCConflict({ targetCountryId: FOREIGN_COUNTRY })
     ).rejects.toMatchObject({ code: "FORBIDDEN", message: expect.stringContaining("NPC") });
     expect(db.user.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: FOREIGN_COUNTRY } })
+      expect.objectContaining({ where: { ownedCountries: { some: { id: FOREIGN_COUNTRY } } } })
     );
     expect(db.militaryBranch.findMany).not.toHaveBeenCalled();
     expect(db.storytellerEffect.createMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects a strike on the caller's own nation even when nobody owns it (system-owner pointer)", async () => {
+    const db = {
+      user: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: "db_user_caller", countryId: CALLER_COUNTRY }),
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      militaryBranch: { findMany: jest.fn() },
+      storytellerEffect: { createMany: jest.fn() },
+    };
+    const ctx = createIdorContext(db);
+    ctx.user = { ...ctx.user!, membershipTier: "mycountry_premium" };
+    const caller = securityConflictsRouter.createCaller(ctx);
+
+    await expect(
+      caller.resolvePvNPCConflict({ targetCountryId: CALLER_COUNTRY })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.militaryBranch.findMany).not.toHaveBeenCalled();
   });
 });
 

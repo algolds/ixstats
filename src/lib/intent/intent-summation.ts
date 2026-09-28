@@ -75,7 +75,7 @@ export async function generateIntentSummationDraft(params: {
   if (!account) {
     // Look up country owner user to link clerkUserId
     const user = await db.user.findFirst({
-      where: { countryId },
+      where: { ownedCountries: { some: { id: countryId } } },
       select: { clerkUserId: true },
     });
     const clerkUserId = user?.clerkUserId || `official_${countryId}`;

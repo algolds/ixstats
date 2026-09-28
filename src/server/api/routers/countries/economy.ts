@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import {
   publicProcedure,
@@ -20,6 +21,16 @@ import {
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
 
+const SOVEREIGN_OWNER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  forumUsername: true,
+  wikiUsername: true,
+  membershipTier: true,
+  role: { select: { displayName: true, name: true } },
+} satisfies Prisma.UserSelect;
+type SovereignOwner = Prisma.UserGetPayload<{ select: typeof SOVEREIGN_OWNER_SELECT }>;
+
 export const economyProcedures = {
   getByIdWithEconomicData: rateLimitedPublicProcedure
     .input(
@@ -40,17 +51,7 @@ export const economyProcedures = {
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: "desc" },
         },
-        users: {
-          select: {
-            id: true,
-            clerkUserId: true,
-            forumUsername: true,
-            wikiUsername: true,
-            membershipTier: true,
-            role: { select: { displayName: true, name: true } },
-          },
-          take: 1,
-        },
+        owner: { select: SOVEREIGN_OWNER_SELECT },
         realm: { select: { id: true, name: true, slug: true } },
       };
 
@@ -84,17 +85,7 @@ export const economyProcedures = {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
-            users: {
-              select: {
-                id: true,
-                clerkUserId: true,
-                forumUsername: true,
-                wikiUsername: true,
-                membershipTier: true,
-                role: { select: { displayName: true, name: true } },
-              },
-              take: 1,
-            },
+            owner: { select: SOVEREIGN_OWNER_SELECT },
             realm: { select: { id: true, name: true, slug: true } },
           },
         });
@@ -212,7 +203,8 @@ export const economyProcedures = {
       if (avgPopGrowth < 0.002) vulnerabilities.push("low_population_growth");
       if (avgGdpGrowth < 0.01) vulnerabilities.push("low_gdp_per_capita_growth");
 
-      const rawUser = (country.users as any[])?.[0];
+      // `country` comes from an `include: any` query, so pin the owner to the shape selected above.
+      const rawUser = country.owner as SovereignOwner | null;
       const sovereignUser = rawUser
         ? {
             id: rawUser.id,
@@ -299,7 +291,7 @@ export const economyProcedures = {
           country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : Date.now(),
       };
 
-      const ownerClerkUserId = (country as any).users?.[0]?.clerkUserId ?? null;
+      const ownerClerkUserId = rawUser?.clerkUserId ?? null;
 
       return {
         ...response,

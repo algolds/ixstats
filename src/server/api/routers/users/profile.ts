@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { UserManagementService } from "~/lib/auth";
 import { globalCache } from "~/lib/cache";
+import { assignNation } from "~/server/modules/realms";
 
 function hydrateProfileDates(profile: any) {
   if (!profile) return profile;
@@ -101,17 +102,20 @@ export const usersProfileRouter = createTRPCRouter({
         });
 
         if (linkedAccount?.countryId && userRecord) {
+          const linkedCountryId = linkedAccount.countryId;
+          const userId: string = userRecord.id;
           try {
-            userRecord = (await ctx.db.user.update({
-              where: { clerkUserId },
-              data: {
-                countryId: linkedAccount.countryId,
-              },
-              include: {
-                country: countryArgs,
-                role: true,
-              },
-            })) as any;
+            // A nation someone else already owns throws here and is skipped (logged below).
+            userRecord = await ctx.db.$transaction(async (tx) => {
+              await assignNation(tx, { userId, countryId: linkedCountryId });
+              return tx.user.findUnique({
+                where: { id: userId },
+                include: {
+                  country: countryArgs,
+                  role: true,
+                },
+              });
+            });
 
             countryRecord = userRecord?.country ?? null;
           } catch (linkError) {

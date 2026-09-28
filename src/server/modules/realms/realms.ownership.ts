@@ -2,7 +2,8 @@
  * The only writer of Country.ownerUserId and User.countryId (spec invariant I3).
  * ownerUserId = who owns the nation; User.countryId = the nation the user is acting as.
  */
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { isSystemOwner } from "~/lib/auth";
 import { realmSettings } from "./realms.settings";
 
 export type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user">;
@@ -49,4 +50,25 @@ export async function releaseNation(tx: OwnershipTx, countryId: string): Promise
 /** Move only the active pointer. Used for the system-owner override and for un-pointing without releasing. */
 export async function pointActiveNation(tx: OwnershipTx, userId: string, countryId: string | null): Promise<void> {
   await tx.user.update({ where: { id: userId }, data: { countryId } });
+}
+
+/** Admin override: give `countryId` to the user. System owners only move their active pointer. */
+export async function adminAssignNation(
+  database: Pick<PrismaClient, "user" | "country" | "$transaction">,
+  input: { clerkUserId: string; countryId: string }
+): Promise<void> {
+  await database.$transaction(async (tx) => {
+    const user = await tx.user.upsert({
+      where: { clerkUserId: input.clerkUserId },
+      update: {},
+      create: { clerkUserId: input.clerkUserId },
+    });
+    if (isSystemOwner(input.clerkUserId)) {
+      await pointActiveNation(tx, user.id, input.countryId);
+      return;
+    }
+    await releaseNation(tx, input.countryId);
+    if (user.countryId && user.countryId !== input.countryId) await releaseNation(tx, user.countryId);
+    await assignNation(tx, { userId: user.id, countryId: input.countryId });
+  });
 }

@@ -81,7 +81,7 @@ export class MessagingConversationOperations {
     input: CreateConversationByCountriesInput
   ) {
     const users = await this.db.user.findMany({
-      where: { countryId: { in: input.countryIds } },
+      where: { ownedCountries: { some: { id: { in: input.countryIds } } } },
       select: { clerkUserId: true },
     });
 

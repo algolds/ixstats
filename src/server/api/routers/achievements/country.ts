@@ -13,7 +13,7 @@ export const achievementsCountryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const users = await ctx.db.user.findMany({
-          where: { countryId: input.countryId },
+          where: { ownedCountries: { some: { id: input.countryId } } },
           select: { clerkUserId: true },
         });
 
@@ -53,7 +53,7 @@ export const achievementsCountryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const users = await ctx.db.user.findMany({
-          where: { countryId: input.countryId },
+          where: { ownedCountries: { some: { id: input.countryId } } },
           select: { clerkUserId: true },
         });
 
@@ -95,7 +95,7 @@ export const achievementsCountryRouter = createTRPCRouter({
       try {
         const countries = await ctx.db.country.findMany({
           include: {
-            users: {
+            owner: {
               select: {
                 clerkUserId: true,
               },
@@ -106,13 +106,9 @@ export const achievementsCountryRouter = createTRPCRouter({
         const userToCountryMap = new Map<string, string>();
         const allUserIds: string[] = [];
         for (const country of countries) {
-          if (country.users) {
-            for (const u of country.users) {
-              if (u.clerkUserId) {
-                userToCountryMap.set(u.clerkUserId, country.id);
-                allUserIds.push(u.clerkUserId);
-              }
-            }
+          if (country.owner) {
+            userToCountryMap.set(country.owner.clerkUserId, country.id);
+            allUserIds.push(country.owner.clerkUserId);
           }
         }
 

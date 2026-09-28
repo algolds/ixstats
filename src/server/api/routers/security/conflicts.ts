@@ -83,9 +83,9 @@ export const securityConflictsRouter = createTRPCRouter({
       try {
         const defenderCountry = await ctx.db.country.findUnique({
           where: { id: input.defenderId },
-          select: { name: true, users: { select: { clerkUserId: true } } },
+          select: { name: true, owner: { select: { clerkUserId: true } } },
         });
-        const defenderUserId = defenderCountry?.users[0]?.clerkUserId;
+        const defenderUserId = defenderCountry?.owner?.clerkUserId;
         if (defenderUserId) {
           await notificationAPI.create({
             userId: defenderUserId,
@@ -159,9 +159,9 @@ export const securityConflictsRouter = createTRPCRouter({
         try {
           const initiatorCountry = await ctx.db.country.findUnique({
             where: { id: conflict.initiatorId },
-            select: { users: { select: { clerkUserId: true } } },
+            select: { owner: { select: { clerkUserId: true } } },
           });
-          const initiatorUserId = initiatorCountry?.users[0]?.clerkUserId;
+          const initiatorUserId = initiatorCountry?.owner?.clerkUserId;
           if (initiatorUserId) {
             await notificationAPI.create({
               userId: initiatorUserId,
@@ -202,9 +202,9 @@ export const securityConflictsRouter = createTRPCRouter({
       try {
         const initiatorCountry = await ctx.db.country.findUnique({
           where: { id: conflict.initiatorId },
-          select: { users: { select: { clerkUserId: true } } },
+          select: { owner: { select: { clerkUserId: true } } },
         });
-        const initiatorUserId = initiatorCountry?.users[0]?.clerkUserId;
+        const initiatorUserId = initiatorCountry?.owner?.clerkUserId;
         if (initiatorUserId) {
           await notificationAPI.create({
             userId: initiatorUserId,
@@ -292,19 +292,11 @@ export const securityConflictsRouter = createTRPCRouter({
     ];
     if (partnerIds.length === 0) return [];
 
-    const [claimedBy, countries] = await Promise.all([
-      ctx.db.user.findMany({
-        where: { countryId: { in: partnerIds } },
-        select: { countryId: true },
-      }),
-      ctx.db.country.findMany({
-        where: { id: { in: partnerIds } },
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      }),
-    ]);
-    const claimedIds = new Set(claimedBy.map((u) => u.countryId));
-    return countries.filter((c) => !claimedIds.has(c.id));
+    return ctx.db.country.findMany({
+      where: { id: { in: partnerIds }, ownerUserId: null },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
   }),
 
   // Resolve a PvNPC conflict automatically
@@ -328,10 +320,10 @@ export const securityConflictsRouter = createTRPCRouter({
       // The strike damages the target's GDP, so the target must be an NPC (unclaimed) nation;
       // player nations (including the caller's own) go through the mutual-consent PvP flow.
       const targetPlayer = await ctx.db.user.findFirst({
-        where: { countryId: input.targetCountryId },
+        where: { ownedCountries: { some: { id: input.targetCountryId } } },
         select: { id: true },
       });
-      if (targetPlayer) {
+      if (targetPlayer || input.targetCountryId === userProfile.countryId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "PvNPC strikes can only target NPC nations. Challenge player nations via PvP.",

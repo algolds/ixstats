@@ -75,7 +75,7 @@ function findCountryByHandle(handle: string, stripped: string) {
     },
     select: {
       ...IDENTITY_COUNTRY_SELECT,
-      users: { where: { isActive: true }, take: 1, include: { role: true } },
+      owner: { include: { role: true } },
     },
   });
 }
@@ -125,8 +125,8 @@ async function findUserAndCountry(handle: string, stripped: string, viewerClerkI
   }
   const byCountry = await findCountryByHandle(handle, stripped);
   if (!byCountry) return { user: null, country: null };
-  const { users, ...country } = byCountry;
-  return { user: users[0] ?? null, country };
+  const { owner, ...country } = byCountry;
+  return { user: owner?.isActive ? owner : null, country };
 }
 
 /**
@@ -173,7 +173,7 @@ export async function resolveIdentityNations(
   const nations = await db.country.findMany({
     where: {
       OR: [
-        { users: { some: { id: user.id } } },
+        { ownerUserId: user.id },
         ...(user.countryId ? [{ id: user.countryId }] : []),
         ...(country ? [{ id: country.id }] : []),
         ...leaderNames.flatMap((name) => (name ? [{ leader: insensitive(name) }] : [])),

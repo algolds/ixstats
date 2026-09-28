@@ -56,7 +56,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
             select: { name: true },
           });
           const targetUsers = await ctx.db.user.findMany({
-            where: { countryId: targetCountryId },
+            where: { ownedCountries: { some: { id: targetCountryId } } },
             select: { id: true },
           });
 

@@ -24,7 +24,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
       },
     });
 
-    // Get all countries with their users
+    // Get all countries with their owners
     const countries = await ctx.db.country.findMany({
       where: { isDemo: false },
       select: {
@@ -36,7 +36,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
         geometry: true,
         centroid: true,
         boundingBox: true,
-        users: { select: { clerkUserId: true, forumUsername: true } },
+        owner: { select: { clerkUserId: true, forumUsername: true } },
       },
     });
 
@@ -138,8 +138,8 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
           featureId: ml.featureId,
           featureName: ml.displayName ?? ml.featureId,
           areaSqKm: ml.areaSqKm,
-          hasOwner: c.users.length > 0,
-          ownerName: c.users[0]?.forumUsername ?? c.users[0]?.clerkUserId ?? null,
+          hasOwner: c.owner !== null,
+          ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
         };
       }),
       unlinked: unlinked.map((c) => ({
@@ -148,8 +148,8 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
         countryFlag: normalizeFlagUrl(c.flag),
         hasGeometry: !!c.geometry,
         hasLandArea: !!(c.landArea && c.landArea > 0),
-        hasOwner: c.users.length > 0,
-        ownerName: c.users[0]?.forumUsername ?? c.users[0]?.clerkUserId ?? null,
+        hasOwner: c.owner !== null,
+        ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
       })),
     };
   }),

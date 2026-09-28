@@ -18,6 +18,7 @@ import { isSystemOwner } from "~/lib/auth";
 import type { BaseCountryData } from "~/types/ixstats";
 import { globalCache } from "~/lib/cache";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { assignNation } from "~/server/modules/realms";
 
 export const usersCountryLinkingRouter = createTRPCRouter({
   // Link user to existing country
@@ -300,10 +301,13 @@ export const usersCountryLinkingRouter = createTRPCRouter({
           },
         });
         // Link user to country
-        await ctx.db.user.upsert({
-          where: { clerkUserId: input.userId },
-          update: { countryId: newCountry.id },
-          create: { clerkUserId: input.userId, countryId: newCountry.id },
+        await ctx.db.$transaction(async (tx) => {
+          const owner = await tx.user.upsert({
+            where: { clerkUserId: input.userId },
+            update: {},
+            create: { clerkUserId: input.userId },
+          });
+          await assignNation(tx, { userId: owner.id, countryId: newCountry.id });
         });
         // Create initial historical data point
         await ctx.db.historicalDataPoint.create({
