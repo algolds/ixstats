@@ -32,12 +32,17 @@ export class WikiLinkError extends Error {
 
 export interface WikiLinkDeps {
   fetchWikiUser: (source: ProofSource, username: string) => Promise<{ username: string; userId: number } | null>;
-  fetchUserPageWikitext: (source: ProofSource, username: string) => Promise<string | null>;
+  fetchUserPageLatest: (
+    source: ProofSource,
+    username: string
+  ) => Promise<{ content: string; author: string } | null>;
   now?: () => Date;
   newToken?: () => string;
 }
 
 type WikiLinkDb = Pick<PrismaClient, "wikiAccountLink" | "user" | "$transaction">;
+/** Shape a transaction client needs to expose for the legacy-column writes below. */
+type WikiLinkTx = Pick<PrismaClient, "wikiAccountLink" | "user">;
 
 export interface WikiLinkView {
   source: string;
@@ -54,6 +59,25 @@ async function wikiCall<T>(call: () => Promise<T>): Promise<T> {
   }
 }
 
+/** Legacy `User.wikiUsername`/`wikiUserId` columns (45 readers) — kept in sync with ixwiki links only.
+ *  A squatter's unverified legacy link loses to the proven/authoritative owner. */
+async function syncIxwikiLegacyColumns(
+  tx: WikiLinkTx,
+  userId: string,
+  username: string,
+  wikiUserId: number | null,
+  verifiedAt: Date
+): Promise<void> {
+  await tx.user.updateMany({
+    where: { wikiUsername: username, id: { not: userId } },
+    data: { wikiUsername: null, wikiUserId: null },
+  });
+  await tx.user.update({
+    where: { id: userId },
+    data: { wikiUsername: username, wikiUserId, lastWikiSync: verifiedAt },
+  });
+}
+
 export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
   const now = deps.now ?? (() => new Date());
   const newToken = deps.newToken ?? (() => `ixstates-verify-${randomBytes(5).toString("hex")}`);
@@ -62,13 +86,15 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     const wikiUser = await wikiCall(() => deps.fetchWikiUser(source, rawUsername));
     if (!wikiUser) throw new WikiLinkError("WIKI_USER_NOT_FOUND", `No ${source} user named "${rawUsername}"`);
     const username = normalizeWikiUsername(wikiUser.username);
-    const holder = await db.wikiAccountLink.findUnique({ where: { source_username: { source, username } } });
-    if (holder && holder.userId !== userId && holder.verifiedAt) {
-      throw new WikiLinkError("TAKEN", `${username} is already verified by another player`);
-    }
     const token = newToken();
     const expiresAt = new Date(now().getTime() + TOKEN_TTL_MS);
     await db.$transaction(async (tx) => {
+      // Re-check the holder inside the transaction: a verified row can only ever be taken over via
+      // confirm's proof-of-ownership check, never here, however narrow the window looked outside a tx.
+      const holder = await tx.wikiAccountLink.findUnique({ where: { source_username: { source, username } } });
+      if (holder && holder.userId !== userId && holder.verifiedAt) {
+        throw new WikiLinkError("TAKEN", `${username} is already verified by another player`);
+      }
       // A user holds one link per wiki; an unverified squat on this username is taken over.
       await tx.wikiAccountLink.deleteMany({ where: { userId, source, NOT: { username } } });
       await tx.wikiAccountLink.upsert({
@@ -87,28 +113,59 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
       throw new WikiLinkError("EXPIRED", "That code expired — request a new one");
     }
     const token = link.token;
-    const wikitext = await wikiCall(() => deps.fetchUserPageWikitext(source, link.username));
-    if (!wikitext?.includes(token)) {
-      throw new WikiLinkError("TOKEN_NOT_FOUND", `The code was not found on User:${link.username}`);
+    const latest = await wikiCall(() => deps.fetchUserPageLatest(source, link.username));
+    if (!latest?.content.includes(token) || latest.author !== link.username) {
+      throw new WikiLinkError(
+        "TOKEN_NOT_FOUND",
+        `The code must be saved on User:${link.username} by ${link.username} themself`
+      );
     }
     await db.$transaction(async (tx) => {
-      await tx.wikiAccountLink.update({
-        where: { id: link.id },
-        data: { verifiedAt: now(), token: null, tokenExpiresAt: null },
+      const verifiedAt = now();
+      // Re-check owner + token atomically: a concurrent start() may have re-owned this row (new
+      // token) while we were waiting on the wiki fetch above.
+      const claimed = await tx.wikiAccountLink.updateMany({
+        where: { id: link.id, userId, token, verifiedAt: null },
+        data: { verifiedAt, token: null, tokenExpiresAt: null },
       });
+      if (claimed.count !== 1) {
+        throw new WikiLinkError("NO_PENDING", "Your verification changed — start again");
+      }
       if (source === "ixwiki") {
-        // Legacy columns (45 readers). A squatter's unverified legacy link loses to the proven owner.
-        await tx.user.updateMany({
-          where: { wikiUsername: link.username, id: { not: userId } },
-          data: { wikiUsername: null, wikiUserId: null },
-        });
-        await tx.user.update({
-          where: { id: userId },
-          data: { wikiUsername: link.username, wikiUserId: link.wikiUserId, lastWikiSync: now() },
-        });
+        await syncIxwikiLegacyColumns(tx, userId, link.username, link.wikiUserId, verifiedAt);
       }
     });
     return { username: link.username };
+  }
+
+  /**
+   * Admin-confirmed link: the admin's authority is the proof, not a token. Used only by the admin
+   * user-management router, never reachable from self-service `linkWiki`.
+   */
+  async function adminVerify(
+    userId: string,
+    source: ProofSource,
+    rawUsername: string,
+    wikiUserId: number | null
+  ): Promise<{ username: string }> {
+    const username = normalizeWikiUsername(rawUsername);
+    const verifiedAt = now();
+    await db.$transaction(async (tx) => {
+      const holder = await tx.wikiAccountLink.findUnique({ where: { source_username: { source, username } } });
+      if (holder && holder.userId !== userId && holder.verifiedAt) {
+        throw new WikiLinkError("TAKEN", `${username} is already verified by another player`);
+      }
+      await tx.wikiAccountLink.deleteMany({ where: { userId, source, NOT: { username } } });
+      await tx.wikiAccountLink.upsert({
+        where: { source_username: { source, username } },
+        update: { userId, wikiUserId, verifiedAt, token: null, tokenExpiresAt: null },
+        create: { userId, source, username, wikiUserId, verifiedAt },
+      });
+      if (source === "ixwiki") {
+        await syncIxwikiLegacyColumns(tx, userId, username, wikiUserId, verifiedAt);
+      }
+    });
+    return { username };
   }
 
   async function unlink(userId: string, source: ProofSource): Promise<void> {
@@ -125,5 +182,5 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     return links.map((l) => ({ source: l.source, username: l.username, verified: !!l.verifiedAt, pending: !!l.token }));
   }
 
-  return { start, confirm, unlink, list };
+  return { start, confirm, unlink, list, adminVerify };
 }

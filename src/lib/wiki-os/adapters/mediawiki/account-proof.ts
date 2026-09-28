@@ -93,13 +93,24 @@ const RevisionsSchema = z.object({
   }),
 });
 
-export async function fetchUserPageWikitext(source: ProofSource, username: string): Promise<string | null> {
+/**
+ * Latest revision of a user page — content AND author. Stock MediaWiki lets anyone (often anonymous)
+ * edit another user's `User:` page, so the token alone does not prove control of the account; the
+ * caller must also check that `author` is the account being verified.
+ */
+export async function fetchUserPageLatest(
+  source: ProofSource,
+  username: string
+): Promise<{ content: string; author: string } | null> {
   const data = await apiQuery(
     source,
-    { prop: "revisions", titles: `User:${normalizeWikiUsername(username)}`, rvprop: "content", rvslots: "main" },
+    { prop: "revisions", titles: `User:${normalizeWikiUsername(username)}`, rvprop: "content|user", rvslots: "main" },
     RevisionsSchema
   );
-  return data.query.pages[0]?.revisions?.[0]?.slots?.main.content ?? null;
+  const revision = data.query.pages[0]?.revisions?.[0];
+  const content = revision?.slots?.main.content;
+  if (content === undefined || !revision?.user) return null;
+  return { content, author: normalizeWikiUsername(revision.user) };
 }
 
 /** Author of the page's first revision, normalised; null if the page does not exist. */

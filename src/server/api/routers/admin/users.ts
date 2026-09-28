@@ -281,6 +281,27 @@ export const adminUsersRouter = createTRPCRouter({
           message: res.error || "Failed to link MediaWiki account",
         });
       }
+
+      // The admin's authority is the proof of ownership here (no token) — record it as a verified
+      // WikiAccountLink so realm claims can rely on it. The PostgreSQL fast path hard-codes
+      // userId 1 (pg-activity.ts), which is not a real MediaWiki user id, so treat it as unknown.
+      const { createWikiLinkService, WikiLinkError } = await import(
+        "~/server/modules/identity/identity.wiki-links"
+      );
+      const { fetchUserPageLatest, fetchWikiUser } = await import(
+        "~/lib/wiki-os/adapters/mediawiki/account-proof"
+      );
+      const wikiLinks = createWikiLinkService(ctx.db, { fetchWikiUser, fetchUserPageLatest });
+      const wikiUserId = res.wikiUserId && res.wikiUserId > 1 ? res.wikiUserId : null;
+      try {
+        await wikiLinks.adminVerify(input.userId, "ixwiki", res.wikiUsername ?? input.wikiUsername, wikiUserId);
+      } catch (err) {
+        if (err instanceof WikiLinkError) {
+          throw new TRPCError({ code: "CONFLICT", message: err.message });
+        }
+        throw err;
+      }
+
       await globalCache.delete(`user_profile:${input.userId}`);
       return res;
     }),

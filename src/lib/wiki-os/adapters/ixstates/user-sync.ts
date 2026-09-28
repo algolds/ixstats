@@ -116,7 +116,10 @@ export async function linkWikiAccount(
     }
   }
 
-  // Store the link & wikiUserId
+  // Store the link & wikiUserId. This self-service path has no proof of account control — it never
+  // writes a verified WikiAccountLink row. Admin-confirmed links go through adminVerify instead
+  // (src/server/api/routers/admin/users.ts, linkUserWiki), since only an admin's authority can
+  // substitute for the token-on-user-page proof that `start`/`confirm` require.
   await db.user.update({
     where: { id: userId },
     data: {
@@ -124,14 +127,6 @@ export async function linkWikiAccount(
       wikiUserId: wikiUser.userId > 0 ? wikiUser.userId : undefined,
       lastWikiSync: new Date(),
     },
-  });
-
-  // Admin-confirmed (trusted) link: record it as verified so realm claims can rely on it.
-  await db.wikiAccountLink.deleteMany({ where: { userId, source: "ixwiki", NOT: { username: wikiUser.username } } });
-  await db.wikiAccountLink.upsert({
-    where: { source_username: { source: "ixwiki", username: wikiUser.username } },
-    update: { userId, verifiedAt: new Date(), token: null, tokenExpiresAt: null },
-    create: { userId, source: "ixwiki", username: wikiUser.username, wikiUserId: wikiUser.userId > 0 ? wikiUser.userId : null, verifiedAt: new Date() },
   });
 
   return { success: true, wikiUsername: wikiUser.username, wikiUserId: wikiUser.userId };
