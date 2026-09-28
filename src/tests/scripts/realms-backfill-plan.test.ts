@@ -19,4 +19,9 @@ describe("planOwnerBackfill", () => {
     ]);
     expect(plan.collisions).toEqual([{ countryId: "c3", userIds: ["u3", "u4"] }]);
   });
+
+  it("never makes a system owner the owner, even when they are the only user", () => {
+    const plan = planOwnerBackfill([{ countryId: "c9", ownerUserId: null, users: [{ id: "u9", clerkUserId: "sys" }] }], sys);
+    expect(plan).toEqual({ assign: [], collisions: [] });
+  });
 });

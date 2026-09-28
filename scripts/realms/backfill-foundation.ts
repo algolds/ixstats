@@ -32,11 +32,12 @@ async function backfillOwners() {
 
 async function backfillRealms() {
   const realm = await db.realm.findUnique({ where: { id: "default" }, select: { slug: true } });
-  console.log(`IxWorld slug: ${realm?.slug ?? "(missing row!)"} → ixworld`);
+  if (!realm) throw new Error('realms row id="default" (IxWorld) is missing — Country.realmId FK depends on it; create it before running this backfill');
+  console.log(`IxWorld slug: ${realm.slug} → ixworld`);
   const privateCount = await db.realm.count({ where: { visibility: "private" } });
   console.log(`private realms → unlisted: ${privateCount}`);
   if (!apply) return;
-  if (realm && realm.slug !== "ixworld") await db.realm.update({ where: { id: "default" }, data: { slug: "ixworld" } });
+  if (realm.slug !== "ixworld") await db.realm.update({ where: { id: "default" }, data: { slug: "ixworld" } });
   await db.realm.updateMany({ where: { visibility: "private" }, data: { visibility: "unlisted" } });
 }
 

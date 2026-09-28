@@ -58,7 +58,7 @@ export const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
     );
   }
 
-  touchLastSeen(db, ctx.user);
+  touchLastSeen(ctx.db, ctx.user);
 
   return next({
     ctx: {
