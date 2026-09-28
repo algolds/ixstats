@@ -67,7 +67,7 @@ export function NotificationRow({
             handleDismiss(n);
           },
           label: "Clear",
-          color: "#ef4444",
+          color: "var(--color-error)",
         }}
       >
         {n.href && (
@@ -87,7 +87,7 @@ export function NotificationRow({
             soundEffects.droplet();
             handleDismiss(n);
           }}
-          color="#ef4444"
+          color="var(--color-error)"
         />
       </SwipeableRow.Trailing>
 

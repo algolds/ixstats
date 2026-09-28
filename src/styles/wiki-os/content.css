@@ -377,8 +377,8 @@ html:not([data-theme="dark"]) .wikios-search-match {
 /* Active Highlight */
 .wikios-search-match--active {
   background: rgba(245, 158, 11, 0.5) !important;
-  color: #ffffff !important;
-  border-bottom: 2px solid #ffffff !important;
+  color: var(--color-white) !important;
+  border-bottom: 2px solid var(--color-white) !important;
   box-shadow:
     0 0 10px rgba(245, 158, 11, 0.6),
     0 0 0 1px var(--color-warning) !important;
@@ -387,8 +387,8 @@ html:not([data-theme="dark"]) .wikios-search-match {
 [data-theme="light"] .wikios-search-match--active,
 html:not([data-theme="dark"]) .wikios-search-match--active {
   background: rgba(245, 158, 11, 0.4) !important;
-  color: #000000 !important;
-  border-bottom-color: #000000 !important;
+  color: var(--color-black) !important;
+  border-bottom-color: var(--color-black) !important;
   box-shadow:
     0 0 8px rgba(217, 119, 6, 0.5),
     0 0 0 1px var(--color-warning-dark) !important;
@@ -1320,7 +1320,7 @@ html:not([data-theme="dark"]) .wikios-article-content .navbox-group {
 
 [data-theme="light"] .wikios-link-preview,
 html:not([data-theme="dark"]) .wikios-link-preview {
-  background: #ffffff !important;
+  background: var(--color-white) !important;
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.15),

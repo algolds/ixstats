@@ -244,7 +244,9 @@ function SwipeableRowRoot({
         if (commitAction) {
           setIsCommitting(true);
           setCommitSide(side);
-          setCommitColor(commitAction.color ?? (side === "trailing" ? "#ef4444" : "#22c55e"));
+          setCommitColor(
+            commitAction.color ?? (side === "trailing" ? "var(--color-error)" : "#22c55e")
+          );
 
           // Execute commit after gulp animation
           setTimeout(() => {
@@ -299,7 +301,7 @@ function SwipeableRowRoot({
           if (trailingCommit) {
             setIsCommitting(true);
             setCommitSide("trailing");
-            setCommitColor(trailingCommit.color ?? "#ef4444");
+            setCommitColor(trailingCommit.color ?? "var(--color-error)");
             setTimeout(() => {
               trailingCommit.action();
               onCommit?.("trailing");
@@ -773,7 +775,7 @@ export function SwipeActionButton({
   _side,
 }: SwipeActionButtonProps & { _index?: number; _total?: number; _side?: "leading" | "trailing" }) {
   // Determine if color is a CSS value or a Tailwind class name
-  const isCssColor = color.startsWith("#") || color.startsWith("rgb") || color.startsWith("hsl");
+  const isCssColor = /^(#|rgb|hsl|var\()/.test(color);
 
   const btnClass = isCssColor
     ? "bg-[color-mix(in_srgb,var(--btn-color)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--btn-color)_22%,transparent)] border border-[color-mix(in_srgb,var(--btn-color)_20%,transparent)] text-[color-mix(in_srgb,var(--btn-color)_85%,#0f172a)] dark:text-[color-mix(in_srgb,var(--btn-color)_85%,#f8fafc)]"

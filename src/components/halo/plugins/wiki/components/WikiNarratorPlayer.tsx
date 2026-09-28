@@ -315,7 +315,7 @@ export function WikiNarratorPlayer({
                     style={
                       isActive
                         ? {
-                            borderColor: "#ffffff",
+                            borderColor: "var(--color-white)",
                             backgroundColor: accentColor,
                             boxShadow: `0 0 6px ${accentColor}`,
                           }

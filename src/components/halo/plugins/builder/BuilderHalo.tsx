@@ -169,9 +169,9 @@ function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
       expandedViews: {
         builder: BuilderView as React.ComponentType<DIViewProps<BuilderFilterState, BuilderContextValue>>,
       },
-      accentColor: hasError ? "#ef4444" : "#f59e0b",
+      accentColor: hasError ? "var(--color-error)" : "#f59e0b",
       stickyLabel: "Builder",
-      badge: hasError ? { color: "#ef4444", pulse: true } : undefined,
+      badge: hasError ? { color: "var(--color-error)", pulse: true } : undefined,
       actions: [
         ...(hasError
           ? [

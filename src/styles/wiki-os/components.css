@@ -2768,7 +2768,7 @@ html:not([data-theme="light"]) .wikios-annotation-mark[data-selected="true"],
 html:not([data-theme="light"]) .wikios-annotation-mark.wikios-anchor-highlighted {
   outline: none !important;
   background-color: color-mix(in srgb, var(--annotation-color, #fef036) 28%, transparent) !important;
-  color: #ffffff !important;
+  color: var(--color-white) !important;
   border-bottom: 2px solid color-mix(in srgb, var(--annotation-color, #fef036) 85%, transparent) !important;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--annotation-color, #fef036) 45%, transparent),
               0 0 18px color-mix(in srgb, var(--annotation-color, #fef036) 30%, transparent) !important;
