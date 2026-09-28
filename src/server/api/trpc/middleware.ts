@@ -8,6 +8,7 @@ import { rateLimiter } from "~/lib/cache";
 import { db, isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
+import { touchLastSeen } from "./last-seen";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -56,6 +57,8 @@ export const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
         "If the issue persists, contact support."
     );
   }
+
+  touchLastSeen(db, ctx.user);
 
   return next({
     ctx: {
