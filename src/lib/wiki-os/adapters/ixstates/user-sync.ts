@@ -126,5 +126,13 @@ export async function linkWikiAccount(
     },
   });
 
+  // Admin-confirmed (trusted) link: record it as verified so realm claims can rely on it.
+  await db.wikiAccountLink.deleteMany({ where: { userId, source: "ixwiki", NOT: { username: wikiUser.username } } });
+  await db.wikiAccountLink.upsert({
+    where: { source_username: { source: "ixwiki", username: wikiUser.username } },
+    update: { userId, verifiedAt: new Date(), token: null, tokenExpiresAt: null },
+    create: { userId, source: "ixwiki", username: wikiUser.username, wikiUserId: wikiUser.userId > 0 ? wikiUser.userId : null, verifiedAt: new Date() },
+  });
+
   return { success: true, wikiUsername: wikiUser.username, wikiUserId: wikiUser.userId };
 }

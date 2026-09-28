@@ -5,6 +5,23 @@ import { db } from "~/server/db";
 import { linkWikiAccount } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { linkDiscordAccount } from "~/lib/discord/user-sync";
 import { linkForumAccount } from "~/server/modules/forum";
+import {
+  fetchUserPageWikitext,
+  fetchWikiUser,
+  PROOF_SOURCES,
+} from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
+
+const wikiSourceInput = z.enum(PROOF_SOURCES);
+const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageWikitext });
+
+function toTrpcError(error: Error): never {
+  if (error instanceof WikiLinkError) {
+    const code = error.code === "WIKI_UNREACHABLE" ? "SERVICE_UNAVAILABLE" : error.code === "TAKEN" ? "CONFLICT" : "BAD_REQUEST";
+    throw new TRPCError({ code, message: error.message });
+  }
+  throw error;
+}
 
 export const ixnayidLinkingRouter = createTRPCRouter({
   // =========================================================================
@@ -37,6 +54,27 @@ export const ixnayidLinkingRouter = createTRPCRouter({
     });
     return { success: true };
   }),
+
+  // =========================================================================
+  // VERIFIED WIKI ACCOUNT LINKING (token-on-user-page proof)
+  // =========================================================================
+
+  listWikiLinks: protectedProcedure.query(({ ctx }) => wikiLinks().list(ctx.user.id)),
+
+  startWikiVerification: protectedProcedure
+    .input(z.object({ source: wikiSourceInput, username: z.string().trim().min(1).max(100) }))
+    .mutation(({ ctx, input }) => wikiLinks().start(ctx.user.id, input.source, input.username).catch(toTrpcError)),
+
+  confirmWikiVerification: protectedProcedure
+    .input(z.object({ source: wikiSourceInput }))
+    .mutation(({ ctx, input }) => wikiLinks().confirm(ctx.user.id, input.source).catch(toTrpcError)),
+
+  unlinkWikiAccount: protectedProcedure
+    .input(z.object({ source: wikiSourceInput }))
+    .mutation(async ({ ctx, input }) => {
+      await wikiLinks().unlink(ctx.user.id, input.source);
+      return { success: true };
+    }),
 
   // =========================================================================
   // DISCORD LINKING
