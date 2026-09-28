@@ -11,7 +11,7 @@ model Post {
 
 model Country {
   id                          String                    @id @default(cuid())
-  name                        String                    @unique
+  name                        String
   slug                        String?                   @unique
   isDemo                      Boolean                   @default(false)
   continent                   String?
@@ -185,7 +185,11 @@ model Country {
   realmId                     String                        @default("default")
   nameBankEntries             NameBank[]                    @relation("CountryNameBank")
   languagePacks               LanguagePack[]                @relation("CountryLanguagePacks")
+  ownerUserId                 String?
+  owner                       User?                         @relation("CountryOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  realmClaims                 RealmClaim[]
 
+  @@unique([realmId, name])
   @@index([name])
   @@index([economicTier])
   @@index([populationTier])
@@ -194,6 +198,7 @@ model Country {
   @@index([realmId])
   @@index([geom_postgis], map: "idx_country_geom", type: Gist)
   @@index([name], map: "idx_country_name")
+  @@index([ownerUserId])
 }
 
 // Card background images for MyCountry UI customization
@@ -249,6 +254,10 @@ model User {
   wikiUserId          Int?
   wikiUsername         String?
   lastWikiSync        DateTime?
+  lastSeenAt          DateTime?
+  ownedCountries      Country[]                @relation("CountryOwner")
+  wikiAccountLinks    WikiAccountLink[]
+  realmClaims         RealmClaim[]
   // IxnayID: Discord account linking
   discordUserId       String?                  @unique
   discordUsername      String?
@@ -896,4 +905,24 @@ model CustomFieldValue {
   @@index([fieldName, isGlobal])
   @@index([userId])
   @@index([usageCount])
+}
+
+/// A wiki account (ixwiki / iiwiki / althistory) linked to a user. `verifiedAt` is set only after the
+/// user proved control by placing `token` on their wiki user page. See docs/architecture/realms-framework-spec.md.
+model WikiAccountLink {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source         String    // ixwiki | iiwiki | althistory
+  username       String    // MediaWiki-normalised (spaces, first letter upper-case)
+  wikiUserId     Int?
+  token          String?
+  tokenExpiresAt DateTime?
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([source, username])
+  @@unique([userId, source])
+  @@map("wiki_account_links")
 }

@@ -265,14 +265,14 @@ model MapLayer {
   updatedAt    DateTime                 @updatedAt
   geom_postgis   Unsupported("geometry")?
   sourceUploadId String?                  // Reference to SvgUpload that created this record
-  worldId      String?                  @default("default") // Future multi-tenant world support
+  realmId      String?                  @default("default") @map("worldId") // Future multi-tenant world support
 
   country      Country?                 @relation("CountryMapFeatures", fields: [countryId], references: [id], onDelete: SetNull)
 
   @@unique([layerType, featureId])
   @@index([layerType, isActive])
   @@index([countryId])
-  @@index([worldId])
+  @@index([realmId])
   @@index([geom_postgis], map: "idx_map_layer_geom", type: Gist)
   @@map("map_layers")
 }
@@ -408,11 +408,11 @@ model SharedVertex {
   lat         Float // WGS84 latitude
   featureRefs Json // Array<{ featureId: string, ringIndex: number, vertexIndex: number }>
   snapTarget  String? // Optional: "altitude_boundary", "river", "coastline"
-  worldId     String   @default("default")
+  realmId     String   @default("default") @map("worldId")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([worldId])
+  @@index([realmId])
   @@map("shared_vertices")
 }
 
@@ -508,15 +508,14 @@ model Realm {
   description     String?
   ownerId         String       // Clerk userId
   status          String       @default("draft") // draft, generating, active, archived
-  visibility      String       @default("private") // private, unlisted, public
+  visibility      String       @default("unlisted") // public | unlisted (never private — realms decision 19)
   templateId      String?      // Source ProceduralWorld or WorldTemplate
   settings        Json?        // Realm-specific config overrides
   thumbnail       String?      // Preview image URL
   seed            Int?         // Master generation seed for reproducibility
   generationParams Json?       // WorldGenParams snapshot
   countries       Country[]        @relation("RealmCountries")
-  worldConfig     WorldConfig?     @relation("RealmWorldConfig")
-  territoryClaims TerritoryClaim[]
+  claims          RealmClaim[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -524,41 +523,6 @@ model Realm {
   @@index([status])
   @@index([visibility])
   @@map("realms")
-}
-
-/// World configuration for the IxWorld framework.
-/// Allows multiple independent worlds to be hosted on the same instance,
-/// each with their own wiki, map layers, climate system, etc.
-/// The "default" world is IxWorld (IxEarth). Future worlds are created
-/// by other communities licensing the framework.
-model WorldConfig {
-  id               String   @id @default(cuid())
-  worldId          String   @unique // "default" for IxWorld, custom slug for others
-  name             String   // "IxWorld", "MyWorld", etc.
-  description      String?
-  wikiBaseUrl      String?  // "https://ixwiki.com"
-  wikiApiPath      String   @default("/api.php")
-  mapProjection    String   @default("globe") // globe, mercator, dynamic
-  defaultCenter    Json?    // [lng, lat]
-  defaultZoom      Float    @default(2)
-  layerTypes       Json?    // available layer types, e.g. ["background","political","climate"]
-  sovereigntyTypes Json?    // custom sovereignty type definitions
-  climateSystem    String   @default("trewartha") // trewartha, koppen, custom
-  elevationZones   Json?    // custom elevation zone definitions
-  waterBodyLabels  Json?    // ocean/sea label positions [{name, lng, lat, zoom}]
-  countryColors    Json?    // custom palette for political layer
-  isActive         Boolean  @default(true)
-  realmId          String?  @unique // FK to Realm (null for legacy "default" config)
-  realm            Realm?   @relation("RealmWorldConfig", fields: [realmId], references: [id])
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Data sync authority
-  dataAuthority     Json?    // Per-field authority map: {"population":"stats","capital":"wiki",...}
-  syncEnabled       Boolean  @default(true)
-  syncIntervalMin   Int      @default(60)
-
-  @@map("world_configs")
 }
 
 /// Transport route connecting cities/hubs across terrain.
@@ -580,7 +544,7 @@ model TransportRoute {
   terrainDifficulty Float?   // 0-1, computed from elevation changes along route
   lengthKm          Float?   // total route length
   speedKmh          Float?   // design/cruising speed in km/h
-  worldId           String   @default("default")
+  realmId           String   @default("default") @map("worldId")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -588,7 +552,7 @@ model TransportRoute {
 
   @@index([countryId])
   @@index([routeType])
-  @@index([worldId, routeType])
+  @@index([realmId, routeType])
   @@map("transport_routes")
 }
 
@@ -604,13 +568,13 @@ model TransportHub {
   coordinates  Json     // [lng, lat]
   throughput   Float?   // annual capacity
   connections  Int      @default(0) // number of routes through this hub
-  worldId      String   @default("default")
+  realmId      String   @default("default") @map("worldId")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([countryId])
   @@index([hubType])
-  @@index([worldId])
+  @@index([realmId])
   @@index([cityId])
   @@map("transport_hubs")
 }
@@ -626,7 +590,7 @@ model TransportNode {
   country       Country? @relation("CountryTransportNodes", fields: [countryId], references: [id], onDelete: SetNull)
   name          String?
   elevation     Float?
-  worldId       String   @default("default")
+  realmId       String   @default("default") @map("worldId")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -634,7 +598,7 @@ model TransportNode {
   segmentsTo    TransportSegment[] @relation("SegmentToNode")
 
   @@index([countryId])
-  @@index([worldId])
+  @@index([realmId])
   @@index([cityId])
   @@map("transport_nodes")
 }
@@ -658,7 +622,7 @@ model TransportSegment {
   isInternational   Boolean  @default(false)
   countryId         String?
   country           Country? @relation("CountryTransportSegments", fields: [countryId], references: [id], onDelete: SetNull)
-  worldId           String   @default("default")
+  realmId           String   @default("default") @map("worldId")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -666,7 +630,7 @@ model TransportSegment {
 
   @@index([countryId])
   @@index([routeType])
-  @@index([worldId, routeType])
+  @@index([realmId, routeType])
   @@index([fromNodeId])
   @@index([toNodeId])
   @@map("transport_segments")
@@ -775,29 +739,30 @@ model NamedLake {
   @@map("named_lakes")
 }
 
-model TerritoryClaim {
-  id                String   @id @default(cuid())
+/// A request to take ownership of something that already exists in a realm. Phase 1 claims existing
+/// countries; wikiSource/wikiPageTitle/mapLayerFeatureId are the Phase 2 targets (claimable nation pages, territory).
+model RealmClaim {
+  id                String    @id @default(cuid())
   realmId           String
-  mapLayerFeatureId String
+  realm             Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
   userId            String
-  nationName        String
-  governmentType    String?
-  capitalName       String?
-  flagUrl           String?
-  details           Json?
-  status            String   @default("pending") // pending, approved, rejected
-  reviewedBy        String?
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  countryId         String?
+  country           Country?  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  wikiSource        String?
+  wikiPageTitle     String?
+  mapLayerFeatureId String?
+  status            String    @default("pending") // pending | approved | rejected | withdrawn
+  autoApproved      Boolean   @default(false)
+  reviewedBy        String?   // Clerk userId of the reviewer, or "system:auto"
   reviewedAt        DateTime?
   rejectionReason   String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  realm             Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
-
-  @@unique([realmId, mapLayerFeatureId, status])
   @@index([realmId, status])
   @@index([userId])
-  @@map("territory_claims")
+  @@index([countryId])
+  @@map("realm_claims")
 }
-
 
