@@ -1,11 +1,21 @@
 import { adminAssignNation } from "~/server/modules/realms";
 import { adminUsersRouter } from "~/server/api/routers/admin/users";
+import { usersProfileRouter } from "~/server/api/routers/users/profile";
 import { createIdorContext } from "~/tests/helpers/country-idor-context";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: (id: string) => id === "sys_owner" }));
+jest.mock("~/server/modules/realms", () => {
+  const actual = jest.requireActual("~/server/modules/realms");
+  return { ...actual, assignNation: jest.fn(actual.assignNation) };
+});
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"), // the tRPC context needs the real Cache class
-  globalCache: { delete: jest.fn().mockResolvedValue(undefined) },
+  globalCache: {
+    delete: jest.fn().mockResolvedValue(undefined),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+  },
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -140,5 +150,69 @@ describe("admin.unassignUserFromCountry", () => {
     expect(d.country.update).not.toHaveBeenCalled();
     expect(d.user.update).not.toHaveBeenCalled();
     expect(d.user.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("users.getProfile ThinkPages fallback never grants ownership", () => {
+  const { assignNation } = jest.requireMock("~/server/modules/realms");
+
+  function profileCaller(ownerUserId: string | null) {
+    const country = { id: "c1", name: "Linkedland" };
+    const d: any = {
+      $transaction: jest.fn((cb: any) => cb(d)),
+      user: {
+        findUnique: jest.fn(({ where }: any) =>
+          Promise.resolve(
+            where.id
+              ? { id: "u1", clerkUserId: "clerk_u1", countryId: "c1", country, role: null }
+              : { id: "u1", clerkUserId: "clerk_u1", countryId: null, country: null, role: null }
+          )
+        ),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn(),
+      },
+      thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue({ countryId: "c1" }) },
+      country: {
+        findUnique: jest.fn().mockResolvedValue({ ownerUserId }),
+        count: jest.fn(),
+        update: jest.fn(),
+      },
+    };
+    const ctx = createMockRouterContext({ auth: { userId: "clerk_u1" }, db: d });
+    return { caller: usersProfileRouter.createCaller(ctx as any), d };
+  }
+
+  beforeEach(() => assignNation.mockClear());
+
+  it("an account for an UNOWNED nation does not make the user its owner", async () => {
+    const { caller, d } = profileCaller(null);
+    const profile = await caller.getProfile();
+    expect(profile.countryId).toBeNull();
+    expect(assignNation).not.toHaveBeenCalled();
+    expect(d.country.update).not.toHaveBeenCalled();
+    expect(d.user.update).not.toHaveBeenCalled();
+  });
+
+  it("an account for a nation the user already owns re-points the active nation", async () => {
+    const { caller, d } = profileCaller("u1");
+    const profile = await caller.getProfile();
+    expect(d.user.update).toHaveBeenCalledWith({ where: { id: "u1" }, data: { countryId: "c1" } });
+    expect(d.country.update).not.toHaveBeenCalled();
+    expect(assignNation).not.toHaveBeenCalled();
+    expect(profile.countryId).toBe("c1");
+  });
+
+  it("a nation owned by someone else is skipped without an error log", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const { caller, d } = profileCaller("u2");
+      const profile = await caller.getProfile();
+      expect(profile.countryId).toBeNull();
+      expect(d.user.update).not.toHaveBeenCalled();
+      expect(d.country.update).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

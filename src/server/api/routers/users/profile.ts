@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { UserManagementService } from "~/lib/auth";
 import { globalCache } from "~/lib/cache";
-import { assignNation } from "~/server/modules/realms";
+import { pointActiveNation } from "~/server/modules/realms";
 
 function hydrateProfileDates(profile: any) {
   if (!profile) return profile;
@@ -103,11 +103,18 @@ export const usersProfileRouter = createTRPCRouter({
 
         if (linkedAccount?.countryId && userRecord) {
           const linkedCountryId = linkedAccount.countryId;
-          const userId: string = userRecord.id;
+          const current = userRecord;
+          const userId: string = current.id;
           try {
-            // A nation someone else already owns throws here and is skipped (logged below).
+            // A ThinkPages account never grants ownership: only re-point the user at a nation they
+            // already own. Anything else (unowned, or someone else's) is skipped silently.
             userRecord = await ctx.db.$transaction(async (tx) => {
-              await assignNation(tx, { userId, countryId: linkedCountryId });
+              const linked = await tx.country.findUnique({
+                where: { id: linkedCountryId },
+                select: { ownerUserId: true },
+              });
+              if (linked?.ownerUserId !== userId) return current;
+              await pointActiveNation(tx, userId, linkedCountryId);
               return tx.user.findUnique({
                 where: { id: userId },
                 include: {
