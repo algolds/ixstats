@@ -1,4 +1,5 @@
 // src/server/api/routers/admin/users.ts
+import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -10,6 +11,16 @@ import {
   pointActiveNation,
   releaseNation,
 } from "~/server/modules/realms";
+import {
+  fetchUserPageLatest,
+  fetchWikiUser,
+  PROOF_SOURCES,
+} from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
+
+/** The wiki-links service for admin link/unlink — the admin's authority stands in for the token proof. */
+const adminWikiLinks = (db: PrismaClient) =>
+  createWikiLinkService(db, { fetchWikiUser, fetchUserPageLatest });
 
 export const adminUsersRouter = createTRPCRouter({
   // List all users and their claimed countries
@@ -260,8 +271,8 @@ export const adminUsersRouter = createTRPCRouter({
   linkUserWiki: adminProcedure
     .input(z.object({ userId: z.string(), wikiUsername: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const { linkWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
-      const res = await linkWikiAccount(input.userId, input.wikiUsername, ctx.auth.userId);
+      const { findLinkableWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
+      const res = await findLinkableWikiAccount(input.userId, input.wikiUsername, ctx.auth.userId);
       if (!res.success) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -269,19 +280,18 @@ export const adminUsersRouter = createTRPCRouter({
         });
       }
 
-      // The admin's authority is the proof of ownership here (no token) — record it as a verified
-      // WikiAccountLink so realm claims can rely on it. The PostgreSQL fast path hard-codes
-      // userId 1 (pg-activity.ts), which is not a real MediaWiki user id, so treat it as unknown.
-      const { createWikiLinkService, WikiLinkError } = await import(
-        "~/server/modules/identity/identity.wiki-links"
-      );
-      const { fetchUserPageLatest, fetchWikiUser } = await import(
-        "~/lib/wiki-os/adapters/mediawiki/account-proof"
-      );
-      const wikiLinks = createWikiLinkService(ctx.db, { fetchWikiUser, fetchUserPageLatest });
+      // The admin's authority is the proof of ownership here (no token): adminVerify writes the verified
+      // WikiAccountLink row AND the legacy User columns in one transaction, so a TAKEN refusal writes nothing
+      // (ruling F-2). The PostgreSQL fast path hard-codes userId 1 (pg-activity.ts), which is not a real
+      // MediaWiki user id, so treat it as unknown.
       const wikiUserId = res.wikiUserId && res.wikiUserId > 1 ? res.wikiUserId : null;
       try {
-        await wikiLinks.adminVerify(input.userId, "ixwiki", res.wikiUsername ?? input.wikiUsername, wikiUserId);
+        await adminWikiLinks(ctx.db).adminVerify(
+          input.userId,
+          "ixwiki",
+          res.wikiUsername ?? input.wikiUsername,
+          wikiUserId
+        );
       } catch (err) {
         if (err instanceof WikiLinkError) {
           throw new TRPCError({ code: "CONFLICT", message: err.message });
@@ -293,18 +303,11 @@ export const adminUsersRouter = createTRPCRouter({
       return res;
     }),
 
-  // Unlink a user's MediaWiki account
+  // Revoke a user's wiki link on any wiki (the verified row; ixwiki also clears the legacy columns — ruling F-2)
   unlinkUserWiki: adminProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(z.object({ userId: z.string(), source: z.enum(PROOF_SOURCES).default("ixwiki") }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.user.update({
-        where: { id: input.userId },
-        data: {
-          wikiUsername: null,
-          wikiUserId: null,
-          lastWikiSync: null,
-        },
-      });
+      await adminWikiLinks(ctx.db).unlink(input.userId, input.source);
       await globalCache.delete(`user_profile:${input.userId}`);
       return { success: true };
     }),
