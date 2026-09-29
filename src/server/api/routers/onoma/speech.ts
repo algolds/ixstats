@@ -73,17 +73,23 @@ export const onomaSpeechRouter = createTRPCRouter({
     };
   }),
 
-  /** Admin: get the Kokoro natural voice config including secrets. */
+  /**
+   * Admin: get the Kokoro natural voice config. The API key never leaves the
+   * server — the client gets whether one is saved plus its last 4 characters.
+   */
   getKokoroAdminConfig: adminProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
     const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
     const speedVal = map.get("onoma.kokoro.speed");
+    const savedApiKey = map.get("onoma.kokoro.apiKey") || "";
     return {
       enabled: map.get("onoma.kokoro.enabled") === "true",
       baseUrl: map.get("onoma.kokoro.baseUrl") || "",
-      apiKey: map.get("onoma.kokoro.apiKey") || "",
+      hasApiKey: savedApiKey.length > 0,
+      apiKeyHint:
+        savedApiKey.length > 4 ? `••••${savedApiKey.slice(-4)}` : savedApiKey ? "••••" : "",
       model: map.get("onoma.kokoro.model") || "model_q8f16",
       voice: map.get("onoma.kokoro.voice") || "af_heart",
       speed: speedVal != null && speedVal !== "" ? Number(speedVal) : 1.0,
@@ -333,7 +339,10 @@ export const onomaSpeechRouter = createTRPCRouter({
       z.object({
         enabled: z.boolean(),
         baseUrl: z.string().url().or(z.string().length(0)),
-        apiKey: z.string(),
+        /** New key to save; omitted or empty keeps the saved key. */
+        apiKey: z.string().optional(),
+        /** Remove the saved key. */
+        clearApiKey: z.boolean().optional(),
         model: z.string(),
         voice: z.string(),
         speed: z.number().min(0.2).max(5.0),
@@ -354,7 +363,6 @@ export const onomaSpeechRouter = createTRPCRouter({
           value: input.baseUrl,
           desc: "Kokoro natural voice: API base URL",
         },
-        { key: "onoma.kokoro.apiKey", value: input.apiKey, desc: "Kokoro natural voice: API key" },
         { key: "onoma.kokoro.model", value: input.model, desc: "Kokoro natural voice: TTS model" },
         {
           key: "onoma.kokoro.voice",
@@ -382,6 +390,14 @@ export const onomaSpeechRouter = createTRPCRouter({
           desc: "Kokoro natural voice: kokoro-fastapi base URL",
         },
       ];
+      const newApiKey = input.apiKey?.trim() ?? "";
+      if (input.clearApiKey || newApiKey) {
+        entries.push({
+          key: "onoma.kokoro.apiKey",
+          value: input.clearApiKey ? "" : newApiKey,
+          desc: "Kokoro natural voice: API key",
+        });
+      }
       await ctx.db.$transaction(
         entries.map((e) =>
           ctx.db.systemConfig.upsert({

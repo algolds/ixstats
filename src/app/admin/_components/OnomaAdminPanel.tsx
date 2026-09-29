@@ -130,7 +130,9 @@ export function OnomaAdminPanel() {
   // Kokoro State
   const [kokoroEnabled, setKokoroEnabled] = useState(true);
   const [kokoroBaseUrl, setKokoroBaseUrl] = useState("localhost:8888");
+  // Holds only a newly typed key; the saved key never reaches the browser.
   const [kokoroApiKey, setKokoroApiKey] = useState("");
+  const [clearKokoroApiKey, setClearKokoroApiKey] = useState(false);
   const [kokoroModel, setKokoroModel] = useState("kokoro");
   const [kokoroVoice, setKokoroVoice] = useState("af_heart");
   const [kokoroSpeed, setKokoroSpeed] = useState(1.0);
@@ -148,7 +150,8 @@ export function OnomaAdminPanel() {
     if (kokoroData) {
       setKokoroEnabled(kokoroData.enabled);
       setKokoroBaseUrl(kokoroData.baseUrl);
-      setKokoroApiKey(kokoroData.apiKey);
+      setKokoroApiKey("");
+      setClearKokoroApiKey(false);
       setKokoroModel(kokoroData.model);
       setKokoroVoice(kokoroData.voice);
       setKokoroSpeed(kokoroData.speed);
@@ -185,11 +188,11 @@ export function OnomaAdminPanel() {
   const handleTestKokoro = async () => {
     setIsTestingKokoro(true);
     try {
-      const res = await fetch(withBasePath("/api/onoma/speak"), {
+      const res = await fetch(withBasePath("/api/onoma/tts"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          word: testWord,
+          text: testWord,
           culture: testCulture,
           engine: kokoroEngine,
           fastApiUrl: kokoroFastApiUrl,
@@ -197,6 +200,7 @@ export function OnomaAdminPanel() {
           voice: kokoroVoice,
           speed: kokoroSpeed,
           model: kokoroModel,
+          // Empty means the route uses the saved key.
           apiKey: kokoroApiKey,
         }),
       });
@@ -366,11 +370,31 @@ export function OnomaAdminPanel() {
               <Label className="text-foreground text-xs font-medium">API Key</Label>
               <Input
                 type="password"
-                placeholder="API Key (optional)"
+                autoComplete="off"
+                placeholder={
+                  kokoroData?.hasApiKey && !clearKokoroApiKey
+                    ? `Saved (${kokoroData.apiKeyHint}) — leave blank to keep`
+                    : "API Key (optional)"
+                }
                 value={kokoroApiKey}
-                onChange={(e) => setKokoroApiKey(e.target.value)}
+                onChange={(e) => {
+                  setKokoroApiKey(e.target.value);
+                  if (e.target.value) setClearKokoroApiKey(false);
+                }}
                 className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
               />
+              {kokoroData?.hasApiKey && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClearKokoroApiKey((v) => !v);
+                    setKokoroApiKey("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline"
+                >
+                  {clearKokoroApiKey ? "Keep the saved key" : "Remove the saved key on save"}
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -528,7 +552,8 @@ export function OnomaAdminPanel() {
                   saveKokoro.mutate({
                     enabled: kokoroEnabled,
                     baseUrl: kokoroBaseUrl,
-                    apiKey: kokoroApiKey,
+                    apiKey: kokoroApiKey || undefined,
+                    clearApiKey: clearKokoroApiKey,
                     model: kokoroModel,
                     voice: kokoroVoice,
                     speed: kokoroSpeed,

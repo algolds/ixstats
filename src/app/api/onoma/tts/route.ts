@@ -221,7 +221,8 @@ async function handleTts(request: NextRequest) {
         // Allow overrides for baseUrl and apiKey only if Admin
         if (isAdmin) {
           if (body.baseUrl) baseUrl = body.baseUrl;
-          if (body.apiKey !== undefined) apiKey = body.apiKey;
+          // An empty key means "use the saved one" (the admin form never holds it).
+          if (body.apiKey) apiKey = body.apiKey;
           // In test mode we bypass the "enabled" switch
           enabled = true;
         }
