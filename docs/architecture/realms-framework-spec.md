@@ -63,30 +63,25 @@ Clerk Organizations as realms.
   from dev through the production proxy (`IIWIKI_DEV_PROXY_URL=https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php`).
 - Hand-drawn / textured maps will vectorise poorly; flat-colour political PNGs are required.
 
-## Status (2026-09-29)
+## Status (2026-09-29) — final
 
-Both plans are implemented on `realms-foundation`; the ledgers (`.superpowers/sdd/2026-09-27-realms-foundation`,
-`.superpowers/sdd/2026-09-28-realms-eurth`) record where each task stands. Runbook:
+Both plans are complete on `realms-foundation`; the ledgers (`.superpowers/sdd/2026-09-27-realms-foundation`,
+`.superpowers/sdd/2026-09-28-realms-eurth`) record every task and ruling. Runbook:
 [`docs/realms/eurth-onboarding.md`](../realms/eurth-onboarding.md).
 
-- **Complete (reviewed clean):** Phase 1 tasks 1–8; Eurth tasks E1, E2, E3, E5 and E6.
-- **E4 (realm-scoped maps):** its review asked for two fixes, which landed in `a4b8a5fb` — the map's
-  IndexedDB cache now holds the realm the server resolved (an Eurth viewer can no longer be shown a cached
-  IxWorld map), and the cross-realm link guard now also covers `updateFeatureProperties` and
-  `repairLinkage`'s `link_by_name`, not only `assignCountryGeometry`. Its re-review was still pending when
-  this was written.
-- **E7 (this runbook and status):** in fix round 1, which also carries the final-wave code items (ruling
-  E-t, listed below).
-- **Still owed before merge:** the final typecheck gates (baseline 0/0/0/0) and one whole-branch review
-  (Phase 1 ruling 21).
+- **All tasks complete and reviewed clean:** Phase 1 tasks 1–8; Eurth tasks E1–E8.
+- **Gates green at `1d376b33`:** typecheck server/trpc/db/ui 0/0/0/0; full Jest 322 suites / 2,921 tests
+  passed.
+- **Final whole-branch review** (`cfc44e15..1d376b33`): ready to merge with fixes; those fixes (rulings
+  F-1–F-5, below) are applied in the final fix wave.
 
 **Implemented — Phase 1 (tasks 1–8):**
 
 - Schema: `Realm`, `RealmClaim`, `WikiAccountLink` models; `Country.ownerUserId`/`realmId`;
   `User.lastSeenAt` (T1).
 - Wiki account verification — a token pasted on the player's own wiki user page proves control of an
-  ixwiki/iiwiki/althistory account; the verified-link write is an admin-only path, separate from
-  self-service linking (T2).
+  ixwiki/iiwiki/althistory account, provided the revision that introduced the token is the account's own
+  (F-3); the verified-link write is an admin-only path, separate from self-service linking (T2).
 - Per-realm nation ownership with a per-user cap (`Realm.settings.maxNationsPerUser`, default 1; site
   admins set it in `/admin/realms` → Realms → edit → Nations per player, 1–20); a system owner *acting as*
   a nation is no longer treated as its real owner for notifications, crons, or auctions (T3, T5).
@@ -126,11 +121,19 @@ Both plans are implemented on `realms-foundation`; the ledgers (`.superpowers/sd
   their nations. Approving a nation-page claim links the new country to its realm's unlinked region of
   that name and syncs its geometry in the approving transaction (E8).
 
+- Final fix wave (F-1–F-5): a claim in a second realm never takes the player off their first nation —
+  **Play as** on `/r/[realm]` switches between nations they own (`users.setActiveNation`), and an admin
+  assignment releases only the player's nations in the target realm; admins revoke verified wiki links on
+  any wiki; a pending verification can be unlinked and an expired code is not shown as pending; a pending
+  claim is re-verified and upgraded in place; claims, verification and Play as are rate-limited; the
+  backfill refuses `--apply` while owner collisions remain or IxWorld is not owned by `system`.
+
 **Not implemented yet (planned):** the per-realm calendar label (decision 18), founder tooling (settings
 such as the nation cap, moderation, removal, succession), the public founding application, a per-realm
-ThinkPages feed, and the passport realm/nation switcher.
+ThinkPages feed, and the passport realm/nation switcher (today a player switches with **Play as** on each
+realm's page).
 
-**Rulings (E-a..E-t):** E-a–E-j are the Eurth design spec's binding decisions
+**Rulings (E-a..E-w, F-1..F-5):** E-a–E-j are the Eurth design spec's binding decisions
 (`docs/superpowers/specs/2026-09-28-realms-eurth-design.md`) — index lore rather than copy it (E-a), a
 5,000-page crawl cap for this slice (E-b), follow only keyword subcategories (E-c), infobox-based nation
 detection (E-d), a script-based one-time import (E-e), claiming creates the `Country` (E-f), a
@@ -150,4 +153,20 @@ by slug — IxWorld holds the plain slugs — while URL/id lookups keep id → s
 fix round carries the remaining final-wave code items so the docs describe the final code — E-s, the
 `CountryData:` placeholder realm check, procedure-level `realmWhere` tests, all-realm admin flag warmers,
 the admin nation-cap setting, the backfill preflight and duplicate report, the unknown-realm import guard,
-and the country editor's realm (E-t).
+and the country editor's realm (E-t). Task E8 (PNG maps through the Full Pipeline with colour → nation
+mapping) was added because decisions 10–11 were otherwise unmet (E-u); potrace loads at runtime in every
+runtime (E-v); colour analysis only detects colours, imported regions keep their metrics, and unreadable or
+oversized map images are refused (E-w).
+
+The final whole-branch review added five more. **F-1:** `assignNation` makes a nation the active one only
+when the player has none; `users.setActiveNation` ("Play as") lets an owner switch between their nations;
+`adminAssignNation` releases only the player's nations in the target country's realm. **F-2:**
+`admin.unlinkUserWiki` takes a `source` and revokes through the wiki-links service; `admin.linkUserWiki`
+writes nothing when `adminVerify` refuses (TAKEN). **F-3:** verification walks back up to 20 revisions of the
+user page and requires the revision that introduced the token to be the account's; a token already in every
+fetched revision cannot be attributed and is refused. **F-4:** a pending verification can be unlinked, and
+only an unexpired code counts as pending. **F-5:** a reused pending claim re-runs the creator check and is
+upgraded in place; known alt accounts merge on ixwiki only; a lost auto-approval race is a claim error;
+claims, verification and Play as use the light mutation rate limit; the backfill refuses `--apply` while
+owner collisions remain or IxWorld's owner is not `system`, and the runbook re-runs the dry run after
+deploy.

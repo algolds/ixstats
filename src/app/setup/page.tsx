@@ -507,7 +507,8 @@ export default function SetupPage() {
                             <p className="text-foreground text-lg font-semibold">Claim submitted</p>
                             <p className="text-muted-foreground mt-1 text-sm">
                               A moderator will review it. Verify your wiki account under Settings →
-                              Account to have claims for nations you created approved instantly.
+                              IxnayID & Passport → Linked Accounts to have claims for nations you
+                              created approved instantly.
                             </p>
                           </div>
                         )}

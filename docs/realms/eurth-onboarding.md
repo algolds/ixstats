@@ -47,18 +47,21 @@ Before it reads anything else, the script checks that the IxWorld realm row (`id
 it doesn't, it stops with `realms row id="default" (IxWorld) is missing — …` and exits non-zero **before
 writing anything** (with or without `--apply`). Create that row first — `Country.realmId` depends on it.
 
-The first line is `DRY RUN — pass --apply to write`. Read all five sections that follow before doing
-anything else:
+The first line is `DRY RUN — pass --apply to write`; the second is `IxWorld realm ownerId: <id>`, which
+must read `system` (IxWorld has no player owner — site admins moderate its claims). Read all five sections
+that follow before doing anything else:
 
 1. **Owners** — `owners: <n> to assign, <n> collisions`: `Country.ownerUserId` derived from
    `User.countryId`. Any `  COLLISION <countryId>: users <id>, <id> — resolve by hand` line means two-plus
    users point at the same country — the script will **not** guess; you must resolve it by hand (pick the
    real owner and null out the others' `User.countryId`, or reassign them) before applying.
+   Right after this section, one `  BLOCKS --apply: …` line appears per blocker — owner collisions left, or
+   an IxWorld ownerId other than `system`. While any is printed, `--apply` refuses (see 1.4).
 2. **IxWorld realm slug** — `IxWorld slug: default → ixworld` (the current slug, then the new one).
-3. **Wiki links** — `ixwiki links to record (unverified): <n>`: legacy `User.wikiUsername` rows that
-   will become **unverified** `ixwiki` `WikiAccountLink` rows (players re-verify later from Settings).
-4. **Visibility** — `private realms → unlisted: <n>`: `private` realms that will flip to `unlisted`
+3. **Visibility** — `private realms → unlisted: <n>`: `private` realms that will flip to `unlisted`
    (private is no longer a valid value).
+4. **Wiki links** — `ixwiki links to record (unverified): <n>`: legacy `User.wikiUsername` rows that
+   will become **unverified** `ixwiki` `WikiAccountLink` rows (players re-verify later from Settings).
 5. **Map layers** — `map layers with no realm → IxWorld: N (M clash with an IxWorld feature, D keys held
    by more than one of them)`, then one `  DUPLICATE <layerType>/<featureId>: <id>, <id>` line per
    duplicated key. Compare `N` to your 1.1 baseline. `M` counts NULL-realm rows whose
@@ -70,11 +73,16 @@ anything else:
 
 ### 1.4 Resolve collisions, then apply
 
-Once owner collisions are resolved and map-layer clashes and duplicates are both `0`:
+Once owner collisions are resolved, the IxWorld ownerId reads `system`, and map-layer clashes and
+duplicates are both `0`:
 
 ```bash
 bun scripts/realms/backfill-foundation.ts --apply
 ```
+
+`--apply` refuses while any `BLOCKS --apply` line is printed: it prints the blockers, then
+`Refusing --apply: nothing was written. Resolve the blockers above, then re-run.`, and exits `1` before
+any write. Fix what the lines name and re-run the dry run first.
 
 Re-run the dry run afterward (omit `--apply`) as a sanity check — it should report
 `owners: 0 to assign, 0 collisions`, `IxWorld slug: ixworld → ixworld`, `private realms → unlisted: 0` and
@@ -92,6 +100,10 @@ bun run deploy:local
 
 If something is badly wrong after deploy, `bun run deploy:rollback` reverts to the previous release —
 it does not revert the schema push, so only use it for a code-only regression.
+
+**Re-run the backfill dry run after deploy** (`bun scripts/realms/backfill-foundation.ts`, no `--apply`):
+expect `owners: 0 to assign, 0 collisions` and no `BLOCKS --apply` line. Anything else means a player
+linked a nation between the backfill and the deploy — resolve it as in 1.3–1.4 and apply again.
 
 ---
 
@@ -253,12 +265,16 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 - **Eurth's stat caps aren't enforced.** Eurth's "Starting Stats v6.1" house rules are not encoded anywhere
   — new Eurth nations run the identical simulation as every other realm (decision 17: one sim, no per-realm
   presets). If Eurth wants caps enforced, that's a future feature, not a config flag today.
+- **A second nation doesn't take over.** A player who already plays a nation (say in IxWorld) keeps
+  acting as it after their Eurth claim is approved; they switch with **Play as <nation>** next to their
+  nation on `/r/eurth` (and back the same way on `/r/ixworld`). The active one shows **Active**.
 - **No founder account yet.** The realm's `ownerId` is `"system"` until an Eurth admin is handed the
   realm; until then, site admins are the only ones who can act on Eurth's claims.
 - **Not shipped yet** (later phases, don't promise these): a public founding application form, the
   per-realm calendar label (not implemented yet — planned), founder moderation/removal/succession tooling
   (including a founder raising their own realm's nation cap — today only site admins can, in
-  `/admin/realms`), a per-realm ThinkPages feed, and the passport realm/nation switcher.
+  `/admin/realms`), a per-realm ThinkPages feed, and the passport realm/nation switcher (Play as on the
+  realm page is the switch until then).
 
 ---
 
