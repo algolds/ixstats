@@ -4,28 +4,15 @@ This directory contains pack artwork images for the IxCards trading card system.
 
 ## Required Image Files (Optional)
 
-The pack system gracefully handles missing images - packs will show text-based fallback designs with gradient backgrounds.
+Pack artwork is data-driven: each `CardPack.artwork` holds a URL. The seed (`prisma/seeds/data/card-packs.json`) expects these SVGs here:
 
-### Pack Type Images
-- **starter-pack.png** - Starter Pack (100 IxC)
-  - Dimensions: 512x768px (2:3 aspect ratio)
-  - Format: PNG with transparency
-  - Style: Basic/bronze theme
+- Season packs: `pack_s1_recruit.svg`, `pack_s1_veteran.svg`, `pack_s1_elite.svg` … through `pack_s4_*` (12 files)
+- Cross-pool packs: `pack_omni_starter.svg`, `pack_world_summit.svg`, `pack_high_roller.svg`, `pack_lore_master.svg`, `pack_champ_event.svg`, `pack_anniversary.svg`, `pack_limited_col.svg`, `pack_founder.svg`
+- Optional foil overlays: `<name>_foil.svg` next to any SVG (blended by `PackHolographicCover`)
 
-- **booster-pack.png** - Booster Pack (250 IxC)
-  - Dimensions: 512x768px (2:3 aspect ratio)
-  - Format: PNG with transparency
-  - Style: Standard/silver theme
+Recommended canvas: 2:3 aspect ratio (e.g. 512x768).
 
-- **premium-pack.png** - Premium Pack (500 IxC)
-  - Dimensions: 512x768px (2:3 aspect ratio)
-  - Format: PNG with transparency
-  - Style: Premium/gold theme
-
-### Optional Pack Types (Future)
-- **elite-pack.png** - Elite Pack
-- **legendary-pack.png** - Legendary Pack
-- **seasonal-pack.png** - Seasonal/Event Packs
+`public/images/*` is git-ignored (only this README is tracked), so the artwork must be deployed to the server out-of-band.
 
 ## Design Guidelines
 
@@ -35,25 +22,24 @@ The pack system gracefully handles missing images - packs will show text-based f
 - Include holographic/metallic finishes
 - Clear visual hierarchy (starter → premium)
 
-### Color Schemes
-- **Starter**: Bronze/brown tones (#CD7F32)
-- **Booster**: Silver/gray tones (#C0C0C0)
-- **Premium**: Gold/yellow tones (#FFD700)
+### Color Schemes (suggested)
+- **Recruit / BASIC**: Bronze/brown tones (#CD7F32)
+- **Veteran / PREMIUM**: Silver/gray tones (#C0C0C0)
+- **Commander Elite / ELITE and above**: Gold/yellow tones (#FFD700)
 
 ### Technical Specs
-- Resolution: 512x768px minimum (1024x1536px for retina)
-- Format: PNG with transparency
+- Resolution: 512x768px minimum (1024x1536px for retina) if raster
+- Format: SVG (matches the seeded paths); PNG works if you update `CardPack.artwork`
 - File size: <500KB per image
 - Color depth: 24-bit RGB + alpha channel
 
 ## Fallback Behavior
 
-When images are missing, the pack opening system shows:
-- Pack type name in large text
-- Gradient background (matches pack tier)
-- Glass effect styling
-- Card count and price information
-- "Tap to Open" instruction
+`PackHolographicCover` (`src/components/cards/pack-opening/PackHolographicCover.tsx`) renders:
+- A pack-type gradient base when `CardPack.artwork` is **empty**
+- The holographic foil sweep (and, above the smallest size, the pack name) on top in either case
+
+If `artwork` is set but the file is missing, the base layer is simply blank (no error, no gradient), so either deploy the files or clear `artwork` on the pack.
 
 ## Image Sources
 
@@ -65,19 +51,16 @@ You can create pack artwork using:
 
 ## Implementation Notes
 
-The pack opening components automatically detect missing images:
-- `PackPurchaseModal.tsx` shows fallback gradient
-- `Stage1_PackReveal.tsx` displays text-based pack
-- No errors shown to users
-- Console warnings for developers
+- `PackHolographicCover.tsx` draws the pack face for the Vault Shop (`PackHolographicCard`) and `Stage1_PackReveal.tsx`
+- No errors are shown to users when images fail to load
 
 ## Adding Pack Images
 
 1. Create or download pack artwork
 2. Resize to 512x768px (or 1024x1536px for retina)
-3. Save as PNG with transparency
-4. Rename to match exact filenames above
-5. Place in this directory
+3. Save as SVG (or PNG with transparency, updating `CardPack.artwork` to match)
+4. Name it to match the seeded filename (or update `CardPack.artwork` via `/admin/cards`)
+5. Place in this directory on the deployed server
 6. Clear browser cache and reload to test
 
 ## Examples
@@ -108,4 +91,4 @@ Border: Ornate gold frame with gems
 
 ## Current Status
 
-🔴 No pack images present - system using text-based fallback designs
+🔴 No pack images in the repository (verified 2026-09-29). Seeded packs reference `pack_*.svg` files that must be supplied at deploy time; without them the pack base layer renders blank.

@@ -20,25 +20,25 @@ By using a single identity, your stats and actions in the simulator automaticall
 
 ## Connecting Your Accounts
 
-When onboarding or setting up your country, you will link your existing gaming profiles to create your IxnayID connection:
+Link your community accounts in **Settings → IxnayID & Passport**, under **Account Credentials → Linked Accounts** (click **Manage**):
 
-- **Verification:** You verify ownership of your external nation or account using a unique authorization token.
-- **SSO Token:** This token acts as a handshake, verifying your role level and country ID without exposing credentials.
-- **Automatic Setup:** Once verified, your country parameters are generated from your baseline history.
+- **Wiki accounts (IxWiki, IIWiki, AltHistory):** enter your wiki username and click **Get code**. Paste the code anywhere on your wiki user page, save it while logged in as that user, then press **Verify**. The code works for 24 hours.
+- **Community Forum and Discord:** connect them from the same list.
+- **Nation claims:** with a verified wiki account, claims for nations you created are approved instantly during setup instead of waiting for a moderator.
 
 ## Managing Connections
 
 > **Troubleshooting and Syncing**
 >
-> If your stats or maps profile ever appears disconnected, follow these steps to re-sync:
+> If a linked account ever looks wrong, follow these steps:
 >
-> 1. Navigate to your **Account settings** page.
-> 2. Under **Linked Accounts**, look for your IxnayID connection status.
-> 3. Click **Re-authenticate Connection** if the token has expired.
-> 4. Click **Force Sync** to manually refresh borders, wiki lore links, and card balances.
+> 1. Open **Settings → IxnayID & Passport** and find **Linked Accounts**.
+> 2. Check each account’s status — connected accounts show the username they’re linked to.
+> 3. If a wiki verification code expired before you verified, click **New code** and try again.
+> 4. Use **Unlink** to remove an account, then connect it again.
 
 > [!WARNING]
 > **Security Guidelines**
 >
 > - Never share your authorization tokens or verification codes with other players or staff.
-> - Profile synchronization runs automatically in the background. Manual sync is only required if you updated your external stats recently.
+> - Only paste a verification code on your own wiki user page.
