@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { linkDiscordAccount } from "~/lib/discord/user-sync";
 import { linkForumAccount } from "~/server/modules/forum";
@@ -29,11 +29,11 @@ export const ixnayidLinkingRouter = createTRPCRouter({
 
   listWikiLinks: protectedProcedure.query(({ ctx }) => wikiLinks().list(ctx.user.id)),
 
-  startWikiVerification: protectedProcedure
+  startWikiVerification: lightMutationProcedure
     .input(z.object({ source: wikiSourceInput, username: z.string().trim().min(1).max(100) }))
     .mutation(({ ctx, input }) => wikiLinks().start(ctx.user.id, input.source, input.username).catch(toTrpcError)),
 
-  confirmWikiVerification: protectedProcedure
+  confirmWikiVerification: lightMutationProcedure
     .input(z.object({ source: wikiSourceInput }))
     .mutation(({ ctx, input }) => wikiLinks().confirm(ctx.user.id, input.source).catch(toTrpcError)),
 

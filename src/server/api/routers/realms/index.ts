@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   adminProcedure,
+  lightMutationProcedure,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
@@ -78,14 +79,14 @@ export const realmsRouter = createTRPCRouter({
     .input(z.object({ slug: z.string().min(1).max(100) }))
     .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug, ctx.user?.id ?? null)),
 
-  claimCountry: protectedProcedure
+  claimCountry: lightMutationProcedure
     .input(z.object({ countryId: z.string().min(1) }))
     .mutation(({ ctx, input }) =>
       claims(ctx.db).claimCountry(ctx.user, input.countryId).catch(claimError)
     ),
 
   /** Claim a nation page of the realm's lore index; approval creates the realm's country (ruling E-f). */
-  claimNationPage: protectedProcedure
+  claimNationPage: lightMutationProcedure
     .input(
       z.object({
         realmSlug: z.string().min(1).max(100),
