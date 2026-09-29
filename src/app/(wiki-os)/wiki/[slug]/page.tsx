@@ -7,11 +7,17 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
+import { ArticleNotFound } from "~/components/wiki-os/reader/ArticleNotFound";
 import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { getWikiBaseUrl, parseWikiSource, WIKI_SOURCES } from "~/lib/wiki-os/config";
+import {
+  articleHtmlInput,
+  getWikiBaseUrl,
+  parseWikiSource,
+  WIKI_SOURCES,
+} from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 
 const RESERVED_TOOL_PAGES: Record<string, string> = {
@@ -38,6 +44,16 @@ const RESERVED_TOOL_PAGES: Record<string, string> = {
   "special-pages": "/util",
 };
 
+/**
+ * `?source=` reads another wiki's page (e.g. a realm's iiwiki lore), read-only (ruling E-l);
+ * `?action=edit` opens the editor, for IxWiki pages only.
+ */
+function readerParams(searchParams: Pick<URLSearchParams, "get">) {
+  const wikiSource = parseWikiSource(searchParams.get("source"));
+  const isEditAction = wikiSource === "ixwiki" && searchParams.get("action") === "edit";
+  return { wikiSource, isEditAction };
+}
+
 export default function WikiOSArticlePage() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
@@ -51,12 +67,8 @@ export default function WikiOSArticlePage() {
   const title = slug.replace(/_/g, " ");
   const isMainPage = title === "Main Page" || title === "Main_Page" || slug === "Main_Page";
 
-  // ?source= reads another wiki's page (e.g. a realm's iiwiki lore); only ixwiki pages are editable here
-  const wikiSource = parseWikiSource(searchParams.get("source"));
+  const { wikiSource, isEditAction } = readerParams(searchParams);
   const isIxWiki = wikiSource === "ixwiki";
-
-  // Check URL search param for edit mode (e.g. ?action=edit)
-  const isEditAction = isIxWiki && searchParams.get("action") === "edit";
   const isMarginParam = searchParams.get("margin");
   const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
 
@@ -152,7 +164,7 @@ export default function WikiOSArticlePage() {
 
   // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
-    { title, wikiSource },
+    articleHtmlInput(title, wikiSource),
     {
       enabled: !!title && !isCategoryOrSpecialOrMain,
       staleTime: 10 * 60 * 1000,
@@ -216,7 +228,7 @@ export default function WikiOSArticlePage() {
   }
 
   return (
-    <WikiOSLayout>
+    <WikiOSLayout readOnly={!isIxWiki}>
       <div ref={articleRef} className="wikios-article-container min-h-[500px]">
         {mode !== "reading" ? (
           <WikiEditBridge
@@ -234,23 +246,11 @@ export default function WikiOSArticlePage() {
               </div>
             )}
             {error && !data && (
-              <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
-                <h2 className="mb-2 text-lg font-semibold text-red-400">Article not found</h2>
-                <p className="text-sm text-zinc-400">
-                  The page &ldquo;{title}&rdquo; does not exist on {WIKI_SOURCES[wikiSource].name}.
-                </p>
-                {isIxWiki && (
-                  <div className="mt-4 flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleEnterEdit("source")}
-                      className="wikios-action-btn cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
-                    >
-                      Create this page
-                    </button>
-                  </div>
-                )}
-              </div>
+              <ArticleNotFound
+                title={title}
+                wikiSource={wikiSource}
+                onCreate={() => handleEnterEdit("source")}
+              />
             )}
             {data && (
               <ArticleRenderer

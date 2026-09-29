@@ -40,6 +40,76 @@ interface ArticleCompanionHUDProps {
   };
   isAuthenticated?: boolean;
   isCollapsed?: boolean;
+  /** Another wiki's page (ruling E-l): no IxWiki backlinks, history or margin. */
+  readOnly?: boolean;
+}
+
+/** Backlinks, history and margin notes — IxWiki's own, so another wiki's page (read-only) has none. */
+function IxWikiPageTools({
+  notes,
+  onOpenBacklinks,
+  onOpenHistory,
+  onOpenMargin,
+}: Pick<ArticleCompanionHUDProps, "onOpenBacklinks" | "onOpenHistory" | "onOpenMargin"> & {
+  notes: number;
+}) {
+  return (
+    <>
+      {/* Backlinks & Revision History Mini-Grid */}
+      <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+        <button
+          type="button"
+          onClick={() => {
+            soundEffects.bloom();
+            onOpenBacklinks?.();
+          }}
+          className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
+          title="What Links Here"
+        >
+          <LinkIcon className="h-3 w-3 text-cyan-400" />
+          <span>Backlinks</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            soundEffects.bloom();
+            onOpenHistory?.();
+          }}
+          className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
+          title="Revision History"
+        >
+          <Clock className="text-muted-foreground h-3 w-3" />
+          <span>History</span>
+        </button>
+      </div>
+
+      {/* Margin notes — quiet status row (not a primary button). Left rail remains the control. */}
+      <button
+        type="button"
+        onClick={() => {
+          soundEffects.bloom();
+          onOpenMargin?.("threads");
+        }}
+        className="group border-border/20 text-muted-foreground hover:text-foreground mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 text-xs font-medium transition-colors"
+      >
+        <span className="flex items-center gap-1.5">
+          <ChatBubble className="h-3 w-3 text-amber-400/80 group-hover:text-amber-400" />
+          <span>Margin notes</span>
+          {notes > 0 ? (
+            <span className="text-muted-foreground/60 tabular-nums">
+              · {notes} {notes === 1 ? "thread" : "threads"}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/40">· none yet</span>
+          )}
+        </span>
+        <span className="text-muted-foreground/40 group-hover:text-foreground transition-colors">
+          →
+        </span>
+      </button>
+    </>
+  );
 }
 
 export function ArticleCompanionHUD({
@@ -60,6 +130,7 @@ export function ArticleCompanionHUD({
   // oxlint-disable-next-line eslint/no-unused-vars
   isAuthenticated = false,
   isCollapsed = false,
+  readOnly,
 }: ArticleCompanionHUDProps) {
   const [showAllContributors, setShowAllContributors] = React.useState(false);
 
@@ -115,8 +186,6 @@ export function ArticleCompanionHUD({
 
   const totalContributorsCount =
     authorInfo?.totalContributors || otherContributors.length + (creatorName ? 1 : 0);
-
-  const hasNotes = marginThreadsCount > 0 || marginAnnotationsCount > 0;
 
   if (isCollapsed) return null;
 
@@ -322,60 +391,14 @@ export function ArticleCompanionHUD({
           </button>
         )}
 
-        {/* Backlinks & Revision History Mini-Grid */}
-        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-          <button
-            type="button"
-            onClick={() => {
-              soundEffects.bloom();
-              onOpenBacklinks?.();
-            }}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
-            title="What Links Here"
-          >
-            <LinkIcon className="h-3 w-3 text-cyan-400" />
-            <span>Backlinks</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              soundEffects.bloom();
-              onOpenHistory?.();
-            }}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
-            title="Revision History"
-          >
-            <Clock className="h-3 w-3 text-muted-foreground" />
-            <span>History</span>
-          </button>
-        </div>
-
-        {/* Margin notes — quiet status row (not a primary button). Left rail remains the control. */}
-        <button
-          type="button"
-          onClick={() => {
-            soundEffects.bloom();
-            onOpenMargin?.("threads");
-          }}
-          className="group border-border/20 text-muted-foreground hover:text-foreground mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 text-xs font-medium transition-colors"
-        >
-          <span className="flex items-center gap-1.5">
-            <ChatBubble className="h-3 w-3 text-amber-400/80 group-hover:text-amber-400" />
-            <span>Margin notes</span>
-            {hasNotes ? (
-              <span className="text-muted-foreground/60 tabular-nums">
-                · {marginThreadsCount + marginAnnotationsCount}{" "}
-                {marginThreadsCount + marginAnnotationsCount === 1 ? "thread" : "threads"}
-              </span>
-            ) : (
-              <span className="text-muted-foreground/40">· none yet</span>
-            )}
-          </span>
-          <span className="text-muted-foreground/40 group-hover:text-foreground transition-colors">
-            →
-          </span>
-        </button>
+        {!readOnly && (
+          <IxWikiPageTools
+            notes={marginThreadsCount + marginAnnotationsCount}
+            onOpenBacklinks={onOpenBacklinks}
+            onOpenHistory={onOpenHistory}
+            onOpenMargin={onOpenMargin}
+          />
+        )}
       </div>
 
       {/* 3. Top Categories / Domain Tags */}

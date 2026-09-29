@@ -104,6 +104,14 @@ export function parseWikiSource(value: string | null | undefined): WikiSource {
   return value && isWikiSource(value) ? value : "ixwiki";
 }
 
+/** `wikios.getArticleHtml` input: an IxWiki page by title alone, so the reader and hover prefetch share one cache key. */
+export function articleHtmlInput(
+  title: string,
+  source: WikiSource
+): { title: string; wikiSource?: WikiSource } {
+  return source === "ixwiki" ? { title } : { title, wikiSource: source };
+}
+
 /** The WikiOS reader path for a page; a page of another wiki carries `?source=`. */
 export function wikiReaderPath(title: string, source: WikiSource = "ixwiki"): string {
   const path = `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;

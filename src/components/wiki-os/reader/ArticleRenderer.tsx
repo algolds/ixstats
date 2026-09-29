@@ -21,6 +21,7 @@ import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/editor/wiki-embed-shared";
+import { parseWikiSource } from "~/lib/wiki-os/config";
 
 // Subcomponent imports
 import { WikiOSHeader, type ArticleAuthorInfo } from "./ArticleHeader";
@@ -34,6 +35,7 @@ import {
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
+import { SourceWikiNote } from "./SourceWikiNote";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
@@ -117,6 +119,13 @@ type PortalTarget =
       data: { key: string };
     };
 
+/** A plain article title that may name a country: not empty, not the Main Page, no namespace. */
+function mayNameCountry(title: string): boolean {
+  return (
+    title.trim() !== "" && title !== "Main Page" && title !== "Main_Page" && !title.includes(":")
+  );
+}
+
 export function ArticleRenderer({
   title,
   contentHtml,
@@ -135,7 +144,7 @@ export function ArticleRenderer({
     activeModal,
     setActiveModal,
     setActiveSectionId,
-    isMarginOpen: marginOpen,
+    isMarginOpen,
     setIsMarginOpen: setMarginOpen,
     marginTab,
     setMarginTab,
@@ -143,6 +152,11 @@ export function ArticleRenderer({
   } = useWikiContext();
   const { isSignedIn } = useWikiAuth();
   const isAuthenticated = isSignedIn;
+  // Another wiki's page (ruling E-l) is read-only here: no section edits, no margin, no IxWiki history.
+  const source = parseWikiSource(wikiSource);
+  const readOnly = source !== "ixwiki";
+  const marginOpen = isMarginOpen && !readOnly;
+  const marginEnabled = !!title && !readOnly;
   const [tocOpen, setTocOpen] = useState(false);
   // oxlint-disable-next-line eslint/no-unused-vars
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
@@ -179,7 +193,7 @@ export function ArticleRenderer({
   // oxlint-disable-next-line eslint/no-unused-vars
   const { data: marginData, refetch: refetchMargin } = api.wikios.getArticleMarginData.useQuery(
     { articleTitle: title, status: "ALL" },
-    { enabled: !!title, staleTime: 15_000 }
+    { enabled: marginEnabled, staleTime: 15_000 }
   );
 
   // Sync activeModal from Toolbar/Sidebar triggers
@@ -192,6 +206,7 @@ export function ArticleRenderer({
 
   // Global hotkey listener: 'T' or 'I' toggles Margin
   useEffect(() => {
+    if (readOnly) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (
@@ -213,14 +228,14 @@ export function ArticleRenderer({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleMargin]);
+  }, [toggleMargin, readOnly]);
 
   // Selection Capsule Handlers & Live Sync
   const notify = useNotify();
 
   const { data: annotationsData, refetch: refetchAnnotations } = api.wikios.getAnnotations.useQuery(
     { pageTitle: title },
-    { enabled: !!title && isAuthenticated, staleTime: 15_000 }
+    { enabled: marginEnabled && isAuthenticated, staleTime: 15_000 }
   );
 
   const addAnnotationMutation = api.wikios.addAnnotation.useMutation({
@@ -365,8 +380,8 @@ export function ArticleRenderer({
 
   const processedHtml = useMemo(() => {
     const html = injectPlaceholderElements(contentHtml);
-    return isAuthenticated ? addSectionEditLinks(html, slug) : html;
-  }, [contentHtml, isAuthenticated, slug]);
+    return isAuthenticated && !readOnly ? addSectionEditLinks(html, slug) : html;
+  }, [contentHtml, isAuthenticated, readOnly, slug]);
   const processedInfoboxHtml = useMemo(
     () => (infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null),
     [infoboxHtml]
@@ -419,15 +434,7 @@ export function ArticleRenderer({
 
   const { data: countryData } = api.countries.getByIdBasic.useQuery(
     { id: title },
-    {
-      enabled:
-        !!title &&
-        title.trim() !== "" &&
-        title !== "Main Page" &&
-        title !== "Main_Page" &&
-        !title.includes(":"),
-      retry: false,
-    }
+    { enabled: mayNameCountry(title), retry: false }
   );
 
   const themeColors = useMemo(() => {
@@ -600,6 +607,7 @@ export function ArticleRenderer({
           tocLength={toc.length}
           onTocClick={() => setTocOpen(true)}
         />
+        <SourceWikiNote title={title} wikiSource={source} />
 
         {/* Mobile Byline Strip (< XL screens where right Intel HUD is hidden) */}
         {(() => {
@@ -685,28 +693,30 @@ export function ArticleRenderer({
           </div>
 
           {categories.length > 0 && <CategoriesBar categories={categories} />}
-          <ArticleFooter title={title} lastModified={lastModified} />
+          <ArticleFooter title={title} lastModified={lastModified} wikiSource={source} />
 
           {/* Margin Suite: Gutter Pins aligned to article text */}
-          <MarginGutterPins
-            contentRef={contentRef}
-            threads={(marginData?.threads as any) || []}
-            annotations={(annotationsData as any) || []}
-            themeColors={themeColors}
-            isMarginOpen={marginOpen}
-            onSelectAnchor={(anchor, id, tab) => {
-              setActiveAnchor(anchor);
-              if (tab === "markup") {
-                setSelectedAnnotationId(id || null);
-                setSelectedThreadId(null);
-              } else {
-                setSelectedThreadId(id || null);
-                setSelectedAnnotationId(null);
-              }
-              setMarginTab(tab || "threads");
-            }}
-            onOpenDrawer={() => setMarginOpen(true)}
-          />
+          {!readOnly && (
+            <MarginGutterPins
+              contentRef={contentRef}
+              threads={(marginData?.threads as any) || []}
+              annotations={(annotationsData as any) || []}
+              themeColors={themeColors}
+              isMarginOpen={marginOpen}
+              onSelectAnchor={(anchor, id, tab) => {
+                setActiveAnchor(anchor);
+                if (tab === "markup") {
+                  setSelectedAnnotationId(id || null);
+                  setSelectedThreadId(null);
+                } else {
+                  setSelectedThreadId(id || null);
+                  setSelectedAnnotationId(null);
+                }
+                setMarginTab(tab || "threads");
+              }}
+              onOpenDrawer={() => setMarginOpen(true)}
+            />
+          )}
         </div>
       </div>
 
@@ -758,6 +768,7 @@ export function ArticleRenderer({
             narrator={narrator}
             isAuthenticated={isAuthenticated}
             isCollapsed={false}
+            readOnly={readOnly}
           />
           {toc.length > 0 && (
             <div className="-mr-1 min-h-0 flex-1 scrollbar-thin overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_8px,black_calc(100%-8px),transparent)] pr-1">
@@ -801,43 +812,47 @@ export function ArticleRenderer({
         <QuickBacklinksModal title={title} slug={slug} onClose={() => setActiveModal(null)} />
       )}
 
-      <SelectionCapsule
-        contentRef={contentRef}
-        isAuthenticated={isAuthenticated}
-        onAddHighlight={handleAddHighlight}
-        onOpenThreadDraft={handleOpenThreadDraft}
-        onSuggestEdit={handleSuggestEdit}
-        onStashQuote={handleStashQuote}
-        onShareQuote={handleShareQuote}
-      />
+      {!readOnly && (
+        <>
+          <SelectionCapsule
+            contentRef={contentRef}
+            isAuthenticated={isAuthenticated}
+            onAddHighlight={handleAddHighlight}
+            onOpenThreadDraft={handleOpenThreadDraft}
+            onSuggestEdit={handleSuggestEdit}
+            onStashQuote={handleStashQuote}
+            onShareQuote={handleShareQuote}
+          />
 
-      <WikiMarginDrawer
-        isOpen={marginOpen}
-        onClose={() => setMarginOpen(false)}
-        articleTitle={title}
-        initialTab={marginTab}
-        activeAnchor={activeAnchor}
-        draftQuote={draftQuote}
-        onClearDraftQuote={() => setDraftQuote(null)}
-        selectedThreadId={selectedThreadId}
-        onSelectThread={setSelectedThreadId}
-        selectedAnnotationId={selectedAnnotationId}
-        onSelectAnnotation={setSelectedAnnotationId}
-        contentRef={contentRef}
-        isAuthenticated={isAuthenticated}
-        themeColors={themeColors}
-        onExpandedChange={setMarginExpanded}
-      />
+          <WikiMarginDrawer
+            isOpen={marginOpen}
+            onClose={() => setMarginOpen(false)}
+            articleTitle={title}
+            initialTab={marginTab}
+            activeAnchor={activeAnchor}
+            draftQuote={draftQuote}
+            onClearDraftQuote={() => setDraftQuote(null)}
+            selectedThreadId={selectedThreadId}
+            onSelectThread={setSelectedThreadId}
+            selectedAnnotationId={selectedAnnotationId}
+            onSelectAnnotation={setSelectedAnnotationId}
+            contentRef={contentRef}
+            isAuthenticated={isAuthenticated}
+            themeColors={themeColors}
+            onExpandedChange={setMarginExpanded}
+          />
 
-      {/* Share Modal Dialog */}
-      {sharePayload && (
-        <MarginShareModal
-          isOpen={!!sharePayload}
-          onClose={() => setSharePayload(null)}
-          articleTitle={title}
-          quoteText={sharePayload.text}
-          isAuthenticated={isAuthenticated}
-        />
+          {/* Share Modal Dialog */}
+          {sharePayload && (
+            <MarginShareModal
+              isOpen={!!sharePayload}
+              onClose={() => setSharePayload(null)}
+              articleTitle={title}
+              quoteText={sharePayload.text}
+              isAuthenticated={isAuthenticated}
+            />
+          )}
+        </>
       )}
     </div>
   );

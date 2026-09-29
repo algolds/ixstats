@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import WikiOSArticlePage from "~/app/(wiki-os)/wiki/[slug]/page";
 
 const mockUseQuery = jest.fn();
 const mockPrefetch = jest.fn();
 const mockRenderer = jest.fn();
 const mockEditor = jest.fn();
+const mockLayout = jest.fn();
 let mockSearch = "";
 let mockSlug = "Portal%3AEurth";
 
@@ -21,7 +22,10 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
-  WikiOSLayout: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  WikiOSLayout: ({ children, readOnly }: { children: ReactNode; readOnly?: boolean }) => {
+    mockLayout({ readOnly });
+    return <div>{children}</div>;
+  },
 }));
 jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
   useWikiContext: () => ({ setActiveModal: jest.fn() }),
@@ -86,6 +90,7 @@ describe("WikiOS reader ?source=", () => {
       "https://iiwiki.com/wiki/Portal%3AEurth"
     );
     expect(mockPrefetch).not.toHaveBeenCalled(); // ixwiki wikitext only warms the ixwiki editor
+    expect(mockLayout).toHaveBeenCalledWith({ readOnly: true }); // no page tools (ruling E-l)
   });
 
   it.each(["", "source=eurth", "source=IIWIKI"])("%p reads from ixwiki", (search) => {
@@ -94,10 +99,9 @@ describe("WikiOS reader ?source=", () => {
     found("Aurelia");
     render(<WikiOSArticlePage />);
 
-    expect(mockUseQuery).toHaveBeenCalledWith(
-      { title: "Aurelia", wikiSource: "ixwiki" },
-      expect.anything()
-    );
+    // The same key hover prefetch warms for IxWiki links
+    expect(mockUseQuery).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
+    expect(mockLayout).toHaveBeenCalledWith({ readOnly: false });
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ wikiSource: "ixwiki" }));
     expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
     expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute(
@@ -112,6 +116,20 @@ describe("WikiOS reader ?source=", () => {
     render(<WikiOSArticlePage />);
     expect(mockEditor).not.toHaveBeenCalled();
     expect(mockRenderer).toHaveBeenCalled();
+  });
+
+  it("a missing IxWiki page offers to create it", () => {
+    mockSlug = "Nowhere";
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error("not found"),
+      refetch: jest.fn(),
+    });
+    render(<WikiOSArticlePage />);
+    expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /create this page/i }));
+    expect(mockEditor).toHaveBeenCalled();
   });
 
   it("a missing iiwiki page names iiwiki and offers no ixwiki page creation", () => {
