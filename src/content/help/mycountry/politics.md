@@ -6,43 +6,35 @@ badge: MyCountry — Your Nation's Home
 
 ## How It's Laid Out
 
-Everything about who governs your nation lives here, across four areas:
+Everything about who governs your nation lives in **Politics** in the MyCountry command bar, across five tabs:
 
-- **Overview** — the health of your political scene at a glance.
-- **Legislature** — how your parliament is set up and what it’s working on.
+- **Cabinet** — the officials you appoint to run your departments.
 - **Parties** — the political movements you create and shape.
-- **Elections** — run a vote and see who wins.
+- **Legislature** — how your parliament is set up, its political metrics, and the results of your latest election.
+- **Bills & Reforms** — draft a bill and call it to a vote.
+- **Power Brokers** — the interest groups whose favor shapes your budget.
 
-## At a Glance
-
-The overview sums up your political system:
-
-- **Parties** — how many are active.
-- **Seats** — how full your legislature is.
-- **Elections held** — your electoral track record.
-- **Standing** — approval and how effectively your government is seen to govern.
 
 ## Your Legislature
 
 > **Setting up parliament**
 >
-> - **Voting system** — choose **proportional representation** (D'Hondt — seats roughly match each party’s share of the vote) or **first-past-the-post** (the winner in each seat takes it). The choice shapes your whole political character.
-> - **Size** — set how many seats your legislature has.
-> - **Business** — track the bills and resolutions on the floor.
-> - **History** — look back at what’s been passed and when.
+> - **Chambers** — from a single chamber up to four.
+> - **Voting system** — choose **proportional representation** (D'Hondt — seats roughly match each party’s share of the vote), **first-past-the-post** (the winner in each seat takes it), or a **mixed** 50/50 system. The choice shapes your whole political character.
+> - **Size and terms** — set how many seats your legislature has, its term length, and whether elections run on a fixed term or allow snap elections.
+> - **Business** — track the bills on the floor in **Bills & Reforms**.
 
 ## Political Parties
 
 Build the parties that bring your nation’s politics to life:
 
-- Give each one a name, ideology, platform, and color.
-- Set how popular it is and where its support comes from.
+- Give each one a name, short name, leader, ideology, and color.
 - Watch them compete for seats at election time.
 - Follow how their fortunes rise and fall across the years.
 
 ## Elections
 
-Run an election and watch the seats fall:
+Elections run on the world clock: when a scheduled election comes due it’s decided automatically, and the next one is set for a full term later. There’s no button to call an election yourself right now.
 
 - **Proportional (D'Hondt)** — a party that wins a third of the vote ends up with roughly a third of the seats. Smaller parties get a real voice.
 - **First-past-the-post** — whoever wins each seat takes it outright. Big parties tend to win big.
@@ -52,7 +44,7 @@ Run an election and watch the seats fall:
 > [!WARNING]
 > **Before You Can Vote**
 >
-> You’ll need at least two parties and a legislature set up before you can run an election. Sort those out in the Parties and Legislature areas first.
+> An election needs at least two parties and a legislature. If it comes due before you have them, it waits until you do — sort those out in the Parties and Legislature tabs first.
 
 > **Keep Exploring**
 >

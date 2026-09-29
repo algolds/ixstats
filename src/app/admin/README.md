@@ -72,7 +72,7 @@ Directories without a `page.tsx`: `calculations/` (formula editor components; th
 
 ## Data Sources
 
-The admin tRPC router was split by domain on 2026-06-13 and recombined with `mergeRouters`, preserving every `api.admin.*` path (registered in `src/server/api/root.ts` via `safeRouter("admin", …)`).
+The admin tRPC router was split by domain on 2026-06-13 and recombined with `mergeRouters`, preserving every `api.admin.*` path (registered as `admin` in `src/server/api/root.ts`).
 
 | File (`src/server/api/routers/admin/`) | Domain |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Country Economic Modeling Engine
 
-**Last updated:** August 2026
+**Last updated:** September 2026
 
 This directory contains the `EconomicModelingEngine` component rendered on the `/countries/[slug]/modeling` route for macroeconomic projections and scenario simulation.
 
@@ -14,5 +14,6 @@ This directory contains the `EconomicModelingEngine` component rendered on the `
 
 - **Route:** Rendered on `/countries/[slug]/modeling`
 - **Data Query:** `api.countries.getByIdWithEconomicData`
-- **Business Logic Hook:** `useEconomicModel` (`src/hooks/useEconomicModel.ts`)
+- **Business Logic Hook:** `useEconomicModel` (`src/hooks/useEconomicModel.ts`), built on the sandbox engine `src/lib/economy/modeling-engine.ts`
+- **Persistence:** `api.economics.updateEconomicProfile`
 - **Shared Tab Equivalents:** General economic overview panels are located in `src/components/mycountry/shared/tabs/EconomyTab.tsx`.

@@ -111,14 +111,14 @@ A complete cartography, spatial analytics, and procedural world generation suite
 A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`apps.ixvault` v2):
 
 - **Four-Pillar Card System (IxCards)**: Collectible cards powered by Force, Wealth, Influence, and Legacy attributes across 5 core card types:
-  - `NATION`: Dynamically minted and continuously recalculated from live country telemetry (GDP per capita, military readiness, embassy network, social vitality).
-  - `LORE`: Procedurally generated from WikiOS articles, scored on historical depth, reference citations, and inbound cross-links.
+  - `NATION`: Country cards with Force / Wealth / Influence / Legacy stats, re-priced daily against their country's GDP and growth by the `card-values` cron.
+  - `LORE`: Generated from WikiOS articles; rarity is suggested from wiki signals (word count, links, edit count, category breadth, images, article age) and admins can override it.
   - `NS_IMPORT`: Synchronized with external NationStates card collections under strict compliance guardrails (streaming image proxying at `/api/proxy-ns-image`, attribution footers, and HMAC-MD5 self-service takedown verification).
   - `SPECIAL` & `COMMUNITY`: Commemorative milestone editions, contest winners, and alliance editions.
-- **Pack Openings & 6 Rarity Tiers**: 6 rarity tiers (Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9%, Legendary 0.1%) with particle shatter animations and rarity-specific audio reveals across 6 pack tiers (Basic, Premium, Elite, Themed, Seasonal, Event).
-- **Crafting, Fusion & Card Junking**: Combine duplicate cards into higher rarities via fusion recipes, upgrade cards directly through evolution, or recycle unlocked cards for instant IxCredits.
+- **Pack Openings & 6 Rarity Tiers**: Common → Legendary. Each pack sets its own price, card count and odds; 20 packs are seeded (100–15,000 IxC), including NationStates season packs. The opening sequence peels, flips and reveals each card by rarity.
+- **Crafting, Fusion & Card Junking**: Recycle unlocked cards for instant IxCredits. Fusion and evolution recipes exist at `/vault/crafting`, but that page is unlinked and does not work end to end yet (see `docs/systems/cards.md`).
 - **Marketplace & P2P Escrow Trading**: Live public auctions with automated bidding and secure peer-to-peer card trading protected by atomic escrow locks.
-- **IxCredits (IxC) & Achievements**: The universal platform currency earned through passive economic dividends, daily streaks, diplomatic resolutions, and achievements (LoreWards) recorded on double-entry transaction ledgers.
+- **IxCredits (IxC), Achievements & Lorewards**: The platform currency, earned through passive economic dividends, daily streaks, diplomatic scenarios, achievement unlocks and Lorewards (wiki-writing rewards), all recorded in the vault ledger.
 
 ---
 

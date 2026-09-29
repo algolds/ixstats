@@ -6,39 +6,37 @@ badge: MyCountry — Your Nation's Home
 
 ## The First Thing You'll See
 
-The Overview is your nation’s home screen — a calm, at-a-glance read on how your country is doing across the board. No decisions to make here; this is where you take the temperature. The doing happens in the other MyCountry sections.
+The Overview is your nation’s home screen — a calm, at-a-glance read on how your country is doing across the board. This is where you take the temperature and see what’s waiting on you; most of the doing happens in the other MyCountry sections.
 
 ## The Vital Signs
 
-Four rings up top give your nation a quick health score in each area:
+The **National Standing** card gives your nation a quick health score in four rings:
 
-- **Economy** — growth, debt, trade, and how varied your economy is, rolled into one number.
-- **Society** — how your people are doing: population, education, health, and everyday satisfaction.
-- **Diplomacy** — your standing in the world: embassies, relationships, and alliances.
-- **Defense** — how ready and secure your nation is, at home and abroad.
+- **Economic** — growth, debt, trade, and how varied your economy is, rolled into one number.
+- **Wellbeing** — how your people are doing: population, education, health, and everyday satisfaction.
+- **Diplomatic** — your standing in the world: embassies, relationships, and alliances.
+- **Efficiency** — how well your government runs.
+
+Alongside the rings you’ll see your population, GDP, public approval, political stability, and how many of this week’s directive slots you’ve used. Tap the rings for the full vitality breakdown.
 
 Green is healthy, amber is worth a look, red wants your attention. A glance tells you where to spend your time.
 
-## Tap Any Number for the Story Behind It
+## What Needs You Now
 
-> **Drill into the details**
+> **Your agenda at a glance**
 >
-> The key figures — GDP, population, growth, debt and more — are all tappable. Open one and you’ll get the full picture:
->
-> - **Overview** — where the number stands now, and what’s driving it.
-> - **Trends** — how it’s moved over time.
-> - **Comparison** — how you stack up against other nations.
-> - **Details** — the pieces that add up to the total.
+> - **Opportunities** — the most pressing situation up top, with a one-tap way to open the brief or declare a directive to resolve it.
+> - **Agenda** — scheduled events, directives rolling out, and national issues waiting on a decision. Tap through to the [Executive desk](/help/mycountry/executive) to handle them.
+> - **Recent activity** — your national log of what’s happened lately.
 
 ## Where Your Economy Goes
 
-Below the key figures, a breakdown shows how your economy splits across its sectors, and where your government spends — education, healthcare, defense, infrastructure, and the rest. It’s the quickest way to see what kind of nation you’re actually running.
+For the sector breakdown, your national budget, tax rates, and trade, open **Economy & Budget** from the MyCountry command bar.
 
 ## Handy on the Side
 
-- **Issues waiting** — a heads-up when decisions are piling up. Tap through to the [Executive desk](/help/mycountry/executive) to handle them.
-- **Your Vault** — a quick peek at your IxCredits and Vault level.
-- **Quick actions** — shortcuts to the things you do most.
+- **Your territory** — a map of your nation, with shortcuts to the world map and the Map Editor.
+- **Domain tiles** — jump straight into Diplomacy, Defense, Politics, or Economy & Budget.
 
 > **Keep Exploring**
 >

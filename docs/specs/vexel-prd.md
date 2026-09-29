@@ -5,7 +5,7 @@
 **Status:** 🟢 Product Definition
 **Date:** July 15, 2026
 **Product Family:** IxLabs (`/labs/vexel`)
-**Supersedes:** `Vexel_PRD_v0.1.md` (Draft — never committed to this repository)
+**Supersedes:** `Vexel_PRD_v0.1.md` (Draft — removed from the repo on 2026-08-20 in commit `852c32a1a`; retrievable from git history)
 
 > **Implementation status (audited 2026-09-29): Phase 1 partially shipped (Labs, unlisted in the main nav).** Routes `/labs/vexel`, `/labs/vexel/[id]`, `/labs/vexel/generate`, `/labs/vexel/registry`, `/labs/vexel/registry/[id]`; engine in `src/lib/heraldry/` (composition schema, layout, blazon, validation, generator); UI in `src/components/maps/vexel/`; tRPC router `api.heraldry.*` (`src/server/api/routers/heraldry/`); Prisma models in `prisma/schema/heraldry.prisma`. Reachable from the Halo command palette; the Labs nav dropdown still omits it.
 >

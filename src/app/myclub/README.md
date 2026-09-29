@@ -27,9 +27,9 @@ The team dashboard is a single-page sidebar router (`ClubRouter` inside the shar
 | **Overview** | Live `MatchTickerSim` (active season) or off-season guidance card; record / points / scored-conceded widgets; upcoming-match scoreboards; season performance history with champion badges; team-training button |
 | **Roster** | Player card binder (overall, position, age, career stage, ratings); per-player training drills; "Manage Listing" to put a player on the transfer market; coaching staff list with career-stage badges |
 | **Tactics** | 7 tactical-intent presets (Neutral, All-Out Attack, Catenaccio, Counter-Attack, Tiki-Taka, Gegenpressing, Kick and Rush) with offense/defense radial rings; Attack Focus + Team Intensity sliders; `LineupBuilder` (starters, captain, save) |
-| **Transfers** | Player search across leagues; bid on open listings (Sovereigns held in escrow); active-listings board; inbound bids (accept/reject) and outbound bid status; player comparison (`PlayerMatchup1`) |
+| **Transfers** | Player search across leagues; bid on open listings (Sovereigns held in escrow); active-listings board; inbound bids (accept/reject) and outbound bid status; player comparison (`PlayerMatchup`) |
 | **Management** | `SponsorWalletDeck` (ticket price, stadium expansion, sponsor selection) and `RevenueCollector` (gate + sponsor base-fee income; sponsor win bonuses are displayed but not yet paid) |
-| **History** | Season-by-season results (`ClubHistorySection`) linking to the season-detail route |
+| **History** | Club legacy (`ClubHistorySection`): titles, all-time W-D-L record, and season-by-season finishes |
 
 **Claim flow:** an unclaimed team shows a Claim card; `claimTeam` takes ownership. Claiming requires a
 **MyClub Team License Token** (Vault Store, 5,000 credits) and, for canonical leagues, a **MyLeague
