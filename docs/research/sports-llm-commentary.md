@@ -34,3 +34,13 @@ To satisfy the **Hard Invariant (Outcome Determinism)**:
 ## Conclusion & Recommendation
 * **Decision**: **GO** (using OpenAI GPT-4o-Mini or OpenRouter Llama 3.1 70B as the backends).
 * **Next Steps**: Implement the production enrichment pipeline under Plan 068.
+
+## Implementation Status (audited 2026-09-29)
+
+**Implemented.** `narrateEvents()` in [`src/lib/sports/commentary/narrator.ts`](../../src/lib/sports/commentary/narrator.ts) rewrites the resolved event trace post-resolution and falls back silently to the templated descriptions on any failure, length mismatch, or when disabled.
+- **Providers:** `nvidia` (default; `meta/llama-3.1-70b-instruct` via build.nvidia.com), `openrouter` (`meta-llama/llama-3.1-70b-instruct`), or OpenAI-compatible (`gpt-4o-mini`). The shipped default differs from the GO recommendation above.
+- **Gating:** env `SPORTS_LLM_COMMENTARY` / `SPORTS_LLM_*`, or admin-managed `sports:llm:*` SystemConfig keys (`applyGlobally`, provider, model, temperature, opt-in reasoning) set from the admin Sports panel (`getGlobalAINarratorSettings`, `saveGlobalAINarratorSettings`, `testLLMNarrator`).
+- **Async enrichment:** match-day simulation fires narration in the background (`narrateInBackground` in `seasons/matches/matchDay.ts`) after the result is persisted, so the LLM never touches the outcome.
+- **Caching:** commentary is stored on the match's `matchStats` and served cache-first by `sports.generateMatchCommentary`; generating fresh commentary requires auth. Caching is per match rather than an explicit `(matchId, seed)` key; the match seed is itself derived from the match id.
+- **Extra:** `generateAudioBroadcast()` can voice the commentary through a Kokoro TTS endpoint (returns null on failure).
+- Plan 068 is not present in the repository.

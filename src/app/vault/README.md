@@ -1,6 +1,6 @@
 # IxVault — Trading Cards, Marketplace & IxCredits
 
-**Last updated:** June 2026
+**Last updated:** September 2026
 
 IxVault is the trading-card and virtual-economy product in IxStats. Players earn **IxCredits (IxC)** through gameplay, buy and open card packs, craft and trade cards, run marketplace auctions, organize collections, and import their NationStates card decks. The `/vault` area is a shared sidebar layout (`AuthenticationGuard` → `VaultSidebarLayout`) wrapping per-route section components — there is no client-side `*Router` here; navigation uses normal Next.js routes.
 
@@ -13,28 +13,28 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | `/vault/inventory` | `VaultCardsSection` | Same hub (inventory entry) |
 | `/vault/collections` | `VaultCardsSection` | Same hub (collections entry) |
 | `/vault/collections/[slug]` | collection detail | View a collection; comments / likes |
-| `/vault/lore-gallery` | `VaultCardsSection` | Gallery filtered to lore cards |
-| `/vault/ns-library` | `VaultCardsSection` | Gallery filtered to NS-import cards |
+| `/vault/lore-gallery` | `VaultCardsSection` | Gallery sub-tab (development builds only; otherwise falls back to Inventory) |
+| `/vault/ns-library` | `VaultCardsSection` | Gallery sub-tab (development builds only; otherwise falls back to Inventory) |
 | `/vault/lore-generator` | `LoreCardGenerator` | Request generation of a lore card |
 | `/vault/marketplace` | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links) |
-| `/vault/crafting` | `CraftingWorkbench` | Fusion / evolution crafting |
+| `/vault/crafting` | `CraftingWorkbench` | Fusion / evolution crafting (not linked from the sidebar) |
 | `/vault/import` | `VaultImportSection` | NationStates deck import wizard |
-| `/vault/ns-deck` | NS deck browser | Browse NS decks |
+| `/vault/ns-deck` | `ImportWizard` | Legacy NS deck import wizard (the sidebar uses `/vault/import`) |
 | `/vault/ns-deck/[nation]` | NS deck viewer | Public NS deck for a nation |
 | `/vault/admin` | admin gate | Admin-only vault tools (`useIsAdmin`) |
 | `/vault/market`, `/vault/packs`, `/vault/trading` | — | **Redirect stubs** → `/vault/marketplace?tab=auctions\|store\|trading` |
 
-The sidebar (`VaultSidebarNav`) exposes 5 sections: **dashboard, cards, marketplace, import, achievements**.
+The sidebar (`VAULT_NAV_ITEMS` in `VaultSidebarNav`) has 4 entries: **dashboard, cards, marketplace, import**; `VaultSidebarLayout` adds an **Achievements** link, and `/achievements` / `/leaderboards` render inside the same layout (`VaultSection` also includes `achievements` and `leaderboards`).
 
 ## Key Features
 
 - **Card packs** — Browse/purchase packs (`cardPacks.getAvailablePacks`, `purchasePack`), open via the cards pipeline. Pack types and odds are documented in `docs/systems/cards.md`.
 - **Marketplace** — Three tabs in one section: **Vault Shop** (`vault.listStoreItems` / `getPurchasedItems`), **Auctions** (`cardMarket.*` — active/ending-soon/my-bids/my-auctions, `createAuction`), and **Trading** (`trading.getActiveTrades` / `getTradeHistory`).
 - **Collections** — Create/delete and organize cards (`cards.getMyCollections`, `createCollection`, `deleteCollection`, `getCollectionCards`); collection pages support comments and likes (`vault.getCollectionComments`, `addCollectionComment`, `likeCollection`).
-- **Crafting** — Fusion and evolution recipes (`crafting.getRecipes`) consuming owned cards; cost tables in `docs/systems/ixcredits.md`.
-- **Card junking** — Recycle unlocked duplicates for IxC (`cards.junkCards`).
-- **NationStates import** — Verify ownership and import an NS deck (`nsImport.requestVerification`, `checkVerification`, `previewDeck`, `importDeck`, `hasImported`, `fetchPublicDeck`); see `docs/systems/ns-integration.md`.
-- **IxCredits** — Earn (passive nation dividend, active gameplay, social, cards) and spend (packs, crafting, market, store). Caps, formulas, and transaction types in `docs/systems/ixcredits.md`.
+- **Crafting** — Fusion and evolution recipes (`crafting.getRecipes`, `getRecipeById`, `craftCard`) consuming owned cards; cost tables in `docs/systems/ixcredits.md`. Known issue: the page maps card-definition IDs into `CraftingWorkbench`, while `craftCard` expects `CardOwnership` IDs.
+- **Card junking** — Recycle unlocked cards for IxC (`cards.junkCards`); cards escrow-locked by an auction or trade are refused.
+- **NationStates import** — Verify ownership and import an NS deck (`nsImport.requestVerification`, `checkVerification`, `importDeck`, `hasImported`, `fetchPublicDeck`); see `docs/systems/ns-integration.md`.
+- **IxCredits** — Earn (passive nation dividend, active gameplay, social, uncapped metagame bonuses) and spend (packs, crafting, market, store). Caps, formulas, and transaction types in `docs/systems/ixcredits.md`.
 
 ## Architecture
 
@@ -42,12 +42,12 @@ The sidebar (`VaultSidebarNav`) exposes 5 sections: **dashboard, cards, marketpl
 |-------|----------|
 | Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + `VaultSidebarLayout`) |
 | Sidebar nav | `src/components/vault/VaultSidebarNav.tsx` (`VaultSection`, `VAULT_NAV_ITEMS`, `getSectionFromPathname`) |
-| Cards Section | `src/components/vault/sections/cards/` — `CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle` |
-| Dashboard Section | `src/components/vault/sections/dashboard/` — Modular balance hero, earnings breakdown, and quick stats widgets |
+| Cards Section | `src/components/vault/sections/cards/` — `InventoryTab`, `CollectionsTab`, `CardGalleryTab`, `*SidebarContent`, `useVaultCardsState`, `types.ts` |
+| Dashboard Section | `src/components/vault/sections/dashboard/` — `VaultNetWorthCard`, `VaultYieldProjectionsCard`, `VaultCardHoldingsCard`, `VaultMilestonesCard`, `VaultRecentActivityCard`, `VaultShowcaseGrid` |
 | Marketplace Section | `src/components/vault/sections/marketplace/` — Store (`store/`), Auctions (`auctions/` incl. `CreateAuctionModal`), Trading |
-| Import Section | `src/components/vault/sections/import/` — NationStates deck import wizard steps and verification status |
-| Shared widgets & theme | `src/components/vault/` — `DailyBonusWidget`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `vault-theme.ts` |
-| Vault Services | `src/lib/vault/` — `vault-crud.ts`, `vault-market.ts`, `vault-pricing.ts`, `vault-type-guards.ts` |
+| Import Section | `src/components/vault/sections/import/` — `ImportNationStep`, `ImportVerifyStep`, `ImportConfirmStep`, `ImportStepIndicator` |
+| Shared widgets | `src/components/vault/` — `DailyBonusWidget`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `IxCreditsSymbol`, cosmetic overlays (`AvatarGlow`, `NeonFrameOverlay`, `CosmeticParticles*`) |
+| Vault Services | `src/lib/vault/` — `vault-service.ts` (facade), `vault-ledger.ts`, `vault-passive-income.ts`, `vault-daily-bonus.ts`, `vault-bonus.ts`, `vault-perks.ts`, `vault-notifications.ts`, `vault-type-guards.ts`, `exchange-*.ts`, `trade-settlement.ts` |
 | Hooks | `src/hooks/vault/` — `useVaultBalance`, `useVaultStats`, `useCollections`, `useRecentActivity` |
 | Reused card UI | `src/components/cards/` — `CardDisplay`, `CardDetailsModal` (`cards/display/modal/`), `CraftingWorkbench`, `lore/LoreCardGenerator` |
 
@@ -63,7 +63,7 @@ The sidebar (`VaultSidebarNav`) exposes 5 sections: **dashboard, cards, marketpl
 | `cardMarket` | `getActiveAuctions`, `getEndingSoon`, `getMyActiveAuctions`, `getMyActiveBids`, `getMyAuctionParticipation`, `createAuction` |
 | `crafting` | `getRecipes` |
 | `trading` | `getActiveTrades`, `getTradeHistory` |
-| `nsImport` | `requestVerification`, `checkVerification`, `hasImported`, `previewDeck`, `importDeck`, `fetchPublicDeck`, `getImportStats` |
+| `nsImport` | `requestVerification`, `checkVerification`, `hasImported`, `importDeck`, `fetchPublicDeck` |
 | `loreCards` | `getAllLoreCards`, `requestLoreCard` |
 | `achievements` | `getAllByCountry`, `getLeaderboard` |
 | `users` | `getProfile` |
@@ -72,13 +72,13 @@ All registered in `src/server/api/root.ts`.
 
 ## Connections
 
-- **Achievements / ThinkPages / Diplomacy** — feed `EARN_ACTIVE` / `EARN_SOCIAL` credits through `vault-service`; nation performance drives passive income and NATION card stats.
+- **ThinkPages / Diplomacy** — feed `EARN_ACTIVE` / `EARN_SOCIAL` credits through `vault-service`; **Achievements / Lorewards / onboarding / NS import** pay uncapped `EARN_BONUS` via `grantBonus()`; nation performance drives passive income and NATION card values (`card-values` cron).
 
 ## Architecture & Security Hardening (Plans 121–123)
 
 - **Atomic Credit Ledger**: `spendCredits` executes atomic conditional updates (`credits: { gte: amount }`) inside DB transactions, preventing race conditions or negative balances under high concurrency.
 - **UTC Calendar Day Streak Math**: Daily login streak calculations (`updateLoginStreak`) normalize dates onto UTC calendar day serial numbers (`Date.UTC(y, m, d) / 86,400,000`), ensuring exact midnight boundary rollover behavior.
-- **Type-Safe Domain Modeling**: Branded domain primitives (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) and structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`) replace loose `any` types and Prisma `(db as any)` casts across `vault-service.ts`, `card-service.ts`, and `auction-service.ts`.
+- **Type-Safe Domain Modeling**: Branded domain primitives (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) and structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`) live in `src/types/cards-display.ts` (some `(db as any)` casts remain in routers).
 - **Perk Performance Cache**: Store item perks lookup (`getPurchasedItemsEffects`) utilizes an in-memory `userPerksCache` (5-minute TTL) with bounded transaction queries (`take: 100`).
 
 ---

@@ -9,18 +9,23 @@ Authoritative index for all active build, deployment, database, audit, diagnosti
 ```
 scripts/
 ├── README.md                     # Single authoritative index (this document)
-├── audit/                        # Architecture guard (audit-arch.ts) & test validation suites
-├── setup/                        # Database seeders, init, backups, asset generators
-├── deployment/                   # Production & staging deployment pipelines
-├── diagnostics/                  # Health check & benchmark scripts
+├── audit/                        # Architecture guard (audit-arch.ts) & test validation suites (see audit/README.md)
+├── verification/                 # CI gates: partitioned typecheck runner, Jest quarantine runner, entrypoint check, verify-strict
+├── docs/                         # Reference-doc synchronizer (docs:sync / docs:check)
+├── setup/                        # Database seeders, init, backup/restore stubs, asset generators, Clerk/auth checks
+├── deployment/                   # Staging/rollback/validation tooling (see deployment/README.md)
+├── diagnostics/                  # Health check, benchmark, cache and DB analysis scripts (diagnostics:*)
+├── cron/                         # Cron job checker (cron:check)
+├── codemods/                     # One-shot codemods (hex-to-tokens, facet-anti-slop)
 ├── onoma/                        # Linguistics lexicon & Kokoro TTS dictionary tools
 ├── ops/                          # Nginx & server configuration templates
 ├── realms/                       # Realms data backfill (owners, IxWorld slug, wiki links, visibility) + realm lore index import
-├── *.sh / *.js / *.ts            # Core root runners (with-base-path.sh, deploy-production.sh, etc.)
+├── reports/                      # Generated report outputs
+├── *.sh / *.js / *.ts            # Core root runners (with-base-path.sh, deploy-production.sh, wiki sync, etc.)
 └── archive/                      # Historical migrations, one-off backfills, and GIS tools
     ├── migrations/               # Completed database backfills, user role seeds, title fixes
     ├── gis_tools/                # Historical SVG-to-GeoJSON scripts, metrics calculators
-    └── geojson_dumps/            # Static GeoJSON pipeline dumps
+    └── geojson_dumps/            # Static GeoJSON pipeline dumps (git-ignored; local only)
 ```
 
 ---
@@ -33,9 +38,11 @@ scripts/
 | [`scripts/with-base-path.sh`](with-base-path.sh) | Wraps Next.js build/start with the `/projects/ixstates` production basePath. |
 | [`scripts/post-build.sh`](post-build.sh) | **Postbuild Hook**: Copies standalone public assets and ensures standalone directory parity. |
 | [`scripts/deploy-production.sh`](deploy-production.sh) | Full production deployment script (build, postbuild, PM2 reload, asset sync). |
-| [`scripts/start-production.js`](start-production.js) | Production server runner for standalone Next.js + Socket.IO server. |
+| [`scripts/start-production.js`](start-production.js) | Legacy production startup script (not wired to any `package.json` alias; `bun run start:prod` uses the root `start-production.sh`, `bun run start` uses `server.mjs`). |
 | [`scripts/deploy-ixworld.sh`](deploy-ixworld.sh) | Maps standalone build runner (`NEXT_PUBLIC_IXWORLD_STANDALONE=true`). |
-| [`scripts/dev-local.sh`](dev-local.sh) / [`deploy-local.sh`](deploy-local.sh) | Local Linux development and staging runners. |
+| [`scripts/dev-local.sh`](dev-local.sh) | WSL local dev (`bun run dev:local`): SSH tunnels, prod DB snapshot into the local `ixstats-postgres` container, asset rsync, then `start-development.sh`. |
+| [`scripts/deploy-local.sh`](deploy-local.sh) | `bun run deploy:local`: local format/lint/test checks, push the current branch, then run `deploy-production.sh` on the VPS over SSH. |
+| [`scripts/refresh-local-db.sh`](refresh-local-db.sh) | Refresh the local Postgres container from a production `pg_dump`. |
 | [`scripts/start-auto.sh`](start-auto.sh) | Automatic environment-detecting dev runner. |
 | [`scripts/validate-server-config.sh`](validate-server-config.sh) | Validates server environment variables, port bindings, and Redis connectivity. |
 
@@ -45,14 +52,18 @@ scripts/
 
 | Script | Purpose & Command |
 | :--- | :--- |
-| [`scripts/audit/audit-arch.ts`](audit/audit-arch.ts) | **Architecture Guard**: Enforces ≤700L ceiling per file, blocks cross-router imports, server boundary leaks, and residue (`bun run audit:arch`). |
+| [`scripts/audit/audit-arch.ts`](audit/audit-arch.ts) | **Architecture Guard**: Enforces ≤700L ceiling per file (500L for hooks; ratcheted via `arch-baseline.json`), blocks cross-router imports, server boundary leaks, and residue (`bun run audit:arch`). |
 | [`scripts/docs/sync-reference-docs.ts`](docs/sync-reference-docs.ts) | **Reference Docs Synchronizer**: Synchronizes AST-derived API inventory and version matrix across canonical docs (`bun run docs:sync` / `bun run docs:check`). |
 | [`scripts/audit/validate-script-targets.ts`](audit/validate-script-targets.ts) | **Script Target Validator**: Validates script paths, configs, and Bun package-manager usage (`bun run validate:script-targets`). |
 | [`scripts/split-router-template.ts`](split-router-template.ts) | **ts-morph Router Splitter**: AST-based code splitter for refactoring oversized flat routers into `mergeRouters` subdirs. |
-| [`scripts/verify-router-splits.ts`](verify-router-splits.ts) | **AST Parity Verifier**: Validates procedure count parity before and after router domain splits. |
-| [`scripts/audit/audit-trpc-wiring.ts`](audit/audit-trpc-wiring.ts) | Validates that all 1,450+ tRPC procedures are wired to live implementations (`bun run audit:wiring`). |
+| [`scripts/verify-router-splits.ts`](verify-router-splits.ts) | **AST Parity Verifier**: One-off parity check for a fixed list of past splits (admin, sports, activities, security, ixnayid); the splitter now verifies parity itself. |
+| [`scripts/audit/audit-trpc-wiring.ts`](audit/audit-trpc-wiring.ts) | Cross-references Prisma models against tRPC router endpoints (77 routers, ~900 procedures) and reports coverage gaps (`bun run audit:wiring`). |
+| [`scripts/audit/audit-country-idor.ts`](audit/audit-country-idor.ts) | Country-ownership (IDOR) check on country-data mutations (`bun run audit:idor`). |
+| [`scripts/verification/run-typecheck.ts`](verification/run-typecheck.ts) | Partitioned typecheck runner behind `typecheck:ui` / `:server` / `:trpc` / `:db`. |
+| [`scripts/verification/run-jest-with-quarantine.ts`](verification/run-jest-with-quarantine.ts) | CI Jest runner honouring `test-quarantine.json` (`bun run test:ci`, `test:quarantine:verify`). |
+| [`scripts/verification/check-entrypoints.ts`](verification/check-entrypoints.ts) | Client/server entrypoint boundary check (`bun run check:entrypoints`). |
 | [`scripts/audit/verify-economic-calculations.ts`](audit/verify-economic-calculations.ts) | Validates economic modeling formulas, ERI, and tax calculations (`bun run test:economics`). |
-| [`scripts/audit/verify-database-integrity.ts`](audit/verify-database-integrity.ts) | Exercises CRUD queries across all 296 Prisma models (`bun run test:db`). |
+| [`scripts/audit/verify-database-integrity.ts`](audit/verify-database-integrity.ts) | Checks referential integrity, indexes, and record counts (`bun run test:db`). |
 | [`scripts/audit/test-all-crud-operations.ts`](audit/test-all-crud-operations.ts) | Comprehensive CRUD regression test suite (`bun run test:crud`). |
 | [`scripts/audit/test-api-health.ts`](audit/test-api-health.ts) | Live API endpoint health checker (`bun run test:health`). |
 | [`scripts/audit/run-all-tests.ts`](audit/run-all-tests.ts) | Unified test runner for all audit suites (`bun run test:all`). |
@@ -78,8 +89,8 @@ scripts/
 | :--- | :--- |
 | [`scripts/setup/init-db.ts`](setup/init-db.ts) | Initializes database tables and seed prerequisites (`bun run db:init`). |
 | [`scripts/setup/seed-db.ts`](setup/seed-db.ts) | Primary database seeder for countries, government structures, and initial users (`bun run db:seed`). |
-| [`scripts/setup/backup-db.ts`](setup/backup-db.ts) | Backs up local PostgreSQL database into timestamped JSON/SQL (`bun run db:backup`). |
-| [`scripts/setup/restore-db.ts`](setup/restore-db.ts) | Restores PostgreSQL database from backup (`bun run db:restore`). |
+| [`scripts/setup/backup-db.ts`](setup/backup-db.ts) | `bun run db:backup` — **not implemented for PostgreSQL**: prints a `pg_dump` hint and exits 1. Use `pg_dump` directly. |
+| [`scripts/setup/restore-db.ts`](setup/restore-db.ts) | `bun run db:restore` — lists `prisma/backups/backup_*.sql`; the actual PostgreSQL restore is **not implemented** (prints a `psql` hint). |
 | [`scripts/setup/seed-sports-standalone.ts`](setup/seed-sports-standalone.ts) | Seeds standalone sports leagues, clubs, and schedules (`bun run db:seed:sports`). |
 | [`scripts/setup/seed-vault-items.ts`](setup/seed-vault-items.ts) | Seeds cards, card packs, and store perks. |
 | [`scripts/setup/generate-pack-assets.ts`](setup/generate-pack-assets.ts) | Generates SVG pack art and foil textures for card packs. |
@@ -88,6 +99,16 @@ scripts/
 | [`scripts/set-admin-role.ts`](set-admin-role.ts) | Grants administrative privileges to a target user (`bun run set-admin-role`). |
 | [`scripts/cleanup-logs.ts`](cleanup-logs.ts) | Rotates and prunes stale audit logs (`bun run cleanup:logs`). |
 | [`scripts/watch-schema.sh`](watch-schema.sh) | File watcher for auto-generating Prisma client on schema change (`bun run db:watch`). |
+
+---
+
+## 📚 Wiki Sync (root)
+
+| Script | Command |
+| :--- | :--- |
+| [`scripts/sync-ixwiki-full.ts`](sync-ixwiki-full.ts) / [`sync-ixwiki-live.ts`](sync-ixwiki-live.ts) / [`sync-ixwiki-media.ts`](sync-ixwiki-media.ts) | `bun run wiki:sync:full` / `wiki:sync:live` / `wiki:sync:media` — IxWiki → WikiOS PostgreSQL sync. |
+| [`scripts/sync-wikios-categories.ts`](sync-wikios-categories.ts) | `bun run wiki:seed:categories` |
+| [`scripts/cleanup-wikios-categories.ts`](cleanup-wikios-categories.ts) / [`cleanup-wikios-sync-summaries.ts`](cleanup-wikios-sync-summaries.ts) | `bun run wiki:clean:categories` / `wiki:clean:summaries` |
 
 ---
 
@@ -107,7 +128,7 @@ scripts/
 The [`scripts/archive/`](archive/) directory preserves one-off migration scripts, data backfill algorithms, and GIS conversion tools from earlier milestones. If similar bulk data transformations or GIS ingest tasks are needed in the future, reference these implementations:
 
 ### 1. Database Migrations & One-Off Backfills (`scripts/archive/migrations/`)
-- **`migrate-messages-to-thinkshare.ts`**: ETL migration script that transformed legacy direct message rows into unified `ThinkPost` / `DirectMessage` conversations.
+- **`migrate-messages-to-thinkshare.ts`**: ETL migration script that transformed legacy direct message rows into ThinkShare conversations (`ThinkshareConversation` / `ThinkshareMessage`).
 - **`backfill-vault-effects.ts` / `backfill-government-branches.ts` / `backfill-geo-links.ts` / `backfill-ixtwitter.ts`**: Backfill algorithms linking atomic components, government branches, and social activity to Prisma models.
 - **`fix-baseline-dates.ts` / `restore-baselines.ts`**: Time-series timestamp correction utilities.
 - **`sync-wiki-flags.ts` / `regenerate-flag-metadata.ts`**: MediaWiki SVG flag scrapers and metadata parsers.
@@ -124,4 +145,4 @@ The [`scripts/archive/`](archive/) directory preserves one-off migration scripts
 - **`reprocess-icecaps.ts`**: Glacial polygon simplification and antimeridian splitting utility.
 
 ### 3. Static GIS Pipeline Dumps (`scripts/archive/geojson_dumps/`)
-- Intermediate GeoJSON outputs (`altitudes.geojson`, `climate.geojson`, `rivers.geojson`, `political.geojson`, `lakes.geojson`) from legacy GIS conversion passes.
+- Intermediate GeoJSON outputs (`altitudes.geojson`, `climate.geojson`, `rivers.geojson`, `political.geojson`, `lakes.geojson`) from legacy GIS conversion passes. This directory is git-ignored and exists only on machines that produced it.
