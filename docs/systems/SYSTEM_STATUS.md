@@ -132,6 +132,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 ## Known blockers on `rose-garden`
 
+- **CI `test:ci` fails:** three suites need git-ignored files (`next.config.js`, `public/icons/game-icons-manifest.json`, `public/data/vector-seeds/`) that CI runners don't have.
 - **CI `audit:arch` fails:** 15 source files are over their line ceiling (largest: `routers/wikios/templates.ts`, 1,298 lines).
   Split them or add them to `RELAXED_FILES`.
 - **Security findings from the audit, not yet fixed:**

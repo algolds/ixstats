@@ -192,6 +192,7 @@ Fix before the RC2 release.
 
 From the status blocks in [`docs/audits/`](../audits/):
 
+- **CI `test:ci` is failing:** three suites read git-ignored files that the runner doesn't have — `verification-gates.test.ts` (`next.config.js`), `CardDesigner.test.ts` (`public/icons/game-icons-manifest.json`) and `enrichment-pipeline.test.ts` (`public/data/vector-seeds/`). Track the assets or skip when absent.
 - **CI `audit:arch` is failing:** 15 files are over their ceiling — split them or add them to `RELAXED_FILES`. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
 - **`docs:sync` undercounts procedures:** `extractApiInventory` reports 901 procedures (runtime count 958) because it misses spread and `mergeRouters` routers.
 - **Service layer:** 199 router files query `ctx.db` directly.
