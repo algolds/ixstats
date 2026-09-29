@@ -2,123 +2,62 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { useOrganization, useOrganizationList } from "@clerk/nextjs";
-import { Globe, Settings, Map, Group as Users, Crown } from "iconoir-react";
+import { notFound } from "next/navigation";
+import { Globe } from "iconoir-react";
+import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { createUrl } from "~/lib/utils";
 
-export default function RealmHubPage({ params }: { params: Promise<{ realm: string }> }) {
-  const { realm } = use(params);
-  const formattedRealmName = realm.charAt(0).toUpperCase() + realm.slice(1).replace(/-/g, " ");
+export default function RealmPage({ params }: { params: Promise<{ realm: string }> }) {
+  const { realm: slug } = use(params);
+  const { data: realm, isLoading } = api.realms.getBySlug.useQuery({ slug });
+  usePageTitle({ title: realm ? `${realm.name} · Realm` : "Realm" });
 
-  const { organization: currentOrg } = useOrganization();
-  const { userMemberships } = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-    },
-  });
-
-  const matchingOrg =
-    currentOrg?.slug === realm || currentOrg?.id === realm
-      ? currentOrg
-      : userMemberships?.data?.find(
-          (m) => m.organization.slug === realm || m.organization.id === realm
-        )?.organization;
-
-  const realmLogo = matchingOrg?.imageUrl;
-
-  usePageTitle({
-    title: `${formattedRealmName} · Realm`,
-  });
+  if (isLoading)
+    return (
+      <div className="text-muted-foreground mx-auto max-w-5xl p-8 text-sm">Loading realm…</div>
+    );
+  if (!realm) notFound();
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl flex-col p-4 md:p-8">
-      {/* Realm Hero */}
-      <div className="border-border bg-card/70 relative overflow-hidden rounded-2xl border p-6 shadow-xs backdrop-blur-xl md:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="border-border bg-accent text-foreground flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border shadow-md">
-              {realmLogo ? (
-                <img
-                  src={realmLogo}
-                  alt={formattedRealmName}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Globe className="h-8 w-8" />
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-foreground text-2xl font-bold tracking-tight">
-                  {formattedRealmName}
-                </h1>
-                <span className="border-border bg-accent text-foreground rounded-md border px-2 py-0.5 text-xs font-bold">
-                  Realm Instance
-                </span>
-              </div>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Simulation realm on the IxStates engine.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/r/${realm}/settings`}
-              className="facet-interactive border-border bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold active:scale-[0.98]"
-            >
-              <Settings className="text-muted-foreground h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-            <Link
-              href={`/maps?realm=${realm}`}
-              className="facet-interactive bg-primary text-primary-foreground flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold shadow-md hover:opacity-90 active:scale-[0.98]"
-            >
-              <Map className="h-4 w-4" />
-              <span>View Map</span>
-            </Link>
-          </div>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
+      <header className="border-border bg-card/70 flex items-center gap-4 rounded-2xl border p-6 backdrop-blur-xl">
+        <div className="border-border bg-accent flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border">
+          {realm.thumbnail ? (
+            <img src={realm.thumbnail} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <Globe className="h-7 w-7" />
+          )}
         </div>
-      </div>
-
-      {/* Realm Sub-Grid */}
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="border-border bg-card/50 rounded-2xl border p-5 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-accent text-foreground flex h-10 w-10 items-center justify-center rounded-xl">
-              <Crown className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-foreground text-sm font-bold">Sovereign Nations</h3>
-              <p className="text-muted-foreground text-xs">Active states in this realm</p>
-            </div>
-          </div>
+        <div>
+          <h1 className="text-foreground text-2xl font-bold tracking-tight">{realm.name}</h1>
+          {realm.description && (
+            <p className="text-muted-foreground mt-1 text-sm">{realm.description}</p>
+          )}
         </div>
+      </header>
 
-        <div className="border-border bg-card/50 rounded-2xl border p-5 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-accent text-foreground flex h-10 w-10 items-center justify-center rounded-xl">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-foreground text-sm font-bold">World Members</h3>
-              <p className="text-muted-foreground text-xs">Active worldbuilders & players</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-border bg-card/50 rounded-2xl border p-5 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-accent text-foreground flex h-10 w-10 items-center justify-center rounded-xl">
-              <Map className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-foreground text-sm font-bold">Atlas Mesh</h3>
-              <p className="text-muted-foreground text-xs">100k cell Voronoi terrain</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <section className="border-border bg-card/70 rounded-2xl border p-6">
+        <h2 className="text-foreground mb-3 text-sm font-bold">
+          Nations · {realm.countries.length}
+        </h2>
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {realm.countries.map((c) => (
+            <li key={c.id}>
+              <Link
+                href={createUrl(`/countries/${c.slug ?? c.id}`)}
+                className="hover:bg-muted flex items-center gap-2 rounded-xl p-2 text-sm"
+              >
+                {c.flag && <img src={c.flag} alt="" className="h-4 w-6 rounded-sm object-cover" />}
+                <span className="text-foreground">{c.name}</span>
+                {!c.claimed && (
+                  <span className="text-muted-foreground ml-auto text-xs">unclaimed</span>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

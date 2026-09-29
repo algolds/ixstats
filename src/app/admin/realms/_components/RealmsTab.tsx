@@ -10,7 +10,6 @@ import {
   Check,
   Xmark as X,
   Globe,
-  Lock,
   Eye,
 } from "iconoir-react";
 
@@ -24,12 +23,11 @@ const STATUS_COLORS: Record<string, string> = {
 const VISIBILITY_ICONS: Record<string, typeof Globe> = {
   public: Globe,
   unlisted: Eye,
-  private: Lock,
 };
 
 export function RealmsTab() {
-  const { data: realms, isLoading, refetch } = api.studio.adminListRealms.useQuery();
-  const updateMutation = api.studio.adminUpdateRealm.useMutation({
+  const { data: realms, isLoading, refetch } = api.realms.adminListRealms.useQuery();
+  const updateMutation = api.realms.adminUpdateRealm.useMutation({
     onSuccess: () => {
       refetch();
       setEditingId(null);
@@ -76,7 +74,7 @@ export function RealmsTab() {
       id,
       name: editForm.name,
       status: editForm.status as "draft" | "generating" | "active" | "archived",
-      visibility: editForm.visibility as "private" | "unlisted" | "public",
+      visibility: editForm.visibility as "unlisted" | "public",
       description: editForm.description,
     });
   }
@@ -92,9 +90,6 @@ export function RealmsTab() {
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Status</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Visibility</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Countries</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">
-                World Config
-              </th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Owner</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Updated</th>
               <th className="text-muted-foreground px-4 py-3 text-right font-medium">Actions</th>
@@ -153,7 +148,6 @@ export function RealmsTab() {
                       >
                         <option value="public">Public</option>
                         <option value="unlisted">Unlisted</option>
-                        <option value="private">Private</option>
                       </select>
                     ) : (
                       <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
@@ -163,15 +157,6 @@ export function RealmsTab() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-center font-medium">{realm._count.countries}</td>
-                  <td className="px-4 py-3">
-                    {realm.worldConfig ? (
-                      <span className="text-xs font-medium text-emerald-500">
-                        {realm.worldConfig.name}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground/50 text-xs">None</span>
-                    )}
-                  </td>
                   <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
                     {realm.ownerId === "system" ? "system" : realm.ownerId.slice(0, 12) + "..."}
                   </td>

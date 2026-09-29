@@ -9,3 +9,4 @@ export {
   type NationOwnershipErrorCode,
   type OwnershipTx,
 } from "./realms.ownership";
+export { ClaimError, createClaimsService, type ClaimErrorCode, type ClaimsDeps, type NationAssignedEvent } from "./realms.claims";

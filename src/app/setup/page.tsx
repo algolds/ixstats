@@ -113,6 +113,7 @@ export default function SetupPage() {
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLinking, setIsLinking] = useState(false);
+  const [claimPending, setClaimPending] = useState(false);
   // oxlint-disable-next-line eslint/no-unused-vars
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,9 +125,7 @@ export default function SetupPage() {
   );
 
   // TRPC Mutations
-  const linkCountryMutation = api.users.linkCountry.useMutation();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const createCountryMutation = api.users.createCountry.useMutation();
+  const claimCountryMutation = api.realms.claimCountry.useMutation();
 
   // Check if user has already completed setup
   useEffect(() => {
@@ -163,17 +162,16 @@ export default function SetupPage() {
     setIsLinking(true);
     setError(null);
     try {
-      await linkCountryMutation.mutateAsync({
-        userId: user.id,
-        countryId: selectedCountryId,
-      });
-
-      // Refetch profile to get updated data
+      const result = await claimCountryMutation.mutateAsync({ countryId: selectedCountryId });
+      if (result.status === "pending") {
+        setClaimPending(true);
+        return;
+      }
       await refetchProfile();
       setCurrentStep("complete");
     } catch (_error) {
-      console.error("Failed to link country:", _error);
-      setError(_error instanceof Error ? _error.message : "Failed to link country");
+      console.error("Failed to claim country:", _error);
+      setError(_error instanceof Error ? _error.message : "Failed to claim country");
     } finally {
       setIsLinking(false);
     }
@@ -504,7 +502,17 @@ export default function SetupPage() {
                           </motion.div>
                         )}
 
-                        {selectedCountryId && (
+                        {claimPending && (
+                          <div className="facet-hierarchy-child border-border rounded-2xl border p-6">
+                            <p className="text-foreground text-lg font-semibold">Claim submitted</p>
+                            <p className="text-muted-foreground mt-1 text-sm">
+                              A moderator will review it. Verify your wiki account under Settings →
+                              Account to have claims for nations you created approved instantly.
+                            </p>
+                          </div>
+                        )}
+
+                        {selectedCountryId && !claimPending && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -519,12 +527,12 @@ export default function SetupPage() {
                               {isLinking ? (
                                 <>
                                   <div className="mr-4 h-6 w-6 animate-spin rounded-full border-b-2 border-current"></div>
-                                  Linking Country...
+                                  Submitting claim...
                                 </>
                               ) : (
                                 <>
                                   <LinkIcon className="mr-4 h-6 w-6" />
-                                  Link Country
+                                  Claim Country
                                 </>
                               )}
                             </Button>

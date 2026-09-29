@@ -223,8 +223,6 @@ export function AdminRouter() {
         return <BlurbsPanel />;
 
       // World & Simulation
-      case "world-settings":
-        return <RealmsPanel defaultTab="worlds" />;
       case "storyteller":
         return <StorytellerPanel />;
       case "realms":
