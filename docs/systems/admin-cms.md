@@ -3,15 +3,15 @@
 **Parent Platform Layer:** Platform Runtime & Shared Substrate  
 **Subsystems:** Dynamic Reference CMS, Role-Based Access Control (RBAC), Audit Trails, System Oversight  
 **Primary Action:** `ADMINISTER` | **Domain Accent:** Crimson Slate (`#E11D48` / `--color-rose-600`)  
-**Route:** `/admin/*` | **Status:** 📀 Gold Master (100% Ready)  
+**Route:** `/admin/*` | **Status:** Release Candidate (platform 1.4.0)  
 
-The Admin CMS provides administrative oversight across 50+ modular interfaces for managing dynamic game catalogs, atomic government/tax parameters, user permissions, audit logs, and live crisis triggers.
+The Admin CMS provides administrative oversight across 39 sections (plus the live dashboard) rendered by the single-page `AdminRouter` (`src/app/admin/_components/AdminRouter.tsx`), for managing dynamic game catalogs, atomic government/tax parameters, users and roles, logs, and platform health. See [`src/app/admin/README.md`](../../src/app/admin/README.md) for the full route list.
 
 ---
 
 ## Table of Contents
 1. [Overview & Architecture](#overview--architecture)
-2. [Reference Data Management](#reference-data-management)
+2. [Reference Data Management](#reference-data-management-interfaces)
 3. [Intelligence & Crisis Templates](#intelligence--crisis-templates)
 4. [Analytics & Monitoring](#analytics--monitoring)
 5. [User Roles & RBAC](#user-roles--rbac)
@@ -23,13 +23,13 @@ The Admin CMS provides administrative oversight across 50+ modular interfaces fo
 
 The Admin CMS ensures **100% dynamic content management**—all game rules, atomic components, scenarios, and catalogs reside in PostgreSQL and can be modified at runtime without requiring code deployments:
 
-- 56 atomic government components & synergies
-- 40+ economic policy components
-- 42 tax system components
+- Atomic government components & synergies (`ComponentType` enum: 91 values)
+- Economic policy components (`EconomicComponentType` enum: 60 values)
+- Tax system components (`TaxComponentType` enum: 43 values)
 - 50+ diplomatic actions & 100+ dynamic scenarios
 - 8 NPC personality traits & archetypes
 - 500+ military equipment items & small arms
-- National issue templates & crisis event triggers
+- National issue templates
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -40,8 +40,8 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
      ┌───────────────────────────┼───────────────────────────┐
      ↓                           ↓                           ↓
 ┌──────────────────┐   ┌───────────────────┐   ┌───────────────────┐
-│ Reference Data   │   │ Analytics & Logs  │   │ System & Security │
-│ 9 Interfaces     │   │ 6 Interfaces      │   │ 5 Interfaces      │
+│ Simulation CMS   │   │ Platform & Logs   │   │ Users & Security  │
+│ 8 CMS sections   │   │ platform, logs    │   │ 4 sections        │
 └──────────────────┘   └───────────────────┘   └───────────────────┘
 ```
 
@@ -57,9 +57,9 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
 - **Router**: `src/server/api/routers/economicComponents/`
 - **Capabilities**: Impact modifiers on GDP growth, employment, innovation, and inequality across 5 policy categories.
 
-### 3. Tax Components (`/admin/tax-components`)
-- **Router**: `src/server/api/routers/taxSystem/` & `atomicTax.ts`
-- **Capabilities**: Rate ranges, revenue calculation formulas, compliance curves, and administrative costs.
+### 3. Tax Components (inside `/admin/economic-components`)
+- **Router**: `src/server/api/routers/taxSystem/` (`crud.ts`, `analysis.ts`)
+- **Capabilities**: Rate ranges, revenue calculation formulas, compliance curves, and administrative costs. The standalone `/admin/tax-components` route was removed; tax editing lives in the Economic Components panel (Tax Impact).
 
 ### 4. Economic Archetypes (`/admin/economic-archetypes`)
 - **Router**: `src/server/api/routers/economicArchetypes/`
@@ -85,45 +85,48 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
 - **Router**: `src/server/api/routers/national-issues/`
 - **Capabilities**: Authoring templates with JSON condition trees, variable placeholders (`{{neighborName}}`, `{{ministerName}}`), and typed consequence definitions.
 
-### 9. Crisis Events (`/admin/crisis-events`)
+### 9. Crisis Events (no admin UI)
 - **Router**: `src/server/api/routers/crisis-events.ts`
-- **Capabilities**: Manual admin triggering for storytelling, parameter overriding, and escalation management.
+- **Status**: The `/admin/crisis-events` route was removed and no admin panel calls `api.crisisEvents.*`. Manual crisis triggering from the admin console is not available; world events are authored in the Storyteller panel (`/admin/storyteller`).
 
 ---
 
 ## Analytics & Monitoring
 
-- **Autosave Monitor (`/admin/autosave-monitor`)**: Monitors Map Editor spatial autosave queues, failure analysis, and retry buffers (`autosaveMonitoring.ts`).
-- **NationStates Sync (`/admin/ns-sync`)**: Daily dump sync status, region discovery, rate limit compliance (`ns-import/`).
-- **Lore Cards Batch Generator (`/admin/lore-cards/batch-generator`)**: Bulk ingestion of MediaWiki articles into trading cards (`lore-cards/`).
-- **Maps Admin (`/admin/maps`)**: Geo diagnostics, province integrity, boundary conformance review (`geo/admin.ts`).
+- **Autosave Monitor (`/admin/autosave-monitor`)**: Opens the Platform panel's autosave tab — autosave queues, failure analysis, and retry buffers (`autosaveMonitoring.ts`).
+- **NationStates card import (`/admin/cards`)**: `CardImportStudio` in the Cards panel (`ns-import/`). The `/admin/ns-sync` route was removed.
+- **Lore Cards Batch Generator (`/admin/cards`)**: `LoreCardBatchAdmin` in the Cards panel (`lore-cards/`). The `/admin/lore-cards/batch-generator` route was removed.
+- **Maps Admin (`/admin/maps`, `/admin/maps/editor`, `/admin/maps/style-editor`)**: World Studio panel, geo diagnostics and boundary review (`geoAdmin` router: `src/server/api/routers/geo/admin/`).
 
 ---
 
-## User Roles & RBAC (`/admin/membership`)
+## User Roles & RBAC
 
-**Router**: `src/server/api/routers/admin/membership.ts` & `roles/`
+**Routes**: `/admin/user-roles`, `/admin/users`, `/admin/membership`  
+**Router**: `src/server/api/routers/admin/users.ts`; role helpers in `src/lib/auth/` (`ability.ts`, `user-management-service.ts`, `system-owner-constants.ts`)
 
-| Role | Access Level | Permissions |
+System roles seeded by `user-management-service.ts` (lower level = more privilege):
+
+| Role | Level | Permissions |
 | :--- | :--- | :--- |
-| **SYSTEM_OWNER** | Superuser | Full system control, database operations, role assignment |
-| **SUPER_ADMIN** | High Admin | Manage all content, user roles, security audits, ban/unban |
-| **ADMIN** | Standard Admin | Edit reference data, approve map edits, resolve disputes |
-| **MODERATOR** | Content Review | Moderate ThinkPages/Forum posts, manage report queues |
-| **USER** | Player | Standard game and simulation access |
+| **owner** (System Owner) | 0 | Full system control; `SYSTEM_OWNER_IDS` are always treated as owners |
+| **admin** (Administrator) | 10 | Administrative access to the admin console and `adminProcedure` endpoints |
+| **user** (Member) | 100 | Standard game and simulation access |
+
+The admin layout (`src/app/admin/layout.tsx`) also admits a `staff` role name. There are no built-in `SUPER_ADMIN` or `MODERATOR` roles. `/admin/membership` manages membership tiers, not roles.
 
 ---
 
 ## Audit Logging & Bulk Operations
 
-All administrative mutations automatically write immutable entries to the `AuditLog` table with:
-- `userId`, `action`, `resourceType`, `resourceId`, `changes` (before/after JSON diff), `ipAddress`, and `timestamp`.
-- Bulk operations support CSV/JSON import, batch validation, and single-transaction rollbacks on schema violations.
+`adminProcedure` runs `auditLogMiddleware` (`src/server/api/trpc/middleware.ts`). It writes an `AuditLog` row only for high-security paths (procedure paths containing `execute`) and for failed calls; other admin calls are logged through `userLoggingMiddleware.admin`. Some routers (e.g. diplomatic scenarios, intelligence templates, military equipment) also write `AuditLog` rows directly.
+- `AuditLog` fields: `userId`, `action`, `target`, `details` (JSON string), `ipAddress`, `userAgent`, `success`, `error`, `timestamp`, `entityType`. There is no before/after diff column.
+- There is no generic CSV/JSON bulk import with transactional rollback; imports are per-feature (roster import in `/admin/countries`, card import in `/admin/cards`).
 
 ---
 
 ## Related Documentation
 
-- [Admin Endpoint Security Map](../ADMIN_ENDPOINT_SECURITY_MAP.md)
+- [Admin Endpoint Security Map](../reference/admin-endpoint-security-map.md)
 - [Database Models Reference](../reference/database.md)
-- [API Reference: Admin Routers](../reference/api-complete.md#admin-router)
+- [API Reference](../reference/api-complete.md)

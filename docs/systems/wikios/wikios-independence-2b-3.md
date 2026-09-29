@@ -1,14 +1,14 @@
-# WikiOS Independence & Native Architecture (Stages 2b & 3 Complete)
+# WikiOS Independence & Native Architecture (Stage 2b shipped, Stage 3 pending cutover)
 
-**Status:** 📀 Fully Shipped & In Production (Plan 170 & Plan 191 Complete)  
-**Package:** `src/lib/wiki-os/` (`@wikios/core`)  
+**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**: the nginx/`LocalSettings.php` work is staged in [`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md) and `scripts/ops/stage3-nginx-cutover.conf`, held for a launch decision (Sept 29, 2026).  
+**Package:** `src/lib/wiki-os/`  
 **Authority Model:** PostgreSQL Primary Store (`wiki_articles`, `wiki_revisions`, `wiki_links`, `wiki_assets`) with Headless MediaWiki Federation.
 
 ---
 
 ## The Decoupled Architecture
 
-With the completion of Plan 170 and Plan 191:
+With the completion of Plan 170 and Plan 191 (Stage 2b):
 
 - **PostgreSQL is 100% authoritative for internal WikiOS reads, writes, search, and assets.**
 - **4,685+ namespace-0 articles** and **4,685+ revisions** are stored natively in `wiki_articles` and `wiki_revisions`.
@@ -16,21 +16,27 @@ With the completion of Plan 170 and Plan 191:
 - **7,555+ media files** are registered in `wiki_assets` with MD5 shard paths and immutable edge caching.
 - **Sub-1.5ms Spotlight Search** is served via `NativeSearchService`.
 - **Sub-10ms Save Operations** commit directly to PostgreSQL first, dispatching non-blocking background queue tasks (`MediaWikiExportWorker`) to synchronize with upstream MediaWiki.
-- **MediaWiki is fully demoted to a headless conversion and external federation adapter.**
+- **MediaWiki is demoted to a headless render (`action=parse`), export, and recent-changes source in the app.** Its public web UI is still live until Stage 3 cuts over.
 
 ---
 
-## Stage 2b & Stage 3 Capabilities (Shipped)
+## Stage 2b Capabilities (Shipped)
 
 1. **`WikiRevision` Append-Only Ledger**:
-   - `id`, `articleId`, `wikitext`, `author`, `summary`, `minor`, `source`, `createdAt`.
+   - `id`, `articleId`, `mwRevId`, `wikitext`, `contentHtml`, `author`, `authorId`, `summary`, `minor`, `source`, `parentRevisionId`, `byteSize`, `byteDelta`, `createdAt`.
    - Indexed `(articleId, createdAt)` for instant sub-2ms revision lookups.
 2. **PostgreSQL Primary Save Pipeline**:
    - `ArticleRepository.saveArticle()` writes directly to PostgreSQL in <10ms, registers newly referenced images via `MediaAssetService`, updates `wiki_links`, and purges Cloudflare edge caches.
 3. **High-Performance Native Reader**:
    - Pre-compiled `contentHtml` serves reads directly from database indexes without runtime PHP overhead.
 4. **Sister-Wiki Federation**:
-   - Direct HTTP adapters (`http-reader.ts`) connect to external wikis (`iiwiki`, `althistory`) with automatic fallback and parallel search dispatch.
+   - Direct HTTP adapters (`http-reader.ts`) connect to external wikis (`iiwiki`, `althistory`) with a circuit breaker and parallel search dispatch. Their pages open read-only via `/wiki/[slug]?source=…` (Sept 2026).
+5. **Direct-edit capture**:
+   - Edits made on classic MediaWiki are synced into PostgreSQL from `recentchanges` by `src/lib/wiki-os/services/auto-sync-service.ts`, run by the `wiki-recentchanges` cron job (`src/server/cron/jobs.ts`) and the `/api/wikios/inbound-sync` webhook.
+
+> The sections below are the original Stage 2b/3 proposal, kept for history. Stage 2b shipped as a
+> PostgreSQL-first design (MediaWiki is no longer canonical), and the open question was answered **yes**
+> (see item 5).
 
 ### Effort / risk
 - ~1 model + ~3 read endpoints rewired + ~10 lines in the write path. Additive table (safe push).
@@ -46,7 +52,7 @@ If no (WikiOS-originated edits only + organic read backfill), it's much lazier. 
 
 ---
 
-## Stage 3 — Render-service isolation
+## Stage 3 — Render-service isolation (pending)
 
 **Goal:** the public only ever sees WikiOS; MediaWiki is reachable only as an API/render backend.
 This is the actual "demote MediaWiki to headless" step, and it's mostly **ops, not app code**.

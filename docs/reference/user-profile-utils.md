@@ -1,10 +1,12 @@
 # User Profile Utils - Usage Guide
 
+> **OBSOLETE (verified 2026-09-29):** `src/lib/user-profile-utils.ts` was deleted on 2026-06-14 in commit `312b73018` ("remove 475 unreachable files") and none of the functions below (`getUserProfile`, `getUserProfiles`, `getUserDisplayName`, `formatUserDisplay`, `preloadUserProfiles`) exist anywhere in `src/`. Author display now goes through the tRPC `users` router (e.g. `users.resolveWikiAuthor`) and per-feature queries. This page is kept for history only and is a candidate for `docs/archive/`.
+
 ## Overview
 The `user-profile-utils.ts` module provides efficient user profile lookup with automatic caching for displaying user/country names in ThinkTanks, ThinkShare, and other components.
 
 ## File Location
-`/ixwiki/public/projects/ixstats/src/lib/user-profile-utils.ts`
+`src/lib/user-profile-utils.ts` _(deleted)_
 
 ## Key Functions
 

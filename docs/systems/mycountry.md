@@ -1,14 +1,14 @@
 # 🏛️ MyCountry Suite — Executive Simulation & Governance
 
-**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `GOVERN` | **Domain Accent:** Amber Gold (`#F59E0B` / `--color-amber-500`)  
 **Route:** `/mycountry` | **Status:** 📀 Gold Master (100% Ready)  
 
 The MyCountry Suite provides sovereign leaders with an executive command environment. Built around the single-page **Command Surface** architecture, it unifies decision-making, foreign relations, macroeconomic planning, and legislative governance into an action-first workflow.
 
-> **Active Public Domains:** **Identity**, **Economy**, **Politics**, and **Diplomacy**.  
-> *(Defense & Intelligence modules are currently in developer preview and gated from public navigation).*
+> **Open to every player:** **Overview/Executive**, **Economy**, **Politics**, and **Diplomacy** (`src/lib/auth/ability.ts`).  
+> *(**Defense** — which also serves `/mycountry/intelligence` — and the **Map Editor** are premium-gated: locked behind `PremiumPreviewFrame`, and hidden from the sidebar for non-premium users unless an admin enables the teaser via `api.admin.getNavigationSettings`.)*
 
 ---
 
@@ -18,16 +18,16 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│               COMMAND SURFACE (src/components/mycountry/)              │
+│            COMMAND SURFACE (src/components/mycountry/shell/)           │
 ├───────────────────────────────────┬────────────────────────────────────┤
 │ 1. Header & Actions Strip         │ Compact StateSeal, Name, Leader,   │
-│    CommandNavToggle.tsx           │ Primary "Declare Directive" CTA    │
+│    headers/UnifiedGlassCommandBar │ Primary "Declare Directive" CTA    │
 ├───────────────────────────────────┼────────────────────────────────────┤
 │ 2. Telemetry Standing Bands       │ Approval, Stability, CivCap Bands  │
 │    StandingBands.tsx              │ Vitality Rings & Composite Scores  │
 ├───────────────────────────────────┼────────────────────────────────────┤
 │ 3. Main Action Feed               │ Realtime Agenda, Horizon Strip,    │
-│    ExecutiveAgenda.tsx            │ Crisis Priority Hero, Issue Briefs │
+│    ExecutiveHome.tsx              │ Crisis Priority Hero, Issue Briefs │
 ├───────────────────────────────────┼────────────────────────────────────┤
 │ 4. Domain Command Surfaces        │ Full-page modes for Diplomacy,     │
 │    DomainSurface.tsx              │ Defense, Politics, and Economy     │
@@ -38,6 +38,7 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 ```
 
 ### Key Component Architecture
+All under `src/components/mycountry/shell/` unless noted.
 - `CommandSurface.tsx` – Master viewport wrapper and shell orchestration
 - `ExecutiveHome.tsx` – Action-first dashboard housing telemetry and priority issues
 - `ExecutiveAgenda.tsx` – 7-day IxTime horizon calendar and commitment tree
@@ -45,9 +46,10 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 - `DomainSurface.tsx` – Specialized domain view for Diplomacy, Defense, Politics, Economy
 - `DomainContextRail.tsx` – Contextual KPI trends and event activity logs
 - `DrillSheets.tsx` – Slide-over sheets for deep parameter adjustment
-- `IssueDetailBrief.tsx` – 4-branch issue resolution brief modal
-- `ExecutiveConsole.tsx` – Directive package composer and diff preview console
-- `CommitmentsAgendaRail.tsx` – Active directive rollout tree rail
+- `shared/headers/IssueDetailBrief.tsx` – 4-branch issue resolution brief modal
+- `ExecutiveConsole.tsx` – Directive package composer and diff preview console (wraps `shared/primitives/IntentComposer.tsx`)
+- `rails/` – Per-domain context rails (`EconomyRail`, `PoliticsRail`, `RelationsRail`, `DefenseRail`)
+- `MyCountryRouter.tsx` / `MyCountrySidebarNav.tsx` – Single-page section router and nav (premium gating lives here)
 
 ---
 
@@ -55,7 +57,7 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 
 A foundational rule of the platform:
 - **Frontend (UI)**: **Directives** is the universal user-facing brand across all UI components, buttons, and dialogs (`"Declare Directive"`, `"Tune Custom Directive"`, `"Executive Directives Agenda"`).
-- **Backend (Engine)**: The **Statecraft Simulation Engine** (`src/lib/statecraft-*.ts`, `src/server/api/routers/intent.ts`) powers intent parsing, power broker alignments, civil capacity throughput, and recon research.
+- **Backend (Engine)**: The **Statecraft Simulation Engine** (`src/lib/statecraft/*.ts`, `src/lib/intent/*.ts`, `src/server/api/routers/intent.ts`) powers intent parsing, power broker alignments, civil capacity throughput, and recon research.
 
 ```mermaid
 sequenceDiagram
@@ -64,50 +66,51 @@ sequenceDiagram
     participant Router as intentRouter
     participant Engine as Statecraft Engine
     participant Ledger as CountryEventSpine
-    participant Feed as ThinkPages News
+    participant Feed as Canon Feed / ThinkPages
 
     Player->>UI: Select Goal & Tune Package (Measured/Moderate/Extreme)
     UI->>Router: intent.commit(goal, package)
-    Router->>Engine: Validate CivCap, Cooldowns & Locked Levers
-    Engine->>Ledger: Apply Clamped Stats Modifiers
-    Engine->>Engine: Spawn Intent Resistance Issues (if configured)
-    Ledger->>Feed: Broadcast Narrative Headline
+    Router->>Engine: Check weekly cap (3 per IxTime week) & cooldown
+    Engine->>Ledger: Apply Clamped Stats Modifiers (+ bounded budget deltas)
+    Engine->>Engine: Spawn Intent Resistance Issues (deterministic)
+    Ledger->>Feed: Change-log rows surface in mycountry.getCanonFeed
     Router-->>Player: Return Committed Intent & Updated Agenda
+    Note over Router,Feed: On completion, a ThinkPages summation draft is generated (generateSummationDraft)
 ```
 
 ### Civil Service Capacity (CivCap)
 - Directives and active policies consume CivCap (`Allocated / Total`).
 - Reactive policies (created in response to issues or broker requests) receive a **25% CivCap upkeep discount** and **15% maintenance discount**.
-- Over-extended CivCap activates **Information Fog**, masking exact numeric effects and presenting qualitative bands (*"Mild Positive"*, *"Strong Negative"*).
+- Over-extended CivCap (or government effectiveness below 45%) raises **Information Fog** warnings in the policy creator (`PolicyReconBanner.tsx`: *"Preview estimates may be inaccurate"*, *"Detail Tracking Obscured"*). Numeric effects are not yet masked into qualitative bands.
 
 ---
 
 ## Grounded Issue Generator & Delegation Engine
 
-The National Issues engine (`src/lib/national-issues-engine.ts`, `src/server/api/routers/national-issues/`) generates real-time decisions:
+The National Issues engine (`src/lib/national-issues/`, `src/server/api/routers/national-issues/`) generates real-time decisions:
 
-1. **Focused Grounding**: `buildCountrySnapshot` resolves live PostGIS `ST_Touches` neighbors, active cabinet ministers, capital city, and trade partners to dynamically inject real names (`{{neighborName}}`, `{{ministerName}}`, `{{capitalCity}}`) into issue templates.
+1. **Focused Grounding**: `buildCountrySnapshot` (`country-snapshot.ts`, `neighbors.ts`) resolves live PostGIS `ST_Touches` neighbors, active cabinet ministers, capital city, and trade partners to dynamically inject real names (`{{neighborName}}`, `{{ministerName}}`, `{{capitalCity}}`) into issue templates.
 2. **4-Branch Issue Brief Resolution**:
-   - `1a. Delegate`: Consumes 15 CivCap to hand off non-urgent issues to the civil service for 5 game days.
+   - `1a. Delegate`: `nationalIssues.dismiss` — consumes 15 CivCap to hand off non-urgent issues to the civil service for 5 IxTime days.
    - `1b. Resolve Brief`: Direct action picking one of the evaluated response options.
-   - `1c. Set Cabinet Meeting`: Schedules deliberation (+7 IxTime days) to bypass slot cooldowns.
+   - `1c. Set Cabinet Meeting`: `quickActions.createMeeting` schedules a cabinet meeting on next week's agenda.
    - `1d. Make Directive`: Promotes the issue directly into the `IntentComposer` to draft a formal national directive.
 3. **Intent ↔ Issues Resistance Rhythm**: Committing extreme directives can spawn linked resistance issues, requiring leaders to manage political pushback before completing national goals.
 
 ---
 
-## Cabinet Meetings & Decisions Subsystem
+## Cabinet Meetings Subsystem
 
-- Managed via `src/server/api/routers/quickactions/meetings.ts` and `src/components/executive/MeetingDetailModal.tsx`.
-- Finalizing a meeting automatically completes the associated `ActivitySchedule`, recording strategic, budget, or policy decisions and logging consequences through the `CountryEventSpine`.
+- Scheduling via `src/server/api/routers/quickactions/meetings.ts` (`createMeeting`, which also writes an `ActivitySchedule` row) and `src/server/api/routers/meetings/` (`createMeeting`, `getMeetings`, `addAgendaItem`, `recordAttendance`, officials). UI: `src/components/executive/actions/MeetingScheduler.tsx`.
+- Meetings are **schedule-only today**: the complete/decide/implement mutations were deleted as zero-caller procedures (plans 312/332), so meeting outcomes are not yet recorded or routed through the `CountryEventSpine`.
 
 ---
 
 ## Vitality Tracking & Governance Ledger
 
 - **Server-Side Computation**: `calculateVitalityScores` in `src/server/shared/mycountry-helpers.ts` computes Economic Vitality, Population Wellbeing, Diplomatic Standing, and Governmental Efficiency. Clients cannot forge vitality numbers.
-- **Time-Series Snapshots**: Periodic `VitalitySnapshot` records provide historical trend charts.
-- **Country Change Log Timeline**: Every stat modification is permanently recorded in an immutable ledger, ensuring total transparency against unearned stat inflation ("Burg's Guardrail").
+- **Trend History**: Trend charts read `HistoricalDataPoint` rows (`api.historical.getCountryHistory`). The `VitalitySnapshot` model exists but nothing writes it yet.
+- **Country Change Log**: Stat changes routed through `CountryEventSpine.recordCountryEvent` (`src/lib/activity/event-spine.ts` — issues, intents, policy maintenance) are written to `CountryChangeLog` and surfaced on the overview via `mycountry.getCanonFeed` ("Burg's Guardrail"). Not every mutating action goes through the spine yet.
 
 ---
 
@@ -117,4 +120,4 @@ The National Issues engine (`src/lib/national-issues-engine.ts`, `src/server/api
 - [Community Feedback Audit](./community-feedback-audit.md)
 - [Economic Calculations Guide](./calculations.md)
 - [Diplomacy System Guide](./diplomacy.md)
-- [API Reference: MyCountry & Intent Routers](../reference/api-complete.md#mycountry-router)
+- [API Reference: MyCountry & Intent Routers](../reference/api-complete.md#operations)

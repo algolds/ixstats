@@ -1,12 +1,12 @@
-# Builder Overview (v3)
+# Builder Overview (v4)
 
-**Last updated:** August 2026
+**Last updated:** September 2026
 
 The MyCountry Builder (`/builder`) is a standalone core system that lets a signed-in user create a new nation — or edit an existing one — by configuring its foundation, identity, government, and economics before committing to the live MyCountry simulation. The builder is a single-page router: all sections render in place via `useState` + `window.history.pushState()` (no Next.js route transitions), with a `popstate` listener for back/forward and deep links via the `?section=` query param.
 
 ## Builder flow
 
-Sections are defined in `lib/builder-theme.ts` (`BuilderSection` / `BUILD_STEPS`). The build flow proceeds in order; once foundation is complete, the remaining sections are freely accessible.
+Sections are defined in `lib/builder-theme.ts` (`BuilderSection` / `BUILD_STEPS`); the header stepper (`HEADER_NAV_STEPS`) shows four steps — Foundation (foundation + identity), Government, Economics, Preview & Create. The build flow proceeds in order; once foundation is complete, the remaining sections are freely accessible. The foundation step is skipped in edit mode and when starting from scratch or an import.
 
 | Section | Purpose | Notable sub-tabs |
 | --- | --- | --- |
@@ -21,12 +21,13 @@ On commit, `api.countries.createCountry` (create mode) or `api.countries.updateC
 
 ## Key features
 
-- **Atomic components** — Government, economic, and tax component catalogs (with synergies/conflicts) drive both setup and live simulation. Sourced from `atomicGovernment`, `atomicEconomic`, and `atomicTax` routers; selectors live under `components/enhanced/`.
+- **Atomic components** — Government, economic, and tax component catalogs (with synergies/conflicts) drive both setup and live simulation. The catalogs are static client data (`src/components/mycountry/domains/government/atoms/`, `src/lib/economy/data/`, `src/lib/government/tax/atomic-tax-components.ts`); selectors live under `components/enhanced/`. Synergies/conflicts are re-checked server-side on save (`src/lib/government/synergy.ts`).
 - **Wiki import** — `ImportSection` searches a wiki and parses infoboxes/flags to pre-fill a build; `WikiDeepScanPanel` runs a deeper scan. Backed by `api.countries.searchWiki`, `api.countries.parseInfobox`, `api.countries.getWikiPageImages`, and `api.wikiCache.builderDeepScan` (cached).
 - **Economy inputs** — Builder economy state is persisted and synced server-side, with cross-syncing between economy, government, and tax so changes stay consistent.
-- **Economic archetypes** — Reusable economy presets via `api.economicArchetypes.*`.
+- **Economic archetypes** — Reusable economy presets (`src/lib/economy/archetypes/`); usage tracked via `api.economicArchetypes.incrementArchetypeUsage`.
 - **Custom government types** — User-defined government types and field values via `api.customTypes.*`.
-- **Policies** — Policy selection and effect calculation via `api.policies.*`.
+- **Companion guide** — `BuilderGuideSheet` (Milestones / Rules tabs) opened from the studio header and auto-opened on first visit to Government and Economics (`builder-guide-context.tsx`).
+- **Drafts & autosave** — `api.builderDraft.*` (`useBuilderPersistence`) plus autosave history in edit mode.
 
 ## Architecture
 
@@ -36,32 +37,32 @@ On commit, `api.countries.createCountry` (create mode) or `api.countries.updateC
 | `import/page.tsx` | Legacy route — redirects to `/builder?section=import` |
 | `components/BuilderRouter.tsx` | Single-page router: section state, URL sync, auth guard, layout |
 | `components/enhanced/AtomicBuilderPage.tsx` | Inner build-step content (foundation → preview), create/edit submit logic |
-| `components/enhanced/` | Atomic selectors, economy builder, national identity, government preview, context |
+| `components/enhanced/` | Atomic selectors, economy builder, national identity, government preview, context, `steps/`, `tabs/`, `sections/` (step renderer, preview) |
 | `components/sections/ImportSection.tsx` | Wiki import flow |
 | `import/_components/` | `EligibleCountryGrid`, `WikiDeepScanPanel`, and related import UI |
-| `sections/` | Step section components (CoreIndicators, Economy, Labor, Demographics, FiscalSystem, GovernmentStructure) |
-| `components/` | Sidebar layout, notch bar, step nav, preview widget, vitality rings, welcome modal |
-| `hooks/` | `useBuilderActions`, `useBuilderAlerts`, `useBuilderState` |
+| `components/` | Sidebar layout, studio header/stepper, step footer, guide sheet + context, mode toggle, welcome modal, editor save bar |
+| `hooks/` | `useBuilderState`, `useBuilderActions`, `useBuilderAlerts`, `useBuilderPersistence`, `useBuilderSync`, `useBuilderEditMode`, `useEditChanges`, `useStepCompletion`, `useBuilderKeyboardShortcuts` |
 | `lib/builder-theme.ts` | Section/step definitions, theming, section↔legacy-step mapping |
-| `data/archetypes/` | Archetype/preset data |
+| `data/` | Guide content (`contextual-help.ts`, `guide-rules.ts`, `onboarding-tutorial.ts`) |
+| `lib/` | Theme, wiki parsers/assembler, economy defaults, field importance, edit-change diffing |
+| `primitives/` | `CountryGrid`, field indicators, advanced-fields disclosure |
 
-State is provided by `BuilderStateContext` (`components/enhanced/context/`) with `BuilderFilterProvider` layered on top; theming follows the MyCountry amber/gold identity with per-section accents.
+State is provided by `BuilderStateProvider` (`components/enhanced/context/`) with `BuilderFilterProvider` and `BuilderGuideProvider` layered on top; theming follows the MyCountry amber/gold identity with per-section accents.
 
 ## Data sources (verified `api.*` calls)
 
 | Router | Procedures used |
 | --- | --- |
-| `countries` | `createCountry`, `updateCountry`, `getByIdAtTime`, `getEligibleCountries`, `searchWiki`, `parseInfobox`, `getWikiPageImages` |
-| `mycountry` | `updateCountry` |
-| `economics` | `getEconomyBuilderState`, `saveEconomyBuilderState` |
-| `government` | `getByCountryId`, `getComponents` |
+| `countries` | `createCountry`, `updateCountry`, `getByIdAtTime`, `getEligibleCountries`, `getEditorRelations`, `searchWiki`, `parseInfobox`, `getWikiPageImages` |
+| `builderDraft` | `get`, `save`, `clear` |
+| `economics` | `getEconomyBuilderState`, `autoSaveEconomyBuilder` |
+| `government` | `getByCountryId` |
 | `taxSystem` | `getByCountryId` |
-| `policies` | `calculatePolicyEffects`, `savePolicySelections` |
-| `atomicGovernment` / `atomicEconomic` / `atomicTax` | `listComponents` |
-| `economicArchetypes` | `getAllArchetypes`, `incrementArchetypeUsage` |
+| `economicArchetypes` | `incrementArchetypeUsage` |
+| `autosaveHistory` | `getAutosaveHistory`, `getAutosaveStats` |
 | `customTypes` | `getUserCustomGovernmentTypes`, `getFieldSuggestions`, `upsertCustomGovernmentType`, `upsertFieldValue` |
 | `wikiCache` | `builderDeepScan` |
-| `countryGeo` | `upsertCity` |
+| `countryGeo` | `getCountryGeoBundle`, `upsertCity` |
 
 All routers are registered in `src/server/api/root.ts`.
 
@@ -73,6 +74,6 @@ All routers are registered in `src/server/api/root.ts`.
 
 ## Maintenance checklist
 
-- Update `docs/systems/builder.md` and `/help/getting-started/*` after changing steps or data contracts.
+- Update `docs/systems/builder.md` and `src/content/help/getting-started/*` after changing steps or data contracts.
 - Keep section definitions in `lib/builder-theme.ts` in sync with router/sidebar UI.
 - Ensure new fields persist to Prisma and surface in MyCountry; include backfill logic for required fields.

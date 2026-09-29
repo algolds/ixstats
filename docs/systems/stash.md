@@ -2,9 +2,9 @@
 
 **Parent App Suite:** WikiOS (`WIKIOS_VERSION = 1`)  
 **Subsystem:** Stash (`STASH_VERSION = 1`)  
-**Primary Action:** `STASH` | **Domain Accent:** Slate Cyan (`#06B6D4` / `--color-cyan-500`)  
-**Route:** `/stashes` | **Status:** 📀 Gold Master (100% Ready)  
-*(Note: Prisma models retain the `LoreStash` schema name for database stability)*  
+**Primary Action:** `STASH` | **Domain Accent:** Crimson Rose (`#f43f5e` / rose-500, see [stash-style-guide.md](stash-style-guide.md))  
+**Route:** `/stashes` | **Status:** Release Candidate (platform 1.4.0)  
+*(Note: Prisma models are `Stash` / `StashItem` / `StashAnnotation`; the tables keep the legacy `lore_stash*` names)*  
 
 ---
 
@@ -45,15 +45,14 @@ Users organize items into custom collections (e.g. *Treaties*, *Fleet Doctrine*,
 1. **Articles Tab**:
    - Saves MediaWiki and WikiOS articles.
    - Automatically resolves lead image thumbnails via `/api/mediawiki/ixwiki/` proxy.
-   - Tracks save date, word count, and user note.
+   - Tracks save date and user note.
    - Shows attached highlight badges.
 2. **Quotes & Highlights Tab**:
    - Two-way sync with the WikiOS Margin annotation system.
    - Stores selected text, color highlights, and lore notes.
    - Provides a one-click copy button and direct anchor link back to the article section.
 3. **Media Tab**:
-   - Saves Wikimedia Commons graphics and user image uploads.
-   - Shows aspect ratio tags (`16:9`, `4:3`, `1:1`, `Square`, `Portrait`).
+   - Saves images from the WikiOS media repository (stored as `commons:`-prefixed items).
    - Includes one-click wikitext snippet copying (`[[File:...|thumb]]`) and full-screen lightbox inspection.
 4. **Discussions Tab**:
    - Bookmarks forum threads from regional and alliance boards.
@@ -62,7 +61,7 @@ Users organize items into custom collections (e.g. *Treaties*, *Fleet Doctrine*,
 ### 2.3 Universal Popover Management
 In accordance with Apple Design standards:
 - **Collection Creation**: Triggered via `CreateStashPopover.tsx`, opening an anchored popover with zero page layout shift.
-- **Collection Settings**: Managed via `StashSettingsMenu.tsx`, providing inline renaming, 8-swatch color tag switching, share link copying, Markdown/JSON exporting, and destructive deletion with safety confirmation.
+- **Collection Settings**: Managed via `StashSettingsMenu.tsx`, providing inline renaming, 8-swatch color tag switching, share link copying (copies a `/stashes?stash=<id>` URL; the page does not read the parameter yet, and stashes are private to their owner), Markdown/JSON exporting, and destructive deletion with safety confirmation.
 
 ### 2.4 Dual Export Engine
 Collections can be exported at any time:
@@ -88,8 +87,8 @@ Collections can be exported at any time:
 │                        SERVER & DATABASE LAYER                         │
 ├────────────────────────────────────────────────────────────────────────┤
 │ • Router: src/server/api/routers/wikios/stash.ts                      │
-│ • Bridge: src/lib/wiki-os/adapters/mediawiki/bridge/mysql-reader.ts     │
-│ • Models: LoreStash, LoreStashItem, PageAnnotation (PostgreSQL)       │
+│ • Annotations: src/server/api/routers/wikios/watchlist-annotations.ts │
+│ • Models: Stash, StashItem, StashAnnotation (PostgreSQL)              │
 └────────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
@@ -107,88 +106,92 @@ Collections can be exported at any time:
 
 ## 4. Database Schema Reference
 
-The database models are defined in `prisma/schema/wiki.prisma`:
+The database models are defined in `prisma/schema/wiki.prisma`. The Prisma models are named `Stash`, `StashItem`, and `StashAnnotation`; the underlying tables keep the legacy `lore_` prefix (`lore_stashes`, `lore_stash_items`, `lore_stash_annotations`).
 
-### LoreStash
+### Stash (`lore_stashes`)
 ```prisma
-model LoreStash {
-  id          String          @id @default(cuid())
-  userId      String
-  name        String          @default("My Stash")
-  color       String          @default("#f43f5e")
-  icon        String?
-  isDefault   Boolean         @default(false)
-  order       Int             @default(0)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-
-  items       LoreStashItem[]
-  annotations PageAnnotation[]
+model Stash {
+  id        String      @id @default(cuid())
+  userId    String
+  name      String      @default("My Stash")
+  color     String      @default("#3b82f6")
+  icon      String?
+  isDefault Boolean     @default(false)
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     StashItem[]
 
   @@unique([userId, name])
   @@index([userId])
+  @@index([userId, isDefault])
+  @@map("lore_stashes")
 }
 ```
 
-### LoreStashItem
+### StashItem (`lore_stash_items`)
 ```prisma
-model LoreStashItem {
-  id          String    @id @default(cuid())
+model StashItem {
+  id          String            @id @default(cuid())
   stashId     String
-  pageTitle   String
+  pageTitle   String            // "commons:" prefix = image, "forum:thread:" prefix = thread
   pageSlug    String
-  contentType String    @default("article") // "article" | "image" | "thread"
-  note        String?   @db.Text
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now())
-
-  stash       LoreStash @relation(fields: [stashId], references: [id], onDelete: Cascade)
+  articleId   String?           // optional link to WikiArticle
+  contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
+  contentId   Int?              // XenForo thread_id or post_id for forum items
+  note        String?
+  order       Int               @default(0)
+  savedAt     DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  stash       Stash             @relation(fields: [stashId], references: [id], onDelete: Cascade)
+  annotations StashAnnotation[]
 
   @@unique([stashId, pageTitle])
-  @@index([stashId])
+  @@map("lore_stash_items")
 }
 ```
 
-### PageAnnotation (Margin Sync)
+### StashAnnotation (Margin highlights, `lore_stash_annotations`)
 ```prisma
-model PageAnnotation {
-  id           String     @id @default(cuid())
-  stashId      String
-  pageTitle    String
-  pageSlug     String
-  selectedText String     @db.Text
-  comment      String?    @db.Text
-  color        String     @default("yellow")
-  startOffset  Int?
-  endOffset    Int?
-  context      String?    @db.Text
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+model StashAnnotation {
+  id             String    @id @default(cuid())
+  itemId         String
+  anchorSelector String
+  anchorOffset   Int
+  focusSelector  String
+  focusOffset    Int
+  selectedText   String
+  comment        String?
+  color          String    @default("#fbbf24")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  item           StashItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  stash        LoreStash  @relation(fields: [stashId], references: [id], onDelete: Cascade)
-
-  @@index([stashId, pageTitle])
+  @@index([itemId])
+  @@map("lore_stash_annotations")
 }
 ```
+
+Annotations hang off a `StashItem`. When a highlight is made on a page that is not stashed yet, `addAnnotation` creates the item in the user's default stash first.
 
 ---
 
 ## 5. tRPC API Reference
 
-All operations are grouped under `api.wikios.*` in `src/server/api/routers/wikios/stash.ts`:
+All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use `api.forum.stashThread` / `unstashThread` / `isThreadStashed` / `getStashedThreads`.
 
 | Procedure | Type | Input | Description |
 | :--- | :--- | :--- | :--- |
 | `getStashes` | Query | `void` | Returns all collections for the active user with item counts. |
-| `getStashItems` | Query | `{ stashId?: string }` | Returns articles, images, and threads for the specified collection. |
-| `createStash` | Mutation | `{ name: string, color?: string }` | Creates a new collection with preset color tag. |
-| `updateStash` | Mutation | `{ id: string, name: string, color: string }` | Renames collection or updates theme color. |
+| `getStashItems` | Query | `{ stashId: string, limit?, cursor? }` | Paginated articles, images, and threads for the specified collection. |
+| `createStash` | Mutation | `{ name: string, color: string, icon?: string }` | Creates a new collection (max 25 per user). |
+| `updateStash` | Mutation | `{ id: string, name?, color?, icon? }` | Renames collection or updates color/icon. |
 | `deleteStash` | Mutation | `{ id: string }` | Deletes a non-default collection and cascades to its items. |
-| `stashPage` | Mutation | `{ pageTitle: string, stashId?: string, contentType?: string, note?: string }` | Saves an article, image, or thread. |
+| `stashPage` | Mutation | `{ pageTitle: string, stashId?: string, contentType?: string, contentId?: number, … }` | Saves an article, image, or thread (default stash if none given). |
 | `unstashPage` | Mutation | `{ pageTitle: string, stashId?: string }` | Removes item from collection. |
 | `isStashed` | Query | `{ pageTitle: string }` | Checks whether active user has stashed this page. |
-| `getAnnotations` | Query | `{ pageTitle?: string, stashId?: string }` | Fetches clipped quotes and Margin highlights. |
-| `addAnnotation` | Mutation | `{ pageTitle, pageSlug, selectedText, comment?, color?, context? }` | Clips text excerpt to active collection. |
+| `getAnnotations` | Query | `{ pageTitle: string }` | Fetches clipped quotes and Margin highlights for a page. |
+| `addAnnotation` | Mutation | `{ itemId? \| pageTitle?, anchorSelector, anchorOffset, focusSelector, focusOffset, selectedText, comment?, color? }` | Clips a text excerpt (creates the item in the default stash if needed). |
 | `deleteAnnotation` | Mutation | `{ id: string }` | Deletes clipped quote. |
 | `getArticleThumbnails` | Query | `{ titles: string[] }` | Batch resolves lead article image thumbnails. |
 

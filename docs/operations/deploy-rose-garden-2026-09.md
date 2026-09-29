@@ -161,7 +161,7 @@ verifies in Settings.) Then run the deploy script — its `db push` is now a no-
 ```
 
 The script installs dependencies; the new ones are `@clerk/backend` and `jsdom`, and `bun.lock` is updated. It then
-generates the Prisma client, runs `db push`, builds, reloads PM2 with `--update-env`, and starts the app.
+generates the Prisma client, runs `db push`, builds (plus `scripts/deploy-ixworld.sh`), reloads PM2 with `--update-env`, and starts the app.
 If `db push` reports possible data loss, **stop and read the message**. It means a schema change would drop data,
 and you should not add `--accept-data-loss` blindly.
 
@@ -169,8 +169,8 @@ After it finishes, confirm the processes picked up production mode:
 
 ```bash
 pm2 jlist | python3 -c "import sys,json;[print(p['name'],p['pm2_env'].get('NODE_ENV')) for p in json.load(sys.stdin) if p['name'].startswith('ixstats')]"
-pm2 logs ixstats-cron --lines 30 --nostream     # expect "no jobs enabled" and no import errors
-pm2 logs ixstats-ws --lines 30 --nostream       # expect the ThinkPages socket + Redis subscriber ready
+pm2 logs ixstats-cron --lines 30 --nostream     # expect "CRON_ENABLED_JOBS is empty — no jobs scheduled" and no import errors
+pm2 logs ixstats-ws --lines 30 --nostream       # expect "[WS] ✓ ThinkPages WebSocket initialized" and no "[ThinkPagesBridge] Redis disabled" warning
 ```
 
 `ixstats-ixtwitter` already points at `scripts/run-ixtwitter-sync.ts`. `server.mjs` no longer schedules any jobs.
@@ -250,6 +250,10 @@ cd /ixwiki/public/projects/ixstats
 git checkout -B development <commit noted in step 1>
 ./scripts/deploy-production.sh
 ```
+
+The deploy script re-fetches `master/development` and hard-resets to it, so this restores the noted commit only while
+it is still the tip of `development` on the remote. If that branch has moved, push a rollback branch at the noted commit
+and check that out instead.
 
 The schema changes are additive, so old code runs against them, except the `WikiRevision` dedupe, which removed
 duplicate rows, and the Realms push, which **dropped** `world_configs` and `territory_claims` (old code's admin

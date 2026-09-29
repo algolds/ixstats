@@ -53,7 +53,7 @@ Historically, fragments of the design system were referred to by legacy names:
 
 ## 2. Volumetric Z-Axis Depth Scale
 
-Facet organizes all UI elements along a physical Z-axis. Instead of arbitrary ad-hoc z-index values, components must strictly adhere to the volumetric depth scale defined in `src/styles/facet/tokens.css`:
+Facet organizes all UI elements along a physical Z-axis. Instead of arbitrary ad-hoc z-index values, components must strictly adhere to the volumetric depth scale. The canonical `--z-*` values are defined in `src/styles/themes.css`; `src/styles/facet/core.css` exposes them as the `--z-depth-*` aliases below (plus `--z-depth-overlay` and `--z-depth-command`):
 
 | CSS Variable | Depth Value | Z-Index | UI Category & Elements |
 |---|---|---|---|
@@ -109,13 +109,13 @@ Facet uses **nested blur compounding** to maintain visual legibility against com
 | `.facet-hierarchy-parent` | Level 1 (Shell) | `8px` | `120%` | `rgba(255, 255, 255, 0.08)` | `rgba(255, 255, 255, 0.90)` |
 | `.facet-hierarchy-child` | Level 2 (Card) | `16px` | `150%` | `rgba(255, 255, 255, 0.10)` | `rgba(255, 255, 255, 0.95)` |
 | `.facet-hierarchy-interactive` | Level 3 (Input/Row) | `24px` (`32px` on hover) | `180%` (`200%` on hover) | `rgba(255, 255, 255, 0.15)` | `rgba(255, 255, 255, 0.98)` |
-| `.facet-hierarchy-modal` | Level 4 (Modal) | `32px` | `200%` | `rgba(18, 20, 24, 0.85)` | `rgba(255, 255, 255, 0.98)` |
+| `.facet-modal` (depth-4 `FacetContainer`; no `.facet-hierarchy-modal` class) | Level 4 (Modal) | `32px` | `200%` | `rgba(18, 20, 24, 0.85)` | `rgba(255, 255, 255, 0.98)` |
 
 ---
 
 ## 4. Physical Materials & Adaptive Textures
 
-Facet defines four tactile surfaces in `src/styles/facet/materials.css` that react dynamically to pointer coordinates (`--pointer-x`, `--pointer-y`, `--pointer-offset-x`, `--pointer-offset-y`):
+Facet defines four tactile surfaces in `src/styles/facet/physics.css` that react dynamically to pointer coordinates (`--pointer-x`, `--pointer-y`, `--pointer-offset-x`, `--pointer-offset-y`):
 
 ### 1. Satin (`.facet-material-satin`)
 - **Visual**: Volumetric translucent glass backing with a smooth pointer-following sheen highlight.
@@ -166,7 +166,7 @@ High-opacity white edge glares appear distracting in dark mode. Facet enforces c
 > [!IMPORTANT]
 > Pseudo-element blurs and double-layer masks on editable text fields cause severe input latency and typing lag.
 - All `input`, `textarea`, and `[contenteditable]` elements must use `.facet-refraction-none` (`display: none !important` on `::before`/`::after`).
-- Backdrop blur on editable inputs is capped at `4px` (`--blur-subtle`).
+- Backdrop blur on editable inputs is capped at `--blur-subtle` (`8px`) with saturation reset to `100%`.
 
 ---
 
@@ -360,7 +360,7 @@ export function useDirectiveNotification() {
 
   const notifySuccess = (title: string, message: string) => {
     // Automatically plays soundEffects.success() and renders in Halo
-    notify.success({ title, message });
+    notify.success(title, message);
   };
 
   return { notifySuccess };

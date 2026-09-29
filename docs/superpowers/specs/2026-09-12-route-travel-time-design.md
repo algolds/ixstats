@@ -1,7 +1,7 @@
 # Route Travel Time & Speed Customization Design Spec
 
 **Date**: 2026-09-12  
-**Status**: Approved & In Progress  
+**Status**: Implemented (Phase 1 and most of the Phase 2 preview) — engine `src/lib/economy/travel-time.ts`; sea routes gained current/wind-aware estimates in plan 049 (`34487789a`)  
 **Authors**: Antigravity & User  
 **Scope**: Transport Network Physics, Travel Time Engine, Map Editor UI, Prisma Schema
 
@@ -38,7 +38,7 @@ model TransportRoute {
   costBillion       Float?   // construction cost estimate
   terrainDifficulty Float?   // 0-1, computed from elevation changes along route
   lengthKm          Float?   // total route length
-  worldId           String   @default("default")
+  realmId           String   @default("default") @map("worldId")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   ...
@@ -48,7 +48,7 @@ model TransportRoute {
 ### B. Fallback Hierarchy
 1. `route.speedKmh` (first-class column)
 2. `(route.properties as any)?.speed_kmh` (legacy JSON fallback)
-3. `ROUTE_CONFIGS[routeType]?.baseSpeed` (route type default)
+3. `DEFAULT_ROUTE_SPEEDS[routeType]` (route type default, `travel-time.ts`)
 4. `80 km/h` (absolute system default)
 
 ---
@@ -62,9 +62,9 @@ $$T_{\text{transit}} = \frac{\text{lengthKm}}{v_{\text{eff}}} \times 60 \text{ m
 
 ### Dwell Time Rules:
 - **Rail / HSR**: $+5\text{ mins}$ per intermediate stop (city).
-- **Commuter Rail / Tram**: $+2\text{ mins}$ per stop.
+- **Commuter Rail**: $+2\text{ mins}$ per stop.
 - **Air Corridor**: $+45\text{ mins}$ airport ground handling/clearance.
-- **Maritime / Ferry**: $+30\text{ mins}$ harbor approach and docking.
+- **Maritime / Ferry**: $+20\text{ mins}$ harbor approach and docking, plus $15\text{ mins}$ per intermediate stop. Sea routes with a path also apply ocean currents and prevailing winds along each segment ([oceanography report](../../reference/oceanography-report.md)).
 - **Road / Motorway**: $+0\text{ mins}$ (free-flow).
 - **Power Grid / Fiber**: Instantaneous light speed (`"< 1ms"`).
 - **Pipeline**: Fluid transit velocity ($10\text{--}15\text{ km/h}$).
@@ -83,12 +83,12 @@ $$T_{\text{transit}} = \frac{\text{lengthKm}}{v_{\text{eff}}} \times 60 \text{ m
 - Displays `Est. Travel Time` with clock icon.
 - Owner can edit speed directly.
 
-### C. Live Waypoint Drawing HUD (`TransportPropertyForm.tsx`)
-- Real-time updates as nodes are added: `4 Nodes • 280 km • ~2h 20m @ 120 km/h`.
+### C. Live Waypoint Drawing HUD (`RouteEditingToolbar.tsx`)
+- Real-time updates as nodes are added: the estimated time plus `280 km` (and the average speed on sea routes).
 
 ---
 
 ## 5. Phase 2 Preview: MyCountry Integration
-- National Transit Accessibility Index in Geography domain.
-- Infrastructure maintenance degradation multipliers.
-- Executive Statecraft directives modifying operational network speeds.
+- National Transit Accessibility Index in Geography domain. *Implemented: TAMI in `src/lib/economy/national-mobility.ts`, `transport.getNationalMobilityProfile`, `TransitMobilityCard`.*
+- Infrastructure maintenance degradation multipliers. *Implemented: `calculateMaintenanceDegradation`, `InfrastructureMaintenanceCard`.*
+- Executive Statecraft directives modifying operational network speeds. *Not implemented.*

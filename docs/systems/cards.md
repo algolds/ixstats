@@ -1,22 +1,22 @@
 # 💎 Vault Cards & Booster Packs Engine
 
-**Parent App Suite:** Vault (`VAULT_VERSION = 2`, dev codename `IxVault`)  
+**Parent App Suite:** Vault (`IXVAULT_VERSION = 2`, dev codename `IxVault`)  
 **Subsystems:** 3D Card Engine, Booster Pack Gacha, Crafting & Recycling, NS Import Bridge  
 **Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
-**Route:** `/vault/cards`, `/vault/packs` | **Status:** 📀 Gold Master (100% Ready)  
+**Route:** `/vault/cards`, `/vault/marketplace?tab=store` (`/vault/packs` redirects here) | **Status:** Release Candidate (platform 1.4.0) — see [Known Gaps](#known-gaps)  
 
-The Vault Cards system provides 3D holographic collectibles integrating sovereign states, MediaWiki historical lore, NationStates imports, and milestone editions with dynamic performance-based rarity calculation and physics-based pack peeling.
+The Vault Cards system provides 3D holographic collectibles integrating sovereign states, MediaWiki historical lore, NationStates imports, and milestone editions with wiki-signal rarity suggestions and a cinematic pack-opening sequence.
 
 ---
 
 ## Overview
 
 - **Multi-Source Card Types**: NATION, LORE, NS_IMPORT, SPECIAL, COMMUNITY
-- **Dynamic Rarity Calculation**: Performance-based rarity scoring (Common $\to$ Legendary)
-- **Ownership & Upgrades**: Quantity tracking, locking protection, leveling, and evolution
-- **Pack Mechanics**: Basic, Premium, Elite, Themed, Seasonal, Event packs
+- **Lore Categories**: 13-value `LoreCategory` enum (`prisma/schema/enums.prisma`) with per-category icons and themes
+- **Ownership & Upgrades**: Serial numbers, escrow locking (`isLocked` while listed/traded), card XP/leveling, and crafting
+- **Pack Mechanics**: Data-driven `CardPack` rows (`packType` BASIC, PREMIUM, ELITE, EVENT, LIMITED seeded; THEMED/SEASONAL defined in `PackType` but unseeded)
 - **Card Recycling & Junking**: Recycle unlocked cards for instant IxCredits based on rarity
-- **Marketplace & P2P Trading**: Live auctions with fee schedules, peer-to-peer trade offers with escrow
+- **Marketplace & P2P Trading**: Live auctions with fee schedules (`cardMarket`), peer-to-peer trade offers with escrow (`trading`)
 - **Attribution & Compliance**: Legally-sound attribution footer for NationStates imports and self-service takedown verification
 
 ---
@@ -24,24 +24,22 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 ## Card Types
 
 ### 1. NATION Cards
-Auto-generated from IxStates nations with dynamic stats (0–100):
-- **Economic Power**: Based on GDP per capita, tier, and growth rate
-- **Diplomatic Influence**: Based on embassy network, relationship strengths, and active missions
-- **Military Strength**: Based on defense budget, readiness score, and force branches
-- **Social Vitality**: Based on ThinkPages followers, posts count, and engagement rate
-- **Rarity Calculation**: Scored dynamically from nation stats, leaderboard position, achievements, and account age.
+Linked to an IxStates country via `Card.countryId`:
+- **Stats**: Shared Force / Wealth / Influence / Legacy stat set (`src/lib/cards/stat-config.ts`; special stats via `src/lib/country-geo/special-stats-populator.ts`)
+- **Valuation**: The daily `card-values` cron (`src/lib/lorewards/card-value-cron.ts`) re-prices NATION cards against their country's GDP and growth.
+- **Minting**: There is no automatic per-country card generator; NATION cards come from admin creation and crafting results (crafted cards default to `cardType: "NATION"`).
 
 ### 2. LORE Cards
-Generated from IxWiki/MediaWiki articles via `loreCardsRouter` and batch generator:
-- Categories: Historical Figures, Geography/Landmarks, Historical Events, Cultural Artifacts, Legendary Items
-- Rarity scored by article length, references, featured status, and inbound cross-links.
+Generated from IxWiki/IIWiki articles via `loreCardsRouter`, the admin Lore Batch tool, user requests (`loreCards.requestLoreCard` → admin queue), and the daily `lore-card-generation` cron:
+- Categories: `LoreCategory` — MILITARY, DIPLOMACY, GEOGRAPHY, RELIGION, CULTURE, GOVERNMENT, PEOPLE, ECONOMY, SCIENCE, HISTORY, NATION, SPECIAL, NS_IMPORT
+- Rarity suggested by `analyzeWikiSignals()` (`src/lib/cards/rarity-algorithm.ts`): word count 25%, links 25%, edit count 15%, category breadth 15%, images 10%, article age 10%; admins can override.
 
 ### 3. NS_IMPORT Cards
-Synchronized daily from official NationStates card dumps:
+Synchronized from the official NationStates per-season card dumps (`cardlist_S{season}.xml.gz`) via admin-triggered region syncs, plus user deck imports:
 - **URL-Only Storage**: Stores flag image URLs; no binary bytes persisted to disk or DB.
-- **Streaming Proxy (`/api/proxy-ns-image`)**: In-memory proxy preventing hotlinking issues.
+- **Streaming Proxy (`/api/proxy-ns-image`)**: Server-side proxy (nationstates.net / Wikimedia only, 24h cache, placeholder fallback on 403).
 - **Attribution Footer (`NationStatesAttribution.tsx`)**: Pinned footer inside `CardDetailsModal` with fan-site attribution copy and takedown trigger.
-- **Self-Service Takedown**: Nation owners verify identity via HMAC-MD5 checksum token to retire cards.
+- **Self-Service Takedown**: Nation owners verify identity via NS checksum (site-specific HMAC-MD5 token) to retire cards (`nsImport.requestSelfServiceTakedown`).
 
 ### 4. SPECIAL & COMMUNITY Cards
 Commemorative milestone editions (e.g. *IxStates 1.0 Ogma Launch*), contest winners, and alliance commemoratives.
@@ -61,7 +59,7 @@ enum CardRarity {
 }
 ```
 
-| Rarity | Standard Pack Drop Rate | Visual Accent | Glow / Shader Effect |
+| Rarity | Default Pack Odds (`CardPack` schema defaults) | Visual Accent | Glow / Shader Effect |
 | :--- | :---: | :--- | :--- |
 | **Common** | 65.0% | Slate (`#94a3b8`) | None |
 | **Uncommon** | 25.0% | Emerald (`#22c55e`) | Subtle ambient glow |
@@ -77,38 +75,49 @@ enum CardRarity {
 1. **Pack Reveal**: Pulsing 3D pack with "Tap to Open"
 2. **Pack Explosion**: Particle shatter effect
 3. **Card Reveal**: Flip sequence with rarity-specific audio
-4. **Quick Actions**: Lock, Junk, Keep, or List on Market
+4. **Quick Actions**: Junk (wired to `cards.junkCards`), Keep, or List (Keep/List are UI-only for now)
 
 ### Pack Tiers
-- **Basic (15 IxC)**: Standard odds (Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9%, Legendary 0.1%)
-- **Premium (35 IxC)**: Enhanced odds (Common 50%, Uncommon 30%, Rare 15%, Ultra Rare 3.5%, Epic 1.3%, Legendary 0.2%)
-- **Elite (75 IxC)**: Guaranteed 1+ Rare or better (Common 30%, Uncommon 35%, Rare 25%, Ultra Rare 7%, Epic 2.5%, Legendary 0.5%)
-- **Themed (50 IxC)** / **Seasonal (60 IxC)** / **Event (100 IxC)**: Filtered pools and limited quantities
+Packs are rows in `CardPack`, seeded from `prisma/seeds/data/card-packs.json` and managed at `/admin/cards`; each row carries its own price, card count, odds, and optional `season` / `cardType` pool filter. Seeded lineup (20 packs; the Season I–IV packs draw from the NS_IMPORT pool):
+- **Season I–IV Recruit (BASIC)**: 100 / 120 / 150 / 200 IxC, 5 cards (e.g. S1: Common 70%, Uncommon 22%, Rare 6%, Ultra Rare 1.5%, Epic 0.4%, Legendary 0.1%)
+- **Season I–IV Veteran (PREMIUM)**: 500 / 600 / 750 / 1,000 IxC, 5–6 cards
+- **Season I–IV Commander Elite (ELITE)**: 2,000 / 2,400 / 3,000 / 4,000 IxC, 8–10 cards
+- **Cross-pool packs**: Omni Starter (150), World Summit (3,500), High Roller Mega (5,000), Lore Master Elite (6,000, LORE-only), Championship Event (2,500), Anniversary (8,000), Limited Collector's Edition (12,000, 150 copies), Founder (15,000)
+
+`guaranteedRarity` is stored on each pack but **not yet enforced** at open time — every card rolls independently against the pack's odds. `themeFilter` is likewise stored but not applied.
 
 ---
 
 ## Card Crafting, Evolution & Junking
 
 ### Crafting & Fusion Recipes (`craftingRouter`)
-- **Fusion**: Combine duplicate cards into higher rarity (e.g. 2 Commons $\to$ 1 Uncommon for 250 IxC; 3 Rares $\to$ 1 Ultra-Rare for 1,000 IxC).
-- **Evolution**: Upgrade individual card rarity directly using IxCredits.
+- **Fusion**: Combine cards into higher rarity (e.g. 2 Commons $\to$ 1 Uncommon for 250 IxC; 3 Rares $\to$ 1 Ultra-Rare for 1,000 IxC).
+- **Evolution**: Upgrade toward a higher rarity using IxCredits (200–4,000 IxC).
+- A successful craft mints a new `Card` row (from `resultCardId`, else a generic "<recipe> Result" NATION card); materials are consumed on every attempt. Recipes are listed in `prisma/seeds/crafting-recipes.ts`.
 
 ### Card Recycling (Junking)
-- Unlocked cards (`isLocked === false`) can be recycled via `api.cards.junkCards`, permanently deleting the ownership record and crediting IxCredits scaled by rarity. Locked cards are protected from accidental junking.
+- Unlocked cards (`isLocked === false`) can be recycled via `api.cards.junkCards`, permanently deleting the ownership record and crediting IxCredits (`junkValue()` = rarity floor × `junkRate`, `src/lib/cards/valuation.ts`). Cards locked in escrow (listed at auction or in a pending trade) cannot be junked; there is no manual lock toggle.
 
 ---
 
 ## Routers & Data Architecture
 
 All card operations route through modularized subdirectories:
-- `src/server/api/routers/cards/` (`index.ts`, `core.ts`, `stats.ts`, `ownership.ts`)
-- `src/server/api/routers/card-packs/`
-- `src/server/api/routers/card-market/`
-- `src/server/api/routers/card-analytics/`
-- `src/server/api/routers/cardImages.ts` & `card-xp.ts`
+- `src/server/api/routers/cards/` (`index.ts`, `inventory.ts`, `collections.ts`, `admin.ts`, `settings.ts`, `operations.ts`)
+- `src/server/api/routers/card-packs/` (`user.ts`, `discovery.ts`, `admin.ts`)
+- `src/server/api/routers/card-market/` (`auctionManagement.ts`, `auctionQueries.ts`, `bids.ts`, `analytics.ts`)
+- `src/server/api/routers/cardImages.ts` (card XP helpers live in `src/lib/cards/xp-utils.ts`)
 - `src/server/api/routers/lore-cards/`
 - `src/server/api/routers/ns-import/`
 - `src/server/api/routers/crafting/` & `trading/`
+
+---
+
+## Known Gaps
+
+- `guaranteedRarity` / `themeFilter` on packs are not enforced; Stage 4 "Keep" and "List" quick actions only log.
+- Crafting: `/vault/crafting` passes card-definition IDs where `crafting.craftCard` expects `CardOwnership` IDs; `CraftingRecipe.successRate` is documented as 0–1 in the schema but rolled as 0–100 in the router; the crafting seed uses fields (`materialsRequired`, `resultType`, `collectorXP`, `unlockRequirement`) and a `MYTHIC` rarity that the schema does not have.
+- Pack artwork referenced by the seed (`/images/packs/pack_*.svg`) is not in the repo (`public/images/*` is git-ignored).
 
 ---
 
@@ -117,4 +126,4 @@ All card operations route through modularized subdirectories:
 - [MyVault System Guide](./myvault.md)
 - [IxCredits Economy Guide](./ixcredits.md)
 - [NationStates Integration Guide](./ns-integration.md)
-- [API Reference: Cards Routers](../reference/api-complete.md#cards-router)
+- [API Reference: IxVault (Cards & Credits)](../reference/api-complete.md)

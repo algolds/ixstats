@@ -1,34 +1,38 @@
 # WikiOS
 
-**Last updated:** August 22, 2026  
+**Last updated:** September 29, 2026  
 **Architecture Status:** Decoupled Native Knowledge Engine (Plan 170 Complete)
 
-WikiOS is an ultra-fast, structured knowledge engine and worldbuilding platform. PostgreSQL is the authoritative primary backend for article content, append-only revisions, directed link graphs, and category hierarchies, delivering **sub-2ms reads** and **sub-10ms atomic writes**. Upstream MediaWiki is integrated purely as an asynchronous compatibility and federation adapter (`adapters/mediawiki/`).
+WikiOS is an ultra-fast, structured knowledge engine and worldbuilding platform. PostgreSQL is the authoritative primary backend for article content, append-only revisions, directed link graphs, and category hierarchies, delivering **sub-2ms reads** and **sub-10ms atomic writes**. Upstream MediaWiki is integrated as a headless render (`action=parse`), asynchronous export, and recent-changes sync adapter over its HTTP Action API (`adapters/mediawiki/`, `services/auto-sync-service.ts`); there is no direct MariaDB connection.
 
-The editor stack provides a custom visual editor (HTML ↔ Structured Block AST), a **CodeMirror 6** source editor, and a zero-navigation in-place editing bridge (`WikiEditBridge`). Reader rendering is accelerated by server-side pre-compiled HTML, browser-native `content-visibility: auto`, and edge CDN cache tagging.
+The editor stack provides a Plate-based visual editor (WikiAST ↔ wikitext), a **CodeMirror 6** source editor, and a zero-navigation in-place editing bridge (`WikiEditBridge`). Reader rendering is accelerated by server-side pre-compiled HTML, browser-native `content-visibility: auto`, and edge CDN cache tagging.
 
 ---
 
-## 1. Routes (`(wiki-os)` group → `/wiki/*`)
+## 1. Routes (`(wiki-os)` group → `/wiki/*` and `/util/*`)
+
+Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes are thin redirects to `/util/*`; the dynamic `history/[slug]`, `whatlinkshere/[slug]`, `categories/[...slug]` and `contributions/[user]` pages are currently duplicated under both prefixes.
 
 | Route | File | Purpose |
 |-------|------|---------|
-| `/wiki` | `wiki/page.tsx` | Redirects to `Main_Page` |
-| `/wiki/[slug]` | `wiki/[slug]/page.tsx` | Article reader + In-place Instant Editor Bridge |
+| `/wiki` | `wiki/page.tsx` | WikiOS main page (`WikiOSMainPage`) |
+| `/wiki/[slug]` | `wiki/[slug]/page.tsx` | Article reader + in-place editor bridge. `?action=edit` opens the editor, `?margin=threads` opens Margin, `?source=iiwiki\|althistory` reads another wiki's page read-only |
 | `/wiki/[slug]/edit` | `wiki/[slug]/edit/page.tsx` | Dedicated editor page (visual + source fallback) |
-| `/wiki/[slug]/talk` | `wiki/[slug]/talk/page.tsx` | Talk / discussion page (Margin split-canvas) |
-| `/wiki/search` | `wiki/search/page.tsx` | Sub-1.5ms Spotlight prefix & full-text search |
-| `/wiki/recent-changes` | `wiki/recent-changes/page.tsx` | Global append-only edit ledger feed |
-| `/wiki/history/[slug]` | `wiki/history/[slug]/page.tsx` | Revision history & byte-diff lineage |
-| `/wiki/diff` | `wiki/diff/page.tsx` | Side-by-side visual revision diff viewer |
-| `/wiki/random` | `wiki/random/page.tsx` | Random article redirect |
-| `/wiki/categories/[...slug]` | `wiki/categories/[...slug]/page.tsx` | Recursive CTE category DAG browser |
-| `/wiki/whatlinkshere/[slug]` | `wiki/whatlinkshere/[slug]/page.tsx` | $O(1)$ relational backlinks graph explorer |
-| `/wiki/contributions/[user]` | `wiki/contributions/[user]/page.tsx` | User contribution history |
+| `/wiki/[slug]/talk` | `wiki/[slug]/talk/page.tsx` | Legacy redirect → `/wiki/[slug]?margin=threads` |
 | `/wiki/user/[username]` | `wiki/user/[username]/page.tsx` | User profile, streaks & Loreward award showcase |
-| `/wiki/lorewards` | `wiki/lorewards/page.tsx` | Gamified Lorewards leaderboard & heatmap streak calendar |
-| `/wiki/repository` | `wiki/repository/page.tsx` | Native media commons asset repository with Blurhash |
-| `/wiki/watchlist` | `wiki/watchlist/page.tsx` | Article watchlist (backed by Stash) |
+| `/util` | `util/page.tsx` | Special directory & utilities deck (`/wiki/utilities` redirects here) |
+| `/util/search` | `util/search/page.tsx` | Prefix & full-text search |
+| `/util/recent-changes` | `util/recent-changes/page.tsx` | Global append-only edit ledger feed |
+| `/util/history/[slug]` | `util/history/[slug]/page.tsx` | Revision history (scrubbable timeline) |
+| `/util/diff` | `util/diff/page.tsx` | Side-by-side visual revision diff viewer |
+| `/util/random` | `util/random/page.tsx` | Random article redirect |
+| `/util/categories`, `/util/categories/[...slug]` | `util/categories/…` | Category index and recursive category browser |
+| `/util/whatlinkshere/[slug]` | `util/whatlinkshere/[slug]/page.tsx` | Relational backlinks explorer |
+| `/util/contributions/[user]` | `util/contributions/[user]/page.tsx` | User contribution history |
+| `/util/lorewards` | `util/lorewards/page.tsx` | Lorewards leaderboard & heatmap streak calendar |
+| `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`) |
+| `/util/templates` | `util/templates/page.tsx` | Template browser |
+| `/util/watchlist` | `util/watchlist/page.tsx` | Article watchlist (`WikiWatchlist` model) |
 
 ---
 
@@ -37,14 +41,14 @@ The editor stack provides a custom visual editor (HTML ↔ Structured Block AST)
 | Area | Feature |
 |------|---------|
 | **Instant Native Engine** | **Sub-2ms reads** from PostgreSQL pre-compiled `contentHtml`, **$O(1)$ backlinks** via `wiki_links`, **zero-query red links** (`targetArticleId = NULL`), and **sub-10ms atomic writes** |
-| **Speculative Navigation** | Instant link hover/touch prefetching (`useWikiPrefetch`), multi-tier IndexedDB client cache, and zero-navigation in-place editor bridge (`WikiEditBridge`) |
+| **Speculative Navigation** | Instant link hover/touch prefetching (`useWikiPrefetch`), localStorage client cache (`editor/local-cache.ts`, 24h TTL), and zero-navigation in-place editor bridge (`WikiEditBridge`) |
 | **DOM Acceleration** | Sub-16ms initial paint via CSS `content-visibility: auto` and section containment |
 | **Two-Tier Native Search** | Tier 1 typo-tolerant prefix search (<1.5ms) + Tier 2 weighted `tsvector` full-text search with headline snippets |
-| **Cloudflare Defense** | Invisible Cloudflare Turnstile CAPTCHA verification, Zero-Trust Access service tokens, and automated edge CDN cache purging on save |
+| **Cloudflare Defense** | Invisible Cloudflare Turnstile verification (when the client sends a token) and automated edge CDN cache purging on save |
 | **Reader** | Pre-rendered HTML transforms, 3D tilt hero banner (`ArticleHeader`), sticky TOC, link hover previews (`LinkPreview`), image lightbox, category breadcrumbs, dynamic map embeds |
-| **Editor** | Dual-mode visual editor (Block AST roundtrip) & CodeMirror 6 source editor with live preview, modular template dialogs, image search/upload modal, and instant 1-click rollback |
+| **Editor** | Dual-mode Plate visual editor (WikiAST roundtrip) & CodeMirror 6 source editor with live preview, modular template dialogs, image search/upload modal, and instant 1-click rollback |
 | **Stash** | Color-coded collections, one-click stash toggle, text-selection annotations, per-item notes |
-| **Lorewards & Streaks** | Algorithmic prose quality scoring, daily/weekly/monthly awards, SVG streak heatmap calendar, article milestone badges, and Discord webhook broadcasting |
+| **Lorewards & Streaks** | Prose-quality scoring (`src/lib/lorewards/scoring.ts`), daily/weekly/monthly awards synced from the Discord Lorewards bot's state file, SVG streak heatmap calendar, and article awards (`WikiArticleAward`) |
 
 ---
 
@@ -53,12 +57,15 @@ The editor stack provides a custom visual editor (HTML ↔ Structured Block AST)
 ```
 src/lib/wiki-os/
 ├── index.ts                   # Root unified barrel export
-├── config.ts                  # Configuration, multi-realm definitions & endpoints
+├── config.ts                  # Configuration, WikiSource definitions & endpoints
 ├── types.ts                   # Nominal contracts & base types
 ├── auth.ts                    # User identity & role abstraction seam
+├── page-ref.ts                # Page reference (title + wiki source)
 │
 ├── core/                      # Authoritative PostgreSQL Domain Services
-│   ├── domain-types.ts        # Nominal types & Block AST node definitions
+│   ├── domain-types.ts        # Nominal types
+│   ├── wiki-ast.ts            # IxWiki AST block model (+ wiki-ast-guards.ts)
+│   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
 │   ├── article-repository.ts  # Authoritative CRUD repository (<2ms read, <10ms write)
 │   ├── link-graph-service.ts  # Link extractor & O(1) relational backlink graph engine
 │   ├── native-search-service.ts # Two-tier Spotlight autocomplete (<1.5ms) & full-text search
@@ -74,7 +81,7 @@ src/lib/wiki-os/
 │       ├── write-service.ts   # Action API write gateway & CSRF token caching
 │       ├── timestamp.ts       # 14-digit timestamp conversion
 │       ├── sync-worker.ts     # Non-blocking MediaWiki export mirror queue
-│       └── bridge/            # Direct MariaDB connector & external wiki federators
+│       └── bridge/            # PostgreSQL readers (pg-*.ts) & external wiki HTTP federators
 │
 ├── transformers/              # Content Transformers, Parsers & Formatters
 │   ├── html-transformer.ts    # Server-side HTML post-processor (Infobox, TOC, Notices)
@@ -89,14 +96,18 @@ src/lib/wiki-os/
 │
 ├── templates/                 # Template Engine & Registry
 │   ├── template-resolver.ts   # Pluggable wikitext template provider registry
-│   └── template-registry.ts   # Client-side TemplateData registry & parameter schemas
+│   ├── template-registry.ts   # Client-side TemplateData registry & parameter schemas
+│   ├── master-presets.ts      # Template presets for the slash menu
+│   └── preview-service.ts     # Tiered template preview cache (+ .server.ts)
 │
 ├── editor/                    # Editor State & Embeds
 │   ├── draft-store.ts         # LocalStorage visual & source draft persistence
+│   ├── local-cache.ts         # LocalStorage wiki data cache
 │   └── wiki-embed-shared.ts   # Shared CSS/JS bundle definitions for interactive embeds
 │
-└── migration/                 # Ingestion & Migration Engine
-    └── index.ts               # Streaming SQL/XML dump ingestion pipeline
+├── wikitext/                  # Wikitext parser & serializer
+└── services/
+    └── auto-sync-service.ts   # MediaWiki recentchanges → PostgreSQL sync (cron + webhook)
 ```
 
 ---

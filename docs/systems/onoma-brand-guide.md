@@ -81,9 +81,11 @@ A foundational rule of Onoma design:
 
 # 04 — The Product Model
 
-- **CREATE**: Make language useful (Places, People, Organizations, Cultures, Names).
-- **STUDIO**: Build the system (Workshop, Phonology, Acoustics, Sound Shifts, Lexicon).
-- **EXPLORE**: Understand the language (Entropy, Frequency, Lexical Diversity, Phonotactics, Formants, Historical Change).
+- **CREATE**: Make language useful (Sandbox quick generator, Places, People, Factions, Culture).
+- **STUDIO**: Build the system (Workshop, Path Visualizer, Name Sets, Sound Shifts & Loanwords).
+- **EXPLORE**: Understand the language (Acoustics & IPA, Grammar & Roots, Writing Systems, Community Packs).
+
+Utility sections outside the three pillars: **Stash** (saved names, dictionaries, generation history) and **Settings** (voice preferences, voice sandbox, local data manager).
 
 ---
 
@@ -91,4 +93,4 @@ A foundational rule of Onoma design:
 
 - [Onoma Glyph Specification](./onoma-glyph-spec.md)
 - [Onoma Voice & Kokoro TTS Guide](./onoma-voice-guide.md)
-- [API Reference: Onoma Router](../reference/api-complete.md#onoma-router)
+- [API Reference: Onoma Router](../reference/api-complete.md)

@@ -2,6 +2,11 @@
 
 **Date:** 2026-09-27 · **Branch:** `realms-foundation` (from `rose-garden` 9f2bd3a6)
 **Product model:** `docs/architecture/realms-framework-spec.md` (read first — the decisions table is the source of truth).
+**Status:** Implemented — all tasks 1–8 merged into `rose-garden` on 2026-09-29 (`91a84f50f`). Changes during
+implementation: `users.setActiveNation` ("Play as") shipped here rather than in Phase 3 (ruling F-1); wiki
+verification checks the user page's revision history, not just its current text (F-3, F-6); `RealmClaim.wikiSource`/
+`wikiPageTitle` are already used by the Eurth slice's nation-page claims (`realms.claimNationPage`); `canModerateRealm`
+takes the realm row (`canModerateRealm(actor, { ownerId })`).
 **Goal:** Put the data model and security foundations under Realms with **no user-visible change for IxWorld
 players except the claim flow**, and close two live holes:
 1. `ixnayid.linkWiki` links any unclaimed ixwiki username without proof of ownership (spoofs authorship,

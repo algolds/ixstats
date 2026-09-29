@@ -2,7 +2,7 @@
 
 **Document Version:** 2.1.0  
 **Date:** August 21, 2026  
-**Status:** Implemented & Canonical Architecture Specification  
+**Status:** Implemented with gaps (verified September 29, 2026). See §6 for what shipped and what did not.  
 **Target Subsystems:** WikiOS Margin (`src/components/wiki-os/margin/`), Discussions Router (`src/server/api/routers/wikios/discussions.ts`), Reader (`src/components/wiki-os/reader/ArticleRenderer.tsx`), Schema (`prisma/schema/wiki.prisma`)  
 **Applied Design Paradigms:** Apple Design (`/apple-design`), Emil Kowalski Design Engineering (`/emil-design-eng`), TypeScript 7.0 (`/typescript-expert`), Anti-Overengineering (`/ponytail-audit`)
 
@@ -104,10 +104,11 @@ When a user selects text anywhere in the article, a compact, origin-aware action
 
 #### Key Functional Details
 * **Instant Actions**:
-  * **Highlight**: Drops a highlight in yellow, emerald, blue, or rose palette (`HIGHLIGHT_PALETTE`).
+  * **Highlight**: Drops a highlight from the six-color `HIGHLIGHT_PALETTE` (yellow, green, blue, pink, orange, lavender).
   * **Discuss**: Opens Margin drawer focused on creating a new discussion anchored to the selected phrase.
   * **Stash**: Saves the highlighted quote to the user's active Lore Stash collection with 1 click.
   * **Copy**: Copies the raw text quote to clipboard with instant confirmation toast.
+  * **Suggest** and **Share** are also shipped in the capsule (suggested-edit draft; share modal).
 * **Origin Calculation**: `transform-origin` dynamically aligns to the center of the text selection bounding rectangle, scaling in naturally from `0.95` scale.
 
 ---
@@ -124,8 +125,8 @@ When a user selects text anywhere in the article, a compact, origin-aware action
 | `transform-origin: center` on selection capsule | `transform-origin: center bottom` | Capsule emerges directly out of the user's highlighted text selection |
 | Static button click with no feedback | `transform: scale(0.97)` on `:active` with `160ms ease-out` | Buttons feel physically responsive and confirm user interaction instantly |
 | Abrupt thread expansion causing layout jumps | Spring accordion transitions with `AnimatePresence` | Smooth layout morphing prevents frame drops during DOM expansion |
-| Drag-to-dismiss requiring 50% drag threshold | Momentum velocity check (`velocity > 0.11px/ms` or `deltaX > 100px`) | Quick flick dismisses the inspector effortlessly regardless of distance dragged |
-| Immediate click-to-resolve causing accidental clicks | Hold-to-resolve (1.0s linear fill with `clip-path: inset()`) | Deliberate press prevents destructive accidents; snapping release provides tactile reward |
+| Drag-to-dismiss requiring 50% drag threshold | Momentum velocity check (`velocity > 0.11px/ms` or `deltaX > 80px`) | Quick flick dismisses the inspector effortlessly regardless of distance dragged |
+| Immediate click-to-resolve causing accidental clicks | Hold-to-resolve (0.9s linear fill with `clip-path: inset()`) | Deliberate press prevents destructive accidents; snapping release provides tactile reward |
 | Opaque gray background on talk elements | `backdrop-filter: blur(24px) saturate(190%)` over `rgba(6, 8, 12, 0.85)` | Translucent Facet glass hierarchy allows article colors to subtly refract underneath |
 
 ---
@@ -162,7 +163,7 @@ export function SelectionCapsule({ contentRef, onAddHighlight, onOpenThreadDraft
 // Hold-to-Resolve pattern with progressive clip-path reveal
 export function HoldToResolveButton({ isResolved, onResolveToggle, isPending }) {
   const [holding, setHolding] = useState(false);
-  // 1.0s timer triggers onResolveToggle and soundEffects.success()
+  // 900ms timer triggers onResolveToggle and soundEffects.success()
   // Progress overlay animates clipPath from inset(0 100% 0 0) to inset(0 0% 0 0)
 }
 ```
@@ -234,11 +235,12 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
   createThread: protectedProcedure.input(...).mutation(...),
   postComment: protectedProcedure.input(...).mutation(...),
   resolveThread: protectedProcedure.input(...).mutation(...),
-  toggleCommentReaction: protectedProcedure.input(...).mutation(...),
   deleteThread: protectedProcedure.input(...).mutation(...),
-  deleteComment: protectedProcedure.input(...).mutation(...),
 });
 ```
+
+Not implemented: `toggleCommentReaction` and `deleteComment`. The `reactions` JSON column exists and is
+read by `getArticleMarginData`, but nothing writes it.
 
 ---
 
@@ -246,7 +248,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
 
 1. **Drawer & Gutter Pins**: Implemented in `src/components/wiki-os/margin/WikiMarginDrawer.tsx` and `MarginGutterPins.tsx`.
 2. **Selection Capsule**: Implemented in `src/components/wiki-os/margin/SelectionCapsule.tsx`.
-3. **Pillar Tabs**: Implemented in `src/components/wiki-os/margin/tabs/MarginThreadsTab.tsx`, `MarginMarkupTab.tsx`, and `MarginStashTab.tsx`.
+3. **Pillar Tabs**: The drawer shows two tabs, Threads (`tabs/MarginThreadsTab.tsx`) and Markup (`tabs/MarginMarkupTab.tsx`). The planned **📑 Stash** tab was never built (there is no `MarginStashTab.tsx`); stashing happens from the selection capsule and the reader's `StashButton`. A third **Inspect** tab (`tabs/MarginInspectTab.tsx`) exists but is hidden in `WikiMarginDrawer.tsx` pending a redesign.
 4. **Backend Router**: Implemented in `src/server/api/routers/wikios/discussions.ts` and registered in `src/server/api/routers/wikios/index.ts`.
 5. **Reader Integration**: Mounted in `src/components/wiki-os/reader/ArticleRenderer.tsx` with hotkeys `T` / `I`.
-6. **Route Forwarding**: Legacy `/wiki/[slug]/talk` routes cleanly redirect to `/wiki/[slug]?margin=threads`.
+6. **Route Forwarding**: Legacy `/wiki/[slug]/talk` routes cleanly redirect to `/wiki/[slug]?margin=threads`. `?margin` is honored only for IxWiki pages; pages opened with `?source=` (another wiki) stay read-only.

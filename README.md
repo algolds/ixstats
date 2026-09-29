@@ -68,7 +68,7 @@ Every commitment produces a **bounded, clamped** world-state change, an automati
 
 - **API**: 90 domain-split **tRPC routers** (~1,450 end-to-end typed procedures) composed via `mergeRouters`. All client data access goes through tRPC — never direct Prisma from components.
 - **Data**: PostgreSQL + PostGIS, 296 Prisma models across 15 schema files — spatial geometry, immutable financial ledgers, and event spines included.
-- **Realtime**: Socket.IO WebSockets (diplomatic/crisis feeds, markets) and Redis-backed caching + rate limiting with in-memory fallback.
+- **Realtime**: WebSockets served by `ws-backend.mjs` (Socket.IO for ThinkPages at `/ws/thinkpages`, plain `ws` for Market auctions at `/api/market-ws`) and Redis-backed caching + rate limiting with in-memory fallback.
 - **Design**: the **Facet** design system (glass materials, physics springs, 4-tier depth) and the **Halo** global overlay (context-aware dynamic action bar, notifications, command palette).
 
 ### Realm-First Product Model
