@@ -6,18 +6,19 @@
  * 3. WikiAccountLink (ixwiki, unverified) for every legacy User.wikiUsername
  * 4. realms.visibility private → unlisted
  * 5. map_layers with no realm (legacy NULL worldId) → IxWorld — map reads filter by realm since E4
- * Preflight (before any write): the IxWorld realm row must exist.
+ * Preflight (before any write): the IxWorld realm row must exist; its ownerId is printed. --apply refuses (exit 1,
+ * nothing written) unless that ownerId is "system" and no owner collision is left (ruling F-5).
  */
 import { PrismaClient } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
-import { findDuplicateLayerKeys, planOwnerBackfill } from "./backfill-plan";
+import { applyBlockers, findDuplicateLayerKeys, planOwnerBackfill, type OwnerPlan } from "./backfill-plan";
 
 const db = new PrismaClient();
 const apply = process.argv.includes("--apply");
 
-async function backfillOwners() {
+async function planOwners(): Promise<OwnerPlan> {
   const countries = await db.country.findMany({
     select: { id: true, name: true, ownerUserId: true, users: { select: { id: true, clerkUserId: true } } },
   });
@@ -27,6 +28,10 @@ async function backfillOwners() {
   );
   console.log(`owners: ${plan.assign.length} to assign, ${plan.collisions.length} collisions`);
   for (const c of plan.collisions) console.log(`  COLLISION ${c.countryId}: users ${c.userIds.join(", ")} — resolve by hand`);
+  return plan;
+}
+
+async function backfillOwners(plan: OwnerPlan) {
   if (!apply) return;
   for (const a of plan.assign) {
     await db.country.update({ where: { id: a.countryId }, data: { ownerUserId: a.userId } });
@@ -35,8 +40,9 @@ async function backfillOwners() {
 
 /** Runs before any write: the IxWorld realm row every Country.realmId FK depends on. */
 async function requireIxWorldRealm() {
-  const realm = await db.realm.findUnique({ where: { id: DEFAULT_REALM_ID }, select: { slug: true } });
+  const realm = await db.realm.findUnique({ where: { id: DEFAULT_REALM_ID }, select: { slug: true, ownerId: true } });
   if (!realm) throw new Error(`realms row id="${DEFAULT_REALM_ID}" (IxWorld) is missing — Country.realmId FK depends on it; create it before running this backfill`);
+  console.log(`IxWorld realm ownerId: ${realm.ownerId}`);
   return realm;
 }
 
@@ -93,7 +99,15 @@ async function backfillMapLayerRealms() {
 async function main() {
   console.log(apply ? "APPLY mode — writing" : "DRY RUN — pass --apply to write");
   const ixworld = await requireIxWorldRealm();
-  await backfillOwners();
+  const owners = await planOwners();
+  const blockers = applyBlockers({ ixworldOwnerId: ixworld.ownerId, ownerCollisions: owners.collisions.length });
+  for (const blocker of blockers) console.log(`  BLOCKS --apply: ${blocker}`);
+  if (apply && blockers.length > 0) {
+    console.error("Refusing --apply: nothing was written. Resolve the blockers above, then re-run.");
+    process.exitCode = 1;
+    return;
+  }
+  await backfillOwners(owners);
   await backfillRealms(ixworld);
   await backfillWikiLinks();
   await backfillMapLayerRealms();

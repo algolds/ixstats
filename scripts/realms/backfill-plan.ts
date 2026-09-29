@@ -43,3 +43,25 @@ export function findDuplicateLayerKeys(rows: LayerKeyRow[]): Array<Omit<LayerKey
   }
   return [...groups.values()].filter((g) => g.ids.length > 1);
 }
+
+/** The IxWorld realm's owner: no player — site admins moderate its claims. */
+export const IXWORLD_REALM_OWNER = "system";
+
+/**
+ * Why `--apply` must refuse before any write (ruling F-5): owner collisions still unresolved, or an IxWorld realm
+ * owned by anyone but "system" (its owner would moderate every IxWorld claim). Empty = safe to apply.
+ */
+export function applyBlockers(input: { ixworldOwnerId: string; ownerCollisions: number }): string[] {
+  const blockers: string[] = [];
+  if (input.ixworldOwnerId !== IXWORLD_REALM_OWNER) {
+    blockers.push(
+      `IxWorld realm ownerId is "${input.ixworldOwnerId}", expected "${IXWORLD_REALM_OWNER}" — set realms.ownerId back to "${IXWORLD_REALM_OWNER}" first`
+    );
+  }
+  if (input.ownerCollisions > 0) {
+    blockers.push(
+      `${input.ownerCollisions} owner collisions — give each COLLISION country one owner by hand (clear the other users' countryId), then re-run`
+    );
+  }
+  return blockers;
+}

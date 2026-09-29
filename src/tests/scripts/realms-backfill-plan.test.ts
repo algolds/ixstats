@@ -1,4 +1,4 @@
-import { findDuplicateLayerKeys, planOwnerBackfill } from "../../../scripts/realms/backfill-plan";
+import { applyBlockers, findDuplicateLayerKeys, planOwnerBackfill } from "../../../scripts/realms/backfill-plan";
 
 const sys = (id: string) => id === "sys";
 
@@ -42,5 +42,27 @@ describe("findDuplicateLayerKeys", () => {
   it("finds none when every key is unique", () => {
     expect(findDuplicateLayerKeys([{ id: "m1", layerType: "lakes", featureId: "a" }])).toEqual([]);
     expect(findDuplicateLayerKeys([])).toEqual([]);
+  });
+});
+
+describe("applyBlockers (F-5.5 — what makes --apply refuse before any write)", () => {
+  it("nothing blocks when the IxWorld realm is owned by system and no owner collides", () => {
+    expect(applyBlockers({ ixworldOwnerId: "system", ownerCollisions: 0 })).toEqual([]);
+  });
+
+  it("owner collisions block --apply until they are resolved by hand", () => {
+    const blockers = applyBlockers({ ixworldOwnerId: "system", ownerCollisions: 2 });
+    expect(blockers).toHaveLength(1);
+    expect(blockers[0]).toMatch(/2 owner collisions/);
+  });
+
+  it("an IxWorld realm owned by anyone but system blocks --apply (its owner would moderate every IxWorld claim)", () => {
+    const blockers = applyBlockers({ ixworldOwnerId: "user_2abc", ownerCollisions: 0 });
+    expect(blockers).toHaveLength(1);
+    expect(blockers[0]).toMatch(/ownerId is "user_2abc", expected "system"/);
+  });
+
+  it("reports every blocker at once", () => {
+    expect(applyBlockers({ ixworldOwnerId: "", ownerCollisions: 1 })).toHaveLength(2);
   });
 });
