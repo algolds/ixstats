@@ -21,7 +21,7 @@ Your country's **Gross Domestic Product (GDP)** is the single most important eco
 Your GDP does not stay still. Every in-game cycle, your economy is recalculated from several factors:
 
 - **Base growth rate** — determined by your country's [economic tier](/help/economy/tiers). Poorer nations can grow faster (up to 10%), while wealthy nations grow more slowly (as low as 0.5%).
-- **Global growth factor** — a world-wide multiplier (currently 3.21%) that raises or lowers everyone's growth to simulate global economic conditions.
+- **Global growth factor** — a world-wide multiplier (1.0321 by default — a 3.21% boost) that raises or lowers everyone's growth to simulate global economic conditions.
 - **Local growth factor** — unique to your nation, reflecting the quality of your government policies, tax system, and infrastructure.
 - **Storyteller events** — trade agreements, natural disasters, economic policies, and special events created by the DM can temporarily boost or reduce your growth.
 - **Diminishing returns** — extremely wealthy nations (those with very high GDP per Capita) see their growth taper off naturally, preventing runaway economies.
@@ -53,11 +53,11 @@ Beyond raw GDP, IxStats tracks several composite scores that measure different d
 - **Social-Economic Welfare Index (SEWI)** — captures the well-being of your citizens beyond just money, including factors like income equality, public services, and quality of life.
 - **Economic Complexity & Trade Index (ECTI)** — reflects how diversified and sophisticated your economy is. Nations that rely on a single export score lower than those with broad, complex economies.
 
-These scores are visible on your MyCountry dashboard and in the Intelligence section. They update automatically as your economy evolves.
+These scores are calculated behind the scenes and feed into your nation's numbers; your economic complexity index appears in MyCountry → Economy & Budget. They update automatically as your economy evolves.
 
 ## How Projections Work
 
-IxStats can forecast where your economy is heading over 1-year, 5-year, and 10-year horizons. Projections use your current growth rate, tier, and active modifiers to estimate future GDP, population, and key indicators.
+IxStats can forecast where your economy is heading over a horizon you choose, from one year up to fifty. Projections use your current growth rate, tier, and active modifiers to estimate future GDP, population, and key indicators.
 
 > **What Affects Projections**
 >
@@ -76,10 +76,10 @@ All economic calculations run on [IxTime](/help/getting-started/ixtime), the in-
 
 > **Quick Reference**
 >
-> - **MyCountry Overview** — shows your GDP, growth rate, and tier at a glance in the economic summary card.
-> - **Intelligence > Economic tab** — deep-dive charts for GDP history, sector breakdown, and trend analysis.
-> - **Modeling page** — run projections and compare scenarios. Accessible from your country profile or the MyCountry sidebar.
-> - **Leaderboards** — see how your GDP, growth, and health scores rank against other nations.
+> - **MyCountry Overview** — shows your population and GDP at a glance in the National Standing card.
+> - **MyCountry → Economy & Budget** — the Economic Report, National Budget, Fiscal Policy, and Trade & Commerce tabs.
+> - **Modeling page** — run projections and compare scenarios. Open **Economic Modeling** from a country profile.
+> - **Leaderboards** — see how your GDP, growth, and other indicators rank against other nations.
 > - **Country profile** — any nation's public profile displays its current economic data and tier.
 
 > [!WARNING]

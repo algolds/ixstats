@@ -24,10 +24,11 @@ There are seven, measured by your **GDP per person**, from humblest to grandest:
 
 ## How Your Tier Is Decided
 
-Two things set your tier:
+One thing sets your tier:
 
-- **GDP per person** — your total output shared across your population. This is the main driver: the higher it climbs, the higher your tier.
-- **Population** — big nations have a harder time keeping per-person output high, so size is taken into account. A tiny city-state and a sprawling empire are judged fairly.
+- **GDP per person** — your total output shared across your population. The higher it climbs, the higher your tier.
+
+Your **population** earns a separate population tier (1 through 7, then X for 500 million and up). It doesn’t change your economic tier, but big nations have a harder time keeping per-person output high.
 
 Your tier updates on its own as your economy moves. Curious about the math? [How Your Economy Is Measured](/help/economy/calculations) has the details.
 
@@ -46,17 +47,16 @@ Moving up the tiers is one of the great long games here. A few ways to do it:
 > **What higher tiers bring**
 >
 > - **Achievements** — many [achievements](/help/gameplay/achievements) ask you to reach a certain tier.
-> - **Fair rankings** — the [leaderboards](/help/gameplay/leaderboards) let you compare yourself with nations at your level.
+> - **Fair rankings** — the [leaderboards](/help/gameplay/leaderboards) show each nation’s tier, so you can see who your peers are.
 > - **Resilience** — wealthier nations shrug off shocks and downturns more easily.
-> - **Bragging rights** — your tier shows on your public profile and posts, so the world can see how far you’ve come.
+> - **Bragging rights** — your tier shows on your public profile, so the world can see how far you’ve come.
 
 ## Where to Check Your Tier
 
-- **Your National Overview** — your tier sits right alongside your key numbers.
-- **Intelligence** — see how close you are to the next tier and how you’re trending.
-- [Leaderboards](/leaderboards) — filter by tier to find your true peers.
+- **Your country profile** — your tier sits right alongside your key numbers.
+- [Leaderboards](/leaderboards) — every entry lists its economic and population tier, so you can find your true peers.
 
 > **Quick Tips**
 >
-> - Check Intelligence now and then to catch trends before they become problems.
+> - Check **Economy & Budget** in MyCountry now and then to catch trends before they become problems.
 > - If your tier slips, revisit your spending and taxes — small tweaks add up fast.
