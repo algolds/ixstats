@@ -137,13 +137,13 @@ A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headl
 ### 💬 ThinkPages & ThinkShare — In-Universe Social & Comms
 
 - **ThinkPages**: The in-universe social and intelligence feed (`systems.thinkpages` v2). Features rich post authoring, hashtag exploration, community polling, headline blurb integration, and persistent collaborative ThinkTanks.
-- **ThinkShare**: Unified, cross-platform encrypted messaging powering personal DMs, diplomatic communiqués, and secure group channels across 5 classification clearance levels (`PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`) with digital signatures.
+- **ThinkShare**: Direct and group messaging at `/messages`, delivered live over the ThinkPages socket. Messages carry a classification level (`PUBLIC` → `TOP_SECRET`); encryption and signature fields exist in the schema but no cryptography is implemented yet.
 
 ---
 
 ### 🏆 MyLeague & Creative Labs
 
-- **MyLeague & MyClub**: 7-sport simulation engine (soccer, Formula 1, hockey, boxing, basketball, baseball, American football) with seeded play-by-play match engines, club finances, ticket revenue, and Markov-chain player career lifecycles.
+- **MyLeague & MyClub**: 7-sport simulation engine (soccer, Formula 1, hockey, boxing, basketball, baseball, American football) with seeded play-by-play match engines, club finances, ticket revenue, and player career lifecycles, at `/myleague` and `/myclub`. Boxing currently reuses the soccer match loop.
 - **⟨ONOMA⟩ Linguistics Studio (`systems.onoma` v4)**: Procedural phonology engine with Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries for conlangs.
 - **Vexel Heraldry**: Vector blazon generator creating heraldic shields, charges, and national flags adhering to classic tincture rules.
 
@@ -169,7 +169,7 @@ Specialized creative toolkits and simulation sandboxes:
 | Laboratory | Route | Status | Focus Area |
 |---|---|:---:|---|
 | **⟨ONOMA⟩** | `/labs/onoma` | **Active** | Procedural phonology engine: Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries. |
-| **Vexel** | `/labs/vexel` | **Active** | Structured heraldry composer: vector blazon generation, tincture rules, and deterministic charge composition from Commons assets. |
+| **Vexel** | `/labs/vexel` | **Preview** | Structured heraldry composer: vector blazon generation, tincture rules, gallery and revisions. Routable but not in the Labs menu; external ornaments and attach-to-country are unfinished. |
 | **Map Pipeline** | `/labs/map-pipeline` | **Active** | Procedural worldgen testbed for testing 100k-cell Voronoi meshes and hypsometric algorithms without touching live data. |
 | **Strata & Dynas** | — | *Roadmap* | Planned laboratories for tectonic relief simulation and dynastic genealogy modeling. |
 
