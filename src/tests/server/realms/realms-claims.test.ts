@@ -83,7 +83,7 @@ function setup() {
     },
     realmPage: { findFirst: jest.fn().mockResolvedValue(nationPage) },
     mapLayer: mapLayerTable([]),
-    user: { update: jest.fn().mockResolvedValue({}) },
+    user: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue({ username: "Kir" }) },
     realmClaim: {
       findFirst: jest.fn().mockResolvedValue(null),
@@ -175,12 +175,64 @@ describe("claimCountry", () => {
     b.db.country.count.mockResolvedValue(1);
     await expect(b.claims.claimCountry(actor, "c1")).rejects.toMatchObject({ code: "CAP_REACHED" });
     const c = setup();
-    c.db.realmClaim.findFirst.mockResolvedValue({ id: "old" });
+    c.db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1" });
+    c.deps.fetchPageCreator.mockResolvedValue("Someone Else");
     await expect(c.claims.claimCountry(actor, "c1")).resolves.toEqual({
       claimId: "old",
       status: "pending",
       autoApproved: false,
     });
+    expect(c.db.realmClaim.create).not.toHaveBeenCalled();
+    expect(c.db.realmClaim.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("re-verifies a pending claim: once the creator is verified it is upgraded in place, not duplicated (F-5.1)", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", countryId: "c1", status: "pending" });
+    await expect(claims.claimCountry(actor, "c1")).resolves.toEqual({
+      claimId: "old",
+      status: "approved",
+      autoApproved: true,
+    });
+    // The guarded decide (pending → approved) upgrades the existing row…
+    expect(db.realmClaim.updateMany).toHaveBeenCalledWith({
+      where: { id: "old", status: "pending" },
+      data: { status: "approved", autoApproved: true, reviewedBy: "system:auto", reviewedAt: expect.any(Date) },
+    });
+    // …then the nation is handed over; no second claim row.
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+    expect(db.country.updateMany).toHaveBeenCalledWith({
+      where: { id: "c1", ownerUserId: null },
+      data: { ownerUserId: "u1" },
+    });
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
+  });
+
+  it("an upgrade that a moderator decided first is NOT_PENDING and assigns nothing", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", countryId: "c1", status: "pending" });
+    db.realmClaim.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({ code: "NOT_PENDING" });
+    expect(db.country.updateMany).not.toHaveBeenCalled();
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+  });
+
+  it("an auto-approval that loses the ownership race is ALREADY_OWNED as a claim error, not a 500 (F-5.3)", async () => {
+    const { db, deps, claims } = setup();
+    db.country.updateMany.mockResolvedValue({ count: 0 }); // someone else took the nation after the read
+    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
+      name: "ClaimError",
+      code: "ALREADY_OWNED",
+    });
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+  });
+
+  it("known alt accounts are merged for ixwiki only — an iiwiki page by the alt stays pending (F-5.2)", async () => {
+    const { db, deps, claims } = setup();
+    db.country.findUnique.mockResolvedValue({ ...country, wikiSource: "iiwiki" });
+    deps.fetchPageCreator.mockResolvedValue("Carthinova"); // an ixwiki alt of Kir; on iiwiki it is someone else
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
+    expect(db.country.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -230,7 +282,7 @@ describe("reviewClaim", () => {
       code: "NOT_PENDING",
     });
     expect(db.country.updateMany).not.toHaveBeenCalled();
-    expect(db.user.update).not.toHaveBeenCalled();
+    expect(db.user.updateMany).not.toHaveBeenCalled();
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
   });
 
@@ -283,7 +335,7 @@ describe("reviewClaim", () => {
     await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
       status: "rejected",
     });
-    expect(db.user.update).not.toHaveBeenCalled();
+    expect(db.user.updateMany).not.toHaveBeenCalled();
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
   });
 
@@ -468,7 +520,8 @@ describe("claimNationPage", () => {
       where: { ownerUserId: "u1", realmId: EURTH },
     });
     const b = pageSetup();
-    b.db.realmClaim.findFirst.mockResolvedValue({ id: "old" });
+    b.db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1" });
+    b.deps.fetchPageCreator.mockResolvedValue("Someone Else");
     await expect(b.claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toEqual({
       claimId: "old",
       status: "pending",
@@ -477,7 +530,30 @@ describe("claimNationPage", () => {
     expect(b.db.realmClaim.findFirst).toHaveBeenCalledWith({
       where: { userId: "u1", realmId: EURTH, wikiPageTitle: "Aurelia", status: "pending" },
     });
-    expect(b.deps.fetchPageCreator).not.toHaveBeenCalled();
+    expect(b.db.realmClaim.create).not.toHaveBeenCalled();
+    expect(b.db.country.create).not.toHaveBeenCalled();
+  });
+
+  it("re-verifies the player's pending page claim and upgrades it in place once verified (F-5.1)", async () => {
+    const { db, deps, claims } = pageSetup();
+    db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", countryId: null, status: "pending" });
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toEqual({
+      claimId: "old",
+      status: "approved",
+      autoApproved: true,
+    });
+    expect(db.realmClaim.updateMany).toHaveBeenCalledWith({
+      where: { id: "old", status: "pending" },
+      data: { status: "approved", autoApproved: true, reviewedBy: "system:auto", reviewedAt: expect.any(Date) },
+    });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+    expect(db.country.create).toHaveBeenCalledTimes(1);
+    expect(db.realmClaim.update).toHaveBeenCalledWith({ where: { id: "old" }, data: { countryId: "new-c" } });
+    expect(db.realmClaim.updateMany).toHaveBeenCalledWith({
+      where: { realmId: EURTH, wikiPageTitle: "Aurelia", status: "pending", id: { not: "old" } },
+      data: expect.objectContaining({ status: "rejected" }),
+    });
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
   });
 
   it("a country created by someone else mid-claim is ALREADY_OWNED, not a 500, and nothing is announced", async () => {
