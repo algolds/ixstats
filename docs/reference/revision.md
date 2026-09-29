@@ -2,7 +2,7 @@
 
 **Status:** Canonical Standard v2  
 **Platform Release:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)  
-**Last Updated:** August 2026  
+**Last Updated:** September 2026  
 
 ---
 
@@ -27,21 +27,21 @@ Versioning communicates:
 ====================================================================================================
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ 1. 🏛️ MYCOUNTRY — Executive Simulation & Sovereign Governance (v5)                             │
+ │ 1. 🏛️ MYCOUNTRY — Executive Simulation & Sovereign Governance (v6)                             │
  │    Action: GOVERN | Domain Accent: Amber Gold (#F59E0B) | Route: /mycountry                    │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Command Surface (v5)     │ Single-page executive console across 4 active domains: Identity,  │
+ │ • Command Surface (v6)     │ Single-page executive console across 4 active domains: Identity,  │
  │                            │ Economy, Politics, Diplomacy. (Defense & Intel in preview).       │
  │ • Directives System        │ Declare national mandates, balance civil capacity (CivCap), and   │
  │                            │ resolve factional resistance.                                     │
  │ • Statecraft Engine (v4)   │ Deterministic sim: 42-tax bracket calculus, parliamentary D'Hondt │
  │                            │ representation, and composite vitality scoring.                   │
- │ • Country Builder (v3)     │ 6-step guided sovereign setup, MediaWiki infobox import, and      │
- │                            │ atomic policy matrix.                                             │
+ │ • Country Builder (v4)     │ Guided wizard stepper, MediaWiki infobox import, archetype        │
+ │                            │ defaults, and atomic policy matrix.                               │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ 2. 🗺️ ATLAS — Spatial Geography & Cartographic Studio (v2)                                     │
+ │ 2. 🗺️ IXWORLD — Spatial Geography & Cartographic Studio (v2)                                   │
  │    Action: MAP | Domain Accent: Sky Blue (#0EA5E9) | Route: /maps                              │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Interactive Map (v2)     │ WebGL vector globe rendering rivers, lakes, national borders,     │
@@ -61,7 +61,7 @@ Versioning communicates:
  │ • Margin                   │ Split-canvas inspector, text markup, gutter pins, and threaded    │
  │                            │ discussions directly on article text.                             │
  │ • Canvas Editor (v1)       │ Visual rich-text authoring with modular content blocks.           │
- │ • Wiki Awards (v1)         │ Editor milestone trophies, peer citations, and author medals.     │
+ │ • Wiki Awards (LoreWards)  │ Editor milestone trophies, peer citations, and author medals.     │
  │ • Stash System (v1)        │ Save articles, quotes, media, and forum threads for later.        │
  │ • Image Repository (v2)    │ Shared image and media library with instant card generators.      │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -124,7 +124,7 @@ Versioning communicates:
  │    Incubating Systems & Specialized Simulation Engines                                         │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Onoma Studio (v4)        │ Linguistic engine, phonetic Markov chains, Kokoro TTS (/labs/onoma)
- │ • MyLeague & MyClub (v1)   │ 7-sport season simulation engine and franchise ownership (/labs/myleague)
+ │ • MyLeague & MyClub (v1)   │ 7-sport season simulation engine and franchise ownership (/myleague, /myclub)
  │ • Vexel (v1)               │ Procedural heraldic coat-of-arms and vector flag studio (/labs/vexel)
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -137,9 +137,9 @@ The platform maintains strict separation between the **Platform SemVer Level** a
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
    *Current:* **`IxStates 1.4.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
-2. **First-Party Apps**: A single monotonic capability integer (`ATLAS_VERSION = 2`, `WIKIOS_VERSION = 1`, `VAULT_VERSION = 2`, `MYCOUNTRY_VERSION = 5`, `THINKPAGES_VERSION = 2`).
+2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 2`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 2`).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
-4. **Subsystems & Components**: Independent capability integers (`BUILDER_VERSION = 3`, `ACHIEVEMENTS_VERSION = 2`, `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `WIKIAWARDS_VERSION = 1`, `HALO_VERSION = 5`, `ONOMA_VERSION = 4`, `FACET_VERSION = 2`, `CANVAS_VERSION = 1`).
+4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 2`, `ACHIEVEMENTS_VERSION = 2` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 5`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 2`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
 5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.4`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
 
 ---

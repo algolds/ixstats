@@ -1,7 +1,7 @@
 # Backend Architecture
 
-**Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Express 5.2.1 · TypeScript 7.0.0  
-**Location**: `src/server/api/` (90 routers, 1,450+ procedures) · `src/server/db.ts` · `src/server/shared/`
+**Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Next.js 16 route handlers + custom Node `http` server (`server.mjs`) · TypeScript 7.0.2  
+**Location**: `src/server/api/` (77 routers registered in `root.ts`, ~950 procedures) · `src/server/db.ts` · `src/server/shared/`
 
 ---
 
@@ -11,38 +11,42 @@ All backend API logic in IxStates is exposed through end-to-end type-safe **tRPC
 
 ```
 src/server/
-├── db.ts                             # Global Prisma client instance with PostGIS connection
+├── db.ts                             # Global Prisma client instance (PostgreSQL + PostGIS)
 ├── shared/                           # Shared cross-router primitives (layer-cache, helpers)
 └── api/
-    ├── trpc.ts                       # tRPC context, middleware, and procedure builders
-    ├── root.ts                       # Master appRouter composing all 90 routers
+    ├── trpc/                         # tRPC context, middleware, and procedure builders (index.ts re-exports)
+    ├── root.ts                       # Master appRouter composing all 77 routers
     └── routers/                      # Domain routers (flat or subdir-organized)
         ├── countries/                # Countries router (crud, metrics, forecasts, search)
         ├── government/               # Government structure, departments, cabinet, legislation
         ├── national-issues/          # Issues engine, inbox, options, player consequences
-        ├── intent/                   # Statecraft directives engine (assemble, goals, execute)
-        ├── wikios/                   # WikiOS headless engine (articles, parsoid, revisions)
-        ├── onoma/                    # Onoma linguistics (markov, IPA phonetics, TTS)
-        ├── geo/                      # Map & GIS spatial pipeline (core, features, tiles)
+        ├── intent.ts                 # Statecraft directives engine (assemble, goals, execute)
+        ├── wikios/                   # WikiOS headless engine (page content, editing, history, search)
+        ├── onoma/                    # Onoma linguistics (namebank, etymology, speech, writing)
+        ├── geo/                      # Map & GIS spatial pipeline (core, features, editor, admin, sovereignty)
+        ├── realms/                   # Realms: realm admin, realm lookup, nation claims (logic in src/server/modules/realms)
         └── ...
 ```
 
 ---
 
-## 2. Context & Procedure Builders (`src/server/api/trpc.ts`)
+## 2. Context & Procedure Builders (`src/server/api/trpc/`)
 
 Every tRPC request initializes a typed context containing database access, authenticated user identity, and request metadata:
 
 ```typescript
-export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const auth = await getAuth(opts.headers);
-  const user = auth.userId ? await resolveDbUser(auth.userId) : null;
-
+// src/server/api/trpc/context.ts (simplified)
+export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequest }) => {
+  // Clerk auth from the request, or a verified Bearer token for API routes
+  // → resolves the DB user, play-as impersonation, and the rate-limit identity
   return {
     db,
+    auth,
     user,
-    userId: user?.id ?? null,
-    headers: opts.headers,
+    rateLimitIdentifier,
+    impersonatorId,
+    realUserId: impersonatorId ?? auth?.userId ?? null,
+    ...opts,
   };
 };
 ```
@@ -51,9 +55,12 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 | Builder | Access Level | Description |
 | :--- | :--- | :--- |
 | **`publicProcedure`** | Unauthenticated | Open to public queries (cached reads, public stats, factbook data). |
-| **`cachedPublicProcedure`** | Public + Memory Cache | Caches query responses in-memory for 60 seconds (reduces DB load on high-traffic reads). |
-| **`protectedProcedure`** | Authenticated User | Requires valid Clerk session; guarantees `ctx.userId` and `ctx.user` are non-null. |
-| **`adminProcedure`** | System Owner / Admin | Verifies `ctx.user.role === "ADMIN"` or `"SYSTEM_OWNER"`; guards CMS and migration routes. |
+| **`cachedPublicProcedure`** | Public + Cache | Realm-aware response cache, 60s TTL (`cachedStaticProcedure`: 1h; `cachedProtectedProcedure`: 30s per user). TTLs live in `src/lib/cache/trpc-cache.ts`. |
+| **`rateLimitedPublicProcedure`** | Public + Rate Limit | Public procedure with the public rate-limit bucket. |
+| **`protectedProcedure`** | Authenticated User | Requires valid Clerk session; guarantees `ctx.auth.userId` and `ctx.user` are non-null. Variants: `lightMutationProcedure`, `readOnlyProcedure` (rate-limited). |
+| **`countryOwnerProcedure`** | Country Owner | Authenticated + owns the target country (`standardMutationCountryOwnerProcedure` adds rate limiting and input validation). |
+| **`premiumProcedure`** | Premium User | Authenticated + premium membership. |
+| **`adminProcedure`** | System Owner / Admin | System owner bypass, else role name `owner`/`admin`/`staff` or role level ≤ 20; blocked while impersonating (play-as). Adds rate limiting and audit logging. |
 
 ---
 
@@ -62,26 +69,28 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 Large domain routers exceeding the architectural ceiling (≤700 lines) are split into focused sub-files and recombined using `mergeRouters` in their directory `index.ts`:
 
 ```typescript
-// src/server/api/routers/wikios/index.ts
-import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
-import { wikiArticlesRouter } from "./articles";
-import { wikiEditingRouter } from "./editing";
-import { wikiMediaRouter } from "./media";
-import { wikiRevisionsRouter } from "./revisions";
+// src/server/api/routers/wikios/index.ts (abridged — 11 sub-routers in total)
+import { mergeRouters } from "~/server/api/trpc";
+import { wikiosPageContentRouter } from "./page-content";
+import { wikiosHistoryDiffRouter } from "./history-diff";
+import { wikiosSearchRouter } from "./search";
+import { wikiosEditingRouter } from "./editing";
+// ...categories, templates, stash, watchlist-annotations, user-talk, discussions, utilities
 
 export const wikiosRouter = mergeRouters(
-  wikiArticlesRouter,
-  wikiEditingRouter,
-  wikiMediaRouter,
-  wikiRevisionsRouter
+  wikiosPageContentRouter,
+  wikiosHistoryDiffRouter,
+  wikiosSearchRouter,
+  wikiosEditingRouter,
+  // ...
 );
 ```
 
 ### Architectural Rules for Routers:
 1. **Preserve Exact API Shape**: `mergeRouters` preserves all `api.<router>.<procedure>` call paths. No frontend call-sites need changes when a flat router is split.
-2. **File Size Ceiling (≤700 Lines)**: Enforced by `scripts/audit/audit-arch.ts`. No single router file may exceed 700 lines.
+2. **File Size Ceiling (≤700 Lines)**: Enforced by `scripts/audit/audit-arch.ts` as a ratchet — new router files must stay under 700 lines, and files already over it are frozen at their size in `scripts/audit/arch-baseline.json` (may only shrink).
 3. **No Direct Cross-Router Imports**: Routers must not import internal helpers directly from another router's sub-files. Shared logic must be extracted to `src/server/shared/` or `src/lib/`.
-4. **Safe Router Registration (`root.ts`)**: In `root.ts`, each router is wrapped in a `safeRouter()` helper so if a single router encounters a runtime dependency error, remaining routers boot safely.
+4. **Static Router Registration (`root.ts`)**: Every router is a static ESM import registered directly in `createTRPCRouter({...})`. There is no runtime wrapper — a broken router fails the module load (and server boot) loudly.
 
 ---
 
@@ -89,19 +98,22 @@ export const wikiosRouter = mergeRouters(
 
 When multiple routers need to share common server-side logic (caching, batching, formatting), the code lives under `src/server/shared/`:
 
-- **`layer-cache.ts`**: High-performance in-memory cache for map vector layers and GeoJSON spatial features.
-- **`country-helpers.ts`**: Shared country ownership and permission validation helpers.
-- **`trpc-cache.ts`**: Cache key generation and TTL management for `cachedPublicProcedure`.
+- **`layer-cache.ts`**: In-memory cache for assembled map FeatureCollections (populated by the geo router, invalidated by the countries router).
+- **`country-helpers.ts`**: Shared numeric/field validation helpers for country data.
+- **`country-authorization.ts`**: Shared country write-permission checks (`COUNTRY_WRITE_ROLES`).
+- **`realm-link-guard.ts`**, **`geo-resource-sync.ts`**, **`transport-sync.ts`**, **`mycountry-helpers.ts`**: other cross-domain helpers.
+
+The tRPC response cache (key generation + TTLs for `cachedPublicProcedure` and friends) lives in `src/lib/cache/trpc-cache.ts`, not under `src/server/shared/`.
 
 ---
 
 ## 5. Security, Rate Limiting & Audit Logging
 
-1. **Redis Rate Limiting (`src/lib/rate-limiter.ts`)**:
+1. **Redis Rate Limiting (`src/lib/cache/rate-limiter.ts`)**:
    - Enforces IP and user-identifier limits across tRPC procedures.
-   - Falls back gracefully to an in-memory token bucket if Redis is unavailable.
-2. **User Activity Audit Trail (`src/lib/user-logging-middleware.ts`)**:
-   - Automatically records destructive mutations (policy changes, executive decrees, transfers) to `UserActivityLog`.
+   - Falls back gracefully to an in-memory store if Redis is unavailable.
+2. **User Activity Logging (`src/lib/logging/user-middleware.ts`)**:
+   - `userLoggingMiddleware` is attached to every base procedure and logs mutations (default `MUTATIONS_ONLY`) via `UserLogger` to the `SystemLog` table. `adminProcedure` additionally runs `auditLogMiddleware` for sensitive/executive paths.
 3. **SQL & Mutation Protection**:
    - Strict Zod v4 schemas validate all input parameters before procedure execution.
    - Prisma parameterized queries prevent SQL injection.
@@ -114,9 +126,9 @@ When multiple routers need to share common server-side logic (caching, batching,
 # Verify all backend routers adhere to ≤700L ceiling and no cross-router imports
 bun run audit:arch
 
-# Run partitioned server typecheck (4096MB safe heap)
+# Run partitioned server typecheck (tsconfig.server.json)
 bun run typecheck:server
 
 # Run backend unit tests
-bun run test -- src/server
+bun run test -- src/tests/server
 ```
