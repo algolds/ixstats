@@ -13,19 +13,19 @@ badge: Defense
 
 - Maintain inventory of ground, naval, air, and special capability units.
 - Use readiness metrics to spot under-maintained assets.
-- Link assets to unified intelligence modules for strategic readiness scoring.
+- Record each asset's status, modernization level, and annual maintenance cost.
 
 ## Where to Manage Units
 
 > **Tools**
 >
-> - Go to **MyCountry → Defense** to manage your units.
-> - Use the unit editor to adjust composition, equipment, and readiness.
-> - Track maintenance schedules and upgrade paths from the unit dashboard.
+> - Go to **MyCountry → Defense** and open the **Forces & Arsenal** tab to manage your units.
+> - Add or edit an asset to set its type, category, status, and modernization level.
+> - Browse the equipment catalog to outfit your forces.
 
 ## Best Practices
 
-- Schedule maintenance via quick actions with reminders surfaced in compliance.
+- Keep an eye on maintenance costs as your arsenal grows.
 - Annotate major upgrades in ThinkPages to capture narrative context.
 - Coordinate with economic planners when upgrades affect budgets.
 

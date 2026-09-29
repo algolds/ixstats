@@ -12,20 +12,19 @@ badge: Defense
 ## What the Defense Suite Covers
 
 - National defense readiness scoring across military branches and strategic modules.
-- Threat monitoring and incident tracking integrated with intelligence alerts.
-- Compliance tasks to ensure critical defense follow-ups are not missed.
+- Threat monitoring in the **Threat Vectors** tab and security events in **Internal Stability**.
 
 ## What You See
 
 > **Key Dashboards**
 >
-> - Defense tab in **MyCountry → Defense**.
-> - Readiness gauges, module cards, and crisis queues.
-> - Real-time security alerts and notification feeds.
+> - **MyCountry → Defense**, with tabs for Branches & Readiness, Threat Vectors, Forces & Arsenal, Special Operations, and Internal Stability.
+> - Readiness and budget cards for each branch.
+> - Security events and notification feeds.
 
 ## Keeping Things Up to Date
 
-- Use quick actions to put forces on alert, respond to threats, or escalate an incident.
+- Plan a deployment in **Special Operations**, or declare a directive to strengthen your defenses.
 - Write up what happened on ThinkPages to keep a record for your nation's history.
 - Keep an eye on live alerts so you can act the moment something changes.
 

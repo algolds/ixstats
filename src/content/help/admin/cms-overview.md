@@ -8,19 +8,18 @@ badge: For Admins
 
 - **100% Dynamic Content:** All game content lives in database; no code deployments needed for updates.
 - **20+ Admin Interfaces:** 10+ reference data, 2 intelligence/templates, 4 analytics, 2 system admin, and specialized tools.
-- **Role-Based Access:** ADMIN, CONTENT_EDITOR, MILITARY_ADMIN roles with granular permissions.
-- **Audit Logging:** All changes tracked with user, timestamp, before/after values.
+- **Role-Based Access:** Owner, admin, and staff roles, with permissions managed per role.
+- **Audit Logging:** Admin changes are recorded in the audit log.
 
-## Reference Data Management (9 Interfaces)
+## Reference Data Management
 
 > **Content Catalogs**
 >
-> - **Government Components:** 24 atomic components with effectiveness scores, synergies, conflicts.
-> - **Economic Components:** 40+ policy components with tier requirements and effects.
-> - **Tax System Components:** 42 tax types with rate ranges and revenue formulas.
+> - **Government Components:** 64 atomic components across 10 categories, with effectiveness scores, synergies, conflicts.
+> - **Economic Components:** 27 policy components with prerequisites and effects.
 > - **Diplomatic Scenarios:** 100+ scenario templates with NPC personality modifiers.
 > - **Military Equipment:** 500+ items (tanks, aircraft, ships, small arms) with specifications.
-> - **NPC Personalities:** 8 personality traits with calculation formulas and archetypes.
+> - **NPC Personalities:** 8 personality traits with calculation formulas and 6 archetypes.
 > - **Crisis Events:** Event templates with severity levels, impact calculations, response options.
 > - **Economic Archetypes:** Country economy templates with tier assignments.
 > - **Achievement Definitions:** Unlock criteria, rewards, progression tiers.
@@ -41,20 +40,13 @@ badge: For Admins
 > **Platform Management**
 >
 > - **Global Settings:** IxTime configuration, feature flags, maintenance mode, system announcements.
-> - **Role Management:** Assign/revoke ADMIN, CONTENT_EDITOR, MAP_EDITOR, MILITARY_ADMIN roles.
-
-## Bulk Operations
-
-- **CSV Import:** Bulk upload equipment, components, scenarios from spreadsheets.
-- **Batch Updates:** Mass edit attributes across multiple items simultaneously.
-- **Export:** Download reference data as CSV/JSON for external analysis or backup.
-- **Validation:** Pre-import checks for schema compliance, duplicate detection, referential integrity.
+> - **Role Management:** Assign and revoke user roles (owner, admin, staff) from User Roles.
 
 > [!WARNING]
 > **Access & Security**
 >
 > - Admin areas are limited to the right roles, and any unauthorized attempt is logged.
-> - Every change is recorded in the audit log, with a complete history.
+> - Admin changes are recorded in the audit log.
 > - Monitor admin activity via the admin analytics dashboard.
 > - Enable 2FA for admin accounts in production environments (recommended).
 
