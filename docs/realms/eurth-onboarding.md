@@ -34,8 +34,15 @@ This is destructive. It will:
 - Add `ownerUserId` and `lastSeenAt` columns.
 - Change `MapLayer`'s unique key to `(worldId, layerType, featureId)` (per-realm map features).
 
-There is no undo short of a DB restore — make sure you have a recent backup (`bun run db:backup`) before
-running this against prod.
+There is no undo short of a DB restore — take a backup first (`bun run db:backup` is not implemented for
+Postgres; use `pg_dump` against the Docker container):
+
+```bash
+docker exec ixstats-postgres pg_dump -U postgres -Fc ixstats > ~/ixstats-pre-realms-$(date +%F).dump
+```
+
+Prisma asks you to confirm the data-loss warnings (the `world_configs` drop and the two new unique
+constraints) — answer yes.
 
 ### 1.3 Backfill — dry run
 
@@ -135,6 +142,8 @@ server**.
   ```bash
   export IIWIKI_DEV_PROXY_URL=https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php
   ```
+  The proxy allows about 100 requests a minute and one crawl of Eurth uses about 110, so **wait a minute
+  between the dry run and `--apply`** (an HTTP 429 means just that; nothing is written, retry).
 
 ### 3.1 Dry run
 
