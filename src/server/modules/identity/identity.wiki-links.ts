@@ -12,6 +12,11 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+/**
+ * The proof window opens this long before the code was issued, so a wiki clock running behind ours can't drop
+ * the player's own save out of it. Safe: the random code cannot appear in any revision saved before it existed.
+ */
+const CLOCK_SKEW_MARGIN_MS = 5 * 60 * 1000;
 
 export type WikiLinkErrorCode =
   | "TAKEN"
@@ -52,8 +57,8 @@ export interface WikiLinkView {
 type TokenProof = "SAVED_BY_ACCOUNT" | "NOT_ON_PAGE" | "SAVED_BY_SOMEONE_ELSE" | "UNATTRIBUTABLE";
 
 /**
- * Rulings F-3/F-6 — who saved the token. `history` holds every revision since the code was issued (oldest
- * first); the code cannot exist before that. The latest revision must contain it, and its FIRST appearance must
+ * Rulings F-3/F-6 — who saved the token. `history` holds every revision since the code was issued, less the
+ * clock-skew margin (oldest first); the code cannot exist before it was issued. The latest revision must contain it, and its FIRST appearance must
  * be the account's own — so a token planted by someone else can't be laundered by a later edit or a revert that
  * restores it. A truncated window, or any revision whose content or author is hidden, cannot be attributed.
  */
@@ -127,8 +132,8 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
       throw new WikiLinkError("EXPIRED", "That code expired — request a new one");
     }
     const token = link.token;
-    const issuedAt = new Date(link.tokenExpiresAt.getTime() - TOKEN_TTL_MS);
-    const history = await wikiCall(() => deps.fetchUserPageHistory(source, link.username, issuedAt));
+    const since = new Date(link.tokenExpiresAt.getTime() - TOKEN_TTL_MS - CLOCK_SKEW_MARGIN_MS);
+    const history = await wikiCall(() => deps.fetchUserPageHistory(source, link.username, since));
     const proof = proveToken(history, token, link.username);
     if (proof === "UNATTRIBUTABLE") {
       throw new WikiLinkError("TOKEN_NOT_FOUND", "Save the code on your user page yourself, then press Verify");

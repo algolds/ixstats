@@ -241,10 +241,25 @@ describe("wiki link verification — confirm(): the token's first appearance sin
     return ctx;
   }
 
-  it("reads only the revisions saved since the code was issued (tokenExpiresAt − 24h)", async () => {
+  it("reads the revisions saved since the code was issued (tokenExpiresAt − 24h), less a 5-minute clock-skew margin", async () => {
     const { deps, service } = pendingSetup();
     await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
-    expect(deps.fetchUserPageHistory).toHaveBeenCalledWith("iiwiki", "Kir", ISSUED);
+    expect(deps.fetchUserPageHistory).toHaveBeenCalledWith("iiwiki", "Kir", new Date(ISSUED.getTime() - 5 * 60_000));
+  });
+
+  it("a wiki clock running behind ours: the account's save stamped 2 minutes before issue is still found and accepted", async () => {
+    const { deps, service } = pendingSetup();
+    const minutes = (m: number) => new Date(ISSUED.getTime() + m * 60_000);
+    const page = [
+      { at: minutes(-60), ...rev("My page", "Kir") },
+      { at: minutes(-2), ...rev(`My page ${TOKEN}`, "Kir") }, // saved after issue, stamped by a slow wiki clock
+      { at: minutes(30), ...rev(`Tidied ${TOKEN}`, "TidyBot") },
+    ];
+    // The wiki answers rvdir=newer&rvstart=<since>: every revision stamped at or after `since`, oldest first.
+    deps.fetchUserPageHistory.mockImplementation((_source: string, _user: string, since: Date) =>
+      Promise.resolve(history(page.filter((r) => r.at >= since).map(({ content, author }) => rev(content, author))))
+    );
+    await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
   });
 
   it("refuses a token planted by someone else, even after the account itself edited the page", async () => {
