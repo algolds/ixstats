@@ -1,6 +1,7 @@
 /**
- * One-time realm lore import (decision 7, rulings E-a..E-e): crawl a wiki category tree into a page index and
- * detect nation pages. Pure over an injected `query` so it is testable and proxy-agnostic.
+ * One-time realm lore import (decision 7, rulings E-a..E-e, E-d′): crawl a wiki category tree into a page index and
+ * find its nations — from a curated roster category when the realm has one, else by the infobox heuristic.
+ * Pure over an injected `query` so it is testable and proxy-agnostic.
  */
 import { z } from "zod";
 
@@ -27,7 +28,10 @@ const SKIP_SUBCATEGORY = /\b(redirects|templates|users|stubs)\b/i;
 /** MediaWiki continuation: every value is passed back verbatim on the next request. */
 const ContinueSchema = z.record(z.string(), z.string()).optional();
 
-/** Runs a query, following MediaWiki continuation until the wiki stops returning a `continue` object. */
+/**
+ * Runs a query, following MediaWiki continuation until the wiki stops returning a `continue` object. A repeated
+ * `continue` (e.g. a proxy that strips continue params) throws rather than looping forever.
+ */
 async function queryAll<T extends { continue?: Record<string, string> }>(
   query: WikiQuery,
   params: Record<string, string>,
@@ -37,6 +41,10 @@ async function queryAll<T extends { continue?: Record<string, string> }>(
   let next: Record<string, string> | undefined = {};
   while (next) {
     const data: T = await query({ ...params, ...next }, schema);
+    const cont = JSON.stringify(data.continue);
+    if (data.continue && cont === JSON.stringify(next)) {
+      throw new Error(`wiki returned the same continuation twice (${cont}); is a proxy stripping continue params?`);
+    }
     responses.push(data);
     next = data.continue;
   }
@@ -133,7 +141,8 @@ const ContentSchema = z.object({
 });
 
 const CONTENT_BATCH = 50;
-const NATION_INFOBOX = /\{\{\s*infobox\s+(former\s+)?country\b/i;
+/** `Infobox country` / `Infobox former country` (spaces or underscores) — not `Infobox country at games` and the like. */
+const NATION_INFOBOX = /\{\{\s*infobox[\s_]+(former[\s_]+)?country\s*(\||\}\}|$)/im;
 const FIRST_HEADING = /^==/m;
 
 /** The lead section is the text before the first heading. */
@@ -158,4 +167,40 @@ export async function detectNationTitles(query: WikiQuery, titles: string[]): Pr
     }
   }
   return nations;
+}
+
+const CATEGORY_PREFIX = /^Category:/;
+
+/** A curated roster (ruling E-d′): one subcategory per nation, named after it, plus any nation pages listed directly. */
+export async function listRosterNations(query: WikiQuery, rosterCategory: string): Promise<string[]> {
+  const titles = new Set<string>();
+  for (const m of await members(query, rosterCategory)) {
+    if (m.ns === NS_CATEGORY) titles.add(m.title.replace(CATEGORY_PREFIX, ""));
+    else if (m.ns === NS_MAIN) titles.add(m.title);
+  }
+  return [...titles].sort();
+}
+
+export type NationMethod = { kind: "infobox" } | { kind: "roster"; roster: string };
+
+const RETIRED_ROSTER = /retired/i;
+
+/** The roster wins when one is named; without one, the infobox heuristic. Retired nations are never claimable. */
+export function nationMethod(roster: string | undefined): NationMethod {
+  if (roster === undefined) return { kind: "infobox" };
+  if (RETIRED_ROSTER.test(roster)) {
+    throw new Error(`"${roster}" is a retired roster; retired nations are never claimable`);
+  }
+  return { kind: "roster", roster };
+}
+
+/** The page index and its nations. Roster nations join the index even when the crawl missed them. */
+export async function indexNations(
+  query: WikiQuery,
+  crawled: string[],
+  method: NationMethod
+): Promise<{ pages: string[]; nations: Set<string> }> {
+  if (method.kind === "infobox") return { pages: crawled, nations: await detectNationTitles(query, crawled) };
+  const nations = new Set(await listRosterNations(query, method.roster));
+  return { pages: [...new Set([...crawled, ...nations])].sort(), nations };
 }

@@ -1,10 +1,18 @@
 /** @jest-environment node */
-import { crawlRealmCategory, detectNationTitles, type WikiQuery } from "~/lib/realms/lore-import";
+import {
+  crawlRealmCategory,
+  detectNationTitles,
+  indexNations,
+  listRosterNations,
+  nationMethod,
+  type WikiQuery,
+} from "~/lib/realms/lore-import";
 
 type Member = { ns: number; title: string };
 
 const ROOT = "Category:Eurth";
 const HISTORY = "Category:History (Eurth)";
+const ROSTER = "Category:Countries (Eurth)";
 
 /** Category:Eurth contains itself (a cycle), a keyword subcategory, a skipped "redirects" one and an unrelated one. */
 const TREE: Record<string, Member[]> = {
@@ -20,6 +28,14 @@ const TREE: Record<string, Member[]> = {
     { ns: 0, title: "C" },
     { ns: 0, title: "A" }, // also listed under the root — one page, counted once
   ],
+  /** The curated roster: one subcategory per active nation, named after it; not reachable from the root crawl. */
+  [ROSTER]: [
+    { ns: 14, title: "Category:Nanto (Eurth)" },
+    { ns: 14, title: "Category:Abantium" },
+    { ns: 0, title: "B" },
+    { ns: 10, title: "Template:Eurth country" }, // not a nation
+    { ns: 14, title: "Category:B" }, // same nation as page B
+  ],
 };
 
 const CONTENT: Record<string, string> = {
@@ -27,6 +43,10 @@ const CONTENT: Record<string, string> = {
   B: "{{Infobox country\n| name = B\n}}\n'''B''' is a nation.\n== Geography ==",
   C: "Plain lore.",
   D: "{{ infobox former country | name = D }}\n'''D''' was a nation.",
+  E: "{{Infobox country at games\n| country = E\n}}\nE at the games.",
+  F: "{{Infobox_country|name=F}}\n'''F''' is a nation.",
+  G: "{{Infobox country geography\n| country = G\n}}",
+  H: "{{Infobox country demographics | country = H }}",
 };
 
 const PAGE_SIZE = 3;
@@ -123,6 +143,11 @@ describe("detectNationTitles", () => {
     await expect(detectNationTitles(query, ["C", "D"])).resolves.toEqual(new Set(["D"]));
   });
 
+  it("does not match Infobox country sub-templates, but matches Infobox_country", async () => {
+    const { query } = fakeWiki();
+    await expect(detectNationTitles(query, ["E", "F", "G", "H"])).resolves.toEqual(new Set(["F"]));
+  });
+
   it("fetches content in batches of 50 titles", async () => {
     const { query, calls } = fakeWiki();
     const titles = Array.from({ length: 120 }, (_, i) => `P${i}`);
@@ -150,5 +175,76 @@ describe("detectNationTitles", () => {
 
     await expect(detectNationTitles(query, ["A", "B"])).resolves.toEqual(new Set(["B"]));
     expect(calls[1]).toMatchObject({ titles: "A|B", rvcontinue: "12|34", continue: "||" });
+  });
+});
+
+describe("wiki continuation guard", () => {
+  it("throws instead of looping when the wiki repeats the same continuation", async () => {
+    const calls: Array<Record<string, string>> = [];
+    // A proxy that strips continue params: every answer is the first page again, with the same `continue`.
+    const query: WikiQuery = async (params, schema) => {
+      calls.push(params);
+      return schema.parse({
+        continue: { cmcontinue: "page|2", continue: "-||" },
+        query: { categorymembers: [{ ns: 0, title: "A" }] },
+      });
+    };
+
+    await expect(crawlRealmCategory(query, { rootCategory: ROOT, keyword: "Eurth" })).rejects.toThrow(
+      /same continuation/
+    );
+    expect(calls).toHaveLength(2);
+  });
+});
+
+describe("listRosterNations", () => {
+  it("returns roster subcategories without the Category: prefix plus direct ns0 pages, sorted and de-duplicated", async () => {
+    const { query, calls } = fakeWiki();
+
+    await expect(listRosterNations(query, ROSTER)).resolves.toEqual(["Abantium", "B", "Nanto (Eurth)"]);
+
+    const rosterCalls = calls.filter((c) => c.cmtitle === ROSTER);
+    expect(rosterCalls).toHaveLength(2); // followed the continuation
+    expect(rosterCalls[0]).toMatchObject({ list: "categorymembers", cmtype: "page|subcat" });
+  });
+});
+
+describe("nationMethod (ruling E-d′)", () => {
+  it("uses the infobox heuristic without a roster", () => {
+    expect(nationMethod(undefined)).toEqual({ kind: "infobox" });
+  });
+
+  it("uses a curated roster when given", () => {
+    expect(nationMethod(ROSTER)).toEqual({ kind: "roster", roster: ROSTER });
+  });
+
+  it.each(["Category:Retired countries (Eurth)", "Category:RETIRED nations"])(
+    "refuses the retired roster %p",
+    (roster) => {
+      expect(() => nationMethod(roster)).toThrow(/retired/i);
+    }
+  );
+});
+
+describe("indexNations", () => {
+  it("takes nations from the roster and adds roster titles the crawl missed to the index", async () => {
+    const { query, calls } = fakeWiki();
+
+    const result = await indexNations(query, ["A", "B", "C"], { kind: "roster", roster: ROSTER });
+
+    expect(result).toEqual({
+      pages: ["A", "Abantium", "B", "C", "Nanto (Eurth)"],
+      nations: new Set(["Abantium", "B", "Nanto (Eurth)"]),
+    });
+    expect(calls.some((c) => c.prop === "revisions")).toBe(false); // no infobox heuristic
+  });
+
+  it("falls back to the infobox heuristic over the crawled pages", async () => {
+    const { query } = fakeWiki();
+
+    await expect(indexNations(query, ["A", "B", "C"], { kind: "infobox" })).resolves.toEqual({
+      pages: ["A", "B", "C"],
+      nations: new Set(["B"]),
+    });
   });
 });

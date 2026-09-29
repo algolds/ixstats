@@ -1,20 +1,30 @@
 /**
- * One-time realm lore index import (rulings E-a..E-e). Dry run by default — the dry run is the preview; --apply writes.
- *   bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" --keyword Eurth [--apply]
- * Crawls the category tree (keyword subcategories only, depth 5, 5,000 pages), marks pages whose lead uses
- * Infobox country / former country as nations, and records the index as RealmPage rows. Page content is never copied.
+ * One-time realm lore index import (rulings E-a..E-e, E-d′). Dry run by default — the dry run is the preview; --apply writes.
+ *   bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" --keyword Eurth \
+ *     [--nation-roster "Category:Countries (Eurth)"] [--apply]
+ * Crawls the category tree (keyword subcategories only, depth 5, 5,000 pages) and records the index as RealmPage rows.
+ * Nations come from --nation-roster (one subcategory per nation; its titles join the index even if the crawl missed
+ * them; a retired roster is refused), else from pages whose lead uses Infobox country / former country.
+ * Page content is never copied.
  */
 import { PrismaClient } from "@prisma/client";
-import { crawlRealmCategory, detectNationTitles, type WikiQuery } from "~/lib/realms/lore-import";
+import { crawlRealmCategory, indexNations, nationMethod, type WikiQuery } from "~/lib/realms/lore-import";
 import { isProofSource, wikiQuery, type ProofSource } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 const db = new PrismaClient();
 const apply = process.argv.includes("--apply");
 
-function arg(name: string): string {
+function optionalArg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
-  const value = i === -1 ? undefined : process.argv[i + 1];
-  if (!value || value.startsWith("--")) throw new Error(`missing --${name}`);
+  if (i === -1) return undefined;
+  const value = process.argv[i + 1];
+  if (!value || value.startsWith("--")) throw new Error(`--${name} needs a value`);
+  return value;
+}
+
+function arg(name: string): string {
+  const value = optionalArg(name);
+  if (value === undefined) throw new Error(`missing --${name}`);
   return value;
 }
 
@@ -44,6 +54,7 @@ async function writeIndex(realmId: string, wikiSource: ProofSource, pages: strin
 }
 
 async function main() {
+  const method = nationMethod(optionalArg("nation-roster")); // refuses a retired roster before any request
   const slug = arg("realm");
   const source = sourceArg();
   const realm = await db.realm.findUnique({ where: { slug }, select: { id: true, name: true } });
@@ -57,13 +68,14 @@ async function main() {
 
   const query: WikiQuery = (params, schema) => wikiQuery(source, params, schema);
   const crawl = await crawlRealmCategory(query, { rootCategory: arg("category"), keyword: arg("keyword") });
-  const nations = await detectNationTitles(query, crawl.pages);
+  const { pages, nations } = await indexNations(query, crawl.pages, method);
   console.log(
-    `pages ${crawl.pages.length}, nations ${nations.size}, categories ${crawl.categoriesVisited.length}, truncated ${crawl.truncated ? "yes" : "no"}`
+    `pages ${pages.length} (crawled ${crawl.pages.length}), nations ${nations.size}, categories ${crawl.categoriesVisited.length}, truncated ${crawl.truncated ? "yes" : "no"}`
   );
+  console.log(`nation method: ${method.kind === "roster" ? `roster ${method.roster}` : "infobox heuristic"}`);
   for (const title of [...nations].sort().slice(0, 20)) console.log(`  nation: ${title}`);
 
-  if (apply) await writeIndex(realm.id, source, crawl.pages, nations);
+  if (apply) await writeIndex(realm.id, source, pages, nations);
 }
 
 main()
