@@ -104,7 +104,7 @@ export function InteractiveCardTemplates({
               style={{
                 borderColor: secureStatus ? `${customAccent}4D` : "#ef44444D",
                 backgroundColor: secureStatus ? `${customAccent}33` : "#ef444433",
-                color: secureStatus ? customAccent : "#ef4444",
+                color: secureStatus ? customAccent : "var(--color-error)",
               }}
               title="Click to toggle security status"
             >

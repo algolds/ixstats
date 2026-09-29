@@ -246,7 +246,7 @@
 /* Primary Action Buttons */
 .cl-formButtonPrimary {
   background-color: var(--color-brand-primary) !important;
-  color: #ffffff !important;
+  color: var(--color-white) !important;
   border-radius: 0.75rem !important;
   font-size: 0.8125rem !important;
   font-weight: 700 !important;

@@ -124,7 +124,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
         commit={{
           action: () => handleDelete(n.id),
           label: "Delete",
-          color: "#ef4444",
+          color: "var(--color-error)",
         }}
       >
         <SwipeActionButton
@@ -132,7 +132,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           icon={Trash2}
           label="Delete"
           onClick={() => handleDelete(n.id)}
-          color="#ef4444"
+          color="var(--color-error)"
         />
       </SwipeableRow.Trailing>
 

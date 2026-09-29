@@ -90,7 +90,7 @@ const badgeTint = (
 ): React.CSSProperties =>
   hasImage
     ? {
-        color: "#ffffff",
+        color: "var(--color-white)",
         borderColor: `var(--flag-border-${color})`,
         backgroundColor: "rgba(0, 0, 0, 0.45)",
       }
