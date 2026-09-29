@@ -220,7 +220,8 @@ export const worldMapProcedures = {
         })),
     };
 
-    return { worldMap, features, capitals };
+    // realmId: the realm these layers were resolved for, so clients can cache them under it
+    return { worldMap, features, capitals, realmId };
   }),
 
   /**

@@ -6,10 +6,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("fs/promises", () => ({ readFile: jest.fn() }));
 
 import { readFile } from "fs/promises";
-import {
-  loadLayerFromDB,
-  loadLayerWithFallback,
-} from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerFromDB, loadLayerWithFallback } from "~/server/api/routers/geo/core/layer-loader";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 

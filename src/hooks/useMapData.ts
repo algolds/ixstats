@@ -4,7 +4,8 @@
  * useMapData - Hook for fetching and managing world map layer data.
  *
  * Uses a two-tier cache strategy:
- * 1. IndexedDB (persistent) — survives page refreshes, 24h TTL
+ * 1. IndexedDB (persistent) — survives page refreshes, 24h TTL; per realm, read-only here
+ *    (useMapDataBatched writes it)
  * 2. React Query (in-memory) — instant during SPA navigation, 30min stale
  *
  * On first load: check IndexedDB → use as initialData → background refresh from server.
@@ -16,7 +17,8 @@ import { api } from "~/trpc/react";
 import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { getCachedMapLayers, setCachedMapLayers } from "~/lib/maps/map-idb-cache";
+import { getCachedMapLayers, type MapCacheScope } from "~/lib/maps/map-idb-cache";
+import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 
 /** Layers that are always visible and cannot be toggled off */
 export const LOCKED_LAYERS: MapLayerType[] = ["background"];
@@ -61,13 +63,20 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
 
-  // IndexedDB cached data for this realm (reloaded when the realm changes; only in browser)
+  // IndexedDB cached data for the realm this map shows (only in browser, once that realm is known).
+  // Read-only here: getWorldMap doesn't report the realm it resolved, so only useMapDataBatched —
+  // whose bundle does — writes entries.
+  const viewerRealmId = useViewerRealmId();
+  const cacheScope = useMemo<MapCacheScope>(
+    () => ({ realm, viewerRealmId }),
+    [realm, viewerRealmId]
+  );
   const [idbData, setIdbData] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setIdbData(null);
-    getCachedMapLayers(realm).then((cached) => {
+    getCachedMapLayers(cacheScope).then((cached) => {
       if (cached && !cancelled) {
         console.log("[useMapData] Loaded map data from IndexedDB cache");
         setIdbData(cached);
@@ -76,7 +85,7 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?
     return () => {
       cancelled = true;
     };
-  }, [realm]);
+  }, [cacheScope]);
 
   // Compute zoom bucket (0=globe, 1=mid, 2=detail) — only re-fetches on bucket change
   const zoomBucket = useMemo(() => {
@@ -109,18 +118,6 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?
       placeholderData: (idbData as any) ?? undefined,
     }
   );
-
-  // Persist fresh server data to IndexedDB
-  const persistedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!layerData) return;
-    // Only persist once per unique dataset (avoid re-writing on every render)
-    const marker = `${realm ?? ""}|${Object.keys(layerData).sort().join(",")}`;
-    if (persistedRef.current === marker) return;
-    persistedRef.current = marker;
-    setCachedMapLayers(layerData as Record<string, unknown>, realm);
-    console.log("[useMapData] Persisted map data to IndexedDB cache");
-  }, [layerData, realm]);
 
   // Use server data if available, otherwise IDB cache
   const effectiveData = layerData ?? idbData;

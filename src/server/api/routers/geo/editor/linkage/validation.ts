@@ -7,6 +7,7 @@ import { clearLayerCache } from "../../core";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { assertCountryInFeatureRealm } from "./realm-link-guard";
 
 export const geoEditorLinkageValidationRouter = createTRPCRouter({
   /** Validate country ↔ map feature linkage. Returns inconsistencies. */
@@ -248,6 +249,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
         });
         if (!ml) throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
+        await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
 
         await ctx.db.mapLayer.update({
           where: { id: ml.id },

@@ -7,6 +7,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { IxTime } from "~/lib/ixtime";
+import { assertCountryInFeatureRealm } from "./realm-link-guard";
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
@@ -33,22 +34,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         });
       }
 
-      // Verify country exists
-      const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId },
-      });
-      if (!country) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Country not found: ${input.countryId}`,
-        });
-      }
-      if (country.realmId !== realmId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "A map feature can only be linked to a country of its own realm",
-        });
-      }
+      // Verify the country exists and belongs to the feature's realm
+      const country = await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
 
       // Update map layer with country link
       await ctx.db.mapLayer.update({
@@ -185,13 +172,9 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input.realm);
       const feature = await ctx.db.mapLayer.findFirst({
-        where: {
-          layerType: "political",
-          featureId: input.featureId,
-          isActive: true,
-          realmId: await viewerRealmId(ctx, input.realm),
-        },
+        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
       });
       if (!feature) {
         throw new TRPCError({
@@ -199,6 +182,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
           message: `Feature not found: ${input.featureId}`,
         });
       }
+      // A new link (and the rename/wiki/sync writes that follow it) must stay inside the feature's realm
+      await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
 
       const updateData: any = {};
       if (input.displayName !== undefined) {

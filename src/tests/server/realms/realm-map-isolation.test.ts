@@ -76,7 +76,12 @@ function emptyDb(): Db {
 }
 
 function eurthViewer() {
-  return { id: "u1", clerkUserId: "clerk_u1", countryId: "c_eu", country: { id: "c_eu", realmId: EURTH } };
+  return {
+    id: "u1",
+    clerkUserId: "clerk_u1",
+    countryId: "c_eu",
+    country: { id: "c_eu", realmId: EURTH },
+  };
 }
 
 function ctxFor(db: Db, user: ReturnType<typeof eurthViewer> | null) {
@@ -87,12 +92,19 @@ function adminCtx(db: Db) {
   return createMockRouterContext({
     db,
     auth: { userId: "admin_1" },
-    user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 }, country: null },
+    user: {
+      id: "db_admin",
+      clerkUserId: "admin_1",
+      role: { name: "admin", level: 10 },
+      country: null,
+    },
   }) as never;
 }
 
 function wheres(db: Db, model: string, method = "findMany") {
-  return db[model]![method]!.mock.calls.map((c: [{ where?: Record<string, unknown> }]) => c[0]?.where);
+  return db[model]![method]!.mock.calls.map(
+    (c: [{ where?: Record<string, unknown> }]) => c[0]?.where
+  );
 }
 
 /** A where names the realm directly (map layers, routes) or through its country (cities, labels…). */
@@ -142,40 +154,67 @@ describe("/maps shows only the viewed realm's map", () => {
 
   it("the map bundle's cities, POIs, subdivisions and capitals belong to the realm's countries", async () => {
     const db = emptyDb();
-    await geoCaller(ctxFor(db, eurthViewer())).getMapBundle({ layers: ["political"] });
+    const bundle = await geoCaller(ctxFor(db, eurthViewer())).getMapBundle({
+      layers: ["political"],
+    });
 
-    expect([...wheres(db, "city"), ...wheres(db, "pointOfInterest"), ...wheres(db, "subdivision")].map(realmOf)).toEqual([
-      EURTH,
-      EURTH,
-      EURTH,
-      EURTH,
-    ]);
+    // the resolved realm travels with the bundle so the client caches it under the right realm
+    expect(bundle.realmId).toBe(EURTH);
+
+    expect(
+      [...wheres(db, "city"), ...wheres(db, "pointOfInterest"), ...wheres(db, "subdivision")].map(
+        realmOf
+      )
+    ).toEqual([EURTH, EURTH, EURTH, EURTH]);
   });
 
   const listings: Array<[string, string[], (db: Db) => Promise<unknown>]> = [
-    ["geoCore.getWorldMapAsOf", ["mapLayer"], (db) => geoCaller(ctxFor(db, eurthViewer())).getWorldMapAsOf({ ixTime: 0 })],
-    ["geoCore.listCountries", ["mapLayer"], (db) => geoCaller(ctxFor(db, eurthViewer())).listCountries()],
+    [
+      "geoCore.getWorldMapAsOf",
+      ["mapLayer"],
+      (db) => geoCaller(ctxFor(db, eurthViewer())).getWorldMapAsOf({ ixTime: 0 }),
+    ],
+    [
+      "geoCore.listCountries",
+      ["mapLayer"],
+      (db) => geoCaller(ctxFor(db, eurthViewer())).listCountries(),
+    ],
     [
       "geoCore.searchFeatures",
       ["mapLayer", "city", "subdivision"],
       (db) => geoCaller(ctxFor(db, eurthViewer())).searchFeatures({ query: "ga" }),
     ],
-    ["geoCore.getAllMapFeatures", ["city", "pointOfInterest", "subdivision"], (db) => geoCaller(ctxFor(db, eurthViewer())).getAllMapFeatures()],
-    ["geoCore.getCapitalCities", ["city"], (db) => geoCaller(ctxFor(db, eurthViewer())).getCapitalCities()],
+    [
+      "geoCore.getAllMapFeatures",
+      ["city", "pointOfInterest", "subdivision"],
+      (db) => geoCaller(ctxFor(db, eurthViewer())).getAllMapFeatures(),
+    ],
+    [
+      "geoCore.getCapitalCities",
+      ["city"],
+      (db) => geoCaller(ctxFor(db, eurthViewer())).getCapitalCities(),
+    ],
     [
       "geoFeatures.getAllMapLabels",
       ["mapLabel"],
-      (db) => createCallerFactory(geoFeaturesLabelsRouter)(ctxFor(db, eurthViewer())).getAllMapLabels(),
+      (db) =>
+        createCallerFactory(geoFeaturesLabelsRouter)(ctxFor(db, eurthViewer())).getAllMapLabels(),
     ],
     [
       "geoFeatures.getAllStoryPins",
       ["storyPin"],
-      (db) => createCallerFactory(geoFeaturesStoryPinsRouter)(ctxFor(db, eurthViewer())).getAllStoryPins(),
+      (db) =>
+        createCallerFactory(geoFeaturesStoryPinsRouter)(
+          ctxFor(db, eurthViewer())
+        ).getAllStoryPins(),
     ],
     [
       "transport.getAllRoutesGeoJSON",
       ["transportRoute"],
-      (db) => createCallerFactory(transportRouteQueriesRouter)(ctxFor(db, eurthViewer())).getAllRoutesGeoJSON(),
+      (db) =>
+        createCallerFactory(transportRouteQueriesRouter)(
+          ctxFor(db, eurthViewer())
+        ).getAllRoutesGeoJSON(),
     ],
   ];
 
@@ -203,7 +242,11 @@ describe("/maps shows only the viewed realm's map", () => {
   it("a feature-id or name lookup is scoped to the realm; a country-id lookup is not", async () => {
     const db = emptyDb();
     const caller = geoCaller(ctxFor(db, eurthViewer()));
-    for (const input of [{ featureId: "Gallambria" }, { countryName: "Gallambria" }, { countryId: "c_eu" }]) {
+    for (const input of [
+      { featureId: "Gallambria" },
+      { countryName: "Gallambria" },
+      { countryId: "c_eu" },
+    ]) {
       await caller.getCountryGeometry(input).catch(() => undefined);
     }
 
@@ -245,7 +288,9 @@ describe("a country's geo profile uses its own realm's base layers", () => {
 describe("the world editor works inside the realm it edits (ruling E-o)", () => {
   it("linkage validation compares the edited realm's features with the edited realm's nations", async () => {
     const db = emptyDb();
-    await createCallerFactory(geoEditorLinkageValidationRouter)(adminCtx(db)).validateLinkage({ realm: "eurth" });
+    await createCallerFactory(geoEditorLinkageValidationRouter)(adminCtx(db)).validateLinkage({
+      realm: "eurth",
+    });
 
     expect(wheres(db, "mapLayer").map(realmOf)).toEqual([EURTH]);
     expect(wheres(db, "country").map(realmOf)).toEqual([EURTH]);
@@ -278,9 +323,51 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
     expect(db.mapLayer!.update).not.toHaveBeenCalled();
   });
 
+  it("refuses to re-link a feature to another realm's country through its properties", async () => {
+    const db = emptyDb();
+    db.mapLayer!.findFirst!.mockResolvedValue({
+      id: "ml1",
+      featureId: "Gallambria",
+      countryId: null,
+    });
+    db.country!.findUnique!.mockResolvedValue({ name: "Caphiria", realmId: DEFAULT_REALM_ID });
+
+    await expect(
+      createCallerFactory(geoEditorLinkageAssignmentRouter)(adminCtx(db)).updateFeatureProperties({
+        featureId: "Gallambria",
+        countryId: "c_ix",
+        displayName: "Gallambria",
+        realm: "eurth",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.mapLayer!.update).not.toHaveBeenCalled();
+    expect(db.country!.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses link_by_name to another realm's country", async () => {
+    const db = emptyDb();
+    db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", featureId: "Gallambria" });
+    db.country!.findUnique!.mockResolvedValue({ name: "Caphiria", realmId: DEFAULT_REALM_ID });
+
+    await expect(
+      createCallerFactory(geoEditorLinkageValidationRouter)(adminCtx(db)).repairLinkage({
+        action: "link_by_name",
+        featureId: "Gallambria",
+        countryId: "c_ix",
+        realm: "eurth",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.mapLayer!.update).not.toHaveBeenCalled();
+    expect(db.country!.update).not.toHaveBeenCalled();
+  });
+
   it("the border editor loads the feature and its neighbours from the edited realm", async () => {
     const db = emptyDb();
-    db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", featureId: "F", boundingBox: [0, 0, 1, 1] });
+    db.mapLayer!.findFirst!.mockResolvedValue({
+      id: "ml1",
+      featureId: "F",
+      boundingBox: [0, 0, 1, 1],
+    });
     await createCallerFactory(geoEditorBordersRouter)(adminCtx(db)).startBorderEditSession({
       featureId: "F",
       realm: "eurth",
@@ -293,7 +380,9 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
   it("rebuilding adjacency pairs and updates the given realm's features only", async () => {
     const db = emptyDb();
     db.$queryRawUnsafe!.mockResolvedValue([{ a: "A", b: "B" }]);
-    await createCallerFactory(geoEditorBordersRouter)(adminCtx(db)).rebuildAdjacency({ realmId: EURTH });
+    await createCallerFactory(geoEditorBordersRouter)(adminCtx(db)).rebuildAdjacency({
+      realmId: EURTH,
+    });
 
     const [sql, realmParam] = db.$queryRawUnsafe!.mock.calls[0];
     expect(sql).toContain(`a."worldId" = $1 AND b."worldId" = $1`);
@@ -312,10 +401,19 @@ describe("imports and SVG commits never touch another realm's layers", () => {
       svgMetadata: {},
       geojsonData: {
         type: "FeatureCollection",
-        features: [{ type: "Feature", id: "X", properties: { name: "X" }, geometry: { type: "Point", coordinates: [0, 0] } }],
+        features: [
+          {
+            type: "Feature",
+            id: "X",
+            properties: { name: "X" },
+            geometry: { type: "Point", coordinates: [0, 0] },
+          },
+        ],
       },
     });
-    await createCallerFactory(geoAdminCommitsRouter)(adminCtx(db)).commitSvgUpload({ uploadId: "up1" });
+    await createCallerFactory(geoAdminCommitsRouter)(adminCtx(db)).commitSvgUpload({
+      uploadId: "up1",
+    });
 
     expect(wheres(db, "mapLayer", "deleteMany").map(realmOf)).toEqual([DEFAULT_REALM_ID]);
     expect(wheres(db, "mapLayer").map(realmOf)).toEqual([DEFAULT_REALM_ID, DEFAULT_REALM_ID]);
