@@ -4,6 +4,11 @@ description: Plan ahead with forward-looking analytics that help you anticipate 
 badge: Intelligence
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## How Forecasting Helps You
 
 Your intelligence system doesn't just tell you what's happening now -- it looks ahead. Forecasts combine your economic trajectory, diplomatic trends, and social indicators to project where your nation is heading. This gives you time to act before problems become crises and position yourself to take advantage of emerging opportunities.
@@ -16,7 +21,7 @@ Your intelligence system doesn't just tell you what's happening now -- it looks 
 
 > **Forecast Locations**
 >
-> - **Intelligence Feed:** The Forward-Looking section on your [Intelligence page](/mycountry/intelligence) highlights the most important predictions and their confidence levels.
+> - **Intelligence Feed:** The Forward-Looking section on your Intelligence page highlights the most important predictions and their confidence levels.
 > - **Economic Analytics:** Scenario cards and projection charts in your economy section let you explore different possible futures side by side.
 > - **Policy Impact Previews:** When you create or adjust policies, you'll see estimated impacts on your key metrics before you commit.
 

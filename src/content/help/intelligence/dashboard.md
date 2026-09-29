@@ -4,6 +4,11 @@ description: Your central command post for monitoring your nation's health, spot
 badge: Intelligence & Strategy
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## What the Dashboard Shows You
 
 The Intelligence Dashboard is your first stop when you log in. It brings together everything you need to know about your nation into a single, easy-to-read view. Navigate to it from **MyCountry → Intelligence** in your sidebar.

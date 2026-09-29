@@ -1,5 +1,10 @@
 # Hex inventory — 2026-09-27 (baseline = HEAD a9fa3bbc, before first-area apply)
 
+> ## Status (2026-09-29)
+>
+> Point-in-time baseline (HEAD `a9fa3bbc`). The first-area and repo-wide passes it records landed as `cfc44e15d` ("style(tokens): replace hard-coded UI colours with theme tokens where the value matches exactly"); the codemod lives at `scripts/codemods/hex-to-tokens.ts`. **RESOLVED:** the 28 mappable sites, 26 of 84 class-b sites, 13 of 652 class-b? literals, 3 of 5 class-a classes; there are now **0** Tailwind arbitrary-hex classes (`[#…]`) in TSX. **OPEN (by design or pending a design call):** 2 class-a sites (`SwipeableRow.tsx:781` `color-mix(…#0f172a)` / `dark:…#f8fafc` pair), 58 class-b CSS/style sites with no exact token, 639 class-b? JS literals (198 theme definitions, 163 categorical palettes, 108 chart colours — mostly legitimate), 1,742 class-c data literals (must stay), and the three "Flags for the owner". A raw grep now finds ~966 hex literals across TSX.
+
+
 Scanned: src/**/*.{ts,tsx,css} — 2866 hex sites. Mappable by the codemod: 28.
 
 Classes: a = Tailwind arbitrary class (class / class-complex); b = inline style + CSS declarations (style / style-complex / css / css-effect); b? = JS literal outside style={{}} (manual triage); c = DATA (must stay literal); n/a = comments, var() fallbacks, token definitions.

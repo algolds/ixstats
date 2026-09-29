@@ -4,6 +4,11 @@ description: Manage national security posture, readiness, and crisis response th
 badge: Defense
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+
 ## What the Defense Suite Covers
 
 - National defense readiness scoring across military branches and strategic modules.

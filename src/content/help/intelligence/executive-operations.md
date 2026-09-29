@@ -4,6 +4,11 @@ description: Turn intelligence insights into decisive action -- coordinate polic
 badge: Intelligence
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## How Intelligence Supports Your Decisions
 
 Intelligence is only valuable if you act on it. The executive operations tools are designed to bridge the gap between knowing what's happening and doing something about it. Every alert, metric, and forecast includes action pathways so you can respond immediately without switching contexts.
@@ -18,7 +23,7 @@ Intelligence is only valuable if you act on it. The executive operations tools a
 >
 > Follow this routine to stay on top of your nation's affairs:
 >
-> 1. **Review your dashboard:** Open [MyCountry → Intelligence](/mycountry/intelligence) and scan for new signals -- vitality changes, hot issues, and fresh forecasts.
+> 1. **Review your dashboard:** Open MyCountry → Intelligence and scan for new signals -- vitality changes, hot issues, and fresh forecasts.
 > 2. **Address urgent items:** Use quick actions to respond to high-priority alerts. Draft policies, approve missions, or adjust your stance on developing situations.
 > 3. **Work the compliance queue:** Review and clear overdue tasks. Each resolved item keeps your governance running cleanly and can unlock new opportunities.
 > 4. **Document your decisions:** Log important choices in ThinkPages so you have a record of why you acted and what you expect to happen. This is invaluable when reviewing outcomes later.

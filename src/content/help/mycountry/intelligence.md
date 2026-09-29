@@ -4,6 +4,11 @@ description: Insights that turn your nation's numbers into clear next moves.
 badge: MyCountry — Your Nation's Home
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## Your Nation, Made Sense Of
 
 Intelligence is where the raw numbers become a story you can act on. There’s nothing to manage here — it’s pure insight, laid out in three views:

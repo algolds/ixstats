@@ -1,5 +1,31 @@
 # IxStats Bloat, Duplication & AI-Slop Audit — 2026-09-23
 
+> ## Status (2026-09-29)
+>
+> Point-in-time record; findings are unchanged. §9 logs the 2026-09-25 execution (all 9 commits are merged into the current tree). Later commits closed more: plan 312 `cc12cf122` deleted 508 zero-caller procedures (router total now 77 namespaces / 958 procedures vs 94 / 1,661 audited); `48c03130b` moved help/terms/privacy to markdown; `ededb10d8` (plans 313 + 345) unified formatters/colour helpers/relative time/rarity palette and added the admin config-kv helper; `f737604ca` + `003c1ee5d` (plan 346 Steps 2–6) trimmed root providers, added opaque nested surfaces, `<Eyebrow>` and fewer decorative pulses; `server.mjs` no longer imports `sports-cron.js`.
+>
+> | Top-30 item | Status |
+> |---|---|
+> | #1, #2, #3, #4, #5, #6, #7, #9, #11, #13, #14, #16, #21, #27, #29 | **RESOLVED** (#29: 418 `text-[8–11px]` sites remain, mostly the excluded `labs/onoma`) |
+> | #18 social dead code | **PARTIAL** — `_components/ActivityFeed.tsx` gone; `src/lib/notifications/hooks.ts` is still 1,288 lines |
+> | #25 stdlib/dup helpers | **PARTIAL** — relative time and colour helpers unified; 27 `Math.random().toString(36)` ids and 29 `JSON.parse(JSON.stringify())` remain |
+> | #8 logging framework | **OPEN** — `src/lib/logging/` (7 files) and `lib/system/logger{,.server}.ts` still exist; 6 `logger.*` calls vs ~1,700 `console.*` |
+> | #10 sports simulate-and-persist | **PARTIAL** — shared `simulateAndPersistMatch` exists in the sports router; `season-cron.ts` still a second lifecycle |
+> | #12 rarity palettes | **PARTIAL** — one palette in `display-utils`; the other 8 tables not folded |
+> | #15 deck.gl ×4 / tsparticles ×2 | **OPEN** (product call) |
+> | #17 `ui/` feature code | **PARTIAL** — `poll-widget` moved to `components/shared/polls/` (1,225 lines), metric-details moved under MyCountry; swipe physics still hand-rolled (`SwipeableRow.tsx` 948 lines) |
+> | #19 WikiOS | **PARTIAL** — `wikiImporter` gone; `wikios/templates.ts` still 1,298 lines (69% static data); orphaned `wikios-*` CSS not re-counted |
+> | #20 diplomacy/intel tail | **OPEN** — `IxTimeSyncManager`/`AccuracyVerifier` (`lib/ixtime/accuracy.ts`) still only used by the admin visualizer |
+> | #22 `DATABASE_READONLY` | **OPEN** |
+> | #23 unreferenced Prisma models | **OPEN** (operator-gated) — schema still 332 models; `c15t.prisma` (8) still unreferenced (`exchange.prisma` is now used by `lib/vault/exchange-service.ts`) |
+> | #24 atomic taxonomies | **PARTIAL** — only `atomicGovernment` (1 proc) remains of the flat `atomic*` routers; gov/econ/tax component triplicates remain |
+> | #26 admin duplication | **PARTIAL** — config-kv helper landed; other dups not re-checked |
+> | #28 root providers | **PARTIAL** — providers trimmed and `MotionConfig reducedMotion="user"` added; ~9-deep nesting remains |
+> | #30 design slop | **OPEN** — current counts in TSX: 966 hex literals, 3,972 `dark:`, 1,376 `backdrop-blur`, 174 `animate-pulse`, 180 `Sparkles`; `transition-all` down to 191 |
+>
+> Also still open from §3/§7: `db.ts:400` fires `syncAchievements` as an import side effect; `getKokoroAdminConfig` (`routers/onoma/speech.ts:77`) returns the Kokoro API key to the admin client.
+
+
 **Commit:** `97e5a945` (branch `rose-garden`) · **Scope:** whole `src/` tree (~790K lines TS/TSX), `prisma/`, `scripts/`, root config, `package.json` · **Mode:** ponytail-audit (complexity only) + improve lenses (perf, TS, Apple/Facet design) · **Method:** 13 parallel read-only auditors, one per system, each verifying "dead" claims by grep over `src/`, `scripts/`, `server.mjs`, `ws-backend.mjs`, `cron-runner.mjs`; every top finding re-verified by the coordinator against the code. Three census scripts (tRPC zero-callers, import-graph reachability from all pages/routers, Prisma model references) were run read-only.
 
 **Not in this audit:** correctness bugs, security, and hot-path performance — those were audited on 2026-09-23 and are planned in `plans/323–340`. Findings already covered by an existing plan are cited by number, not repeated. Nothing was applied.

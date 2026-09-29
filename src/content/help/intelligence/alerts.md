@@ -4,6 +4,11 @@ description: Stay on top of developing situations with intelligent alerts that t
 badge: Intelligence & Strategy
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## Types of Alerts You'll Receive
 
 Your intelligence system monitors every corner of your nation and sends you alerts when something important changes. Alerts are grouped into four categories:
@@ -19,7 +24,7 @@ Your intelligence system monitors every corner of your nation and sends you aler
 >
 > You'll find your alerts in several places so you never miss something important:
 >
-> - **Intelligence Feed:** Your primary alert center within the [Intelligence page](/mycountry/intelligence), showing all alerts with full context and action buttons.
+> - **Intelligence Feed:** Your primary alert center within the Intelligence page, showing all alerts with full context and action buttons.
 > - **Notification Bell:** The bell icon in your top navigation shows a count of unread alerts and lets you quickly preview recent ones from anywhere.
 > - **Discord Notifications:** Critical incidents are automatically posted to your Discord channel so you're alerted even when you're not on the platform.
 

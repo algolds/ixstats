@@ -4,6 +4,11 @@ description: Track force composition, maintenance schedules, and upgrade paths.
 badge: Defense
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+
 ## Asset Management
 
 - Maintain inventory of ground, naval, air, and special capability units.

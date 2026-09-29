@@ -4,6 +4,11 @@ description: Browse and manage 500+ military equipment items across all domains 
 badge: Defense
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+
 ## Equipment Categories
 
 - **Ground Forces:** Main battle tanks, armored vehicles, artillery systems, air defense platforms, infantry weapons (500+ items).

@@ -1,6 +1,6 @@
 # MyLeague
 
-**Last updated:** June 2026
+**Last updated:** September 2026
 
 Sports league simulation — the public competition layer of IxStates. Create a league, fill it with
 auto-generated teams and rosters, run a season match-day by match-day, and resolve standings,
@@ -48,15 +48,16 @@ Boxing (`bracket`) exposes a **Bracket** tab; F1 (`circuit`) exposes a **Race Re
 - **Create League wizard** — `LeagueCreator` multi-step dialog: pick sport preset, configure, review.
 - **League workspace** — HUD banner (season, team count, progression, reigning champion), sidebar
   brand card + champion widget, and tabbed content.
-- **Standings** — position/record/points table (`Standings1`), with promotion/relegation zones when
+- **Standings** — position/record/points table (`StandingsTable`), with promotion/relegation zones when
   configured on the league.
-- **Schedule** — match cards grouped by match day plus a live **Simulation Control Deck**
+- **Schedule** — match cards grouped by match day plus the **`LeagueControlDeck`** simulation controls
   (simulate next day, simulate remaining, transition season).
 - **Bracket / Race Results** — weight-class brackets for boxing, driver/race grids for F1.
-- **Teams directory** — all teams with Managed/Unclaimed badges; clicking opens `TeamRosterModal`.
-- **History** — completed seasons with champions, linking to the season-detail route.
-- **Match detail** — `MatchDetailModal` opens from any result for box-score/commentary.
-- **Settings** — `LeagueSettingsModal` (name edit, logo upload) via the "Manage MyLeague" button.
+- **Teams directory** — all teams with Managed/Unclaimed filters; clicking a team opens it in the
+  Sports Focus panel (`useSportsFocus().focusOrganization`, URL `?focus=organization:<id>`).
+- **History** — league archive (`LeagueArchiveTab`) with champions and all-time records, linking to the season-detail route.
+- **Match detail** — `MatchDetailModal` / `MatchCenter` open from any result for box-score, commentary, and analysis.
+- **Settings** — `LeagueSettingsModal` with Branding, Competition (incl. promotion/relegation counts), and Advanced tabs.
 
 ## Simulation loop
 
@@ -64,25 +65,28 @@ Boxing (`bracket`) exposes a **Bracket** tab; F1 (`circuit`) exposes a **Race Re
 2. **Start Season** (`startSeason`) → schedule generated per archetype.
 3. **Simulate Day** (`simulateMatchDay`) / **Simulate Remaining** (`simulateFullSeason`) → bounded
    probabilistic engine resolves matches, updates standings.
-4. Postseason resolves (`simulatePlayoffRound` / `simulateRace`) → champion declared.
+4. Postseason brackets/races resolve inside the same simulation calls (multi-stage seasons advance via
+   `transitionToNextStage`) → champion declared.
 5. **Transition Season** (`transitionToNextSeason`) → player progression + new draft, next season.
 
 Simulation controls are live in the workspace for any authenticated user (not dev-only).
 
 ## Architecture
 
-Page components are thin; all UI lives in `src/components/sports/league/`:
+Page components are thin; the workspace is `LeagueRouter` in `src/components/sports/league/`:
 
 | Component | Role |
 |-----------|------|
 | `LeagueCreator` | Multi-step create-league dialog |
-| `LeagueSidebarLayout` / `LeagueSidebarNav` | Workspace shell + section nav, brand/champion widgets |
-| `StandingsTable`, `ScheduleView`, `BracketView`, `RaceResults`, `DraftPicksView` | Tab content views |
-| `MatchTickerSim` | Animated live match replay |
-| `TeamRosterModal`, `TeamSettingsModal` | Team roster slide-over and settings |
-| `LeagueSettingsModal`, `MatchDetailModal` | League settings dialog, per-match detail modal |
+| `SportsShell` / `SportsSidebarNav` / `SportsCommandBar` (`src/components/sports/core/`) | Shared workspace shell + section nav (also used by MyClub) |
+| `SportsFocusProvider` / `SportsFocusOverlay` / `SportsFocusPanel` | URL-reflected Focus panel for teams, athletes, and matches |
+| `LeagueMasthead`, `LeagueBrandWidgets`, `LeagueControlDeck`, `MatchdayTape`, `NextMatchCountdown` | Header, brand/champion widgets, simulation controls |
+| `tabs/League*Tab.tsx` (`BracketView`, `RaceResults`, `DraftPicksView`) | Tab content views |
+| `MatchTickerSim`, `MatchDetailModal`, `match/MatchCenter` | Live match replay, per-match detail, COMPETE match center |
+| `TeamSettingsModal`, `LeagueSettingsModal` (`settings/`) | Team and league settings |
 
-Shared sport views `Standings1` and `LatestResults1` come from `src/components/sports/`; sport
+Shared sport views `StandingsTable`, `LatestResults`, `Scoreboard`, `PlayerCard` come from
+`src/components/sports/`; match surfaces from `src/components/sports/surfaces/`; sport
 theming/presets from `src/lib/sports/presets.ts`; the simulation engine from `src/lib/sports/`.
 
 ## Data sources
@@ -98,13 +102,15 @@ in `root.ts`. Procedures used by these pages:
 | `createLeague` / `updateLeague` | Create wizard / settings modal |
 | `getStandings`, `getSchedule`, `getSeason` | Standings, schedule, season detail |
 | `getBracket`, `getRaceResults`, `getDraftPicks` | Boxing / F1 / draft tabs |
-| `getLeagueHistory` | History tab |
-| `startSeason`, `simulateMatchDay`, `simulateFullSeason`, `transitionToNextSeason` | Simulation controls |
+| `getLeagueArchive`, `getAllTimeRecords` | History tab (`almanac.ts`) |
+| `startSeason`, `simulateMatchDay`, `simulateSingleMatch`, `simulateFullSeason`, `transitionToNextSeason` | Simulation controls |
+| `resetSeason`, `regenerateSchedule`, `overrideMatchResult`, `transferTeam`, `setFeaturedLeague` | Commissioner / admin controls |
 
-Other domains in the same router: `teams` (team/tactics/training/lineups, plus `getMyClubs`,
-`getMyClubOverview`, `claimTeam`), `transfers` (listings/bids/valuations), `club` (stadium upgrades,
-ticket pricing, patron saints), `standings` (history/records), and additional season lifecycle
-procedures (`simulatePlayoffRound`, `simulateRace`, `collectMatchRevenue`).
+Other domains in the same router: `teams` (`getTeam`, `updateTeam`, `claimTeam`, `getPlayer`),
+`club` (tactics, lineups, training, sponsors, stadium upgrades, ticket pricing, patron saints,
+`getMyClubs`, `getMyClubOverview`), `transfers` (listings/bids), `standings` (standings, brackets,
+races, team history, live matches), `almanac` (archive, athlete careers, records), and
+`seasons/lifecycle.ts` (`collectMatchRevenue`, `getMatchDetails`).
 
 ## Connection to MyClub
 

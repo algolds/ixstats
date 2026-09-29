@@ -4,6 +4,11 @@ description: Your nation's intelligence system brings together economic analysis
 badge: Intelligence
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## What the Intelligence System Does for You
 
 Running a nation means juggling many moving pieces at once. Your intelligence system is designed to pull all of that information together so you can see the big picture without switching between dozens of screens. It continuously monitors every aspect of your nation and presents the most important findings in a unified, easy-to-navigate interface.

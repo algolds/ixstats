@@ -4,6 +4,11 @@ description: Plan your nation's long-term future with strategic briefings that l
 badge: Intelligence
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## What Strategic Intelligence Offers
 
 While your daily dashboard keeps you informed about immediate developments, strategic intelligence helps you think in longer time horizons. These are the big-picture assessments that guide your nation's direction -- where you're headed over the coming periods and what major decisions lie ahead.
@@ -16,9 +21,9 @@ While your daily dashboard keeps you informed about immediate developments, stra
 
 > **Accessing Your Strategic Intelligence**
 >
-> - **Intelligence Feed:** Strategic briefings appear in the intelligence feed on your [Intelligence page](/mycountry/intelligence), marked with priority indicators so you can distinguish them from routine updates.
+> - **Intelligence Feed:** Strategic briefings appear in the intelligence feed on your Intelligence page, marked with priority indicators so you can distinguish them from routine updates.
 > - **ThinkPages Collections:** Curate leadership briefing collections in ThinkPages to organize strategic insights alongside your own analysis and commentary.
-> - **Executive Dashboard:** High-priority strategic findings surface on your main [dashboard](/mycountry/intelligence) alongside daily metrics so you never miss a major development.
+> - **Executive Dashboard:** High-priority strategic findings surface on your main dashboard alongside daily metrics so you never miss a major development.
 
 ## Using Strategic Intelligence for Major Decisions
 
