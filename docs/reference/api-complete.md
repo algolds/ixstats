@@ -3,7 +3,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (77 Routers, 900 Endpoints)
+### Live tRPC API Inventory (77 Routers, 901 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -80,11 +80,11 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.trading`** | 4 | 3 | 0 | **7** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
-| **`api.users`** | 10 | 11 | 0 | **21** | `src/server/api/routers/users/index.ts` |
+| **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 25 | 19 | 0 | **44** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 55 | 20 | 0 | **75** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **441** | **458** | **0** | **900** | **77 registered namespaces** |
+| **TOTALS** | **441** | **459** | **0** | **901** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 ---
