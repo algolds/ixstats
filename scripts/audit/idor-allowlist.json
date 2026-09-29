@@ -48,5 +48,6 @@
   "src/server/api/routers/security/operations.ts#endOperation": "loads the operation, FORBIDDEN unless operation.countryId === caller's fresh user.countryId, before any write",
   "src/server/api/routers/sports/club.ts#invokePatronSaint": "FORBIDDEN unless caller owns the team (team.ownerUserId === ctx.user.id); the nation effect is the paid sports_saint_blessing read only by lib/sports/team-rating",
   "src/server/api/routers/taxSystem/analysis.ts#checkConflicts": "read-only: detectTaxConflicts only reads taxSystem/fiscalSystem, writes nothing",
-  "src/server/api/routers/users/country-linking.ts#createCountry": "FORBIDDEN unless input.userId === ctx.auth.userId; creates a brand-new country for a caller with no linked country, touches no existing country"
+  "src/server/api/routers/users/country-linking.ts#createCountry": "FORBIDDEN unless input.userId === ctx.auth.userId; creates a brand-new country for a caller with no linked country, touches no existing country",
+  "src/server/api/routers/users/country-linking.ts#setActiveNation": "moves only the caller's own active pointer (User.countryId of ctx.user.id) and only to a nation the caller owns (activateOwnedNation reads country.ownerUserId === ctx.user.id, else FORBIDDEN); writes no country data"
 }

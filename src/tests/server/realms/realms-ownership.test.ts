@@ -1,4 +1,5 @@
 import {
+  activateOwnedNation,
   assignNation,
   canModerateRealm,
   NationOwnershipError,
@@ -42,14 +43,19 @@ describe("realmSettings", () => {
 });
 
 describe("assignNation", () => {
-  it("sets owner and active pointer (invariant I1)", async () => {
+  it("sets the owner, and makes it the active nation only when the user has none (invariant I1, ruling F-1)", async () => {
     const t = tx(unowned);
     await assignNation(t, { userId: "u1", countryId: "c1" });
     expect(t.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null },
       data: { ownerUserId: "u1" },
     });
-    expect(t.user.update).toHaveBeenCalledWith({ where: { id: "u1" }, data: { countryId: "c1" } });
+    // Guarded on countryId: null — a player already acting as a nation (another realm's) keeps it.
+    expect(t.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "u1", countryId: null },
+      data: { countryId: "c1" },
+    });
+    expect(t.user.update).not.toHaveBeenCalled();
   });
 
   it("loses a concurrent race: the guarded ownership write matches nothing → ALREADY_OWNED, no pointer move", async () => {
@@ -57,6 +63,7 @@ describe("assignNation", () => {
     t.country.updateMany.mockResolvedValue({ count: 0 });
     await expect(assignNation(t, { userId: "u1", countryId: "c1" })).rejects.toMatchObject({ code: "ALREADY_OWNED" });
     expect(t.user.update).not.toHaveBeenCalled();
+    expect(t.user.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuses a country owned by someone else", async () => {
@@ -75,7 +82,29 @@ describe("assignNation", () => {
     const t = tx({ ...unowned, ownerUserId: "u1" }, 1);
     await assignNation(t, { userId: "u1", countryId: "c1" });
     expect(t.country.updateMany).not.toHaveBeenCalled();
-    expect(t.user.update).toHaveBeenCalled();
+    expect(t.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "u1", countryId: null },
+      data: { countryId: "c1" },
+    });
+  });
+});
+
+describe("activateOwnedNation (users.setActiveNation, ruling F-1)", () => {
+  it("the owner switches their active nation", async () => {
+    const t = tx({ ownerUserId: "u1" });
+    await expect(activateOwnedNation(t, { userId: "u1", countryId: "c2" })).resolves.toBe(true);
+    expect(t.country.findUnique).toHaveBeenCalledWith({ where: { id: "c2" }, select: { ownerUserId: true } });
+    expect(t.user.update).toHaveBeenCalledWith({ where: { id: "u1" }, data: { countryId: "c2" } });
+  });
+
+  it("refuses a nation the user does not own, or one that does not exist, and moves nothing", async () => {
+    for (const country of [{ ownerUserId: "u2" }, { ownerUserId: null }, null]) {
+      const t = tx(country);
+      await expect(activateOwnedNation(t, { userId: "u1", countryId: "c2" })).resolves.toBe(false);
+      expect(t.user.update).not.toHaveBeenCalled();
+      expect(t.user.updateMany).not.toHaveBeenCalled();
+      expect(t.country.update).not.toHaveBeenCalled();
+    }
   });
 });
 

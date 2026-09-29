@@ -22,7 +22,10 @@ export class NationOwnershipError extends Error {
 
 const alreadyOwned = () => new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
 
-/** Give `countryId` to `userId` and make it their active nation. */
+/**
+ * Give `countryId` to `userId`. It becomes their active nation only when they have none (ruling F-1): a player
+ * acting as a nation of another realm keeps acting as it until they choose "Play as" (activateOwnedNation).
+ */
 export async function assignNation(tx: OwnershipTx, input: { userId: string; countryId: string }): Promise<void> {
   const country = await tx.country.findUnique({
     where: { id: input.countryId },
@@ -43,7 +46,7 @@ export async function assignNation(tx: OwnershipTx, input: { userId: string; cou
     });
     if (count === 0) throw alreadyOwned();
   }
-  await tx.user.update({ where: { id: input.userId }, data: { countryId: country.id } });
+  await tx.user.updateMany({ where: { id: input.userId, countryId: null }, data: { countryId: country.id } });
 }
 
 /** Take the nation away from its owner; anyone acting as it stops doing so. */
@@ -57,7 +60,26 @@ export async function pointActiveNation(tx: OwnershipTx, userId: string, country
   await tx.user.update({ where: { id: userId }, data: { countryId } });
 }
 
-/** Admin override: give `countryId` to the user. System owners only move their active pointer. */
+/**
+ * A player switches which of their own nations they act as (users.setActiveNation, ruling F-1). A nation they
+ * do not own (or that does not exist) is refused with `false` and nothing moves; system owners keep their
+ * override through the admin paths only.
+ */
+export async function activateOwnedNation(
+  tx: OwnershipTx,
+  input: { userId: string; countryId: string }
+): Promise<boolean> {
+  const country = await tx.country.findUnique({ where: { id: input.countryId }, select: { ownerUserId: true } });
+  if (country?.ownerUserId !== input.userId) return false;
+  await pointActiveNation(tx, input.userId, input.countryId);
+  return true;
+}
+
+/**
+ * Admin override: give `countryId` to the user. First the previous owner loses it, and so do the user's other
+ * nations in the SAME realm (ruling F-1) — a nation they own in another realm stays theirs, and the active
+ * pointer follows assignNation's rule. System owners only move their active pointer.
+ */
 export async function adminAssignNation(
   database: Pick<PrismaClient, "user" | "country" | "$transaction">,
   input: { clerkUserId: string; countryId: string }
@@ -72,8 +94,14 @@ export async function adminAssignNation(
       await pointActiveNation(tx, user.id, input.countryId);
       return;
     }
+    const target = await tx.country.findUnique({ where: { id: input.countryId }, select: { realmId: true } });
+    if (!target) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
     await releaseNation(tx, input.countryId);
-    if (user.countryId && user.countryId !== input.countryId) await releaseNation(tx, user.countryId);
+    const heldInRealm = await tx.country.findMany({
+      where: { ownerUserId: user.id, realmId: target.realmId, id: { not: input.countryId } },
+      select: { id: true },
+    });
+    for (const held of heldInRealm) await releaseNation(tx, held.id);
     await assignNation(tx, { userId: user.id, countryId: input.countryId });
   });
 }

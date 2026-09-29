@@ -7,12 +7,13 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 function caller(
   findUnique: jest.Mock,
-  realmPage = { findFirst: jest.fn().mockResolvedValue(null) }
+  realmPage = { findFirst: jest.fn().mockResolvedValue(null) },
+  viewer: { id: string; clerkUserId: string } | null = null
 ) {
   const ctx = createMockRouterContext({
     db: { realm: { findUnique }, realmPage },
-    auth: null,
-    user: null,
+    auth: viewer ? { userId: viewer.clerkUserId } : null,
+    user: viewer,
   });
   return realmsRouter.createCaller(ctx as never);
 }
@@ -37,11 +38,40 @@ describe("realms.getBySlug", () => {
     const realm = await caller(findUnique).getBySlug({ slug: "ixworld" });
 
     expect(realm?.countries).toEqual([
-      { id: "c1", name: "Aurelia", slug: "aurelia", flag: null, claimed: true },
-      { id: "c2", name: "Borea", slug: "borea", flag: null, claimed: false },
+      { id: "c1", name: "Aurelia", slug: "aurelia", flag: null, claimed: true, mine: false },
+      { id: "c2", name: "Borea", slug: "borea", flag: null, claimed: false, mine: false },
     ]);
     for (const c of realm?.countries ?? []) expect(c).not.toHaveProperty("ownerUserId");
     expect(JSON.stringify(realm)).not.toContain("u_secret");
+  });
+
+  it("marks the signed-in viewer's own nations (for Play as, ruling F-1) without exposing owner ids", async () => {
+    const findUnique = jest.fn().mockResolvedValue({
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      description: null,
+      thumbnail: null,
+      status: "active",
+      visibility: "public",
+      countries: [
+        { id: "e1", name: "Gallambria", slug: "gallambria", flag: null, ownerUserId: "u_viewer" },
+        { id: "e2", name: "Sunseong", slug: "sunseong", flag: null, ownerUserId: "u_other" },
+        { id: "e3", name: "Vestria", slug: "vestria", flag: null, ownerUserId: null },
+      ],
+      pages: [],
+      _count: { pages: 0 },
+    });
+    const realm = await caller(findUnique, undefined, { id: "u_viewer", clerkUserId: "clerk_viewer" }).getBySlug({
+      slug: "eurth",
+    });
+    expect(realm?.countries.map((c) => [c.id, c.mine])).toEqual([
+      ["e1", true],
+      ["e2", false],
+      ["e3", false],
+    ]);
+    expect(JSON.stringify(realm)).not.toContain("u_other");
+    expect(JSON.stringify(realm)).not.toContain("u_viewer");
   });
 
   it("returns null for an unknown slug", async () => {

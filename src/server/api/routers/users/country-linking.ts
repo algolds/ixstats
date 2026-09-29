@@ -8,13 +8,14 @@ import {
   publicProcedure,
   protectedProcedure,
   adminProcedure,
+  lightMutationProcedure,
 } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { generateSlug } from "~/lib/utils";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { globalCache } from "~/lib/cache";
-import { assignNation } from "~/server/modules/realms";
+import { activateOwnedNation, assignNation } from "~/server/modules/realms";
 
 export const usersCountryLinkingRouter = createTRPCRouter({
   // Create new country for user (LEGACY - Use countries.createCountry for new builder)
@@ -212,6 +213,20 @@ export const usersCountryLinkingRouter = createTRPCRouter({
           cause: error,
         });
       }
+    }),
+
+  /** "Play as": act as another nation the caller owns, e.g. one in another realm (ruling F-1). */
+  setActiveNation: lightMutationProcedure
+    .input(z.object({ countryId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const activated = await ctx.db.$transaction((tx) =>
+        activateOwnedNation(tx, { userId: ctx.user.id, countryId: input.countryId })
+      );
+      if (!activated) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only play as a nation you own" });
+      }
+      await globalCache.delete(`user_profile:${ctx.user.clerkUserId}`);
+      return { success: true };
     }),
 
   // Get user's membership status

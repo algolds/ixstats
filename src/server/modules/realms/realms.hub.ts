@@ -1,12 +1,13 @@
 /**
  * The public realm page (/r/[realm]): its nations, the nation pages of its lore index that no country has taken
- * yet (claimable — decision 8), and the size and wiki of that index (ruling E-a).
+ * yet (claimable — decision 8), and the size and wiki of that index (ruling E-a). Nations the signed-in viewer
+ * owns are marked `mine` so the page can offer "Play as" (ruling F-1).
  */
 import type { PrismaClient } from "@prisma/client";
 
 type HubDb = Pick<PrismaClient, "realm" | "realmPage">;
 
-export async function getRealmHub(db: HubDb, slug: string) {
+export async function getRealmHub(db: HubDb, slug: string, viewerId: string | null) {
   const realm = await db.realm.findUnique({
     where: { slug },
     select: {
@@ -39,8 +40,12 @@ export async function getRealmHub(db: HubDb, slug: string) {
   const named = new Set(countries.map((c) => c.name));
   return {
     ...rest,
-    // Public endpoint: expose "claimed", never internal user ids.
-    countries: countries.map(({ ownerUserId, ...c }) => ({ ...c, claimed: ownerUserId !== null })),
+    // Public endpoint: expose "claimed" and "mine", never internal user ids.
+    countries: countries.map(({ ownerUserId, ...c }) => ({
+      ...c,
+      claimed: ownerUserId !== null,
+      mine: viewerId !== null && ownerUserId === viewerId,
+    })),
     nationPages: pages.filter((page) => !named.has(page.title)),
     lorePageCount: _count.pages,
     loreSource: lore?.wikiSource ?? null,

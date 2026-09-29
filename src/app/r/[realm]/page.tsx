@@ -9,6 +9,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { ClaimableNations } from "./_components/ClaimableNations";
+import { PlayAsNation } from "./_components/PlayAsNation";
 
 /** The realm's lore lives on its wiki (ruling E-a); WikiOS renders the portal live from that wiki. */
 function LoreSection({
@@ -40,6 +41,8 @@ function LoreSection({
 export default function RealmPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
   const { data: realm, isLoading } = api.realms.getBySlug.useQuery({ slug });
+  const ownsHere = !!realm?.countries.some((c) => c.mine);
+  const { data: profile } = api.users.getProfile.useQuery(undefined, { enabled: ownsHere });
   usePageTitle({ title: realm ? `${realm.name} · Realm` : "Realm" });
 
   if (isLoading)
@@ -86,17 +89,24 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
         </div>
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {realm.countries.map((c) => (
-            <li key={c.id}>
+            <li key={c.id} className="flex items-center gap-2">
               <Link
                 href={createUrl(`/countries/${c.slug ?? c.id}`)}
-                className="hover:bg-muted flex items-center gap-2 rounded-xl p-2 text-sm"
+                className="hover:bg-muted flex min-w-0 flex-1 items-center gap-2 rounded-xl p-2 text-sm"
               >
                 {c.flag && <img src={c.flag} alt="" className="h-4 w-6 rounded-sm object-cover" />}
-                <span className="text-foreground">{c.name}</span>
+                <span className="text-foreground truncate">{c.name}</span>
                 {!c.claimed && (
                   <span className="text-muted-foreground ml-auto text-xs">unclaimed</span>
                 )}
               </Link>
+              {c.mine && (
+                <PlayAsNation
+                  countryId={c.id}
+                  countryName={c.name}
+                  active={profile?.countryId === c.id}
+                />
+              )}
             </li>
           ))}
         </ul>

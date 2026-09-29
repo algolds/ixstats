@@ -76,7 +76,7 @@ export const realmsRouter = createTRPCRouter({
   /** Public realm page data (public and unlisted realms are both readable by link). */
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string().min(1).max(100) }))
-    .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug)),
+    .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug, ctx.user?.id ?? null)),
 
   claimCountry: protectedProcedure
     .input(z.object({ countryId: z.string().min(1) }))
