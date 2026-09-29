@@ -120,6 +120,43 @@ files are:
 cd /ixwiki/public/projects/ixstats
 git fetch master rose-garden
 git checkout -B rose-garden master/rose-garden     # the deploy script deploys the checkout's current branch
+```
+
+### 5a. Realms schema + ownership backfill (before the deploy script)
+
+`rose-garden` includes the Realms work (`docs/architecture/realms-framework-spec.md`). Its schema change **drops**
+`world_configs` (1 row) and `territory_claims` (0 rows) and adds two unique constraints, so the deploy script's own
+`db push` would stop on the data-loss warning. Apply it by hand first, then the one-off ownership backfill:
+
+```bash
+bun install --frozen-lockfile && bun run db:generate        # new dependency: potrace
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
+  "SELECT count(*) FROM map_layers WHERE \"worldId\" IS NULL; SELECT id, slug, \"ownerId\" FROM realms;"
+#   expect: a count (compare with the backfill's map-layer line) and the row  default|default|system
+bun run db:push:force        # answer yes: the world_configs drop and the two new unique constraints are expected
+bun scripts/realms/backfill-foundation.ts                  # dry run
+```
+
+The dry run prints `owners: N to assign, M collisions`. A **collision** is a country that two or more ordinary
+users point at; the script never guesses. For each `COLLISION <countryId>: users <a>, <b>`, decide the owner and
+clear the others' pointer, then dry-run again (the dev rehearsal on 2026-09-29 had exactly one, Faneria):
+
+```bash
+docker exec ixstats-postgres psql -U postgres -d ixstats -c \
+  "UPDATE \"User\" SET \"countryId\" = NULL WHERE id = '<user to detach>' AND \"countryId\" = '<countryId>';"
+```
+
+When the dry run shows `0 collisions` and no `BLOCKS --apply` line:
+
+```bash
+bun scripts/realms/backfill-foundation.ts --apply
+bun scripts/realms/backfill-foundation.ts                  # expect: owners: 0 to assign, 0 collisions
+```
+
+(One `ixwiki links … skip` line is normal when two accounts share a legacy wiki username: the first keeps it, the other
+verifies in Settings.) Then run the deploy script — its `db push` is now a no-op:
+
+```bash
 ./scripts/deploy-production.sh
 ```
 
@@ -151,6 +188,27 @@ pm2 logs ixstats-ws --lines 30 --nostream       # expect the ThinkPages socket +
 - **Country editor** (`/mycountry/editor`): change a slider, and an amber dot plus "1 change" appear. Undo reverts it.
 - **Vault:** place a bid on a test auction; the balance moves, and cancelling refunds it.
 - **Map editor:** click two points on one river, and the edge follows the river.
+
+## 6b. Serve Eurth (the first outside realm)
+
+Full detail and player instructions: `docs/realms/eurth-onboarding.md`. On prod:
+
+1. Re-run `bun scripts/realms/backfill-foundation.ts` (dry run): expect `0 to assign, 0 collisions` — anything else
+   means someone linked a nation between the backfill and the deploy; resolve as in 5a.
+2. `/admin/realms` → Realms → **New realm**: name `Eurth`, slug `eurth`, visibility `public`, description
+   `Realistic geofiction and political simulation, loosely based on NationStates. Lore on IIWiki (Portal:Eurth);
+   community at eurth.org.`
+3. Import the lore index (prod reaches iiwiki directly — no proxy variable):
+   ```bash
+   bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" \
+     --keyword Eurth --nation-roster "Category:Countries (Eurth)"            # dry run
+   #   expect: pages ≈2750 (crawled ≈2746), nations 100, categories 49, truncated no
+   bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" \
+     --keyword Eurth --nation-roster "Category:Countries (Eurth)" --apply
+   ```
+4. `/r/eurth` lists 100 claimable nations and the lore link opens `Portal:Eurth` read-only in WikiOS.
+5. Tell Eurth players: verify your IIWiki account (Settings → IxnayID & Passport → Linked Accounts), then claim your
+   nation at `/r/eurth`. Site admins review other claims in `/admin/realms` → Claims.
 
 ## 7. Turn cron jobs on, one per cycle
 
@@ -194,5 +252,6 @@ git checkout -B development <commit noted in step 1>
 ```
 
 The schema changes are additive, so old code runs against them, except the `WikiRevision` dedupe, which removed
-duplicate rows. To undo that, restore from the step 1 dump:
+duplicate rows, and the Realms push, which **dropped** `world_configs` and `territory_claims` (old code's admin
+world-config pages break; everything else runs). To undo that, restore from the step 1 dump:
 `docker exec -i ixstats-postgres pg_restore -U postgres -d ixstats --clean < /root/ixstats-<stamp>.dump`.
