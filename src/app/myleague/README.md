@@ -105,7 +105,7 @@ in `root.ts`. Procedures used by these pages:
 | `getStandings`, `getSchedule`, `getSeason` | Standings, schedule, season detail |
 | `getBracket`, `getRaceResults`, `getDraftPicks` | Boxing / F1 / draft tabs |
 | `getLeagueArchive`, `getAllTimeRecords` | History tab (`almanac.ts`) |
-| `startSeason`, `simulateMatchDay`, `simulateSingleMatch`, `simulateFullSeason`, `transitionToNextSeason` | Simulation controls |
+| `startSeason`, `simulateMatchDay`, `simulateSingleMatch`, `simulateFullSeason`, `transitionToNextSeason` | Simulation controls — the league's creator or a system owner only (`sports/league-access.ts`) |
 | `resetSeason`, `regenerateSchedule`, `overrideMatchResult`, `transferTeam`, `setFeaturedLeague` | Commissioner / admin controls |
 
 Other domains in the same router: `teams` (`getTeam`, `updateTeam`, `claimTeam`, `getPlayer`),

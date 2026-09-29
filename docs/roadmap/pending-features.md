@@ -21,14 +21,13 @@ kind, then by system. "Source" points to the doc that describes the intended beh
 
 ## 1. Security findings
 
-Fix before the RC2 release.
+Fix before the RC2 release. Fixed on 2026-09-29: `achievements.unlock` is admin-only; the Kokoro API key is
+masked in the admin config; sports season and simulation procedures require the league's manager;
+`scripts/refresh-local-db.sh` reads the role password from `IXSTATS_READONLY_PASSWORD`.
 
 | Item | Where | Detail |
 |---|---|---|
-| Any user can unlock any achievement for anyone | `achievements.unlock` | Accepts an arbitrary `userId` from any signed-in caller |
-| Kokoro API key sent to the browser | `routers/onoma/speech.ts:77` (`getKokoroAdminConfig`) | Return a masked value instead |
-| Sports simulation has no ownership check | `sports` `simulateMatchDay`, `startSeason`, `simulateFullSeason`, `transitionToNextSeason` | UI hides the controls, but the server doesn't check league ownership |
-| Hard-coded read-only DB password | `scripts/refresh-local-db.sh`, git history since 2026-05-31 | Move to an env var and rotate the credential (plan 325) |
+| Rotate the read-only DB password | `ixstats_readonly` role (plan 325) | The old password is in git history since 2026-05-31; the script no longer contains it, but the credential itself must be changed on the server |
 | CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | Waits on removing the nginx/Cloudflare header override |
 
 ## 2. Broken or regressed features
@@ -182,7 +181,6 @@ Fix before the RC2 release.
 - **AuditLog `target` index:** in the schema, but with no migration.
 - **Incident-response runbook:** referenced but missing.
 - **Discord bot admin session:** the bot calls `admin.getSystemStatus` (admin-only); the runbook doesn't cover how it authenticates.
-- **CI push trigger:** `.github/workflows/ci.yml` lists `v2`, not `rose-garden`.
 - **Leftovers:**
   - `scripts/post-build.sh` prints `pm2 restart ixstats` (no such app).
   - Unwired: `scripts/deployment/deploy-to-production.sh`, `scripts/start-production.js`, `scripts/verify-router-splits.ts`.
@@ -192,8 +190,8 @@ Fix before the RC2 release.
 
 From the status blocks in [`docs/audits/`](../audits/):
 
-- **CI `test:ci` is failing:** three suites read git-ignored files that the runner doesn't have — `verification-gates.test.ts` (`next.config.js`), `CardDesigner.test.ts` (`public/icons/game-icons-manifest.json`) and `enrichment-pipeline.test.ts` (`public/data/vector-seeds/`). Track the assets or skip when absent.
-- **CI `audit:arch` is failing:** 15 files are over their ceiling — split them or add them to `RELAXED_FILES`. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
+- **Git-ignored fixtures:** three checks read files CI doesn't have — `next.config.js`, `public/icons/game-icons-manifest.json` and `public/data/vector-seeds/`. They now run only where the file exists (dev machines, the server), so CI doesn't cover them; tracking the assets would restore that coverage.
+- **`audit:arch` reports 15 files over their ceiling** (non-blocking in CI) — split them or add them to `RELAXED_FILES`. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
 - **`docs:sync` undercounts procedures:** `extractApiInventory` reports 901 procedures (runtime count 958) because it misses spread and `mergeRouters` routers.
 - **Service layer:** 199 router files query `ctx.db` directly.
 - **Arch guard coverage:** no pre-commit hook for `audit:arch`; the router-split parity check covers 5 routers.

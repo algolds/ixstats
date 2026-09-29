@@ -23,7 +23,7 @@
 > | #28 root providers | **PARTIAL** — providers trimmed and `MotionConfig reducedMotion="user"` added; ~9-deep nesting remains |
 > | #30 design slop | **OPEN** — current counts in TSX: 966 hex literals, 3,972 `dark:`, 1,376 `backdrop-blur`, 174 `animate-pulse`, 180 `Sparkles`; `transition-all` down to 191 |
 >
-> Also still open from §3/§7: `db.ts:400` fires `syncAchievements` as an import side effect; `getKokoroAdminConfig` (`routers/onoma/speech.ts:77`) returns the Kokoro API key to the admin client.
+> Also still open from §3/§7: `db.ts:400` fires `syncAchievements` as an import side effect. (`getKokoroAdminConfig` returning the Kokoro API key was fixed on 2026-09-29: it now returns a masked hint.)
 
 
 **Commit:** `97e5a945` (branch `rose-garden`) · **Scope:** whole `src/` tree (~790K lines TS/TSX), `prisma/`, `scripts/`, root config, `package.json` · **Mode:** ponytail-audit (complexity only) + improve lenses (perf, TS, Apple/Facet design) · **Method:** 13 parallel read-only auditors, one per system, each verifying "dead" claims by grep over `src/`, `scripts/`, `server.mjs`, `ws-backend.mjs`, `cron-runner.mjs`; every top finding re-verified by the coordinator against the code. Three census scripts (tRPC zero-callers, import-graph reachability from all pages/routers, Prisma model references) were run read-only.
