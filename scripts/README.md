@@ -15,7 +15,7 @@ scripts/
 ├── diagnostics/                  # Health check & benchmark scripts
 ├── onoma/                        # Linguistics lexicon & Kokoro TTS dictionary tools
 ├── ops/                          # Nginx & server configuration templates
-├── realms/                       # Realms Phase 1 data backfill (owners, IxWorld slug, wiki links, visibility)
+├── realms/                       # Realms data backfill (owners, IxWorld slug, wiki links, visibility) + realm lore index import
 ├── *.sh / *.js / *.ts            # Core root runners (with-base-path.sh, deploy-production.sh, etc.)
 └── archive/                      # Historical migrations, one-off backfills, and GIS tools
     ├── migrations/               # Completed database backfills, user role seeds, title fixes
@@ -62,12 +62,13 @@ scripts/
 
 ---
 
-## 🌐 Realms Phase 1 (`scripts/realms/`)
+## 🌐 Realms (`scripts/realms/`)
 
 | Script | Purpose & Command |
 | :--- | :--- |
 | [`scripts/realms/backfill-foundation.ts`](realms/backfill-foundation.ts) | Realms Phase 1 data backfill (owners, IxWorld slug, ixwiki link rows, visibility). Dry run by default; `--apply` writes. Run after `db:push:force`, before deploying the realms-foundation code (`bun scripts/realms/backfill-foundation.ts [--apply]`). |
 | [`scripts/realms/backfill-plan.ts`](realms/backfill-plan.ts) | Pure planning helper for the owner-backfill step above (`planOwnerBackfill`) — never guesses on multi-user collisions, reports them for manual resolution. |
+| [`scripts/realms/import-realm-lore.ts`](realms/import-realm-lore.ts) | One-time realm lore **index** import (titles only, never content): crawls a wiki category tree (keyword subcategories only, depth 5, 5,000-page cap, truncation reported), marks pages whose lead uses `Infobox country`/`Infobox former country` as nations, and writes `RealmPage` rows. Dry run (the preview) by default; `--apply` writes. Needs the realm to exist first (`/admin/realms` → New realm). `bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" --keyword Eurth [--apply]` |
 
 ---
 

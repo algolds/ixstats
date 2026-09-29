@@ -4,6 +4,13 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
+import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import {
   SystemRestart as Loader2,
   EditPencil as Pencil,
@@ -11,6 +18,7 @@ import {
   Xmark as X,
   Globe,
   Eye,
+  Plus,
 } from "iconoir-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -24,6 +32,123 @@ const VISIBILITY_ICONS: Record<string, typeof Globe> = {
   public: Globe,
   unlisted: Eye,
 };
+
+interface NewRealm {
+  slug: string;
+  name: string;
+  description: string;
+  visibility: "public" | "unlisted";
+}
+const EMPTY_REALM: NewRealm = { slug: "", name: "", description: "", visibility: "unlisted" };
+
+/** "New realm" (ruling E-j): realms are created here by an admin, active, founder "system". */
+function NewRealmForm() {
+  const utils = api.useUtils();
+  const notify = useNotify();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_REALM);
+  const create = api.realms.adminCreateRealm.useMutation({
+    onSuccess: (realm) => {
+      notify.success("Realm created", `${realm.name} (${realm.slug}) is active.`);
+      setForm(EMPTY_REALM);
+      setOpen(false);
+      void utils.realms.adminListRealms.invalidate();
+    },
+    onError: (error) => notify.error("Could not create realm", error.message),
+  });
+  const valid = REALM_SLUG_PATTERN.test(form.slug) && form.name.trim().length > 0;
+
+  if (!open) {
+    return (
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <Plus className="h-4 w-4" />
+          New realm
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      className="border-border/40 bg-card/25 grid gap-4 rounded-2xl border p-4 backdrop-blur-md sm:grid-cols-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        create.mutate({
+          slug: form.slug,
+          name: form.name.trim(),
+          description: form.description.trim() || undefined,
+          visibility: form.visibility,
+        });
+      }}
+    >
+      <div className="space-y-1.5">
+        <Label htmlFor="new-realm-name">Name</Label>
+        <Input
+          id="new-realm-name"
+          value={form.name}
+          maxLength={100}
+          placeholder="Eurth"
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="new-realm-slug">Slug</Label>
+        <Input
+          id="new-realm-slug"
+          className="font-mono"
+          value={form.slug}
+          maxLength={40}
+          placeholder="eurth"
+          onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))}
+        />
+        <p className="text-muted-foreground text-xs">
+          2–40 lower-case letters, digits or hyphens. Not editable after creation.
+        </p>
+      </div>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label htmlFor="new-realm-description">Description</Label>
+        <Textarea
+          id="new-realm-description"
+          value={form.description}
+          maxLength={1000}
+          rows={2}
+          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="new-realm-visibility">Visibility</Label>
+        <Select
+          value={form.visibility}
+          onValueChange={(v) =>
+            setForm((f) => ({ ...f, visibility: v === "public" ? "public" : "unlisted" }))
+          }
+        >
+          <SelectTrigger id="new-realm-visibility" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unlisted" description="Reachable by link, not listed">
+              Unlisted
+            </SelectItem>
+            <SelectItem value="public" description="Listed for everyone">
+              Public
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-end justify-end gap-2">
+        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" size="sm" disabled={!valid || create.isPending}>
+          {create.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+          Create realm
+        </Button>
+      </div>
+    </form>
+  );
+}
 
 export function RealmsTab() {
   const { data: realms, isLoading, refetch } = api.realms.adminListRealms.useQuery();
@@ -53,8 +178,11 @@ export function RealmsTab() {
 
   if (!realms?.length) {
     return (
-      <div className="text-muted-foreground py-16 text-center">
-        No realms found. The default realm should be seeded automatically.
+      <div className="space-y-4">
+        <NewRealmForm />
+        <div className="text-muted-foreground py-16 text-center">
+          No realms found. The default realm should be seeded automatically.
+        </div>
       </div>
     );
   }
@@ -81,6 +209,7 @@ export function RealmsTab() {
 
   return (
     <div className="space-y-4">
+      <NewRealmForm />
       <div className="border-border/40 bg-card/25 overflow-x-auto rounded-2xl border backdrop-blur-md">
         <table className="w-full text-sm">
           <thead>

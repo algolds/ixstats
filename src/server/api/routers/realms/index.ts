@@ -10,6 +10,8 @@ import {
 } from "~/server/api/trpc";
 import { ClaimError, createClaimsService, type NationAssignedEvent } from "~/server/modules/realms";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { parsePrismaError } from "~/lib/prisma-error";
+import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import { globalCache } from "~/lib/cache";
@@ -54,6 +56,12 @@ const CLAIM_ERROR_CODES = {
 function claimError(error: Error): never {
   if (error instanceof ClaimError)
     throw new TRPCError({ code: CLAIM_ERROR_CODES[error.code], message: error.message });
+  throw error;
+}
+
+function slugTaken(error: Error): never {
+  if (parsePrismaError(error)?.type === "unique_constraint")
+    throw new TRPCError({ code: "CONFLICT", message: "That slug is taken" });
   throw error;
 }
 
@@ -146,6 +154,23 @@ export const realmsRouter = createTRPCRouter({
       },
     });
   }),
+
+  /** Admin: create a realm (ruling E-j — admin-created, founder "system" until its admin has an account). */
+  adminCreateRealm: adminProcedure
+    .input(
+      z.object({
+        slug: z.string().regex(REALM_SLUG_PATTERN, "2–40 lower-case letters, digits or hyphens"),
+        name: z.string().trim().min(1).max(100),
+        description: z.string().max(1000).optional(),
+        visibility: z.enum(["public", "unlisted"]),
+        ownerId: z.string().min(1).optional(),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      ctx.db.realm
+        .create({ data: { ...input, ownerId: input.ownerId ?? "system", status: "active" } })
+        .catch(slugTaken)
+    ),
 
   /** Admin: update any realm (not restricted to owner) */
   adminUpdateRealm: adminProcedure

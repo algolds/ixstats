@@ -1,7 +1,8 @@
 /**
  * Wiki account proof — the three MediaWiki reads needed to verify that a user controls a wiki account
  * and to find who created a page. All three wikis are read through their public api.php with the
- * allowlisted IxStats-Builder user agent (iiwiki through the Cloudflare-safe URL).
+ * allowlisted IxStats-Builder user agent (iiwiki through the Cloudflare-safe URL). The underlying
+ * `wikiQuery` is exported for other read-only wiki queries (the realm lore import).
  */
 import { z } from "zod";
 import { DEFAULT_MEDIAWIKI_URL, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
@@ -44,7 +45,8 @@ export function wikiUserPageUrl(source: ProofSource, username: string): string {
   return `${SITE_URLS[source]}/wiki/${encodeURI(title)}`;
 }
 
-async function apiQuery<T>(source: ProofSource, params: Record<string, string>, schema: z.ZodType<T>): Promise<T> {
+/** One api.php `action=query` read (formatversion 2) with the allowlisted UA, parsed by `schema`; throws WikiApiError. */
+export async function wikiQuery<T>(source: ProofSource, params: Record<string, string>, schema: z.ZodType<T>): Promise<T> {
   const url = new URL(apiUrl(source));
   for (const [key, value] of Object.entries({ action: "query", format: "json", formatversion: "2", ...params })) {
     url.searchParams.set(key, value);
@@ -69,7 +71,7 @@ const UsersSchema = z.object({
 });
 
 export async function fetchWikiUser(source: ProofSource, username: string): Promise<{ username: string; userId: number } | null> {
-  const data = await apiQuery(source, { list: "users", ususers: normalizeWikiUsername(username) }, UsersSchema);
+  const data = await wikiQuery(source, { list: "users", ususers: normalizeWikiUsername(username) }, UsersSchema);
   const user = data.query.users[0];
   if (!user || user.missing || user.userid === undefined) return null;
   return { username: user.name, userId: user.userid };
@@ -102,7 +104,7 @@ export async function fetchUserPageLatest(
   source: ProofSource,
   username: string
 ): Promise<{ content: string; author: string } | null> {
-  const data = await apiQuery(
+  const data = await wikiQuery(
     source,
     { prop: "revisions", titles: `User:${normalizeWikiUsername(username)}`, rvprop: "content|user", rvslots: "main" },
     RevisionsSchema
@@ -115,7 +117,7 @@ export async function fetchUserPageLatest(
 
 /** Author of the page's first revision, normalised; null if the page does not exist. */
 export async function fetchPageCreator(source: ProofSource, title: string): Promise<string | null> {
-  const data = await apiQuery(
+  const data = await wikiQuery(
     source,
     { prop: "revisions", titles: title, rvlimit: "1", rvdir: "newer", rvprop: "user" },
     RevisionsSchema
