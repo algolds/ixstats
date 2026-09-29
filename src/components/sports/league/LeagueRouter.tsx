@@ -6,8 +6,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/auth";
 import { SportsShell } from "~/components/sports/core/SportsShell";
 import { type SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
 import { LeagueControlDeck, ReigningChampionWidget } from "~/components/sports/league/LeagueBrandWidgets";
@@ -45,7 +43,6 @@ export interface LeagueRouterProps {
 export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useUser();
   const { focusOrganization, focusMatch } = useSportsFocus();
 
   const sectionParam = (searchParams.get("section") || searchParams.get("tab")) as SportsNavSection | null;
@@ -194,9 +191,8 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     return sections;
   }, [isBoxing, isF1, hasDraftPicks]);
 
-  const canManageLeague = Boolean(
-    user && (league?.createdByUserId === user.id || isSystemOwner(user.id))
-  );
+  // Computed on the server: createdByUserId is a database id, not the Clerk id `useUser` returns.
+  const canManageLeague = Boolean(league?.viewerCanManage);
 
   const archetypeLabel = league ? ARCHETYPE_LABELS[league.archetype] || league.archetype : "";
   const isCircuit = league?.archetype === "circuit";

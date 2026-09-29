@@ -14,6 +14,7 @@ import {
 } from "~/lib/sports";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
+import { viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
 
 export const leaguesCrudRouter = createTRPCRouter({
   getLeagues: publicProcedure
@@ -123,7 +124,7 @@ export const leaguesCrudRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
       }
 
-      return league;
+      return { ...league, viewerCanManage: viewerCanManageLeague(ctx, league) };
     } catch (error) {
       if (error instanceof TRPCError) throw error;
       throw new TRPCError({

@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
 import { resolveRace, transitionToNextStage, simpleHash } from "~/lib/sports";
 import { outcomeFromScores, resolveMatchPredictions } from "~/lib/sports/predictions";
@@ -31,6 +32,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
         if (!currentSeason) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
         }
+        assertCanManageLeague(ctx, currentSeason.league);
 
         if (currentSeason.league.archetype === "circuit") {
           // Simulate all remaining races
