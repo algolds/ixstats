@@ -9,6 +9,7 @@
 import { PrismaClient } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { planOwnerBackfill } from "./backfill-plan";
 
 const db = new PrismaClient();
@@ -31,13 +32,13 @@ async function backfillOwners() {
 }
 
 async function backfillRealms() {
-  const realm = await db.realm.findUnique({ where: { id: "default" }, select: { slug: true } });
-  if (!realm) throw new Error('realms row id="default" (IxWorld) is missing — Country.realmId FK depends on it; create it before running this backfill');
+  const realm = await db.realm.findUnique({ where: { id: DEFAULT_REALM_ID }, select: { slug: true } });
+  if (!realm) throw new Error(`realms row id="${DEFAULT_REALM_ID}" (IxWorld) is missing — Country.realmId FK depends on it; create it before running this backfill`);
   console.log(`IxWorld slug: ${realm.slug} → ixworld`);
   const privateCount = await db.realm.count({ where: { visibility: "private" } });
   console.log(`private realms → unlisted: ${privateCount}`);
   if (!apply) return;
-  if (realm.slug !== "ixworld") await db.realm.update({ where: { id: "default" }, data: { slug: "ixworld" } });
+  if (realm.slug !== "ixworld") await db.realm.update({ where: { id: DEFAULT_REALM_ID }, data: { slug: "ixworld" } });
   await db.realm.updateMany({ where: { visibility: "private" }, data: { visibility: "unlisted" } });
 }
 

@@ -17,6 +17,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 // ──────────────────────────────────────────────
 // Router
@@ -505,7 +506,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
    *  Requires PostGIS. Returns the number of features updated and pairs found.
    *  Safe to re-run; overwrites existing neighbors values. */
   rebuildAdjacency: adminProcedure
-    .input(z.object({ realmId: z.string().default("default") }))
+    .input(z.object({ realmId: z.string().default(DEFAULT_REALM_ID) }))
     .mutation(async ({ ctx }) => {
       const { isPostGISAvailable } = await import("~/lib/maps/geo-validation");
       if (!(await isPostGISAvailable(ctx.db))) return { features: 0, pairs: 0, skipped: true };

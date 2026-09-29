@@ -176,7 +176,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
               lastSeenAt: true,
               createdAt: true,
               updatedAt: true,
-              country: { select: { id: true, name: true, flag: true } },
+              country: { select: { id: true, name: true, flag: true, realmId: true } },
               role: { select: { id: true, name: true, level: true } },
             },
           });

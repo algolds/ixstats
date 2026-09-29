@@ -12,6 +12,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 // ──────────────────────────────────────────────
 // Router
@@ -62,7 +63,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       z.object({
         layers: z.record(z.string(), z.unknown()),
         mode: z.enum(["replace", "merge"]).default("merge"),
-        realmId: z.string().default("default"),
+        realmId: z.string().default(DEFAULT_REALM_ID),
       })
     )
     .mutation(async ({ ctx, input }) => {
