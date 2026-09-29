@@ -2,8 +2,8 @@
 
 The authoritative index for all IxStates architecture, systems, operations, specifications, reference, and research. Version information is governed by the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-> Refreshed August 2026 — platform **IxStates 1.4.0 "Lobster Crosby"** (Release Candidate), branch `v2`. Treat this structure as the source of truth.  
-> Active implementation plans live in [`plans/`](../plans/); historical completion records live in [`archive/`](archive/) and [`plans/archive/`](../plans/archive/).
+> Refreshed August 2026 — platform **IxStates 1.4.0 "Lobster Crosby"** (Release Candidate), integration branch `rose-garden`. Treat this structure as the source of truth.  
+> Active implementation plans live in `plans/`; historical completion records live in `docs/archive/` and `plans/archive/`. All three are git-ignored and exist only in the maintainer's local checkout.
 
 ---
 
@@ -177,9 +177,9 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 
 ## 🗄️ Historical Archive (`docs/archive/`)
 
-Completed implementation plans, feature spike records, and legacy changelogs live in [`docs/archive/`](archive/):
-- **Superpowers Brainstorming Archive**: [`docs/archive/superpowers/`](archive/superpowers/) (25 plans and 67 design specs from June–August 2026 feature sprints).
-- **Design Spikes Archive**: [`docs/archive/design/`](archive/design/) (`province-generator.md`, `territory-brush.md`).
-- **Legacy Changelog**: [`docs/archive/CHANGELOG_PRE_OGMA.md`](archive/CHANGELOG_PRE_OGMA.md) (v0.9 to v2.2.0).
-- **Command Surface Migration Record**: [`docs/archive/mycountry-v2-command-surface-plan.md`](archive/mycountry-v2-command-surface-plan.md).
-- **Pre-UPG v2 Maps Spec**: [`docs/archive/maps-1.1.md`](archive/maps-1.1.md).
+Completed implementation plans, feature spike records, and legacy changelogs live in `docs/archive/`, which is git-ignored (local only, not in the repository):
+- **Superpowers Brainstorming Archive**: `docs/archive/superpowers/` (25 plans and 67 design specs from June–August 2026 feature sprints).
+- **Design Spikes Archive**: `docs/archive/design/` (`province-generator.md`, `territory-brush.md`).
+- **Legacy Changelog**: `docs/archive/CHANGELOG_PRE_OGMA.md` (v0.9 to v2.2.0).
+- **Command Surface Migration Record**: `docs/archive/mycountry-v2-command-surface-plan.md`.
+- **Pre-UPG v2 Maps Spec**: `docs/archive/maps-1.1.md`.

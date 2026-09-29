@@ -94,6 +94,9 @@ export const IN_SCOPE_DOCS = [
   "scripts/README.md",
 ];
 
+/** Git-ignored agent guides: synced and link-checked when present locally, never required. */
+const LOCAL_ONLY_DOCS = new Set(["AGENTS.md", "CLAUDE.md"]);
+
 /**
  * 1. Extract Package & Runtime Versions
  */
@@ -515,6 +518,7 @@ export function validateDocLinks(
   for (const relFile of docFiles) {
     const absFile = path.join(rootDir, relFile);
     if (!fs.existsSync(absFile)) {
+      if (LOCAL_ONLY_DOCS.has(relFile)) continue;
       issues.push({
         file: relFile,
         line: 1,
