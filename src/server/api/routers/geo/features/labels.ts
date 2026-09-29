@@ -15,6 +15,7 @@ import {
   cachedPublicProcedure,
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -187,37 +188,39 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       return { id: input.labelId, deleted: true };
     }),
 
-  getAllMapLabels: cachedPublicProcedure.query(async ({ ctx }) => {
-    const labels = await ctx.db.mapLabel.findMany({
-      where: { status: "approved" },
-      take: 2000,
-      include: { country: { select: { name: true, slug: true } } },
-    });
+  getAllMapLabels: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const labels = await ctx.db.mapLabel.findMany({
+        where: { status: "approved", country: { realmId: await viewerRealmId(ctx, input?.realm) } },
+        take: 2000,
+        include: { country: { select: { name: true, slug: true } } },
+      });
 
-    return {
-      type: "FeatureCollection" as const,
-      features: labels
-        .filter((l) => Array.isArray(l.coordinates) && (l.coordinates as number[]).length >= 2)
-        .map((l) => ({
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: l.coordinates as [number, number] },
-          properties: {
-            id: l.id,
-            text: l.text,
-            labelType: l.labelType,
-            fontSize: l.fontSize,
-            color: l.color,
-            rotation: l.rotation,
-            letterSpacing: l.letterSpacing,
-            fontWeight: l.fontWeight,
-            opacity: l.opacity,
-            minZoom: l.minZoom,
-            maxZoom: l.maxZoom,
-            wikiPageTitle: l.wikiPageTitle,
-            countryId: l.countryId,
-            countryName: l.country.name,
-          },
-        })),
-    };
-  }),
+      return {
+        type: "FeatureCollection" as const,
+        features: labels
+          .filter((l) => Array.isArray(l.coordinates) && (l.coordinates as number[]).length >= 2)
+          .map((l) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: l.coordinates as [number, number] },
+            properties: {
+              id: l.id,
+              text: l.text,
+              labelType: l.labelType,
+              fontSize: l.fontSize,
+              color: l.color,
+              rotation: l.rotation,
+              letterSpacing: l.letterSpacing,
+              fontWeight: l.fontWeight,
+              opacity: l.opacity,
+              minZoom: l.minZoom,
+              maxZoom: l.maxZoom,
+              wikiPageTitle: l.wikiPageTitle,
+              countryId: l.countryId,
+              countryName: l.country.name,
+            },
+          })),
+      };
+    }),
 });

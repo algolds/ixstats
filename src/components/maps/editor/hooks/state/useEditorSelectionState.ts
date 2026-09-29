@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { api } from "~/trpc/react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type { FeatureCollection } from "geojson";
 import type { EditorFeature, MapEditorInstance, EditorContextMenuData } from "~/components/maps/editor/types/editor-state";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
@@ -141,8 +142,9 @@ export function useEditorSelectionState({
     };
   }, []);
 
+  const realm = useMapRealm();
   const { data: cursorTerrainInfo } = api.geoCore.getPointInfo.useQuery(
-    { lng: debouncedCoords?.[0] ?? 0, lat: debouncedCoords?.[1] ?? 0 },
+    { lng: debouncedCoords?.[0] ?? 0, lat: debouncedCoords?.[1] ?? 0, realm },
     { enabled: !!debouncedCoords, staleTime: 30_000, gcTime: 60_000 }
   );
 

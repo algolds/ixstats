@@ -16,7 +16,7 @@ export const achievementsProgressRouter = createTRPCRouter({
         // If no user specified but countryId is provided, find country's owner/first user
         if (!targetUserId && input.countryId) {
           const user = await ctx.db.user.findFirst({
-            where: { countryId: input.countryId },
+            where: { ownedCountries: { some: { id: input.countryId } } },
             select: { clerkUserId: true },
           });
           if (user) targetUserId = user.clerkUserId;

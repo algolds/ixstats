@@ -27,8 +27,7 @@ Routes whose `page.tsx` defers to `AdminRouter` are marked **(router)**; the sec
 | `notifications/` | Notification administration **(router)** |
 | `logs/` | System / calculation log viewer **(router)** |
 | `user-logs/` | User activity log viewer (`LogsPanel`) **(router)** |
-| `world-settings/` | World config (merged into `realms` World Configs tab) **(router)** |
-| `realms/` | Game realms + user→realm assignments **(router)** |
+| `realms/` | Realms, nation claims queue + user→realm assignments **(router)** |
 | `storyteller/` | Storyteller world events / event chains **(router)** |
 | `worldstudio/` | World Studio map authoring panel **(router)** |
 | `reference-data/` | Reference data management hub **(router)** |

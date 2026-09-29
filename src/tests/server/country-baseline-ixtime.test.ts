@@ -12,7 +12,6 @@ const srcDir = path.resolve(__dirname, "../..");
 const CREATE_SITES = [
   "server/api/routers/countries/management/create.ts",
   "server/api/routers/geo/editor/linkage/assignment.ts",
-  "lib/maps/pipeline/realm-map-committer.ts",
 ];
 
 /** Source of each `country.create(...)` / `country.upsert(...)` argument object in `source`. */

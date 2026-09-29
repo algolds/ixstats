@@ -42,11 +42,12 @@
   "src/server/api/routers/geo/features/subdivisions/generation.ts#simplifySubdivisions": "countryOwnerProcedure sets ctx.country = caller's country (null only for privileged roles); body throws FORBIDDEN when ctx.country.id !== input.countryId and binds id-keyed rows with findFirst({ id, countryId })",
   "src/server/api/routers/government/crud.ts#checkConflicts": "read-only: detects conflicts, writes nothing",
   "src/server/api/routers/heraldry/mutations.ts#attachToCountry": "FORBIDDEN unless caller owns the achievement AND (system owner or fresh user.countryId === input.countryId), before country.update",
+  "src/server/api/routers/realms/index.ts#claimCountry": "writes only a claim row owned by the caller (userId = ctx.user.id); ownership changes only via assignNation for an unowned nation, and only when the caller's verified wiki account created its page — otherwise the claim waits for a realm moderator",
   "src/server/api/routers/security/conflicts.ts#resolvePvNPCConflict": "initiator is always the caller's own country (fresh user lookup); FORBIDDEN when the target nation is claimed by any user, so only NPC nations take damage",
   "src/server/api/routers/security/operations.ts#createOperation": "fresh user.findUnique({ clerkUserId: ctx.auth.userId }) → FORBIDDEN unless userProfile.countryId === input.countryId, before any write",
   "src/server/api/routers/security/operations.ts#endOperation": "loads the operation, FORBIDDEN unless operation.countryId === caller's fresh user.countryId, before any write",
   "src/server/api/routers/sports/club.ts#invokePatronSaint": "FORBIDDEN unless caller owns the team (team.ownerUserId === ctx.user.id); the nation effect is the paid sports_saint_blessing read only by lib/sports/team-rating",
   "src/server/api/routers/taxSystem/analysis.ts#checkConflicts": "read-only: detectTaxConflicts only reads taxSystem/fiscalSystem, writes nothing",
   "src/server/api/routers/users/country-linking.ts#createCountry": "FORBIDDEN unless input.userId === ctx.auth.userId; creates a brand-new country for a caller with no linked country, touches no existing country",
-  "src/server/api/routers/users/country-linking.ts#linkCountry": "claim flow: input.userId must equal ctx.auth.userId and the country must be unclaimed by any other user (system owner excepted); writes only the caller's user row"
+  "src/server/api/routers/users/country-linking.ts#setActiveNation": "moves only the caller's own active pointer (User.countryId of ctx.user.id) and only to a nation the caller owns (activateOwnedNation reads country.ownerUserId === ctx.user.id, else FORBIDDEN); writes no country data"
 }

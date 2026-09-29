@@ -83,7 +83,7 @@ export const adminCountriesGridRouter = createTRPCRouter({
             updatedAt: true,
             createdAt: true,
             // Owner info
-            users: {
+            owner: {
               select: {
                 id: true,
                 clerkUserId: true,
@@ -149,11 +149,11 @@ export const adminCountriesGridRouter = createTRPCRouter({
         lastCalculated: c.lastCalculated,
         updatedAt: c.updatedAt,
         // Owner
-        owner: c.users[0]
+        owner: c.owner
           ? {
-              id: c.users[0].id,
-              clerkUserId: c.users[0].clerkUserId,
-              lastActive: c.users[0].updatedAt,
+              id: c.owner.id,
+              clerkUserId: c.owner.clerkUserId,
+              lastActive: c.owner.updatedAt,
             }
           : null,
         // Alerts
@@ -172,7 +172,7 @@ export const adminCountriesGridRouter = createTRPCRouter({
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
         include: {
-          users: {
+          owner: {
             select: {
               id: true,
               clerkUserId: true,

@@ -47,7 +47,7 @@ export interface SharedVertexPayload {
   lng: number;
   lat: number;
   featureRefs: Array<{ featureId: string; ringIndex: number; vertexIndex: number }>;
-  worldId: string;
+  realmId: string;
 }
 
 export interface EnrichedMapPackage {
@@ -69,11 +69,11 @@ export function enrichMapDataset(
     areaSqKm: number;
     centroid: [number, number];
   }>,
-  worldId = "default"
+  realmId = "default"
 ): EnrichedMapPackage {
   const log: string[] = [];
   log.push(
-    `[Enrichment] Starting enrichment for ${countries.length} countries under worldId: ${worldId}`
+    `[Enrichment] Starting enrichment for ${countries.length} countries under realmId: ${realmId}`
   );
 
   // 1. Enrich Altitudes Layer with elevation metadata
@@ -228,7 +228,7 @@ export function enrichMapDataset(
           lng: lng!,
           lat: lat!,
           featureRefs: refs,
-          worldId,
+          realmId,
         });
       }
     }

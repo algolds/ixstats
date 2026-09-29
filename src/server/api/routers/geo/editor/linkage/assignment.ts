@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { IxTime } from "~/lib/ixtime";
+import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
@@ -16,12 +18,14 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       z.object({
         featureId: z.string(),
         countryId: z.string(),
+        ...realmScopeInput.shape,
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify feature exists
+      // Verify feature exists (featureId is unique only within a realm)
+      const realmId = await viewerRealmId(ctx, input.realm);
       const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId },
+        where: { layerType: "political", featureId: input.featureId, realmId },
       });
       if (!mapLayer) {
         throw new TRPCError({
@@ -30,16 +34,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         });
       }
 
-      // Verify country exists
-      const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId },
-      });
-      if (!country) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Country not found: ${input.countryId}`,
-        });
-      }
+      // Verify the country exists and belongs to the feature's realm
+      const country = await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
 
       // Update map layer with country link
       await ctx.db.mapLayer.update({
@@ -74,10 +70,14 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
    * Admin: Unlink a map feature from a Country record.
    */
   unlinkCountryGeometry: adminProcedure
-    .input(z.object({ featureId: z.string() }))
+    .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
       const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId },
+        where: {
+          layerType: "political",
+          featureId: input.featureId,
+          realmId: await viewerRealmId(ctx, input.realm),
+        },
       });
 
       if (!mapLayer) {
@@ -118,10 +118,15 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
    * Admin: Get all details for a specific map feature.
    */
   getFeatureDetails: adminProcedure
-    .input(z.object({ featureId: z.string() }))
+    .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
       const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        where: {
+          layerType: "political",
+          featureId: input.featureId,
+          isActive: true,
+          realmId: await viewerRealmId(ctx, input.realm),
+        },
         include: {
           country: {
             select: {
@@ -163,11 +168,13 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         countryId: z.string().nullable().optional(),
         properties: z.record(z.string(), z.any()).optional(),
         wikiPageTitle: z.string().nullable().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input.realm);
       const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
       });
       if (!feature) {
         throw new TRPCError({
@@ -175,6 +182,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
           message: `Feature not found: ${input.featureId}`,
         });
       }
+      // A new link (and the rename/wiki/sync writes that follow it) must stay inside the feature's realm
+      await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
 
       const updateData: any = {};
       if (input.displayName !== undefined) {
@@ -248,10 +257,11 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
    * Admin: Create a new Country record from an unclaimed political map feature.
    */
   createCountryFromShape: adminProcedure
-    .input(z.object({ featureId: z.string(), name: z.string().min(1) }))
+    .input(z.object({ featureId: z.string(), name: z.string().min(1), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input.realm);
       const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
       });
       if (!feature) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
@@ -271,6 +281,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         data: {
           name: input.name,
           slug,
+          realmId,
           geometry: feature.geometry as any,
           centroid: feature.centroid as any,
           boundingBox: feature.boundingBox as any,

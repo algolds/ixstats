@@ -24,14 +24,23 @@ import type { DIViewProps } from "~/components/halo/types";
 import { WikiNarratorPlayer, WikiWorkspaceTab, WikiSearchDropdown } from "../components";
 import { type LocalDraft, type PausedSession } from "../types";
 import { listDrafts } from "~/lib/wiki-os/editor/draft-store";
+import { pageRefPath } from "~/lib/wiki-os/page-ref";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 export interface WikiViewProps extends DIViewProps {}
 
 export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { articleTitle, tocEntries, themeColors, activeSectionId, narratorState, narratorActions } =
-    useWikiContext();
+  const {
+    articleTitle,
+    articleSource,
+    tocEntries,
+    themeColors,
+    activeSectionId,
+    narratorState,
+    narratorActions,
+  } = useWikiContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
@@ -86,9 +95,9 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const visibleToc = useMemo(() => tocEntries.filter((e) => e.level <= 3), [tocEntries]);
 
   const handleNavigateToArticle = useCallback(
-    (title: string) => {
+    (title: string, source?: WikiSource) => {
       onClose();
-      navigateWithBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`, router);
+      navigateWithBasePath(pageRefPath({ title, source }), router);
     },
     [router, onClose]
   );
@@ -310,6 +319,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
       {(!hasNarratorAccess || wikiTab === "workspace") && (
         <WikiWorkspaceTab
           articleTitle={articleTitle}
+          wikiSource={articleSource}
           isMainPage={isMainPage}
           isSignedIn={isSignedIn}
           slug={slug}

@@ -8,133 +8,16 @@ import {
   publicProcedure,
   protectedProcedure,
   adminProcedure,
+  lightMutationProcedure,
 } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
-import { getDefaultEconomicConfig } from "~/lib/config-service";
-import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { generateSlug } from "~/lib/utils";
+import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { isSystemOwner } from "~/lib/auth";
-import type { BaseCountryData } from "~/types/ixstats";
 import { globalCache } from "~/lib/cache";
-import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { activateOwnedNation, assignNation } from "~/server/modules/realms";
 
 export const usersCountryLinkingRouter = createTRPCRouter({
-  // Link user to existing country
-  linkCountry: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        countryId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Verify the userId matches the authenticated user
-        if (input.userId !== ctx.auth?.userId) {
-          throw new Error("UNAUTHORIZED: Cannot link country for different user");
-        }
-
-        // Check if user already has a country
-        const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
-        if (user && user.countryId === input.countryId) {
-          // User is already linked to this country, return success
-          return { success: true, message: "User already linked to this country" };
-        }
-
-        // Check if country is already claimed by another user
-        const claimedUser = await ctx.db.user.findFirst({
-          where: {
-            countryId: input.countryId,
-            clerkUserId: { not: input.userId }, // Exclude current user
-          },
-        });
-
-        const isSystemOwnerUser = isSystemOwner(input.userId);
-
-        if (claimedUser && !isSystemOwnerUser) {
-          throw new Error("Country is already claimed by another user");
-        }
-        // Check if country exists
-        const country = await ctx.db.country.findUnique({ where: { id: input.countryId } });
-        if (!country) {
-          throw new Error("Country not found");
-        }
-        // Link user to country
-        if (isSystemOwnerUser) {
-          // For system owners, allow linking even if country is claimed by others
-          await ctx.db.user.upsert({
-            where: { clerkUserId: input.userId },
-            update: { countryId: input.countryId },
-            create: { clerkUserId: input.userId, countryId: input.countryId },
-          });
-        } else {
-          // For regular users, unlink any existing country first
-          await ctx.db.user.updateMany({
-            where: { countryId: input.countryId },
-            data: { countryId: null },
-          });
-
-          await ctx.db.user.upsert({
-            where: { clerkUserId: input.userId },
-            update: { countryId: input.countryId },
-            create: { clerkUserId: input.userId, countryId: input.countryId },
-          });
-        }
-        // Get the updated country with user info
-        const updatedCountry = await ctx.db.country.findUnique({
-          where: { id: input.countryId },
-          include: {
-            storytellerEffects: {
-              where: { isActive: true },
-              orderBy: { ixTimeTimestamp: "desc" },
-            },
-          },
-        });
-
-        // Send notification to user
-        try {
-          await notificationHooks.onUserAccountChange({
-            userId: input.userId,
-            changeType: "country_assigned",
-            title: "Country Assigned",
-            description: `You have been assigned to ${updatedCountry?.name || "a country"}. You can now manage your country from the MyCountry dashboard.`,
-            metadata: {
-              countryId: input.countryId,
-              countryName: updatedCountry?.name,
-            },
-          });
-        } catch (notifError) {
-          console.error("Failed to send country assignment notification:", notifError);
-          // Don't fail the whole operation if notification fails
-        }
-
-        await globalCache.delete(`user_profile:${input.userId}`);
-
-        // New-player onboarding bonus (one-time, on first country link)
-        try {
-          const bcfg = await getBonusConfig(ctx.db);
-          await grantBonus(ctx.db, input.userId, "bonus:new_player", bcfg.newPlayer, {
-            oneTime: true,
-            metadata: { countryId: input.countryId, countryName: updatedCountry?.name },
-          });
-        } catch (bonusError) {
-          console.error("Failed to grant new-player bonus:", bonusError);
-        }
-
-        return {
-          success: true,
-          country: updatedCountry,
-          message: "Country linked successfully",
-        };
-      } catch (error) {
-        console.error("Error linking country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to link country", {
-          cause: error,
-        });
-      }
-    }),
-
   // Create new country for user (LEGACY - Use countries.createCountry for new builder)
   createCountry: protectedProcedure
     .input(
@@ -230,68 +113,10 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         if (user && user.countryId) {
           throw new Error("User already has a linked country");
         }
-        // Create default country data
-        const defaultData = {
-          name: input.countryName,
-          slug: generateSlug(input.countryName),
-          continent: input.initialData?.continent || "Unknown",
-          region: input.initialData?.region || "Unknown",
-          baselinePopulation: input.initialData?.baselinePopulation || 1000000,
-          baselineGdpPerCapita: input.initialData?.baselineGdpPerCapita || 50000,
-          landArea: input.initialData?.landArea || 100000,
-          flag: input.initialData?.flag || undefined,
-          coatOfArms: input.initialData?.coatOfArms || undefined,
-          governmentType: input.initialData?.government || undefined,
-          baselineDate: new Date(IxTime.getCurrentIxTime()),
-          lastCalculated: new Date(IxTime.getCurrentIxTime()),
-          localGrowthFactor: 1.0,
-        };
-        // Calculate initial stats using the calculator
-        const config = getDefaultEconomicConfig();
-        const calculator = new IxStatsCalculator(config, defaultData.baselineDate.getTime());
-        const baseCountryData: BaseCountryData = {
-          country: defaultData.name,
-          continent: defaultData.continent,
-          region: defaultData.region,
-          population: defaultData.baselinePopulation,
-          gdpPerCapita: defaultData.baselineGdpPerCapita,
-          landArea: defaultData.landArea,
-          maxGdpGrowthRate: 0.05, // Default 5% growth rate
-          adjustedGdpGrowth: 0.03, // Default 3% growth rate
-          populationGrowthRate: 0.01, // Default 1% growth rate
-          actualGdpGrowth: 0.03, // Default 3% growth rate
-          projected2040Population: defaultData.baselinePopulation * 1.2, // 20% growth projection
-          projected2040Gdp: defaultData.baselinePopulation * defaultData.baselineGdpPerCapita * 1.5, // 50% GDP growth projection
-          projected2040GdpPerCapita: defaultData.baselineGdpPerCapita * 1.25, // 25% per capita growth projection
-          localGrowthFactor: 1.0,
-        };
-        const initialStats = calculator.initializeCountryStats(baseCountryData);
-        const currentStats = calculator.calculateTimeProgression(initialStats);
-        // Create the country record with all available data
+        // Baseline data shared with realm nation claims (~/lib/countries/baseline-country)
+        const baseline = buildBaselineCountryData(input.countryName, input.initialData);
         const newCountry = await ctx.db.country.create({
-          data: {
-            ...defaultData,
-            currentPopulation: currentStats.newStats.currentPopulation,
-            currentGdpPerCapita: currentStats.newStats.currentGdpPerCapita,
-            currentTotalGdp: currentStats.newStats.currentTotalGdp,
-            economicTier: currentStats.newStats.economicTier,
-            populationTier: currentStats.newStats.populationTier,
-            populationGrowthRate: currentStats.newStats.populationGrowthRate,
-            adjustedGdpGrowth: currentStats.newStats.adjustedGdpGrowth,
-            maxGdpGrowthRate: currentStats.newStats.maxGdpGrowthRate,
-            populationDensity: currentStats.newStats.populationDensity,
-            gdpDensity: currentStats.newStats.gdpDensity,
-            // Additional economic fields from initialData
-            nominalGDP:
-              input.initialData?.nominalGDP ||
-              defaultData.baselinePopulation * defaultData.baselineGdpPerCapita,
-            realGDPGrowthRate: input.initialData?.realGDPGrowthRate || 3.0,
-            inflationRate: input.initialData?.inflationRate || 2.0,
-            unemploymentRate: input.initialData?.unemploymentRate || 5.0,
-            taxRevenueGDPPercent: input.initialData?.taxRevenueGDPPercent || 20.0,
-            literacyRate: input.initialData?.literacyRate || 95.0,
-            lifeExpectancy: input.initialData?.lifeExpectancy || 75.0,
-          },
+          data: { ...baseline, slug: generateSlug(input.countryName) },
           include: {
             storytellerEffects: {
               where: { isActive: true },
@@ -300,24 +125,27 @@ export const usersCountryLinkingRouter = createTRPCRouter({
           },
         });
         // Link user to country
-        await ctx.db.user.upsert({
-          where: { clerkUserId: input.userId },
-          update: { countryId: newCountry.id },
-          create: { clerkUserId: input.userId, countryId: newCountry.id },
+        await ctx.db.$transaction(async (tx) => {
+          const owner = await tx.user.upsert({
+            where: { clerkUserId: input.userId },
+            update: {},
+            create: { clerkUserId: input.userId },
+          });
+          await assignNation(tx, { userId: owner.id, countryId: newCountry.id });
         });
         // Create initial historical data point
         await ctx.db.historicalDataPoint.create({
           data: {
             countryId: newCountry.id,
             ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
-            population: currentStats.newStats.currentPopulation,
-            gdpPerCapita: currentStats.newStats.currentGdpPerCapita,
-            totalGdp: currentStats.newStats.currentTotalGdp,
-            populationGrowthRate: currentStats.newStats.populationGrowthRate,
-            gdpGrowthRate: currentStats.newStats.adjustedGdpGrowth,
-            landArea: defaultData.landArea,
-            populationDensity: currentStats.newStats.populationDensity,
-            gdpDensity: currentStats.newStats.gdpDensity,
+            population: baseline.currentPopulation,
+            gdpPerCapita: baseline.currentGdpPerCapita,
+            totalGdp: baseline.currentTotalGdp,
+            populationGrowthRate: baseline.populationGrowthRate,
+            gdpGrowthRate: baseline.adjustedGdpGrowth,
+            landArea: baseline.landArea,
+            populationDensity: baseline.populationDensity,
+            gdpDensity: baseline.gdpDensity,
           },
         });
 
@@ -385,6 +213,20 @@ export const usersCountryLinkingRouter = createTRPCRouter({
           cause: error,
         });
       }
+    }),
+
+  /** "Play as": act as another nation the caller owns, e.g. one in another realm (ruling F-1). */
+  setActiveNation: lightMutationProcedure
+    .input(z.object({ countryId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const activated = await ctx.db.$transaction((tx) =>
+        activateOwnedNation(tx, { userId: ctx.user.id, countryId: input.countryId })
+      );
+      if (!activated) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only play as a nation you own" });
+      }
+      await globalCache.delete(`user_profile:${ctx.user.clerkUserId}`);
+      return { success: true };
     }),
 
   // Get user's membership status

@@ -559,6 +559,7 @@ const EXPECTED: Record<
         "nationalIssueTemplate.findMany",
         "nationalIssue.findMany",
         "nPCPersonalityAssignment.findUnique",
+        "country.findUnique",
         "intent.findMany",
         "country.findFirst",
         "nationalIssue.create",
@@ -567,7 +568,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "50a85b08744812bf831a0f667acb38427333244ab2cf570b1c19a5bc95300436",
+    digest: "62cf98dfd6be8e961c65a25e04f0fb61e73b972a3d47325f16fbadced8bcf61b",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -600,6 +601,7 @@ const EXPECTED: Record<
         "nationalIssueTemplate.findMany",
         "nationalIssue.findMany",
         "nPCPersonalityAssignment.findUnique",
+        "country.findUnique",
         "intent.findMany",
         "country.findFirst",
         "country.findMany",
@@ -607,7 +609,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "f7c20bf2d064c8c79acff0df2e71228c7644ca3645b39ee68109297b85c12f2c",
+    digest: "9eae36692c9a39e87fad891a46bb31c9bc41e0a33e9842c308b284df0e396639",
   },
   evaluateMissingCountry: {
     summary: {
@@ -681,12 +683,13 @@ const EXPECTED: Record<
         "nationalIssueTemplate.findMany",
         "nationalIssue.findMany",
         "nPCPersonalityAssignment.findUnique",
+        "country.findUnique",
         "intent.findMany",
         "country.findFirst",
         "issueGenerationLog.create",
       ],
     },
-    digest: "8656f9dbb28f1949e6d779b237858824a7adb25737b20304380fdbaf6023f62f",
+    digest: "7992a266a47e19fd629b742eaa79d73d4db33dff65fc9c607f1901532d2797e2",
   },
   evaluateTemplateQueryThrows: {
     summary: {
@@ -747,13 +750,14 @@ const EXPECTED: Record<
         "nationalIssueTemplate.findMany",
         "nationalIssue.findMany",
         "nPCPersonalityAssignment.findUnique",
+        "country.findUnique",
         "intent.findMany",
         "country.findFirst",
         "nationalIssue.create",
         "issueGenerationLog.create",
       ],
     },
-    digest: "f155adf2d3b263cbfe13e2eea5b9f766964d4fe054d8e02f201b89f21fdcc3f0",
+    digest: "b20bf46e0627b382b764a4f13b03820fd1b198a3d9bd343c9e2131eef565e64f",
   },
   forceGenerateFollowUp: {
     summary: {

@@ -1,10 +1,26 @@
 // src/server/api/routers/admin/users.ts
+import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
-import { isSystemOwner } from "~/lib/auth";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
+import {
+  adminAssignNation,
+  NationOwnershipError,
+  pointActiveNation,
+  releaseNation,
+} from "~/server/modules/realms";
+import {
+  fetchUserPageHistory,
+  fetchWikiUser,
+  PROOF_SOURCES,
+} from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
+
+/** The wiki-links service for admin link/unlink — the admin's authority stands in for the token proof. */
+const adminWikiLinks = (db: PrismaClient) =>
+  createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
 
 export const adminUsersRouter = createTRPCRouter({
   // List all users and their claimed countries
@@ -26,16 +42,13 @@ export const adminUsersRouter = createTRPCRouter({
   // List all countries and their assigned users
   listCountriesWithUsers: adminProcedure.query(async ({ ctx }) => {
     const countries = await ctx.db.country.findMany({
-      include: { users: true },
+      include: { owner: true },
       orderBy: { name: "asc" },
     });
     return countries.map((c) => ({
       id: c.id,
       name: c.name,
-      user:
-        c.users && c.users.length > 0
-          ? { id: c.users[0].id, clerkUserId: c.users[0].clerkUserId }
-          : null,
+      user: c.owner ? { id: c.owner.id, clerkUserId: c.owner.clerkUserId } : null,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     }));
@@ -45,34 +58,13 @@ export const adminUsersRouter = createTRPCRouter({
   assignUserToCountry: adminProcedure
     .input(z.object({ userId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const isSystemOwnerUser = isSystemOwner(input.userId);
-
-      if (isSystemOwnerUser) {
-        // For system owners, allow multiple users to access the same country
-        // Just link the user without unlinking others
-        await ctx.db.user.upsert({
-          where: { clerkUserId: input.userId },
-          update: { countryId: input.countryId },
-          create: { clerkUserId: input.userId, countryId: input.countryId },
-        });
-      } else {
-        // For regular users, maintain the original behavior (one user per country)
-        // Unlink any user currently assigned to this country
-        await ctx.db.user.updateMany({
-          where: { countryId: input.countryId },
-          data: { countryId: null },
-        });
-        // Unlink this user from any country they currently claim
-        await ctx.db.user.updateMany({
-          where: { clerkUserId: input.userId },
-          data: { countryId: null },
-        });
-        // Link user to country
-        await ctx.db.user.upsert({
-          where: { clerkUserId: input.userId },
-          update: { countryId: input.countryId },
-          create: { clerkUserId: input.userId, countryId: input.countryId },
-        });
+      try {
+        await adminAssignNation(ctx.db, { clerkUserId: input.userId, countryId: input.countryId });
+      } catch (err) {
+        if (err instanceof NationOwnershipError) {
+          throw new TRPCError({ code: "CONFLICT", message: err.message });
+        }
+        throw err;
       }
 
       await globalCache.delete(`user_profile:${input.userId}`);
@@ -85,9 +77,15 @@ export const adminUsersRouter = createTRPCRouter({
   unassignUserFromCountry: adminProcedure
     .input(z.object({ userId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.user.updateMany({
-        where: { clerkUserId: input.userId, countryId: input.countryId },
-        data: { countryId: null },
+      await ctx.db.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({ where: { clerkUserId: input.userId } });
+        if (!user || user.countryId !== input.countryId) return;
+        const country = await tx.country.findUnique({
+          where: { id: input.countryId },
+          select: { ownerUserId: true },
+        });
+        if (country?.ownerUserId === user.id) await releaseNation(tx, input.countryId);
+        else await pointActiveNation(tx, user.id, null);
       });
 
       await globalCache.delete(`user_profile:${input.userId}`);
@@ -273,30 +271,43 @@ export const adminUsersRouter = createTRPCRouter({
   linkUserWiki: adminProcedure
     .input(z.object({ userId: z.string(), wikiUsername: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const { linkWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
-      const res = await linkWikiAccount(input.userId, input.wikiUsername, ctx.auth.userId);
+      const { findLinkableWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
+      const res = await findLinkableWikiAccount(input.userId, input.wikiUsername, ctx.auth.userId);
       if (!res.success) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: res.error || "Failed to link MediaWiki account",
         });
       }
+
+      // The admin's authority is the proof of ownership here (no token): adminVerify writes the verified
+      // WikiAccountLink row AND the legacy User columns in one transaction, so a TAKEN refusal writes nothing
+      // (ruling F-2). The PostgreSQL fast path hard-codes userId 1 (pg-activity.ts), which is not a real
+      // MediaWiki user id, so treat it as unknown.
+      const wikiUserId = res.wikiUserId && res.wikiUserId > 1 ? res.wikiUserId : null;
+      try {
+        await adminWikiLinks(ctx.db).adminVerify(
+          input.userId,
+          "ixwiki",
+          res.wikiUsername ?? input.wikiUsername,
+          wikiUserId
+        );
+      } catch (err) {
+        if (err instanceof WikiLinkError) {
+          throw new TRPCError({ code: "CONFLICT", message: err.message });
+        }
+        throw err;
+      }
+
       await globalCache.delete(`user_profile:${input.userId}`);
       return res;
     }),
 
-  // Unlink a user's MediaWiki account
+  // Revoke a user's wiki link on any wiki (the verified row; ixwiki also clears the legacy columns — ruling F-2)
   unlinkUserWiki: adminProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(z.object({ userId: z.string(), source: z.enum(PROOF_SOURCES).default("ixwiki") }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.user.update({
-        where: { id: input.userId },
-        data: {
-          wikiUsername: null,
-          wikiUserId: null,
-          lastWikiSync: null,
-        },
-      });
+      await adminWikiLinks(ctx.db).unlink(input.userId, input.source);
       await globalCache.delete(`user_profile:${input.userId}`);
       return { success: true };
     }),

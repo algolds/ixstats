@@ -17,10 +17,13 @@ import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { timeAgo } from "~/lib/format/compact";
+import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { type LocalDraft, type PausedSession } from "../types";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;
+  /** The wiki the article lives on; another wiki's page is read-only in WikiOS (ruling E-l′). */
+  wikiSource: WikiSource;
   isMainPage?: boolean;
   isSignedIn?: boolean;
   slug?: string | null;
@@ -32,11 +35,13 @@ interface WikiWorkspaceTabProps {
     timestamp?: string | null;
   }> | null;
   onClose: () => void;
-  onNavigateToArticle: (title: string) => void;
+  /** Opens the page on its own wiki (IxWiki when none is given) */
+  onNavigateToArticle: (title: string, source?: WikiSource) => void;
 }
 
 export function WikiWorkspaceTab({
   articleTitle,
+  wikiSource,
   isMainPage = false,
   isSignedIn = false,
   slug,
@@ -110,7 +115,7 @@ export function WikiWorkspaceTab({
               <button
                 key={idx}
                 type="button"
-                onClick={() => onNavigateToArticle(session.title)}
+                onClick={() => onNavigateToArticle(session.title, session.source)}
                 className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
@@ -172,40 +177,16 @@ export function WikiWorkspaceTab({
         <div className="border-border mb-3 border-b pb-3">
           <SectionHeader label="This Page" />
           <div className="space-y-0.5">
-            {isSignedIn && (
-              <QuickAction
-                icon={<FileEdit />}
-                label="Edit"
-                shortcut="Tab Tab"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(`/wiki/${slug}/edit`, router);
-                }}
-              />
+            {wikiSource === "ixwiki" && (
+              <IxWikiPageActions isSignedIn={isSignedIn} slug={slug} onClose={onClose} />
             )}
-            <QuickAction
-              icon={<History />}
-              label="History"
-              onClick={() => {
-                onClose();
-                navigateWithBasePath(`/wiki/history/${slug}`, router);
-              }}
-            />
-            <QuickAction
-              icon={<Link2 />}
-              label="What links here"
-              onClick={() => {
-                onClose();
-                navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
-              }}
-            />
             <QuickAction
               icon={<ExternalLink />}
               label="View on Original Wiki"
               onClick={() => {
                 onClose();
                 if (articleTitle) {
-                  const mwBaseUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+                  const mwBaseUrl = getWikiBaseUrl(wikiSource);
                   const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
                   window.open(targetUrl, "_blank", "noopener,noreferrer");
                 }
@@ -214,6 +195,46 @@ export function WikiWorkspaceTab({
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+/** Edit, History and What links here act on the IxWiki page, so another wiki's page has none. */
+function IxWikiPageActions({
+  isSignedIn,
+  slug,
+  onClose,
+}: Pick<WikiWorkspaceTabProps, "isSignedIn" | "slug" | "onClose">) {
+  const router = useRouter();
+  return (
+    <>
+      {isSignedIn && (
+        <QuickAction
+          icon={<FileEdit />}
+          label="Edit"
+          shortcut="Tab Tab"
+          onClick={() => {
+            onClose();
+            navigateWithBasePath(`/wiki/${slug}/edit`, router);
+          }}
+        />
+      )}
+      <QuickAction
+        icon={<History />}
+        label="History"
+        onClick={() => {
+          onClose();
+          navigateWithBasePath(`/wiki/history/${slug}`, router);
+        }}
+      />
+      <QuickAction
+        icon={<Link2 />}
+        label="What links here"
+        onClick={() => {
+          onClose();
+          navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
+        }}
+      />
     </>
   );
 }

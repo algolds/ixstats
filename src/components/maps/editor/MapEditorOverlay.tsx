@@ -33,6 +33,7 @@ import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
 import { RegionHoverTooltip } from "~/components/maps/editor/components/RegionHoverTooltip";
 import { HypsometricElevationHUD } from "~/components/maps/editor/components/HypsometricElevationHUD";
 import { MapEditorPluginProvider } from "~/components/maps/editor/plugins/context";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import {
   EditorLoadingScreen,
   EditorErrorBoundary,
@@ -80,6 +81,7 @@ export default function MapEditorOverlay({
   mapInstance: initialMapInstance,
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
+  const realm = useMapRealm();
 
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [brushRadius, setBrushRadius] = useState(20);
@@ -502,6 +504,7 @@ export default function MapEditorOverlay({
                     onToggleLayer={toggleEditorLayer}
                     hideEditButtons={true}
                     onMapReady={setSharedWorldMap}
+                    realm={realm}
                   />
                 )
               ) : (

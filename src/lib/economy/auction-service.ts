@@ -614,7 +614,7 @@ export class AuctionService {
 
           // Find the nation owner
           const nationOwner = await tx.user.findFirst({
-            where: { countryId: auction.CardOwnership.cards.countryId },
+            where: { ownedCountries: { some: { id: auction.CardOwnership.cards.countryId } } },
           });
 
           let royaltyRecipientClerkId: string | null = null;
@@ -806,7 +806,7 @@ export class AuctionService {
 
             // Find the nation owner
             const nationOwner = await tx.user.findFirst({
-              where: { countryId: auction.CardOwnership.cards.countryId },
+              where: { ownedCountries: { some: { id: auction.CardOwnership.cards.countryId } } },
             });
 
             let royaltyRecipientClerkId: string | null = null;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
@@ -45,11 +46,13 @@ export const pointQueryProcedures = {
       z.object({
         lng: z.number().min(-180).max(180),
         lat: z.number().min(-90).max(90),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Query altitude, climate, and political layers at this point
+        // Query the viewed realm's altitude, climate, and political layers at this point
+        const realmId = await viewerRealmId(ctx, input.realm);
         const layerResults = await withPointQueryTimeout(ctx.db, (tx) =>
           tx.$queryRawUnsafe<
             Array<{
@@ -65,9 +68,11 @@ export const pointQueryProcedures = {
            WHERE "isActive" = true
              AND geom_postgis IS NOT NULL
              AND "layerType" IN ('altitudes', 'climate', 'political')
+             AND "worldId" = $3
              AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))`,
             input.lng,
-            input.lat
+            input.lat,
+            realmId
           )
         );
 

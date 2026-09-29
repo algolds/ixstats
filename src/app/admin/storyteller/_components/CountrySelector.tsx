@@ -4,6 +4,7 @@
 
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -25,7 +26,7 @@ export function CountrySelector({
 }: CountrySelectorProps) {
   const [search, setSearch] = useState("");
   const { data } = api.countries.getSelectList.useQuery(
-    { limit: 250 },
+    { limit: 250, realm: ALL_REALMS },
     {
       refetchOnWindowFocus: false,
     }

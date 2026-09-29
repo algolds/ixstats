@@ -94,7 +94,7 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
   for (const country of countriesWithGrowth) {
     // Trigger government announcement
     const governmentUsers = await prisma.user.findMany({
-      where: { countryId: country.id, isActive: true },
+      where: { isActive: true, ownedCountries: { some: { id: country.id } } },
       take: 1,
     });
 

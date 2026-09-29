@@ -27,6 +27,7 @@ import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
 import { TimelineScrubber } from "./TimelineScrubber";
+import { MapRealmProvider } from "./MapRealmContext";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
 import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
@@ -69,6 +70,8 @@ export interface MapContainerProps {
   onMapReady?: (map: import("maplibre-gl").Map | null) => void;
   /** Suppress country click-to-select + flyTo (e.g. while a border editor owns clicks). */
   disableCountrySelect?: boolean;
+  /** Realm slug to show (`?realm=`); undefined = the viewer's realm. Editors opened here edit it too. */
+  realm?: string;
 }
 
 export function MapContainer({
@@ -89,6 +92,7 @@ export function MapContainer({
   hideEditButtons = false,
   onMapReady,
   disableCountrySelect = false,
+  realm,
 }: MapContainerProps) {
   const isAdmin = useIsAdmin();
   const isStaff = useIsStaff();
@@ -117,7 +121,7 @@ export function MapContainer({
     isServerLoading,
     dropPin,
     clearPin,
-  } = useMapPinInfo();
+  } = useMapPinInfo(realm);
 
   // Fetch user profile to get countryId first
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
@@ -196,6 +200,7 @@ export function MapContainer({
     overlayData,
     error,
   } = useMapDataQueries({
+    realm,
     initialLayers,
     currentZoom,
     initialCountryId,
@@ -255,7 +260,7 @@ export function MapContainer({
     historicalIxTime === null ? null : IxTime.getCurrentGameYear(historicalIxTime);
 
   const { data: historicalPolitical } = api.geoCore.getWorldMapAsOf.useQuery(
-    { ixTime: historicalIxTime as number },
+    { ixTime: historicalIxTime as number, realm },
     {
       enabled: historicalIxTime !== null,
       staleTime: 5 * 60_000,
@@ -408,6 +413,7 @@ export function MapContainer({
           onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
           onSearchResult={handleSearchResult}
           onOpenWelcome={() => setIsWelcomeOpen(true)}
+          realm={realm}
         />
       )}
 
@@ -505,27 +511,32 @@ export function MapContainer({
         totalSteps={totalSteps}
       />
 
-      {/* Map editor overlay */}
-      {isEditing && editingCountryId && (
-        <MapEditorOverlay
-          countryId={editingCountryId}
-          mapLayers={mapLayers}
-          onExit={handleExitEditor}
-          historicalYear={historicalYear}
-          mapInstance={mapRef.current?.getMap() ?? null}
-        />
-      )}
+      {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
+          nation's realm — undefined = the viewer's realm — even when opened from /maps?realm=<other> */}
+      <MapRealmProvider value={undefined}>
+        {isEditing && editingCountryId && (
+          <MapEditorOverlay
+            countryId={editingCountryId}
+            mapLayers={mapLayers}
+            onExit={handleExitEditor}
+            historicalYear={historicalYear}
+            mapInstance={mapRef.current?.getMap() ?? null}
+          />
+        )}
+      </MapRealmProvider>
 
-      {/* World map editor overlay */}
-      {isWorldEditing && (
-        <MapEditorOverlay
-          isWorldMode={true}
-          mapLayers={mapLayers}
-          onExit={() => setIsWorldEditing(false)}
-          historicalYear={historicalYear}
-          mapInstance={mapRef.current?.getMap() ?? null}
-        />
-      )}
+      {/* The world editor edits the realm this map shows (ruling E-r) */}
+      <MapRealmProvider value={realm}>
+        {isWorldEditing && (
+          <MapEditorOverlay
+            isWorldMode={true}
+            mapLayers={mapLayers}
+            onExit={() => setIsWorldEditing(false)}
+            historicalYear={historicalYear}
+            mapInstance={mapRef.current?.getMap() ?? null}
+          />
+        )}
+      </MapRealmProvider>
 
       {/* Historical timeline scrubber (read-only) */}
       {showControls && tourState === "idle" && (

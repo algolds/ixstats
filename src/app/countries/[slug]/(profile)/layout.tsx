@@ -156,10 +156,10 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
     );
   }
 
-  const sovereignUser = country.users?.[0]
+  const sovereignUser = country.owner
     ? {
-        username: country.users[0].forumUsername || country.users[0].wikiUsername || null,
-        roleName: country.users[0].role?.displayName || country.users[0].role?.name || null,
+        username: country.owner.forumUsername || country.owner.wikiUsername || null,
+        roleName: country.owner.role?.displayName || country.owner.role?.name || null,
       }
     : null;
 

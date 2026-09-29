@@ -6,8 +6,14 @@ import { Eye, EyeClosed } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { api } from "~/trpc/react";
+import { parseWikiSource } from "~/lib/wiki-os/config";
 
-export function WatchButton({ title }: { title: string }) {
+/** The watchlist is IxWiki's: another wiki's page shown in WikiOS gets no Watch button (ruling E-l′). */
+export function WatchButton({ title, wikiSource }: { title: string; wikiSource?: string }) {
+  return parseWikiSource(wikiSource) === "ixwiki" ? <IxWikiWatchButton title={title} /> : null;
+}
+
+function IxWikiWatchButton({ title }: { title: string }) {
   const { isSignedIn } = useWikiAuth();
   const pageTitle = title.replace(/_/g, " ");
   const utils = api.useUtils();

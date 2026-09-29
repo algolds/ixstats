@@ -9,7 +9,8 @@
  * Phase 2 (deferred): Loads decorative layers (altitudes, rivers, lakes, icecaps)
  *   in a separate request. These fill in after the map is already visible.
  *
- * Maintains the same IndexedDB + React Query two-tier cache strategy.
+ * Maintains the same IndexedDB + React Query two-tier cache strategy. The IndexedDB entry is the
+ * shown realm's: written only from a real (non-placeholder) bundle, tagged with the realm it resolved.
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
@@ -21,7 +22,13 @@ import type {
   CapitalsGeoJson,
 } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { getCachedMapLayers, setCachedMapLayers } from "~/lib/maps/map-idb-cache";
+import {
+  getCachedMapLayers,
+  mapLayersCacheKey,
+  setCachedMapLayers,
+  type MapCacheScope,
+} from "~/lib/maps/map-idb-cache";
+import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { CRITICAL_LAYERS, LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
 
 const DEFAULT_VISIBLE: MapLayerType[] = [
@@ -36,22 +43,30 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
 /** Decorative layers load in a deferred second request */
 const DECORATIVE_LAYERS: MapLayerType[] = [];
 
-export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number) {
+/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
+export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number, realm?: string) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
 
-  // IndexedDB cached data (loaded once on mount)
+  // IndexedDB cached data for the realm this map shows — only once that realm is known
+  const viewerRealmId = useViewerRealmId();
+  const cacheScope = useMemo<MapCacheScope>(
+    () => ({ realm, viewerRealmId }),
+    [realm, viewerRealmId]
+  );
   const [idbData, setIdbData] = useState<Record<string, unknown> | null>(null);
-  const idbLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (idbLoadedRef.current) return;
-    idbLoadedRef.current = true;
-    getCachedMapLayers().then((cached) => {
-      if (cached) setIdbData(cached);
+    let cancelled = false;
+    setIdbData(null);
+    getCachedMapLayers(cacheScope).then((cached) => {
+      if (cached && !cancelled) setIdbData(cached);
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheScope]);
 
   // Compute zoom bucket — only re-fetches on bucket change
   const zoomBucket = useMemo(() => {
@@ -83,8 +98,9 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     data: criticalBundle,
     isLoading: criticalLoading,
     error: criticalError,
+    isPlaceholderData: criticalIsPlaceholder,
   } = api.geoCore.getMapBundle.useQuery(
-    { layers: CRITICAL_LAYERS, zoom: zoomParam },
+    { layers: CRITICAL_LAYERS, zoom: zoomParam, realm },
     {
       ...MAP_QUERY_OPTIONS,
       placeholderData: (prev) =>
@@ -102,7 +118,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
   );
 
   const { data: decorativeData, isLoading: _decorativeLoading } = api.geoCore.getWorldMap.useQuery(
-    { layers: decorativeLayersToFetch }, // Exclude zoom parameter to keep cache key stable and prevent re-fetching on zoom
+    { layers: decorativeLayersToFetch, realm }, // Exclude zoom parameter to keep cache key stable and prevent re-fetching on zoom
     {
       ...MAP_QUERY_OPTIONS,
       // Don't block the map from rendering — load in background
@@ -127,15 +143,17 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     return Object.keys(merged).length > 0 ? merged : null;
   }, [idbData, criticalBundle?.worldMap, decorativeData]);
 
-  // Persist to IndexedDB when both phases are loaded
+  // Persist the server's layers (never the cache-backed placeholder) under the realm it resolved
   const persistedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!mergedWorldMap) return;
-    const keys = Object.keys(mergedWorldMap).sort().join(",");
-    if (persistedRef.current === keys) return;
-    persistedRef.current = keys;
-    setCachedMapLayers(mergedWorldMap);
-  }, [mergedWorldMap]);
+    if (!criticalBundle?.realmId || criticalIsPlaceholder) return;
+    const fresh: Record<string, unknown> = { ...criticalBundle.worldMap, ...decorativeData };
+    const keys = Object.keys(fresh).sort().join(",");
+    const marker = `${mapLayersCacheKey(cacheScope)}|${criticalBundle.realmId}|${keys}`;
+    if (persistedRef.current === marker) return;
+    persistedRef.current = marker;
+    void setCachedMapLayers(cacheScope, fresh, criticalBundle.realmId);
+  }, [criticalBundle, criticalIsPlaceholder, decorativeData, cacheScope]);
 
   const isLoading = criticalLoading && !mergedWorldMap;
 

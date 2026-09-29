@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { useNotify } from "~/hooks/useNotify";
 import {
   type ScenarioFormData,
@@ -59,7 +60,7 @@ export function useDiplomaticScenariosAdmin() {
   );
 
   const { data: countries } = api.countries.getAll.useQuery(
-    { limit: 500 },
+    { limit: 500, realm: ALL_REALMS },
     {
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000,

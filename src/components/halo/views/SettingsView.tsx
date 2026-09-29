@@ -43,7 +43,6 @@ import {
   SectionLabel,
   AnimatedVolumeIcon,
 } from "./settings/SettingsControls";
-import { InlineRealmSwitcher } from "./settings/InlineRealmSwitcher";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -307,9 +306,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 </div>
                 <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
               </button>
-
-              {/* Active Realm */}
-              <InlineRealmSwitcher onClose={onClose} />
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
               <div className="border-border/40 mt-1 flex items-center justify-between border-t pt-2 dark:border-white/10">

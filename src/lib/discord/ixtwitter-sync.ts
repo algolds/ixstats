@@ -12,6 +12,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { db as sharedDb } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 import { DOMParser } from "@xmldom/xmldom";
@@ -233,8 +234,9 @@ function formatPostContent(message: DiscordMessage): string {
 
 async function loadCountryIdCache(db: PrismaClient) {
   const countryNames = Array.from(new Set(Object.values(DISCORD_COUNTRY_MAP)));
+  // The Discord map names IxWorld nations; names repeat across realms (ruling E-p).
   const countries = await db.country.findMany({
-    where: { name: { in: countryNames } },
+    where: { realmId: DEFAULT_REALM_ID, name: { in: countryNames } },
     select: { name: true, id: true },
   });
   for (const c of countries) {

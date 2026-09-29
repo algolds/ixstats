@@ -16,6 +16,7 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
@@ -319,11 +320,15 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           minYear: z.number().int().optional(),
           maxYear: z.number().int().optional(),
           storylineId: z.string().optional(),
+          ...realmScopeInput.shape,
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const where: Record<string, unknown> = { status: "approved" };
+      const where: Record<string, unknown> = {
+        status: "approved",
+        country: { realmId: await viewerRealmId(ctx, input?.realm) },
+      };
       if (input?.category) where.category = input.category;
       if (input?.storylineId) where.storylineId = input.storylineId;
       if (input?.minYear !== undefined || input?.maxYear !== undefined) {

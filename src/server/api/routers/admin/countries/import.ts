@@ -9,6 +9,7 @@ import { IxTime } from "~/lib/ixtime";
 import { parseRosterFile } from "~/lib/admin/roster-parser";
 import type { ImportAnalysis, BaseCountryData } from "~/types/ixstats";
 import { generateSlug } from "~/lib/utils";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
 export const adminCountriesImportRouter = createTRPCRouter({
@@ -29,9 +30,10 @@ export const adminCountriesImportRouter = createTRPCRouter({
           throw new Error("No valid countries found in the file");
         }
 
-        // Check for existing countries
+        // Check for existing countries (the roster is IxWorld's; names repeat across realms)
         const existingCountries = await ctx.db.country.findMany({
           where: {
+            realmId: DEFAULT_REALM_ID,
             name: { in: countries.map((c) => c.country) },
           },
           select: {
@@ -196,9 +198,10 @@ export const adminCountriesImportRouter = createTRPCRouter({
         if (countries.length === 0) {
           throw new Error("No valid countries found in the file");
         }
-        // Get all existing countries by name
+        // Get all existing IxWorld countries by name (never another realm's same-name nation)
         const existingCountries = await ctx.db.country.findMany({
           where: {
+            realmId: DEFAULT_REALM_ID,
             name: { in: countries.map((c) => c.country) },
           },
         });

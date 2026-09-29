@@ -31,6 +31,37 @@ import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
 
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
+const RESERVED_WIKI_SLUGS = new Set([
+  "lorewards",
+  "diff",
+  "watchlist",
+  "search",
+  "random",
+  "repository",
+  "recent-changes",
+  "categories",
+  "whatlinkshere",
+  "user",
+  "history",
+  "contributions",
+  "utilities",
+  "templates",
+  "sandbox",
+]);
+
+/**
+ * A path that is NOT an editable wiki article: the reserved /wiki/* tool routes, the Special: namespace, and
+ * anything not under /wiki/<slug> (util, library and other routes). Article pages (/wiki/<Title> and their
+ * /edit, /talk sub-routes) are NOT special, so the page tools (Edit / Talk / History / What Links Here) render
+ * for them. NOTE: previously this matched every "/wiki/" path, which hid page tools on all articles.
+ */
+function isNonArticlePath(cleanPath: string): boolean {
+  const wikiSlug = cleanPath.match(/^\/wiki\/([^/]+)/)?.[1];
+  if (!wikiSlug) return true;
+  const slug = decodeURIComponent(wikiSlug);
+  return RESERVED_WIKI_SLUGS.has(slug) || /^special:/i.test(slug);
+}
+
 export function WikiOSLayout({
   title,
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -38,6 +69,7 @@ export function WikiOSLayout({
   hideTitleHeading = false,
   showUtilitiesRibbon,
   sections,
+  readOnly,
   children,
 }: {
   title?: string;
@@ -45,9 +77,11 @@ export function WikiOSLayout({
   hideTitleHeading?: boolean;
   showUtilitiesRibbon?: boolean;
   sections?: TocEntry[];
+  /** Another wiki's page shown in WikiOS (ruling E-l): no page tools and no edit shortcut. */
+  readOnly?: boolean;
   children: ReactNode;
 }) {
-  useWikiOSShortcuts();
+  useWikiOSShortcuts(readOnly);
   useWikiPrefetch();
   const { articleTitle, setActiveModal } = useWikiContext();
   const pathname = usePathname();
@@ -121,48 +155,8 @@ export function WikiOSLayout({
 
   const activeId = getActiveId();
 
-  // A "special page" is anything that is NOT an editable wiki article — the Main Page,
-  // the reserved /wiki/* tool routes, the Special: namespace, and non-article library
-  // routes. Article pages (/wiki/<Title> and their /edit, /talk sub-routes) are NOT
-  // special, so the page-tools (Edit / Talk / History / What Links Here) render for them.
-  // NOTE: previously this matched every "/wiki/" path, which hid page tools on all
-  // articles since every article lives under /wiki/.
-  const RESERVED_WIKI_SLUGS = new Set([
-    "lorewards",
-    "diff",
-    "watchlist",
-    "search",
-    "random",
-    "repository",
-    "recent-changes",
-    "categories",
-    "whatlinkshere",
-    "user",
-    "history",
-    "contributions",
-    "utilities",
-    "templates",
-    "sandbox",
-  ]);
-  const cleanPath = stripBasePath(pathname);
-  const wikiSlugMatch = cleanPath.match(/^\/wiki\/([^/]+)/);
-  const wikiSlug = wikiSlugMatch ? decodeURIComponent(wikiSlugMatch[1]) : null;
-  const isReservedWikiPage = !!wikiSlug && RESERVED_WIKI_SLUGS.has(wikiSlug);
-  const isSpecialNamespace = !!wikiSlug && /^special:/i.test(wikiSlug);
-  const isUtilRoute = cleanPath === "/util" || cleanPath.startsWith("/util/");
-  const isLibraryRoute =
-    cleanPath === "/blurbs" ||
-    cleanPath.startsWith("/blurbs/") ||
-    cleanPath === "/stashes" ||
-    cleanPath.startsWith("/stashes/");
-  // Not under /wiki/<slug> at all → not an article either.
-  const isSpecialPage =
-    isMainPage ||
-    isReservedWikiPage ||
-    isSpecialNamespace ||
-    isLibraryRoute ||
-    isUtilRoute ||
-    !wikiSlug;
+  // A "special page" has no page tools: the Main Page, a non-article path, or another wiki's page (read-only).
+  const isSpecialPage = readOnly || isMainPage || isNonArticlePath(stripBasePath(pathname));
 
   const sidebarContent = (
     <WikiOSUnifiedSidebar

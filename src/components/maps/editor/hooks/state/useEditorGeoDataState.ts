@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 import type {
   PropertiesPanelCountry,
@@ -26,6 +27,8 @@ export function useEditorGeoDataState({
   setMapSelectedCountry,
 }: UseEditorGeoDataStateProps) {
   const utils = api.useUtils();
+  // The realm being edited: its features, and its nations to link them to (ruling E-o)
+  const realm = useMapRealm();
 
   // --- Sidebar Tabs State ---
   const [activeSidebarTab, setActiveSidebarTab] = useState<TabId>(
@@ -63,13 +66,14 @@ export function useEditorGeoDataState({
   // Load details for the selected feature
   const { data: featureDetails, refetch: refetchFeatureDetails } =
     api.geoEditor.getFeatureDetails.useQuery(
-      { featureId: mapSelectedCountry?.featureId ?? "" },
+      { featureId: mapSelectedCountry?.featureId ?? "", realm },
       { enabled: !!mapSelectedCountry?.featureId }
     );
 
-  const { data: featureList } = api.geoCore.listCountries.useQuery(undefined, {
-    enabled: isWorldMode,
-  });
+  const { data: featureList } = api.geoCore.listCountries.useQuery(
+    { realm },
+    { enabled: isWorldMode }
+  );
 
   const recalculateAreaMutation = api.geoCore.recalculateArea.useMutation({
     onSuccess: () => {
@@ -82,7 +86,7 @@ export function useEditorGeoDataState({
   });
 
   const { data: dbCountries } = api.countries.getAll.useQuery(
-    { limit: 500 },
+    { limit: 500, realm },
     { enabled: isWorldMode, staleTime: 60_000 }
   );
 
@@ -90,11 +94,14 @@ export function useEditorGeoDataState({
     api.geoSovereignty.getSovereigntyRelations.useQuery(undefined, { enabled: isWorldMode });
 
   const { data: validationData, refetch: refetchValidation } =
-    api.geoEditor.validateLinkage.useQuery(undefined, {
-      enabled: isWorldMode,
-      staleTime: 10_000,
-      retry: false,
-    });
+    api.geoEditor.validateLinkage.useQuery(
+      { realm },
+      {
+        enabled: isWorldMode,
+        staleTime: 10_000,
+        retry: false,
+      }
+    );
 
   const assignMutation = api.geoEditor.assignCountryGeometry.useMutation({
     onSuccess: () => {
@@ -229,9 +236,10 @@ export function useEditorGeoDataState({
       createCountryFromShapeMutation.mutate({
         featureId: mapSelectedCountry.featureId,
         name,
+        realm,
       });
     },
-    [mapSelectedCountry, createCountryFromShapeMutation]
+    [mapSelectedCountry, createCountryFromShapeMutation, realm]
   );
 
   useEffect(() => {
@@ -327,12 +335,12 @@ export function useEditorGeoDataState({
 
   const handleAssignLink = (featureId: string) => {
     if (!assignCountryId) return;
-    assignMutation.mutate({ featureId, countryId: assignCountryId });
+    assignMutation.mutate({ featureId, countryId: assignCountryId, realm });
   };
 
   const handleUnlink = (featureId: string) => {
     if (confirm(`Unlink this feature (${featureId}) from its country?`)) {
-      unlinkMutation.mutate({ featureId });
+      unlinkMutation.mutate({ featureId, realm });
     }
   };
 
@@ -387,6 +395,7 @@ export function useEditorGeoDataState({
         countryId: editableCountryLinkageId || null,
         properties: parsedProperties,
         wikiPageTitle: wikiPageTitle || null,
+        realm,
       },
       {
         onSuccess: () => {

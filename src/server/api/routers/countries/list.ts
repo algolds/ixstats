@@ -2,6 +2,7 @@ import { z } from "zod";
 import { publicProcedure, cachedPublicProcedure, cachedStaticProcedure } from "~/server/api/trpc";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { TRPCError } from "@trpc/server";
+import { realmScopeInput, realmWhere, viewerRealmId } from "~/server/api/trpc/realm-scope";
 
 export const listProcedures = {
   // Get simple list of countries for dropdowns
@@ -10,18 +11,15 @@ export const listProcedures = {
       z.object({
         search: z.string().optional(),
         limit: z.number().optional().default(20),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: input.search
-          ? {
-              name: {
-                contains: input.search,
-                mode: "insensitive",
-              },
-            }
-          : undefined,
+        where: {
+          ...(await realmWhere(ctx, input.realm)),
+          name: input.search ? { contains: input.search, mode: "insensitive" } : undefined,
+        },
         take: input.limit,
         orderBy: { name: "asc" },
         select: {
@@ -61,11 +59,15 @@ export const listProcedures = {
           search: z.string().optional(),
           continent: z.string().optional(),
           economicTier: z.string().optional(),
+          ...realmScopeInput.shape,
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const where: Record<string, unknown> = { isDemo: false };
+      const where: Record<string, unknown> = {
+        isDemo: false,
+        ...(await realmWhere(ctx, input?.realm)),
+      };
       if (input?.search) {
         where.name = { contains: input.search, mode: "insensitive" };
       }
@@ -308,10 +310,10 @@ export const listProcedures = {
    * Used by the world map to highlight prominent nations.
    */
   getTopCountriesByImportance: cachedStaticProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(25) }))
+    .input(z.object({ limit: z.number().min(1).max(100).default(25), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: { isDemo: false },
+        where: { isDemo: false, realmId: await viewerRealmId(ctx, input.realm) },
         orderBy: [{ currentPopulation: "desc" }, { currentGdpPerCapita: "desc" }],
         take: input.limit,
         select: { name: true, currentPopulation: true, currentGdpPerCapita: true },
@@ -328,10 +330,10 @@ export const listProcedures = {
     }),
 
   getTopCountriesByPopulation: cachedPublicProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+    .input(z.object({ limit: z.number().min(1).max(100).default(10), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: { isDemo: false },
+        where: { isDemo: false, realmId: await viewerRealmId(ctx, input.realm) },
         orderBy: { currentPopulation: "desc" },
         take: input.limit,
         select: {
@@ -358,14 +360,16 @@ export const listProcedures = {
     .input(
       z.object({
         limit: z.number().min(1).max(10).default(3),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
-      const count = await ctx.db.country.count({ where: { isDemo: false } });
+      const where = { isDemo: false, realmId: await viewerRealmId(ctx, input.realm) };
+      const count = await ctx.db.country.count({ where });
       const skip = Math.max(0, Math.floor(Math.random() * count) - input.limit);
 
       const countries = await ctx.db.country.findMany({
-        where: { isDemo: false },
+        where,
         take: input.limit,
         skip,
         orderBy: { name: "asc" },

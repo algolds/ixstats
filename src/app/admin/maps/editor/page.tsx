@@ -6,8 +6,10 @@ export const dynamic = "force-dynamic";
  */
 
 import dynamicImport from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { SystemRestart as Loader2 } from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { MapRealmProvider } from "~/components/maps/core/MapRealmContext";
 
 const MapEditorOverlay = dynamicImport(() => import("~/components/maps/editor/MapEditorOverlay"), {
   ssr: false,
@@ -23,15 +25,19 @@ const MapEditorOverlay = dynamicImport(() => import("~/components/maps/editor/Ma
 
 export default function WorldEditorPage() {
   usePageTitle({ title: "Admin - World Editor" });
+  // ?realm=<slug> edits that realm's map; without it, the admin's own realm (ruling E-o)
+  const realm = useSearchParams().get("realm") ?? undefined;
 
   return (
     <div className="bg-background text-foreground absolute inset-0 z-40">
-      <MapEditorOverlay
-        isWorldMode={true}
-        onExit={() => {
-          window.location.href = "/admin/maps";
-        }}
-      />
+      <MapRealmProvider value={realm}>
+        <MapEditorOverlay
+          isWorldMode={true}
+          onExit={() => {
+            window.location.href = "/admin/maps";
+          }}
+        />
+      </MapRealmProvider>
     </div>
   );
 }

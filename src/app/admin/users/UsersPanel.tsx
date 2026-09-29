@@ -668,7 +668,7 @@ export function UsersPanel() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  unlinkWikiMutation.mutate({ userId: e.matchedUser!.id });
+                                  unlinkWikiMutation.mutate({ userId: e.matchedUser!.id, source: "ixwiki" });
                                 }}
                                 className="text-destructive h-7 text-xs"
                               >

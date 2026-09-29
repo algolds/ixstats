@@ -15,6 +15,7 @@ scripts/
 ├── diagnostics/                  # Health check & benchmark scripts
 ├── onoma/                        # Linguistics lexicon & Kokoro TTS dictionary tools
 ├── ops/                          # Nginx & server configuration templates
+├── realms/                       # Realms data backfill (owners, IxWorld slug, wiki links, visibility) + realm lore index import
 ├── *.sh / *.js / *.ts            # Core root runners (with-base-path.sh, deploy-production.sh, etc.)
 └── archive/                      # Historical migrations, one-off backfills, and GIS tools
     ├── migrations/               # Completed database backfills, user role seeds, title fixes
@@ -58,6 +59,16 @@ scripts/
 | [`scripts/audit-flag-urls.ts`](audit-flag-urls.ts) | Audits and validates country flag URLs against MediaWiki endpoints (`bun run audit:flags`). |
 | [`scripts/audit-production-urls.ts`](audit-production-urls.ts) | Validates production route 200 HTTP responses (`bun run audit:urls`). |
 | [`scripts/prod-audit.ts`](prod-audit.ts) | Deep production readiness audit suite. |
+
+---
+
+## 🌐 Realms (`scripts/realms/`)
+
+| Script | Purpose & Command |
+| :--- | :--- |
+| [`scripts/realms/backfill-foundation.ts`](realms/backfill-foundation.ts) | Realms Phase 1 data backfill (owners, IxWorld slug, ixwiki link rows, visibility, map layers with no realm → IxWorld). Dry run by default; `--apply` writes. Run after `db:push:force`, before deploying the realms-foundation code (`bun scripts/realms/backfill-foundation.ts [--apply]`). |
+| [`scripts/realms/backfill-plan.ts`](realms/backfill-plan.ts) | Pure planning helper for the owner-backfill step above (`planOwnerBackfill`) — never guesses on multi-user collisions, reports them for manual resolution. |
+| [`scripts/realms/import-realm-lore.ts`](realms/import-realm-lore.ts) | One-time realm lore **index** import (titles only, never content): crawls a wiki category tree (keyword subcategories only, depth 5, 5,000-page cap, truncation reported), takes nations from a curated roster category (`--nation-roster`, one subcategory per nation; retired rosters refused) or, without one, from pages whose lead uses `Infobox country`/`Infobox former country`, and writes `RealmPage` rows. Dry run (the preview) by default; `--apply` writes. Needs the realm to exist first (`/admin/realms` → New realm). `bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" --keyword Eurth --nation-roster "Category:Countries (Eurth)" [--apply]` |
 
 ---
 

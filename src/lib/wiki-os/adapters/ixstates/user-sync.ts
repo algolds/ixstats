@@ -4,7 +4,7 @@
  * Links IxStats users to their MediaWiki accounts via direct MySQL lookup.
  * Follows the same pattern as xenforo-user-sync.ts:
  *   - lookupWikiUser: find wiki user by username
- *   - linkWikiAccount: validate + store link
+ *   - findLinkableWikiAccount: validate an admin link (the write is the wiki-links service's adminVerify)
  */
 
 import { db } from "~/server/db";
@@ -82,10 +82,12 @@ export async function lookupWikiUser(
 }
 
 /**
- * Link or claim an IxStats user to their MediaWiki account.
- * Validates the wiki user exists and checks for duplicate links.
+ * Admin-only (the admin `linkUserWiki` mutation — self-service linking is token-on-user-page verification):
+ * validate that the wiki user exists and that no other IxStats user holds it. Writes nothing — the admin router
+ * then records the link through the wiki-links service (`adminVerify`), which writes the verified WikiAccountLink
+ * row and the legacy User columns in one transaction, so a refusal there leaves nothing half-written (ruling F-2).
  */
-export async function linkWikiAccount(
+export async function findLinkableWikiAccount(
   userId: string,
   wikiUsername: string,
   clerkUserId?: string
@@ -115,16 +117,6 @@ export async function linkWikiAccount(
       };
     }
   }
-
-  // Store the link & wikiUserId
-  await db.user.update({
-    where: { id: userId },
-    data: {
-      wikiUsername: wikiUser.username,
-      wikiUserId: wikiUser.userId > 0 ? wikiUser.userId : undefined,
-      lastWikiSync: new Date(),
-    },
-  });
 
   return { success: true, wikiUsername: wikiUser.username, wikiUserId: wikiUser.userId };
 }

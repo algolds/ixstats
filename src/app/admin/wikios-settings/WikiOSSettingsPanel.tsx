@@ -6,6 +6,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { OpenBook as BookOpen } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import {
   WikiLinkStatusSection,
   ManualLinkEditorSection,
@@ -18,7 +19,7 @@ export function WikiOSSettingsPanel() {
   usePageTitle({ title: "Admin - WikiOS Settings" });
 
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getAll.useQuery(
-    { limit: 500 },
+    { limit: 500, realm: ALL_REALMS },
     { refetchOnWindowFocus: false }
   );
 

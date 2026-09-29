@@ -3,7 +3,7 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +57,13 @@ const BUILTIN_TOC_REGEX = /<div[^>]*id="toc"[^>]*>[\s\S]*?<\/div>\s*(?:<\/div>)?
 const WIKI_LINK_HREF_REGEX = /href="\/wiki\/([^"]*?)"/gu;
 const INDEX_PHP_HREF_REGEX = /href="\/index\.php\?([^"]*)"/gu;
 const CLASS_NEW_REGEX = /class="new"/gu;
+/** Namespaces WikiOS does not read as articles of another wiki: they open on that wiki's own site. */
+const SITE_NAMESPACE_REGEX =
+  /^(?:File|Image|Media|Special|User|Category|Template|Module|Help|MediaWiki|Talk|[A-Za-z]+_talk)(?::|%3A)/iu;
+const QUERY_TITLE_REGEX = /(?:^|&(?:amp;)?)title=([^&]*)/u;
+const QUERY_UPLOAD_FILE_REGEX = /(?:^|&(?:amp;)?)wpDestFile=([^&]*)/u;
+const MISSING_PAGE_TOOLTIP_REGEX = / \(page does not exist\)"/gu;
+const PAGE_NAME_REGEX = /^[^#]*/u;
 
 const IMG_LAZY_REGEX = /<img(?![^>]*loading=)/gu;
 const IMG_ASYNC_REGEX = /<img(?![^>]*decoding=)/gu;
@@ -113,8 +120,8 @@ export function transformArticleHtml(
   // 5. Remove MediaWiki's built-in TOC block if present
   processed = removeBuiltInToc(processed);
 
-  // 6. Transform wiki links from /wiki/ to /wiki/
-  processed = transformLinks(processed, basePath);
+  // 6. Transform wiki links from /wiki/ to /wiki/ (another wiki's links stay with that wiki)
+  processed = transformLinks(processed, basePath, wikiSource);
 
   // 7. Transform image URLs to be absolute
   processed = transformImages(processed, wikiSource);
@@ -129,10 +136,10 @@ export function transformArticleHtml(
   return {
     contentHtml: processed,
     infoboxHtml: infoboxHtml
-      ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath)
+      ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath, wikiSource)
       : null,
     noticesHtml: noticesHtml
-      ? transformLinks(transformImages(noticesHtml, wikiSource), basePath)
+      ? transformLinks(transformImages(noticesHtml, wikiSource), basePath, wikiSource)
       : null,
     toc,
     images,
@@ -283,7 +290,13 @@ function removeBuiltInToc(html: string): string {
   return html.replace(BUILTIN_TOC_REGEX, "");
 }
 
-function transformLinks(html: string, basePath: string): string {
+function transformLinks(html: string, basePath: string, wikiSource: WikiSource): string {
+  return wikiSource === "ixwiki"
+    ? transformIxWikiLinks(html, basePath)
+    : transformSourceWikiLinks(html, basePath, wikiSource);
+}
+
+function transformIxWikiLinks(html: string, basePath: string): string {
   const origin = DEFAULT_MEDIAWIKI_URL;
 
   // 1. Transform /wiki/Title links to /wiki/Title (with basePath)
@@ -309,6 +322,33 @@ function transformLinks(html: string, basePath: string): string {
   result = result.replace(CLASS_NEW_REGEX, 'class="new wikios-redlink"');
 
   return result;
+}
+
+/** The page a red link points at: its title, or the missing file of an upload link. */
+function redLinkPage(query: string): string | undefined {
+  const file = QUERY_UPLOAD_FILE_REGEX.exec(query)?.[1];
+  return file ? `File:${file}` : QUERY_TITLE_REGEX.exec(query)?.[1];
+}
+
+/**
+ * Another wiki's page is parsed by ixwiki, so its links resolve against ixwiki (ruling E-l). Articles stay in the
+ * WikiOS reader for that wiki (`?source=`, before any #fragment); files, special, user and similar pages open on
+ * that wiki; red links only mean "not on IxWiki", so they are ordinary links to that wiki's page.
+ */
+function transformSourceWikiLinks(html: string, basePath: string, wikiSource: WikiSource): string {
+  const origin = getWikiBaseUrl(wikiSource).replace(/\/+$/u, "");
+  const href = (page: string) =>
+    SITE_NAMESPACE_REGEX.test(page)
+      ? `href="${origin}/wiki/${page}" rel="noreferrer"`
+      : `href="${basePath}/wiki/${page.replace(PAGE_NAME_REGEX, (name) => `${name}?source=${wikiSource}`)}"`;
+  return html
+    .replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => href(path))
+    .replace(INDEX_PHP_HREF_REGEX, (_match, query: string) => {
+      const page = redLinkPage(query);
+      return page ? href(page) : `href="${origin}/index.php?${query}" rel="noreferrer"`;
+    })
+    .replace(CLASS_NEW_REGEX, 'class="wikios-source-link"')
+    .replace(MISSING_PAGE_TOOLTIP_REGEX, '"');
 }
 
 export function transformImages(

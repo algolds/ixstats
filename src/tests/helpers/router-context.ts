@@ -7,6 +7,8 @@ export interface MockUser {
   id?: string;
   clerkUserId: string;
   countryId?: string | null;
+  /** Defaults to now so the throttled lastSeenAt write in authMiddleware stays quiet in router tests. */
+  lastSeenAt?: Date | null;
   role?: {
     name: string;
     level?: number;
@@ -73,7 +75,7 @@ export function createMockRouterContext(options: MockRouterContextOptions = {}):
   return {
     db: options.db ?? {},
     auth: options.auth === null ? null : (options.auth ?? defaultAuth),
-    user: options.user === null ? null : (options.user ?? defaultUser),
+    user: options.user === null ? null : { lastSeenAt: new Date(), ...(options.user ?? defaultUser) },
     impersonatorId: options.impersonatorId,
     headers: options.headers ?? defaultHeaders,
     sourceIp: options.sourceIp ?? "127.0.0.1",

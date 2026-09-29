@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Card, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -26,7 +27,10 @@ interface PollManagerProps {
 export function PollManager({ onCreateNew }: PollManagerProps) {
   const notify = useNotify();
   const { data: polls, refetch } = api.polls.list.useQuery();
-  const { data: countriesData } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countriesData } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   // Create a mapping of countryId to country name
   const countryNameMap = useMemo(() => {

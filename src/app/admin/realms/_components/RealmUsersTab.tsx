@@ -4,7 +4,7 @@ import { api } from "~/trpc/react";
 import { SystemRestart as Loader2 } from "iconoir-react";
 
 export function RealmUsersTab() {
-  const { data: users, isLoading } = api.studio.adminListUsers.useQuery();
+  const { data: users, isLoading } = api.realms.adminListUsers.useQuery();
 
   if (isLoading) {
     return (

@@ -1,6 +1,8 @@
 // src/components/halo/plugins/wiki/types.ts
 // Shared types, constants, and utilities for the Halo Wiki plugin.
 
+import type { WikiPageRef } from "~/lib/wiki-os/page-ref";
+
 export const NARRATOR_ACCENT = "#3b82f6";
 
 export const NARRATOR_SPEEDS = [0.8, 1.0, 1.25, 1.5, 2.0];
@@ -23,8 +25,8 @@ export interface LocalDraft {
   type: "source" | "visual";
 }
 
-export interface PausedSession {
-  title: string;
+/** Reading progress for a page, with its wiki (entries saved before sources were recorded have none: IxWiki). */
+export interface PausedSession extends WikiPageRef {
   scrollPercent: number;
   updatedAt: number;
 }

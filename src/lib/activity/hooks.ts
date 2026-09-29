@@ -16,7 +16,7 @@ async function triggerAchievementCheck(countryId: string, eventName: string, use
     let activeUserId = userId;
     if (!activeUserId && countryId) {
       const user = await db.user.findFirst({
-        where: { countryId },
+        where: { ownedCountries: { some: { id: countryId } } },
         select: { clerkUserId: true },
       });
       if (user) activeUserId = user.clerkUserId;

@@ -44,7 +44,7 @@ export const managementLifecycleProcedures = {
         let targetUserId = userProfile?.id;
         if (!targetUserId) {
           const countryOwner = await ctx.db.user.findFirst({
-            where: { countryId: id },
+            where: { ownedCountries: { some: { id } } },
           });
           targetUserId = countryOwner?.id;
         }

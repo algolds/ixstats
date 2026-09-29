@@ -91,9 +91,10 @@ export async function generateRankings(countryId: string): Promise<Ranking[]> {
 
     if (!country) return [];
 
-    // Get all countries with valid economic data for comparative rankings
+    // Rank against the country's own realm (ruling E-h); the rankings cache is keyed by country id.
     const allCountries = await db.country.findMany({
       where: {
+        realmId: country.realmId,
         currentPopulation: { gt: 0 },
         currentGdpPerCapita: { gt: 0 },
       },

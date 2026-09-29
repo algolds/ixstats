@@ -24,8 +24,8 @@ const passport: PassportPayload = {
   },
   featuredRealm: {
     id: "default",
-    name: "IxEarth",
-    slug: "ixearth",
+    name: "IxWorld",
+    slug: "ixworld",
     role: "Sovereign",
     isFeatured: true,
     country: {
@@ -98,9 +98,9 @@ describe("PassportOverviewTab", () => {
     render(<PassportOverviewTab data={passport} cleanUsername="alex" />);
 
     expect(screen.getByText("Sovereign of Caphiria")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /In IxEarth/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /In IxWorld/ })).toHaveAttribute(
       "href",
-      "/r/ixearth/alex"
+      "/r/ixworld/alex"
     );
     expect(screen.getByText("@alexpav")).toBeInTheDocument();
     expect(screen.getByText("Lv 3")).toBeInTheDocument();

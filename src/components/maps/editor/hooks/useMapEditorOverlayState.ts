@@ -12,6 +12,7 @@ import { useBorderEditor } from "~/hooks/useBorderEditor";
 import { useWikiScanner } from "~/hooks/useWikiScanner";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { EditorMode } from "~/hooks/map-editor/editor-types";
 import {
@@ -52,8 +53,9 @@ export function useMapEditorOverlayState({
     (!isWorldMode || activeCountryId ? activeCountryId : undefined) ?? "__none__"
   );
 
+  const realm = useMapRealm();
   const { data: neighborGeoms } = api.geoCore.getNeighborGeometries.useQuery(
-    { featureId: borderState.featureId! },
+    { featureId: borderState.featureId!, realm },
     { enabled: !!borderState.featureId }
   );
 
@@ -305,7 +307,11 @@ export function useMapEditorOverlayState({
     mapLayers: editorMapLayers,
     toggleLayer: rawToggleEditorLayer,
     visibleLayers: editorVisibleLayers,
-  } = useMapData(["background", "altitudes", "rivers", "lakes", "political", "country_labels"]);
+  } = useMapData(
+    ["background", "altitudes", "rivers", "lakes", "political", "country_labels"],
+    undefined,
+    realm
+  );
   const toggleEditorLayer = useCallback(
     (layer: string) => rawToggleEditorLayer(layer as Parameters<typeof rawToggleEditorLayer>[0]),
     [rawToggleEditorLayer]

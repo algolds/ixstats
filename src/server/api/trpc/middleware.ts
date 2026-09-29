@@ -8,6 +8,7 @@ import { rateLimiter } from "~/lib/cache";
 import { db, isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
+import { touchLastSeen } from "./last-seen";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -17,6 +18,7 @@ import {
   SecurityError,
 } from "~/lib/app-error";
 import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/cache";
+import { ALL_REALMS, DEFAULT_REALM_ID, realmScopeInput } from "~/lib/realms/realm-ids";
 
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 
@@ -56,6 +58,8 @@ export const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
         "If the issue persists, contact support."
     );
   }
+
+  touchLastSeen(ctx.db, ctx.user);
 
   return next({
     ctx: {
@@ -438,24 +442,25 @@ export const publicRateLimit = createRateLimitMiddleware({
   namespace: "public",
 });
 
-export const standardCacheMiddleware = t.middleware(
-  async ({ ctx, next, path, type, getRawInput }) => {
+/**
+ * Cached reads. The key carries the viewer's realm unless it is IxWorld (ruling E-q), because realm-scoped
+ * listings fall back to it when the input names none. An all-realms read ("*") is never cached: whether
+ * "*" applies depends on the caller being a site admin (ruling E-o).
+ */
+function realmAwareCacheMiddleware(config: keyof typeof cacheConfigs) {
+  return t.middleware(async ({ ctx, next, path, type, getRawInput }) => {
     const rawInput = await getRawInput();
-    const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.standard);
-    return cacheFactory({ ctx, path, type, input: rawInput, next });
-  }
-);
+    const scope = realmScopeInput.safeParse(rawInput);
+    if (scope.success && scope.data.realm === ALL_REALMS) return next();
+    const activeRealmId: string | undefined = ctx.user?.country?.realmId ?? undefined;
+    const realmKey = activeRealmId === DEFAULT_REALM_ID ? undefined : activeRealmId;
+    const cacheFactory = createCacheMiddlewareFactory(cacheConfigs[config]);
+    return cacheFactory({ ctx, path, type, input: rawInput, next, realmKey });
+  });
+}
 
-export const staticCacheMiddleware = t.middleware(
-  async ({ ctx, next, path, type, getRawInput }) => {
-    const rawInput = await getRawInput();
-    const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.static);
-    return cacheFactory({ ctx, path, type, input: rawInput, next });
-  }
-);
+export const standardCacheMiddleware = realmAwareCacheMiddleware("standard");
 
-export const userCacheMiddleware = t.middleware(async ({ ctx, next, path, type, getRawInput }) => {
-  const rawInput = await getRawInput();
-  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.userSpecific);
-  return cacheFactory({ ctx, path, type, input: rawInput, next });
-});
+export const staticCacheMiddleware = realmAwareCacheMiddleware("static");
+
+export const userCacheMiddleware = realmAwareCacheMiddleware("userSpecific");

@@ -15,6 +15,16 @@ import {
 import { useRouter } from "next/navigation";
 import { navigateWithBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import {
+  isSamePage,
+  pageRefPath,
+  recentArticlesSchema,
+  type WikiPageRef,
+} from "~/lib/wiki-os/page-ref";
+
+/** A reading-progress entry in localStorage ("wikios:pausedSessions"). */
+type PausedEntry = WikiPageRef & { scrollPercent: number; updatedAt: number };
 
 export interface WikiThemeColors {
   primary: string;
@@ -50,22 +60,29 @@ interface WikiContextState {
   isWikiPage: boolean;
   /** Current article title (null if not on an article page) */
   articleTitle: string | null;
+  /** The wiki the current article lives on; only IxWiki pages are editable in WikiOS (ruling E-l′) */
+  articleSource: WikiSource;
   /** TOC entries for the current article */
   tocEntries: TocEntry[];
   /** Theme colors of the current wiki article */
   themeColors: WikiThemeColors | null;
   /** Currently active section ID (tracked by IntersectionObserver) */
   activeSectionId: string | null;
-  /** Recent wiki articles visited (from sessionStorage, newest first) */
-  recentArticles: string[];
-  /** Set the wiki page state */
-  setWikiPage: (title: string | null, toc: TocEntry[], colors?: WikiThemeColors | null) => void;
+  /** Recent wiki articles visited, with their wiki (from sessionStorage, newest first) */
+  recentArticles: WikiPageRef[];
+  /** Set the wiki page state (source defaults to IxWiki) */
+  setWikiPage: (
+    title: string | null,
+    toc: TocEntry[],
+    colors?: WikiThemeColors | null,
+    source?: WikiSource
+  ) => void;
   /** Update the active section */
   setActiveSectionId: (id: string | null) => void;
   /** Navigate to a section */
   navigateToSection: (id: string) => void;
-  /** Navigate to a recently visited wiki article */
-  restoreSession: (title?: string) => void;
+  /** Navigate to a recently visited wiki article, on its own wiki (default: the most recent) */
+  restoreSession: (page?: WikiPageRef) => void;
   /** Active overlay modal (history, backlinks, or margin inspector) */
   activeModal: "history" | "backlinks" | "margin" | null;
   /** Set the active modal */
@@ -93,6 +110,7 @@ interface WikiContextState {
 const WikiContext = createContext<WikiContextState>({
   isWikiPage: false,
   articleTitle: null,
+  articleSource: "ixwiki",
   tocEntries: [],
   themeColors: null,
   activeSectionId: null,
@@ -125,10 +143,11 @@ const WikiContext = createContext<WikiContextState>({
 export function WikiContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [articleTitle, setArticleTitle] = useState<string | null>(null);
+  const [articleSource, setArticleSource] = useState<WikiSource>("ixwiki");
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
   const [themeColors, setThemeColors] = useState<WikiThemeColors | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
-  const [recentArticles, setRecentArticles] = useState<string[]>([]);
+  const [recentArticles, setRecentArticles] = useState<WikiPageRef[]>([]);
   const [activeModal, setActiveModal] = useState<"history" | "backlinks" | "margin" | null>(null);
   const [isMarginOpen, setIsMarginOpen] = useState(false);
   const [marginTab, setMarginTab] = useState<"threads" | "markup">("threads");
@@ -174,16 +193,23 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem("wikios:recentArticles");
+      const parsed = stored ? recentArticlesSchema.safeParse(JSON.parse(stored)) : null;
       // oxlint-disable-next-line
-      if (stored) setRecentArticles(JSON.parse(stored));
+      if (parsed?.success) setRecentArticles(parsed.data);
     } catch {
       /* SSR or private browsing */
     }
   }, []);
 
   const setWikiPage = useCallback(
-    (title: string | null, toc: TocEntry[], colors: WikiThemeColors | null = null) => {
+    (
+      title: string | null,
+      toc: TocEntry[],
+      colors: WikiThemeColors | null = null,
+      source: WikiSource = "ixwiki"
+    ) => {
       setArticleTitle(title);
+      setArticleSource(source);
       setTocEntries(toc);
       setThemeColors(colors);
 
@@ -191,8 +217,8 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
       if (title && title !== "Main Page") {
         try {
           setRecentArticles((prev) => {
-            const filtered = prev.filter((t) => t !== title);
-            const next = [title, ...filtered].slice(0, 5);
+            const filtered = prev.filter((page) => !isSamePage(page, title, source));
+            const next = [{ title, source }, ...filtered].slice(0, 5);
             sessionStorage.setItem("wikios:recentArticles", JSON.stringify(next));
             return next;
           });
@@ -213,10 +239,10 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const restoreSession = useCallback(
-    (title?: string) => {
-      const target = title ?? recentArticles[0];
+    (page?: WikiPageRef) => {
+      const target = page ?? recentArticles[0];
       if (target) {
-        navigateWithBasePath(`/wiki/${encodeURIComponent(target.replace(/ /g, "_"))}`, router);
+        navigateWithBasePath(pageRefPath(target), router);
       }
     },
     [recentArticles, router]
@@ -239,12 +265,12 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
 
         try {
           const stored = localStorage.getItem("wikios:pausedSessions");
-          let sessions: Array<{ title: string; scrollPercent: number; updatedAt: number }> = stored
-            ? JSON.parse(stored)
-            : [];
+          let sessions: PausedEntry[] = stored ? JSON.parse(stored) : [];
           if (!Array.isArray(sessions)) sessions = [];
 
-          const existingIndex = sessions.findIndex((s) => s.title === articleTitle);
+          const existingIndex = sessions.findIndex((s) =>
+            isSamePage(s, articleTitle, articleSource)
+          );
 
           if (existingIndex !== -1 && sessions[existingIndex]) {
             if (sessions[existingIndex].scrollPercent !== roundedPct) {
@@ -256,6 +282,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
           } else {
             sessions.unshift({
               title: articleTitle,
+              source: articleSource,
               scrollPercent: roundedPct,
               updatedAt: Date.now(),
             });
@@ -273,7 +300,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("scroll", handleScroll);
       clearTimeout(timeoutId);
     };
-  }, [articleTitle]);
+  }, [articleTitle, articleSource]);
 
   // Restore scroll position on page load if progress exists
   useEffect(() => {
@@ -282,9 +309,8 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem("wikios:pausedSessions");
       if (stored) {
-        const sessions: Array<{ title: string; scrollPercent: number; updatedAt: number }> =
-          JSON.parse(stored);
-        const session = sessions.find((s) => s.title === articleTitle);
+        const sessions: PausedEntry[] = JSON.parse(stored);
+        const session = sessions.find((s) => isSamePage(s, articleTitle, articleSource));
         // Only auto-restore progress if it's substantial (between 2% and 98%)
         if (session && session.scrollPercent > 2 && session.scrollPercent < 98) {
           const timer = setTimeout(() => {
@@ -303,12 +329,13 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
       // ignore
     }
     return;
-  }, [articleTitle]);
+  }, [articleTitle, articleSource]);
 
   const value = useMemo<WikiContextState>(
     () => ({
       isWikiPage: articleTitle !== null,
       articleTitle,
+      articleSource,
       tocEntries,
       themeColors,
       activeSectionId,
@@ -331,6 +358,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     }),
     [
       articleTitle,
+      articleSource,
       tocEntries,
       themeColors,
       activeSectionId,

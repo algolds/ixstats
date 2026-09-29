@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 export interface WikiPlaceholderMetadata {
   label: string;
@@ -26,6 +27,19 @@ export interface CanonicalPlaceholderResult {
   rawVal: unknown;
   status: PlaceholderStatus;
   metadata?: WikiPlaceholderMetadata;
+}
+
+interface RankRow {
+  id: string;
+  realmId: string;
+}
+
+/** A country's rank within its own realm (ruling E-h): an Eurth nation is never ranked against IxWorld. */
+function realmRankLabel(sorted: readonly RankRow[], country: RankRow): string | undefined {
+  const index = sorted
+    .filter((c) => c.realmId === country.realmId)
+    .findIndex((c) => c.id === country.id);
+  return index !== -1 ? `Ranked #${index + 1} globally` : undefined;
 }
 
 function hashCode(str: string): number {
@@ -61,8 +75,14 @@ export async function resolveWikiPlaceholderValues(
     where: {
       OR: [
         ...(activeCountryId ? [{ id: activeCountryId }] : []),
+        // CountryData:<name> names an IxWorld nation — names repeat across realms (ruling E-p).
         ...(countryNames.size > 0
-          ? [{ name: { in: Array.from(countryNames), mode: "insensitive" } }]
+          ? [
+              {
+                realmId: DEFAULT_REALM_ID,
+                name: { in: Array.from(countryNames), mode: "insensitive" },
+              },
+            ]
           : []),
       ],
     },
@@ -88,8 +108,8 @@ export async function resolveWikiPlaceholderValues(
       : [];
 
   // Fetch all countries sorted to calculate rank
-  let allCountriesSortedGdp: Array<{ id: string; currentTotalGdp: number | null }> = [];
-  let allCountriesSortedPop: Array<{ id: string; currentPopulation: number | null }> = [];
+  let allCountriesSortedGdp: Array<RankRow & { currentTotalGdp: number | null }> = [];
+  let allCountriesSortedPop: Array<RankRow & { currentPopulation: number | null }> = [];
 
   const hasRankNeed = placeholders.some(
     (p) =>
@@ -99,11 +119,11 @@ export async function resolveWikiPlaceholderValues(
   if (hasRankNeed) {
     [allCountriesSortedGdp, allCountriesSortedPop] = await Promise.all([
       db.country.findMany({
-        select: { id: true, currentTotalGdp: true },
+        select: { id: true, realmId: true, currentTotalGdp: true },
         orderBy: { currentTotalGdp: "desc" },
       }),
       db.country.findMany({
-        select: { id: true, currentPopulation: true },
+        select: { id: true, realmId: true, currentPopulation: true },
         orderBy: { currentPopulation: "desc" },
       }),
     ]);
@@ -136,7 +156,9 @@ export async function resolveWikiPlaceholderValues(
         results.push({ key: p, value: "Unknown Field", rawVal: null, status: "malformed" });
         continue;
       }
-      const country = countries.find((c: any) => c.name.toLowerCase() === cName.toLowerCase());
+      const country = countries.find(
+        (c: any) => c.realmId === DEFAULT_REALM_ID && c.name.toLowerCase() === cName.toLowerCase()
+      );
       if (!country) {
         results.push({ key: p, value: "Unknown Country", rawVal: null, status: "not-found" });
         continue;
@@ -275,14 +297,12 @@ export async function resolveWikiPlaceholderValues(
       val = country.currentPopulation;
       formattedVal = formatNumber(Number(val ?? 0));
       label = "Population";
-      const rIndex = allCountriesSortedPop.findIndex((c) => c.id === country.id);
-      rank = rIndex !== -1 ? `Ranked #${rIndex + 1} globally` : undefined;
+      rank = realmRankLabel(allCountriesSortedPop, country);
     } else if (f === "currenttotalgdp" || f === "gdp") {
       val = country.currentTotalGdp;
       formattedVal = formatCurrency(Number(val ?? 0));
       label = "Total GDP";
-      const rIndex = allCountriesSortedGdp.findIndex((c) => c.id === country.id);
-      rank = rIndex !== -1 ? `Ranked #${rIndex + 1} globally` : undefined;
+      rank = realmRankLabel(allCountriesSortedGdp, country);
     } else if (f === "currentgdppercapita" || f === "gdppercapita" || f === "gdp_per_capita") {
       val =
         country.currentGdpPerCapita ??

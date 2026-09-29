@@ -9,7 +9,7 @@ describe("Plan 159: Achievements Country Leaderboard Query Batching", () => {
     const userAchievementFindManyMock = jest.fn().mockResolvedValue([
       { userId: "u1", rarity: "Legendary" },
       { userId: "u1", rarity: "Common" },
-      { userId: "u2", rarity: "Epic" },
+      { userId: "u1", rarity: "Epic" },
       { userId: "u3", rarity: "Rare" },
     ]);
 
@@ -22,7 +22,7 @@ describe("Plan 159: Achievements Country Leaderboard Query Batching", () => {
             flag: "flag1.png",
             economicTier: "Developed",
             populationTier: "Large",
-            users: [{ clerkUserId: "u1" }, { clerkUserId: "u2" }],
+            owner: { clerkUserId: "u1" },
           },
           {
             id: "c2",
@@ -30,7 +30,7 @@ describe("Plan 159: Achievements Country Leaderboard Query Batching", () => {
             flag: "flag2.png",
             economicTier: "Emerging",
             populationTier: "Medium",
-            users: [{ clerkUserId: "u3" }],
+            owner: { clerkUserId: "u3" },
           },
           {
             id: "c3",
@@ -38,7 +38,15 @@ describe("Plan 159: Achievements Country Leaderboard Query Batching", () => {
             flag: "flag3.png",
             economicTier: "Developing",
             populationTier: "Small",
-            users: [{ clerkUserId: "u4" }],
+            owner: { clerkUserId: "u4" },
+          },
+          {
+            id: "c4",
+            name: "Nation 4 (Unowned)",
+            flag: "flag4.png",
+            economicTier: "Developing",
+            populationTier: "Small",
+            owner: null,
           },
         ]),
       },
@@ -55,8 +63,11 @@ describe("Plan 159: Achievements Country Leaderboard Query Batching", () => {
 
     const leaderboard = await (caller as any).getLeaderboard({ limit: 10 });
 
-    // Assert query batching
+    // Assert query batching over owners only
     expect(userAchievementFindManyMock).toHaveBeenCalledTimes(1);
+    expect(userAchievementFindManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: { in: ["u1", "u3", "u4"] } } })
+    );
 
     // Assert filtering of 0-achievement country and sorting
     expect(leaderboard).toHaveLength(2);

@@ -47,6 +47,7 @@ import {
 } from "~/components/ui/select";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { useAdminNavigation } from "./AdminNavigationContext";
@@ -123,7 +124,7 @@ export function CountryInspector() {
 
   // Fetch list of countries
   const { data: countryList } = api.countries.getSelectList.useQuery(
-    { limit: 250 },
+    { limit: 250, realm: ALL_REALMS },
     { refetchOnWindowFocus: false }
   );
 

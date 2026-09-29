@@ -58,7 +58,7 @@ export async function calculatePassiveIncome(countryId: string, db: PrismaClient
 
     let yieldBoost = 0;
     const user = await db.user.findFirst({
-      where: { countryId },
+      where: { ownedCountries: { some: { id: countryId } } },
       select: { id: true },
     });
     if (user) {

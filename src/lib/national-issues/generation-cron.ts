@@ -28,13 +28,11 @@ export async function generateNationalIssues(): Promise<IssuesGenerationResult> 
   if (!GAMEPLAY_FLAGS.issuesAutoGenerate) return result;
 
   // Only evaluate claimed countries (those a user owns) — NPCs don't need an inbox.
-  const owners = await db.user.findMany({
-    where: { countryId: { not: null } },
-    select: { countryId: true },
+  const owned = await db.country.findMany({
+    where: { ownerUserId: { not: null } },
+    select: { id: true },
   });
-  const countryIds = [
-    ...new Set(owners.map((o) => o.countryId).filter((id): id is string => !!id)),
-  ];
+  const countryIds = owned.map((c) => c.id);
   result.countriesChecked = countryIds.length;
 
   for (const countryId of countryIds) {

@@ -4,6 +4,7 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { HealthRing } from "~/components/ui/health-ring";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -130,7 +131,7 @@ export function RingsAuditPanel() {
   usePageTitle({ title: "Admin - Rings Audit" });
 
   const { data: countriesData, isLoading } = api.countries.getAll.useQuery(
-    { limit: 20 },
+    { limit: 20, realm: ALL_REALMS },
     { refetchOnWindowFocus: false }
   );
 

@@ -83,7 +83,7 @@ import { geoSovereigntyRouter } from "./routers/geo/sovereignty";
 import { geoWikiRouter } from "./routers/geo/wiki";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
-import { studioRouter } from "./routers/studio";
+import { realmsRouter } from "./routers/realms";
 
 // ─── Wiki & WikiOS ───────────────────────────────────────────────────────────
 import { wikiosRouter } from "./routers/wikios";
@@ -195,7 +195,7 @@ export const appRouter = createTRPCRouter({
   geoWiki: geoWikiRouter,
   resources: resourcesRouter,
   transport: transportRouter,
-  studio: studioRouter,
+  realms: realmsRouter,
 
   // ─── Wiki & WikiOS ─────────────────────────────────────────────────────────
   wikios: wikiosRouter,

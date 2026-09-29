@@ -1,15 +1,19 @@
 "use client";
 
 import React from "react";
+import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 export function ArticleFooter({
   title,
   lastModified,
+  wikiSource,
 }: {
   title: string;
   lastModified: string | null;
+  /** The wiki the page lives on (default IxWiki). */
+  wikiSource?: WikiSource;
 }) {
-  const mwBaseUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+  const mwBaseUrl = getWikiBaseUrl(wikiSource);
   const mwUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
   return (

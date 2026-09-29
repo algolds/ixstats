@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { CountriesPageModular } from "./_components/CountriesPageModular";
@@ -16,6 +17,8 @@ export default function CountriesPage() {
   const viewerCountryId = userProfile?.countryId;
 
   const [searchQuery, setSearchQuery] = useState("");
+  // ?realm=<slug> lists that realm; without it the server uses the viewer's active nation's realm.
+  const realm = useSearchParams().get("realm") ?? undefined;
 
   // Fetch countries data
   const {
@@ -25,6 +28,7 @@ export default function CountriesPage() {
   } = api.countries.getAll.useQuery(
     {
       limit: 1000,
+      realm,
     },
     {
       refetchOnWindowFocus: false,

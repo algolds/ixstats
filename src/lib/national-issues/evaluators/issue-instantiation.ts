@@ -28,19 +28,24 @@ const TARGET_COUNTRY_SELECT = {
   continent: true,
 } as const;
 
-function findCountryByName(db: PrismaClient, name: string): Promise<TargetCountryRecord | null> {
+function findCountryByName(
+  db: PrismaClient,
+  name: string,
+  realmId: string
+): Promise<TargetCountryRecord | null> {
   return db.country.findFirst({
-    where: { name: { mode: "insensitive", equals: name } },
+    where: { realmId, name: { mode: "insensitive", equals: name } },
     select: TARGET_COUNTRY_SELECT,
   });
 }
 
 async function pickRandomOtherCountry(
   countryId: string,
+  realmId: string,
   db: PrismaClient
 ): Promise<TargetCountryRecord | null> {
   const otherCountries = await db.country.findMany({
-    where: { id: { not: countryId } },
+    where: { realmId, id: { not: countryId } },
     select: TARGET_COUNTRY_SELECT,
     take: 20,
   });
@@ -51,7 +56,7 @@ async function pickRandomOtherCountry(
 /**
  * Resolve target country statistics for foreign/diplomatic issues: the active
  * intent's target first, then grounded neighbors/partners (plan 002 §6C), then a
- * random other country. Never throws.
+ * random other country — always from the subject nation's own realm (ruling E-p). Never throws.
  */
 export async function resolveTargetCountryRecord(
   countryId: string,
@@ -60,22 +65,28 @@ export async function resolveTargetCountryRecord(
 ): Promise<TargetCountryRecord | null> {
   let targetCountryRecord: TargetCountryRecord | null = null;
   try {
+    const subject = await db.country.findUnique({
+      where: { id: countryId },
+      select: { realmId: true },
+    });
+    if (!subject) return null;
+    const { realmId } = subject;
     const activeIntentsWithTarget = await db.intent.findMany({
       where: { countryId, status: "active", target: { not: null } },
       select: { target: true },
     });
     const targetName = activeIntentsWithTarget[0]?.target;
     if (activeIntentsWithTarget.length > 0 && targetName) {
-      targetCountryRecord = await findCountryByName(db, targetName);
+      targetCountryRecord = await findCountryByName(db, targetName, realmId);
     }
     if (!targetCountryRecord) {
       const preferredName = snapshot.neighbors?.[0]?.name || snapshot.partners?.[0]?.name;
       if (preferredName) {
-        targetCountryRecord = await findCountryByName(db, preferredName);
+        targetCountryRecord = await findCountryByName(db, preferredName, realmId);
       }
     }
     if (!targetCountryRecord) {
-      targetCountryRecord = await pickRandomOtherCountry(countryId, db);
+      targetCountryRecord = await pickRandomOtherCountry(countryId, realmId, db);
     }
   } catch (err) {
     console.warn("[IssuesEngine] Failed to resolve target country record:", err);

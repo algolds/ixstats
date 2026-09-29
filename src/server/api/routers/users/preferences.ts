@@ -7,6 +7,29 @@ import {
   protectedProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
+import type { PrismaClient } from "@prisma/client";
+import { viewerRealmId } from "~/server/api/trpc/realm-scope";
+
+/**
+ * The nation a player typed: its name within the viewer's realm first, else a (globally unique) slug.
+ * IxWorld holds the plain slugs, so slug-first would send an Eurth player's "Gallambria" to IxWorld's
+ * owner (ruling E-s).
+ */
+async function findTypedCountry(
+  ctx: Parameters<typeof viewerRealmId>[0] & { db: Pick<PrismaClient, "country"> },
+  clean: string
+) {
+  return (
+    (await ctx.db.country.findFirst({
+      where: { realmId: await viewerRealmId(ctx), name: { equals: clean, mode: "insensitive" } },
+      select: { id: true },
+    })) ??
+    (await ctx.db.country.findFirst({
+      where: { slug: { equals: clean, mode: "insensitive" } },
+      select: { id: true },
+    }))
+  );
+}
 
 export interface PrivacyConfig {
   directMessages: "everyone" | "followers" | "verified" | "nobody";
@@ -271,15 +294,8 @@ export const usersPreferencesRouter = createTRPCRouter({
       const userId = ctx.auth.userId;
       const clean = input.identifier.replace(/^@/, "").trim().toLowerCase();
 
-      // Find target user by username or country
-      const targetCountry = await ctx.db.country.findFirst({
-        where: {
-          OR: [
-            { name: { equals: clean, mode: "insensitive" } },
-            { slug: { equals: clean, mode: "insensitive" } },
-          ],
-        },
-      });
+      // Find target user by username or country (names repeat across realms — ruling E-s).
+      const targetCountry = await findTypedCountry(ctx, clean);
 
       const targetUser = await ctx.db.user.findFirst({
         where: {
@@ -353,14 +369,14 @@ export const usersPreferencesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
       const clean = input.identifier.replace(/^@/, "").trim().toLowerCase();
+      const targetCountry = await findTypedCountry(ctx, clean);
 
       const targetUser = await ctx.db.user.findFirst({
         where: {
           OR: [
             { wikiUsername: { equals: clean, mode: "insensitive" } },
             { discordUsername: { equals: clean, mode: "insensitive" } },
-            { country: { name: { equals: clean, mode: "insensitive" } } },
-            { country: { slug: { equals: clean, mode: "insensitive" } } },
+            ...(targetCountry ? [{ countryId: targetCountry.id }] : []),
           ],
         },
       });

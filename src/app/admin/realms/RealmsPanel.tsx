@@ -4,25 +4,25 @@
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Sparks, Globe, Group as Users, Settings } from "iconoir-react";
+import { Sparks, Globe, Group as Users, CheckCircle } from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { RealmsTab } from "./_components/RealmsTab";
 import { RealmUsersTab } from "./_components/RealmUsersTab";
-import { WorldConfigsTab } from "./_components/WorldConfigsTab";
+import { ClaimsTab } from "./_components/ClaimsTab";
 
 interface RealmsPanelProps {
-  defaultTab?: "realms" | "worlds" | "users";
+  defaultTab?: "realms" | "claims" | "users";
 }
 
 export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
-  usePageTitle({ title: "Admin - Realms & World Config" });
+  usePageTitle({ title: "Admin - Realms" });
 
   return (
     <div className="space-y-6">
       <AdminHeader
         icon={Sparks}
-        title="Realms & World Settings"
-        description="Manage community regions, world instances, climate and wiki parameters, and player access."
+        title="Realms"
+        description="Realms, nation claims and player access."
       />
 
       <Tabs defaultValue={defaultTab} className="w-full">
@@ -35,11 +35,11 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
             Realms
           </TabsTrigger>
           <TabsTrigger
-            value="worlds"
+            value="claims"
             className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
-            <Settings className="h-4 w-4 text-amber-400" />
-            World Configs
+            <CheckCircle className="h-4 w-4 text-amber-400" />
+            Claims
           </TabsTrigger>
           <TabsTrigger
             value="users"
@@ -54,8 +54,8 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
           <RealmsTab />
         </TabsContent>
 
-        <TabsContent value="worlds" className="mt-6 focus-visible:outline-none">
-          <WorldConfigsTab />
+        <TabsContent value="claims" className="mt-6 focus-visible:outline-none">
+          <ClaimsTab />
         </TabsContent>
 
         <TabsContent value="users" className="mt-6 focus-visible:outline-none">

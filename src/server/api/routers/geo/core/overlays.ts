@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { computeCrisisRiskFactors } from "~/lib/maps/geo-analytics";
 import {
   deriveNationalHealthScore,
@@ -54,17 +55,21 @@ function normalizeCountMap(records: { id: string; _count: number }[]): Record<st
   return map;
 }
 
+/** Overlays that take no other input: the listing is scoped to the viewer's realm (?realm= overrides). */
+const realmScopedOverlayProcedure = cachedPublicProcedure.input(realmScopeInput.optional());
+
 export const overlayProcedures = {
   getRegionalChoropleth: cachedPublicProcedure
     .input(
       z.object({
         metric: z.enum(["gdpPerCapita", "population", "vitality", "health", "tradeBalance"]),
         groupBy: z.enum(["country", "region", "continent"]).default("country"),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: { geometry: { not: null } as any },
+        where: { geometry: { not: null } as any, realmId: await viewerRealmId(ctx, input.realm) },
         select: {
           id: true,
           name: true,
@@ -249,9 +254,9 @@ export const overlayProcedures = {
    * with source-specific weights. The returned `value` is a percentile rank
    * (0–1) so colors distribute evenly across the active range.
    */
-  getCanonDensity: cachedPublicProcedure.query(async ({ ctx }) => {
+  getCanonDensity: realmScopedOverlayProcedure.query(async ({ ctx, input }) => {
     const countries = await ctx.db.country.findMany({
-      where: { geometry: { not: null } as any },
+      where: { geometry: { not: null } as any, realmId: await viewerRealmId(ctx, input?.realm) },
       select: {
         id: true,
         name: true,
@@ -378,12 +383,15 @@ export const overlayProcedures = {
           riskType: z
             .enum(["hurricane", "earthquake", "drought", "flood", "wildfire", "pandemic", "famine"])
             .optional(),
+          ...realmScopeInput.shape,
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input?.realm);
       // Get pre-computed geo profiles with crisis risk data
       const profiles = await ctx.db.countryGeoProfile.findMany({
+        where: { country: { realmId } },
         select: {
           countryId: true,
           climateDistribution: true,
@@ -459,7 +467,7 @@ export const overlayProcedures = {
       const refCountries =
         allRefs.length > 0
           ? await ctx.db.country.findMany({
-              where: { OR: [{ id: { in: allRefs } }, { name: { in: allRefs } }] },
+              where: { realmId, OR: [{ id: { in: allRefs } }, { name: { in: allRefs } }] },
               select: { id: true, name: true, centroid: true },
             })
           : [];
@@ -499,7 +507,8 @@ export const overlayProcedures = {
    * 4.4 — Geopolitical Overlay: Alliance groups, diplomatic relations, and conflicts
    * as GeoJSON for network-style map visualization.
    */
-  getGeopoliticalOverlay: cachedPublicProcedure.query(async ({ ctx }) => {
+  getGeopoliticalOverlay: realmScopedOverlayProcedure.query(async ({ ctx, input }) => {
+    const realmId = await viewerRealmId(ctx, input?.realm);
     // 1. Alliance groups
     const alliances = await ctx.db.alliance.findMany({
       where: { visibility: "public" },
@@ -545,7 +554,7 @@ export const overlayProcedures = {
     );
 
     const relationCountries = await ctx.db.country.findMany({
-      where: { id: { in: uniqueCountryIds } },
+      where: { id: { in: uniqueCountryIds }, realmId },
       select: { id: true, name: true, centroid: true },
     });
 
@@ -584,7 +593,7 @@ export const overlayProcedures = {
 
     // 3. Active military conflicts as point markers
     const conflicts = await ctx.db.militaryConflict.findMany({
-      where: { status: { in: ["active", "proposed", "accepted"] } },
+      where: { status: { in: ["active", "proposed", "accepted"] }, initiator: { realmId } },
       select: {
         id: true,
         type: true,

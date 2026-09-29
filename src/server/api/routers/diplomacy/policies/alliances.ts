@@ -256,9 +256,9 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       try {
         const targetCountry = await ctx.db.country.findUnique({
           where: { id: input.targetCountryId },
-          select: { users: { select: { clerkUserId: true } } },
+          select: { owner: { select: { clerkUserId: true } } },
         });
-        const targetUserId = targetCountry?.users[0]?.clerkUserId;
+        const targetUserId = targetCountry?.owner?.clerkUserId;
         const alliance = await ctx.db.alliance.findUnique({
           where: { id: input.allianceId },
           select: { name: true },

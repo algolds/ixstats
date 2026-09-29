@@ -28,6 +28,7 @@ import {
   syncGovernmentComponents,
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
+import { assignNation, DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 export const managementCreateProcedures = {
   // Create a new country from builder
@@ -77,8 +78,10 @@ export const managementCreateProcedures = {
 
       let foundationData: any = null;
       if (input.foundationCountry) {
+        // Foundations are IxWorld nations; names repeat across realms (ruling E-p).
         const foundationCountry = await ctx.db.country.findFirst({
           where: {
+            realmId: DEFAULT_REALM_ID,
             OR: [{ slug: input.foundationCountry }, { name: input.foundationCountry }],
           },
         });
@@ -355,10 +358,11 @@ export const managementCreateProcedures = {
           await syncGovernmentComponents(tx, country.id, governmentComponentsList);
           await syncEconomyBuilderState(tx, country.id, economyBuilderState);
 
-          await tx.user.update({
+          const owner = await tx.user.findUniqueOrThrow({
             where: { clerkUserId: userId },
-            data: { countryId: country.id },
+            select: { id: true },
           });
+          await assignNation(tx, { userId: owner.id, countryId: country.id });
 
           return country;
         });
