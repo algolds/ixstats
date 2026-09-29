@@ -69,7 +69,9 @@ Boxing (`bracket`) exposes a **Bracket** tab; F1 (`circuit`) exposes a **Race Re
    `transitionToNextStage`) → champion declared.
 5. **Transition Season** (`transitionToNextSeason`) → player progression + new draft, next season.
 
-Simulation controls are live in the workspace for any authenticated user (not dev-only).
+Simulation controls (`LeagueControlDeck`) are shown only to the league's creator (`createdByUserId`) or a
+system owner. Note that the simulation procedures themselves are plain `protectedProcedure`s without a
+server-side ownership check.
 
 ## Architecture
 

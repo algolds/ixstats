@@ -20,14 +20,14 @@ You’re not filling out a profile. You’re running a nation, telling its story
 >
 > - Your **economy actually runs the numbers** — GDP, trade, taxes, and growth are modeled and live, not a one-line stat.
 > - Your nation lives on a **real, editable world map** — borders, terrain, and neighbors you can see and shape.
-> - Government, military, diplomacy, and intelligence are **connected systems**, not separate flavor text — a choice in one shows up in the others.
+> - Government, military, diplomacy, and politics are **connected systems**, not separate flavor text — a choice in one shows up in the others.
 > - The world runs on its own clock ([IxTime](/help/getting-started/ixtime)) — things keep happening whether or not you’re watching.
 >
 > Less answering issues. More building and running a nation.
 
 ## Your First Few Minutes
 
-1. **Create your nation** in the [Country Builder](/builder) — from a blank slate, or by importing a starting point from your IxWiki article.
+1. **Create your nation** in the [Country Builder](/builder) — from a blank slate, a real-world template, or by importing a country page from IIWiki or AltHistory Wiki. Already on the IxWiki roster? Claim your existing nation during [setup](/setup) instead.
 2. **Give it an identity** — name, flag, motto, and the feel of the place.
 3. **Visit [MyCountry](/mycountry)** — your nation’s home base — and watch it come to life.
 4. **Find your spot** on the [world map](/maps).

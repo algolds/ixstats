@@ -4,7 +4,7 @@
 > - ✅ `BuilderGuideContext` / `useBuilderGuide()` (`builder-guide-context.tsx`), mounted in `BuilderRouter.tsx`; per-section `builder-guide-seen-<section>` keys (versioned `"2.0"`).
 > - ✅ `BuilderGuideSheet.tsx` with **Milestones** (`data/contextual-help.ts`) and **Rules** (`data/guide-rules.ts`) tabs, tip box, and "Changes auto-save in draft" footer.
 > - ✅ Triggers: studio header Guide button (`BuilderStudioHeader.tsx`), and first-visit auto-open for Government (create mode) and Economics (`GovernmentStep.tsx`, `EconomyBuilderPage.tsx`).
-> - ✅ `BenchmarkHelpModal`, `GovernmentHelpSystem`, `BuilderHelpWidget` deleted; `FieldHelpTooltip.tsx` kept. `AtomicWelcomeModal` no longer renders in the builder (the builder mounts `AtomicGovernmentComponents` with `standalone`). `EconomicWelcomeModal` is no longer imported anywhere.
+> - ✅ `BenchmarkHelpModal`, `GovernmentHelpSystem`, `BuilderHelpWidget` deleted; `FieldHelpTooltip.tsx` kept. `AtomicWelcomeModal` no longer renders in the builder (the builder mounts `AtomicGovernmentComponents` with `standalone`). `EconomicWelcomeModal` is no longer rendered anywhere (only re-exported from its barrel).
 > - ❌ **Live Insights / `"diagnostics"` tab not built** — `GuideTab` is `"milestones" | "rules"` only.
 > - ❌ Subheader deep-link buttons (`[ ? Component Guide ]`, `[ ? Help ]`, `[ ? Template Guide ]`) are not wired to `openGuide`; the foundation `CountryGrid` "full guide" still opens `BuilderWelcomeModal` (`CountrySelector.tsx`), and non-standalone `AtomicGovernmentComponents` still opens `AtomicWelcomeModal`.
 > - ⚠️ `AtomicWelcomeModal.tsx` / `EconomicWelcomeModal.tsx` files still exist (the former is used outside the builder).
