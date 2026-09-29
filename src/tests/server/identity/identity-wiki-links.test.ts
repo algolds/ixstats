@@ -2,9 +2,10 @@ import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/
 
 const NOW = new Date("2026-09-27T12:00:00Z");
 const TOKEN = "ixstates-verify-abcdef1234";
-const rev = (content: string, author: string) => ({ content, author });
-/** A User: page history, newest first; `complete` = no older revision exists. */
-const history = (revisions: Array<{ content: string; author: string }>, complete = true) => ({ revisions, complete });
+type Rev = { content: string | null; author: string | null };
+const rev = (content: string | null, author: string | null): Rev => ({ content, author });
+/** The User: page revisions saved since the code was issued, oldest first; `complete` = the window is not truncated. */
+const history = (revisions: Rev[], complete = true) => ({ revisions, complete });
 
 function setup(overrides: Partial<Record<string, any>> = {}) {
   const db: any = {
@@ -221,7 +222,11 @@ describe("wiki link verification — confirm()", () => {
   });
 });
 
-describe("wiki link verification — confirm() attributes the token to whoever saved it (ruling F-3)", () => {
+describe("wiki link verification — confirm(): the token's first appearance since issue must be the account's (F-3, F-6)", () => {
+  const EXPIRES = new Date(NOW.getTime() + 1000);
+  const ISSUED = new Date(EXPIRES.getTime() - 24 * 3600 * 1000);
+  const SAVE_IT_YOURSELF = "Save the code on your user page yourself, then press Verify";
+
   function pendingSetup() {
     const ctx = setup();
     ctx.db.wikiAccountLink.findUnique.mockResolvedValue({
@@ -230,19 +235,22 @@ describe("wiki link verification — confirm() attributes the token to whoever s
       source: "iiwiki",
       username: "Kir",
       token: TOKEN,
-      tokenExpiresAt: new Date(NOW.getTime() + 1000),
+      tokenExpiresAt: EXPIRES,
       verifiedAt: null,
     });
     return ctx;
   }
 
+  it("reads only the revisions saved since the code was issued (tokenExpiresAt − 24h)", async () => {
+    const { deps, service } = pendingSetup();
+    await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
+    expect(deps.fetchUserPageHistory).toHaveBeenCalledWith("iiwiki", "Kir", ISSUED);
+  });
+
   it("refuses a token planted by someone else, even after the account itself edited the page", async () => {
     const { db, deps, service } = pendingSetup();
     deps.fetchUserPageHistory.mockResolvedValue(
-      history(
-        [rev(`My page, tidied. ${TOKEN}`, "Kir"), rev(`My page ${TOKEN}`, "Mallory"), rev("My page", "Kir")],
-        false
-      )
+      history([rev(`My page ${TOKEN}`, "Mallory"), rev(`My page, tidied. ${TOKEN}`, "Kir")])
     );
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
       code: "TOKEN_NOT_FOUND",
@@ -251,10 +259,14 @@ describe("wiki link verification — confirm() attributes the token to whoever s
     expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
   });
 
-  it("refuses a page someone else CREATED with the token, even after the account edited it", async () => {
+  it("refuses a laundered token: planted, vandalised away, then restored by the account's revert", async () => {
     const { db, deps, service } = pendingSetup();
     deps.fetchUserPageHistory.mockResolvedValue(
-      history([rev(`Hi ${TOKEN}`, "Kir"), rev(TOKEN, "Mallory")], true)
+      history([
+        rev(`My page <!-- ${TOKEN} -->`, "Mallory"),
+        rev("vandalised", "Vandal"),
+        rev(`My page <!-- ${TOKEN} -->`, "Kir"), // Kir's revert restores the planted token
+      ])
     );
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
     expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
@@ -263,49 +275,47 @@ describe("wiki link verification — confirm() attributes the token to whoever s
   it("accepts a token the account saved itself, even if someone edited the page after", async () => {
     const { db, deps, service } = pendingSetup();
     deps.fetchUserPageHistory.mockResolvedValue(
-      history([rev(`Tidied ${TOKEN}`, "TidyBot"), rev(`My page ${TOKEN}`, "Kir"), rev("My page", "Mallory")], false)
+      history([rev("My page", "Mallory"), rev(`My page ${TOKEN}`, "Kir"), rev(`Tidied ${TOKEN}`, "TidyBot")])
     );
     await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
     expect(db.wikiAccountLink.updateMany).toHaveBeenCalledTimes(1);
   });
 
-  it("the introducer is the oldest revision of the NEWEST unbroken run (a re-added token counts from its re-add)", async () => {
-    const accepted = pendingSetup();
-    accepted.deps.fetchUserPageHistory.mockResolvedValue(
-      history([rev(TOKEN, "Kir"), rev("removed", "Kir"), rev(TOKEN, "Mallory")], true)
-    );
-    await expect(accepted.service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
-
-    const refused = pendingSetup();
-    refused.deps.fetchUserPageHistory.mockResolvedValue(
-      history([rev(TOKEN, "Kir"), rev(TOKEN, "Mallory"), rev("removed", "Kir"), rev(TOKEN, "Kir")], true)
-    );
-    await expect(refused.service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
-  });
-
-  it("accepts a user page the account created with the token (its whole history was fetched)", async () => {
+  it("accepts a user page the account created with the token", async () => {
     const { deps, service } = pendingSetup();
-    deps.fetchUserPageHistory.mockResolvedValue(history([rev(`Hi ${TOKEN}`, "Kir"), rev(TOKEN, "Kir")], true));
+    deps.fetchUserPageHistory.mockResolvedValue(history([rev(TOKEN, "Kir"), rev(`Hi ${TOKEN}`, "Kir")]));
     await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
   });
 
-  it("refuses when every one of the 20 fetched revisions already contains the token (introducer out of reach)", async () => {
+  it("refuses when the window is truncated (the first appearance cannot be established)", async () => {
     const { db, deps, service } = pendingSetup();
     const twenty = Array.from({ length: 20 }, (_, i) => rev(`edit ${i} ${TOKEN}`, "Kir"));
     deps.fetchUserPageHistory.mockResolvedValue(history(twenty, false));
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
       code: "TOKEN_NOT_FOUND",
-      message: "Save the code on your user page yourself, then press Verify",
+      message: SAVE_IT_YOURSELF,
     });
     expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
   });
 
+  it("refuses when any revision in the window has hidden content or a hidden author (unattributable)", async () => {
+    for (const hidden of [rev(null, "Mallory"), rev(`x ${TOKEN}`, null)]) {
+      const { db, deps, service } = pendingSetup();
+      deps.fetchUserPageHistory.mockResolvedValue(history([hidden, rev(`Mine ${TOKEN}`, "Kir")]));
+      await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+        code: "TOKEN_NOT_FOUND",
+        message: SAVE_IT_YOURSELF,
+      });
+      expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
+    }
+  });
+
   it("still requires the LATEST revision to contain the token", async () => {
     const { deps, service } = pendingSetup();
-    deps.fetchUserPageHistory.mockResolvedValue(history([rev("removed", "Mallory"), rev(TOKEN, "Kir")], true));
+    deps.fetchUserPageHistory.mockResolvedValue(history([rev(TOKEN, "Kir"), rev("removed", "Mallory")]));
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
     const empty = pendingSetup();
-    empty.deps.fetchUserPageHistory.mockResolvedValue(history([], true));
+    empty.deps.fetchUserPageHistory.mockResolvedValue(history([]));
     await expect(empty.service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
   });
 });

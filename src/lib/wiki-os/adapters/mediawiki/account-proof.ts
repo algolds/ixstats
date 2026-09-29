@@ -78,7 +78,7 @@ export async function fetchWikiUser(source: ProofSource, username: string): Prom
 }
 
 const RevisionsSchema = z.object({
-  /** Present when older revisions exist beyond the ones returned. */
+  /** Present when more revisions exist beyond the ones returned. */
   continue: z.object({ rvcontinue: z.string().optional() }).optional(),
   query: z.object({
     pages: z.array(
@@ -97,27 +97,36 @@ const RevisionsSchema = z.object({
   }),
 });
 
-/** How many of a user page's most recent revisions the proof walks back through (ruling F-3). */
+/** How many user page revisions saved since a code was issued the proof reads; more is a truncated window (F-6). */
 export const USER_PAGE_REVISION_WINDOW = 20;
 
 export interface UserPageRevision {
-  content: string;
-  /** Normalised; "" when the author is hidden. */
-  author: string;
+  /** null when the revision's content is hidden (revision-deleted). */
+  content: string | null;
+  /** Normalised; null when the author is hidden. */
+  author: string | null;
 }
 
-/** A user page's most recent revisions, newest first; `complete` when no older revision exists. */
+/** A user page's revisions saved since a time, oldest first; `complete` when the window is not truncated. */
 export interface UserPageHistory {
   revisions: UserPageRevision[];
   complete: boolean;
 }
 
+/** MediaWiki timestamp (ISO 8601, whole seconds). */
+const wikiTimestamp = (at: Date) => at.toISOString().replace(/\.\d{3}Z$/, "Z");
+
 /**
- * The last USER_PAGE_REVISION_WINDOW revisions of a user page — content AND author. Stock MediaWiki lets anyone
- * (often anonymous) edit another user's `User:` page, so the token alone does not prove control of the account;
- * the caller must attribute the token to the revision that introduced it. A missing page has no revisions.
+ * The revisions of a user page saved since `since` (oldest first, up to USER_PAGE_REVISION_WINDOW) — content AND
+ * author. Stock MediaWiki lets anyone (often anonymous) edit another user's `User:` page, so the token alone does
+ * not prove control of the account; the caller must attribute the token's first appearance. A missing page has
+ * no revisions.
  */
-export async function fetchUserPageHistory(source: ProofSource, username: string): Promise<UserPageHistory> {
+export async function fetchUserPageHistory(
+  source: ProofSource,
+  username: string,
+  since: Date
+): Promise<UserPageHistory> {
   const data = await wikiQuery(
     source,
     {
@@ -125,13 +134,15 @@ export async function fetchUserPageHistory(source: ProofSource, username: string
       titles: `User:${normalizeWikiUsername(username)}`,
       rvprop: "content|user",
       rvslots: "main",
+      rvdir: "newer",
+      rvstart: wikiTimestamp(since),
       rvlimit: String(USER_PAGE_REVISION_WINDOW),
     },
     RevisionsSchema
   );
   const revisions = (data.query.pages[0]?.revisions ?? []).map((revision) => ({
-    content: revision.slots?.main.content ?? "",
-    author: revision.user ? normalizeWikiUsername(revision.user) : "",
+    content: revision.slots?.main.content ?? null,
+    author: revision.user ? normalizeWikiUsername(revision.user) : null,
   }));
   return { revisions, complete: !data.continue };
 }
