@@ -76,7 +76,7 @@ The WikiOS router domain is split into focused files and combined with `mergeRou
 
 ## Design system and style guide
 
-- **Style guide.** Full specification in [`docs/systems/wikios/style-guide.md`](file:///home/jxsig/projects/ixstats/docs/systems/wikios/style-guide.md), following Apple Human Interface Guidelines and Emil Kowalski design engineering principles.
-- **Glass physics.** Hardware-accelerated backdrop blur (`blur(20px) saturate(180%)`), chamfered edge glare overlays, and calibrated light or dark surface tokens in [`src/styles/wiki-os/cards.css`](file:///home/jxsig/projects/ixstats/src/styles/wiki-os/cards.css) and [`variables.css`](file:///home/jxsig/projects/ixstats/src/styles/wiki-os/variables.css).
+- **Style guide.** Full specification in [`docs/systems/wikios/style-guide.md`](wikios/style-guide.md), following Apple Human Interface Guidelines and Emil Kowalski design engineering principles.
+- **Glass physics.** Hardware-accelerated backdrop blur (`blur(20px) saturate(180%)`), chamfered edge glare overlays, and calibrated light or dark surface tokens in `src/styles/wiki-os/cards.css` and `variables.css`.
 - **Proportional typography.** Proportional type for all headings and body text (`Host Grotesk` display, `Geist Sans` reading), paired with `tabular-nums` for numeric alignment. Clean section headers without arbitrary indicator dots.
 - **Spring motion.** Critically damped spring curves (`stiffness: 400, damping: 24`), origin-aware popovers, and instant `:active` scale (`scale(0.97)`) touch feedback across all pressable components.

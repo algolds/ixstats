@@ -4,7 +4,7 @@
 **Status**: Proposal  
 **Target Directory**: `/plans`  
 
-This document presents the top 5 high-impact features designed to bridge the gaps between our rich in-world sports lore (WAFF World Cup, Caphirian Imperial League, and Ice Hockey/LHL) and the `MyLeague` simulation engine. Each feature is designed to fit directly into the existing modular monolith architecture of **IxStates** using [sports.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/sports.prisma) and [resolver.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/resolver.ts).
+This document presents the top 5 high-impact features designed to bridge the gaps between our rich in-world sports lore (WAFF World Cup, Caphirian Imperial League, and Ice Hockey/LHL) and the `MyLeague` simulation engine. Each feature is designed to fit directly into the existing modular monolith architecture of **IxStates** using [sports.prisma](../../prisma/schema/sports.prisma) and [resolver.ts](../../src/lib/sports/resolver.ts).
 
 ---
 
@@ -57,7 +57,7 @@ Extend the tournament structures in the database and engine to support multi-sta
 * **Caphirian Imperial League**: 16-team double round-robin (30 matches) -> Top 4 enter the "Golden Box" postseason knockout to determine the champion.
 
 ### 2. Technical Implementation
-* **Database Schema Expansion** in [sports.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/sports.prisma):
+* **Database Schema Expansion** in [sports.prisma](../../prisma/schema/sports.prisma):
   ```prisma
   model SportsSeason {
     // ... current fields
@@ -109,7 +109,7 @@ Simulate a realistic league pyramid by linking domestic leagues (e.g. *Caphirian
   }
   ```
 * **Season Boundary Transitions**:
-  During the `advanceSeason` cron/trigger in [server.mjs](file:///ixwiki/public/projects/ixstats/server.mjs):
+  During the `advanceSeason` cron/trigger in [server.mjs](../../server.mjs):
   1. Retrieve the final standings of the Division 1 league and its child Division 2 league.
   2. Select the lowest $R$ teams from Division 1 standings and the highest $P$ teams from Division 2 standings.
   3. Swap their `leagueId` fields in the `SportsTeam` database table:

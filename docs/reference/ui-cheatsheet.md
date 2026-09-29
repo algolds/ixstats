@@ -9,7 +9,7 @@
 ## ⚡ The 7 Golden Rules
 
 1. **Zero Raw Hexes**: Never use `[#...]` or inline style hexes. Always use semantic Tailwind v4 tokens (`bg-card`, `text-foreground`, `border-border/40`, `text-muted-foreground`, `bg-popover`, `ring-ring`).
-2. **Encapsulated Primitives**: Never import `@radix-ui/*` directly in domain features. Always import from [`src/components/ui/`](file:///home/jxsig/projects/ixstats/src/components/ui/).
+2. **Encapsulated Primitives**: Never import `@radix-ui/*` directly in domain features. Always import from [`src/components/ui/`](../../src/components/ui/).
 3. **Icons Standard**: Use `iconoir-react` exclusively. `lucide-react` is blocked.
 4. **Polymorphic Triggers (`asChild`)**: Always pass `asChild` to Radix triggers (`<DialogTrigger asChild>`, `<DropdownMenuTrigger asChild>`) when wrapping buttons or custom elements to avoid nested `<button>` errors.
 5. **Tactile Physics**: Add mechanical compression on press (`active:scale-[0.98] transition-transform duration-140`). Keep motion under 250ms.

@@ -109,21 +109,21 @@ Under `src/server/api/routers/onoma/`, procedures are domain-split and merged vi
 
 | Sub-Router | File | Scope |
 |---|---|---|
-| **NameBank** | [`namebank.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank.ts) | Stash item integration, saved names CRUD, custom dictionary imports/exports, public dictionary listing, training data. |
-| **Speech** | [`speech.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/speech.ts) | Kokoro TTS voice catalog, per-culture voice mapping, audio presets, health probes, HuggingFace space wake-up, branding config. |
-| **History** | [`history.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/history.ts) | Generation event logging, timeline, favorites, stats. |
-| **Batch** | [`batch.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/batch.ts) | Batch generation jobs & matrix permutations. |
-| **Marketplace** | [`marketplace.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/marketplace.ts) | Language pack discovery, rating, and forking. |
-| **Etymology** | [`etymology.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/etymology.ts) | Etymological graph links & root trees. |
-| **Syntax** | [`syntax.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/syntax.ts) | Sentence structure, POS, and grammar trees. |
-| **Writing** | [`writing.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/writing.ts) | Grapheme-to-glyph systems and script converters. |
-| **Loanwords** | [`loanwords.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/loanwords.ts) | Cross-cultural loanword adaptation. |
+| **NameBank** | [`namebank.ts`](../../../server/api/routers/onoma/namebank.ts) | Stash item integration, saved names CRUD, custom dictionary imports/exports, public dictionary listing, training data. |
+| **Speech** | [`speech.ts`](../../../server/api/routers/onoma/speech.ts) | Kokoro TTS voice catalog, per-culture voice mapping, audio presets, health probes, HuggingFace space wake-up, branding config. |
+| **History** | [`history.ts`](../../../server/api/routers/onoma/history.ts) | Generation event logging, timeline, favorites, stats. |
+| **Batch** | `batch.ts` | Batch generation jobs & matrix permutations. |
+| **Marketplace** | [`marketplace.ts`](../../../server/api/routers/onoma/marketplace.ts) | Language pack discovery, rating, and forking. |
+| **Etymology** | [`etymology.ts`](../../../server/api/routers/onoma/etymology.ts) | Etymological graph links & root trees. |
+| **Syntax** | [`syntax.ts`](../../../server/api/routers/onoma/syntax.ts) | Sentence structure, POS, and grammar trees. |
+| **Writing** | [`writing.ts`](../../../server/api/routers/onoma/writing.ts) | Grapheme-to-glyph systems and script converters. |
+| **Loanwords** | [`loanwords.ts`](../../../server/api/routers/onoma/loanwords.ts) | Cross-cultural loanword adaptation. |
 
 ---
 
 ## Performance & Optimization
 
 - **Compacted Datasets**: Syllable corpora, species datasets, and cultural profiles formatted as compact arrays, reducing line count by over **15,000 lines** and minimizing AST parsing memory overhead.
-- **Unified Procedural Resolvers**: Shared [`template-resolver.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/template-resolver.ts) deduplicates regex token interpolation across all specialized generators.
+- **Unified Procedural Resolvers**: Shared [`template-resolver.ts`](../../../lib/onoma/template-resolver.ts) deduplicates regex token interpolation across all specialized generators.
 - **Animation Frame Throttling**: `AcousticFormantVisualizer.tsx` pauses canvas 60fps waveform rendering when the browser tab is hidden via `document.visibilityState`.
 - **Zero Architecture God Files**: All files remain under the project's ≤700 architecture ceiling.

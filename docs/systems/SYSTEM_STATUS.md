@@ -4,7 +4,7 @@
 **Last updated:** August 2026  
 **Auditor:** Senior System Review (`/improve`) · Architecture Guard (`/apple-design`) · Anti-Slop Audit (`/unslop`)  
 **Target Milestone:** **Going Gold (Gold Master / Public Launch Readiness)**  
-**Version Registry:** [`src/lib/buildVersion.ts`](file:///home/jxsig/projects/ixstats/src/lib/buildVersion.ts) · **Architecture Spec:** [`docs/reference/revision.md`](file:///home/jxsig/projects/ixstats/docs/reference/revision.md)
+**Version Registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Architecture Spec:** [`docs/reference/revision.md`](../reference/revision.md)
 
 ---
 

@@ -53,7 +53,7 @@ Historically, fragments of the design system were referred to by legacy names:
 
 ## 2. Volumetric Z-Axis Depth Scale
 
-Facet organizes all UI elements along a physical Z-axis. Instead of arbitrary ad-hoc z-index values, components must strictly adhere to the volumetric depth scale defined in [`src/styles/facet/tokens.css`](file:///home/jxsig/projects/ixstats/src/styles/facet/tokens.css):
+Facet organizes all UI elements along a physical Z-axis. Instead of arbitrary ad-hoc z-index values, components must strictly adhere to the volumetric depth scale defined in `src/styles/facet/tokens.css`:
 
 | CSS Variable | Depth Value | Z-Index | UI Category & Elements |
 |---|---|---|---|
@@ -115,7 +115,7 @@ Facet uses **nested blur compounding** to maintain visual legibility against com
 
 ## 4. Physical Materials & Adaptive Textures
 
-Facet defines four tactile surfaces in [`src/styles/facet/materials.css`](file:///home/jxsig/projects/ixstats/src/styles/facet/materials.css) that react dynamically to pointer coordinates (`--pointer-x`, `--pointer-y`, `--pointer-offset-x`, `--pointer-offset-y`):
+Facet defines four tactile surfaces in `src/styles/facet/materials.css` that react dynamically to pointer coordinates (`--pointer-x`, `--pointer-y`, `--pointer-offset-x`, `--pointer-offset-y`):
 
 ### 1. Satin (`.facet-material-satin`)
 - **Visual**: Volumetric translucent glass backing with a smooth pointer-following sheen highlight.
@@ -185,10 +185,10 @@ All UI primitives in IxStates are built upon a strict headless architecture:
 
 ## 7. Cuelume Audio-Tactile Engine
 
-IxStates integrates **Cuelume** ([`src/lib/sound/cuelume.ts`](file:///home/jxsig/projects/ixstats/src/lib/sound/cuelume.ts)), providing Web Audio synthesized interaction sounds adhering to the four core interaction principles: *causality, harmony, utility, restraint*.
+IxStates integrates **Cuelume** ([`src/lib/sound/cuelume.ts`](../../src/lib/sound/cuelume.ts)), providing Web Audio synthesized interaction sounds adhering to the four core interaction principles: *causality, harmony, utility, restraint*.
 
 ### Root Event Delegation
-[`CuelumeSoundProvider`](file:///home/jxsig/projects/ixstats/src/components/providers/CuelumeSoundProvider.tsx) in [`src/app/layout.tsx`](file:///home/jxsig/projects/ixstats/src/app/layout.tsx) automatically initializes the sound engine on application boot and delegates event listeners to the entire `document`. Route transitions fire a subtle `soundEffects.arrival()` cue.
+[`CuelumeSoundProvider`](../../src/components/providers/CuelumeSoundProvider.tsx) in [`src/app/layout.tsx`](../../src/app/layout.tsx) automatically initializes the sound engine on application boot and delegates event listeners to the entire `document`. Route transitions fire a subtle `soundEffects.arrival()` cue.
 
 ### Standardized Primitive Audio Matrix
 

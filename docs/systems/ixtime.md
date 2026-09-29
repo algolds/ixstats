@@ -348,7 +348,7 @@ pm2 restart ixwiki-discord-bot
 - `shrink` **`src/lib/ixtime/core.ts` legacy fallbacks**: ✅ Removed uncalled `getCurrentIxTimeInternal()` duplicate and simplified override logic.
 
 **Net Reduction Summary:**  
-~380 lines of boilerplate removed, 1 dead HTTP route deleted, recurring test overhead eliminated from the background server loop, and 2 dedicated Jest test suites added in [`src/tests/lib/ixtime/`](file:///home/jxsig/projects/ixstats/src/tests/lib/ixtime/).
+~380 lines of boilerplate removed, 1 dead HTTP route deleted, recurring test overhead eliminated from the background server loop, and 2 dedicated Jest test suites added in [`src/tests/lib/ixtime/`](../../src/tests/lib/ixtime/).
 
 ---
 
