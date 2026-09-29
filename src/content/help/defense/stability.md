@@ -4,9 +4,14 @@ description: Monitor internal security, civil unrest, and early warning indicato
 badge: Defense
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+
 ## Stability Indicators
 
-- Metrics derive from `stability-formulas.ts`, social sentiment, and economic shocks.
+- Metrics derive from your nation’s stability formulas, social sentiment, and economic shocks.
 - Compliance tasks fire when thresholds are crossed (e.g., protests, strikes, coup risk).
 - Outputs feed into intelligence alerts and defense readiness scores.
 
@@ -14,8 +19,8 @@ badge: Defense
 
 > **Dashboards**
 >
-> - Executive Command page – highlights top stability risks in the executive overview.
-> - Defense & Security page – ties stability to crisis scenarios.
+> - MyCountry overview – your National Standing card shows current political stability.
+> - Defense – the **Internal Stability** tab ties stability to security events.
 > - ThinkPages – track narratives and mitigation plans.
 
 > [!WARNING]

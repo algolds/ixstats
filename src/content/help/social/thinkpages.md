@@ -10,7 +10,7 @@ ThinkPages is the social publishing platform built into IxStats. Think of it as 
 
 - Compose rich text posts with embedded wiki lookups, images, and tags.
 - The live event feed highlights featured and trending posts so important news reaches everyone.
-- Your posts connect to achievements, notifications, and your intelligence dashboard, keeping everything in one place.
+- Your posts connect to achievements and notifications, and each of your first five posts a day earns 1 IxCredit.
 
 ## Writing a Post
 
@@ -19,7 +19,7 @@ ThinkPages is the social publishing platform built into IxStats. Think of it as 
 > 1. Navigate to ThinkPages from the main menu and tap **Compose**.
 > 2. Use the rich editor to write your content. You can search the IxWiki directly from the composer to pull in references and link to articles.
 > 3. Add tags like **#economy**, **#diplomacy**, or **#military** so other players can discover your post through topic filters.
-> 4. Choose to publish publicly for everyone to see, or share it with a specific [ThinkTank](/help/social/thinktanks) group.
+> 4. Publish it to the feed for everyone to see. (To work with a smaller group, use a [ThinkTank](/help/social/thinktanks).)
 > 5. Once published, monitor reactions and replies in your feed.
 
 ## Tips for Great Posts

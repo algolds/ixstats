@@ -3,6 +3,10 @@
 **Date:** 2026-09-28 · **Branch:** `realms-foundation` · **Builds on:** Phase 1 (`2026-09-27-realms-foundation-design.md`)
 **Product model:** `docs/architecture/realms-framework-spec.md` — decisions 1–25 are binding.
 **Owner's instruction:** "finish all plans, make realms valid and green-lit, use https://eurth.org/ as the first realm."
+**Status:** Implemented — tasks E1–E8 merged into `rose-garden` on 2026-09-29 (`91a84f50f`). Later rulings refine
+this table: nation membership comes from an optional curated `--nation-roster` category, with the infobox rule
+as fallback (E-d′); E8 added PNG realm maps through the Full Pipeline (E-u). Final rulings:
+`docs/architecture/realms-framework-spec.md` → Status. The "Out of scope" list below is still unbuilt.
 
 ## What Eurth is (verified 2026-09-28)
 

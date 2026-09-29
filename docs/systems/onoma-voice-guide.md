@@ -59,5 +59,5 @@ docker run -d --name kokoro-web -p 8888:8888 -e KW_SECRET_API_KEY="mysecret" ghc
 ## Related Documentation
 
 - [Onoma Brand Guide](./onoma-brand-guide.md)
-- [Halo Plugin System](./dynamic-island.md)
+- [Halo Plugin System](./halo.md)
 - [WikiOS System Guide](./wikios.md)

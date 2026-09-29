@@ -22,6 +22,9 @@ src/components/halo/
 ├── hooks.ts                      # State management, keyboard shortcuts, and search engine
 ├── plugin-context.tsx            # React 19 concurrent external store for plugins
 ├── types.ts                      # DIPlugin, DIAction, DIBadge, SearchResult interfaces
+├── presets.ts                    # Capsule size presets (compact, large, tall, …)
+├── HaloPrimitives.tsx            # Shared capsule context & UI primitives
+├── DynamicIslandEffects.tsx      # Shared glass style constants (legacy file name)
 ├── HaloTourContext.tsx           # Onboarding and visual wayfinding guide
 ├── HaloTourTooltip.tsx           # Tooltip callouts for Halo controls
 ├── views/                        # Core Halo system views ONLY
@@ -32,18 +35,14 @@ src/components/halo/
 │   ├── NotificationsView.tsx     # Unified Alert Center and direct message tray (React.memo)
 │   ├── SettingsView.tsx          # Theme, audio, and platform preferences (React.memo)
 │   ├── NavTray.tsx               # Mobile-optimized bottom navigation tray (React.memo)
+│   ├── settings/
+│   │   └── SettingsControls.tsx
 │   └── tray/                     # Alert Center sub-components
 │       ├── types.ts
 │       ├── NotificationRow.tsx
 │       └── MessageTrayItem.tsx
 └── plugins/                      # Domain-specific Halo plugins
     ├── index.ts                  # Unified barrel export for all plugins
-    ├── _template/                # Developer starter template for new plugins
-    │   ├── TemplateHalo.tsx      # Plugin registration component
-    │   ├── index.ts              # Plugin barrel export
-    │   └── views/                # Modal views
-    │       ├── index.ts
-    │       └── TemplateView.tsx
     ├── mycountry/                # MyCountry executive plugin
     │   ├── MyCountryHalo.tsx     # Executive KPIs & quick actions registration
     │   ├── index.ts
@@ -66,6 +65,7 @@ src/components/halo/
     │   └── views/
     │       ├── index.ts
     │       ├── WikiView.tsx
+    │       ├── WikiNarratorView.tsx
     │       └── WikiProfileView.tsx
     ├── builder/                  # Nation Builder plugin
     │   ├── BuilderHalo.tsx       # Step tracker & manual save registration
@@ -75,7 +75,7 @@ src/components/halo/
     │       ├── BuilderView.tsx
     │       └── BuilderProgressView.tsx
     └── sports/                   # Live match activity plugin
-        ├── SportsLiveHalo.tsx    # Deterministic IxTime live match scoreboard
+        ├── SportsLiveHalo.tsx    # Deterministic IxTime live match scoreboard (mounted globally via GameProviders)
         └── index.ts
 ```
 
@@ -91,7 +91,7 @@ Every Halo plugin is a self-contained module in `src/components/halo/plugins/<fe
 4. **`types.ts`** (optional): Contains domain-specific types.
 5. **`index.ts`**: Clean barrel export exporting `<Name>Halo`, views, and backwards-compatible aliases (`*DIPlugin`).
 
-To create a new plugin, developers copy `src/components/halo/plugins/_template/` into their feature directory and mount `<FeatureHalo />` in their route layout.
+To create a new plugin, copy the smallest existing plugin (e.g. `src/components/halo/plugins/forum/`) as a starting point and mount `<FeatureHalo />` in the route layout. (The former `_template/` starter directory was removed.)
 
 ---
 
@@ -107,8 +107,10 @@ The registry provides comprehensive coverage across eight platform domains:
 - **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/wiki/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
 - **Community**: Messages (`/messages`), ThinkPages Social (`/thinkpages`), ThinkTanks (`/thinktanks`), Forum (`/forum`), New Thread (`/forum/new-thread`), and Achievements (`/achievements`).
 - **Sports**: MyLeague Standings (`/myleague`) and MyClub Squad Roster (`/myclub`).
-- **Labs**: Onoma Linguistics (`/labs/onoma`), Vexel Flags (`/labs/vexel`), Map Pipeline (`/labs/map-pipeline`), Sandbox (`/labs/sandbox`), and Design Bible (`/labs/design-bible`).
-- **System**: Theme toggles, audio controls, compact mode, notifications, settings, and changelog.
+- **Labs**: Onoma Linguistics (`/labs/onoma`), Vexel Heraldry (`/labs/vexel`), and Map Pipeline (`/labs/map-pipeline`).
+- **System**: Theme toggles, audio controls, compact mode, mark-all-read, notifications, settings, changelog, and admin.
+
+A second `CORE_FEATURES` list adds quick shortcuts (Dashboard, Leaderboards, Maps, Card Packs, Reload Data, Notifications, Search).
 
 ### 2. Search Indexing & Keyword Aliases
 Each entry contains an array of search keywords and synonyms. Queries match against title, description, category, and keywords in a single normalized lookup pass:
@@ -125,10 +127,10 @@ System actions execute instantly via hook callbacks without requiring full-page 
 - `mark-all-read`: Clears unread alert badges and notification counters.
 - `reload-data`: Refreshes platform telemetry.
 - `random-wiki`: Jumps to a random encyclopedia article.
-- `random-country`: Selects and loads a random world nation.
+- `random-country`: Selects and loads a random world nation (handled in `hooks.ts`; no registry entry currently surfaces it).
 
 ### 4. Icon Design Standards
-Icons use a curated combination of `iconoir-react` and `react-icons/gi`. Generic sparkle icons (`Sparkles`) are strictly prohibited in favor of domain-accurate iconography (`Crown`, `GiWaxSeal`, `EditPencil`, `GiShieldBash`, `GiCoins`, `GiCapitol`).
+Registry icons come from `iconoir-react` (the Halo tree does not import `react-icons/gi`). Generic sparkle icons (`Sparkles`) are strictly prohibited in favor of domain-accurate iconography (e.g. `Crown`, `EditPencil`).
 
 ---
 
@@ -175,15 +177,10 @@ $$\text{repulsionProgress} = \text{clamp}\left(\frac{\text{scrollY}}{56}, 0, 1\r
 
 ## Physical Motion & Spring Physics
 
-Motion transitions across capsule expansion, tray reveals, and modal transforms utilize Apple critically damped spring physics:
+Motion transitions across capsule expansion, tray reveals, and modal transforms utilize Apple critically damped spring physics. The profile is written inline in `CompactView.tsx` and `NavTray.tsx` (there is no exported constant):
 
 ```typescript
-export const HALO_SPRING = {
-  type: "spring",
-  stiffness: 420,
-  damping: 38,
-  mass: 0.8,
-};
+transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.8 }}
 ```
 
 ---

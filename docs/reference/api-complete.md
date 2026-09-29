@@ -87,1004 +87,663 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **TOTALS** | **441** | **459** | **0** | **901** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
+> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
+
 ---
+
+> **Curated catalog.** The sections below list every procedure of the most-used routers, with their top-level input keys (`?` = optional), generated from the live router on 2026-09-29. For the remaining namespaces see the inventory table above.
 
 ## Core Systems
 
-### countries Router (40 procedures)
+### countries Router (29 procedures)
 
-**Key Queries:**
+Country reads are split across `list`, `economy`, `identity`, `management`, `wiki`, `atomic` and `flags` modules and spread into one namespace (`flags` is nested: `api.countries.flags.*`).
+
 ```typescript
-// Get single country
-api.countries.getById.useQuery({ id: string })
-api.countries.getByIdAtTime.useQuery({ id: string }) // IxTime-aware
+// Queries (24)
+api.countries.getSelectList.useQuery({ search?, limit?, realm? })
+api.countries.getAll.useQuery({ limit?, offset?, search?, continent?, economicTier?, realm? })
+api.countries.getMapSummary.useQuery({ countryId })
+api.countries.getBulkMapSummaries.useQuery({ countryIds })
+api.countries.getTopCountriesByImportance.useQuery({ limit?, realm? })
+api.countries.getTopCountriesByPopulation.useQuery({ limit?, realm? })
+api.countries.getRandomCountries.useQuery({ limit?, realm? })
+api.countries.getByIdWithEconomicData.useQuery({ id, timestamp?, realm? })
+api.countries.getByIdAtTime.useQuery({ id, timestamp? })
+api.countries.getEditorRelations.useQuery({ countryId })
+api.countries.getGlobalStats.useQuery({ realm? })
+api.countries.getTradeData.useQuery({ countryId })
+api.countries.getActivityRingsData.useQuery({ countryId })
+api.countries.getByIdBasic.useQuery({ id, realm? })
+api.countries.getMapLinkStatus.useQuery({ countryId })
+api.countries.getWikiIntro.useQuery({ countryName })
+api.countries.getWikiSections.useQuery({ countryName })
+api.countries.getWikiPageImages.useQuery({ countryName })
+api.countries.getWikiRichIntro.useQuery({ countryName })
+api.countries.getBulkWikiRichIntros.useQuery({ countryNames })
+api.countries.getWikiSectionPreviews.useQuery({ countryName })
+api.countries.getEligibleCountries.useQuery({ site })
+api.countries.getByNameWithAtomic.useQuery({ name, realm? })
+api.countries.flags.resolveBatch.useQuery({ countryNames, fallbackPolicy? })
 
-// Lists & filtering
-api.countries.getAll.useQuery() // With filters, pagination
-api.countries.getByContinent.useQuery({ continent: string })
-api.countries.getByTier.useQuery({ tier: EconomicTier })
-
-// Statistics & analytics
-api.countries.getGlobalStats.useQuery()
-api.countries.getActivityRingsData.useQuery({ id: string })
-api.countries.getComparisonData.useQuery({ ids: string[] })
-
-// Economic data
-api.countries.getByIdWithEconomicData.useQuery({ id: string })
-api.countries.getHistoricalData.useQuery({ id: string, years: number })
-api.countries.getProjections.useQuery({ id: string, years: number })
+// Mutations (5)
+api.countries.update.useMutation() // { id, ...fields } (passthrough)
+api.countries.createCountry.useMutation() // { name, foundationCountry, economicInputs?, governmentComponents?, taxSystemData?, governmentStructure?, economyBuilderState?, archetypeId? }
+api.countries.updateCountry.useMutation() // { id, name, economicInputs?, governmentComponents?, taxSystemData?, governmentStructure?, economyBuilderState? }
+api.countries.searchWiki.useMutation() // { query, site, categoryFilter? }
+api.countries.parseInfobox.useMutation() // { pageName, site }
 ```
 
-**Key Mutations:**
+### users Router (22 procedures)
+
 ```typescript
-// CRUD operations
-api.countries.create.useMutation()
-api.countries.update.useMutation()
-api.countries.delete.useMutation()
-
-// Bulk operations
-api.countries.bulkUpdate.useMutation()
-api.countries.recalculateAll.useMutation()
-
-// Growth & calculations
-api.countries.updateGrowthFactors.useMutation()
-api.countries.recalculateVitality.useMutation()
-```
-
-### users Router (19 procedures)
-
-**Profile Management:**
-```typescript
+// Queries (10)
 api.users.getProfile.useQuery()
-api.users.updateProfile.useMutation()
-api.users.updatePreferences.useMutation()
+api.users.getCurrentUserAbilities.useQuery()
+api.users.getCurrentUserWithRole.useQuery()
+api.users.getUserWithRole.useQuery({ clerkUserId })
+api.users.getMembershipStatus.useQuery()
+api.users.getPreferences.useQuery()
+api.users.getPrivacySettings.useQuery()
+api.users.exportUserData.useQuery()
+api.users.resolveWikiAuthor.useQuery({ wikiUsername })
+api.users.getActiveUsers.useQuery({ limit?, excludeUserId? })
 
-// Country assignment
-api.users.assignCountry.useMutation({ countryId: string })
-api.users.getCountryAssignment.useQuery()
+// Mutations (12)
+api.users.createCountry.useMutation() // { userId, countryName, initialData?, nationalIdentity? }
+api.users.setActiveNation.useMutation() // { countryId }
+api.users.updateMembershipTier.useMutation() // { userId, tier }
+api.users.updateWikiPreferences.useMutation() // { wikiAutoScan?, wikiSourcePriority?, wikiDisplayMode? }
+api.users.updatePrivacyConfig.useMutation() // { directMessages?, messageRequestFiltering?, mentions?, tradeOffers?, thinktankInvites?, showOnlineStatus?, searchDiscoverable?, searchEngineIndexing?, dmReadReceipts?, diagnosticTelemetry?, personalizedRecommendations?, showDiscordTag?, showWikiAttribution? }
+api.users.blockAccount.useMutation() // { identifier }
+api.users.unblockAccount.useMutation() // { connectionId }
+api.users.muteAccount.useMutation() // { identifier }
+api.users.unmuteAccount.useMutation() // { connectionId }
+api.users.addMutedKeyword.useMutation() // { keyword }
+api.users.removeMutedKeyword.useMutation() // { connectionId }
+api.users.clearSearchHistory.useMutation()
 ```
 
-### admin Router (33 procedures)
+### admin Router (78 procedures)
 
-**System Stats:**
+All procedures use `adminProcedure` (auth → admin role → input validation → 100 req/min → audit log).
+
 ```typescript
-api.admin.getSystemStats.useQuery()
-api.admin.getUserStats.useQuery()
-api.admin.getContentStats.useQuery()
+// Queries (35)
+api.admin.getGlobalStats.useQuery()
+api.admin.getSystemStatus.useQuery()
+api.admin.getConfig.useQuery()
+api.admin.getCalculationLogs.useQuery({ limit? })
+api.admin.getSystemLogs.useQuery({ limit?, offset?, level?, category?, searchTerm?, userId?, nextJsErrors? })
+api.admin.getBotStatus.useQuery()
+api.admin.getBotProcesses.useQuery()
+api.admin.getBotProcessLogs.useQuery({ processName, logType })
+api.admin.getBotCommands.useQuery()
+api.admin.getBotRoles.useQuery()
+api.admin.listUsersWithCountries.useQuery()
+api.admin.listCountriesWithUsers.useQuery()
+api.admin.getNavigationSettings.useQuery()
+api.admin.listUserIdentities.useQuery()
+api.admin.syncDiscordGuildMembers.useQuery()
+api.admin.listMediaWikiReconciliationMatrix.useQuery()
+api.admin.getAdminAuditLog.useQuery({ limit?, offset?, action?, targetId? })
+api.admin.getCountryGrid.useQuery({ search?, sortBy?, sortOrder?, tierFilter?, limit?, offset? })
+api.admin.getCountryDetail.useQuery({ countryId })
+api.admin.getDiplomaticOptions.useQuery({ type?, category?, isActive? })
+api.admin.getUpcomingEvents.useQuery({ limit? })
+api.admin.getWorldEvents.useQuery({ activeOnly?, type?, limit?, offset? })
+api.admin.simulateWorldEvent.useQuery({ type, severity, duration?, affectedCountryIds, parameters? })
+api.admin.getWikiArticleAwards.useQuery({ category?, search? })
+api.admin.getWikiTemplatesList.useQuery()
+api.admin.getLorewardWeights.useQuery()
+api.admin.previewLorewardScoring.useQuery({ date, proseWeight, collaborativeBonus, depthMaxBonus, noveltyBonus, importanceMaxBonus })
+api.admin.searchMediaWikiTemplates.useQuery({ query })
+api.admin.searchWikiUsers.useQuery({ query, limit? })
+api.admin.getThinkpagesDiscordFeedConfig.useQuery()
+api.admin.getStashStats.useQuery()
+api.admin.getStashConfig.useQuery()
+api.admin.getThinkPagesStats.useQuery()
+api.admin.getThinkPagesConfig.useQuery()
+api.admin.getCronSchedules.useQuery()
 
-// Maintenance
-api.admin.clearCache.useMutation()
-api.admin.rebuildIndexes.useMutation()
-api.admin.runMaintenance.useMutation()
+// Mutations (43)
+api.admin.saveConfig.useMutation() // { globalGrowthFactor, autoUpdate, botSyncEnabled, timeMultiplier, baseInflationRate?, tierGrowthModifiers?, diminishingReturnsThreshold?, diminishingReturnsFactor?, minGrowthFloor? }
+api.admin.setCustomTime.useMutation() // { ixTime, multiplier? }
+api.admin.syncEpochWithData.useMutation() // { targetEpoch, reason? }
+api.admin.forceRecalculation.useMutation()
+api.admin.clearSystemLogs.useMutation()
+api.admin.syncBot.useMutation()
+api.admin.pauseBot.useMutation()
+api.admin.resumeBot.useMutation()
+api.admin.clearBotOverrides.useMutation()
+api.admin.controlBotProcess.useMutation() // { processName, action }
+api.admin.simulateBotCommand.useMutation() // { commandName, subcommand?, options?, user? }
+api.admin.assignUserToCountry.useMutation() // { userId, countryId }
+api.admin.unassignUserFromCountry.useMutation() // { userId, countryId }
+api.admin.updateNavigationSettings.useMutation() // { showWikiTab, showCardsTab, showLabsTab, showIntelligenceTab, showDefenseTab, showMapsTab, showForumTab, showHelpTab }
+api.admin.inviteUserToBypassWaitlist.useMutation() // { emailAddress, reservedNationName, role? }
+api.admin.linkUserWiki.useMutation() // { userId, wikiUsername }
+api.admin.unlinkUserWiki.useMutation() // { userId, source? }
+api.admin.linkUserDiscord.useMutation() // { userId, discordUserId, discordUsername }
+api.admin.unlinkUserDiscord.useMutation() // { userId }
+api.admin.applyDiscordAutoAssignments.useMutation() // { assignments }
+api.admin.analyzeImport.useMutation() // { fileData, fileName }
+api.admin.importRosterData.useMutation() // { analysisId, replaceExisting, fileData?, fileName?, changes? }
+api.admin.createDiplomaticOption.useMutation() // { type, value, category?, description?, sortOrder?, isActive? }
+api.admin.updateDiplomaticOption.useMutation() // { id, data }
+api.admin.deleteDiplomaticOption.useMutation() // { id }
+api.admin.createWorldEvent.useMutation() // { name, type, description?, severity, duration?, startsAt, endsAt?, chainId?, chainOrder?, parameters?, affectedCountryIds, generateEffects? }
+api.admin.updateWorldEvent.useMutation() // { eventId, name?, description?, severity?, isActive?, startsAt?, endsAt?, parameters? }
+api.admin.setWikiLink.useMutation() // { countryId, wikiPageTitle, wikiSource? }
+api.admin.bulkSetWikiLinks.useMutation() // { links }
+api.admin.deleteWikiArticleAward.useMutation() // { id }
+api.admin.triggerLorewardScoring.useMutation() // { date }
+api.admin.saveLorewardWinnerOverride.useMutation() // { date, type?, winnerUser, winnerPage, winnerScore?, winnerBytes?, runnerUpUser?, runnerUpPage?, runnerUpScore?, runnerUpBytes?, status? }
+api.admin.pushLorewardToBot.useMutation() // { date, winner, runnerUp?, candidates?, editCount? }
+api.admin.purgeWikiCache.useMutation() // { pageTitle }
+api.admin.purgeAllWikiCache.useMutation()
+api.admin.saveLorewardWeights.useMutation() // { lorewardWeight_bytesAdded, lorewardWeight_proseRatio, lorewardWeight_editDepth, lorewardWeight_collaborationBonus, lorewardWeight_newArticleBonus }
+api.admin.createWikiArticleAwardBatch.useMutation() // { pageTitles, category, name, description?, recipientUsers?, metadata? }
+api.admin.evaluateWikiMilestones.useMutation() // { pageTitles? }
+api.admin.syncWikiTemplateByName.useMutation() // { name }
+api.admin.syncWikiTemplatesByCategory.useMutation() // { category }
+api.admin.saveStashConfig.useMutation() // { maxStashCount, offlineCacheEnabled, autoCategorization, highlightTracking, welcomeVersion? }
+api.admin.saveThinkPagesConfig.useMutation() // { maxAccountsPerUser, maxCharLength, autoNewsElections, autoNewsPolicies, commentAttachments, feedLimit }
+api.admin.saveCronSchedules.useMutation() // { cronSchedule_lorewardsScoring, cronSchedule_passiveIncome, cronSchedule_cardValue }
 ```
 
 ---
 
 ## Government & Economics
 
-### atomicGovernment Router (12 procedures)
+### atomicGovernment Router (1 procedure)
 
 ```typescript
-// Component management
-api.atomicGovernment.getComponents.useQuery({ countryId: string })
-api.atomicGovernment.addComponent.useMutation()
-api.atomicGovernment.removeComponent.useMutation()
-
-// Effectiveness & synergies
-api.atomicGovernment.calculateEffectiveness.useQuery({ countryId: string })
-api.atomicGovernment.getSynergies.useQuery({ countryId: string })
+// Queries (1)
+api.atomicGovernment.getComponents.useQuery({ countryId })
 ```
 
-### economics Router (19 procedures)
+### economics Router (5 procedures)
 
 ```typescript
-// Indicators
-api.economics.getCountryIndicators.useQuery({ countryId: string })
-api.economics.getCoreIndicators.useQuery({ countryId: string })
+// Queries (2)
+api.economics.getEconomyConfiguration.useQuery({ countryId })
+api.economics.getEconomyBuilderState.useQuery({ countryId })
 
-// Builder
-api.economics.saveEconomicData.useMutation()
-api.economics.validateEconomicData.useQuery()
-
-// Analysis
-api.economics.getProjections.useQuery({ countryId: string, years: number })
-api.economics.getHistoricalTrends.useQuery()
+// Mutations (3)
+api.economics.updateEconomicProfile.useMutation() // { countryId, gdpGrowthVolatility?, economicComplexity?, innovationIndex?, competitivenessRank?, easeOfDoingBusiness?, corruptionIndex?, sectorBreakdown?, exportsGDPPercent?, importsGDPPercent?, tradeBalance? }
+api.economics.updateFiscalSystem.useMutation() // { countryId, personalIncomeTaxRates?, corporateTaxRates?, salesTaxRate?, propertyTaxRate?, payrollTaxRate?, exciseTaxRates?, wealthTaxRate?, spendingByCategory?, fiscalBalanceGDPPercent?, primaryBalanceGDPPercent?, taxEfficiency? }
+api.economics.autoSaveEconomyBuilder.useMutation() // { countryId, changes }
 ```
 
-### taxSystem Router (11 procedures)
+### taxSystem Router (5 procedures)
 
 ```typescript
-// Tax management
-api.taxSystem.getTaxComponents.useQuery({ countryId: string })
-api.taxSystem.calculateRevenue.useQuery({ countryId: string })
-api.taxSystem.updateTaxRates.useMutation()
+// Queries (1)
+api.taxSystem.getByCountryId.useQuery({ countryId })
 
-// Analysis
-api.taxSystem.getTaxBurden.useQuery({ countryId: string })
-api.taxSystem.getRevenueProjections.useQuery()
+// Mutations (4)
+api.taxSystem.create.useMutation() // { countryId, data, skipConflictCheck? }
+api.taxSystem.update.useMutation() // { countryId, data, skipConflictCheck? }
+api.taxSystem.delete.useMutation() // { countryId }
+api.taxSystem.checkConflicts.useMutation() // { countryId, data }
 ```
 
-### government Router (15 procedures)
+### government Router (6 procedures)
 
 ```typescript
-// Government structure
-api.government.getStructure.useQuery({ countryId: string })
-api.government.updateStructure.useMutation()
-api.government.autosave.useMutation()
+// Queries (3)
+api.government.getByCountryId.useQuery({ countryId, budgetYearsLimit?, includeSubDepartments?, includeSubBudgets?, revenueSourcesLimit? })
+api.government.getFullByCountryId.useQuery({ countryId })
+api.government.getCivilServiceStatus.useQuery({ countryId })
 
-// Budget management
-api.government.getBudget.useQuery({ countryId: string })
-api.government.updateBudget.useMutation()
-
-// Department operations
-api.government.getDepartments.useQuery({ countryId: string })
-api.government.createDepartment.useMutation()
-api.government.updateDepartment.useMutation()
-api.government.deleteDepartment.useMutation()
-
-// Component effects (on-demand recalculation)
-api.government.recalculateEffects.useMutation({ countryId: string })
-// Recalculates and re-applies atomic government component effects on demand.
-// Applies economic effects, updates political metrics, generates notifications.
-// Returns: { overallEffectiveness, effectsCreated, politicalMetricsUpdated }
+// Mutations (3)
+api.government.checkConflicts.useMutation() // { countryId, data }
+api.government.create.useMutation() // { countryId, data, skipConflictCheck? }
+api.government.update.useMutation() // { countryId, data, skipConflictCheck? }
 ```
 
 ---
 
 ## Intelligence & Diplomacy
 
-### unified-intelligence Router (29 procedures)
+### intelligence Router (4 procedures)
+
+The former `unifiedIntelligence` executive-dashboard router no longer exists; `api.intelligence` now only manages intelligence briefing templates.
 
 ```typescript
-// Executive dashboard
-api.unifiedIntelligence.getExecutiveDashboard.useQuery({ countryId: string })
-api.unifiedIntelligence.getBriefing.useQuery({ countryId: string, date: Date })
+// Queries (1)
+api.intelligence.getAllTemplates.useQuery()
 
-// Threat and security monitoring
-api.unifiedIntelligence.getSecurityThreats.useQuery({ countryId: string })
-api.unifiedIntelligence.getCrisisFeed.useQuery({ countryId: string })
-
-// Operations
-api.unifiedIntelligence.createOperation.useMutation()
-api.unifiedIntelligence.updateOperation.useMutation()
+// Mutations (3)
+api.intelligence.createTemplate.useMutation() // { reportType, classification, summaryTemplate, findingsTemplate, minimumLevel, confidenceBase }
+api.intelligence.updateTemplate.useMutation() // { id, reportType?, classification?, summaryTemplate?, findingsTemplate?, minimumLevel?, confidenceBase? }
+api.intelligence.deleteTemplate.useMutation() // { id }
 ```
 
-### diplomatic Router (26 procedures)
+### diplomaticCore Router (8 procedures)
+
+The former monolithic `diplomatic` router is split into `diplomaticCore`, `diplomaticEmbassies`, `diplomaticCultural` and `diplomaticPolicies`.
 
 ```typescript
-// Embassies
-api.diplomatic.getEmbassies.useQuery({ countryId: string })
-api.diplomatic.createEmbassy.useMutation()
-api.diplomatic.closeEmbassy.useMutation()
+// Queries (5)
+api.diplomaticCore.getRelationships.useQuery({ countryId })
+api.diplomaticCore.getFollowStatus.useQuery({ viewerCountryId, targetCountryId })
+api.diplomaticCore.getSharedData.useQuery({ embassyId, dataType? })
+api.diplomaticCore.getAllDiplomaticOptions.useQuery()
+api.diplomaticCore.getOptionUsageStats.useQuery()
 
-// Missions
-api.diplomatic.getMissions.useQuery({ embassyId: string })
-api.diplomatic.createMission.useMutation()
-api.diplomatic.updateMissionStatus.useMutation()
-
-// Relations
-api.diplomatic.getRelationships.useQuery({ countryId: string })
-api.diplomatic.updateRelationship.useMutation()
-
-// Cultural exchanges
-api.diplomatic.getCulturalExchanges.useQuery()
-api.diplomatic.createExchange.useMutation()
+// Mutations (3)
+api.diplomaticCore.setDiplomaticGoal.useMutation() // { relationId, goal }
+api.diplomaticCore.followCountry.useMutation() // { followerCountryId, followedCountryId }
+api.diplomaticCore.unfollowCountry.useMutation() // { followerCountryId, followedCountryId }
 ```
 
-### diplomaticPolicies Router (15 procedures)
+### diplomaticEmbassies Router (8 procedures)
 
-**Foreign Policy Actions:**
 ```typescript
-// Active policies
-api.diplomaticPolicies.getActiveForeignPolicies.useQuery({ countryId: string })
-api.diplomaticPolicies.getBilateralTrade.useQuery({ country1Id: string, country2Id: string })
-api.diplomaticPolicies.previewForeignPolicyImpact.useQuery({ ... })
+// Queries (3)
+api.diplomaticEmbassies.getEmbassies.useQuery({ countryId })
+api.diplomaticEmbassies.getEmbassyDetails.useQuery({ embassyId })
+api.diplomaticEmbassies.calculateEstablishmentCost.useQuery({ hostCountryId, guestCountryId, targetLocation? })
 
-// Propose / lift foreign policy actions
-api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({ ... })
-// Wrapped in $transaction for atomicity; generates diplomatic news on success.
-api.diplomaticPolicies.liftForeignPolicyAction.useMutation({ actionId: string })
-// Wrapped in $transaction; reverts policy effects, generates diplomatic news.
-
-// Response
-api.diplomaticPolicies.respondToForeignPolicy.useMutation({
-  actionId: string,
-  response: "retaliate" | "escalate" | "de-escalate" | "accept"
-})
-// Allows targeted countries to retaliate, escalate, or de-escalate foreign policy
-// actions proposed against them. Updates bilateral relationship scores accordingly.
+// Mutations (5)
+api.diplomaticEmbassies.establishEmbassy.useMutation() // { hostCountryId, guestCountryId, name, location?, ambassadorName? }
+api.diplomaticEmbassies.closeEmbassy.useMutation() // { embassyId, reason? }
+api.diplomaticEmbassies.reopenEmbassy.useMutation() // { embassyId }
+api.diplomaticEmbassies.deleteEmbassy.useMutation() // { embassyId }
+api.diplomaticEmbassies.updateEmbassyProfile.useMutation() // { embassyId, description?, strategicPriorities?, partnershipGoals?, keyAchievements? }
 ```
 
-**Alliances & Blocs:**
+### diplomaticCultural Router (10 procedures)
+
 ```typescript
-api.diplomaticPolicies.getAlliances.useQuery({ countryId: string })
-api.diplomaticPolicies.getAllianceDashboard.useQuery({ countryId: string })
-api.diplomaticPolicies.createAlliance.useMutation()
-api.diplomaticPolicies.inviteMember.useMutation()
-api.diplomaticPolicies.leaveAlliance.useMutation()
-api.diplomaticPolicies.proposeAllianceAction.useMutation()
-api.diplomaticPolicies.voteOnAllianceAction.useMutation()
-api.diplomaticPolicies.createAllianceDocument.useMutation()
-api.diplomaticPolicies.getAllianceDocuments.useQuery()
+// Queries (2)
+api.diplomaticCultural.getCulturalExchanges.useQuery({ countryId, status?, type? })
+api.diplomaticCultural.getNPCCulturalResponses.useQuery({ exchangeId, hostCountryId })
+
+// Mutations (8)
+api.diplomaticCultural.createCulturalExchange.useMutation() // { title, type, description, narrative?, objectives?, isPublic?, maxParticipants?, hostCountryId, hostCountryName, hostCountryFlag?, participantCountryId?, startDate, endDate, autoCreateMissions?, embassyMissionId? }
+api.diplomaticCultural.joinCulturalExchange.useMutation() // { exchangeId, countryId, countryName, flagUrl?, role? }
+api.diplomaticCultural.voteOnExchange.useMutation() // { exchangeId, vote, comment? }
+api.diplomaticCultural.uploadCulturalArtifact.useMutation() // { exchangeId, type, title, description?, thumbnailUrl?, fileUrl, contributor }
+api.diplomaticCultural.updateCulturalExchange.useMutation() // { exchangeId, title, description }
+api.diplomaticCultural.cancelCulturalExchange.useMutation() // { exchangeId, hostCountryId }
+api.diplomaticCultural.generateCulturalScenario.useMutation() // { targetCountryId, preferredScenarioType? }
+api.diplomaticCultural.calculateExchangeImpact.useMutation() // { exchangeId, responseChoice, participantSatisfaction, publicPerception }
 ```
 
-### npcPersonalities Router (10 procedures)
+### diplomaticPolicies Router (9 procedures)
+
+`proposeForeignPolicyAction` and `liftForeignPolicyAction` run inside `$transaction` and generate diplomatic news on success.
 
 ```typescript
-// Personality management
-api.npcPersonalities.getPersonality.useQuery({ countryId: string })
-api.npcPersonalities.calculateTraits.useMutation({ countryId: string })
-api.npcPersonalities.updateTraits.useMutation()
+// Queries (3)
+api.diplomaticPolicies.getActiveForeignPolicies.useQuery({ countryId, includeExpired? })
+api.diplomaticPolicies.getAlliances.useQuery({ countryId })
+api.diplomaticPolicies.getAllianceDashboard.useQuery({ allianceId })
 
-// Behavioral prediction
-api.npcPersonalities.predictResponse.useQuery({
-  countryId: string,
-  proposalType: string,
-  context: object
-})
+// Mutations (6)
+api.diplomaticPolicies.proposeForeignPolicyAction.useMutation() // { targetId, actionType, severity?, reason?, description? }
+api.diplomaticPolicies.createAlliance.useMutation() // { name, shortName?, type, description?, charter?, color?, visibility?, joinPolicy? }
+api.diplomaticPolicies.inviteMember.useMutation() // { allianceId, targetCountryId, role? }
+api.diplomaticPolicies.leaveAlliance.useMutation() // { allianceId }
+api.diplomaticPolicies.proposeAllianceAction.useMutation() // { allianceId, actionType, targetId?, title, description? }
+api.diplomaticPolicies.voteOnAllianceAction.useMutation() // { actionId, vote, comment? }
+```
 
-// Archetype
-api.npcPersonalities.getArchetype.useQuery({ countryId: string })
-api.npcPersonalities.setArchetype.useMutation()
+### npcPersonalities Router (5 procedures)
+
+```typescript
+// Queries (1)
+api.npcPersonalities.getAllPersonalities.useQuery({ archetype?, isActive?, orderBy? })
+
+// Mutations (4)
+api.npcPersonalities.createPersonality.useMutation() // { name, archetype, traits, traitDescriptions, culturalProfile, toneMatrix, responsePatterns, scenarioResponses, eventModifiers, historicalBasis?, historicalContext? }
+api.npcPersonalities.updatePersonality.useMutation() // { id, name?, traits?, traitDescriptions?, culturalProfile?, toneMatrix?, responsePatterns?, scenarioResponses?, eventModifiers?, historicalBasis?, historicalContext? }
+api.npcPersonalities.deletePersonality.useMutation() // { id }
+api.npcPersonalities.assignPersonalityToCountry.useMutation() // { personalityId, countryId, reason? }
 ```
 
 ---
 
 ## Defense & Security
 
-### security Router (34 procedures)
+### security Router (17 procedures)
 
 ```typescript
-// Military branches
-api.security.getBranches.useQuery({ countryId: string })
-api.security.createBranch.useMutation()
-api.security.updateBranch.useMutation()
+// Queries (8)
+api.security.getSecurityAssessment.useQuery({ countryId })
+api.security.getMilitaryBranches.useQuery({ countryId })
+api.security.getDefenseBudget.useQuery({ countryId, fiscalYear? })
+api.security.getInternalStability.useQuery({ countryId })
+api.security.getBorderSecurity.useQuery({ countryId })
+api.security.getOperations.useQuery({ countryId, includeCompleted? })
+api.security.getConflicts.useQuery({ countryId })
+api.security.getPvNPCTargets.useQuery()
 
-// Units & assets
-api.security.getUnits.useQuery({ branchId: string })
-api.security.createUnit.useMutation()
-api.security.assignEquipment.useMutation()
-
-// Readiness & threats
-api.security.getReadinessStatus.useQuery({ countryId: string })
-api.security.getThreatAssessment.useQuery({ countryId: string })
-api.security.updateThreatLevel.useMutation()
-
-// Budget
-api.security.getDefenseBudget.useQuery({ countryId: string })
-api.security.updateBudgetAllocation.useMutation()
+// Mutations (9)
+api.security.createMilitaryAsset.useMutation() // { branchId, asset }
+api.security.updateMilitaryAsset.useMutation() // { id, asset }
+api.security.deleteMilitaryAsset.useMutation() // { id }
+api.security.resolveSecurityEvent.useMutation() // { id, resolutionNotes? }
+api.security.createOperation.useMutation() // { countryId, operationType, name, description?, targetCountryId?, personnelDeployed?, unitIds?, assetIds?, duration? }
+api.security.endOperation.useMutation() // { operationId, successRating? }
+api.security.proposePvPConflict.useMutation() // { defenderId, reason?, pvpRules? }
+api.security.respondToConflict.useMutation() // { conflictId, accept }
+api.security.resolvePvNPCConflict.useMutation() // { targetCountryId, reason? }
 ```
 
-### militaryEquipment Router (20 procedures)
+### militaryEquipment Router (10 procedures)
 
 ```typescript
-// Catalog
-api.militaryEquipment.getAll.useQuery({ filters })
-api.militaryEquipment.getById.useQuery({ id: string })
-api.militaryEquipment.getByType.useQuery({ type: EquipmentType })
+// Queries (4)
+api.militaryEquipment.getAllCatalogEquipment.useQuery({ includeInactive?, category?, era?, search? })
+api.militaryEquipment.getManufacturers.useQuery({ specialty?, isActive? })
+api.militaryEquipment.getManufacturerStats.useQuery()
+api.militaryEquipment.getEquipmentUsageStats.useQuery()
 
-// Management (admin)
-api.militaryEquipment.create.useMutation()
-api.militaryEquipment.update.useMutation()
-api.militaryEquipment.bulkImport.useMutation()
-
-// Manufacturers
-api.militaryEquipment.getManufacturers.useQuery()
-api.militaryEquipment.getByManufacturer.useQuery({ id: string })
+// Mutations (6)
+api.militaryEquipment.createCatalogEquipment.useMutation() // { name, category, subcategory?, era, manufacturerId, specifications?, capabilities?, requirements?, procurementCost, maintenanceCost, technologyTier, isActive? }
+api.militaryEquipment.updateCatalogEquipment.useMutation() // { id, name?, category?, subcategory?, era?, manufacturerId?, specifications?, capabilities?, requirements?, procurementCost?, maintenanceCost?, technologyTier?, isActive? }
+api.militaryEquipment.deleteCatalogEquipment.useMutation() // { id }
+api.militaryEquipment.bulkToggleEquipment.useMutation() // { equipmentIds, isActive }
+api.militaryEquipment.createManufacturer.useMutation() // { name, country, specialty?, founded?, description?, isActive? }
+api.militaryEquipment.updateManufacturer.useMutation() // { id, name?, country?, specialty?, founded?, description?, isActive? }
 ```
 
-### crisisEvents Router (15 procedures)
+### crisisEvents Router (2 procedures)
 
 ```typescript
-// Active crises
-api.crisisEvents.getActiveCrises.useQuery({ countryId: string })
-api.crisisEvents.getCrisisById.useQuery({ id: string })
-
-// Response
-api.crisisEvents.submitResponse.useMutation({
-  crisisId: string,
-  responseType: ResponseType,
-  resources: number
-})
-
-// History & stats
-api.crisisEvents.getHistory.useQuery({ countryId: string })
-api.crisisEvents.getStatistics.useQuery({ countryId: string })
-
-// Admin
-api.crisisEvents.adminTrigger.useMutation() // Manual event creation
-api.crisisEvents.adminResolve.useMutation()
+// Queries (2)
+api.crisisEvents.getActive.useQuery({ limit? })
+api.crisisEvents.getStatistics.useQuery({ timeframe? })
 ```
 
 ---
 
 ## Social & Collaboration
 
-### thinkpages Router (59 procedures)
+### thinkpages Router (35 procedures)
 
-**Accounts:**
 ```typescript
-api.thinkpages.getAccountsByCountry.useQuery({ countryId: string })
-api.thinkpages.createAccount.useMutation()
-api.thinkpages.updateAccount.useMutation()
-api.thinkpages.deleteAccount.useMutation()
-```
+// Queries (14)
+api.thinkpages.checkUsernameAvailability.useQuery({ username })
+api.thinkpages.getAccountsByCountry.useQuery({ countryId? })
+api.thinkpages.getMyAccounts.useQuery()
+api.thinkpages.getAccountCountsByType.useQuery({ countryId })
+api.thinkpages.getPost.useQuery({ postId })
+api.thinkpages.getPostsByClerkUserId.useQuery({ clerkUserId, limit?, cursor? })
+api.thinkpages.getPostReactions.useQuery({ postId, reactionType? })
+api.thinkpages.getDiscordChannelTopic.useQuery()
+api.thinkpages.getFeed.useQuery({ countryId?, hashtag?, filter?, limit?, cursor? })
+api.thinkpages.getDiscordEmojis.useQuery({ guildId? })
+api.thinkpages.getThinktanks.useQuery({ userId?, type? })
+api.thinkpages.getThinktankById.useQuery({ groupId, userId? })
+api.thinkpages.getGroupFeed.useQuery({ groupId, limit?, cursor? })
+api.thinkpages.getThinktankDocuments.useQuery({ groupId })
 
-**Posts:**
-```typescript
-// Feed & browsing
-api.thinkpages.getFeed.useQuery({ filter?, hashtag?, countryId?, limit?, cursor? })
-// Paginated feed with full includes (account, country, reactions, media, poll, repost).
-api.thinkpages.getPost.useQuery({ postId: string })
-// Single post with replies, reactions, and media attachments.
-api.thinkpages.getPostsByClerkUserId.useQuery({ clerkUserId: string, limit?, cursor? })
-// All public posts across all accounts owned by a Clerk user.
-
-// CRUD
-api.thinkpages.getPosts.useQuery({ filters, pagination })
-api.thinkpages.getPostById.useQuery({ id: string })
-api.thinkpages.createPost.useMutation()
-api.thinkpages.updatePost.useMutation()
-api.thinkpages.deletePost.useMutation()
-
-// Interactions
-api.thinkpages.addReaction.useMutation()
-api.thinkpages.addComment.useMutation()
-api.thinkpages.sharePost.useMutation()
-```
-
-**Groups (ThinkTanks):**
-```typescript
-api.thinkpages.getGroups.useQuery()
-api.thinkpages.createGroup.useMutation()
-api.thinkpages.joinGroup.useMutation()
-api.thinkpages.leaveGroup.useMutation()
-
-// Group content
-api.thinkpages.getGroupPosts.useQuery({ groupId: string })
-api.thinkpages.createGroupPost.useMutation()
-```
-
-**Messaging (ThinkShare):**
-```typescript
-api.thinkpages.getConversations.useQuery({ userId: string })
-api.thinkpages.getMessages.useQuery({ conversationId: string })
-api.thinkpages.sendMessage.useMutation()
+// Mutations (21)
+api.thinkpages.updateAccount.useMutation() // { accountId, verified?, profileImageUrl?, postingFrequency?, politicalLean?, personality?, isActive?, accountType? }
+api.thinkpages.createAccount.useMutation() // { countryId, accountType, username, firstName, lastName?, bio?, verified?, postingFrequency?, politicalLean?, personality?, profileImageUrl?, isActive? }
+api.thinkpages.createPost.useMutation() // { accountId, content?, hashtags?, mentions?, visibility?, parentPostId?, repostOfId?, visualizations?, mediaUrls?, postToDiscord?, poll? }
+api.thinkpages.updatePost.useMutation() // { postId, content, hashtags? }
+api.thinkpages.deletePost.useMutation() // { postId }
+api.thinkpages.pinPost.useMutation() // { postId, accountId, pinned }
+api.thinkpages.addReaction.useMutation() // { postId, accountId, reactionType }
+api.thinkpages.removeReaction.useMutation() // { postId, accountId }
+api.thinkpages.bookmarkPost.useMutation() // { postId, userId, bookmarked }
+api.thinkpages.flagPost.useMutation() // { postId, userId, reason? }
+api.thinkpages.createThinktank.useMutation() // { name, description?, avatar?, type?, category?, tags?, createdBy }
+api.thinkpages.updateThinktank.useMutation() // { groupId, name?, description?, avatar?, type?, category?, tags? }
+api.thinkpages.deleteThinktank.useMutation() // { groupId }
+api.thinkpages.updateGroupSettings.useMutation() // { groupId, allowPersonaPosting?, rules?, bannerUrl?, themeAccent?, pinnedDocIds? }
+api.thinkpages.createGroupPost.useMutation() // { groupId, accountId?, content, hashtags?, mediaUrls? }
+api.thinkpages.inviteToThinktank.useMutation() // { groupId, userIds, invitedBy }
+api.thinkpages.joinThinktank.useMutation() // { groupId, userId }
+api.thinkpages.leaveThinktank.useMutation() // { groupId, userId }
+api.thinkpages.createThinktankDocument.useMutation() // { groupId, title, createdBy, content?, isPublic? }
+api.thinkpages.updateThinktankDocument.useMutation() // { documentId, userId, title?, content?, isPublic? }
+api.thinkpages.deleteThinktankDocument.useMutation() // { documentId, userId }
 ```
 
 ---
 
 ## Operations
 
-### mycountry Router (7 procedures)
+### mycountry Router (4 procedures)
 
-**Dashboard:**
+`getCountryDashboard` returns country data with vitality scores, achievements, rankings and milestones. The former executive-action and vitality-tracking procedures were removed.
+
 ```typescript
-// Executive dashboard data
-api.mycountry.getCountryDashboard.useQuery({ countryId: string, includeHistory?: boolean })
-// Returns comprehensive country data with vitality scores, achievements, rankings, milestones.
-
-// Player-visible narrative feed
-api.mycountry.getNewsFeed.useQuery({ countryId: string })
-// Returns recent StorytellerEffect records for the player-visible narrative feed.
-// Each record: { id, description, inputType, value, ixTimeTimestamp, createdAt }
-
-// Rankings & milestones
-api.mycountry.getRankings.useQuery({ countryId: string })
-api.mycountry.getMilestones.useQuery({ countryId: string })
-api.mycountry.getNationalSummary.useQuery({ countryId: string })
+// Queries (4)
+api.mycountry.getCountryDashboard.useQuery({ countryId, includeHistory? })
+api.mycountry.getRankings.useQuery({ countryId })
+api.mycountry.getNationalSummary.useQuery({ countryId })
+api.mycountry.getCanonFeed.useQuery({ countryId, limit? })
 ```
 
-**Executive Actions:**
-```typescript
-// List available executive actions (9 action types) with cooldowns, costs, requirements
-api.mycountry.getExecutiveActions.useQuery({ countryId: string })
-// Returns: { actions: Array<{ name, category, description, estimatedImpact, cooldownHours, 
-//   cooldownRemaining, cost, urgency }> }
+### quickActions Router (2 procedures)
 
-// Execute an executive action — creates real StorytellerEffect with computed values,
-// enforces per-action cooldowns, and logs audit trail
-api.mycountry.executeAction.useMutation({ 
-  countryId: string,
-  actionName: string 
-})
-// Action types: stimulus_package, population_incentives, tax_policy, diplomatic_mission,
-// military_exercise, public_infrastructure, emergency_powers, cultural_initiative, sanctions
+```typescript
+// Queries (1)
+api.quickActions.getOfficials.useQuery({ countryId, governmentStructureId?, departmentId?, role?, activeOnly? })
+
+// Mutations (1)
+api.quickActions.createMeeting.useMutation() // { countryId, userId?, meeting }
 ```
 
-**Intelligence & Vitality:**
-```typescript
-// Intelligence feed aggregation
-api.mycountry.getIntelligenceFeed.useQuery({ countryId: string })
+### scheduledChanges Router (1 procedure)
 
-// Vitality tracking — computes scores server-side (no client-submitted values accepted)
-api.mycountry.updateVitalityTracking.useMutation({ countryId: string })
-// Computes economic, social, political, and military vitality scores server-side.
-// Updates trend analysis and generates notifications on significant changes.
-
-// Achievements
-api.mycountry.getAchievements.useQuery({ countryId: string })
-```
-
-### quickactions Router (21 procedures)
+Due changes are applied by the `scheduled-changes` cron job (`src/server/cron/jobs.ts`), not by a tRPC mutation.
 
 ```typescript
-// Actions
-api.quickActions.getAvailableActions.useQuery({ countryId: string })
-api.quickActions.executeAction.useMutation({ actionType, parameters })
-
-// Shortcuts
-api.quickActions.scheduleMeeting.useMutation()
-api.quickActions.createPolicy.useMutation()
-api.quickActions.sendNotification.useMutation()
-```
-
-### scheduledChanges Router (7 procedures)
-
-```typescript
-// Delayed impact system
-api.scheduledChanges.getScheduled.useQuery({ countryId: string })
-api.scheduledChanges.create.useMutation({
-  changeType: string,
-  effectiveDate: Date,
-  changes: object
-})
-api.scheduledChanges.cancel.useMutation({ id: string })
-
-// Apply a specific scheduled change — validates field paths, creates StorytellerEffect
-api.scheduledChanges.applyScheduledChange.useMutation({ id: string })
-
-// Apply all due scheduled changes — same field validation + StorytellerEffect creation
-api.scheduledChanges.applyDueChanges.useMutation()
+// Queries (1)
+api.scheduledChanges.getPendingChanges.useQuery()
 ```
 
 ---
 
 ## Maps & Geography
 
-### geo Router (14 procedures)
+### geoCore Router (23 procedures)
+
+The former `geo`, `mapEditor` and `mapMonitoring` routers are replaced by the `geo*` namespaces (`geoCore`, `geoFeatures`, `geoEditor`, `geoAdmin`, `geoSovereignty`, `geoWiki`); see the inventory table for the rest.
 
 ```typescript
-// Borders & geometry
-api.geo.getCountryGeometry.useQuery({ countryId: string })
-api.geo.updateGeometry.useMutation()
-api.geo.validateGeometry.useQuery({ geoJSON: object })
+// Queries (21)
+api.geoCore.getWorldMap.useQuery({ layers?, zoom?, realm? })
+api.geoCore.getMapBundle.useQuery({ layers?, zoom?, realm? })
+api.geoCore.getAllMapFeatures.useQuery({ realm? })
+api.geoCore.getWorldMapAsOf.useQuery({ ixTime, zoom?, realm? })
+api.geoCore.getHistoryRange.useQuery()
+api.geoCore.getCountryGeometry.useQuery({ featureId?, countryName?, countryId?, realm? })
+api.geoCore.getCountryFeatures.useQuery({ countryId })
+api.geoCore.getCapitalCities.useQuery({ realm? })
+api.geoCore.getCountryLinkage.useQuery({ countryId })
+api.geoCore.getNeighbors.useQuery({ countryId })
+api.geoCore.getNeighborGeometries.useQuery({ featureId, realm? })
+api.geoCore.getPointInfo.useQuery({ lng, lat, realm? })
+api.geoCore.listCountries.useQuery({ realm? })
+api.geoCore.getLayerInfo.useQuery({ realm? })
+api.geoCore.searchFeatures.useQuery({ query, types?, limit?, realm? })
+api.geoCore.getMapStats.useQuery({ realm? })
+api.geoCore.getCountryGeoProfile.useQuery({ countryId })
+api.geoCore.getRegionalChoropleth.useQuery({ metric, groupBy?, realm? })
+api.geoCore.getCanonDensity.useQuery({ realm? })
+api.geoCore.getCrisisRiskMap.useQuery({ riskType?, realm? })
+api.geoCore.getGeopoliticalOverlay.useQuery({ realm? })
 
-// Spatial queries
-api.geo.findIntersecting.useQuery({ bounds: BoundingBox })
-api.geo.calculateArea.useQuery({ countryId: string })
-api.geo.findNearest.useQuery({ point: Coordinates })
-
-// Territory management
-api.geo.getTerritories.useQuery({ countryId: string })
-api.geo.createTerritory.useMutation()
+// Mutations (2)
+api.geoCore.recalculateArea.useMutation() // { featureId, realm? }
+api.geoCore.recalculateGeoProfiles.useMutation() // { countryId? }
 ```
 
-### mapEditor Router (18 procedures)
+### geoEditor Router (19 procedures)
 
 ```typescript
-// Subdivisions
-api.mapEditor.getSubdivisions.useQuery({ countryId: string })
-api.mapEditor.createSubdivision.useMutation()
-api.mapEditor.updateSubdivision.useMutation()
-api.mapEditor.deleteSubdivision.useMutation()
+// Queries (3)
+api.geoEditor.getFeatureDetails.useQuery({ featureId, realm? })
+api.geoEditor.validateLinkage.useQuery({ realm? })
+api.geoEditor.getEditQueue.useQuery({ status?, limit?, offset? })
 
-// Cities
-api.mapEditor.getCities.useQuery({ countryId: string })
-api.mapEditor.createCity.useMutation()
-api.mapEditor.updateCity.useMutation()
-
-// POIs
-api.mapEditor.getPOIs.useQuery({ filters })
-api.mapEditor.createPOI.useMutation()
-api.mapEditor.bulkImportPOIs.useMutation()
-```
-
-### mapMonitoring Router (7 procedures)
-
-```typescript
-// Performance metrics (admin only)
-api.mapMonitoring.getTileStats.useQuery()
-api.mapMonitoring.getCacheStats.useQuery()
-api.mapMonitoring.getMartinStatus.useQuery()
-api.mapMonitoring.getErrorRates.useQuery()
+// Mutations (16)
+api.geoEditor.assignCountryGeometry.useMutation() // { featureId, countryId, realm? }
+api.geoEditor.unlinkCountryGeometry.useMutation() // { featureId, realm? }
+api.geoEditor.updateFeatureProperties.useMutation() // { featureId, displayName?, countryId?, properties?, wikiPageTitle?, realm? }
+api.geoEditor.createCountryFromShape.useMutation() // { featureId, name, realm? }
+api.geoEditor.repairLinkage.useMutation() // { action, featureId?, countryId?, realm? }
+api.geoEditor.approveEdit.useMutation() // { editId, reviewNote? }
+api.geoEditor.rejectEdit.useMutation() // { editId, reviewNote? }
+api.geoEditor.startBorderEditSession.useMutation() // { featureId, realm? }
+api.geoEditor.saveBorderEditDraft.useMutation() // { sessionId, sessionData }
+api.geoEditor.submitBorderEdit.useMutation() // { featureId, editSubtype, proposedGeometry, affectedFeatures?, neighborUpdates?, applyDirectly?, reason?, realm? }
+api.geoEditor.splitCountry.useMutation() // { featureId, splitLine, nameA, nameB, realm? }
+api.geoEditor.mergeCountries.useMutation() // { featureIds, newName, realm? }
+api.geoEditor.repairBorderGeometry.useMutation() // { geometry }
+api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
+api.geoEditor.runPipeline.useMutation() // { source, svgContent?, worldGenParams?, targetLayers?, pngBase64?, pngConfig? }
+api.geoEditor.importPipelineResult.useMutation() // { layers, mode?, realmId? }
 ```
 
 ---
 
 ## IxVault (Cards & Credits)
 
-### vault Router (7 procedures)
+### vault Router (44 procedures)
 
-**Balance & Info:**
+Balance, level and transaction reads use the signed-in user (no `userId` input).
+
 ```typescript
-// Get user's vault balance
-api.vault.getBalance.useQuery({ userId: string })
-// Returns: { credits, lifetimeEarned, vaultLevel, loginStreak, todayEarned }
-```
+// Queries (25)
+api.vault.getBalance.useQuery()
+api.vault.getVaultLevel.useQuery()
+api.vault.getTodayEarnings.useQuery()
+api.vault.calculatePassiveIncome.useQuery({ countryId })
+api.vault.getUserStats.useQuery()
+api.vault.getBudgetMultiplier.useQuery({ countryId })
+api.vault.checkDailyCap.useQuery({ earnType })
+api.vault.getTransactions.useQuery({ limit?, offset?, type? })
+api.vault.getPurchasedItems.useQuery()
+api.vault.listStoreItems.useQuery()
+api.vault.getEquippedCosmetics.useQuery()
+api.vault.getMyCollections.useQuery({ limit?, offset? })
+api.vault.getPublicCollections.useQuery({ limit?, offset?, sortBy? })
+api.vault.getCollectionLeaderboard.useQuery({ category, limit? })
+api.vault.getCollectionComments.useQuery({ collectionId, limit?, offset? })
+api.vault.getCollectionDetails.useQuery({ collectionId })
+api.vault.adminListUserTransactions.useQuery({ userId, limit?, offset?, type? })
+api.vault.adminListVaults.useQuery({ search?, limit?, offset? })
+api.vault.adminGetVaultConfig.useQuery()
+api.vault.adminListStoreItemsAll.useQuery()
+api.vault.adminGetPriceHistory.useQuery({ itemId })
+api.vault.adminGetIxCardSeason.useQuery()
+api.vault.adminGetPurchaseLogs.useQuery()
+api.vault.adminGetPurchasedItems.useQuery({ userId })
+api.vault.adminGetEquippedCosmetics.useQuery({ userId })
 
-**Input Schema:**
-```typescript
-z.object({
-  userId: z.string()
-})
-```
-
-**Output Schema:**
-```typescript
-{
-  credits: number;
-  lifetimeEarned: number;
-  lifetimeSpent: number;
-  todayEarned: number;
-  vaultLevel: number;
-  vaultXp: number;
-  loginStreak: number;
-  lastLoginDate: Date | null;
-}
-```
-
-**Transactions:**
-```typescript
-// Get transaction history
-api.vault.getTransactions.useQuery({
-  userId: string,
-  limit?: number, // Default 20
-  type?: 'EARN' | 'SPEND' | 'ALL' // Default 'ALL'
-})
-
-// Returns paginated transaction list
-```
-
-**Input Schema:**
-```typescript
-z.object({
-  userId: z.string(),
-  limit: z.number().optional(),
-  type: z.enum(['EARN', 'SPEND', 'ALL']).optional()
-})
-```
-
-**Output Schema:**
-```typescript
-{
-  transactions: Array<{
-    id: string;
-    credits: number;
-    balanceAfter: number;
-    type: VaultTransactionType;
-    source: string;
-    metadata?: Record<string, any>;
-    createdAt: Date;
-  }>;
-}
-```
-
-**Earning IxCredits:**
-```typescript
-// Claim daily login bonus
+// Mutations (19)
+api.vault.spendCredits.useMutation() // { amount, type, source, metadata? }
 api.vault.claimDailyBonus.useMutation()
-// Returns: { credits: number, streak: number, bonus: number }
-
-// Claim streak bonus (7+ days)
-api.vault.claimStreakBonus.useMutation()
-// Returns: { credits: number, streak: number, bonus: number }
+api.vault.claimCombinedDailyClaim.useMutation() // { choice }
+api.vault.adminAdjustStreak.useMutation() // { targetUserId, delta }
+api.vault.toggleEquipCosmetic.useMutation() // { itemId }
+api.vault.createCollection.useMutation() // { name, description?, isPublic? }
+api.vault.updateCollection.useMutation() // { collectionId, name?, description?, isPublic? }
+api.vault.deleteCollection.useMutation() // { collectionId }
+api.vault.likeCollection.useMutation() // { collectionId, unlike? }
+api.vault.addCollectionComment.useMutation() // { collectionId, content }
+api.vault.adminAdjustCredits.useMutation() // { targetUserId, amount, type?, source, reason, sendNotification? }
+api.vault.adminSaveVaultConfig.useMutation() // { activeDailyCap, socialDailyCap, xpPerLevel, maxStreakBonus, premiumMultiplier, priceGoldenProfileGlow, priceNeonCyberFrame, priceEliteChatBadge, priceLoreRequestToken, priceCardCapacity, pricePassiveYieldBoost, isEarningEnabled, isTradingEnabled, isAuctionsEnabled, isStoreEnabled, isCraftingEnabled, isPacksEnabled, isMaintenanceMode, exemptStaffFromLimit }
+api.vault.adminCreateStoreItem.useMutation() // { name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, effects? }
+api.vault.adminUpdateStoreItem.useMutation() // { id, name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, isActive?, effects? }
+api.vault.adminDeleteStoreItem.useMutation() // { id, hardDelete? }
+api.vault.adminSetIxCardSeason.useMutation() // { season }
+api.vault.adminGrantStoreItem.useMutation() // { userId, itemId }
+api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
+api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
 ```
 
-**Output Schema (claimDailyBonus):**
+### cards Router (24 procedures)
+
 ```typescript
-{
-  credits: number; // New balance
-  streak: number; // Current streak days
-  bonus: number; // Bonus amount earned
-}
+// Queries (13)
+api.cards.getMyCards.useQuery({ sortBy?, filterRarity? })
+api.cards.getUserCards.useQuery({ userId, sortBy?, filterRarity?, limit? })
+api.cards.getLoreStats.useQuery()
+api.cards.getNSCards.useQuery({ limit?, offset?, search?, season?, rarity?, region?, categoryFilter?, cardTypeFilter?, cteFilter?, isRetired?, includeRetired?, sortBy? })
+api.cards.getNSLibraryStats.useQuery()
+api.cards.getValuationConfig.useQuery()
+api.cards.getBonusConfig.useQuery()
+api.cards.getGeneralConfig.useQuery()
+api.cards.fetchCommonsCategoryMembers.useQuery({ category, limit? })
+api.cards.getMyCollections.useQuery()
+api.cards.getCollectionCards.useQuery({ collectionId })
+api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource })
+api.cards.getUnifiedAuditLogs.useQuery({ category?, limit?, offset?, search? })
+
+// Mutations (11)
+api.cards.junkCards.useMutation() // { ownershipIds }
+api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation?, junkRate? }
+api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, wikiImport?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary?, loreward? }
+api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, maxJunkBatchSize?, autoGenerateLoreThumbnails? }
+api.cards.updateCardDetails.useMutation() // { cardId, title?, marketValue?, isRetired?, category?, cardType?, rarity?, artworkUrl?, artworkSource?, description? }
+api.cards.bulkToggleVisibility.useMutation() // { isRetired, cardTypeFilter?, cteFilter?, categoryFilter?, season?, rarity? }
+api.cards.importCommonsFlags.useMutation() // { items, defaultRarity?, season? }
+api.cards.recomputeCardValues.useMutation()
+api.cards.createCollection.useMutation() // { name, description?, isPublic? }
+api.cards.addToCollection.useMutation() // { collectionId, cardOwnershipId }
+api.cards.deleteCollection.useMutation() // { collectionId }
 ```
 
-**Spending IxCredits:**
+### cardPacks Router (9 procedures)
+
 ```typescript
-// Spend credits
-api.vault.spendCredits.useMutation({
-  amount: number,
-  type: VaultTransactionType, // SPEND_PACKS, SPEND_MARKET, etc.
-  source: string, // Description of what was purchased
-  metadata?: Record<string, any>
-})
-// Returns: { newBalance: number, transaction: Transaction }
-```
-
-**Input Schema:**
-```typescript
-z.object({
-  amount: z.number().positive(),
-  type: z.nativeEnum(VaultTransactionType),
-  source: z.string(),
-  metadata: z.record(z.any()).optional()
-})
-```
-
-**Progression:**
-```typescript
-// Get vault level info
-api.vault.getVaultLevel.useQuery({ userId: string })
-// Returns: { level: number, xp: number, nextLevelXp: number }
-
-// Get earnings summary
-api.vault.getEarningsSummary.useQuery({ userId: string })
-// Returns: { passive, active, cards, social, total }
-```
-
-**Auth:** All endpoints require authentication
-**Rate Limit:** 100 requests per 10 minutes
-
----
-
-### cards Router (6 procedures)
-
-**Browse & Search:**
-```typescript
-// Get cards with filters
-api.cards.getCards.useQuery({
-  season?: number,
-  rarity?: CardRarity,
-  type?: CardType,
-  search?: string,
-  limit?: number, // Default 50
-  offset?: number // Default 0
-})
-
-// Returns paginated card list
-```
-
-**Input Schema:**
-```typescript
-z.object({
-  season: z.number().optional(),
-  rarity: z.nativeEnum(CardRarity).optional(),
-  type: z.nativeEnum(CardType).optional(),
-  search: z.string().optional(),
-  limit: z.number().default(50),
-  offset: z.number().default(0)
-})
-```
-
-**Output Schema:**
-```typescript
-{
-  cards: Array<{
-    id: string;
-    title: string;
-    description: string | null;
-    artwork: string;
-    cardType: CardType;
-    rarity: CardRarity;
-    season: number;
-    stats: Record<string, number>;
-    marketValue: number;
-    totalSupply: number;
-  }>;
-  total: number;
-  hasMore: boolean;
-}
-```
-
-**Card Details:**
-```typescript
-// Get single card by ID
-api.cards.getCardById.useQuery({ cardId: string })
-// Returns full card details with relationships
-
-// Get card statistics
-api.cards.getCardStats.useQuery({ cardId: string })
-// Returns: { totalSupply, marketValue, recentTrades, owners, ... }
-```
-
-**Output Schema (getCardById):**
-```typescript
-{
-  id: string;
-  title: string;
-  description: string | null;
-  artwork: string;
-  cardType: CardType;
-  rarity: CardRarity;
-  season: number;
-  stats: Record<string, number>;
-  marketValue: number;
-  totalSupply: number;
-  level: number;
-  // Include country relation if NATION type
-  country?: {
-    id: string;
-    name: string;
-    // ... other country fields
-  };
-}
-```
-
-**User Inventory:**
-```typescript
-// Get user's owned cards (MyCards)
-api.cards.getMyCards.useQuery({
-  sortBy?: 'rarity' | 'date' | 'value',
-  filterRarity?: CardRarity
-})
-
-// Returns user's card inventory with ownership details
-```
-
-**Output Schema:**
-```typescript
-{
-  cards: Array<{
-    id: string; // Ownership ID
-    card: Card; // Full card details
-    quantity: number;
-    acquiredDate: Date;
-    acquiredMethod: AcquireMethod;
-    isLeveledUp: boolean;
-    hasAlternateArt: boolean;
-  }>;
-}
-```
-
-**Special Queries:**
-```typescript
-// Get cards by country
-api.cards.getCardsByCountry.useQuery({ countryId: string })
-// Returns all card variants for a nation
-
-// Get featured cards
-api.cards.getFeaturedCards.useQuery()
-// Returns: Array<Card> (trending, new releases, etc.)
-```
-
-**Auth:** Browse endpoints public, ownership endpoints require authentication
-**Rate Limit:** 200 requests per 10 minutes
-
----
-
-### cardPacks Router (7 procedures)
-
-**Available Packs:**
-```typescript
-// Get all available packs for purchase
+// Queries (3)
 api.cardPacks.getAvailablePacks.useQuery()
-// Returns: Array<CardPack>
+api.cardPacks.getAllPacks.useQuery()
+api.cardPacks.getMyPacks.useQuery({ isOpened? })
+
+// Mutations (6)
+api.cardPacks.purchasePack.useMutation() // { packId }
+api.cardPacks.openPack.useMutation() // { userPackId }
+api.cardPacks.createPack.useMutation() // { name, description?, artwork?, packType, priceCredits, cardCount?, guaranteedRarity?, isActive? }
+api.cardPacks.updatePack.useMutation() // { packId, updates }
+api.cardPacks.deactivatePack.useMutation() // { packId }
+api.cardPacks.adminAwardPack.useMutation() // { targetUserId, packId, acquiredMethod?, sendNotification? }
 ```
 
-**Output Schema:**
+### nsImport Router (23 procedures)
+
+Replaces the former `nsIntegration` router (NationStates deck verification, import and sync).
+
 ```typescript
-{
-  packs: Array<{
-    id: string;
-    name: string;
-    description: string | null;
-    artwork: string;
-    cardCount: number;
-    packType: PackType;
-    priceCredits: number;
-    // Rarity odds
-    commonOdds: number;
-    uncommonOdds: number;
-    rareOdds: number;
-    ultraRareOdds: number;
-    epicOdds: number;
-    legendaryOdds: number;
-    // Availability
-    isAvailable: boolean;
-    limitedQuantity: number | null;
-    purchaseLimit: number | null;
-    expiresAt: Date | null;
-  }>;
-}
-```
+// Queries (9)
+api.nsImport.hasImported.useQuery()
+api.nsImport.fetchPublicDeck.useQuery({ nationName })
+api.nsImport.getSyncHealth.useQuery()
+api.nsImport.getSyncLogs.useQuery({ syncTypeFilter?, limit? })
+api.nsImport.getSyncLogCards.useQuery({ syncLogId, limit?, offset?, search? })
+api.nsImport.getActiveJobs.useQuery()
+api.nsImport.getVerificationUrl.useQuery({ nationName })
+api.nsImport.listHiddenNSCards.useQuery()
+api.nsImport.getMyNSCards.useQuery()
 
-**Pack Details:**
-```typescript
-// Get specific pack details
-api.cardPacks.getPackById.useQuery({ packId: string })
-// Returns: CardPack
-```
-
-**User Packs:**
-```typescript
-// Get user's unopened packs
-api.cardPacks.getMyPacks.useQuery()
-// Returns user's unopened pack inventory
-```
-
-**Output Schema:**
-```typescript
-{
-  packs: Array<{
-    id: string; // UserPack ID
-    pack: CardPack; // Full pack details
-    isOpened: boolean;
-    acquiredDate: Date;
-    acquiredMethod: string;
-  }>;
-}
-```
-
-**Purchase Pack:**
-```typescript
-// Purchase a pack
-api.cardPacks.purchasePack.useMutation({
-  packId: string
-})
-
-// Returns: { pack: UserPack, newBalance: number }
-```
-
-**Input Schema:**
-```typescript
-z.object({
-  packId: z.string()
-})
-```
-
-**Output Schema:**
-```typescript
-{
-  pack: {
-    id: string;
-    packId: string;
-    isOpened: false;
-    acquiredDate: Date;
-  };
-  newBalance: number; // IxCredits balance after purchase
-}
-```
-
-**Open Pack:**
-```typescript
-// Open an owned pack
-api.cardPacks.openPack.useMutation({
-  userPackId: string
-})
-
-// Returns: { cards: Array<Card>, bonusCredits: number }
-```
-
-**Input Schema:**
-```typescript
-z.object({
-  userPackId: z.string()
-})
-```
-
-**Output Schema:**
-```typescript
-{
-  cards: Array<{
-    id: string;
-    title: string;
-    artwork: string;
-    rarity: CardRarity;
-    // ... full card details
-  }>;
-  bonusCredits: number; // Lucky pack bonus + daily bonus
-}
-```
-
-**Admin Operations:**
-```typescript
-// Create new pack (admin only)
-api.cardPacks.createPack.useMutation({
-  name: string,
-  description?: string,
-  artwork: string,
-  cardCount: number,
-  packType: PackType,
-  priceCredits: number,
-  // Rarity odds (must sum to 100)
-  commonOdds: number,
-  uncommonOdds: number,
-  // ... other odds
-})
-
-// Update pack availability
-api.cardPacks.updatePack.useMutation({
-  packId: string,
-  isAvailable: boolean
-})
-
-// Deactivate pack
-api.cardPacks.deactivatePack.useMutation({ packId: string })
-```
-
-**Auth:** Browse endpoints public, purchase/open/admin require authentication
-**Rate Limit:** 100 requests per 10 minutes (purchase limited to prevent abuse)
-
----
-
-### nsIntegration Router (3 procedures)
-
-**Collection Import:**
-```typescript
-// Import user's NationStates collection
-api.nsIntegration.importNSCollection.useMutation({
-  nsNation: string,
-  verificationCode: string
-})
-
-// Returns: { imported: number, skipped: number, totalCards: number, bonusCredits: number }
-```
-
-**Input Schema:**
-```typescript
-z.object({
-  nsNation: z.string(),
-  verificationCode: z.string()
-})
-```
-
-**Output Schema:**
-```typescript
-{
-  imported: number; // Cards successfully imported
-  skipped: number; // Cards not yet synced to IxStats
-  totalCards: number; // Total cards in NS deck
-  bonusCredits: number; // Import bonus awarded (usually 100 IxC)
-}
-```
-
-**Card Data:**
-```typescript
-// Get NS-specific card data
-api.nsIntegration.getNSCardData.useQuery({
-  nsCardId: number,
-  season: number
-})
-
-// Returns NS card metadata
-```
-
-**Output Schema:**
-```typescript
-{
-  nsCardId: number;
-  season: number;
-  nation: string;
-  rarity: string; // NS rarity string
-  type: string; // NS card type
-  flag: string; // Flag artwork URL
-  // ... additional NS-specific fields
-}
-```
-
-**Admin Sync:**
-```typescript
-// Manual NS card sync (admin only)
-api.nsIntegration.syncNSCards.useMutation({
-  season: number
-})
-
-// Returns: { season, totalCards, imported, updated, timestamp }
-```
-
-**Auth:** All endpoints require authentication, syncNSCards requires admin role
-**Rate Limit:** 10 requests per 10 minutes (respects NS API limits)
-
-**Example Usage:**
-```typescript
-// Import NS collection
-const importMutation = api.nsIntegration.importNSCollection.useMutation({
-  onSuccess: (result) => {
-    toast.success(`Imported ${result.imported} cards! +${result.bonusCredits} IxC bonus`);
-  },
-  onError: (error) => {
-    if (error.message.includes("verify")) {
-      toast.error("Could not verify NS nation ownership");
-    }
-  }
-});
-
-// User submits form
-importMutation.mutate({
-  nsNation: "example-nation",
-  verificationCode: "abc123def456"
-});
+// Mutations (14)
+api.nsImport.requestVerification.useMutation() // { nationName }
+api.nsImport.checkVerification.useMutation() // { verificationId, checksum }
+api.nsImport.importDeck.useMutation() // { verificationId }
+api.nsImport.fetchRegionCards.useMutation() // { regionNames, seasons? }
+api.nsImport.pauseRegionFetch.useMutation() // { syncLogId }
+api.nsImport.resumeRegionFetch.useMutation() // { syncLogId }
+api.nsImport.stopRegionFetch.useMutation() // { syncLogId }
+api.nsImport.discoverTopRegions.useMutation() // { limit?, tag? }
+api.nsImport.requestSelfServiceTakedown.useMutation() // { cardId, nationName, checksum, reason? }
+api.nsImport.hideNSCard.useMutation() // { nsCardId, nsSeason, reason? }
+api.nsImport.restoreNSCard.useMutation() // { nsCardId, nsSeason }
+api.nsImport.filterCTECards.useMutation()
+api.nsImport.hideMyCard.useMutation() // { nsCardId, nsSeason, reason? }
+api.nsImport.refreshCardValues.useMutation()
 ```
 
 ---
@@ -1093,7 +752,7 @@ importMutation.mutate({
 
 ### Basic Query
 ```typescript
-const { data, isLoading, error } = api.countries.getById.useQuery({
+const { data, isLoading, error } = api.countries.getByIdBasic.useQuery({
   id: "country123"
 });
 ```
@@ -1103,14 +762,14 @@ const { data, isLoading, error } = api.countries.getById.useQuery({
 const utils = api.useUtils();
 const mutation = api.countries.update.useMutation({
   onMutate: async (newData) => {
-    await utils.countries.getById.cancel();
-    const previous = utils.countries.getById.getData({ id: newData.id });
-    utils.countries.getById.setData({ id: newData.id }, newData);
+    await utils.countries.getByIdBasic.cancel();
+    const previous = utils.countries.getByIdBasic.getData({ id: newData.id });
+    utils.countries.getByIdBasic.setData({ id: newData.id }, (old) => (old ? { ...old, ...newData } : old));
     return { previous };
   },
   onError: (err, variables, context) => {
     if (context?.previous) {
-      utils.countries.getById.setData(
+      utils.countries.getByIdBasic.setData(
         { id: variables.id },
         context.previous
       );
@@ -1123,14 +782,14 @@ const mutation = api.countries.update.useMutation({
 ```
 
 ### Server-Side Caller
+React Server Components use the hydration helpers in `src/trpc/server.ts`, which wrap `createCaller(createTRPCContext)`:
 ```typescript
-import { createCaller } from "~/server/api/root";
+import { api } from "~/trpc/server";
 
-export async function getServerSideProps(context) {
-  const caller = createCaller(await createContext(context));
-  const country = await caller.countries.getById({ id: "country123" });
-
-  return { props: { country } };
+export default async function CountryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const country = await api.countries.getByIdBasic({ id });
+  // ...
 }
 ```
 
@@ -1141,7 +800,7 @@ const {
   fetchNextPage,
   hasNextPage,
   isFetchingNextPage
-} = api.thinkpages.getPosts.useInfiniteQuery(
+} = api.thinkpages.getFeed.useInfiniteQuery(
   { limit: 20 },
   {
     getNextPageParam: (lastPage) => lastPage.nextCursor
@@ -1153,31 +812,20 @@ const {
 
 ## Authentication & Rate Limiting
 
-All endpoints enforce Clerk authentication and Redis-based rate limiting:
+Procedures are built from the builders in `src/server/api/trpc/procedures.ts`. Authentication is Clerk-backed (`authMiddleware`); rate limiting uses `rateLimiter` from `src/lib/cache/rate-limiter.ts` (Redis in production, in-memory fallback in development) and throws `RateLimitError` (`TOO_MANY_REQUESTS`).
 
-```typescript
-// In tRPC context (src/server/api/trpc.ts)
-export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
-  }
-
-  // Rate limiting check
-  const rateLimitKey = `ratelimit:${ctx.user.id}`;
-  const requests = await redis.incr(rateLimitKey);
-  if (requests === 1) {
-    await redis.expire(rateLimitKey, 600); // 10 minutes
-  }
-  if (requests > 100) {
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
-      message: 'Rate limit exceeded'
-    });
-  }
-
-  return next({ ctx: { user: ctx.user } });
-});
-```
+| Builder | Middleware chain |
+| --- | --- |
+| `publicProcedure` | timing → user logging |
+| `protectedProcedure` | timing → auth → user logging |
+| `countryOwnerProcedure` | timing → auth → country ownership → user logging |
+| `premiumProcedure` | timing → auth → premium tier → user logging (with performance) |
+| `adminProcedure` | auth → admin role → input validation → rate limit (100/min) → audit log → admin logging |
+| `standardMutationCountryOwnerProcedure` | `countryOwnerProcedure` + 60 mutations/min + input validation |
+| `lightMutationProcedure` | `protectedProcedure` + 100/min (`light_mutations`) |
+| `readOnlyProcedure` | `protectedProcedure` + 120/min (`queries`) |
+| `rateLimitedPublicProcedure` | `publicProcedure` + 100/min (`public`) |
+| `cachedPublicProcedure` / `cachedProtectedProcedure` / `cachedStaticProcedure` | response-cache variants |
 
 ---
 
@@ -1210,59 +858,21 @@ const mutation = api.countries.update.useMutation({
 
 ## Autosave System
 
-### autosaveHistory Router (5 procedures)
+Autosave events are recorded in the `AuditLog` table (actions such as `autosave:economy`); the two routers below read them back.
+
+### autosaveHistory Router (2 procedures)
 
 **User Autosave History:**
 ```typescript
 // Get autosave history for country
 api.autosaveHistory.getAutosaveHistory.useQuery({
   countryId: string,
-  limit?: number,    // Default: 20
-  offset?: number    // Default: 0
+  limit?: number,
+  offset?: number
 })
 
 // Get autosave statistics
-api.autosaveHistory.getAutosaveStats.useQuery({
-  countryId: string,
-  timeRange?: 'day' | 'week' | 'month' | 'all'  // Default: 'week'
-})
-
-// Get recent autosaves
-api.autosaveHistory.getRecentAutosaves.useQuery({
-  countryId: string,
-  limit?: number     // Default: 10
-})
-
-// Get failed autosaves
-api.autosaveHistory.getFailedAutosaves.useQuery({
-  countryId: string,
-  limit?: number     // Default: 20
-})
-
-// Get autosave timeline
-api.autosaveHistory.getAutosaveTimeline.useQuery({
-  countryId: string,
-  startDate?: Date,
-  endDate?: Date
-})
-```
-
-**Example Response (getAutosaveStats):**
-```typescript
-{
-  totalSaves: 147,
-  successfulSaves: 145,
-  failedSaves: 2,
-  successRate: 98.6,
-  lastSaveTime: Date,
-  averageSavesPerDay: 21,
-  byBuilder: {
-    nationalIdentity: 42,
-    government: 38,
-    taxSystem: 35,
-    economy: 32
-  }
-}
+api.autosaveHistory.getAutosaveStats.useQuery({ countryId: string })
 ```
 
 ---
@@ -1272,118 +882,50 @@ api.autosaveHistory.getAutosaveTimeline.useQuery({
 **Global Autosave Monitoring:**
 ```typescript
 // Get global autosave statistics
-api.autosaveMonitoring.getAutosaveStats.useQuery()
-// Returns: { totalSaves, successfulSaves, failedSaves, successRate, lastHourSaves, lastDaySaves, averageSaveTimeMs }
+api.autosaveMonitoring.getAutosaveStats.useQuery({ timeRange? })
 
 // Get autosave time series
-api.autosaveMonitoring.getAutosaveTimeSeries.useQuery({
-  timeRange: 'hour' | 'day' | 'week' | 'month',
-  granularity: 'minute' | 'hour' | 'day'
-})
+api.autosaveMonitoring.getAutosaveTimeSeries.useQuery({ timeRange?, granularity? })
 
 // Get failure analysis
-api.autosaveMonitoring.getFailureAnalysis.useQuery()
-// Returns: { topErrors, failuresByBuilder, recentFailures }
+api.autosaveMonitoring.getFailureAnalysis.useQuery({ timeRange? })
 
 // Get active users
-api.autosaveMonitoring.getActiveUsers.useQuery({
-  timeRange: 'hour' | 'day' | 'week'  // Default: 'hour'
-})
+api.autosaveMonitoring.getActiveUsers.useQuery({ timeRange? })
 
 // Get system health
 api.autosaveMonitoring.getSystemHealth.useQuery()
-// Returns: { status, metrics, alerts }
-```
-
-**Example Response (getSystemHealth):**
-```typescript
-{
-  status: 'healthy',
-  metrics: {
-    successRate: 99.2,
-    averageResponseTime: 87,  // ms
-    errorRate: 0.8,           // percentage
-    activeUsers: 14
-  },
-  alerts: [
-    {
-      severity: 'info',
-      message: 'System operating normally',
-      timestamp: Date
-    }
-  ]
-}
 ```
 
 ---
 
 ### Autosave Mutations
 
-All builder routers include autosave mutations:
+There is no per-builder `autosave` mutation. Builder hooks debounce and then call the builder's regular persistence procedures:
 
-**National Identity:**
-```typescript
-api.nationalIdentity.autosave.useMutation()
-// Input: { countryId, data: { countryName?, officialName?, motto?, ... } }
-// Output: { success, data: NationalIdentity, message }
-```
+**Government:** `useGovernmentBuilderAutoSync` (`src/hooks/useBuilderAutoSync.ts`) → `api.government.checkConflicts` / `create` / `update`
 
-**Government:**
-```typescript
-api.government.autosave.useMutation()
-// Input: { countryId, data: { governmentName?, governmentType?, totalBudget?, ... } }
-// Output: { success, data: GovernmentStructure, message }
-```
+**Tax System:** `useTaxBuilderAutoSync` (`src/hooks/useBuilderAutoSync.ts`) → `api.taxSystem.checkConflicts` / `create` / `update`
 
-**Tax System:**
-```typescript
-api.taxSystem.autosave.useMutation()
-// Input: { countryId, data: { personalIncomeTaxRates?, corporateTaxRates?, ... } }
-// Output: { success, data: FiscalSystem, message }
-```
-
-**Economy Builder:**
+**Economy Builder:** `useEconomyAutoSync` (`src/app/builder/components/enhanced/economy-builder/useEconomyAutoSync.ts`) →
 ```typescript
 api.economics.autoSaveEconomyBuilder.useMutation()
-// Input: { countryId, data: { baselinePopulation?, nominalGDP?, sectorBreakdown?, ... } }
-// Output: { success, data: { economicProfile, demographics, laborMarket }, message }
+// Input: { countryId, changes }
+// Logs success/failure to AuditLog as "autosave:economy"
 ```
 
-**Client-Side Hooks:**
-```typescript
-// National Identity autosave hook
-import { useNationalIdentityAutoSync } from '~/hooks/useNationalIdentityAutoSync';
-
-const { syncNow, lastSyncTime, isSyncing, syncError } = useNationalIdentityAutoSync({
-  countryId,
-  formData,
-  enabled: true
-});
-
-// Manual trigger
-syncNow();
-
-// Government autosave hook
-import { useGovernmentAutoSync } from '~/hooks/useGovernmentAutoSync';
-
-// Tax system autosave hook
-import { useTaxSystemAutoSync } from '~/hooks/useTaxSystemAutoSync';
-
-// Economy autosave hook
-import { useEconomyBuilderAutoSync } from '~/hooks/useEconomyBuilderAutoSync';
-```
+All three build on `useGenericAutoSync` (`src/hooks/useGenericAutoSync.ts`).
 
 **Debounce Configuration:**
-All autosave hooks use a 15-second debounce to batch changes and prevent excessive database writes.
+`useGenericAutoSync` and the government/tax hooks default to a 2-second debounce; the economy builder uses 15 seconds.
 
 **Error Handling:**
-- All autosave failures are logged to `AuditLog` table
+- Economy autosave failures are logged to the `AuditLog` table
 - Users see subtle error indicators, not intrusive alerts
 - Admins can monitor failures via `autosaveMonitoring` router
 
 **Security:**
 - All mutations verify user ownership before saving
-- Unauthorized attempts are logged to audit system
 - Rate limiting applied to prevent abuse
 
 ---
@@ -1394,14 +936,14 @@ All autosave hooks use a 15-second debounce to batch changes and prevent excessi
 - [Database Reference](./database.md) - Prisma schema
 - [Edge Cases](./edge-cases.md) - Common errors and handling
 
-> **Note:** The legacy `api.md` snapshot (February 2026) has been superseded by this document (June 2026). This api-complete.md is the canonical API reference with more routers (83 vs 61) and endpoints (1,432 vs 927). The legacy file has been removed.
+> **Note:** The legacy `api.md` snapshot (February 2026) has been superseded by this document. This api-complete.md is the canonical API reference; the live router has 77 namespaces and 958 procedures (September 2026). The legacy file has been removed.
 
 ---
 
 ## API Examples
 
-> Merged from `docs/reference/api-examples.md`. Date: June 2026.
-> Worked request/response examples for the most commonly used endpoints.
+> Merged from `docs/reference/api-examples.md`. Date: June 2026; procedure names and inputs re-verified September 2026.
+> Worked request examples for commonly used endpoints.
 
 ### Authentication
 
@@ -1418,66 +960,59 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ```typescript
 const { data } = api.countries.getAll.useQuery({
-  limit: 20, offset: 0, includeEconomicData: true, sortBy: 'gdp', sortOrder: 'desc'
+  limit: 20, offset: 0, search: "", continent: undefined, economicTier: undefined
 });
-// Returns: { countries: Array<Country>, total: 45, hasMore: true }
 ```
 
 ### countries.createCountry — Create Country
 
 ```typescript
 const createCountry = api.countries.createCountry.useMutation({
-  onSuccess: (data) => router.push(`/countries/${data.country.slug}`)
+  onSuccess: () => router.push("/mycountry")
 });
 createCountry.mutate({
-  countryName: "Republic of Innovation", capitalCity: "Techville",
-  population: 25000000, gdp: 500000000000, currencyCode: "IND",
-  economicSystem: "mixed_market", governmentType: "federal_republic",
-  nationalIdentity: { officialLanguages: ["English", "Spanish"], /* ... */ },
-  taxSystem: { categories: [{ name: "Personal Income Tax", type: "income", brackets: [/* ... */] }] }
+  name: "Republic of Innovation",
+  foundationCountry: null,
+  economicInputs: { /* builder economic inputs */ },
+  governmentComponents: [/* atomic component types */],
+  taxSystemData: { /* tax builder state */ },
+  governmentStructure: { /* government builder state */ },
+  economyBuilderState: { /* economy builder state */ },
 });
-// Returns: { success: true, country: { id, countryName, slug, ... }, message: "Country created successfully" }
 ```
 
-### countries.getById — Get Single Country
+### countries.getByIdBasic — Get Single Country
 
 ```typescript
-const { data: country } = api.countries.getById.useQuery({
-  id: "clx8a1b2c3d4e5f6g7h8i9j0", includeEconomicData: true, includeRelations: true
-});
-// Returns full country with economic data, diplomatic relations, national identity
+const { data: country } = api.countries.getByIdBasic.useQuery({ id: "clx8a1b2c3d4e5f6g7h8i9j0" });
+// For economic data use api.countries.getByIdWithEconomicData.useQuery({ id, timestamp? })
 ```
 
-### mycountry.getDashboardData — Dashboard
+### mycountry.getCountryDashboard — Dashboard
 
 ```typescript
-const { data: dashboard } = api.mycountry.getDashboardData.useQuery({
-  timeRange: "30d", includeProjections: true
+const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery({
+  countryId: "clx...", includeHistory: true
 });
-// Returns: { country, vitalityScores, intelligenceFeed, achievements, metrics, projections }
+// Returns country data with vitality scores, achievements, rankings and milestones
 ```
 
-### diplomatic.createEmbassy — Establish Embassy
+### diplomaticEmbassies.establishEmbassy — Establish Embassy
 
 ```typescript
-const createEmbassy = api.diplomatic.createEmbassy.useMutation({
-  onSuccess: () => utils.diplomatic.getEmbassies.invalidate()
+const establishEmbassy = api.diplomaticEmbassies.establishEmbassy.useMutation({
+  onSuccess: () => utils.diplomaticEmbassies.getEmbassies.invalidate()
 });
-createEmbassy.mutate({
-  countryId: "clx...", targetCountryId: "clx9b...", ambassadorName: "Ambassador Jane Smith",
-  staffCount: 25, specialization: "trade", budget: 5000000
+establishEmbassy.mutate({
+  hostCountryId: "clx9b...", guestCountryId: "clx...", name: "Embassy of Innovation",
+  location: "Techville", ambassadorName: "Ambassador Jane Smith"
 });
-// Returns: { success, embassy: { id, status, relationshipBonus, monthlyMaintenance }, relationshipUpdate }
 ```
 
-### economics.getProjections — Economic Projections
+### economics.getEconomyConfiguration — Economy Configuration
 
 ```typescript
-const { data: projections } = api.economics.getProjections.useQuery({
-  countryId: "clx...", years: 5, includeScenarios: true
-});
-// Returns: { projections: Array<{ year, quarter, gdp, gdpGrowthRate, ... }>,
-//           scenarios: { optimistic, baseline, pessimistic } }
+const { data: config } = api.economics.getEconomyConfiguration.useQuery({ countryId: "clx..." });
 ```
 
 ### thinkpages.createPost — Create Post
@@ -1489,59 +1024,55 @@ const createPost = api.thinkpages.createPost.useMutation({
 createPost.mutate({
   accountId: "account_abc123", visibility: "public",
   content: "Excited to announce our new trade agreement! #diplomacy #trade",
-  hashtags: ["diplomacy", "trade"], mentions: ["@RepublicOfTrade"]
+  hashtags: ["diplomacy", "trade"], mentions: ["RepublicOfTrade"]
 });
-// Returns: { success, post: { id, content, engagement, account } }
 ```
 
 ### users.getProfile — Current User Profile
 
 ```typescript
 const { data: profile } = api.users.getProfile.useQuery();
-// Returns: { userId, countryId, country: { id, countryName, ... },
-//           role: { name, permissions }, preferences: { theme, language, ... } }
-// Unauthenticated: { userId: null, countryId: null, hasCompletedSetup: false }
+// Returns the signed-in user's profile, linked country and role.
 ```
 
-### achievements.getByCountry — Country Achievements
+### achievements.getAllByCountry — Country Achievements
 
 ```typescript
-const { data } = api.achievements.getByCountry.useQuery({ countryId: "clx...", includeProgress: true });
-// Returns: { unlocked: Array<Achievement>, inProgress: Array<{ progress: { current, target, percentage } }>,
-//           locked: Array<Achievement>, statistics: { totalUnlocked, totalPoints, rank } }
+const { data } = api.achievements.getAllByCountry.useQuery({ countryId: "clx..." });
+// Recent unlocks: api.achievements.getRecentByCountry.useQuery({ countryId, limit? })
 ```
 
 ### admin.getSystemStatus — System Status (Admin Only)
 
 ```typescript
 const { data: status } = api.admin.getSystemStatus.useQuery();
-// Returns: { system: { version, uptime, ixTime }, database: { status, connectionPool },
-//           statistics: { totalCountries, activeUsers, ... }, apiHealth, externalServices }
+// Returns: { ixTime: { currentRealTime, currentIxTime, formattedIxTime, multiplier, isPaused, ... },
+//           countryCount, activeStorytellerEffects, lastCalculation, warnings }
 ```
 
 ### Best Practices
 
 **Query Invalidation**: After mutations, invalidate related queries:
 ```typescript
-utils.countries.getById.invalidate({ id: data.country.id });
+utils.countries.getByIdBasic.invalidate({ id: countryId });
 utils.countries.invalidate();
-utils.mycountry.getDashboardData.invalidate();
+utils.mycountry.getCountryDashboard.invalidate();
 ```
 
 **Optimistic Updates**: Update UI before server response, rollback on error:
 ```typescript
-const updateCountry = api.countries.updateCountry.useMutation({
+const updateCountry = api.countries.update.useMutation({
   onMutate: async (newData) => {
-    await utils.countries.getById.cancel({ id: newData.id });
-    const previousData = utils.countries.getById.getData({ id: newData.id });
-    utils.countries.getById.setData({ id: newData.id }, (old) => ({ ...old, ...newData }));
+    await utils.countries.getByIdBasic.cancel({ id: newData.id });
+    const previousData = utils.countries.getByIdBasic.getData({ id: newData.id });
+    utils.countries.getByIdBasic.setData({ id: newData.id }, (old) => (old ? { ...old, ...newData } : old));
     return { previousData };
   },
   onError: (err, newData, context) => {
-    utils.countries.getById.setData({ id: newData.id }, context.previousData);
+    utils.countries.getByIdBasic.setData({ id: newData.id }, context?.previousData);
   },
   onSettled: (data, error, variables) => {
-    utils.countries.getById.invalidate({ id: variables.id });
+    utils.countries.getByIdBasic.invalidate({ id: variables.id });
   }
 });
 ```
@@ -1550,26 +1081,26 @@ const updateCountry = api.countries.updateCountry.useMutation({
 ```typescript
 const [page, setPage] = useState(0);
 const { data } = api.countries.getAll.useQuery({ limit: 20, offset: page * 20 });
-// Next page: if (data?.hasMore) setPage(page + 1)
 ```
 
 **Type Safety**: Use TypeScript inference:
 ```typescript
-import { type RouterInputs, type RouterOutputs } from "~/lib/trpc";
+import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
 type CreateCountryInput = RouterInputs["countries"]["createCountry"];
-type Country = RouterOutputs["countries"]["getById"];
+type Country = RouterOutputs["countries"]["getByIdBasic"];
 ```
 
 ### Rate Limiting
 
 | Endpoint Type | Rate Limit |
 |---------------|-----------|
-| Public endpoints | 100 requests/minute |
-| Protected endpoints | 60 requests/minute |
-| Mutations | 30 requests/minute |
-| Admin endpoints | 30 requests/minute |
+| `rateLimitedPublicProcedure` | 100 requests/minute |
+| `readOnlyProcedure` | 120 requests/minute |
+| `standardMutationCountryOwnerProcedure` | 60 requests/minute |
+| `lightMutationProcedure` | 100 requests/minute |
+| `adminProcedure` | 100 requests/minute |
 
-Rate limit headers included in all responses: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Plain `publicProcedure` / `protectedProcedure` carry no tRPC rate limit of their own. tRPC responses do not set `X-RateLimit-*` headers (only the `/api/mediawiki` proxy route does).
 
 ### Error Handling Pattern
 
@@ -1586,3 +1117,4 @@ const mutation = api.countries.createCountry.useMutation({
     }
   }
 });
+```

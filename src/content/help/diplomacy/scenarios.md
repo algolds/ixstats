@@ -8,7 +8,7 @@ badge: Diplomacy
 
 Diplomatic scenarios are dynamic events that appear based on world conditions, your relationships, and sometimes pure chance. They present you with a situation — a trade opportunity, a crisis that needs mediating, an alliance proposal — and ask you to choose how to respond. Your decisions have real consequences for your relationships, economy, and reputation.
 
-Scenarios appear on your [MyCountry → Diplomacy](/mycountry/diplomacy) page when they become available. You will also receive notifications when a new scenario requires your attention.
+Scenarios appear in the **Diplomatic Events** tab of your [MyCountry → Diplomacy](/mycountry/diplomacy) page when they become available. You will also receive notifications when a new scenario requires your attention.
 
 ## Scenario Categories
 
@@ -22,7 +22,7 @@ Scenarios appear on your [MyCountry → Diplomacy](/mycountry/diplomacy) page wh
 
 > **From Trigger to Outcome**
 >
-> 1. **A Scenario Appears:** Scenarios are triggered by world events, your current relationships, or random opportunities. Each month, there is roughly a 5–15% chance a new scenario will appear for your country.
+> 1. **A Scenario Appears:** Scenarios are triggered by world events, your current relationships, or random opportunities.
 > 2. **You Review the Situation:** The scenario gives you context about what is happening, who is involved, what is at stake, and what your options are. You will also see predicted outcomes for each choice.
 > 3. **You Make a Decision:** Choose from 2–5 response options, each with different costs, benefits, and levels of risk. There is rarely a single "right" answer — it depends on your strategy.
 > 4. **The Other Country Responds:** The partner country reacts based on their [personality traits](/help/diplomacy/npc-personalities), your relationship strength, and their own national interests.
@@ -32,12 +32,11 @@ Scenarios appear on your [MyCountry → Diplomacy](/mycountry/diplomacy) page wh
 
 NPC responses are not random. Every NPC country has [8 personality traits](/help/diplomacy/npc-personalities) that determine how they react to your choices, combined with your current relationship strength:
 
-- **Pragmatists:** Focus on economic benefits. They will accept deals that offer clear mutual gain.
-- **Idealists:** Prioritize principles. They may reject proposals that conflict with their values, even if economically beneficial.
-- **Aggressors:** Demand favorable terms and may threaten consequences if you refuse their counter-offers.
-- **Diplomats:** Seek compromise and often propose creative win-win alternatives you had not considered.
-- **Opportunists:** Watch out — they may exploit crises for their own advantage rather than working toward resolution.
-- **Isolationists:** Reluctant participants. Do not expect them to engage enthusiastically, but they can be reliable partners once committed.
+- **Pragmatic Realists** and **Peaceful Merchants:** Focus on practical and economic benefits. They will accept deals that offer clear mutual gain.
+- **Ideological Hardliners:** Prioritize principles. They may reject proposals that conflict with their values, even if economically beneficial.
+- **Aggressive Expansionists:** Demand favorable terms and may threaten consequences if you refuse their counter-offers.
+- **Cultural Diplomats:** Seek compromise and welcome cooperative, people-to-people solutions.
+- **Cautious Isolationists:** Reluctant participants. Do not expect them to engage enthusiastically, but they can be reliable partners once committed.
 
 ## Scenario Outcomes
 
@@ -54,7 +53,7 @@ NPC responses are not random. Every NPC country has [8 personality traits](/help
 > [!WARNING]
 > **Strategic Tips**
 >
-> - Check the other country's [personality profile](/help/diplomacy/npc-personalities) before responding. Knowing whether you are dealing with a Pragmatist or an Aggressor changes everything.
+> - Check the other country's [personality profile](/help/diplomacy/npc-personalities) before responding. Knowing whether you are dealing with a Peaceful Merchant or an Aggressive Expansionist changes everything.
 > - Pay attention to predicted outcomes. The scenario interface shows you likely results for each option, so weigh the risk-reward carefully.
 > - Think long-term. A short-term sacrifice can lead to a lasting alliance that pays off many times over.
 
@@ -65,6 +64,5 @@ Diplomatic scenarios are created and balanced by platform administrators. The sc
 > **Related Guides**
 >
 > - [NPC Personalities](/help/diplomacy/npc-personalities) — Understanding how NPC traits shape scenario responses.
-> - [Diplomatic Missions](/help/diplomacy/missions) — Targeted operations you can launch alongside scenarios.
 > - [Embassy Network](/help/diplomacy/embassies) — The diplomatic infrastructure that enables scenarios.
 > - [Admin Reference Data](/help/admin/reference-data) — Managing scenario templates (admin only).

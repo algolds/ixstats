@@ -1,5 +1,12 @@
 # IxStates Test Suite Comprehensive Audit & Justification
 
+> ## Status (2026-09-29)
+>
+> **Removal candidates: RESOLVED.** All 7 Tier-4 files in §2 are deleted (`passport-architecture`, `clerk-components`, `wiki-os/margin`, the 3 admin `*-page` tests, `caching-benchmark`). Flakiness remedies are in place: `src/tests/helpers/mock-prisma.ts`, `transactional-mock-db.ts`, and `article-store.test.ts` now clears mocks; CI runs Jest through the quarantine runner (`bun run test:ci`, `test:quarantine:verify`).
+>
+> **Inventory is stale:** the suite is now **325** test files (vs 122 audited), so the tier counts in §1 and §4 no longer describe the whole suite. Re-run the audit if tier percentages are needed.
+
+
 **Date**: August 2026  
 **Platform**: IxStates 1.4.0 "Lobster Crosby" (Release Candidate)  
 **Runners**: Jest 30.4.2 (`@swc/jest`, `jsdom`), Bun 1.4.0 Native Parallel Runner (`bun test`)  

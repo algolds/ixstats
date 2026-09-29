@@ -6,21 +6,21 @@ badge: MyCountry — Your Nation's Home
 
 ## Where the Big Decisions Happen
 
-This is the desk where you actually lead. Find it under **MyCountry → Executive**. It brings the issues on your plate, your cabinet, your policies, and your boldest moves together in one place.
+This is the desk where you actually lead. Open it with **Declare a Directive** in the MyCountry command bar. It brings the issues on your plate, your cabinet, your policies, and your boldest moves together in one place.
 
 ## What You'll Do Here
 
 ### The Intent Engine
 
-State your plain-language goals using the Intent Composer. You can authorize a package directly to run it immediately, or click **Propose as Cabinet Goal** to schedule a deliberation session with your ministers, bypassing active weekly cooldowns.
+State a plain-language goal in the Intent Composer and your government answers with three packages — **Measured**, **Moderate**, or **Extreme**. Preview what each would change, then commit the one you want. You can resolve up to three directives per IxTime week; after that, the desk goes on cooldown until a slot frees up.
 
 ### Cabinet Meetings & Deliberation
 
-Convene scheduled cabinet meetings to address proposed intents. Opening a session lets you select between three ministry courses (Measured, Moderate, or Extreme) to commit resources, adjust department budgets, activate policies, and complete the meeting in one click.
+When a national issue lands, its brief lets you call a cabinet meeting to research it before you decide, delegate it, or declare a follow-up directive.
 
 ### National Issues & Resistance
 
-Active intents generate thematic national issues with 2.0x probability, representing resistance or support from your nation's groups. Diplomatic and foreign issues dynamically pull actual neighbor leaders, regions, and GDP stats directly from the database.
+Issues that match the themes of your active directives are twice as likely to come up, representing resistance or support from your nation's groups. Diplomatic and foreign issues dynamically pull actual neighbor leaders, regions, and GDP stats directly from the database.
 
 ### Policies & Strategy
 
@@ -30,16 +30,14 @@ Track active policies and draft custom strategies across every ministry. Custom 
 
 Jump straight into the things you do most:
 
-- **Review issues** — open your inbox and respond to what’s waiting.
-- **Schedule a meeting** — set up a new cabinet session.
-- **Create a policy** — start drafting something new.
-- **Plan ahead** — sketch out a long-term initiative with milestones.
+- **Declare a directive** — state a goal and pick the package that fits.
+- **Review issues** — open an issue’s brief from your agenda and respond.
+- **Surprise Me** — let the composer suggest a goal when you’re not sure where to start.
 
 ## How It Connects
 
 The Executive desk pulls from the rest of your nation:
 
-- **Intelligence** — the insights and findings that should inform your calls.
 - **Diplomacy** — foreign-policy decisions tie back to your relationships abroad.
 - **Defense** — your readiness and security shape your options in a crisis.
 - **Overview** — see the effect of your choices on your nation’s vital signs.
@@ -47,5 +45,4 @@ The Executive desk pulls from the rest of your nation:
 > **Keep Exploring**
 >
 > - [National Issues & Decisions](/help/gameplay/national-issues) — how events arrive and why your choices stick.
-> - [Command & Operations](/help/intelligence/executive-operations) — running your nation’s biggest moves.
 > - [The Component Library](/help/government/components) — the building blocks behind your government.

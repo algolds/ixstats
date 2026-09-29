@@ -4,6 +4,11 @@ description: Tailor defense modules, doctrines, and task forces to match your ca
 badge: Defense
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+
 ## Customization Options
 
 - Adjust strategic module emphasis (cyber, air defense, naval readiness, etc.).

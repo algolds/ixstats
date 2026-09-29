@@ -1,76 +1,76 @@
 # Achievements & Leaderboards
 
-**Last updated:** August 2026
+**Last updated:** September 2026
 
-This directory holds the React view for `/achievements` — a single tabbed page combining
-gameplay achievements, quest paths, wiki Lorewards, a showcase cabinet, and global leaderboards.
-It is a Core System within IxStats; see `docs/systems/achievements.md` for the full guide.
+This directory holds the React view for `/achievements` — a single page combining a profile
+header, an optional showcase shelf, and the full gameplay achievement catalog. Global
+leaderboards live on the standalone `/leaderboards` page. It is a Core System within IxStats;
+see `docs/systems/achievements.md` for the full guide.
 
 ## Routes
 
 | Path | Purpose |
 | --- | --- |
-| `/achievements` | Tabbed hub: Quest Paths, Master Achievements, Showcase Cabinet, Lorewards, Global Leaderboards |
-| `/achievements?tab=<id>` | Deep-links a tab; valid ids: `quest-trees`, `all-achievements`, `showcase`, `wiki-lore`, `leaderboard` |
-| `/leaderboards` | Full standalone leaderboards surface wrapped in VaultSidebarLayout with category filters and podium cards |
+| `/achievements` | Header card + optional Showcase shelf + full catalog (no tabs; `?tab=` is ignored) |
+| `/leaderboards` | Standalone global leaderboards (`LeaderboardTab`) wrapped in `VaultSidebarLayout` |
+| `/wiki/lorewards` | Wiki Lorewards (moved out of `/achievements`; lives under WikiOS) |
 
 ## Key features
 
-- **Streamlined Header Summary** — focused top hero card displaying Total Unlocked, Achievement Points (gameplay only,
-  excluding `OOL_MEDAL`/`WIKI_AWARD` trigger types), and Global Rank for the signed-in user's country (Lore Score summary display and legendary badges grid removed for clean visual hierarchy).
-- **Quest Paths** (`quest-trees`) — 8 curated progression tracks defined in
-  `components/achievements/constants.ts` (`QUEST_PATHS`): Merchant, Prosperity, Warlord,
-  Diplomat, Sovereign, Thinker, Vidmaster, and Lore & Meme. Each lists ordered achievement
-  `keys` rendered as a node tree.
-- **Achievements** (`all-achievements`) — full master list with status, filterable by category
+- **Header Summary** — country flag wash, Total Unlocked, Achievement Points (gameplay only,
+  excluding `OOL_MEDAL`/`WIKI_AWARD` trigger types), and Global Rank for the signed-in user's
+  country, plus a link to `/leaderboards`.
+- **Collector resync** — on load the page calls `achievements.syncMyCollectorAchievements`,
+  which evaluates all definitions for the user's country and unlocks anything newly met. This is
+  currently the only path that unlocks achievements automatically.
+- **Showcase shelf** — toggleable display of unlocked achievements (`ShowcaseTab`); preference
+  persisted in `localStorage` (`ixstats-show-achievements-cabinet`).
+- **Achievements catalog** (`AllAchievementsTab`) — master list with status, filterable by category
   (Economic, Diplomatic, Government, Military, Social, General) and rarity (Common → Legendary;
-  colors via `getRarityColor`/`getRarityBg`).
-- **Showcase Cabinet** — toggleable display of unlocked achievements; preference persisted in
-  `localStorage` (`ixstats-show-achievements-cabinet`).
-- **Lorewards** (`wiki-lore`) — wiki scoring sub-system: UFC-style leaderboard, a winners
-  calendar (default June 2026), and per-day award detail. Admins (owner/admin/staff) get
-  additional controls.
-- **Global Leaderboards** (`leaderboard`) — country rankings, optionally scoped by category.
+  colors via `getRarityColor`/`getRarityBg`), with search, grid/list toggle, and secret reveal.
+
+Removed on 2026-08-10 (commit `fe55c1872`): the Quest Paths tab (`QUEST_PATHS` still exists in
+`components/achievements/constants.ts` but is unused on this page), the Lorewards tab, and the
+in-page leaderboard tab. The planned Ribbons tab is not built yet — see
+`docs/specs/2026-08-10-achievements-ribbons-design.md`.
 
 ## Architecture
 
 | Layer | Files |
 | --- | --- |
-| Page | `src/app/achievements/page.tsx` (orchestrates tabs, profile card, layout) |
+| Page | `src/app/achievements/page.tsx` (profile card, showcase toggle, catalog, layout) |
 | Layout | `VaultSidebarLayout` (`activeSection="achievements"`) |
-| Tabs | `components/achievements/tabs/{QuestTreesTab,AllAchievementsTab,WikiLoreTab,ShowcaseTab,LeaderboardTab}.tsx` |
-| Widgets | `components/achievements/{QuestPathCard,WikiLoreDayModal}.tsx`, `constants.ts` |
+| Tabs / panels | `components/achievements/tabs/{AllAchievementsTab,ShowcaseTab,LeaderboardTab}.tsx` |
+| Widgets | `components/achievements/{AchievementDecorations,FloatingRibbonRack}.tsx`, `constants.ts` |
 
 The page is fully client-side (`"use client"`); auth via `useUser()` from `~/context/auth-context`.
 
 ## Data sources (verified `api.*`)
 
-- `api.users.getProfile` — user profile, role, `countryId`, `wikiUsername`
+- `api.users.getProfile` — user profile, role, `countryId`
 - `api.achievements.getAllWithStatus` — master achievements with per-country unlock status
-- `api.achievements.getLeaderboard` — country rankings (optional `category`)
-- `api.achievements.getRecentByCountry` — recent unlocks (used by showcase/widgets)
-- `api.lorewards.getUserStats` — Lore Score for the user's wiki account
-- `api.lorewards.getUfcLeaderboard` — UFC-style wiki leaderboard
-- `api.lorewards.getWinnersCalendar` / `getAllArticleAwards` — Lorewards calendar data
+- `api.achievements.syncMyCollectorAchievements` — collector resync on load
+- `api.achievements.getLeaderboard` — country rankings (used for the Global Rank figure)
+- `api.achievements.getCountryLeaderboard` — used by `LeaderboardTab` on `/leaderboards`
 
 Backend routers (registered in `src/server/api/root.ts`): `achievements` (merged from
 `country` / `progress` / `management` sub-routers; mutations `unlock`,
-`syncMyCollectorAchievements`) and `lorewards`.
+`syncMyCollectorAchievements`) and `lorewards`. Definitions and unlock logic live in
+`src/lib/achievements/` (`definitions.ts` — 76 achievements, `service.ts`).
 
 ## Connections
 
-- **MyCountry / Dashboard** — `DashboardPlayerWidget` surfaces achievement data on the dashboard.
-- **Lorewards** — wiki medal/award scoring feeds the profile Lore Score and the `wiki-lore` tab.
+- **IxVault** — unlocks pay one-time `EARN_BONUS` credits by rarity (Common 100 → Legendary 2,500 IxC)
+  plus any cards/packs in `rewardsJson`.
+- **Lorewards** — wiki medal/award scoring lives at `/wiki/lorewards` (WikiOS).
 
 ## Maintenance notes
 
-- Keep `QUEST_PATHS` keys in sync with the achievement keys defined in the backend.
-- Update `docs/systems/achievements.md` whenever categories, rarity tiers, or trigger types change.
+- Keep `docs/systems/achievements.md` updated whenever categories, rarity tiers, or trigger types change.
+- If Quest Paths return, keep `QUEST_PATHS` keys in sync with the achievement keys in `definitions.ts`.
 
 ---
 
-_Corrected from the prior (May 2026) README, which described a separate `/leaderboards` page,
-generic "badge cards/category filters" components, and several endpoints that do not exist
-(`getAllByCountry` as the primary list source, `createAchievementAlert`,
-`getCurrentUserWithRole`, `getActiveUsers`). The page is a single tabbed view; standalone
-leaderboards now redirect._
+_Corrected September 2026: the prior README described a five-tab page (Quest Paths, Master
+Achievements, Showcase Cabinet, Lorewards, Global Leaderboards) and `?tab=` deep links that were
+removed in August 2026, and claimed `/leaderboards` redirects (it is a live standalone page)._

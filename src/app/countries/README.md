@@ -1,6 +1,6 @@
 # Countries / Explore
 
-**Last updated:** August 2026
+**Last updated:** September 2026
 
 Public, read-only nation profiles plus the browse/explore experience. Anyone (signed in or not) can list all countries, search/filter/sort them, and open an individual country's public profile. Owner-side editing lives in MyCountry, not here.
 
@@ -21,7 +21,7 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 
 ## Profile Navigation Structure
 
-The public profile employs a 2-tier Apple Design navigation hierarchy:
+The profile shell (`(profile)/layout.tsx`) offers three presentation concepts via `CountryConceptSwitcher` — `CommandProfileView`, `EditorialProfileView`, and `AtlasProfileView` (`_components/concepts/`). Within them, the public profile employs a 2-tier Apple Design navigation hierarchy:
 1. **Tier 1 (Page Top Bar — `CountryTabs.tsx`):** `Factbook` (`/factbook`), `Dossier` (`/dossier`), and `Activity` (`/activity`) with physical Framer Motion spring layout indicators.
 2. **Tier 2 (Factbook Sections — `MyCountryTabsList.tsx`):** `Overview`, `Economy`, `Labor`, `Government`, and `Geography` with sliding underline navigation.
 
@@ -54,7 +54,7 @@ countries/
     │   ├── dossier/page.tsx          # Dossier tab
     │   └── activity/page.tsx         # Activity feed tab
     ├── modeling/page.tsx             # Economic scenario engine
-    ├── _components/                  # CountryHeader, CountryTabs, FactbookSidebar, CountryActivityPanel
+    ├── _components/                  # CountryHeader, CountryTabs, FactbookSidebar, FactbookSectionContent, CountryActivityPanel, concepts/, shared/, switcher/
     ├── _hooks/useCountryPageState.ts # Tab & banner state manager
     ├── _types/                       # Domain types for profile pages
     └── _utils/countryDataTransformers.ts # Telemetry vitality calculation
@@ -66,12 +66,12 @@ countries/
 | --- | --- |
 | `api.countries.getAll` | Explore list (`page.tsx`) |
 | `api.countries.getByIdWithEconomicData` | Profile shell (`CountryDataProvider`), modeling |
-| `api.countries.getActivityRingsData` | Telemetry vitality rings |
+| `api.countries.getActivityRingsData` | Telemetry vitality rings (via `CountryDataProvider`) |
 | `api.activities.getCountryActivity` | Factbook sidebar & activity tab |
 | `api.government.getByCountryId` | Overview government structure (via `useMyCountryMetrics`) |
 | `api.wikiCache.getCountryProfile` | Overview wiki content (via `useMyCountryMetrics`) |
-| `api.maps.getCountryGeometry` | Factbook sidebar map embed |
+| `api.countryGeo.getCountryGeoBundle`, `api.geoCore.getWorldMap` | Factbook sidebar map embed (via `useCountryMapEmbed`) |
 | `api.system.getCurrentIxTime` | Time context |
-| `api.users.getProfile` | Viewer identity (`useUserCountry`) |
+| `api.users.getProfile`, `api.countries.getByIdAtTime` | Viewer identity (`useUserCountry`) |
 
 All routers above are registered in `src/server/api/root.ts`.

@@ -4,11 +4,16 @@ description: Plan, launch, and monitor missions to strengthen trade, security, a
 badge: Diplomacy & Alliances
 ---
 
+> [!WARNING]
+> **Not available yet**
+>
+> Launching diplomatic missions isn't available in the app right now. An embassy's details can list active missions, but there's no way to start one yet. This guide describes how missions are designed to work.
+
 ## What Are Diplomatic Missions?
 
 Diplomatic missions are targeted operations you send out from your [embassies](/help/diplomacy/embassies) to achieve specific goals with another country. Whether you want to open new trade routes, coordinate joint security efforts, or build cultural goodwill, missions are how you turn diplomatic relationships into real results.
 
-You can find your active and available missions by navigating to [MyCountry → Diplomacy](/mycountry/diplomacy) and opening the **Missions** tab.
+Any active missions show up in an embassy's details under [MyCountry → Diplomacy](/mycountry/diplomacy) → **Embassy Network**.
 
 ## Mission Types
 
@@ -31,7 +36,7 @@ You can find your active and available missions by navigating to [MyCountry → 
 ## How Success Is Determined
 
 - **Your Relationship Strength:** Stronger existing ties with a country improve your chances of mission success.
-- **NPC Personality:** The target country's [personality and behavioral traits](/help/diplomacy/npc-personalities) influence how they respond to your mission. A Pragmatist will prioritize mutual economic benefit, while an Idealist cares about shared values.
+- **NPC Personality:** The target country's [personality and behavioral traits](/help/diplomacy/npc-personalities) influence how they respond to your mission. A Peaceful Merchant will prioritize mutual economic benefit, while an Ideological Hardliner cares about shared values.
 - **Mission Type & Context:** Some mission types are naturally harder than others. Security missions during a regional crisis, for example, carry higher stakes and risk.
 - **Resource Investment:** Committing more resources to a mission generally improves its odds of success.
 - **Active Scenarios:** Ongoing [diplomatic scenarios](/help/diplomacy/scenarios) can create favorable or unfavorable conditions for your missions.
@@ -40,7 +45,7 @@ You can find your active and available missions by navigating to [MyCountry → 
 > **Tips for Success**
 >
 > - Align missions with your broader strategy. If you are building a trade network, stack trade missions with countries that have favorable economic policies.
-> - Check the target country's [NPC personality](/help/diplomacy/npc-personalities) before launching. Sending a cultural mission to an Isolationist is unlikely to succeed.
+> - Check the target country's [NPC personality](/help/diplomacy/npc-personalities) before launching. Sending a cultural mission to a Cautious Isolationist is unlikely to succeed.
 > - Address mission failures promptly. Failed missions can trigger intelligence alerts and may damage your relationship with the target country.
 > - Establish an [embassy](/help/diplomacy/embassies) first. Most mission types require an active embassy in the target country.
 > - Be patient with timelines. Complex missions take multiple IxTime periods to complete but typically yield stronger outcomes.

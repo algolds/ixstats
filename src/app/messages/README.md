@@ -1,6 +1,6 @@
 # Messages (ThinkShare)
 
-**Last updated:** June 2026
+**Last updated:** September 2026
 
 Unified messaging backbone for IxStats. ThinkShare is a sub-system of ThinkPages and serves as the platform-wide messaging surface at `/messages`, consolidating personal DMs, ThinkTank group chats, diplomatic/official conversations, and system alerts into a single inbox backed by one set of `thinkshareConversation` data models.
 
@@ -11,6 +11,8 @@ The page is rendered by `MessagesRouter`, which handles unified messaging across
 | Route | Folder | Purpose |
 |---|---|---|
 | `/messages` | `conversations` | All direct, diplomatic, wiki & system messages (with pinned System Messages & LoreBot WikiOS feed) |
+
+The page lives at `src/app/messages/[[...folder]]/page.tsx`; `conversations` is currently the only entry in `MESSAGE_FOLDERS`.
 
 A `?conversation=<id>` query param deep-links a specific conversation (consumed then cleared from the URL). ThinkTank group collaboration is now hosted in its own dedicated workspace at `/thinktanks`.
 
@@ -66,17 +68,18 @@ All messaging data flows through the `api.messages` tRPC router (`src/server/api
 | `messages.editMessage` / `deleteMessage` | Edit / delete a message |
 | `messages.addReaction` / `removeReaction` | Message reactions |
 | `messages.addParticipant` / `leaveConversation` | Manage participants |
-| `messages.markMessagesAsRead` | Read receipts |
+| `messages.markMessagesAsRead` / `markAllAsRead` | Read receipts |
+| `messages.getConversation` | Single conversation detail |
+| `messages.sendAdminBroadcast` / `sendAdminMessage` | Admin-only system broadcasts and direct admin messages |
 | `messages.searchUsers` | Participant search for new conversations |
 | `messages.clearAllSystemNotifications` | Clear the system-alerts folder |
-| `messages.syncDiscussions` | Pull wiki talk-page + forum discussions into the inbox |
 | `wikios.getStashes` / `wikios.getStashItems` | Stash attachment picker |
 
 Router source files: `conversations.ts`, `messaging.ts`, `participants.ts`, `index.ts`.
 
 ## Connections
 
-- **ThinkPages** — ThinkShare is a sub-system of ThinkPages (see `docs/systems/social.md`); ThinkTank groups appear in the `groups` folder.
+- **ThinkPages** — ThinkShare is a sub-system of ThinkPages (see `docs/systems/social.md`); ThinkTank groups live in their own workspace at `/thinktanks` (each group has a linked `ThinkshareConversation`, but there is no `groups` folder in `/messages`).
 - **Diplomacy / official messaging** — `diplomatic` and `official` conversation types carry classification (`PUBLIC`…`TOP_SECRET`), priority, and channel type (`BILATERAL`/`MULTILATERAL`/`EMERGENCY`), unifying official channels into the same inbox.
-- **Wiki & Forum** — `syncDiscussions` bridges wiki talk pages and forum threads into conversations (`wiki` / `forum` sources).
+- **Wiki & Forum** — conversations can carry `wiki` / `forum` sources. The messaging service still has a `syncDiscussions` method (`src/server/modules/messaging/`), but its `messages.syncDiscussions` tRPC procedure was removed on 2026-09-27 (plan 312, zero callers), so nothing currently triggers the sync from the UI.
 - **Stash** — message composer can attach Stash links from WikiOS.

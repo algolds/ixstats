@@ -12,18 +12,21 @@ nextLabel: How It All Fits Together
 
 Open the [Country Builder](/builder) from the top menu. You can start either way:
 
-- **From scratch** — shape every part of your nation exactly how you picture it.
-- **Import from IxWiki** — already written factbooks? Pull your existing article in as a starting point, then refine. Your lore becomes a nation that actually runs.
+- **From scratch** — shape every part of your nation exactly how you picture it, or start from a real-world template.
+- **Import from a wiki** — already written a factbook? Pull your IIWiki or AltHistory Wiki country page in as a starting point, then refine. Your lore becomes a nation that actually runs.
+
+If your nation already exists on the IxWiki roster, you don’t need the builder — claim it during [setup](/setup). A moderator reviews the claim, or it’s approved instantly if you’ve verified your wiki account (see [IxnayID](/help/getting-started/ixnayid)).
 
 ## Build It, Section by Section
 
 The builder walks you through your nation one piece at a time:
 
-1. **Identity** — name, flag, motto, and the character of the place.
-2. **Government** — choose how your nation is run. Mix components for [synergy bonuses](/help/government/synergy) when the right parts work together.
-3. **Economy** — set your sectors and growth strategy, and see which [economic tier](/help/economy/tiers) your nation starts in.
-4. **People** — your population, workforce, and the social makeup of your nation.
-5. **Money** — your [taxes](/help/economy/tax-system) and spending priorities. This is where you decide what kind of country you can afford to be.
+1. **Foundation** — your starting point and identity: name, flag, motto, and the character of the place.
+2. **Government** — choose how your nation is run. Mix components for [synergy bonuses](/help/government/synergy) when the right parts work together. In expert mode you also set your structure and spending priorities.
+3. **Economics** — set your economic components and see which [economic tier](/help/economy/tiers) your nation starts in. In expert mode you also tune your sectors and workforce.
+4. **Preview & Create** — review the whole nation before it goes live.
+
+Your [tax rates](/help/economy/tax-system) are fine-tuned after launch, in MyCountry → Economy & Budget.
 
 ## Review, Then Make It Live
 
@@ -39,7 +42,7 @@ Before you publish, you’ll see a full summary of your nation. Take a minute to
 
 ## What Happens When You Save
 
-- Your nation goes live right away. Head to [MyCountry](/mycountry) to see it running — your vital signs, suggested next steps, and quick actions.
+- Your nation goes live right away. Head to [MyCountry](/mycountry) to see it running — your vital signs, suggested next steps, and your agenda.
 - It takes its place on the [world map](/maps) and the [leaderboards](/leaderboards) alongside everyone else’s.
 - From here on, the world keeps moving — and your nation grows with the choices you make.
 

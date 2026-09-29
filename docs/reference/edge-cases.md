@@ -1,8 +1,10 @@
 # Edge Cases & Error Scenarios
 
-**Last updated:** May 2026
+**Last updated:** May 2026 (spot-checked against code September 2026)
 
 Comprehensive guide to edge cases, error handling, and unusual scenarios across all IxStates (IxStats) systems.
+
+> **Accuracy note (2026-09-29):** Many snippets below are *illustrative design intent*, not code. Verified against the codebase: the 25-account ThinkPages limit (per Clerk user), the 10,000-character post limit, the economic tier thresholds, and the rate limiter. Not implemented as written: the tier-transition `lerp` smoothing, the "IMF intervention" recession event, the admin rate-limit exemption, and optimistic locking via a `Country.version` column (no such column exists).
 
 ## Table of Contents
 1. [Economic Calculations](#economic-calculations)
@@ -71,20 +73,20 @@ const unemploymentRate = totalUnemployed / Math.max(laborForce, 1);
 
 ### Tier Boundary Transitions
 
-**Scenario:** Country GDP per capita crosses tier boundary ($29,999 → $30,001)
+**Scenario:** Country GDP per capita crosses tier boundary ($34,999 → $35,001)
 
 **Current Behavior:**
 ```typescript
-// Tier determined by GDP per capita ranges
-Tier 3: $15,000 - $30,000
-Tier 4: $30,000 - $60,000
+// Tier determined by GDP per capita (src/lib/economy/calculations.ts → calculateEconomicTier)
+// Impoverished < $10,000 ≤ Developing < $25,000 ≤ Developed < $35,000
+// ≤ Healthy < $45,000 ≤ Strong < $55,000 ≤ Very Strong < $65,000 ≤ Extravagant
 
-// At $30,001 per capita
-oldTier = 3 (multiplier 1.2)
-newTier = 4 (multiplier 1.0)
+// At $35,001 per capita
+oldTier = DEVELOPED
+newTier = HEALTHY  // growth modifiers: SystemConfig tierGrowthModifier_*
 ```
 
-**Smooth Transition:**
+**Smooth Transition (proposed — not implemented; tier changes apply immediately):**
 ```typescript
 // Applied over 1 IxTime year (6 real months)
 const transitionProgress = daysSinceTransition / 365;
@@ -337,7 +339,7 @@ async function applyRelationshipDecay(relationshipId: string): Promise<void> {
 
 ### 25-Account Limit
 
-**Scenario:** User attempts to create 26th ThinkPages account
+**Scenario:** User attempts to create 26th ThinkPages account (the limit is per Clerk user, across all countries)
 
 **Validation (Client):**
 ```typescript
@@ -357,14 +359,15 @@ const canCreate = (accountsData?.length ?? 0) < 25;
 createAccount: protectedProcedure
   .input(z.object({ /* ... */ }))
   .mutation(async ({ ctx, input }) => {
-    const existingCount = await ctx.db.thinkpagesAccount.count({
-      where: { countryId: input.countryId }
+    // src/server/api/routers/thinkpages/accounts.ts
+    const existingAccounts = await ctx.db.thinkpagesAccount.findMany({
+      where: { clerkUserId: ctx.auth.userId }
     });
 
-    if (existingCount >= 25) {
+    if (existingAccounts.length >= 25) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        message: 'Maximum 25 accounts per country'
+        message: 'You have reached the maximum of 25 ThinkPages accounts per user'
       });
     }
 
@@ -806,57 +809,37 @@ sessionStorage.removeItem('returnTo');
 
 ### Rate Limit Exceeded
 
-**Scenario:** User makes 101 requests in 10 minutes (limit: 100)
+**Scenario:** A user exceeds the per-minute budget of a rate-limited procedure builder (e.g. 121st `readOnlyProcedure` call within 60 seconds)
 
-**Redis Implementation:**
+**Implementation** (`src/server/api/trpc/middleware.ts` → `createRateLimitMiddleware`, backed by `src/lib/cache/rate-limiter.ts`: Redis in production, in-memory fallback in development):
 ```typescript
-// In tRPC middleware
-const rateLimitKey = `ratelimit:${ctx.user.id}`;
-const requests = await redis.incr(rateLimitKey);
+const result = await rateLimiter.check(ctx.rateLimitIdentifier, namespace, {
+  maxRequests: options.max,
+  windowMs: options.windowMs, // 60_000 for every tier
+});
 
-if (requests === 1) {
-  await redis.expire(rateLimitKey, 600); // 10-minute window
-}
-
-if (requests > 100) {
-  const ttl = await redis.ttl(rateLimitKey);
-  throw new TRPCError({
-    code: 'TOO_MANY_REQUESTS',
-    message: `Rate limit exceeded. Try again in ${ttl} seconds.`
-  });
+if (!result.success) {
+  throw new RateLimitError( // surfaces as TOO_MANY_REQUESTS
+    `Too many requests. Maximum ${options.max} requests per ${options.windowMs / 1000} seconds. Try again at ${result.resetAt.toISOString()}`,
+    result.resetAt
+  );
 }
 ```
+
+Limits per builder: `readOnlyProcedure` 120/min, `lightMutationProcedure` 100/min, `rateLimitedPublicProcedure` 100/min, `adminProcedure` 100/min, `standardMutationCountryOwnerProcedure` 60/min. The limiter is skipped entirely when `rateLimiter.isEnabled()` is false.
 
 **Client Response:**
 ```typescript
 onError: (error) => {
   if (error.data?.code === 'TOO_MANY_REQUESTS') {
-    const match = error.message.match(/(\d+) seconds/);
-    const seconds = match ? parseInt(match[1]) : 600;
-
     toast.error('Rate limit exceeded', {
-      description: `Please wait ${Math.ceil(seconds / 60)} minutes`
+      description: 'Please wait a minute and try again'
     });
-
-    // Optionally show countdown timer
-    setRetryAfter(seconds);
   }
 }
 ```
 
-**Admin Exemption:**
-```typescript
-// Admins exempt from rate limiting
-if (ctx.user.role === 'ADMIN' || ctx.user.role === 'SUPER_ADMIN') {
-  return next({ ctx });
-}
-
-// Apply rate limiting for regular users
-const rateLimited = await checkRateLimit(ctx.user.id);
-if (!rateLimited) {
-  throw new TRPCError({ code: 'TOO_MANY_REQUESTS' });
-}
-```
+**Admin Exemption:** None — admin procedures are rate limited like any other (100/min).
 
 ---
 
@@ -866,7 +849,7 @@ if (!rateLimited) {
 
 **Scenario:** Two users update same record simultaneously
 
-**Prisma Optimistic Locking:**
+**Prisma Optimistic Locking (pattern only — `Country` has no `version` column):**
 ```typescript
 // Model with version field
 model Country {

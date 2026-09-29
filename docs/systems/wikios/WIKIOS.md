@@ -1,7 +1,7 @@
 # WikiOS native architecture
 
 Status: Release candidate (Plan 170 & Plan 191 complete)  
-Package: `src/lib/wiki-os/` (`@wikios/core`)  
+Package: `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
 Runtime: TypeScript 7.0, Next.js 16 App Router  
 
 WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Reads take under 2ms and writes take under 10ms.
@@ -14,10 +14,12 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **Pre-compiled HTML.** `contentHtml` serves reads directly from database indexes in under 2ms.
 - **Relational link graph (`wiki_links`).** Stores directed edges for backlink queries in under 1ms and identifies red links without extra lookups.
 - **Native Media & Asset Engine (`MediaAssetService`).** Manages 7,555+ media files in `wiki_assets` with MD5 shard paths, automated dimensions extraction, JIT auto-registration, and immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
-- **Direct MariaDB read pool (`getIxWikiPool()`).** Connects directly to MariaDB on port 3306 or 13306 for unmigrated pages, history, and categories with zero HTTP overhead.
-- **Global bot bridge (`WikiOS-Bridge`).** `MediaWikiExportWorker` queues upstream edits asynchronously and patches `rev_actor` and `rc_actor` for accurate author attribution.
+- **No direct MariaDB connection.** The MariaDB pool (`mysql-pool.ts` / `mysql-reader.ts`) was removed on 2026-08-25 (`80eee985d`). Bridge reads are PostgreSQL (`bridge/pg-*.ts`) plus the MediaWiki HTTP Action API.
+- **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
+- **Outbound export (`MediaWikiExportWorker`).** Queues upstream `action=edit` calls asynchronously over the shared bot session. Authorship lives in `WikiRevision.author`; per-user `rev_actor` patching is not implemented (`updateRevisionActor` is a no-op).
+- **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026).
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Turnstile verification and non-blocking Cloudflare Zone edge cache purges on save.
-- **Canvas visual editor (`CANVAS_VERSION = 1`).** Block-based editor with bidirectional translation between visual blocks and wikitext.
+- **Canvas visual editor (`CANVAS_VERSION = 1`).** Plate-based block editor (Plan 206) with a WikiAST ↔ wikitext converter (Plans 205/208) and lossless template serialization (Plan 301).
 
 ---
 
@@ -30,7 +32,7 @@ flowchart TD
     end
 
     subgraph "tRPC backend (src/server/api/routers/wikios/)"
-        Routers["Domain routers: page-content, editing, history, search-categories, user-talk"]
+        Routers["Domain routers: page-content, editing, history-diff, search, categories, templates, stash, watchlist-annotations, user-talk, discussions, utilities"]
     end
 
     subgraph "WikiOS core engine (src/lib/wiki-os/)"
@@ -43,8 +45,7 @@ flowchart TD
 
     subgraph "Storage layer"
         PG[("PostgreSQL database\nwiki_articles, wiki_revisions, wiki_links, wiki_assets")]
-        MariaDB[("MariaDB database\nDirect read pool: 1-3ms")]
-        MediaWiki["MediaWiki Action API\nAsync mirror via bot bridge"]
+        MediaWiki["MediaWiki Action API\nparse render, async export, recentchanges sync"]
     end
 
     UI -->|"tRPC"| Routers
@@ -57,8 +58,8 @@ flowchart TD
     Repo -->|"Primary read / write"| PG
     LinkGraph -->|"Directed edge graph"| PG
     Media -->|"Asset lookups & JIT upsert"| PG
-    Repo -.->|"Legacy read fallback"| MariaDB
     Repo -->|"Async job queue"| MediaWiki
+    MediaWiki -.->|"recentchanges sync (cron + webhook)"| PG
 ```
 
 ---
@@ -74,10 +75,14 @@ src/lib/wiki-os/
 ├── use-wiki-auth.ts           # React client hook for authentication
 ├── storage.ts                 # Context and country resolution
 │
+├── page-ref.ts                # Page reference (title + wiki source) helpers
+│
 ├── core/                      # PostgreSQL domain services
 │   ├── article-repository.ts  # CRUD repository (<2ms read, <10ms write)
 │   ├── link-graph-service.ts  # Directed link graph engine
 │   ├── native-search-service.ts # Two-tier search service
+│   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
+│   ├── wiki-ast.ts            # IxWiki AST block model (+ wiki-ast-guards.ts)
 │   ├── parser-functions.ts    # ParserFunctions evaluator (#if, #switch, #expr)
 │   └── category-service.ts    # Recursive category tree queries
 │
@@ -88,9 +93,11 @@ src/lib/wiki-os/
 │   ├── mediawiki/             # MediaWiki compatibility layer
 │   │   ├── write-service.ts   # Action API write gateway and actor attribution
 │   │   ├── sync-worker.ts     # Asynchronous background mirror queue
-│   │   └── bridge/            # MariaDB direct connector and federated readers
-│   │       ├── mysql-pool.ts  # Connection pool
-│   │       ├── mysql-reader.ts # Raw MariaDB queries
+│   │   ├── parsoid.ts         # action=parse / Parsoid render and conversions
+│   │   └── bridge/            # PostgreSQL readers and federated HTTP readers
+│   │       ├── pg-reader.ts   # Articles/wikitext (+ pg-search, pg-activity, pg-taxonomy, pg-site)
+│   │       ├── http-reader.ts # IIWiki / AltHistory HTTP adapter with circuit breaker
+│   │       ├── batch-reader.ts # Batched lookups
 │   │       └── dispatchers.ts # Multi-source dispatchers
 │   └── ixstates/              # Game simulation adapters
 │       ├── unified-parser.ts  # Infobox indicator parser
@@ -101,9 +108,10 @@ src/lib/wiki-os/
 │   ├── infobox-parser.ts      # Template tokenizer
 │   └── media-theme.ts         # Theme switcher
 │
-├── templates/                 # Template registry
-├── editor/                    # Visual canvas and draft store
-└── migration/                 # Ingestion engine
+├── templates/                 # Template registry, presets, tiered preview cache
+├── editor/                    # Draft store, local cache, template wikitext parsing
+├── wikitext/                  # Wikitext parser/serializer (links, lists, tables, templates)
+└── services/                  # auto-sync-service.ts (recent-changes inbound sync)
 ```
 
 ---
@@ -130,11 +138,11 @@ src/lib/wiki-os/
 | Feature | Description |
 |---|---|
 | WikiOS Canvas | Dual-mode writing environment with visual block editing, source mode, live preview, and templates |
-| Visual editor | ContentEditable WYSIWYG editor with headings, tables, images, templates, and links |
+| Visual editor | Plate (`platejs`) block editor with headings, tables, images, atomic template/infobox blocks, and links |
 | Source editor | CodeMirror 6 editor with wikitext syntax highlighting and active line indicator |
 | Action toolbar | Save, Cancel, and Preview action buttons |
 | Keyboard shortcuts | `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+K` (link) |
-| Template inserter | Template picker with parameter forms and preview |
+| Template insertion | Slash-command menu with template presets (Plan 207), TemplateData-driven parameter forms (Plan 302), and tiered preview cache (Plan 303) |
 | Image search | File search across local assets and Wikimedia Commons |
 | Mode toggle | Switch between visual and source editor modes |
 | Edit summary | Summary input field and minor edit checkbox |

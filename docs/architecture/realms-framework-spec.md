@@ -1,7 +1,7 @@
 # Realms — Product Model & Decisions
 
 **Status:** Decided 2026-09-27 (design Q&A with the owner). Supersedes the earlier multi-tenant PRD
-(`docs/archive/superpowers/specs/2026-07-21-realms-platform-prd.md`), which is historical only.
+(`docs/archive/superpowers/specs/2026-07-21-realms-platform-prd.md` — `docs/archive/` is gitignored, so it exists only in local archives), which is historical only.
 **Build phases:** 1 Foundation → 2 Founding → 3 Playing → 4 Social & governance.
 Phase 1 spec: `docs/superpowers/specs/2026-09-27-realms-foundation-design.md`.
 
@@ -65,7 +65,8 @@ Clerk Organizations as realms.
 
 ## Status (2026-09-29) — final
 
-Both plans are complete on `realms-foundation`; the ledgers (`.superpowers/sdd/2026-09-27-realms-foundation`,
+Both plans are complete and were merged into `rose-garden` on 2026-09-29 (`91a84f50f`), followed by the F-6
+verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-realms-foundation`,
 `.superpowers/sdd/2026-09-28-realms-eurth`) record every task and ruling. Runbook:
 [`docs/realms/eurth-onboarding.md`](../realms/eurth-onboarding.md).
 
@@ -130,10 +131,15 @@ Both plans are complete on `realms-foundation`; the ledgers (`.superpowers/sdd/2
 
 **Not implemented yet (planned):** the per-realm calendar label (decision 18), founder tooling (settings
 such as the nation cap, moderation, removal, succession), the public founding application, a per-realm
-ThinkPages feed, and the passport realm/nation switcher (today a player switches with **Play as** on each
-realm's page).
+ThinkPages feed and its global-feed setting, and the passport realm/nation switcher and nav chip (today a
+player switches with **Play as** on each realm's page). Also still open: archived-realm handling (read-only,
+excluded from crons and payouts — decision 21), the WikiOS front page as a portal to every realm's lore and
+realm-tagged forum content (decision 3), and pre-filling the builder from a claimed nation page (E-f).
+Phases 2 (Founding), 3 (Playing) and 4 (Social & governance) have not started as phases; the Eurth slice
+pulled forward only the pieces listed above (lore index import, nation-page claims, realm-scoped queries and
+maps, PNG realm maps, the realm hub, Play as).
 
-**Rulings (E-a..E-w, F-1..F-5):** E-a–E-j are the Eurth design spec's binding decisions
+**Rulings (E-a..E-w, F-1..F-6):** E-a–E-j are the Eurth design spec's binding decisions
 (`docs/superpowers/specs/2026-09-28-realms-eurth-design.md`) — index lore rather than copy it (E-a), a
 5,000-page crawl cap for this slice (E-b), follow only keyword subcategories (E-c), infobox-based nation
 detection (E-d), a script-based one-time import (E-e), claiming creates the `Country` (E-f), a
@@ -158,7 +164,7 @@ mapping) was added because decisions 10–11 were otherwise unmet (E-u); potrace
 runtime (E-v); colour analysis only detects colours, imported regions keep their metrics, and unreadable or
 oversized map images are refused (E-w).
 
-The final whole-branch review added five more. **F-1:** `assignNation` makes a nation the active one only
+The final whole-branch review added five more; F-6 later tightened F-3. **F-1:** `assignNation` makes a nation the active one only
 when the player has none; `users.setActiveNation` ("Play as") lets an owner switch between their nations;
 `adminAssignNation` releases only the player's nations in the target country's realm. **F-2:**
 `admin.unlinkUserWiki` takes a `source` and revokes through the wiki-links service; `admin.linkUserWiki`

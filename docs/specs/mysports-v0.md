@@ -1,4 +1,4 @@
-Absolutely. I’ve folded the audit into the original PRD rather than simply appending recommendations. The main changes are:
+**Revision note (Draft v2):** The design audit was folded into the original PRD rather than appended as recommendations. The main changes are:
 
 * **Competition/Participant abstractions** to prevent the soccer-centric `League/Club` model from breaking F1 and other sports.
 * **Four domain entities + canonical event stream** rather than treating events as equivalent persistent objects.
@@ -24,6 +24,13 @@ The result below is intended to be the **new canonical PRD**, not an audit/comme
 **Primary Experience:** COMPETE
 **Initial Sport:** Soccer
 **Future Sports:** Hockey, Formula 1, Boxing, Basketball, Baseball, Football
+
+> **Implementation status (audited 2026-09-29).** The checklists in §44–46 and the roadmap in §58–59 were written before implementation and are left unticked for history; actual state:
+> - **P0-A Foundation — mostly shipped.** `SportsShell`, `SportsFocusProvider` (+ `SportsFocusOverlay`/`SportsFocusPanel`), URL-reflected Focus (`?focus=<type>:<id>`) and focus resolution states (`src/lib/sports/contracts.ts`), `SportsCommandPalette`. **Not built:** a formal `SportDefinition` / sport-adapter interface — sports are data presets (`src/lib/sports/presets.ts`) plus per-sport resolvers and match surfaces.
+> - **P0-B Core Management — shipped.** League overview, standings, schedule, results, teams, archive; MyClub overview/roster/tactics/transfers/management/history with finance (`SponsorWalletDeck`, `RevenueCollector`).
+> - **P0-C COMPETE — shipped.** `MatchCenter` COMPETE state machine (READY → SIMULATING → RESULT/ANALYSIS), replayable simulation snapshot with seed + `resolverVersion` (`simulate-and-persist.ts`), idempotent atomic match claim, event trace persisted in `matchStats`, deterministic analysis (`analysis.ts`).
+> - **P1 — partial.** ✅ Instant/Brief speed toggle (no Live mode; preference not persisted), ✅ Trophy Card / Vault minting, ✅ tactics presets + `LineupBuilder`, ✅ optional LLM commentary. ❌ Distinct Broadcast mode, momentum graph, `<AthleteCard>` Vault card.
+> - **P2 — largely shipped ahead of plan.** ✅ Hockey resolver, remaining sports (F1 racing resolver; basketball/baseball/football resolvers; boxing uses the bracket archetype with the soccer match loop as fallback), stadium management, sponsorship, promotion/relegation, escrowed transfer bids. 🟡 Multi-stage competitions (engine only; no stage-config UI). ❌ Bid-distribution transfer UI, institutional management, scouting, medical, academy.
 
 ---
 

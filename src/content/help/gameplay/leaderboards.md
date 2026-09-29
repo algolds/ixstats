@@ -1,32 +1,26 @@
 ---
 title: Leaderboards & Rankings
-description: GDP, population, achievements, and diplomatic influence rankings across all nations.
+description: Economy, demographics, governance, and achievement rankings across all nations.
 badge: Living World
 ---
 
 ## Leaderboard Categories
 
-The leaderboard system ranks all nations across five competitive metrics. Access the Leaderboards page from the main navigation.
+The leaderboard system ranks nations across more than a dozen metrics, grouped into three categories plus Achievements. Open the [Leaderboards](/leaderboards) page from the **Global Leaderboards** link on the Achievements page, from the Dashboard menu, or with the command palette (`Ctrl` + `K`).
 
-- **Total GDP:** Absolute economic output — larger nations with higher populations and productivity rank higher
-- **GDP Per Capita:** Economic output per person — measures prosperity and economic efficiency regardless of population size
-- **Population:** Total population count across all demographics
+- **Economy & Wealth:** Total GDP, GDP per capita, GDP growth, average income, government revenue, and government spending
+- **Demographics & Labor:** Population, population density, land area, workforce, and employment
+- **Quality & Governance:** Literacy and life expectancy
 - **Achievements:** Total achievement score based on number and rarity of unlocked achievements
-- **Diplomatic Influence:** Composite score from embassy count, alliance memberships, relationship quality, and international standing
 
 ## How Rankings Work
 
 > **Ranking System**
 >
 > - Rankings are computed from live data when the page loads
-> - Data is cached for a few minutes for performance
-> - Your nation's position is highlighted in the ranking table
-> - Click any country entry to navigate to their full profile page
-> - Sorting toggles between ascending and descending order per metric
-
-## Dashboard Integration
-
-Leaderboard highlights also appear on the main Dashboard, showing your current rank and nearby competitors in each category. This provides at-a-glance competitive context without navigating to the full leaderboard page.
+> - Nations are ranked within a realm — your active nation's realm by default
+> - The top three take the podium; everyone else is listed below with their economic and population tiers
+> - Search for a nation by name, and choose to show 10, 25, 50, or 100 nations
 
 ## Competitive Gameplay
 
@@ -40,4 +34,4 @@ Leaderboards drive competitive gameplay by providing clear goals:
 > **Related Documentation**
 >
 > - [Achievements & Progression](/help/gameplay/achievements) — Achievement system and rewards
-> - [Economic Tiers](/help/economy/tiers) — Economic tier system affecting GDP rankings
+> - [Economic Tiers](/help/economy/tiers) — The tiers shown next to each nation

@@ -1,3 +1,10 @@
+# Statecraft Game Loops: IN → SEE → OUT → RIPPLE
+
+> **Implementation status (verified 2026-09-29).**
+> - **Built:** Domestic loop (National Issues → response/Policy → `CountryEventSpine` bounded consequence + `CountryChangeLog`). Intents/Directives. Capacity (`calculateCivilServiceCapacity`, CivCap standing band). Mandate (`computeApproval`, `src/lib/government/approval.ts`). Power Brokers (`src/lib/statecraft/power-brokers.ts`, `PowerBrokersPanel`). Politics Bills with a fogged whip count (`legislation` router, `src/lib/statecraft/whip.ts`). Diplomacy foreign-intel fog (`src/lib/statecraft/diplo-intel.ts`). Almanac-style agenda (`src/lib/statecraft/calendar.ts`, `AgendaHorizonStrip`). Chronicle via `mycountry.getCanonFeed`.
+> - **Partial:** SEE recon on issues ships dark (`STATECRAFT_SPINE`, default off). Never-lie fog is only warnings in the policy creator (no masking). Cross-arena ripple is limited to intent resistance issues. Asymmetry is display-only (`relative-development.ts`).
+> - **Not built:** Recon Meetings that convene and return minutes, Mandate as a gate/multiplier on costs, atom-biased issue decks and atom-parameterized fog (§6), and weekly lever regen as a stored resource.
+
 ## 1. The loop: IN → SEE → OUT → RIPPLE
 
 One loop, repeated weekly (IxTime):
@@ -39,7 +46,7 @@ stops them blurring. Two and a half already exist in code.
 
 ### Capacity — a **rate** (administrative bandwidth)
 - **Is:** how much your civil service can handle per week.
-- **Code home:** `governmentCapacityIndex` (`src/lib/atomic-economic-integration.ts`), raised by
+- **Code home:** `governmentCapacityIndex` (`src/lib/economy/atomic-integration.ts`), raised by
   bureaucracy/merit/e-gov atoms; per-Policy demand is `GovernmentComponent.requiredCapacity`.
 - **Regen:** each IxTime week — bandwidth, not a hoard.
 - **Spent on:** each Meeting's recon depth; each active Policy's upkeep.
@@ -57,7 +64,7 @@ stops them blurring. Two and a half already exist in code.
 
 ### Mandate — a **standing** (legitimacy you risk, not cash you spend)
 - **Is:** your political standing to act.
-- **Code home:** `computeApproval` (`src/lib/approval.ts`: leading-party support + stability). Derived,
+- **Code home:** `computeApproval` (`src/lib/government/approval.ts`: leading-party support + stability). Derived,
   not stored.
 - **Earned/risked:** popular Commitments build it; unpopular Issue responses, fiat Commitments, and Bills
   against your coalition cost it. *How* it's earned is atom-shaped (Electoral legitimacy lives and dies
@@ -95,12 +102,13 @@ what the coalition supplies) and makes elections matter *weekly*, not just at te
 spawns a domestic Issue ("controversial") and shifts party support (politics); a domestic worker-
 protection Policy re-prices a free-trade Foreign Policy (Keaor's Pooristan/Goldland asymmetry); a passed
 Bill can *mandate* a diplomacy commitment. A commitment in one arena emits Stimuli in the others — riding
-the `recordCountryEvent` spine (designed in `mycountry-core-loops-design.md`).
+the `recordCountryEvent` spine (`src/lib/activity/event-spine.ts`; originally designed in the archived `mycountry-core-loops-design` plan).
 
-**Existing plumbing per arena:** Domestic = `national-issues-consequences` (`applyConsequence` +
-`FIELD_BOUNDS`), `policy-effects-sync`, `StorytellerEffect`. Diplomacy = `ForeignPolicyAction`,
-`Embassy`/`EmbassyMission`, `Alliance`, `CulturalExchange`, `diplomatic-news-generator`. Politics =
-`PoliticalParty`, `Legislature`, `LegislativeSeat`, `Election`, the politics-drift cron.
+**Existing plumbing per arena:** Domestic = `src/lib/national-issues/consequences.ts` + `FIELD_BOUNDS`,
+`src/lib/policies/effects-sync.ts`, `StorytellerEffect`. Diplomacy = `ForeignPolicyAction`,
+`Embassy`/`EmbassyMission`, `Alliance`, `CulturalExchange`, `src/lib/diplomacy/news-generator.ts`. Politics =
+`PoliticalParty`, `Legislature`, `LegislativeSeat`, `Election`, Bills (`legislation` router), the
+politics-drift cron.
 
 ---
 
@@ -180,4 +188,4 @@ just a config row. Built early, it's scope-scary; built last, it's a table.
 - **The Chronicle** — every commitment compiles into a readable, wiki-ready national history (numbers as
   connective tissue underneath). The "gameplay" is authoring your nation's history with an engine that
   won't let story and stats silently disagree — the lore-first payoff, via `recordCountryEvent` +
-  `diplomatic-news-generator` + `CountryChangeLog`.
+  `src/lib/diplomacy/news-generator.ts` + `CountryChangeLog`.

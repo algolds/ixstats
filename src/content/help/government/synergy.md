@@ -19,7 +19,7 @@ Every government component you choose carries traits that interact with other co
 > 1. Open the [Government Components](/help/government/components) section of the builder and start selecting your components.
 > 2. Watch for green synergy badges and red conflict badges that appear next to each component as you build your combination.
 > 3. Check the live effectiveness preview to see how your total score changes with each addition.
-> 4. After saving, visit your MyCountry dashboard to track how synergies affect your government performance over time.
+> 4. After saving, check MyCountry → Economy & Budget to track your government efficiency over time.
 
 > [!WARNING]
 > **Tips and Trade-offs**

@@ -10,14 +10,13 @@ Every nation in IxStats participates in a global trade network. Your country imp
 
 - **Trade surplus** means your exports exceed your imports, bringing wealth into your economy.
 - **Trade deficit** means you are spending more on imports than you earn from exports, which can weaken your currency and increase debt over time.
-- Your top trading partners, commodity breakdowns, and overall balance are all tracked automatically as your economy evolves.
+- Your exports, imports, and overall balance are all tracked automatically as your economy evolves.
 
 ## Where to View Your Trade Data
 
 > **Finding Trade Information**
 >
-> - **MyCountry → Economy tab** — View your trade cards, top trading partners, commodity breakdowns, and alerts when persistent deficits threaten your economy.
-> - **Leaderboards → Trade filters** — Compare your trade surplus or deficit against other nations to see where you stand globally.
+> - **MyCountry → Economy & Budget → Trade & Commerce** — View your exports, imports, and trade balance, set sector tariff schedules, and track your free trade pacts.
 > - **ThinkPages** — Share trade strategy posts with the community using the #trade tag to document your decisions and get feedback.
 
 ## What Affects Your Trade Balance
@@ -29,15 +28,13 @@ Every nation in IxStats participates in a global trade network. Your country imp
 
 ## How to Improve Your Trade Position
 
-- **Launch trade missions** — Use the quick actions panel to send trade missions that open new markets and negotiate favorable terms with other nations.
 - **Strengthen diplomatic ties** — Establish embassies and build alliances with major trading partners to unlock trade bonuses and reduce barriers.
 - **Invest in infrastructure** — Better infrastructure lowers the cost of moving goods, making your exports more competitive globally.
 - **Adjust your tax policy** — Offer incentives to high-export industries or adjust tariffs to protect vulnerable domestic sectors while encouraging growth.
-- **Monitor and adapt** — Keep an eye on your trade data in the Economy tab and respond quickly when deficits emerge or new opportunities arise.
+- **Monitor and adapt** — Keep an eye on your trade data in the Trade & Commerce tab and respond quickly when deficits emerge or new opportunities arise.
 
 > **Related Topics**
 >
-> - [Diplomatic Missions](/help/diplomacy/missions) — Learn how sending missions abroad supports trade and opens new markets.
 > - [Embassies](/help/diplomacy/embassies) — Discover how embassy networks strengthen your trading relationships.
 > - [Economic Tiers](/help/economy/tiers) — see how your economy climbs from one stage to the next.
 > - [Economic Modeling](/help/economy/modeling) — Explore how supply-side factors and projections affect trade outcomes.

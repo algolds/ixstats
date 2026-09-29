@@ -20,13 +20,13 @@ There’s no single “win” here — IxStats is about building a nation and li
 
 ## The Systems Behind Your Nation
 
-> **Six things you steer**
+> **The things you steer**
 >
 > - **Economy** — GDP, trade, jobs, and tax revenue, all modeled and live. [Learn more](/help/economy/modeling)
 > - **Government** — how your nation is run, and how your choices ripple through everything else. [Learn more](/help/government/atomic)
 > - **Diplomacy** — embassies, missions, and the give-and-take with other nations and their leaders. [Learn more](/help/diplomacy/embassies)
-> - **Defense** — your military, a deep equipment catalog, and how you keep your nation secure. [Learn more](/help/defense/overview)
-> - **Intelligence** — the dashboards and forecasts that turn your numbers into clear next moves. [Learn more](/help/mycountry/intelligence)
+> - **Defense** — your military, a deep equipment catalog, and how you keep your nation secure (a Premium preview). [Learn more](/help/mycountry/defense)
+> - **Intelligence** — the dashboards and forecasts that turn your numbers into clear next moves (a Premium preview, not yet in MyCountry). [Learn more](/help/mycountry/intelligence)
 > - **Politics** — your legislature, parties, and the elections that decide who holds power. [Learn more](/help/mycountry/politics)
 
 ## Rewards as You Play
@@ -34,7 +34,7 @@ There’s no single “win” here — IxStats is about building a nation and li
 - **Achievements** — milestones across five rarity tiers, each worth [IxCredits](/help/vault/ixcredits). [See them all](/help/gameplay/achievements)
 - **IxCredits** — earned through play, spent on [packs](/help/vault/card-packs), trades, and cosmetics.
 - **Your Vault** — levels up as you go, unlocking more along the way. [Visit your Vault](/help/vault/overview)
-- **Leaderboards** — see how your nation stacks up by economy, population, and influence. [View rankings](/help/gameplay/leaderboards)
+- **Leaderboards** — see how your nation stacks up on economy, demographics, governance, and achievements. [View rankings](/help/gameplay/leaderboards)
 
 ## A Good First Path
 

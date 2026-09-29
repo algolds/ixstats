@@ -1,123 +1,142 @@
-# IxStates System Status & Public Launch Readiness Audit
-## Operating Topology & Production Status (Platform 1.4.0 "Lobster Crosby" Release Candidate)
+# IxStates System Status
 
-**Last updated:** August 2026  
-**Auditor:** Senior System Review (`/improve`) · Architecture Guard (`/apple-design`) · Anti-Slop Audit (`/unslop`)  
-**Target Milestone:** **Going Gold (Gold Master / Public Launch Readiness)**  
-**Version Registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Architecture Spec:** [`docs/reference/revision.md`](../reference/revision.md)
+**Platform:** 1.4.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
+**Last verified:** 2026-09-29, by a doc-by-doc audit against the code
+**Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
+**Open work:** [`docs/roadmap/pending-features.md`](../roadmap/pending-features.md)
 
----
+This page replaces the August "Gold Master (100%)" matrix. That matrix rated every system as finished; the September audit
+found several that are partly built, read-only, or broken, so each row now carries the status the code supports.
 
-## 1. Master System Readiness Matrix
+## Status key
 
-```text
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        CANONICAL PLATFORM READINESS LIFECYCLE                          │
-├───────────────────┬───────────────────┬────────────────────┬───────────────────────────┤
-│ 1. Prototype (<50)│ 2. Alpha (50–69%) │ 3. Beta (70–84%)   │ 4. Release Candidate (85+)│
-│ Sandbox / Labs,   │ Engine runs,      │ Feature complete,  │ 100% type-safe, verified  │
-│ experimental code │ partial UI wiring │ polished Facet UI  │ production ready to lock  │
-└───────────────────┴───────────────────┴────────────────────┴───────────────────────────┘
-```
+| Label | Meaning |
+| :--- | :--- |
+| ✅ **Live** | Shipped, wired into navigation, works end to end |
+| 🟡 **Partial** | Shipped, but documented scope is missing or a loop is broken (see Notes) |
+| 🔒 **Premium** | Live, gated to premium accounts |
+| 🧪 **Labs** | Experimental; reachable under `/labs` or a standalone route |
+| ⛔ **Not built** | Designed or documented only |
 
 ---
 
-## 2. Master App Directory & Subsystems
+## 🏛️ MyCountry — executive simulation
 
-### 🏛️ 1. MyCountry (Executive Simulation & Sovereign Governance)
-
-| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+| Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
-| **Command Surface** | `v5` | `/mycountry` | `mycountry/`, `quickactions/` | 📀 **Gold Master (100%)** | 4 active public domains (Identity, Economy, Politics, Diplomacy), tab-free reactive shell |
-| **Directives System** | `v5` | `/mycountry` | `intent.ts`, `national-issues/` | 📀 **Gold Master (100%)** | CivCap throughput balance, Power Broker resistance, policy declarations |
-| **Statecraft Engine** | `v4` | Internal Engine | `src/server/shared/mycountry-helpers.ts` | 📀 **Gold Master (100%)** | 42-tax calculus, D'Hondt proportional representation, vitality index |
-| **Country Builder** | `v3` | `/builder` | `atomicGovernment.ts`, `atomicEconomic.ts` | 📀 **Gold Master (100%)** | 6-step guided sovereign setup, MediaWiki infobox import, atomic synergy |
-| *Defense & Intel Modules* | `v1 (Preview)` | `/mycountry/defense` | `defense/`, `intelligence/` | 🧪 **Developer Preview** | Internal preview simulation modes (gated from public navigation) |
+| Command Surface | UI v6 | `/mycountry`, `/mycountry/{executive,economy,politics,diplomacy}` | `mycountry/`, `quickactions/`; `components/mycountry/shell/` | ✅ Live | Overview/Executive, Economy, Politics and Diplomacy are open to every player |
+| Directives (Intent) | engine v4 | `/mycountry` | `intent.ts`, `src/lib/intent/`, `src/lib/statecraft/` | ✅ Live | Flat intent tree; 3 per IxTime week plus cooldown. Intent DAG and layers not built |
+| National Issues & 4-branch brief | engine v4 | `/mycountry` | `national-issues/`, `src/lib/national-issues/` | ✅ Live | Recon ("SEE") sits behind `STATECRAFT_SPINE`, off by default |
+| Information fog | — | policy creator | `PolicyReconBanner.tsx` | 🟡 Partial | Warnings only; numbers are not masked into bands |
+| Cabinet meetings | — | `/mycountry` agenda | `meetings/`, `quickactions/meetings.ts` | 🟡 Partial | Schedule-only; outcome and decision mutations were deleted (plans 312/332) |
+| Event spine / canon feed | — | `/mycountry` | `src/lib/activity/event-spine.ts` | 🟡 Partial | Directives and issues write to it; diplomacy, defense, elections and meetings bypass it |
+| Economy & fiscal policy | — | `/mycountry/economy` | `economics/`, `taxSystem/`, `src/lib/economy/`, `src/lib/government/` | ✅ Live | 20 built-in archetypes; 6 player tax-rate sliders over 42 engine tax components (the tax builder UI was removed); ERI, PII and GDP projection are reference formulas only |
+| Politics: parties, legislature, bills, brokers | — | `/mycountry/politics` | `elections/`, `legislation.ts` | ✅ Live | |
+| Elections | — | `/mycountry/politics` | `elections/`, `src/lib/government/election-simulation.ts` | 🟡 Partial | **Broken loop:** candidate registration was deleted (plan 312), so cron-scheduled follow-up elections never resolve |
+| Diplomacy | — | `/mycountry/diplomacy` | `diplomacy/`, `diplomaticScenarios/` | ✅ Live | Embassies, alliances, cultural exchange, stances with drift cron. Embassy missions are not playable |
+| Defense | — | `/mycountry/defense` (also serves `/mycountry/intelligence`) | `security/`, `militaryEquipment/` | 🔒 Premium | |
+| Intelligence | — | — | `intelligence/` (templates), `diplo-intel.ts` | 🟡 Partial | No standalone dashboard; the old stack was deleted in plans 312/341 |
+| Map editor section | — | `/mycountry/map-editor` | — | 🟡 Partial | Premium-gated, but the route falls through to the Executive home |
+| Country Builder | v4 | `/builder`, `/mycountry/editor` | `builderDraft.ts`, `countries/`, `economics/`, `customTypes.ts` | ✅ Live | 4-step wizard plus wiki import; guided/expert modes, 50-step undo in edit mode |
+| Builder companion guide | — | `/builder` | `BuilderGuideSheet.tsx` | 🟡 Partial | No diagnostics tab or subheader deep links |
+| Autosave | — | builder | `useGenericAutoSync` | 🟡 Partial | Only the Economy builder uses the engine; no navigation flush or shared sync badge |
+
+## 🌍 Atlas & Realms — geography and worlds
+
+| Subsystem | Version | Routes | Routers / code | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| Interactive map | IxWorld v2 | `/maps` (`?realm=`) | `geo/core/`, `geo/sovereignty.ts`, `countryGeo.ts` | ✅ Live | MapLibre 6 globe; realm-scoped layers |
+| Map editor | IxWorld v2 | in place on `/maps`; world editor at `/admin/maps/editor` | `geo/editor/`, `geo/admin/` | 🟡 Partial | Border/coast/river snapping and history ship; the 2026-09-11 inspector spec is only partly built; no cross-country gap/overlap validation |
+| Map pipeline (SVG/PNG/procedural) | Atlas v5 | `/labs/map-pipeline`, admin wizard | `geo/editor/procedural.ts`, `src/lib/maps/` | ✅ Live | PNG realm maps with colour → nation mapping |
+| Worldgen (UPG v2) | Atlas v5 | `/labs/map-pipeline` | `src/lib/worldgen/v2/` | ✅ Live | Not yet connected to realm generation |
+| Routes & travel time | — | `/maps` | `transport/`, `src/lib/economy/travel-time.ts` | ✅ Live | Sea routes use currents and wind; directive-driven network speeds not built |
+| Realms Phase 1 + Eurth | — | `/r/[realm]`, `/admin/realms` | `realms/`, `src/server/modules/realms/` | ✅ Live | Ownership, verified-creator claims, realm-scoped listings, lore index. Merged 2026-09-29 |
+| Realms Phases 2–4 | — | — | — | ⛔ Not built | Founding applications, founder tooling, archived realms, per-realm feeds, realm switcher, procedural realm generation |
+
+## 📖 WikiOS — lore platform
+
+| Subsystem | Version | Routes | Routers / code | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| Native lore engine | WikiOS v1 | `/wiki/*`, `/util/*` | `wikios/`, `src/lib/wiki-os/` | ✅ Live | PostgreSQL store with inbound MediaWiki recent-changes sync; no MariaDB path |
+| Multi-wiki reading | — | `/wiki/[slug]?source=` | `wikios/` | ✅ Live | Other wikis' pages are read-only |
+| Canvas editor (Plate) | Canvas v1 | `/wiki/[slug]/edit` | `wikios/editing.ts`, `components/wiki-os/editor/plate/` | ✅ Live | WikiAST, slash menu, TemplateData forms |
+| MediaWiki export | — | — | `adapters/mediawiki/sync-worker.ts` | 🟡 Partial | In-memory queue (lost on restart); bot session only, no per-user attribution |
+| Margin | — | `/wiki/*?margin` | `components/wiki-os/margin/` | 🟡 Partial | No comment reactions or deletion; no Stash tab; Inspect tab hidden |
+| Stash | v1 | `/stashes` | `wikios/stash.ts`, `forum/stash.ts` | 🟡 Partial | Share links are not read |
+| Lorewards & article awards | Achievements v2 | `/util/lorewards` | `lorewards/` | ✅ Live | |
+| Repository (Commons) | v2 | `/util/repository` | `commons.ts` | ✅ Live | |
+| Guardian | — | — | `guardian/cloudflare-guardian.ts` | 🟡 Partial | Turnstile optional; no abuse filter |
+| Stage 3 MediaWiki isolation | — | — | `scripts/ops/stage3-nginx-cutover.conf` | ⛔ Not built | Staged config only; not cut over |
+
+## 💎 Vault — credits, cards, achievements
+
+| Subsystem | Version | Routes | Routers / code | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| IxCredits ledger | IxVault v2 | `/vault` | `vault/`, `src/lib/vault/` | ✅ Live | Passive income + catch-up, daily streak, `EARN_BONUS` |
+| Cards | IxVault v2 | `/vault/cards` | `cards/`, `lore-cards/` | ✅ Live | 5 card types. NATION cards are re-priced daily but not auto-minted |
+| Pack store & opening | IxVault v2 | `/vault/marketplace?tab=store` | `card-packs/` | 🟡 Partial | `guaranteedRarity` and `themeFilter` not enforced; Keep/List quick actions only log |
+| Marketplace (auctions) & trading | IxVault v2 | `/vault/marketplace`, `/vault/trading` | `card-market/`, `trading/` | ✅ Live | Escrow-locked |
+| Crafting | — | `/vault/crafting` (unlinked) | `crafting/` | 🟡 Partial | **Broken end to end:** wrong ID type, success-rate units, seed/schema mismatch |
+| NationStates import | — | `/vault/import`, `/vault/ns-deck` | `ns-import/` | ✅ Live | Dump sync is admin-triggered |
+| Achievements | v2 | `/achievements`, `/leaderboards` | `achievements/` | ✅ Live | Evaluated only on page visit; ribbons are decorative |
+| Premium tiers | — | — | `premiumProcedure`, `PremiumPreviewFrame` | 🟡 Partial | Only Defense and 10 security procedures are gated; no payments |
+
+## 💬 ThinkPages — social
+
+| Subsystem | Version | Routes | Routers / code | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| Feed | v2 | `/dashboard`, `/thinkpages/post/[id]`, `/hashtags/[tag]` | `thinkpages/`, `polls/` | ✅ Live | `[blurb:slug]` is a Blurbs cross-post prefix |
+| Accounts (personas) | v2 | `/thinkpages` | `thinkpages/accounts.ts` | ✅ Live | 25 accounts per user; Discord mirror and IxTwitter import |
+| ThinkTanks | v2 | `/thinktanks` | `thinkpages/thinktanks/` | 🟡 Partial | Feed and Members only; Docs tab built but not mounted; no chat |
+| ThinkShare messages | v2 | `/messages` | `messages/` | ✅ Live | Live over `/ws/thinkpages`; encryption fields exist but no cryptography |
+| Blurbs | — | `/blurbs` | `blurbs/` | ✅ Live | |
+
+## 🗨️ Forum & identity
+
+| Subsystem | Version | Routes | Routers / code | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| IxForum (XenForo bridge) | platform | `/forum` | `forum/` (`reading`, `writing`, `stash`, `account`) | ✅ Live | Moderation and alerts removed (plan 312) |
+| Passport | — | `/@user`, `/id/[username]`, `/r/[realm]/[username]` | `src/server/modules/identity/` | ✅ Live | Overview/Work/Realms/History tabs |
+| Verified wiki accounts | — | `/settings` | `identity.wiki-links.ts` | ✅ Live | Token saved to the user page on ixwiki, iiwiki or althistory |
+
+## ⚙️ Concord — living world
+
+| Subsystem | Version | Routes | Routers / code | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| IxTime | Concord v2 | platform | `src/lib/ixtime/`, `/api/ixtime/sync-from-bot` | ✅ Live | Discord bot is the source of truth; continuous across multiplier changes |
+| Crisis events | Concord v2 | — | `crisis-events.ts` | 🟡 Partial | Read-only (`getActive`, `getStatistics`); only the demo seed creates rows; no admin UI |
+| NPC personalities | Concord v2 | `/admin/npc-personalities` | `npcPersonalities/`, `src/lib/diplomacy/npc-personality.ts` | 🟡 Partial | Traits drive cultural-exchange responses only; drift has no callers; no event fatigue |
+| Cron | — | — | `cron-runner.mjs`, `src/server/cron/jobs.ts` | ✅ Live | 15 jobs; none run unless listed in `CRON_ENABLED_JOBS` |
+
+## 🎨 Design, Halo & admin
+
+| Subsystem | Version | Routes | Code | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| Facet design system | v2 | global | `src/styles/facet/`, `src/components/ui/facet*` | ✅ Live | Plan 346 cleanup partial (hex colours, blur, pulse counts in the audits) |
+| Halo overlay & command palette | v5 | global | `src/components/halo/` | ✅ Live | |
+| Cuelume audio | v1 | global | `src/lib/sound/cuelume.ts` | ✅ Live | 17 synthesized cues |
+| Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | ✅ Live | 39 sections; `/admin/calculations` has no `page.tsx`; audit log records `execute` paths and errors only |
+| Help center | platform | `/help` | `src/content/help/`, `HelpExplorer.tsx` | 🟡 Partial | See [help.md](help.md) for registered vs unregistered articles |
+| Rate limiting | platform | — | `src/lib/cache/rate-limiter.ts`, `trpc/middleware.ts` | 🟡 Partial | Fewer than 100 of ~960 procedures are limited; no `X-RateLimit-*` headers |
+
+## 🧪 Labs
+
+| Tool | Version | Routes | Routers | Status | Notes |
+|---|:---:|---|---|:---:|---|
+| Onoma | v4 | `/labs/onoma` | `onoma/`, `/api/onoma/tts` | 🧪 Labs | Roadmap phases 1–3 and 7 done; 4, 5, 8, 9 partial; 6 and 10 not started |
+| MyLeague & MyClub | platform | `/myleague`, `/myclub` | `sports/` | 🧪 Labs | 7 sport presets; boxing reuses the soccer loop; sponsor win bonus unpaid |
+| Vexel heraldry | — | `/labs/vexel` | `heraldry/` | 🧪 Labs | P0 mostly built; not in the Labs menu; attach-to-country blanks the coat of arms |
+| Map pipeline | Atlas v5 | `/labs/map-pipeline` | `geo/editor/procedural.ts` | 🧪 Labs | |
 
 ---
 
-### 🗺️ 2. Atlas (Spatial Geography & Cartography Studio)
+## Known blockers on `rose-garden`
 
-| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **Interactive Map** | `v2` | `/maps`, standalone | `geo/core/`, `geo/sovereignty/` | 📀 **Gold Master (100%)** | GPU-accelerated MapLibre GL WebGL globe: rivers, lakes, borders, altitude, biomes |
-| **Map Editor** | `v2` | `/maps/editor` | `geo/editor/`, `geo/admin/` | 📀 **Gold Master (100%)** | Draw/edit borders, regions, provinces, cities, POIs, Voronoi vertex snapping |
-| **Atlas Engine (UPG v2 + IxEarth)**| `v5` | Internal Engine | `src/lib/worldgen/v2/`, `geo-calc.ts` | 📀 **Gold Master (100%)** | "Geography is King": manual IxEarth climate/topo + UPG v2 100k mesh |
-| **Spatial Geographic Analyzer**| `v5` | Internal Engine | `src/server/shared/geo-calc.ts` | 📀 **Gold Master (100%)** | PostGIS topological ground truth (`ST_Touches`), biomes, river networks |
-
----
-
-### 📖 3. WikiOS (Lore & Knowledge Operating System)
-
-| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **Native Lore Engine** | `v1` | `/(wiki-os)/*` | `wikios/`, `wikiCache.ts` | 📀 **Gold Master (100%)** | High-speed native lore platform with PostgreSQL storage & sub-2ms link graph |
-| **Margin** | `v1` | `/(wiki-os)/*` | `margin/` | 📀 **Gold Master (100%)** | Split-canvas inspector, text markup, gutter pins, threaded notes directly on articles |
-| **Canvas Editor** | `v1` | `/(wiki-os)/editor/*` | `wikios/editor.ts` | 📀 **Gold Master (100%)** | Visual rich-text authoring with modular content blocks |
-| **Wiki Awards** | `v1` | `/(wiki-os)/awards` | `lorewards/`, `activities/` | 📀 **Gold Master (100%)** | Editor milestone trophies, peer citations, and author medals |
-| **Stash System** | `v1` | `/stashes` | `stashes/` | 📀 **Gold Master (100%)** | Save articles, quotes, media, and forum threads for later |
-| **Image Repository** | `v2` | `/(wiki-os)/repository`| `commons.ts`, `narrator/` | 📀 **Gold Master (100%)** | Shared image and media library with instant lore-card generator bindings |
-
----
-
-### 💎 4. Vault (Metagame Incentives, Social Economy & Collectibles)
-
-| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **Metagame Incentive Hub** | `v2` | `/vault` | `vault/`, `economic/` | 📀 **Gold Master (100%)** | Central progression, social currency, and engagement reward engine |
-| **Cards System** | `v2` | `/vault` | `cards/`, `crafting/` | 📀 **Gold Master (100%)** | 3D holographic cards across 5 editions (Nation, Lore, Import, Special, Community) |
-| **Booster Pack Opening**| `v2` | `/vault/packs` | `card-packs/` | 📀 **Gold Master (100%)** | Physics-driven card peeling with calibrated rarity probabilities |
-| **Atomic Credit Ledger** | `v2` | `/vault` | `vault/`, `economic/` | 📀 **Gold Master (100%)** | Concurrency-locked credit ledger, daily streak rewards, passive dividends |
-| **Marketplace Trading Desk** | `v2` | `/vault/market` | `trading/`, `auctions/` | 📀 **Gold Master (100%)** | Live auction bidding, instant buyout escrow, peer trading desks |
-| **Achievements System** | `v2` | `/achievements` | `achievements/` | 📀 **Gold Master (100%)** | Platform milestone showcase, unlock progression rings, card pack yields |
-
----
-
-### 💬 5. ThinkPages (Real-Time Knowledge Feed & Communications)
-
-| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **Sovereign Feed** | `v2` | `/thinkpages` | `thinkpages/`, `polls/` | 📀 **Gold Master (100%)** | Sovereign micro-posts, `[blurb:slug]` tag embedding, rich wiki cards |
-| **Account Manager** | `v2` | `/thinkpages/accounts`| `accounts/`, `discord/` | 📀 **Gold Master (100%)** | Multi-account switching, auto-Discord webhooks, dispatch feeds, bot telemetry |
-| **ThinkTanks** | `v2` | `/thinktanks` | `thinktanks/` | 📀 **Gold Master (100%)** | Collaborative policy drafting rooms, multilateral research groups, shared drafts |
-| **ThinkShare Messaging** | `v2` | `/messages` | `messages/` | 📀 **Gold Master (100%)** | Platform-wide real-time direct chat, group rooms, rich media drops |
-
----
-
-### 🗨️ 6. IxForum (Archival Community Discourse)
-
-| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **XenForo Native Bridge** | `v1.4` | `/(forum)/forum` | `forum/` | 📀 **Gold Master (100%)** | Thread sync, category boards, and sovereign dispatch bulletins in Orange theme |
-| **IxnayID Single Sign-On** | `v1.4` | `/id` | `ixnayid.ts` | 📀 **Gold Master (100%)** | Platform-wide unified session auth and user credential sharing |
-
----
-
-### ⚙️ 7. Concord Engine (Living-World Simulation Backend)
-
-| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **IxTime Master Clock** | `v2` | Platform Daemon | `ixtime.ts` | 📀 **Gold Master (100%)** | Temporal world clock synchronization, epoch conversion, and scheduled ticks |
-| **Dynamic World Events** | `v2` | `/admin/crisis-events`| `crisis-events.ts` | 📀 **Gold Master (100%)** | Algorithmic natural disaster, economic shock, and border clash queues |
-| **Autonomous NPC AI** | `v2` | `/admin/npc-personalities`| `npcPersonalities/` | 📀 **Gold Master (100%)** | 8 personality traits and 6 behavioral archetypes with fatigue dampening |
-
----
-
-### 🎨 8. Facet UI Design System & Ambient Runtime
-
-| Subsystem / Component | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **Facet Primitives** | `v2` | Global Styles | `src/styles/facet/` | 📀 **Gold Master (100%)** | Volumetric Z-depth, physical materials, edge glare, and Radix encapsulation |
-| **Halo Contextual Overlay** | `v5` | Global Overlay | `src/components/halo/` | 📀 **Gold Master (100%)** | Contextual header wayfinding, live telemetry, and `Cmd+K` command palette |
-| **Cuelume Audio Engine** | `v1` | `CuelumeSoundProvider`| `src/lib/sound/cuelume.ts` | 📀 **Gold Master (100%)** | 17 Web Audio synthesized haptic sound cues bound to `data-cuelume-*` |
-| **Admin CMS Suite** | Platform CMS | `/admin/*` | `admin/` | 📀 **Gold Master (100%)** | 50+ administration interfaces with role-based access control and audit logging |
-
----
-
-### 🧪 Labs (Experimental & Incubation Studio)
-
-| System / Tool | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
-|---|:---:|---|---|:---:|---|
-| **Onoma Studio** | `v4` | `/labs/onoma` | `onoma/`, `src/app/api/onoma/tts/` | 🧪 **Labs Preview** | Phonetic IPA rules, conlang generator, and Kokoro TTS speech synthesis |
-| **MyLeague & MyClub** | `v1` | `/labs/myleague` | `sports/` | 🧪 **Labs Preview** | 7-sport season simulation engine, tactics, transfers, and athlete cards |
-| **Vexel Heraldry Studio** | `v1` | `/labs/vexel` | `vexel/` | 🧪 **Labs Preview** | Procedural heraldic coat-of-arms and national flag vector generator |
+- **CI `test:ci` fails:** three suites need git-ignored files (`next.config.js`, `public/icons/game-icons-manifest.json`, `public/data/vector-seeds/`) that CI runners don't have.
+- **CI `audit:arch` fails:** 15 source files are over their line ceiling (largest: `routers/wikios/templates.ts`, 1,298 lines).
+  Split them or add them to `RELAXED_FILES`.
+- **Security findings from the audit, not yet fixed:**
+  - `achievements.unlock` lets any signed-in user unlock any achievement for any `userId`.
+  - `onoma.getKokoroAdminConfig` returns the Kokoro API key to the client (`routers/onoma/speech.ts:77`).
+  - Sports simulation procedures (`simulateMatchDay`, `startSeason`, `simulateFullSeason`, `transitionToNextSeason`) have no server-side league-ownership check.
+  - A Postgres password for `ixstats_readonly` is hard-coded in `scripts/refresh-local-db.sh` and in git history; rotate it (plan 325).

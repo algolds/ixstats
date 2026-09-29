@@ -6,42 +6,43 @@ badge: MyCountry — Your Nation's Home
 
 ## How It's Laid Out
 
-Your foreign affairs are split into four easy areas:
+Open **Diplomacy** from the MyCountry command bar. Your foreign affairs are split into five tabs:
 
-- **Overview** — your diplomatic health at a glance.
-- **Embassies & Relations** — your network abroad and how each relationship is doing.
-- **Messages** — talk directly with other nations.
-- **Foreign Policy** — the stances you take toward the rest of the world.
+- **Embassy Network** — your embassies abroad and the bonuses they earn you.
+- **Bilateral Relations** — every relationship, how it’s doing, and the stance you take toward each nation.
+- **Alliances & Blocs** — the partnerships you form and join.
+- **Cultural Exchanges** — programs that build goodwill.
+- **Diplomatic Events** — situations that need your response.
 
 ## At a Glance
 
-The overview gives you a quick read on where you stand in the world:
+The side rail gives you a quick read on where you stand in the world:
 
-- **Embassies** — how many you’ve opened, out of the ones you could.
-- **Relationships** — how many nations you have ties with.
-- **Average warmth** — how strong those ties are, on the whole.
-- **Close friends** — the share of relationships that are genuinely strong.
+- **Embassies** — how many are active.
+- **Relationships** — how many nations you have ties with, and how they’re doing.
+- **Alliances & blocs** — the partnerships you belong to.
+- **Active foreign policies** — the moves you currently have in play.
 
 ## Embassies & Relations
 
 > **Building your network**
 >
-> - Open new embassies with other nations.
-> - Manage the embassies you have — their staff and the influence they earn you.
+> - Open new embassies with **Establish Embassy**.
+> - Check each embassy’s staff, budget, influence, and reputation — or close it, and reopen it later.
 > - See your alliances and spot opportunities to join forces.
 > - Watch relationships warm or cool as you act on the world stage.
 
 ## Talking to Other Nations
 
-Send messages straight to other nations — float proposals, answer theirs, and keep the lines open with allies and rivals alike.
+Diplomatic conversations live in [Messages](/messages) — float proposals, answer theirs, and keep the lines open with allies and rivals alike. From another nation’s profile you can also request a meeting.
 
 ## Foreign Policy
 
 Set the stances that shape how the world sees you:
 
-- **Draft a policy** — define what you’re after and who it concerns.
-- **Track what’s active** — keep an eye on your standing policies and their effects.
-- **See the trade impact** — watch how your stances ripple through trade.
+- **Choose a stance** — in **Bilateral Relations**, pick how you approach each nation (Ally, Coexist, Hegemony, or Rival) and see theirs toward you.
+- **Propose a policy action** — from another nation’s profile, put a foreign-policy move on the table.
+- **Track what’s active** — the side rail keeps your standing policies in view.
 
 ## Your Choices Have Consequences
 

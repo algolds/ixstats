@@ -1,4 +1,14 @@
-MyCountry: Vision–Implementation Audit
+# MyCountry: Vision–Implementation Audit
+
+> **Historical snapshot (written 2026-06-30).** The "Code audit" in §2 describes the codebase as it was then. **What has changed since (verified 2026-09-29):**
+> - **Intent Engine: built, following recommendation (b).** `Intent` model (`prisma/schema/government.prisma`) with a parent/child tree (no `NationalIntent` / `IntentDependency` DAG, no Vision/Strategic/Operational layers). `intent` router (`suggest`, `commit`, `getTree`, `getStatus`, `updateStatus`, `getLinkedIssues`, `generateSummationDraft`). Packages (measured / moderate / extreme / custom) are assembled server-side from the policy registry (`src/lib/intent/assemble.ts`). Commits are capped at 3 per IxTime week with a cooldown, and each commit spawns resistance issues (`src/lib/intent/resistance.ts`). Branded "Directives" in the UI.
+> - **Spine callers changed:** `recordCountryEvent` (now `src/lib/activity/event-spine.ts`) is called by `intent.ts`, `national-issues/consequences.ts`, and `policies/maintenance-cron.ts`. `diplomacy/inbox.ts` no longer exists, and meeting completion (`completeMeeting` / decisions) was deleted in plans 312/332, so meetings are schedule-only. The spine is still not universal.
+> - **Situation Room: partial.** `ExecutiveWarRoom.tsx` was replaced by the single `CommandSurface` → `ExecutiveHome` (severity-ranked priority hero, 7-day agenda horizon, standing bands, canon feed). There is still no `dashboard-state-engine.ts`, Decide/Review/Monitor/Celebrate model, or "since your last session" briefing.
+> - **Changelog UI:** `CountryChangeLogTimeline.tsx` / `getChangeLog` are gone. Change-log rows now surface through `mycountry.getCanonFeed`.
+> - **Still unbuilt:** deliberation meetings (Convene→Brief→Deliberate→Commit), `ForeignMission` / `LegislativeBill` models, and qualitative-band fog masking. `statecraftSpine` still defaults off. Bills now exist via the `legislation` router, stored as `Policy` rows.
+> - **Asymmetry:** `src/lib/diplomacy/relative-development.ts` now labels partner asymmetry on embassy cards, but it is not applied to trade or economy math.
+> - **Diplomacy bands & stances:** `relation-bands.ts` (standing bands on embassy cards) and `setDiplomaticGoal` + `runDiplomaticDrift` (stances) have shipped.
+
 0. The bottom line up front
 There are two design generations stacked on top of each other, and the gap between them is the whole story:
 

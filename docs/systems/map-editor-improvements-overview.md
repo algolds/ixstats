@@ -5,11 +5,13 @@
 
 This initiative improves the MyCountry map editor across three fronts. Each plan file is **self-contained** — an executor can run any one without reading the others.
 
+> **Status (2026-09-29): historical — C-1, C-2 and C-3 are shipped.** Written in June 2026 against the retired `v2` branch (the integration branch is now `rose-garden`). The per-plan files it names were not kept in the repo, and the paths and line numbers in Part A are the June 2026 layout — e.g. `EnhancedMapEditorContent.tsx` no longer exists; the editor is `src/components/maps/editor/MapEditorOverlay.tsx` (country editor in place on `/maps`, world editor at `/admin/maps/editor`). Current stack: Next.js 16.3, `maplibre-gl` 6.11, `@turf/turf` 7.4. Geoman was never added: region union/subtract/intersect shipped on turf instead (`pathfinderOperation` in `src/hooks/map-editor/useMapEditorTransforms.ts`).
+
 | Plan | File | Status | Depends on |
 |------|------|--------|------------|
 | C-1 Contextual Tool Toolbar | `map-editor-contextual-toolbar.md` | **MERGED** to v2 @ `e7d43e42` (squash; core only) | — |
-| C-1b Region geometry ops (Geoman) | _(to be written)_ | TODO — descoped from C-1 (see log) | C-1 |
-| C-2 Geography Report / Analyzer | `map-editor-geography-analyzer.md` | TODO | C-2 schema step needs explicit `db:push:force` approval |
+| C-1b Region geometry ops (Geoman) | _(never written)_ | **Superseded** — union/subtract/intersect shipped via turf without Geoman; split/merge live in the border editor (`geoEditor.splitCountry` / `mergeCountries`) | C-1 |
+| C-2 Geography Report / Analyzer | `map-editor-geography-analyzer.md` | **DONE** @ `94f23058` — `Peak`/`NamedRiver`/`NamedLake`, `geoCore.getCountryGeoProfile` superlatives + per-country PostGIS hydro, `GeographyReportModal` | C-2 schema step needs explicit `db:push:force` approval |
 | C-3 Routes Foundation | `map-editor-routes-foundation.md` | **MERGED** to v2 @ `2670e0fd` | C-1 `ToolOptionsBar` wiring ✓ done |
 
 **Recommended order:** C-1 ✓ → C-3 ✓ → C-2.
@@ -64,10 +66,10 @@ User-confirmed decisions: region geometry ops use **MapLibre-Geoman**; the analy
 ---
 
 ## Part B — Direction (later, beyond the three plans)
-- **Topology validation on save** (Turf gap/overlap/self-intersection) — prevents the "Pescorto-style" defects (`maps.md` Level 2).
-- **Shared-border editing** (`maps.md` Level 5; `SharedVertex` model already exists) — edit one edge, both neighbors update.
-- **Named-feature → sim tie-in**: navigable `NamedRiver` / coastal `NamedLake` → `CountryGeoProfile.tradeModifier`.
-- **flightcn-style animated route arcs** (geometry already great-circle) — pure render layer; defer until C-3 lands.
+- **Topology validation on save** (Turf gap/overlap/self-intersection) — prevents the "Pescorto-style" defects. *Partial (2026-09): border submits run PostGIS validity checks (`validateGeometryValid`) and subdivisions are clipped to their country; no cross-country gap/overlap check.*
+- **Shared-border editing** (`SharedVertex` model already exists) — edit one edge, both neighbors update. *Done: `useBorderEditor` + `src/lib/maps/shared-vertex-builder.ts`, `topology-engine.ts`.*
+- **Named-feature → sim tie-in**: navigable `NamedRiver` / coastal `NamedLake` → `CountryGeoProfile.tradeModifier`. *Not started: `computeEconomicGeoModifiers` (`src/lib/maps/geo-analytics.ts`) does not read named features.*
+- **flightcn-style animated route arcs** (geometry already great-circle) — pure render layer. *Done: `DeckTransportOverlay` (deck.gl `ArcLayer` / `TripsLayer`).*
 
 ---
 
@@ -86,5 +88,5 @@ bun run db:push:force && bun run db:generate
 ```
 
 ## Notes
-- **Only new runtime dependency:** `@geoman-io/maplibre-geoman-free` (MIT, C-1). Everything else reuses installed `@turf/turf`, `maplibre-gl`, existing components, and existing tRPC mutations.
+- **Only new runtime dependency (planned, never added):** `@geoman-io/maplibre-geoman-free` (MIT, C-1). Everything else reuses installed `@turf/turf`, `maplibre-gl`, existing components, and existing tRPC mutations.
 - **Versioning:** per `docs/reference/revision.md`, these touch the IxWorld app + Atlas engine — consider a capability bump after C-1/C-2.

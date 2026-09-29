@@ -2,6 +2,8 @@
 
 **Phase 3: Card Crafting/Fusion/Evolution**
 
+> **Status (verified 2026-09-29): PARTIAL.** The workbench, animation, and `crafting.getRecipes` / `getRecipeById` / `craftCard` exist, but `/vault/crafting` is not linked from the Vault nav, the page passes card-definition IDs where `craftCard` expects `CardOwnership` IDs, `successRate` units disagree between schema (0–1) and router (0–100), and the recipe seed does not match the Prisma model. See [Known Issues](#known-issues).
+
 The crafting system allows players to combine or evolve cards to create more powerful variants. This system features fusion (combining multiple cards) and evolution (upgrading individual cards) mechanics with dynamic success rates and XP rewards.
 
 ## Architecture
@@ -40,35 +42,11 @@ interface CraftingWorkbenchProps {
 />
 ```
 
-#### 2. **RecipeBrowser.tsx**
-Recipe selection and filtering interface.
-
-**Features:**
-- Recipe grid display
-- Filter by: ALL, UNLOCKED, LOCKED, COMPLETED
-- Search functionality
-- Recipe details preview
-- Unlock status indicators
-- Completion tracking
-
-**Props:**
-```typescript
-interface RecipeBrowserProps {
-  selectedRecipeId: string | null;
-  onRecipeSelect: (recipeId: string) => void;
-}
-```
-
-**Usage:**
-```tsx
-<RecipeBrowser
-  selectedRecipeId={recipeId}
-  onRecipeSelect={setRecipeId}
-/>
-```
+#### 2. Recipe selection (inline)
+There is no `RecipeBrowser` component. `/vault/crafting` renders a horizontal row of recipe buttons from `crafting.getRecipes({})` and passes the selected ID to `CraftingWorkbench`. `getRecipes` itself supports `filter` (ALL, UNLOCKED, LOCKED, COMPLETED), `recipeType`, and `search`.
 
 #### 3. **CraftingAnimation.tsx**
-Success/failure animation component.
+Success/failure animation component (rendered by `CraftingWorkbench` after a craft).
 
 **Features:**
 - Glass fusion effect (cards merging)
@@ -101,106 +79,69 @@ interface CraftingAnimationProps {
 ### Page
 
 #### `/vault/crafting`
-Main crafting hub page.
+Main crafting page (`src/app/vault/crafting/page.tsx`), rendered inside the Vault layout but not listed in the Vault sidebar.
 
 **Layout:**
-- Header with title and description
-- Crafting statistics overview (4-stat grid)
-- Two-column layout:
-  - Left: RecipeBrowser (1/3 width on desktop)
-  - Right: CraftingWorkbench (2/3 width on desktop)
-- Recent crafting history section
-- Help section with crafting instructions
+- "Select Crafting Recipe" row of recipe buttons
+- `CraftingWorkbench` fed with the user's cards from `cards.getMyCards({ sortBy: "value" })`
+
+Not built: statistics overview, crafting history section, help section.
 
 ## Backend
 
-### tRPC Router: `crafting.ts`
+### tRPC Router: `crafting` (`src/server/api/routers/crafting/recipes.ts`)
 
 **Endpoints:**
 
 1. **`getRecipes`** (Protected)
-   - Filter recipes by status (ALL, UNLOCKED, LOCKED, COMPLETED)
-   - Search by name/description
-   - Returns recipes with unlock status
+   - Filter recipes by status (ALL, UNLOCKED, LOCKED, COMPLETED), `recipeType`, and name/description search
+   - Returns active recipes with `isUnlocked` (`User.collectorLevel >= minLevel`), `isCompleted`, `completedCount`
 
 2. **`getRecipeById`** (Protected)
-   - Get detailed recipe information
-   - Includes unlock status, completion count, recent crafts
+   - Detailed recipe information including unlock status, completion count, recent crafts
 
 3. **`craftCard`** (Protected)
-   - Execute crafting operation
-   - Validates materials, credits, unlock status
-   - Calculates success based on success rate
-   - Creates result card if successful
-   - Awards XP and updates collector level
-   - Records crafting history
+   - Input: `recipeId`, `materialCardIds` (**`CardOwnership` IDs**)
+   - Respects `isMaintenanceMode` / `isCraftingEnabled`; validates ownership, materials, credits, unlock level
+   - Rolls success, consumes materials, mints a result card on success, awards card XP, records history
 
-4. **`getCraftingHistory`** (Protected)
-   - Get user's crafting history
-   - Pagination support
-   - Filter by success status
-
-5. **`getCraftingStats`** (Protected)
-   - Get aggregate crafting statistics
-   - Total crafts, success rate, XP gained, credits spent
-
-6. **`createRecipe`** (Admin)
-   - Create new crafting recipe
-   - Auto-calculates cost, success rate, XP based on rarity
-
-7. **`updateRecipe`** (Admin)
-   - Update existing recipe
-   - Toggle active status
-
-8. **`adminGetAllRecipes`** (Admin)
-   - Get all recipes including inactive
-   - Includes craft count statistics
+**Not implemented** (previously documented): `getCraftingHistory`, `getCraftingStats`, `createRecipe`, `updateRecipe`, `adminGetAllRecipes`. Recipes are managed through the seed file or direct DB edits.
 
 ## Database Models
 
 ### CraftingRecipe
 
+From `prisma/schema/cards.prisma`:
+
 ```prisma
 model CraftingRecipe {
-  id                String   @id @default(cuid())
-  name              String
-  description       String?
-  recipeType        String   // FUSION or EVOLUTION
-  resultCardId      String?  // Card template ID
-  resultRarity      String   // Rarity of result
-  resultType        String   // CardType of result
-  materialsRequired Json     // Array of material requirements
-  ixCreditsCost     Int      @default(0)
-  successRate       Float    @default(100.0)
-  unlockRequirement Json?    // Unlock conditions
-  isActive          Boolean  @default(true)
-  collectorXP       Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  craftingHistory   CraftingHistory[]
+  id              String            @id @default(cuid())
+  name            String
+  description     String?
+  recipeType      String            // "FUSION" | "EVOLUTION"
+  requiredCardIds Json              // Array of card IDs or criteria
+  requiredCount   Int               @default(1)
+  resultCardId    String?           // Specific result card (null = random by rarity)
+  resultRarity    String?           // If random result, rarity constraint
+  ixCreditsCost   Int               @default(0)
+  successRate     Float             @default(1.0) // schema comment: 0.0-1.0
+  minLevel        Int               @default(1)
+  collectorXPGain Int               @default(0)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  craftingHistory CraftingHistory[]
 }
 ```
 
-**Material Requirement Format:**
+**Material Requirement Format** (`requiredCardIds`): either specific card IDs, or criteria objects validated by count only (`requiredCount`):
 ```json
 [
-  {
-    "cardId": "optional-specific-card-id",
-    "rarity": "RARE",
-    "type": "NATION",
-    "quantity": 2
-  }
+  { "rarity": "RARE", "quantity": 2 }
 ]
 ```
 
-**Unlock Requirement Format:**
-```json
-{
-  "minLevel": 5,
-  "achievements": ["achievement-id-1"],
-  "completedRecipes": ["recipe-id-1"]
-}
-```
+**Unlock requirement:** only `minLevel` (compared with `User.collectorLevel`). Achievement and prerequisite-recipe unlocks are not implemented.
 
 ### CraftingHistory
 
@@ -231,67 +172,44 @@ model CraftingHistory {
    - Result rarity determined by recipe
 
 2. **EVOLUTION**
-   - Upgrade a single card to higher rarity
-   - More reliable than fusion (higher success rates)
-   - Preserves card identity
-   - Requires specific base card
+   - Intended to upgrade a single card to higher rarity
+   - More reliable than fusion (higher seeded success rates)
+   - Currently consumes the material and mints a new card (identity is not preserved unless the recipe sets `resultCardId`)
 
 ### Success Rate System
 
-**Default rates by rarity:**
-- COMMON: 100%
-- UNCOMMON: 95%
-- RARE: 85%
-- ULTRA_RARE: 70%
-- EPIC: 50%
-- LEGENDARY: 30%
-- MYTHIC: 15%
+Seeded rates (percent): Fusion 95 / 85 / 70 / 30 / 15, Evolution 100 / 95 / 85 / 70 / 50, Lore Card Fusion 80, Event Card Fusion 60.
 
 Success is determined by:
 ```typescript
 const roll = Math.random() * 100;
 const success = roll <= recipe.successRate;
 ```
+Note: this treats `successRate` as a percentage, while the schema default (`1.0`) and comment assume 0–1.
 
 ### Cost System
 
-**IxCredits cost by rarity:**
-- COMMON: 100
-- UNCOMMON: 250
-- RARE: 500
-- ULTRA_RARE: 1,000
-- EPIC: 2,500
-- LEGENDARY: 5,000
-- MYTHIC: 10,000
+**Seeded IxCredits costs:**
+- Fusion: Common→Uncommon 250, Uncommon→Rare 500, Rare→Ultra Rare 1,000, Epic→Legendary 5,000, "Mythic" 10,000
+- Evolution: 200 / 400 / 800 / 2,000 / 4,000 (Common→Uncommon … Epic→Legendary)
+- Special: Lore Card Fusion 750, Event Card Fusion 1,500
+
+Credits are spent with `SPEND_CRAFT` on every attempt, successful or not.
 
 ### XP Rewards
 
-**Collector XP by rarity:**
-- COMMON: 10 XP
-- UNCOMMON: 25 XP
-- RARE: 50 XP
-- ULTRA_RARE: 100 XP
-- EPIC: 250 XP
-- LEGENDARY: 500 XP
-- MYTHIC: 1,000 XP
-
-**Level progression:**
-- 1,000 XP per collector level
-- Level = floor(totalXP / 1000) + 1
+`collectorXPGain` is granted to the **newly crafted card** (`grantCardXp(..., "CRAFT")`) on success and recorded in `CraftingHistory`. Crafting does not change `User.collectorLevel`.
 
 ### Unlock System
 
-Recipes can be locked behind requirements:
-- **Minimum collector level**
-- **Required achievements** (placeholder)
-- **Completed recipes** (prerequisite recipes)
+Recipes can be locked behind a **minimum collector level** (`minLevel`). Required achievements and completed-recipe prerequisites are not implemented.
 
 ## Seed Data
 
 Sample recipes provided in `/prisma/seeds/crafting-recipes.ts`:
 
-- 5 Fusion recipes (Common → Mythic)
-- 5 Evolution recipes (Common → Epic)
+- 5 Fusion recipes (Common → "Mythic")
+- 5 Evolution recipes (Common → Legendary)
 - 2 Special recipes (Lore Card, Event Card)
 
 **Run seed:**
@@ -299,19 +217,19 @@ Sample recipes provided in `/prisma/seeds/crafting-recipes.ts`:
 npx tsx prisma/seeds/crafting-recipes.ts
 ```
 
+⚠️ The seed objects use legacy field names (`materialsRequired`, `resultType`, `collectorXP`, `unlockRequirement`) that are not columns on `CraftingRecipe`, and a `MYTHIC` rarity that is not in `CardRarity`; `prisma.craftingRecipe.create({ data: recipe })` will fail until the seed is updated.
+
 ## Atomic Transactions
 
-Crafting operations use Prisma transactions to ensure atomicity:
+`craftCard` runs in a Prisma transaction:
 
-1. Validate user has sufficient IxCredits
-2. Validate user owns all material cards
-3. Deduct IxCredits
-4. Delete consumed card instances
-5. Create result card (if successful)
-6. Award XP and update collector level
-7. Record crafting history
+1. Spend IxCredits (`vaultService.spendCreditsTx`, `SPEND_CRAFT`; fails on insufficient balance)
+2. Delete consumed `CardOwnership` rows
+3. On success: create a new `Card` (from `resultCardId`, else a generic "<recipe> Result" NATION card with `resultRarity`) and its ownership
+4. Award card XP to the new card
+5. Record crafting history
 
-**If any step fails, entire transaction rolls back.**
+Ownership and material validation happen just before the transaction. **If any step inside fails, the transaction rolls back.**
 
 ## Integration Points
 
@@ -324,23 +242,18 @@ Crafting operations use Prisma transactions to ensure atomicity:
 - Card instance ownership verification
 - Card creation for successful crafts
 - Card deletion for consumed materials
+- Card XP for the crafted card (`src/lib/cards/xp-utils.ts`)
 
 ### User System
-- Collector level tracking
-- XP accumulation
-- Level-up calculations
+- Collector level read for recipe unlocks (not modified by crafting)
 
 ## UI/UX Features
 
 ### Facet Design
-All components use the Facet (glass) design system:
-- `glassDepth="parent"` - Page-level containers
-- `glassDepth="child"` - Section containers
-- `glassDepth="interactive"` - Interactive elements
-- `glassDepth="modal"` - Modal overlays
+Components use Facet (glass) styling via `CometCard` and `facet-hierarchy-*` classes.
 
 ### Animations
-- Framer Motion for smooth transitions
+- Motion (`motion/react`) for smooth transitions
 - Card slot hover effects
 - Fusion animation with particle effects
 - Success/failure reveal sequences
@@ -355,12 +268,10 @@ All components use the Facet (glass) design system:
 ## Performance Considerations
 
 1. **Inventory Loading**
-   - Limit to 1,000 cards for crafting
-   - Use pagination for larger inventories
+   - The page loads the full `cards.getMyCards` result (no pagination)
 
 2. **Recipe Filtering**
-   - Client-side filtering for speed
-   - Server-side search for accuracy
+   - Server-side filter/search on `getRecipes` (the page currently requests all recipes)
 
 3. **Animation Performance**
    - GPU-accelerated transforms
@@ -376,7 +287,7 @@ All components use the Facet (glass) design system:
 - Recipe not found
 - Invalid materials
 
-**All errors return TRPCError with appropriate messages.**
+**Errors surface as TRPCError messages; the workbench currently shows them with `alert()`.**
 
 ## Testing Checklist
 
@@ -421,9 +332,9 @@ All components use the Facet (glass) design system:
 
 - `@trpc/server` - API layer
 - `@prisma/client` - Database ORM
-- `framer-motion` - Animations
-- `~/lib/vault-service` - IxCredits management
-- `~/lib/card-service` - Card operations
+- `motion` (`motion/react`) - Animations
+- `~/lib/vault/vault-service` - IxCredits management
+- `~/lib/cards/xp-utils` - Card XP
 - `~/components/ui/comet-card` - Facet (glass) components
 - `~/components/cards/display/CardDisplay` - Card rendering
 
@@ -433,20 +344,26 @@ All components use the Facet (glass) design system:
 src/
 ├── components/cards/crafting/
 │   ├── CraftingWorkbench.tsx     # Main crafting interface
-│   ├── RecipeBrowser.tsx         # Recipe selection
 │   ├── CraftingAnimation.tsx     # Success/failure animation
-│   ├── index.ts                  # Barrel exports
-│   └── README.md                 # This file
+│   └── README.md                 # This file (no barrel index.ts)
 ├── app/vault/crafting/
-│   └── page.tsx                  # Crafting hub page
-└── server/api/routers/
-    └── crafting.ts               # tRPC router
+│   └── page.tsx                  # Crafting page (inline recipe picker)
+└── server/api/routers/crafting/
+    ├── index.ts                  # Router export
+    └── recipes.ts                # getRecipes, getRecipeById, craftCard
 
 prisma/
-├── schema.prisma                 # Database models
+├── schema/cards.prisma           # CraftingRecipe, CraftingHistory
 └── seeds/
-    └── crafting-recipes.ts       # Sample recipes
+    └── crafting-recipes.ts       # Sample recipes (needs schema alignment)
 ```
+
+## Known Issues
+
+- `/vault/crafting` maps `cards.getMyCards` results to `CardInstance` with `id = card definition ID`; `craftCard` looks up `CardOwnership` IDs, so crafts fail with "You don't own all the specified material cards".
+- `successRate` percent vs fraction mismatch (see above).
+- Seed file field names do not match the model.
+- Evolution does not preserve card identity: success always mints a new card.
 
 ## Version History
 
@@ -455,7 +372,7 @@ prisma/
   - Success rate system
   - XP rewards and progression
   - 12 sample recipes
-  - Full UI with Facet (glass) design
+  - Facet (glass) workbench UI
 
 ---
 

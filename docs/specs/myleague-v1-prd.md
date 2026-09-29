@@ -14,6 +14,11 @@
 
 ---
 
+> **Implementation status (audited 2026-09-29) — historical scoping PRD, superseded.** The shipped product is documented in [`docs/systems/myleague.md`](../systems/myleague.md) and the later architecture PRD [`mysports-v0.md`](./mysports-v0.md). Final names are **MyLeague** / **MyClub** (routes `/myleague`, `/myclub`).
+> - **P0-1 … P0-12: all shipped** — league creation (with optional team `nationId`), archetype scheduler (`src/lib/sports/scheduler.ts`), generated rosters, bounded probabilistic resolver (dispatcher `resolver.ts`; there is no formal `MatchResolver` interface), ELO updates (`elo-calculator.ts`), standings/brackets/playoffs, Markov talent generator (`talent.ts`), aging (`aging.ts`), draft + transfer market, IxTime season cron (`sports-season-advance` job → `advanceSportsSeasons`), history/records (`almanac.ts`, `SportSeasonRecord`), MyClub dashboard.
+> - **P1:** P1-1 manager intent ✅ (7 tactical presets + sliders); P1-2 richer narrative 🟡 (rivalry intensity + optional LLM commentary; no dynasty detection or historical-significance scoring); P1-3 multi-dimensional rating vectors ✅ (per-sport `ratingVector`); P1-4 nation competitions 🟡 (quadrennial World Cup; no national leaderboards); P1-5 championship card minting ✅.
+> - **P2:** P2-1 AegisCore engine ❌ not started; P2-2 combat & racing 🟡 (F1 circuit resolver ✅; boxing bracket archetype ships but bouts reuse the soccer match loop); P2-3 custom sport DSL ❌ not started; P2-4 economic integration 🟡 (training, licenses, patron saints and escrowed transfer bids use Vault credits via `exchangeService`; no market-currency club valuations).
+
 ## 1. 🧭 Overview
 
 MyLeague is the competition layer of IxStats. A player **spins up a league** (pick a sport, set the teams, choose a format), the system **auto-generates a format-appropriate schedule**, **simulates the season** on the IxTime clock, and every in-game year runs a **draft or transfer window** that refreshes talent via a **procedural (Markov-driven) generator** of rookies and coaches. Teams age, develop, decline, win, and build history.

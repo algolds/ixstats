@@ -6,13 +6,13 @@ badge: IxVault & Cards
 
 ## Pack Store
 
-The Acquire section of the Vault contains the Pack Store where you can browse and purchase card packs. Each pack type has a fixed IxCredits price, a guaranteed number of cards, and minimum rarity guarantees.
+The **Vault Shop** tab of the Vault's **Marketplace** is where you browse and purchase card packs; your unopened packs wait under **My Packs**. Each pack type has a fixed IxCredits price, a guaranteed number of cards, and minimum rarity guarantees.
 
 ## Purchasing Packs
 
 > **Purchase Flow**
 >
-> 1. Browse available packs in the Pack Store
+> 1. Browse available packs in the Vault Shop
 > 2. Click a pack to open the Purchase Modal
 > 3. Review pack contents, price, and rarity guarantees
 > 4. Confirm purchase (IxCredits are deducted immediately)

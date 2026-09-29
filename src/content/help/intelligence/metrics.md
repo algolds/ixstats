@@ -4,6 +4,11 @@ description: Understand the numbers behind your nation's intelligence system and
 badge: Intelligence & Strategy
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Intelligence is a MyCountry Premium feature in preview, and it doesn't currently have its own section in MyCountry — the `/mycountry/intelligence` address opens the Defense view instead. The dashboard, feed, and settings described in this guide aren't available right now.
+
 ## What Your Metrics Mean
 
 Your intelligence system tracks dozens of indicators across every aspect of your nation. These are organized into three main families so you can quickly assess where things stand and where action is needed.

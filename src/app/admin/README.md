@@ -1,8 +1,8 @@
 # Admin Dashboard
 
-**Last updated:** June 2026
+**Last updated:** September 2026
 
-The admin console at `/admin` is the operator surface for IxStats. It currently exposes **47 top-level route directories** under `src/app/admin/` (51 including nested sub-routes such as analytics and map editors) — not the "28" stated by earlier revisions of this file. Most routes are thin: their `page.tsx` renders the shared `AdminRouter`, which switches on the active section, so navigation between admin areas is instant (no Next.js route transition). A handful of feature-heavy areas (countries, diplomatic options/scenarios, military equipment, NPC personalities, maps) ship their own page content and auth guard.
+The admin console at `/admin` is the operator surface for IxStats. It exposes **37 top-level route directories** with a `page.tsx` under `src/app/admin/` (42 `page.tsx` files including the root and the nested `diplomatic-options/analytics`, `diplomatic-scenarios/analytics`, `maps/editor` and `maps/style-editor`). Every route except the two map editors renders the shared `AdminRouter`, which switches on the active section (39 sections + the dashboard), so navigation between admin areas is instant (no Next.js route transition). Plan 344 (September 2026) removed the alias routes and the unlinked `/studio` UI.
 
 ## Scope
 - Review system status, calculation logs, live dashboard metrics, and health
@@ -11,76 +11,68 @@ The admin console at `/admin` is the operator surface for IxStats. It currently 
 - Manage user↔country mapping, roles, realms, and membership tiers
 - Edit world-sim calculation formulas and reference data
 - Curate dynamic game content: government / economic components, economic archetypes, diplomatic options & scenarios, military equipment, NPC personalities, intelligence templates, national issues
-- Manage cards/vault, lore cards, polls, blurbs, achievements/awards, and notifications
-- Run WikiOS tooling: wiki link status, LoreScanner, Commons image repository, wiki awards
+- Manage cards/vault (incl. NationStates card import and lore card batch generation), polls, blurbs, achievements/awards, and notifications
+- Run WikiOS tooling: wiki link status, LoreScanner, Commons image repository, Loreward weights and article awards
+- Labs panels: MyLeague, Narrator, Onoma, Facet lab
 
 ## Admin Directories
-Routes whose `page.tsx` defers to `AdminRouter` are marked **(router)**; the section is rendered by `AdminRouter.renderContent()`. Pages with their own content/auth are marked **(standalone)**.
+All routes below render `AdminRouter`; the section panel is chosen by `AdminRouter.renderContent()`. Only `maps/editor` and `maps/style-editor` render their own page content.
 
-| Directory | Purpose |
+| Directory | Section panel / purpose |
 | --- | --- |
 | `(root) page.tsx` | Live admin dashboard (`LiveAdminDashboard`) — default section |
-| `settings/` | General platform settings **(router)** |
-| `platform/` | Platform health / system validation hub (system-validation merged here) **(standalone)** |
-| `system-validation/` | Redirect → `platform` |
-| `bot/` | Discord bot integration center (process, commands, sync) **(router)** |
-| `notifications/` | Notification administration **(router)** |
-| `logs/` | System / calculation log viewer **(router)** |
-| `user-logs/` | User activity log viewer (`LogsPanel`) **(router)** |
-| `realms/` | Realms, nation claims queue + user→realm assignments **(router)** |
-| `storyteller/` | Storyteller world events / event chains **(router)** |
-| `worldstudio/` | World Studio map authoring panel **(router)** |
-| `reference-data/` | Reference data management hub **(router)** |
-| `national-issues/` | National issues templates **(router)** |
-| `calculations/` | Calculation formula editor (router-only section, no dir) |
-| `countries/` | God-mode country data, roster import, grid/detail, audit, announcements **(standalone)** |
-| `government-components/` | Atomic government building-block CRUD **(standalone)** |
-| `economic-components/` | Economic policy component CRUD **(standalone)** |
-| `economic-archetypes/` | Economy templates / preset component sets **(standalone)** |
-| `diplomatic-options/` | Diplomatic action CRUD + `analytics/` **(standalone)** |
-| `diplomatic-scenarios/` | Diplomatic scenario templates + `analytics/` **(standalone)** |
-| `military-equipment/` | Equipment catalog + `small-arms/`, `manufacturers/`, `analytics/` **(standalone)** |
-| `npc-personalities/` | NPC personality traits / archetypes, clone & assign **(standalone)** |
-| `intelligence-templates/` | Intelligence briefing templates **(standalone)** |
-| `ns-sync/` | NationStates data synchronization **(standalone)** |
-| `autosave-monitor/` | Autosave system health / failure analysis **(standalone)** |
-| `lore-cards/` | Lore card `batch-generator/` from wiki content **(standalone)** |
-| `cards/` | Vault card management (`card-packs/` redirects to `cards?tab=packs`) **(router)** |
-| `card-packs/` | Redirect → `cards?tab=packs` |
-| `vault/` | IxVault administration **(router)** |
-| `stash/` | Stash settings **(router)** |
-| `polls/` | Polls management **(router)** |
-| `blurbs/` | Blurbs management **(router)** |
-| `achievements/` | Achievements / awards & system points (`AwardsManagerSection`) **(router)** |
-| `lorewards/` | Loreward scoring (renders null / handled via wiki router) |
-| `thinkpages/` | ThinkPages content settings **(router)** |
-| `membership/` | Membership tier management **(standalone)** |
-| `user-management/` | User list / management (`UserManagement mode="users"`) **(router)** |
-| `user-roles/` | Role assignment (`UserManagement mode="roles"`) **(router)** |
-| `users/` | Legacy user analytics route **(standalone)** |
-| `maps/` | Atlas map admin + `editor/`, `style-editor/` (own error boundary) **(standalone)** |
-| `wiki/` | Wiki link status, manual link editor, system tuning **(router)** |
-| `wikios-settings/` | WikiOS base settings (link status + editor + tuning) **(router)** |
-| `lorescanner/` | WikiOS bulk wiki-link scanner **(router)** |
-| `image-repo/` | WikiOS Commons repository / flag cache (`UnifiedMediaServiceAdmin`) **(router)** |
-| `myleague/` | MyLeague admin panel (Labs) **(router)** |
-| `facet-lab/` | Facet design-system lab **(router)** |
-| `facet-materials-lab/` | Facet materials lab (`FacetLabPanel`) **(router)** |
-| `studio/` | Content studio **(standalone)** |
-| `rings-audit/` | Health-ring data audit (`HealthRing` debug view) **(standalone)** |
+| `platform/` | Platform health / system validation (`PlatformSettingsPanel`) |
+| `autosave-monitor/` | Platform panel, autosave tab |
+| `countries/` | God-mode country data, roster import, grid/detail, audit, announcements (`CountriesAdminPanel`) |
+| `bot/` | Discord bot integration center (process, commands, sync) |
+| `notifications/` | Notification administration |
+| `logs/` | System / calculation / user log viewer (`LogsPanel`) |
+| `realms/` | Realms, nation claims queue + user→realm assignments |
+| `storyteller/` | Storyteller world events / event chains |
+| `maps/` | World Studio panel; `maps/editor/` and `maps/style-editor/` are full-page editors (own error boundary) |
+| `reference-data/` | Reference data management hub |
+| `national-issues/` | National issues templates |
+| `rings-audit/` | Health-ring data audit |
+| `government-components/` | Atomic government building-block CRUD |
+| `economic-components/` | Economic policy component CRUD (incl. tax impact) |
+| `economic-archetypes/` | Economy templates / preset component sets |
+| `diplomatic-options/` | Diplomatic action CRUD (+ `analytics/`) |
+| `diplomatic-scenarios/` | Diplomatic scenario templates (+ `analytics/`) |
+| `military-equipment/` | Equipment catalog (`MilitaryEquipmentPanel`) |
+| `npc-personalities/` | NPC personality traits / archetypes |
+| `intelligence-templates/` | Intelligence briefing templates |
+| `cards/` | Vault card management, NS card import (`CardImportStudio`), lore card batch generator (`LoreCardBatchAdmin`) |
+| `vault/` | IxVault administration |
+| `stash/` | Stash settings |
+| `polls/` | Polls management |
+| `blurbs/` | Blurbs management |
+| `achievements/` | Achievements and article awards (`AwardsManagerSection`) |
+| `thinkpages/` | ThinkPages content settings |
+| `membership/` | Membership tier management |
+| `users/` | User list / management (`UserManagement mode="users"`) |
+| `user-roles/` | Role assignment (`UserManagement mode="roles"`) |
+| `wikios-settings/` | WikiOS utilities deck, wiki link status, manual link editor, system tuning (incl. Loreward weights) |
+| `lorescanner/` | WikiOS bulk wiki-link scanner |
+| `image-repo/` | WikiOS Commons repository / flag cache |
+| `myleague/` | MyLeague admin panel (Labs) |
+| `narrator/` | Narrator admin panel (Labs) |
+| `onoma/` | Onoma admin panel (Labs) |
+| `facet-lab/` | Facet design-system lab (`facet-materials-lab/FacetLabPanel`) |
 
-> Removed since the prior README: `tax-components/`, `card-balancer/`, and `crisis-events/` no longer exist as admin routes. Tax editing now lives within `economic-components` (Tax Impact). The prior "28 / + 7 more" table is superseded by the full list above.
+Directories without a `page.tsx`: `calculations/` (formula editor components; the `calculations` section is reachable from the sidebar, but a hard load of `/admin/calculations` has no route), `facet-materials-lab/` (lab components), `wiki/components/` (sections used by `wikios-settings`, `lorescanner`, `achievements`), `_components/`, `_hooks/`.
+
+> Removed since the June README: `settings/`, `system-validation/`, `user-logs/`, `worldstudio/`, `card-packs/`, `lorewards/`, `user-management/`, `wiki/` (page), `facet-materials-lab/` (page), `studio/`, and earlier `tax-components/`, `card-balancer/`, `crisis-events/`, `ns-sync/`, `lore-cards/`. Added: `narrator/`, `onoma/`.
 
 ## Architecture & Auth
 
-- **Shared layout guard** — `src/app/admin/layout.tsx` enforces access before rendering any admin route. It requires a signed-in Clerk user who is either a system owner (`isSystemOwner(user.id)`) **or** carries `publicMetadata.role ∈ {admin, owner, staff}`. Anyone else sees the `AccessDeniedScreen`; signed-out users get a sign-in modal.
-- **System owner** — `src/lib/system-owner-constants.ts` defines `SYSTEM_OWNER_IDS` and `isSystemOwner()`, which audit-logs owner access in production.
+- **Shared layout guard** — `src/app/admin/layout.tsx` enforces access before rendering any admin route. It requires a signed-in Clerk user who is either a system owner (`isSystemOwner(user.id)`) **or** has a role `∈ {admin, owner, staff}` in Clerk `publicMetadata.role` or in the database role. Anyone else sees the `AccessDeniedScreen`; signed-out users get a sign-in modal.
+- **System owner** — `src/lib/auth/system-owner-constants.ts` defines `SYSTEM_OWNER_IDS` and `isSystemOwner()`, which audit-logs owner access in production.
 - **Single-page router** — `_components/AdminRouter.tsx` + `_components/AdminNavigationContext.tsx` (`useAdminNavigation`) drive section state and URL sync via `window.history.pushState()` with a `popstate` listener. Section panels are `dynamic()`-imported (`ssr: false`) for code-splitting.
-- **Exceptions to the router** — `maps/editor` and `maps/style-editor` bypass the sidebar layout and render inside an `AdminErrorBoundary` directly. The standalone content routes above guard themselves.
+- **Exceptions to the router** — `maps/editor` and `maps/style-editor` bypass the sidebar layout and render inside an `AdminErrorBoundary` directly.
 
 ## Data Sources
 
-The admin tRPC router was split by domain on 2026-06-13 and recombined with `mergeRouters`, preserving every `api.admin.*` path (registered in `src/server/api/root.ts` via `safeRouter("admin", …)`).
+The admin tRPC router was split by domain on 2026-06-13 and recombined with `mergeRouters`, preserving every `api.admin.*` path (registered as `admin` in `src/server/api/root.ts`).
 
 | File (`src/server/api/routers/admin/`) | Domain |
 | --- | --- |
@@ -89,13 +81,16 @@ The admin tRPC router was split by domain on 2026-06-13 and recombined with `mer
 | `users.ts` | user↔country mapping/assignment, navigation visibility settings |
 | `countries/` | god-mode country data, roster import, grid/detail, audit, announcements, scenarios |
 | `worldEvents.ts` | storyteller world events, event chains, diplomatic options, upcoming events |
-| `wiki.ts` | wiki links, article awards, loreward scoring, templates, cache purges, cron, wiki users |
+| `wiki.ts` | wiki links, article awards, loreward scoring, templates, cache purges, wiki users |
+| `cron.ts` | cron schedules (`getCronSchedules`, `saveCronSchedules`) |
+| `stash.ts` | Stash settings |
+| `thinkpages.ts` | ThinkPages content settings |
 | `thinkpagesDiscordFeed.ts` | Thinkpages → Discord feed configuration |
 
-`api.admin.*` exposes ~83 procedures across these files. Map admin is served separately by `geoAdmin` (`geo/admin` + `geo/admin/cities`). Supplemental user analytics/assignment endpoints live in `api.users.*` and `api.countries.*`.
+`_config-kv.ts` is a shared helper, not a router. `api.admin.*` exposes ~78 procedures across these files. Map admin is served separately by `geoAdmin` (`geo/admin` + `geo/admin/cities`). Supplemental user analytics/assignment endpoints live in `api.users.*` and `api.countries.*`.
 
 ## Maintenance
 
-- Update `docs/systems/admin-cms.md` when adding or removing admin interfaces, and keep this directory table in sync (it drifted to "28" while the real count is 47).
+- Update `docs/systems/admin-cms.md` when adding or removing admin interfaces, and keep this directory table in sync with `AdminRouter.renderContent()` and the sidebar (`_components/AdminSidebarNavWidget.tsx`).
 - New admin mutations must go through a domain service and be guarded; never bypass the layout auth check.
 - Register any new admin router file in `routers/admin/index.ts` and verify procedure parity at the AST level after splitting (`scripts/verify-router-splits.ts`).

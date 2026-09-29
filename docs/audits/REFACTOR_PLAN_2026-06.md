@@ -1,5 +1,10 @@
 # IxStats Refactor Plan — remaining items (June 2026)
 
+> ## Status (2026-09-29)
+>
+> **All items RESOLVED — candidate for `docs/archive/`.** Tier A, B1–B3, C1–C5 were completed in June (log below). The two deferred items have since closed: **B4** — `countries/_components/economy/utils.ts` no longer exists and plan 313 (`ededb10d8`) unified the formatters in `src/lib/utils/format-utils.ts`; **D1/D2 follow-up** — `scripts/setup/seed-db.ts` now calls `seedSmallArmsEquipment()` and `seedMilitaryEquipmentCatalog()`, and the static sources live in `src/lib/military/` (`equipment-extended.json`/`.ts`). Tier E (B7, B8, F5, F9) remains wontfix as recorded.
+
+
 Companion to [AUDIT_2026-06.md](./AUDIT_2026-06.md). Phases 0–4 + the `animated-number`/`useFlag` wrapper migrations are already done. This plan covers everything left, **grounded in a 6-agent code investigation** (real consumer counts, signature compatibility, and per-component split seams verified against the tree). Sized by effort/risk so it can be executed incrementally.
 
 Legend — Risk/Effort: **L**ow / **M**edium / **H**igh.

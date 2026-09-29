@@ -4,6 +4,11 @@ description: Handle dynamic crisis events including natural disasters, economic 
 badge: Defense
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+
 ## Crisis Event Types
 
 - **Natural Disasters:** Earthquakes (mag 3.0-9.0), floods, hurricanes (Cat 1-5), wildfires, droughts, volcanic eruptions, tsunamis.
@@ -39,10 +44,8 @@ badge: Defense
 
 ## Tracking Crises
 
-- View all active crises from your **MyCountry → Defense** dashboard.
-- Submit response strategies with resource allocation for each active crisis.
-- Review past events and outcomes in your crisis history.
-- Crisis alerts also appear in your [Intelligence Dashboard](/help/intelligence/dashboard) for executive briefings.
+- The number of active crises appears in the player widget on your [Dashboard](/dashboard) sidebar.
+- Choosing a response strategy for a crisis isn’t available in the app yet — the response options above describe how crises are designed to work.
 
 > [!WARNING]
 > **Best Practices**

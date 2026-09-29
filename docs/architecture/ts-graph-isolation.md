@@ -1,6 +1,6 @@
 # TypeScript Architecture & Compilation Isolation
 
-**Tooling**: TypeScript 7.0.0 · Bun 1.4 Runtime · ts-morph AST Engine  
+**Tooling**: TypeScript 7.0.2 · Bun 1.4 Runtime · ts-morph AST Engine  
 **Enforcement**: `scripts/audit/audit-arch.ts` (`bun run audit:arch`)  
 **Configs**: `tsconfig.json`, `tsconfig.base.json`, `tsconfig.ui.json`, `tsconfig.server.json`, `tsconfig.trpc.json`, `tsconfig.db.json`
 
@@ -30,16 +30,16 @@ Compilation sub-projects keep boundaries modular across the codebase:
 ```
 
 ### Compiler Optimization Directives (`tsconfig.base.json`):
-- **`types: []`**: Blocks automatic inclusion of all node_modules `@types/*` packages, reducing the compilation file graph by 70%.
-- **`isolatedModules: true`**: Guarantees safe per-file transpilation by SWC/Turbopack.
-- **`importHelpers: true` + `tslib`**: Emits shared runtime helpers to minimize bundle footprints.
-- **`exclude: ["**/.*"]`**: Prevents the compiler from traversing hidden directories (`.git`, `.env`).
+- **`types: ["node"]`**: Only `@types/node` is included automatically, instead of every `@types/*` package in node_modules.
+- **`isolatedModules: true`** + **`verbatimModuleSyntax: true`**: Guarantees safe per-file transpilation by SWC/Turbopack.
+- **`noEmit: true`**, **`skipLibCheck: true`**, **`assumeChangesOnlyAffectDirectDependencies: true`**: Typecheck-only, incremental-friendly settings.
+- **`exclude: ["**/.*", "scripts", "docs", ...]`** (in each sub-project tsconfig): Prevents the compiler from traversing hidden directories (`.git`, `.env`) and non-app trees.
 
 ---
 
 ## 3. Architecture Guard Rules (`scripts/audit/audit-arch.ts`)
 
-The architecture guard runs in CI and pre-commit hooks to enforce modular boundaries:
+The architecture guard runs in CI (`.github/workflows/ci.yml`, alongside `typecheck:ui`, `typecheck:server` and `typecheck:trpc`) to enforce modular boundaries. There is no repo-managed pre-commit hook.
 
 ```bash
 # Run architecture guard verification
@@ -47,12 +47,12 @@ bun run audit:arch
 ```
 
 ### The Three Enforced Invariants:
-1. **File Size Ceiling (≤700 Lines)**:
-   - Every file under `src/server/api/routers/**` and `src/types/**` must remain under 700 lines (relaxed to 900 lines for designated data/type tables).
+1. **File Size Ceiling**:
+   - Files under `src/server/api/routers`, `src/types`, `src/app`, `src/components` and `src/lib` must stay under 700 lines; `src/hooks` under 500. Designated data/type tables in `src/types` are relaxed to 900.
 2. **Zero Cross-Router Imports**:
    - Sub-routers in `src/server/api/routers/<DomainA>/` are strictly forbidden from importing directly from `src/server/api/routers/<DomainB>/`.
-   - Cross-domain server utilities must reside under `src/server/shared/` (e.g. `layer-cache.ts`, `trpc-cache.ts`).
-3. **Ratchet Baseline (`arch-baseline.json`)**:
+   - Cross-domain server utilities must reside under `src/server/shared/` (e.g. `layer-cache.ts`, `country-authorization.ts`). A small allow-list of known, not-yet-fixed cross-router imports lives in the script.
+3. **Ratchet Baseline (`scripts/audit/arch-baseline.json`)**:
    - Existing legacy files are recorded at their exact line counts. Lines may only decrease; any code additions that expand a file above the ceiling fail the build.
 
 ---
@@ -64,12 +64,14 @@ When a router approaches the 700-line ceiling, split it into domain sub-files us
 ```bash
 bun run scripts/split-router-template.ts \
   --routerFile="src/server/api/routers/myDomain.ts" \
-  --groups='{"crud": ["get*", "create*", "update*"], "admin": ["archive*", "purge*"]}' \
-  --pattern=mergeRouters
+  --outDir="src/server/api/routers/myDomain" \
+  --varName="myDomainRouter" \
+  --groups='{read:["getFoo","getBar"],mutate:["createX","updateY"]}' \
+  --pattern="mergeRouters"
 ```
 
 ### Verification Steps:
 1. Verify sub-routers compile into directory `index.ts` using `mergeRouters`.
 2. Delete the original monolith file.
-3. Run `bun run audit:arch` to confirm the file count and baseline decrease.
+3. Run `bun run audit:arch` (and `bun run audit:arch:update` to ratchet the baseline down).
 4. Run `bun run typecheck:server` to confirm 0 type errors.

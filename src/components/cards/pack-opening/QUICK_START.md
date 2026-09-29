@@ -2,6 +2,8 @@
 
 **5-Minute Integration Guide** for IxCards Pack Opening Experience
 
+> **Verified September 2026.** `PackPurchaseModal` and the `pack-opening/index.ts` barrel were removed during dead-code cleanup. Purchase with `api.cardPacks.purchasePack` yourself (as `src/components/vault/sections/marketplace/VaultStoreTab.tsx` does) and render `PackOpeningSequence` from its own file.
+
 ---
 
 ## Installation (Already Complete)
@@ -11,7 +13,7 @@ All components are installed at:
 /src/components/cards/pack-opening/
 ```
 
-No additional dependencies needed - uses existing Framer Motion, tRPC, and Prisma.
+No additional dependencies needed - uses existing Motion (`motion/react`), tRPC, and Prisma.
 
 ---
 
@@ -20,36 +22,28 @@ No additional dependencies needed - uses existing Framer Motion, tRPC, and Prism
 ### 1. Import Components
 
 ```tsx
-import {
-  PackPurchaseModal,
-  PackOpeningSequence
-} from "~/components/cards/pack-opening";
+import { PackOpeningSequence } from "~/components/cards/pack-opening/PackOpeningSequence";
 ```
 
 ### 2. Add State Management
 
 ```tsx
 const [selectedPack, setSelectedPack] = useState<PackData | null>(null);
-const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 const [openingPackId, setOpeningPackId] = useState<string | null>(null);
+const purchase = api.cardPacks.purchasePack.useMutation();
 ```
 
-### 3. Render Purchase Modal
+### 3. Purchase the Pack
 
 ```tsx
-<PackPurchaseModal
-  packId={selectedPack.id}
-  packType={selectedPack.packType}
-  packName={selectedPack.name}
-  priceCredits={selectedPack.priceCredits}
-  cardCount={selectedPack.cardCount}
-  isOpen={isPurchaseModalOpen}
-  onPurchase={(userPackId) => {
-    setIsPurchaseModalOpen(false);
-    setOpeningPackId(userPackId);
+<button
+  onClick={async () => {
+    const res = await purchase.mutateAsync({ packId: selectedPack.id });
+    setOpeningPackId(res.userPack.id); // purchasePack returns { success, message, userPack }
   }}
-  onCancel={() => setIsPurchaseModalOpen(false)}
-/>
+>
+  Buy {selectedPack.name} ({selectedPack.priceCredits} IxC)
+</button>
 ```
 
 ### 4. Render Pack Opening (Fullscreen)
@@ -73,23 +67,6 @@ const [openingPackId, setOpeningPackId] = useState<string | null>(null);
 
 ## Component Props Reference
 
-### PackPurchaseModal
-
-```typescript
-{
-  packId: string              // CardPack.id from database
-  packType: PackType          // BASIC, PREMIUM, ELITE, etc.
-  packName: string            // Display name
-  packDescription?: string    // Optional description
-  packArtwork?: string        // Optional image URL
-  priceCredits: number        // Price in IxCredits
-  cardCount: number           // Number of cards in pack
-  isOpen: boolean             // Modal visibility
-  onPurchase: (userPackId: string) => void  // Called after purchase
-  onCancel: () => void        // Called on close
-}
-```
-
 ### PackOpeningSequence
 
 ```typescript
@@ -107,7 +84,7 @@ const [openingPackId, setOpeningPackId] = useState<string | null>(null);
 ## Animation Timeline
 
 ```
-User taps "Purchase" → PackPurchaseModal
+User taps "Buy" → cardPacks.purchasePack
   ↓
 Purchase succeeds → PackOpeningSequence starts
   ↓
@@ -128,13 +105,12 @@ onComplete() called
 
 ## API Calls (Automatic)
 
-The system automatically calls:
+`PackOpeningSequence` automatically calls:
 
-1. **Purchase**: `api.cardPacks.purchasePack.mutate({ packId })`
-2. **Balance Check**: `api.vault.getVaultBalance.query()`
-3. **Open Pack**: `api.cardPacks.openPack.mutate({ userPackId })`
+1. **Open Pack**: `api.cardPacks.openPack.mutate({ userPackId })`
+2. **Junk quick action**: `api.cards.junkCards.mutate({ ownershipIds })`
 
-No manual API calls needed!
+Your page is responsible for **Purchase** (`api.cardPacks.purchasePack.mutate({ packId })`) and any balance display (`api.vault.getBalance`).
 
 ---
 
@@ -149,16 +125,10 @@ Place in `public/sounds/`:
 
 **Missing files**: System plays silently
 
-### Pack Images (Text Fallback)
-Place in `public/images/packs/`:
-- `basic-pack.png`
-- `premium-pack.png`
-- `elite-pack.png`
-- `themed-pack.png`
-- `seasonal-pack.png`
-- `event-pack.png`
+### Pack Images (Gradient Fallback)
+Artwork comes from `CardPack.artwork`; the seed references `/images/packs/pack_<id>.svg` (e.g. `pack_s1_recruit.svg`) plus optional `_foil.svg` overlays. None are committed — see `public/images/packs/README.md`.
 
-**Missing images**: Shows pack type text
+**Empty `artwork`**: Shows a pack-type gradient (a set-but-missing URL renders blank)
 
 ---
 
@@ -189,7 +159,7 @@ revealedIndex === -1 ? 500 : 800  // First card / stagger delay
 ```
 
 ### Particle Count
-Edit `pack-opening-service.ts`:
+Edit `src/lib/cards/pack-opening-service.ts`:
 ```typescript
 export function getOptimalParticleCount(): number {
   return isMobileDevice() ? 25 : 50;  // Adjust counts
@@ -220,9 +190,9 @@ export function getOptimalParticleCount(): number {
 ### Issue: Purchase fails
 **Check**:
 1. User has sufficient IxCredits
-2. Pack is available (`isAvailable = true`)
-3. Pack isn't sold out
-4. Pack hasn't expired
+2. Pack is active (`CardPack.isActive = true`) and pack purchases are enabled (`isPacksEnabled`, not in maintenance mode)
+3. Pack isn't sold out (`limitedQuantity`) or over the per-user `purchaseLimit`
+4. Pack hasn't expired (`expiresAt`)
 
 ---
 
@@ -271,10 +241,8 @@ export function getOptimalParticleCount(): number {
 ### Opening After Purchase
 ```tsx
 // After successful purchase
-onPurchase={(userPackId) => {
-  setIsPurchaseModalOpen(false);
-  setOpeningPackId(userPackId);
-}}
+const res = await purchase.mutateAsync({ packId });
+setOpeningPackId(res.userPack.id);
 ```
 
 ### Showing Results
@@ -283,7 +251,7 @@ onPurchase={(userPackId) => {
 onComplete={() => {
   setOpeningPackId(null);
   toast.success("Cards added to collection!");
-  router.push("/myvault/collection");
+  router.push("/vault/inventory");
 }}
 ```
 
@@ -291,11 +259,10 @@ onComplete={() => {
 
 ## Integration Checklist
 
-- [ ] Import components in pack store page
+- [ ] Import `PackOpeningSequence` in the pack store page
 - [ ] Add state for selected pack and opening pack
-- [ ] Render PackPurchaseModal with pack data
+- [ ] Call `cardPacks.purchasePack` and capture `userPack.id`
 - [ ] Render PackOpeningSequence in fullscreen overlay
-- [ ] Handle onPurchase callback
 - [ ] Handle onComplete callback
 - [ ] (Optional) Add sound files to public/sounds/
 - [ ] (Optional) Add pack images to public/images/packs/
@@ -317,12 +284,7 @@ onComplete={() => {
 
 ## Full Example Page
 
-See `/src/components/cards/pack-opening/README.md` for complete integration example with:
-- Pack store grid
-- Purchase modal
-- Opening sequence
-- Success handling
-- Error handling
+See `/src/components/cards/pack-opening/README.md` for a complete integration example, and `src/components/vault/sections/marketplace/VaultStoreTab.tsx` for the production implementation (pack grid, purchase, opening sequence, success/error handling).
 
 ---
 
@@ -330,8 +292,8 @@ See `/src/components/cards/pack-opening/README.md` for complete integration exam
 
 **Documentation**:
 - `/src/components/cards/pack-opening/README.md` - Full guide
-- `/PACK_OPENING_IMPLEMENTATION.md` - Technical specs
 - `/src/types/pack-opening.ts` - Type definitions
+- `/src/lib/cards/pack-opening-service.ts` - Sound, haptics, particles
 
 **Code Reference**:
 - All components include inline JSDoc comments

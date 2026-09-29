@@ -12,20 +12,20 @@
 
 ## Security Overview
 
+`src/env.ts` is the authoritative list of environment variables and says which are required in production. The app refuses to start in production without `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CRON_SECRET` (≥32 chars), `IXTIME_BOT_SECRET` and `WIKI_SYNC_WEBHOOK_SECRET` (≥32 chars).
 
 ## Files That Are Safe to Commit
 
-✅ **Safe to commit (contain no secrets):**
-- `.env.example` - Template with placeholder values
-- `.env.production.example` - Production template with placeholder values
-- `.env` - Base configuration (no secrets)
-- `.env.local.dev` - Development template (no secrets)
-- `.env.production` - Production template (no secrets)
+`.gitignore` ignores `.env` and every `.env.*` file except `.env.example`.
 
-❌ **NEVER commit (contain actual secrets):**
-- `.env.local` - Your local development secrets
-- `.env.production.local` - Your local production secrets
-- `.env.development.local` - Your local development secrets
+✅ **Safe to commit (contain no secrets):**
+- `.env.example` - Template with placeholder values (the only tracked env file)
+
+❌ **NEVER commit (gitignored; may contain real values):**
+- `.env` - Shared defaults
+- `.env.local.dev` / `.env.local` - Your local development settings and secrets
+- `.env.production` - Production values (loaded by the production scripts)
+- `.env.production.local` - Production secrets
 - Any file containing actual API keys, tokens, or passwords
 
 ---
@@ -54,20 +54,21 @@
 
 ### 2. Discord Bot Integration
 
-**Purpose:** IxTime synchronization and server integration
+**Purpose:** IxTime synchronization, Discord image proxy, IxTwitter sync and guild member sync
 
-**Required Keys:**
-- `DISCORD_BOT_TOKEN` - Bot authentication token
-- `DISCORD_APPLICATION_ID` - Application ID
-- `DISCORD_PUBLIC_KEY` - Public key for verification
-- `DISCORD_BOT_AUTH_KEY` - Custom authentication key for IxStats-Discord communication
+**Keys (see `src/env.ts`):**
+- `DISCORD_BOT_TOKEN` - Bot authentication token (image proxy, IxTwitter sync)
+- `DISCORD_CLIENT_ID` - Application (client) ID
+- `DISCORD_GUILD_ID` - Guild used for member sync
+- `IXTIME_BOT_SECRET` - Shared secret the bot sends to `/api/ixtime/sync-from-bot` (**required in production**)
+- `BOT_API_KEY` - Key the bot sends to `/api/bot/lorewards/sync`
 
 **Where to get them:**
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Select your application (or create one)
 3. Navigate to "Bot" section for `DISCORD_BOT_TOKEN`
-4. Navigate to "General Information" for `DISCORD_APPLICATION_ID` and `DISCORD_PUBLIC_KEY`
-5. Generate `DISCORD_BOT_AUTH_KEY` yourself (see below)
+4. Navigate to "General Information" for the application (client) ID
+5. Generate `IXTIME_BOT_SECRET` and `BOT_API_KEY` yourself (`openssl rand -hex 32`) and give the bot the same values
 
 **Security Level:** HIGH - Provides access to Discord bot functionality
 
@@ -87,10 +88,10 @@
 
 ### 4. Cron Job Security
 
-**Purpose:** Secure scheduled job execution
+**Purpose:** Authenticates the HTTP cron triggers (`/api/cron/*`, `Authorization: Bearer <CRON_SECRET>`). Scheduled jobs themselves run inside `cron-runner.mjs` (PM2 `ixstats-cron`) and need no secret.
 
 **Required Keys:**
-- `CRON_SECRET` - Random secure token for cron job authentication
+- `CRON_SECRET` - Random secure token, at least 32 characters (**required in production**)
 
 **How to generate:**
 ```bash
@@ -98,6 +99,15 @@ openssl rand -hex 32
 ```
 
 **Security Level:** HIGH - Prevents unauthorized execution of scheduled jobs
+
+### 4b. Wiki Webhook Secret
+
+**Purpose:** Shared secret MediaWiki sends to `/api/wiki/sync-webhook` and `/api/wikios/inbound-sync` (header `x-wiki-webhook-secret` or `Authorization: Bearer`).
+
+**Required Keys:**
+- `WIKI_SYNC_WEBHOOK_SECRET` - at least 32 characters (**required in production**); generate with `openssl rand -hex 32`
+
+**Security Level:** HIGH - Lets the caller trigger wiki syncs
 
 ### 5. Database Credentials
 
@@ -117,9 +127,10 @@ openssl rand -hex 32
 
 ### 6. Redis (Optional - Production Recommended)
 
-**Purpose:** Rate limiting and caching
+**Purpose:** Rate limiting, caching, and the ThinkPages cross-process broadcast bridge (web app → `ixstats-ws`)
 
 **Required Keys:**
+- `REDIS_ENABLED="true"` - Redis is ignored unless this is set
 - `REDIS_URL` - Redis connection string
 
 **Format:**
@@ -150,9 +161,8 @@ redis://[username:password@]host:port/database
 
    # Discord Bot (if needed for local development)
    DISCORD_BOT_TOKEN="your_actual_token_here"
-   DISCORD_APPLICATION_ID="your_app_id_here"
-   DISCORD_PUBLIC_KEY="your_public_key_here"
-   DISCORD_BOT_AUTH_KEY="your_custom_auth_key_here"
+   DISCORD_CLIENT_ID="your_app_id_here"
+   IXTIME_BOT_SECRET="your_generated_secret_here"
 
    # Cron Secret
    CRON_SECRET="your_generated_secret_here"
@@ -181,15 +191,15 @@ export CLERK_SECRET_KEY="sk_test_your_secret"
 3. Add all required production variables:
    - Use `pk_live_*` and `sk_live_*` for Clerk
    - Use production database URL
-   - Add `CRON_SECRET`
+   - Add `CRON_SECRET`, `IXTIME_BOT_SECRET` and `WIKI_SYNC_WEBHOOK_SECRET`
    - Add Discord webhook URL (optional but recommended)
 
 **For Self-Hosted Deployments:**
 
 1. Create `.env.production.local` on your server:
    ```bash
-   # DO NOT commit this file!
-   cp .env.production.example .env.production.local
+   # DO NOT commit this file! Use .env.example as the reference for variable names.
+   touch .env.production.local
    ```
 
 2. Edit `.env.production.local` with actual production values
@@ -275,8 +285,8 @@ export CLERK_SECRET_KEY="sk_test_your_secret"
    - Update `CRON_SECRET` in production environment
 
 3. **Update cron job configuration:**
-   - If using external cron service (e.g., cron-job.org), update authorization header
-   - If using Vercel Cron, no action needed (uses internal auth)
+   - Update the `Authorization: Bearer` header of anything that calls `/api/cron/*` (external cron service or manual `curl`)
+   - `cron-runner.mjs` jobs call no HTTP endpoint and need no change
 
 4. **Restart application**
 
@@ -488,8 +498,9 @@ git check-ignore .env.local
 # Check for secrets in staged files
 git diff --cached | grep -E "(CLERK_SECRET|DISCORD.*TOKEN|PASSWORD)"
 
-# List all environment variables (development)
-bun run env:check  # if available
+# Validate environment variables
+bun run verify:environment   # scripts/deployment/verify-environment.ts
+bun run auth:check           # Clerk key sanity check
 ```
 
 ### Emergency Contacts
@@ -509,6 +520,6 @@ bun run env:check  # if available
 
 ---
 
-**Last Updated:** October 2025
+**Last Updated:** September 2026
 **Maintained By:** IxStats Development Team
 **Review Schedule:** Quarterly

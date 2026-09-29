@@ -4,7 +4,7 @@
 
 The help center at `/help` renders Markdown articles from `src/content/help/<category>/<slug>.md` through one shared layout (`src/components/documents/DocumentPage.tsx`), the same one used by `/terms` and `/privacy` (`src/content/legal/*.md`). There is **no tRPC/`api.*` data source and no `help` router**; the only `api.*` occurrences are literal strings inside article copy.
 
-**Coverage (June 2026):** 58 articles registered in the hub across 13 sections, grouped into 6 filter categories.
+**Coverage (September 2026):** 54 article files; 41 registered in the hub across 10 sections, with 5 filter buttons. The 13 unregistered files (all of `defense/`, `diplomacy/scenarios`, `economy/modeling`, `government/synergy`, and four `intelligence/` pages) are reachable only by direct URL.
 
 ## Routes
 
@@ -19,15 +19,15 @@ Article folders (under `src/content/help/`): `getting-started/`, `gameplay/`, `m
 
 - **Article center** — section cards on the hub list every article with title, description, and tag chips, linking to its route.
 - **Search** — client-side filter (`useMemo`) over article `title`, `description`, and `tags`; shows an empty-state when nothing matches.
-- **Categories** — six filter buttons: All Topics, Getting Started, Gameplay, Features, Technical, Admin. Each hub section declares a `category` of `getting-started` | `gameplay` | `features` | `technical` | `admin`.
-- **Quick links footer** — four shortcut cards (New to IxStats, Gameplay, Cards & Vault, API Docs).
+- **Categories** — five filter buttons: All Topics, Start Here (`getting-started`), Living World (`gameplay`), Your Nation (`features`), Admin (`admin`). Sections may also declare `systems` (Economy, Government, Intelligence), which has no button, so those sections only show under All Topics.
+- **Quick links footer** — four shortcut cards (New to IxStats?, Build a Nation, How It Works, Cards & Vault).
 - **In-article navigation** — the layout renders a "Help Center" breadcrumb, a table of contents built from the `##` headings, and optional prev/next links.
 
 ## Architecture
 
 | Piece | Location | Role |
 |-------|----------|------|
-| Hub | `page.tsx` | Client component; holds the `helpSections` array (sections → articles), search + category state |
+| Hub | `page.tsx` + `_components/HelpExplorer.tsx` | `page.tsx` is the server page (header, quick links); `HelpExplorer` is the client component holding the `helpSections` array (sections → articles), search + category state |
 | Layout | `src/components/documents/DocumentPage.tsx` + `DocumentLayout.tsx` | Loads a `.md` file, renders it with `react-markdown` + `remark-gfm`, wraps it in the page chrome |
 | Conventions | `src/lib/markdown-document.ts` | Frontmatter parsing, heading ids, callouts |
 | Articles | `src/content/help/<category>/<slug>.md` | Article content |
@@ -41,7 +41,7 @@ The hub is the single source of truth for which articles are discoverable: an ar
    - Frontmatter (`---` block of `key: value` lines): `title`, `description`, `badge` (hub section name), optional `prevHref`/`prevLabel`/`nextHref`/`nextLabel`.
    - `##` headings become table-of-contents entries; ids are slugs of the heading text, or pinned with a trailing `{#id}`.
    - A blockquote is a callout (`> **Title**` then the body); start it with a `> [!WARNING]` line for a warning callout.
-3. Register/adjust the article in the `helpSections` array in `page.tsx` (id, title, description, `path`, tags) so it surfaces in search and filters. Keep `path` aligned with the file (`/help/economy/tiers` → `src/content/help/economy/tiers.md`).
+3. Register/adjust the article in the `helpSections` array in `_components/HelpExplorer.tsx` (id, title, description, `path`, tags) so it surfaces in search and filters. Keep `path` aligned with the file (`/help/economy/tiers` → `src/content/help/economy/tiers.md`).
 4. Keep metadata (title, description, tags) consistent between the hub entry and the article.
 
 ## Maintenance

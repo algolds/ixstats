@@ -8,17 +8,19 @@ The repository consolidates production deployment tooling behind a single canoni
 
 - **Canonical Deployment Script**: [`scripts/deploy-production.sh`](../deploy-production.sh)
 - **Local Trigger / Remote Deploy**: [`scripts/deploy-local.sh`](../deploy-local.sh)
-- **Production Start Command**: `bun run start:prod` (invokes `start-production.sh`)
+- **Production Start Command**: `bun run start:prod` (invokes the root `start-production.sh` → `next start` on `${PORT:-3550}`)
+- **Current release runbook**: [`docs/operations/deploy-rose-garden-2026-09.md`](../../docs/operations/deploy-rose-garden-2026-09.md) (Realms schema push, ownership backfill, Eurth serving)
 
 ## Operator Decisions & Decisions Record (2026-08-20)
 
 1. **Canonical Production Entrypoint**:
    - `scripts/deploy-production.sh` is the sole authoritative production deployment entrypoint.
-   - Stale/duplicate entrypoints (such as legacy `scripts/deployment/deploy-to-production.sh`) are deprecated and removed from active package aliases (`deploy:production` pruned).
+   - Stale/duplicate entrypoints are deprecated and removed from active package aliases (`deploy:production` pruned). The legacy `scripts/deployment/deploy-to-production.sh` file still exists in this directory but is not wired to any script or workflow — do not use it.
 
 2. **Process Ownership Strategy**:
-   - Production service lifecycle is managed on the VPS via PM2 (`pm2 startOrReload ecosystem.config.cjs`).
-   - Maps standalone instance is managed via `ecosystem.ixworld.config.cjs`.
+   - Production service lifecycle is managed on the VPS via PM2 (`pm2 startOrReload ecosystem.config.cjs`, called from `deploy-production.sh`).
+   - Maps standalone instance is managed via `ecosystem.ixworld.config.cjs`; the standalone WebSocket backend (`ws-backend.mjs`, PM2 `ixstats-ws`) and cron runner (`cron-runner.mjs`, PM2 `ixstats-cron`) run as separate processes.
+   - The `ecosystem*.config.cjs` files are server-local (git-ignored); they are not in the repository.
    - Node process runs standalone on port 3550 with basePath `/projects/ixstates`.
 
 3. **Schema Migration Strategy**:
@@ -43,3 +45,14 @@ Validates:
 - All TypeScript config targets (`-p tsconfig.*.json`) exist.
 - All CI workflow `bun run <cmd>` references match actual `package.json` scripts.
 - No banned package-manager invocations exist.
+
+## Other scripts in this directory
+
+| Script | Alias | Notes |
+| --- | --- | --- |
+| `deploy-to-staging.sh` | `bun run deploy:staging` | Staging deploy |
+| `rollback-deployment.sh` | `bun run deploy:rollback` | Roll back to the previous release |
+| `post-deployment-validation.ts` | `bun run post:deploy:validate` | Post-deploy smoke checks |
+| `verify-environment.ts` | `bun run verify:environment` | Environment variable verification |
+| `setup-monitoring.ts` | `bun run setup:monitoring` | Monitoring setup |
+| `deploy-to-production.sh` | — | Legacy, unwired (see above) |

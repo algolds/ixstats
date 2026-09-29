@@ -34,7 +34,7 @@ IxTime features bidirectional mathematical time conversion, cross-service synchr
 │ 2. MASTER TEMPORAL ENGINE (src/lib/ixtime/)                                           │
 │    • core.ts (IxTime)                 — Synchronous epoch math & pivot conversions     │
 │    • sync.ts (IxTimeSyncManager)      — 15s daemon polling & automated drift correction│
-│    • accuracy.ts                      — 11 mathematical verification test suites       │
+│    • accuracy.ts                      — 12 mathematical verification test suites       │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ 3. API & GATEWAY LAYER                                                                │
 │    • tRPC Routers                     — api.system.getCurrentIxTime, api.admin.bot.*   │
@@ -151,12 +151,12 @@ A server-side singleton managing cross-service consistency:
 - **Polling Loop**: Runs every 15 seconds (using `.unref()` so background timers do not block process teardown). Disabled automatically in test suites (`NODE_ENV === "test"`).
 
 ### 3. `accuracy.ts` — Automated Accuracy Verifier (`IxTimeAccuracyVerifier`)
-Maintains 11 rigorous mathematical validation suites ensuring $>99.9998\%$ calculation integrity:
+Maintains 12 rigorous mathematical validation suites ensuring $>99.9998\%$ calculation integrity:
 1. `epoch_real_world`: Validates Oct 4, 2020 exact millisecond match.
 2. `epoch_in_game`: Validates Jan 1, 2028 baseline match.
 3. `transition_4x_to_2x`: Validates exact intersection at July 27, 2025 $\equiv$ Jan 1, 2040.
 4. `transition_continuity`: Asserts zero time gap/jump ($\Delta t \le 1\text{ ms}$) across transition boundary.
-5. `calc_4x_period` & `calc_2x_period`: Validates linear speed slope precision in both eras.
+5. `calc_4x_period` & `calc_2x_period` (two suites): Validates linear speed slope precision in both eras.
 6. `calc_year_progression`: Validates year rollover arithmetic.
 7. `edge_leap_years`: Ensures quadrennial leap day ($365.25\text{ d}$) stability.
 8. `edge_dst_transitions`: Proves immunity to local daylight saving shifts via UTC-only arithmetic.
@@ -195,6 +195,7 @@ Restricted to `admin`, `owner`, or `staff` roles:
 - `api.admin.bot.getBotProcesses`: Inspects PM2 process state for `ixwiki-discord-bot` and `ixstats-ixtwitter`.
 - `api.admin.bot.controlBotProcess`: Dispatches PM2 `start`, `stop`, or `restart`.
 - `api.admin.bot.getBotProcessLogs`: Reads trailing 50 lines of stdout/stderr from PM2 logs.
+- `api.admin.bot.getBotCommands` / `getBotRoles` / `simulateBotCommand`: Discord command/role inspection and command simulation.
 
 ### 3. REST API Route Handlers
 
@@ -205,7 +206,7 @@ Restricted to `admin`, `owner`, or `staff` roles:
 | `/api/ixtime/health` | `GET` | Public | Health probe returning bot connection status. |
 | `/api/ixtime/set-override` | `POST` | Admin | Sets custom `ixTimeMs` and optional speed multiplier. |
 | `/api/ixtime/set-natural` | `POST` | Admin | Resets multiplier to the canonical era default (`2.0x`). |
-| `/api/ixtime/sync-bot` | `POST` | Admin | Forces bi-directional sync with the Discord bot. |
+| `/api/ixtime/sync-from-bot` | `POST` | Bot (`Bearer IXTIME_BOT_SECRET`) | Bot-to-server sync push; required secret in production. |
 
 ---
 
@@ -262,7 +263,8 @@ import {
   useIxTimeFormatted, 
   useIxTimeGameYear, 
   useIxTimeMultiplier,
-  useCurrentIxTime 
+  useIxTimeIsPaused,
+  useIxTime, // composite hook (re-renders on any slice change)
 } from "~/context/IxTimeContext";
 
 // Component that needs timestamp (re-renders every tick):
@@ -287,14 +289,15 @@ The `getUpcomingEvents()` pure function accepts `nowIxTime` and a collection of 
 
 IxTime fields in PostgreSQL models use two conventions:
 1. **`Float` Unix Millisecond Epochs** (Recommended for Statecraft simulation):
-   - `Issue.deadlineIxTime`: Timestamp when unaddressed issues auto-resolve.
-   - `Issue.reconReadyIxTime`: Timestamp when intelligence recon findings unlock.
+   - `NationalIssue.deadlineIxTime`: Issue deadline (auto-resolve on expiry only when `ISSUES_ENFORCE_DEADLINES` is on).
+   - `NationalIssue.reconReadyIxTime`: Timestamp when recon findings unlock.
    - `ActivitySchedule.scheduledIxTime`: Scheduled cabinet meetings or executive events.
-   - `CabinetPolicy.effectiveIxTime`: Statutory implementation date.
-   - `SportsFixture.scheduledIxTime`: Sports match kickoff timestamp.
+   - `Policy.effectiveIxTime`: Statutory implementation date.
+   - `Election.scheduledIxTime`: When the elections cron resolves an election.
+   - `SportMatch.scheduledIxTime`: Sports match kickoff timestamp.
 2. **`DateTime` Timestamps** (Standard PostgreSQL `timestamptz`):
    - `CalculationLog.ixTimeTimestamp`: Snapshot date recorded during economic batch runs.
-   - `VitalitySnapshot.ixTimeTimestamp`: Longitudinal telemetry index.
+   - `ThinkshareMessage.ixTimeTimestamp`: In-game send time of a message.
 
 ---
 
@@ -343,12 +346,12 @@ pm2 restart ixwiki-discord-bot
 
 - `delete` **`src/app/api/ixtime/set-override-direct/`**: ✅ Deleted unreferenced legacy duplicate route handler. All overrides cleanly route to authenticated `POST /api/ixtime/set-override`.
 - `shrink` **`src/app/api/ixtime-status/route.ts`**: ✅ Cleaned up into a concise, lightweight status proxy.
-- `shrink` **`src/context/IxTimeContext.tsx`**: ✅ Purged redundant wrapper functions; directly re-exports granular Zustand selectors (`useIxTimeTimestamp`, `useIxTimeFormatted`, `useIxTimeGameYear`, `useIxTimeMultiplier`, `useIxTimeIsPaused`, `useIxTimeAll`, `useIxTimeActions`) for $O(1)$ selective component re-rendering.
-- `yagni` **`src/lib/ixtime/accuracy.ts` runtime invocation in `updateMasterState()`**: ✅ Eliminated recurring execution of 11 dynamic test suites from the 15s server sync loop. Verification tests now execute exclusively in dedicated Jest suites.
+- `shrink` **`src/context/IxTimeContext.tsx`**: ✅ Purged redundant wrapper functions; directly re-exports granular Zustand selectors (`useIxTimeTimestamp`, `useIxTimeFormatted`, `useIxTimeGameYear`, `useIxTimeMultiplier`, `useIxTimeIsPaused`) alongside the composite `useIxTime()` hook for $O(1)$ selective component re-rendering.
+- `yagni` **`src/lib/ixtime/accuracy.ts` runtime invocation in `updateMasterState()`**: ✅ Eliminated recurring execution of 12 dynamic test suites from the 15s server sync loop. Verification tests now execute exclusively in dedicated Jest suites.
 - `shrink` **`src/lib/ixtime/core.ts` legacy fallbacks**: ✅ Removed uncalled `getCurrentIxTimeInternal()` duplicate and simplified override logic.
 
 **Net Reduction Summary:**  
-~380 lines of boilerplate removed, 1 dead HTTP route deleted, recurring test overhead eliminated from the background server loop, and 2 dedicated Jest test suites added in [`src/tests/lib/ixtime/`](../../src/tests/lib/ixtime/).
+~380 lines of boilerplate removed, 1 dead HTTP route deleted, recurring test overhead eliminated from the background server loop, and dedicated test suites added in [`src/tests/lib/ixtime/`](../../src/tests/lib/ixtime/) (`accuracy`, `bot-sync`, `core`, `multiplier-continuity`).
 
 ---
 
@@ -359,4 +362,4 @@ pm2 restart ixwiki-discord-bot
 - [Halo Wayfinding & Contextual Overlay](./halo.md)
 - [MyLeague Sports Simulation Engine](./myleague.md)
 - [Versioning & Release Architecture](../reference/revision.md)
-- [Complete tRPC API Catalog](../reference/api-complete.md#system-router)
+- [Complete tRPC API Catalog](../reference/api-complete.md)

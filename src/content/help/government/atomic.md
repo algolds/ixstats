@@ -8,9 +8,9 @@ badge: Government & Structure
 
 Instead of picking a single government type like "Democracy" or "Monarchy," IxStats lets you assemble your government from individual building blocks called **components**. Each component represents a specific aspect of how your nation operates. Mix and match them to create a government that is uniquely yours — from a decentralized republic with strong judicial oversight to a centralized technocracy driven by expert councils.
 
-## The Five Categories
+## The Core Categories
 
-Every government component belongs to one of five categories. Together, they define the full picture of how your nation is run:
+Government components are grouped into ten categories. These five define the core of how your nation is run:
 
 - **Power Distribution** — Determines where authority resides. Is power centralized in a single leader, shared across branches, or spread among regional governments?
 - **Decision Processes** — Defines how laws and policies are created. Does your nation rely on legislative debate, executive decree, popular referendums, or council consensus?
@@ -18,7 +18,7 @@ Every government component belongs to one of five categories. Together, they def
 - **Institutions** — The organizations that carry out governance. This includes courts, legislatures, regulatory agencies, advisory bodies, and civil service structures.
 - **Control Mechanisms** — How the government maintains order and enforces its authority. This covers everything from an independent judiciary and free press to censorship boards and secret police.
 
-For a full list of every available component, see the [Component Catalog](/help/government/components).
+The other five — Administrative Efficiency, Social Policy, International Relations, Innovation & Development, and Crisis Management — round out how your government delivers. For a full list of every available component, see the [Component Catalog](/help/government/components).
 
 ## Choosing Your Components
 
@@ -26,9 +26,9 @@ For a full list of every available component, see the [Component Catalog](/help/
 >
 > 1. Open the **Country Builder** and navigate to the Government section. If you need help getting started, check the [Country Building Guide](/help/gameplay/country-building).
 > 2. Browse components by category. Each one has a description and a preview of its effects, so you can understand what it does before selecting it.
-> 3. Select the components that match the government you envision. You can pick one or more from each category.
+> 3. Select the components that match the government you envision — up to 15 in total, from any mix of categories.
 > 4. Watch for **synergy** and **conflict** indicators as you build — they appear automatically when certain combinations interact.
-> 5. Save your choices. Your government effectiveness score updates immediately on your country dashboard.
+> 5. Save your choices. Your government effectiveness score updates as you build.
 
 ## Synergies and Conflicts
 
@@ -50,7 +50,7 @@ Your effectiveness score reflects how well your government components work toget
 
 Every component you add or remove updates your nation's real numbers — GDP, population growth, political stability, and more — based on its kind, its strength, and how it plays with your other choices. Each change is recorded, so you can trace how a single governance decision shaped your country over time.
 
-You can view your effectiveness score and a breakdown of these factors on your **My Country** dashboard under the Government section. The Intelligence tab also provides deeper analytics on how your government configuration affects other areas of your nation.
+You can view your effectiveness score and a breakdown of these factors in the Government step of the builder, which you can reopen any time from the MyCountry editor. Your government efficiency also appears in MyCountry → Economy & Budget.
 
 ## Tips for New Players
 

@@ -45,19 +45,19 @@ Domestic governance, diplomacy, and politics are the *same* loop — `IN → SEE
 | **OUT** (commit) | Policy | Foreign policy / treaty | Bill vote |
 | **Resolves by** | Executive fiat | Foreign consent | Legislative vote |
 
-Play is two verbs — *See* (pay to look) and *Commit* (pay to act) — spent against three heterogeneous levers: **Capacity** (a *rate*: civil-service bandwidth), **Treasury** (a *stock*: the actual budget), and **Mandate** (a *standing*: legitimacy you risk, which abroad becomes Influence & Reputation). Over-extending Capacity or low government efficiency triggers **Information Fog** — the engine *never lies*, it withholds or qualifies (the *never-lie contract*), masking precise effects behind qualitative risk bands rather than fabricated numbers.
+Play is two verbs — *See* (pay to look) and *Commit* (pay to act) — spent against three heterogeneous levers: **Capacity** (a *rate*: civil-service bandwidth), **Treasury** (a *stock*: the actual budget), and **Mandate** (a *standing*: legitimacy you risk, which abroad becomes Influence & Reputation). Over-extending Capacity or low government efficiency triggers **Information Fog** — the engine *never lies*, it withholds or qualifies (the *never-lie contract*). Today fog shows as warnings on previews; masking effects behind qualitative risk bands is designed but not yet built.
 
 ### The Canonical Loop — Action → World Effect → Narrative → Ledger
 
-Every commitment produces a **bounded, clamped** world-state change, an automatic narrative headline on ThinkPages, and an immutable ledger row via the `CountryEventSpine` dispatcher. Stat changes are capped by the 7-tier growth engine, recorded through `VaultTransaction` double-entry ledgers and the `AuditLog`, and surfaced in the **Country Change Log Timeline** — the "Burg's Guardrail" guarantee that no stat can be quietly inflated.
+Commitments produce a **bounded, clamped** world-state change and a narrative entry in the country's canon feed via the event spine (`src/lib/activity/event-spine.ts`). Stat changes are capped by the growth-tier engine and credit movements are recorded in the vault ledger — the "Burg's Guardrail" goal that no stat can be quietly inflated. The spine is not yet universal: directives and national issues use it; diplomacy, defense, elections and meetings do not.
 
 ### System Engines
 
 | Engine | Role |
 | :--- | :--- |
 | **IxTime** (Temporal) | Continuous dilated clock (currently 2.0×) with piecewise-linear epoch math, automated drift correction, and a client-side interpolation store. Governs issue deadlines, elections, budget cycles, match clocks, and wiki timestamps. |
-| **Statecraft** (MyCountry Engine v4) | Validates Civil Service Capacity (CivCap) throughput, applies clamped stat modifiers, classifies intent, and spawns resistance issues from 5 domestic power brokers. |
-| **Concord** (Living-World, v2) | NPC nation AI (8 traits → 6 behavioral archetypes, naturalistic drift), crisis lifecycle state machine (`BREWING → ACTIVE → ESCALATING → CONTAINED → RESOLVING → RESOLVED`), and event fatigue dampening. |
+| **Statecraft** (MyCountry Engine v4) | Tracks Civil Service Capacity (CivCap), applies clamped stat modifiers, classifies intent, and spawns resistance issues from domestic power brokers. |
+| **Concord** (Living-World, v2) | IxTime, diplomatic stance drift, and NPC personality traits (8 traits scored from live data). The crisis lifecycle (`BREWING → … → RESOLVED`), NPC trait drift and event-fatigue dampening are designed but not yet built; crisis events are read-only today. |
 | **Atlas** (Spatial, v5) | 100,000-cell Voronoi procedural worldgen (tectonic plates, coastal hypsometric damping, Coriolis hydrology, 12 Trewartha biomes). PostGIS `ST_Touches` geometry is the Tier-0 source of truth for borders, neighbors, and regional rollups. |
 
 ### Apps & Core Systems
@@ -66,9 +66,9 @@ Every commitment produces a **bounded, clamped** world-state change, an automati
 
 ### API, Data & Platform Infrastructure
 
-- **API**: 90 domain-split **tRPC routers** (~1,450 end-to-end typed procedures) composed via `mergeRouters`. All client data access goes through tRPC — never direct Prisma from components.
-- **Data**: PostgreSQL + PostGIS, 296 Prisma models across 15 schema files — spatial geometry, immutable financial ledgers, and event spines included.
-- **Realtime**: Socket.IO WebSockets (diplomatic/crisis feeds, markets) and Redis-backed caching + rate limiting with in-memory fallback.
+- **API**: 77 domain-split **tRPC routers** (~960 end-to-end typed procedures after the September dead-code removal) composed via `mergeRouters`. All client data access goes through tRPC — never direct Prisma from components.
+- **Data**: PostgreSQL + PostGIS, 332 Prisma models across 18 schema files — spatial geometry, immutable financial ledgers, and event spines included.
+- **Realtime**: WebSockets served by `ws-backend.mjs` (Socket.IO for ThinkPages at `/ws/thinkpages`, plain `ws` for Market auctions at `/api/market-ws`) and Redis-backed caching + rate limiting with in-memory fallback.
 - **Design**: the **Facet** design system (glass materials, physics springs, 4-tier depth) and the **Halo** global overlay (context-aware dynamic action bar, notifications, command palette).
 
 ### Realm-First Product Model
@@ -80,18 +80,18 @@ IxWorld is one realm among several: every country belongs to a realm (`Country.r
 The flagship executive desk (`systems.mycountry` v6, `engines.mycountry` v4 in `src/lib/buildVersion.ts`). Lead your nation through authentic governance systems centered around executive power:
 
 - **The Single Command Surface**: Unified leadership cockpit (`src/components/mycountry/shell/CommandSurface.tsx`) featuring Telemetry Standing Bands (Approval, Stability, CivCap, Vitality Rings), an interactive 7-day IxTime Executive Agenda horizon strip, and Priority Crisis hero spotlights.
-- **National Directives & Statecraft Engine**: Declare national policy packages across 3 intensity levels (Measured, Moderate, Extreme). The Statecraft simulation engine validates Civil Service Capacity (CivCap) throughput, applies clamped stat modifiers, and broadcasts narrative bulletins across global feeds. Committing extreme directives triggers the **Intent ↔ Issues Resistance Rhythm**, spawning political pushback from 5 domestic power brokers (Military Junta, Merchant Guilds, Clerisy, Bureaucracy, Industrialists). Over-allocating CivCap activates **Information Fog**, masking exact numeric outcomes into qualitative risk bands.
+- **National Directives & Statecraft Engine**: Declare national policy packages across 3 intensity levels (Measured, Moderate, Extreme). The Statecraft engine (`src/lib/statecraft/`, `src/lib/intent/`) tracks Civil Service Capacity (CivCap), applies clamped stat modifiers, and writes narrative entries to the country's canon feed. Directives are capped at 3 per IxTime week with a cooldown. Committing extreme directives triggers the **Intent ↔ Issues Resistance Rhythm**, spawning political pushback from domestic power brokers. Over-extended CivCap or low government effectiveness raises **Information Fog** warnings on policy previews (numbers are not yet masked into qualitative bands).
 - **Grounded National Issues & 4-Branch Briefs**: The dynamic issue engine builds real-time national dilemmas by resolving live PostGIS `ST_Touches` neighboring countries, active cabinet ministers, and trade partners into templates (`{{neighborName}}`, `{{ministerName}}`). Leaders resolve dilemmas via 4 distinct action paths:
   - `Delegate`: Consumes 15 CivCap to pass non-urgent matters to the civil service for 5 in-game days.
   - `Resolve Brief`: Choose an immediate executive option with direct statistical tradeoffs.
-  - `Set Cabinet Meeting`: Schedule a formal meeting in the 7-day Agenda (+7 IxTime days) to deliberate complex crises without slot cooldowns.
+  - `Set Cabinet Meeting`: Schedule a meeting in the 7-day Agenda (+7 IxTime days). Meetings are schedule-only for now — outcomes and decisions are not yet recorded.
   - `Make Directive`: Escalate the dilemma directly into the Intent Composer to enact a formal national directive.
-- **Politics, Parliament & Hemicycles**: Manage political parties with ideological spectrum ratings (-100 to +100), configure unicameral or bicameral legislatures (10–1,000 seats), and run elections using D'Hondt proportional representation, First-Past-The-Post (FPTP), or Mixed allocation. An 11-step simulation algorithm factors GDP growth, campaign charisma, and stability margins into live SVG Parliament Hemicycle seat visualizations and cabinet minister appointments.
-- **Macroeconomics, 42-Tax System & Fiscal Policy**: Model economic output across 12+ macro templates (Free Market, Nordic Social Democracy, Developmental State, etc.), 42 distinct tax components across 4 brackets (income, corporate, consumption, wealth), sector composition donuts, and daily Vault dividend yields.
-- **Defense Readiness & Security**: Calibrate readiness postures across military branches (Army, Navy, Air Force, Cyber, Homeland Security), procure hardware from military equipment catalogs, track border threat heatmaps, and deploy forces via the Operations Wizard.
-- **Diplomacy & NPC AI Reactions**: Establish physical embassies with dedicated specializations (Economic, Cultural, Security, General), sign bilateral treaties, deploy cultural missions, and negotiate with autonomous NPC nations governed by 8 core personality traits and 6 behavioral archetypes with dynamic event fatigue dampening.
-- **Vitality Tracking & Governance Ledger**: Server-side composite vitality calculations (Economic, Wellbeing, Diplomatic, Efficiency) and immutable `CountryEventSpine` audit timeline preventing unearned stat inflation ("Burg's Guardrail").
-- **The 6-Step Country Builder**: Launch new sovereign states via a guided wizard (Identity $\to$ Government $\to$ Economy $\to$ Demographics $\to$ Fiscal $\to$ Review) with atomic component synergy scoring and MediaWiki infobox auto-import.
+- **Politics, Parliament & Hemicycles**: Manage political parties with ideological spectrum ratings (-100 to +100), configure unicameral, bicameral or custom legislatures (10–10,000 seats), table Bills against a fogged whip count, and resolve elections with D'Hondt, First-Past-The-Post (FPTP), or Mixed allocation shown on an SVG hemicycle. Known gap: candidate registration was removed in September, so cron-scheduled follow-up elections currently have no candidates.
+- **Macroeconomics & Fiscal Policy**: Model economic output across 20 built-in archetypes (10 modern, 10 historical), set headline tax rates in MyCountry → Economy & Budget → Fiscal Policy (the engine defines 42 atomic tax components, which players don't pick directly), and collect daily Vault dividend yields.
+- **Defense & Security (premium)**: Military branches, units and equipment procurement, readiness and security threats. The Defense domain (which also serves `/mycountry/intelligence`) is premium-gated. There is no standalone intelligence dashboard.
+- **Diplomacy & NPC AI Reactions**: Establish physical embassies with dedicated specializations (Economic, Cultural, Security, General), sign bilateral treaties, deploy cultural missions, set diplomatic stances (which drift over time), and exchange with NPC nations whose 8 personality traits currently shape cultural-exchange responses. NPC trait drift, crisis events and NPC responses to embassies and treaties are still to be built.
+- **Vitality Tracking & Governance Ledger**: Server-side composite vitality scores (Economic, Wellbeing, Diplomatic, Efficiency) and a country event spine surfaced as the owner's canon feed. Not every subsystem writes to the spine yet (diplomacy, defense, elections and meetings bypass it).
+- **The Country Builder (v4)**: Launch a nation through a guided wizard (Foundation & Identity $\to$ Government $\to$ Economics $\to$ Preview) or import one from a wiki infobox, with atomic component synergy scoring. The same builder powers edit mode at `/mycountry/editor`.
 
 ---
 
@@ -111,14 +111,14 @@ A complete cartography, spatial analytics, and procedural world generation suite
 A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`apps.ixvault` v2):
 
 - **Four-Pillar Card System (IxCards)**: Collectible cards powered by Force, Wealth, Influence, and Legacy attributes across 5 core card types:
-  - `NATION`: Dynamically minted and continuously recalculated from live country telemetry (GDP per capita, military readiness, embassy network, social vitality).
-  - `LORE`: Procedurally generated from WikiOS articles, scored on historical depth, reference citations, and inbound cross-links.
+  - `NATION`: Country cards with Force / Wealth / Influence / Legacy stats, re-priced daily against their country's GDP and growth by the `card-values` cron.
+  - `LORE`: Generated from WikiOS articles; rarity is suggested from wiki signals (word count, links, edit count, category breadth, images, article age) and admins can override it.
   - `NS_IMPORT`: Synchronized with external NationStates card collections under strict compliance guardrails (streaming image proxying at `/api/proxy-ns-image`, attribution footers, and HMAC-MD5 self-service takedown verification).
   - `SPECIAL` & `COMMUNITY`: Commemorative milestone editions, contest winners, and alliance editions.
-- **Pack Openings & 6 Rarity Tiers**: 6 rarity tiers (Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9%, Legendary 0.1%) with particle shatter animations and rarity-specific audio reveals across 6 pack tiers (Basic, Premium, Elite, Themed, Seasonal, Event).
-- **Crafting, Fusion & Card Junking**: Combine duplicate cards into higher rarities via fusion recipes, upgrade cards directly through evolution, or recycle unlocked cards for instant IxCredits.
+- **Pack Openings & 6 Rarity Tiers**: Common → Legendary. Each pack sets its own price, card count and odds; 20 packs are seeded (100–15,000 IxC), including NationStates season packs. The opening sequence peels, flips and reveals each card by rarity.
+- **Crafting, Fusion & Card Junking**: Recycle unlocked cards for instant IxCredits. Fusion and evolution recipes exist at `/vault/crafting`, but that page is unlinked and does not work end to end yet (see `docs/systems/cards.md`).
 - **Marketplace & P2P Escrow Trading**: Live public auctions with automated bidding and secure peer-to-peer card trading protected by atomic escrow locks.
-- **IxCredits (IxC) & Achievements**: The universal platform currency earned through passive economic dividends, daily streaks, diplomatic resolutions, and achievements (LoreWards) recorded on double-entry transaction ledgers.
+- **IxCredits (IxC), Achievements & Lorewards**: The platform currency, earned through passive economic dividends, daily streaks, diplomatic scenarios, achievement unlocks and Lorewards (wiki-writing rewards), all recorded in the vault ledger.
 
 ---
 
@@ -137,13 +137,13 @@ A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headl
 ### 💬 ThinkPages & ThinkShare — In-Universe Social & Comms
 
 - **ThinkPages**: The in-universe social and intelligence feed (`systems.thinkpages` v2). Features rich post authoring, hashtag exploration, community polling, headline blurb integration, and persistent collaborative ThinkTanks.
-- **ThinkShare**: Unified, cross-platform encrypted messaging powering personal DMs, diplomatic communiqués, and secure group channels across 5 classification clearance levels (`PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`) with digital signatures.
+- **ThinkShare**: Direct and group messaging at `/messages`, delivered live over the ThinkPages socket. Messages carry a classification level (`PUBLIC` → `TOP_SECRET`); encryption and signature fields exist in the schema but no cryptography is implemented yet.
 
 ---
 
 ### 🏆 MyLeague & Creative Labs
 
-- **MyLeague & MyClub**: 7-sport simulation engine (soccer, Formula 1, hockey, boxing, basketball, baseball, American football) with seeded play-by-play match engines, club finances, ticket revenue, and Markov-chain player career lifecycles.
+- **MyLeague & MyClub**: 7-sport simulation engine (soccer, Formula 1, hockey, boxing, basketball, baseball, American football) with seeded play-by-play match engines, club finances, ticket revenue, and player career lifecycles, at `/myleague` and `/myclub`. Boxing currently reuses the soccer match loop.
 - **⟨ONOMA⟩ Linguistics Studio (`systems.onoma` v4)**: Procedural phonology engine with Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries for conlangs.
 - **Vexel Heraldry**: Vector blazon generator creating heraldic shields, charges, and national flags adhering to classic tincture rules.
 
@@ -169,7 +169,7 @@ Specialized creative toolkits and simulation sandboxes:
 | Laboratory | Route | Status | Focus Area |
 |---|---|:---:|---|
 | **⟨ONOMA⟩** | `/labs/onoma` | **Active** | Procedural phonology engine: Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries. |
-| **Vexel** | `/labs/vexel` | **Active** | Structured heraldry composer: vector blazon generation, tincture rules, and deterministic charge composition from Commons assets. |
+| **Vexel** | `/labs/vexel` | **Preview** | Structured heraldry composer: vector blazon generation, tincture rules, gallery and revisions. Routable but not in the Labs menu; external ornaments and attach-to-country are unfinished. |
 | **Map Pipeline** | `/labs/map-pipeline` | **Active** | Procedural worldgen testbed for testing 100k-cell Voronoi meshes and hypsometric algorithms without touching live data. |
 | **Strata & Dynas** | — | *Roadmap* | Planned laboratories for tectonic relief simulation and dynastic genealogy modeling. |
 

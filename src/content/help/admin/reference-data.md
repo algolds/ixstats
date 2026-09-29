@@ -6,27 +6,20 @@ badge: For Admins
 
 ## Government Components
 
-- **24 Atomic Components:** DEMOCRATIC_PROCESS, FEDERAL_SYSTEM, CONSTITUTIONAL_MONARCHY, etc.
-- **Fields:** Name, description, category, effectiveness score (0-100), tier requirements.
+- **64 Atomic Components** across 10 categories: DEMOCRATIC_PROCESS, FEDERAL_SYSTEM, INDEPENDENT_JUDICIARY, etc.
+- **Fields:** Name, description, category, effectiveness score (0-100), costs, prerequisites.
 - **Synergies:** Define compatible components that boost effectiveness when combined.
 - **Conflicts:** Mark incompatible combinations that reduce effectiveness or cause instability.
 - Changes immediately reflected in the country builder component selector.
 
 ## Economic Components
 
-> **40+ Policy Components**
+> **27 Policy Components**
 >
-> - Categories: Trade Policy, Labor Market, Investment, Innovation, Infrastructure, Environment.
+> - Categories: Economic Model, Sector Focus, Labor System, Trade Policy, Innovation, Resource Management.
 > - Effects: GDP impact, employment, innovation index, sustainability, inequality.
-> - Prerequisites: Tier requirements, prerequisite components, unlock conditions.
+> - Prerequisites: Prerequisite components and unlock conditions.
 > - Formulas: Custom calculation expressions for dynamic economic modeling.
-
-## Tax System Components
-
-- **42 Tax Types:** Income, corporate, VAT, property, capital gains, etc.
-- **Rate Configuration:** Min/max rates, progressive brackets, flat rates, exemptions.
-- **Revenue Formulas:** Base calculations with GDP multipliers, population factors, compliance rates.
-- **Economic Effects:** Growth impact, inequality adjustments, compliance costs.
 
 ## Diplomatic Scenarios
 
@@ -46,9 +39,9 @@ badge: For Admins
 
 ## NPC Personalities
 
-- **8 Personality Traits:** Assertiveness, cooperativeness, risk tolerance, pragmatism, etc.
+- **8 Personality Traits:** Assertiveness, cooperativeness, economic focus, cultural openness, risk tolerance, ideological rigidity, militarism, isolationism.
 - **Calculation Formulas:** Define how traits derive from observable data (alliances, conflicts, trade).
-- **Archetypes:** Configure 6 personality profiles (Pragmatist, Idealist, Aggressor, etc.).
+- **Archetypes:** 6 personality profiles (Pragmatic Realist, Peaceful Merchant, Aggressive Expansionist, Cultural Diplomat, Ideological Hardliner, Cautious Isolationist).
 - **Drift Parameters:** Max annual change rates, influence factors.
 
 ## CRUD Operations
@@ -59,13 +52,6 @@ badge: For Admins
 > 2. **Read:** Browse list view with filters, search, pagination; click to view details.
 > 3. **Update:** Edit inline or via form; changes logged to audit trail.
 > 4. **Delete:** Soft delete (archived) or hard delete with confirmation; check dependencies first.
-
-## Bulk Operations
-
-- **CSV Import:** Upload spreadsheet with standardized columns; preview before commit.
-- **Batch Edit:** Select multiple items, apply common changes (tags, categories, effectiveness scores).
-- **Export:** Download current catalog as CSV or JSON for backup or external analysis.
-- **Validation:** Automatic checks for duplicates, invalid references, missing required fields.
 
 > **Related Articles**
 >

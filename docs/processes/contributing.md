@@ -1,14 +1,14 @@
 # Contributing Guide
 
-**Last updated:** May 2026
+**Last updated:** September 2026
 
 This guide outlines expectations for contributing to IxStats. Use it alongside the architectural and system docs when planning work.
 
 ## Workflow
-1. Create a feature branch from `v2` with a descriptive name
+1. Create a feature branch from the current integration branch (`rose-garden`) with a descriptive name
 2. Install dependencies and prepare the database (`bun install`, `bun run db:setup`)
 3. Implement changes with accompanying tests and documentation updates
-4. Run quality gates: `bun run test`, `bun run audit:wiring`, `bun run typecheck`
+4. Run quality gates: `bun run test`, `bun run typecheck`, `bun run audit:arch`, `bun run lint:strict`, `bun run docs:check` (the same gates CI runs in `.github/workflows/ci.yml`)
 5. Submit a pull request referencing the relevant documentation or help articles
 
 ## Code Standards
@@ -26,7 +26,7 @@ This guide outlines expectations for contributing to IxStats. Use it alongside t
 ## Tests & Verification
 - Add or update Jest tests for routers/services touched
 - Include manual testing notes for features lacking automation
-- Consider Playwright scenarios for UX-critical paths
+- There is no browser E2E suite (Playwright is not installed); document manual verification for UX-critical paths
 
 ## Review Checklist
 - Does the change respect rate limiting and auth boundaries?
@@ -35,8 +35,8 @@ This guide outlines expectations for contributing to IxStats. Use it alongside t
 - Has the help center been updated for user-facing changes?
 
 ## Release Guidance
-- Tag releases in CHANGELOG (if maintained separately)
+- Record releases in the root `CHANGELOG.md`; version numbers come from `src/lib/buildVersion.ts`
 - Run deployment checklist from `docs/operations/deployment.md`
-- Archive legacy docs under `docs/archive/<date>` when retiring features
+- Archive legacy docs under `docs/archive/<date>` when retiring features (`docs/archive/` is git-ignored and kept locally)
 
 Maintainers should revise this guide when workflow expectations change or new tooling is adopted.

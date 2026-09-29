@@ -37,7 +37,7 @@ WikiOS uses dynamic optical scaling via CSS `clamp()`, proportional tracking, an
 - **Display and brand.** `var(--wikios-font-brand)` resolves to `"Host Grotesk", sans-serif` for hero titles and brand anchors.
 - **Reading prose.** `var(--wikios-font-reading)` resolves to `var(--font-geist-sans), system-ui, -apple-system, sans-serif` for article body copy, summaries, and lead blurbs.
 - **UI and navigation.** `var(--wikios-font-ui)` resolves to `var(--font-geist-sans), system-ui, -apple-system, sans-serif` for sidebar items, tabs, and controls.
-- **Code and syntax.** `var(--wikios-font-mono)` resolves to `"JetBrains Mono", "Consolas", monospace` for wikitext source editing and raw code snippets only.
+- **Code and syntax.** `var(--wikios-font-mono)` resolves to `"JetBrains Mono", "Fira Code", "Consolas", monospace` for wikitext source editing and raw code snippets only.
 
 ### Type scale
 
@@ -71,6 +71,8 @@ WikiOS uses layered translucent materials with GPU-accelerated backdrop blur and
 | `--wikios-amber` | `#f59e0b` (amber-500) | `#d97706` (amber-600) | Timeline chronologies, warning alerts, canon event pills |
 | `--wikios-green` | `#22c55e` (green-500) | `#16a34a` (green-600) | Positive byte diffs (`+412`), online indicators, verified badges |
 | `--wikios-red` | `#ef4444` (red-500) | `#dc2626` (red-600) | Negative byte diffs (`-38`), deletion warnings, conflict flags |
+
+Tokens are defined in `src/styles/wiki-os/foundations.css`. Light-mode values are literal hex codes. The dark-mode (`:root`) values alias the global theme variables (for example `--wikios-accent: var(--color-info)`, `--wikios-bg: var(--color-bg-primary)`), so the dark hex codes on this page are the intended resolved values, not literals in the file.
 
 ### Dark mode surfaces (default)
 - Base canvas (`--wikios-bg`): `#0f1114`

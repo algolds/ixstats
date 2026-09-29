@@ -1,6 +1,6 @@
 # Stash
 
-**Last updated:** June 2026
+**Last updated:** September 2026
 
 The Stash (internally "Lore Stash") is the platform's save-for-later system. Signed-in users bookmark wiki pages, media-repository images, and forum threads into named, color-coded collections, then add inline text highlights for worldbuilding research. It is part of the WikiOS surface and renders inside `WikiOSLayout`.
 
@@ -8,7 +8,7 @@ The Stash (internally "Lore Stash") is the platform's save-for-later system. Sig
 
 | Route | File | Description |
 |-------|------|-------------|
-| `/stashes` | `src/app/stashes/page.tsx` | Stash manager — sidebar of collections, item grid with Pages / Images / Threads tabs |
+| `/stashes` | `src/app/stashes/page.tsx` | Stash manager — sidebar of collections, item views with Articles / Quotes / Images / Threads tabs |
 
 Signed-out visitors see a sign-in prompt instead of the manager.
 
@@ -21,17 +21,18 @@ Signed-out visitors see a sign-in prompt instead of the manager.
 | One-click save | `StashButton` saves the current page to the default stash, or to specific stashes via a popover / manager modal |
 | Text annotations | Selection-based highlights with anchor/focus selectors, selected text, optional comment, and color (`addAnnotation`) |
 | Organization | Rename / recolor / set icon (`updateStash`) |
-| Help guide | `StashWelcomeModal` onboarding (Getting Started, Page Markups, Image Repository, Forum Threads) |
+| Collection settings | `StashSettingsMenu`: rename, 8-swatch color picker, Markdown / JSON export, copy link, delete |
+| Help guide | `StashWelcomeModal` onboarding (Overview, Articles & Quotes, Media Assets, Forum Threads) |
 
 ## Architecture
 
 | Piece | Location | Role |
 |-------|----------|------|
-| Page | `src/app/stashes/page.tsx` | Manager UI; tabs filter items by `pageTitle` prefix (`commons:` = image, `forum:thread:` = thread, else wiki page). Sections live in `src/components/wiki-os/stashes/` (`StashImagesGrid` holds `StashedImageModal`: lightbox + wikitext copy formats) |
+| Page | `src/app/stashes/page.tsx` | Manager UI; tabs filter items by `pageTitle` prefix (`commons:` = image, `forum:thread:` = thread, else wiki page); the Quotes tab flattens each article's annotations. Sections live in `src/components/wiki-os/stashes/` (`StashSidebar`, `StashPagesList`, `StashQuotesList`, `StashImagesGrid` with `StashedImageModal`, `StashThreadsList`, `StashSettingsMenu`, `CreateStashPopover`) |
 | Stash button | `src/components/wiki-os/reader/StashButton.tsx` | Save toggle + popover + `StashManagerModal` |
 | Welcome modal | `src/components/wiki-os/shared/StashWelcomeModal.tsx` | First-run help (localStorage `wikios-stashes-welcome-seen`) |
 | Other entry points | `src/components/wiki-os/media-search/MyStashTab.tsx`, `src/components/messages/MessagesStashAttachmentModal.tsx` | Stash access from media search and messaging |
-| Styles | `src/styles/wiki-os.css` | `wikios-stash-*` classes |
+| Styles | `src/styles/wiki-os/components.css` (aggregated by `src/styles/wiki-os.css`) | `wikios-stash-*` classes |
 
 Models live in `prisma/schema/wiki.prisma`: `Stash`, `StashItem` (`contentType` = `wiki` | `forum_thread` | `forum_post`, optional `contentId`), `StashAnnotation`.
 

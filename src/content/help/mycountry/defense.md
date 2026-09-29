@@ -4,15 +4,22 @@ description: Command your military, shape your forces, and keep your nation secu
 badge: MyCountry — Your Nation's Home
 ---
 
+> [!WARNING]
+> **Preview feature**
+>
+> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+
 ## How It's Laid Out
 
-Everything about your nation’s security sits in three areas:
+Everything about your nation’s security sits in five tabs:
 
-- **Command** — the big-picture read on threats and readiness.
-- **Forces** — your branches, your troops, and the gear they carry.
-- **Operations** — what your military is actually doing right now.
+- **Branches & Readiness** — the big-picture read on readiness across your branches.
+- **Threat Vectors** — what’s out there and worth watching.
+- **Forces & Arsenal** — your troops and the gear they carry.
+- **Special Operations** — what your military is actually doing right now.
+- **Internal Stability** — security at home.
 
-## Command
+## Readiness & Threats
 
 A clear view of how safe your nation is:
 
@@ -21,7 +28,7 @@ A clear view of how safe your nation is:
 - **Threats** — what’s out there and worth watching.
 - **Needs attention** — the defense matters waiting on a decision from you.
 
-## Forces
+## Forces & Arsenal
 
 > **Building your military**
 >
@@ -30,7 +37,7 @@ A clear view of how safe your nation is:
 > - **Make-up** — balance active troops, reserves, and the support that keeps them going.
 > - **At a glance** — branch count, average readiness, and your overall security score.
 
-## Operations
+## Special Operations
 
 Plan and follow what your forces are doing:
 

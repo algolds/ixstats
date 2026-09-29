@@ -1,9 +1,9 @@
 # WikiOS Core Engine (`src/lib/wiki-os/`)
 
 **Status**: Primary & Default Encyclopedia Engine  
-**Package**: `@wikios/core`  
+**Package**: in-repo module (`~/lib/wiki-os`), not a published package  
 **Runtime**: TypeScript 7.0, Bun 1.4+  
-**Platform**: IxStates 1.4.0 Lobster Crosby (RC-1)  
+**Platform**: IxStates 1.4.0 Lobster Crosby (Release Candidate)  
 
 ---
 
@@ -20,20 +20,20 @@ WikiOS is the **primary and default encyclopedia platform** for the IxStates eco
                             ┌───────────────────────────────┴───────────────────────────────┐
                             ▼                                                               ▼
              ┌─────────────────────────────┐                                 ┌─────────────────────────────┐
-             │       IxWiki Database       │                                 │   IIWiki & AltHistory       │
-             │   (Direct MariaDB/Postgres) │                                 │  (Sister Community Realms)  │
+             │   IxWiki (PostgreSQL store) │                                 │   IIWiki & AltHistory       │
+             │ wiki_articles / _revisions  │                                 │  (Sister Community Realms)  │
              ├─────────────────────────────┤                                 ├─────────────────────────────┤
-             │ • <2ms Binary SQL Reads     │                                 │ • Multi-Wiki HTTP Adapter   │
+             │ • <2ms Pre-compiled Reads   │                                 │ • Multi-Wiki HTTP Adapter   │
              │ • <10ms Atomic Writes       │                                 │ • 5-min Memory/LRU Cache    │
              │ • Direct Taxonomy Graph     │                                 │ • Circuit Breakers (403)    │
-             │ • Zero MediaWiki PHP Lag    │                                 │ • Cross-Wiki Parse Proxy    │
+             │ • recentchanges Inbound Sync│                                 │ • Cross-Wiki Parse Proxy    │
              └──────────────┬──────────────┘                                 └─────────────────────────────┘
                             │
                             │ (Asynchronous Export Mirroring)
                             ▼
              ┌─────────────────────────────┐
              │    MediaWiki Export Worker  │
-             │  (Attributed MariaDB Patch) │
+             │  (Action API, bot session)  │
              └──────────────┬──────────────┘
                             │
                             ▼
@@ -48,14 +48,14 @@ WikiOS is the **primary and default encyclopedia platform** for the IxStates eco
 ## 2. Storage & Write Pipeline
 
 1. **Read Path (<2ms)**:
-   - Queries direct MariaDB binary socket connection pool (`mysql2/promise`) for raw wikitext, revisions, categories, and backlinks.
-   - Leverages PostgreSQL (`WikiArticle`, `WikiCache`) for structured infoboxes, Lore Stash bookmarks, and sovereign country metadata.
+   - Reads articles, wikitext, revisions, categories, and backlinks from PostgreSQL (`WikiArticle`, `WikiRevision`, `WikiLink`, `WikiCategory*`) via `ArticleRepository` and `adapters/mediawiki/bridge/pg-*.ts`. There is no direct MariaDB connection (the `mysql2` pool was removed on 2026-08-25).
+   - Uses the MediaWiki HTTP Action API (`action=parse`) as a headless renderer for templates/Lua, and PostgreSQL (`WikiCache`) for structured infoboxes and country metadata.
 2. **Write Path (<10ms)**:
    - Saves directly to PostgreSQL `ArticleRepository` in a single transaction.
-   - Asynchronously enqueues `MediaWikiExportWorker` to mirror edits to MariaDB and legacy MediaWiki APIs, maintaining 100% data parity without blocking the user.
+   - Asynchronously enqueues `MediaWikiExportWorker` (in-process queue) to mirror edits to classic MediaWiki through the Action API using the bot session, without blocking the user. Authorship is kept in `WikiRevision.author`; upstream per-user actor attribution is not implemented.
 3. **Classic MediaWiki Fallback**:
    - `https://ixwiki.com/` remains accessible at all times for users preferring the classic MediaWiki Vector interface.
-   - Any edits made on classic MediaWiki are immediately reflected in WikiOS via direct MariaDB database queries.
+   - Edits made on classic MediaWiki are pulled into PostgreSQL by `services/auto-sync-service.ts` (`runAutoSyncCycle`), run by the `wiki-recentchanges` cron job and the authenticated `/api/wikios/inbound-sync` webhook.
 
 ---
 
@@ -67,15 +67,17 @@ src/lib/wiki-os/
 │   ├── ixstates/         # Sovereignty & nation eligible country service
 │   ├── mediawiki/        # Core MediaWiki bridge & database readers
 │   │   ├── bridge/
-│   │   │   ├── mysql-reader.ts  # Direct MariaDB binary query engine (<2ms)
+│   │   │   ├── pg-reader.ts     # PostgreSQL article/wikitext reader (+ pg-search, pg-activity, pg-taxonomy, pg-site)
 │   │   │   ├── http-reader.ts   # Resilient sister-wiki HTTP adapter (IIWiki/AltHistory)
 │   │   │   └── dispatchers.ts   # Public multi-wiki dispatching engine
 │   │   ├── article-store.ts     # PostgreSQL cache & shadow synchronization
 │   │   └── sync-worker.ts       # Non-blocking MediaWiki background export worker
-├── core/                 # Native search service & ArticleRepository
-├── editor/               # PlateJS visual block editor & wikitext source editor
-├── transformers/         # Infobox parsers, image URL hash math, wikitext compiler
-└── templates/            # Custom template resolver & macro provider
+├── core/                 # ArticleRepository, link graph, native search, media assets, WikiAST
+├── editor/               # Draft store & local cache (Plate editor UI lives in src/components/wiki-os/editor/)
+├── services/             # auto-sync-service.ts (recentchanges inbound sync)
+├── transformers/         # Infobox parsers, image URL hash math, WikiAST ↔ wikitext converter
+├── wikitext/             # Wikitext parser & serializer
+└── templates/            # Custom template resolver, presets & preview cache
 ```
 
 ---
@@ -88,6 +90,6 @@ WikiOS provides first-class support for sister community wikis via the strict `W
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 ```
 
-- **`ixwiki`**: Local high-speed database engine (MariaDB binary protocol + Postgres metadata).
-- **`iiwiki`** & **`althistory`**: External community sister wikis with memory caching and circuit breaker protection.
-- **`all`**: Parallel concurrent queries (`Promise.allSettled`) for unified cross-encyclopedia search.
+- **`ixwiki`**: Local PostgreSQL store; the only editable source.
+- **`iiwiki`** & **`althistory`**: External community sister wikis read over HTTP with a 5-minute circuit breaker for offline/403 hosts. In the reader they open via `/wiki/[slug]?source=…` and are read-only (links, Watch, edit route and `?margin` follow the page's wiki).
+- **`all`**: Parallel concurrent queries (`Promise.all`) for unified cross-encyclopedia search (`api.wikios.search`).

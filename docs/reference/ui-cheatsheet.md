@@ -196,10 +196,7 @@ export function NotificationTrigger() {
 
   const handleAction = () => {
     // Automatically plays soundEffects.success() and pushes to Halo pill
-    notify.success({
-      title: "Directives Updated",
-      message: "Civil capacity rebalanced across 4 sectors.",
-    });
+    notify.success("Directives Updated", "Civil capacity rebalanced across 4 sectors.");
   };
 
   return (

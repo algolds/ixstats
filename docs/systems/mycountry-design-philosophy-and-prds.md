@@ -1,6 +1,17 @@
 # MyCountry Design Philosophy & Community Feedback
 
-This document outlines the core structural and gameplay philosophies governing the **MyCountry** module (v3), based on design principles and community feedback.
+This document outlines the core structural and gameplay philosophies governing the **MyCountry** module, based on design principles and community feedback. It was written against MyCountry v3/v4; the current system is `MYCOUNTRY_VERSION = 6` / `MYCOUNTRY_ENGINE_VERSION = 4`.
+
+> **Implementation status of the PRDs below (verified 2026-09-29):**
+>
+> | PRD / section | Status | Where it stands |
+> | :--- | :--- | :--- |
+> | §1–3 Philosophy, fog, policy origins | ✅ Mostly built | Derived policy risk/CivCap, department gate for custom policies, reactive 25%/15% discounts (`policies/crud.ts`). Fog is warnings only (`PolicyReconBanner`) — no qualitative-band masking. |
+> | Gameplay Frameworks 1–4 (Milestone, Coalition, Geography, Crisis) | 💡 Exploration | Not built as loops. Pieces exist: power brokers and bills (Coalition), neighbor-grounded issues (Geography). |
+> | Intent Engine PRD | 🟡 Partial | `Intent` tree + `intent` router + measured/moderate/extreme packages + resistance issues + weekly cap. No `NationalIntent`/`IntentDependency` DAG, Vision/Strategic/Operational layers, Blocked→Proposed auto-transition, or ministry-generated Plans A/B/C. |
+> | Executive Meeting System PRD | ❌ Not built | Meetings are schedule-only (`meetings.createMeeting`, `quickActions.createMeeting`). No deliberation phases, meeting categories, participant profiles, recommendation engine, or decision recording (completion mutations deleted in plans 312/332). |
+> | Executive Dashboard (Situation Room) PRD | 🟡 Partial | `ExecutiveHome`: severity-ranked priority hero, 7-day agenda, standing bands, intent tree, canon feed. No AI morning briefing, Decide/Review/Monitor/Celebrate model, `dashboard-state-engine.ts`, or cabinet recommendations. |
+> | Executive Domains PRD | 🟡 Partial | Bills (`legislation` router, stored as `Policy`), parties, cron elections, stances, alliances. No `ForeignMission`/treaty-as-intent nodes, party red lines, or summits-as-meetings. Elections still exist as a separate system. |
 
 ---
 
@@ -222,7 +233,7 @@ I audited the `executive`, `diplomacy`, and `politics` systems in the codebase t
 ### Politics System (Elections & Stability)
 * **Status:** Engines built, automation hooks in place.
 * **Findings:**
-  * The `elections.ts` router delegates to a shared `simulateElectionCore`. This allows the cron job (`election-cron.ts`) to seamlessly simulate elections based on IxTime, making the politics system a "clock that runs while you're away." 
+  * Elections run through a shared `simulateElectionCore` (`src/lib/government/election-simulation.ts`), resolved by the cron job (`src/lib/government/election-cron.ts`) on IxTime, making the politics system a "clock that runs while you're away." (The manual simulate/schedule/candidate mutations have since been removed — see [Elections](./elections.md).) 
   * The next missing piece (as noted in the core loops doc) is linking **Internal Stability** dynamically to the components and policies, rather than it being a static editable field. 
 
 ---

@@ -9,11 +9,11 @@ Four core pillars:
 3. **Sound Change & Conlang Evolution Engine** (`sound-shifts.ts`) — Historical phonological sound shift rule interpreter ($X \to Y\ /\ \text{ENV}$) across chronological epochs (e.g. Grimm's Law, Latin-to-Romance Lenition, Slavic Palatalization, Great Vowel Shift) to derive daughter conlangs and regional dialects from Proto-Lexicons with full step tracking.
 4. **Acoustic Formants & Spectrogram Engine** (`vowel-formants.ts`) — Real-time 2D IPA Vowel Quadrilateral ($F_1$ vowel height vs $F_2$ vowel frontness/backness), acoustic center of gravity calculations, and Web Audio API FFT spectrum visualization.
 
-Everything runs in the browser. The server is only touched to save names to the Stash, fetch optional live-world training data, and proxy natural neural voice synthesis through Kokoro TTS.
+Generation runs in the browser. The server is only touched to save names and dictionaries to the Stash, persist Studio/Explore profiles (syntax, writing systems, etymology roots, loanword contacts, community packs), log generation history, fetch optional live-world training data, and proxy natural neural voice synthesis through Kokoro TTS.
 
 ---
 
-## 7 Core Optimization & Architecture Initiatives (Plans 125–131)
+## 8 Core Optimization & Architecture Initiatives (Plans 125–132)
 
 | Initiative | Scope | Description |
 |---|---|---|
@@ -46,10 +46,17 @@ src/lib/onoma/
   kokoro-phonemes.ts           IPA to Kokoro phoneme converter and token normalizer
   lexicon-analytics.ts         Shannon entropy, letter/bigram/trigram frequencies, 0–100 health audit
   types.ts                     Nominal branded types (IPAString, LanguagePackId) and strict Zod validation schemas
-  cultural-profiles.ts         13 culture word lists (preset training + classifier training)
-  species/group/tavern         Rule-based fantasy assemblers
+  cultural-profiles.ts         13 culture word lists (preset training + classifier training; loads cultural-profiles.json)
+  species-generator.ts / group-generator.ts   Rule-based fantasy assemblers
+  markov-naming.ts             MarkovNameGenerator used by language-families.ts and the worldgen (src/lib/worldgen/v2/politics.ts)
+  language-families.ts         10 curated language families (seed lists → compiled Markov families)
+  comparator.ts                Phoneme-inventory Jaccard/cosine profile comparison
+  name-sets.ts                 Curated seed name datasets (Studio → Name Sets)
+  loanwords-presets.ts         Loanword contact presets
+  custom-dictionaries.ts / lexicon-loader.ts / data-bridge.ts   Custom dictionary storage, lexicon loading, universal data bridge
+  template-resolver.ts / phonetics-shared.ts / ipa-overrides.ts  Shared token interpolation, phonetic helpers, IPA overrides
   data/                        Generated, COMMITTED:
-    fantasy/species/group/tavern-data.ts   syllable/template data
+    fantasy-names-data / group-data / species-data   syllable/template data
     lexicon/<category>.json + manifest.json  compact wiki dictionaries (build output)
   lexicon/                     Lexicon pipeline logic (pure, jest-tested):
     clean.ts                   title → trainable name
@@ -61,15 +68,14 @@ src/hooks/
   useNameBank.ts               Name Bank queries, Stash persistence, and dictionary mutations
   useWikiNarrator.ts           Immersive natural audio narrator for WikiOS article voiceover
 
-src/app/labs/onoma/components/
+src/app/labs/onoma/components/   (full tree: src/app/labs/onoma/README.md)
   OnomaRouter.tsx              SPA router + Facet navigation tabs + dynamic code-splitting
   sections/
-    OverviewSection.tsx        Quick generator & popular presets
-    PlacesSection.tsx          Settlement, geography & natural feature generators
-    PeopleSection.tsx          First names, noble houses & cultural ethnonyms
-    MilitarySection.tsx        Military regiments, ships & fortress namers
-    StudioSection.tsx          Conlang creation suite (Workshop, Visualizer, Name Sets, Lexicon, IPA, Sound Shifts)
-    MarketplaceSection.tsx     Conlang sharing & community dictionary repository
+    OverviewSection.tsx        Sandbox quick generator & popular presets
+    CategoryDomainSection.tsx  Places / People / Factions / Culture domain generators (declarative taxonomies)
+    StudioSection.tsx          Conlang creation suite (Workshop, Path Visualizer, Name Sets, Sound Shifts)
+    ExploreSection.tsx         Acoustics & IPA, Grammar & Roots, Writing Systems, Community Packs
+    LanguagePacksSection.tsx   Conlang sharing & community dictionary repository
     StashSection.tsx           Saved names & exported conlang dictionaries
     SettingsSection.tsx        Voice sandbox, speed/pitch preferences & server wake controls
   sections/studio/
@@ -123,7 +129,7 @@ Onoma provides dual voice synthesis:
 2. **🎙 Kokoro Neural TTS** (`/api/onoma/tts`): Self-hosted neural model proxy passing canonical IPA phonemes directly to `/dev/generate_from_phonemes`.
 
 ### Hugging Face / GPU Cold-Start Wake Engine
-Idle Hugging Face spaces and GPU containers sleep when inactive. The `wakeKokoroServer` tRPC mutation in `src/server/api/routers/onoma/core.ts` provides:
+Idle Hugging Face spaces and GPU containers sleep when inactive. The `wakeKokoroServer` tRPC mutation in `src/server/api/routers/onoma/speech.ts` provides:
 - Extended **45-second cold-start timeout** to allow container bootup.
 - Live status reporting (`awake`, `waking`, `down`, `unconfigured`) and latency tracking ($ms$).
 - Interactive "Ping / Wake Server" triggers in both the Admin Panel and Onoma Lab Settings.
@@ -132,18 +138,15 @@ Idle Hugging Face spaces and GPU containers sleep when inactive. The `wakeKokoro
 
 ## Automated Test Suites
 
-Run the full Onoma test suite with `bun`:
+Tests live under `src/tests/`. Run the full Onoma test suite with `bun`:
 
 ```bash
-# Run all Onoma engine, linguistics, and TTS proxy tests (18 test suites, 154 tests)
-bun run test -- src/lib/onoma src/app/api/onoma/tts
-
-# Run dedicated Initiatives 125-131 verification suite
-bun run test -- src/lib/onoma/onoma-audit-initiatives.test.ts
+# Run all Onoma engine, linguistics, and TTS proxy tests (16 test suites, 172 tests as of Sept 2026)
+bun run test -- src/tests/lib/onoma src/tests/app/api/onoma
 
 # Run sound shift engine tests
-bun run test -- src/lib/onoma/sound-shifts.test.ts
+bun run test -- src/tests/lib/onoma/sound-shifts.test.ts
 
 # Run vowel formant acoustic tests
-bun run test -- src/lib/onoma/vowel-formants.test.ts
+bun run test -- src/tests/lib/onoma/vowel-formants.test.ts
 ```

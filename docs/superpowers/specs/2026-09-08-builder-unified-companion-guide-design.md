@@ -1,9 +1,18 @@
 # Spec: Builder Unified Companion Sheet & Dynamic Guide System
 
+> **Implementation status (verified 2026-09-29): largely shipped.**
+> - ✅ `BuilderGuideContext` / `useBuilderGuide()` (`builder-guide-context.tsx`), mounted in `BuilderRouter.tsx`; per-section `builder-guide-seen-<section>` keys (versioned `"2.0"`).
+> - ✅ `BuilderGuideSheet.tsx` with **Milestones** (`data/contextual-help.ts`) and **Rules** (`data/guide-rules.ts`) tabs, tip box, and "Changes auto-save in draft" footer.
+> - ✅ Triggers: studio header Guide button (`BuilderStudioHeader.tsx`), and first-visit auto-open for Government (create mode) and Economics (`GovernmentStep.tsx`, `EconomyBuilderPage.tsx`).
+> - ✅ `BenchmarkHelpModal`, `GovernmentHelpSystem`, `BuilderHelpWidget` deleted; `FieldHelpTooltip.tsx` kept. `AtomicWelcomeModal` no longer renders in the builder (the builder mounts `AtomicGovernmentComponents` with `standalone`). `EconomicWelcomeModal` is no longer rendered anywhere (only re-exported from its barrel).
+> - ❌ **Live Insights / `"diagnostics"` tab not built** — `GuideTab` is `"milestones" | "rules"` only.
+> - ❌ Subheader deep-link buttons (`[ ? Component Guide ]`, `[ ? Help ]`, `[ ? Template Guide ]`) are not wired to `openGuide`; the foundation `CountryGrid` "full guide" still opens `BuilderWelcomeModal` (`CountrySelector.tsx`), and non-standalone `AtomicGovernmentComponents` still opens `AtomicWelcomeModal`.
+> - ⚠️ `AtomicWelcomeModal.tsx` / `EconomicWelcomeModal.tsx` files still exist (the former is used outside the builder).
+
 ## 1. Overview & Problem Statement
 
 The current help architecture in the IxStates Nation Builder is fragmented across two competing paradigms:
-1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](../../../src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp.ts`.
+1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](../../../src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp` (`src/app/builder/data/contextual-help.ts`).
 2. **Multiple Viewport-Blocking Centered Modals**:
    - [`AtomicWelcomeModal.tsx`](../../../src/components/mycountry/domains/government/atomic/AtomicWelcomeModal.tsx) (Government component walkthrough)
    - [`EconomicWelcomeModal.tsx`](../../../src/components/mycountry/domains/economy/atomic/EconomicWelcomeModal.tsx) (Economy component walkthrough)
@@ -65,7 +74,7 @@ Location: `src/app/builder/components/BuilderGuideSheet.tsx`
 1. **Glassmorphic Surface**: Radix `SheetContent` (`side="right"`, `sm:max-w-md lg:max-w-lg`) with `bg-card/95 backdrop-blur-2xl border-l border-white/10`.
 2. **Contextual Header**: Displays the section title (e.g. "Government Companion", "Fiscal Engine Companion", "Country Template Companion") and an instant close button.
 3. **Tactile Tab Bar**: Radix `TabsList` rendered as an iOS-style segmented control:
-   - **Tab 1: Milestones (`"milestones"`)**: High-level workflow steps and section roadmap (sourced from `contextualHelp.ts`).
+   - **Tab 1: Milestones (`"milestones"`)**: High-level workflow steps and section roadmap (sourced from `data/contextual-help.ts`).
    - **Tab 2: Rules & Mechanics (`"rules"`)**: Consolidated domain rules (15-component cap, power balance, synergies, friction/conflicts, and upkeep formulas). Replaces `AtomicWelcomeModal` and `EconomicWelcomeModal`.
    - **Tab 3: Live Insights (`"diagnostics"`)**: Reactive statecraft telemetry displaying current selection counts, active synergy boosts, and detected conflicts.
 4. **Statecraft Tips & Auto-Save Footer**: Real-time tips and persistent status indicator.
