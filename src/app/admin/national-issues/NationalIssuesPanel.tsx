@@ -23,6 +23,7 @@ import {
 } from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { TemplateEditorSheet } from "./TemplateEditorSheet";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -73,7 +74,10 @@ export function NationalIssuesPanel() {
   const [maxIssuesPerWeek, setMaxIssuesPerWeek] = useState(7);
 
   // Queries
-  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 100 });
+  const { data: countries } = api.countries.getSelectList.useQuery({
+    limit: 100,
+    realm: ALL_REALMS,
+  });
 
   const {
     data: templatesData,

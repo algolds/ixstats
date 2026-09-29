@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
@@ -55,7 +56,10 @@ export function NarratorPlaygroundTab() {
   const [playgroundOutput, setPlaygroundOutput] = useState("");
   const [playgroundLatency, setPlaygroundLatency] = useState<number | null>(null);
 
-  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 100 });
+  const { data: countries } = api.countries.getSelectList.useQuery({
+    limit: 100,
+    realm: ALL_REALMS,
+  });
 
   const { data: playgroundEvents, isLoading: eventsLoading } =
     api.narrator.getPlaygroundEvents.useQuery(

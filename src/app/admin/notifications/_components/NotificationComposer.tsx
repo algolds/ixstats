@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -181,7 +182,10 @@ export function NotificationComposer() {
   const notify = useNotify();
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countries } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   // Mutations
   const createNotificationMutation = api.notifications.createNotification.useMutation({

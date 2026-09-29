@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
-/** IxWorld — tenant 0. */
-export const DEFAULT_REALM_ID = "default";
+export { DEFAULT_REALM_ID };
 
 /** The realm a viewer is looking at: ?realm=<slug>, else their active nation's realm, else IxWorld (decision 4). */
 export async function resolveViewerRealmId(

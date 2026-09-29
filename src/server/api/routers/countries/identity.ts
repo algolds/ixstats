@@ -1,15 +1,16 @@
 import { z } from "zod";
 import { publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { countryRefWhere, pickCountryRef } from "./utils";
 
 export const identityProcedures = {
   getByIdBasic: rateLimitedPublicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
-      const country = await ctx.db.country.findFirst({
-        where: {
-          OR: [{ id: input.id }, { slug: input.id.toLowerCase() }, { name: input.id }],
-        },
+      const rows = await ctx.db.country.findMany({
+        where: countryRefWhere(input.id, await viewerRealmId(ctx, input.realm)),
+        take: 3,
         select: {
           id: true,
           name: true,
@@ -25,6 +26,7 @@ export const identityProcedures = {
           centroid: true,
         },
       });
+      const country = pickCountryRef(rows, input.id);
 
       if (!country) {
         return null;

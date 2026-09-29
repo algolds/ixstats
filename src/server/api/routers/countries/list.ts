@@ -2,7 +2,7 @@ import { z } from "zod";
 import { publicProcedure, cachedPublicProcedure, cachedStaticProcedure } from "~/server/api/trpc";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { TRPCError } from "@trpc/server";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { realmScopeInput, realmWhere, viewerRealmId } from "~/server/api/trpc/realm-scope";
 
 export const listProcedures = {
   // Get simple list of countries for dropdowns
@@ -17,7 +17,7 @@ export const listProcedures = {
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
         where: {
-          realmId: await viewerRealmId(ctx, input.realm),
+          ...(await realmWhere(ctx, input.realm)),
           name: input.search ? { contains: input.search, mode: "insensitive" } : undefined,
         },
         take: input.limit,
@@ -66,7 +66,7 @@ export const listProcedures = {
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {
         isDemo: false,
-        realmId: await viewerRealmId(ctx, input?.realm),
+        ...(await realmWhere(ctx, input?.realm)),
       };
       if (input?.search) {
         where.name = { contains: input.search, mode: "insensitive" };

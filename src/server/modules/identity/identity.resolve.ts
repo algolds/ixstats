@@ -2,8 +2,10 @@
  * Resolves a public passport handle to a user, their country and linked wiki/forum names.
  * Order: the viewer's own linked names, then users, then countries, then external wiki/forum names.
  */
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { lookupWikiUser } from "~/lib/wiki-os/adapters/ixstates/user-sync";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   IDENTITY_COUNTRY_SELECT,
   IDENTITY_USER_INCLUDE,
@@ -61,22 +63,29 @@ async function findThinkpagesCountry(clerkUserId: string): Promise<IdentityCount
   });
 }
 
-function findCountryByHandle(handle: string, stripped: string) {
+const HANDLE_COUNTRY_SELECT = {
+  ...IDENTITY_COUNTRY_SELECT,
+  owner: { include: { role: true } },
+} satisfies Prisma.CountrySelect;
+
+/**
+ * A handle names a country by its slug or id (globally unique) first; a bare name or wiki page title
+ * is read as an IxWorld nation, since names repeat across realms (ruling E-p).
+ */
+async function findCountryByHandle(handle: string, stripped: string) {
+  const byKey = await db.country.findFirst({
+    where: {
+      OR: [{ slug: handle.toLowerCase() }, { slug: stripped.toLowerCase() }, { id: handle }],
+    },
+    select: HANDLE_COUNTRY_SELECT,
+  });
+  if (byKey) return byKey;
   return db.country.findFirst({
     where: {
-      OR: [
-        { slug: handle.toLowerCase() },
-        { slug: stripped.toLowerCase() },
-        { name: handle },
-        { name: stripped },
-        { id: handle },
-        { wikiPageTitle: handle },
-      ],
+      realmId: DEFAULT_REALM_ID,
+      OR: [{ name: handle }, { name: stripped }, { wikiPageTitle: handle }],
     },
-    select: {
-      ...IDENTITY_COUNTRY_SELECT,
-      owner: { include: { role: true } },
-    },
+    select: HANDLE_COUNTRY_SELECT,
   });
 }
 

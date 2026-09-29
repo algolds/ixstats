@@ -11,6 +11,7 @@ import {
 } from "iconoir-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -41,7 +42,7 @@ export function DevCountryViewToolbar() {
 
   // Fetch country list for dropdown
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
-    { limit: 500 },
+    { limit: 500, realm: ALL_REALMS },
     { enabled: canUseDevView && isToolbarExpanded }
   );
 

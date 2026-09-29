@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent } from "~/components/ui/card";
@@ -74,7 +75,10 @@ export function AlertRulesPanel() {
   const [form, setForm] = useState<ThresholdForm>(emptyForm);
 
   const { data, isLoading, refetch } = api.notifications.getAlertThresholds.useQuery();
-  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countries } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   const updateMutation = api.notifications.updateAlertThreshold.useMutation({
     onSuccess: () => {

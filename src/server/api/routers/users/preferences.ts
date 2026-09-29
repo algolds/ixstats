@@ -7,6 +7,7 @@ import {
   protectedProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
+import { viewerRealmId } from "~/server/api/trpc/realm-scope";
 
 export interface PrivacyConfig {
   directMessages: "everyone" | "followers" | "verified" | "nobody";
@@ -271,15 +272,18 @@ export const usersPreferencesRouter = createTRPCRouter({
       const userId = ctx.auth.userId;
       const clean = input.identifier.replace(/^@/, "").trim().toLowerCase();
 
-      // Find target user by username or country
-      const targetCountry = await ctx.db.country.findFirst({
-        where: {
-          OR: [
-            { name: { equals: clean, mode: "insensitive" } },
-            { slug: { equals: clean, mode: "insensitive" } },
-          ],
-        },
-      });
+      // Find target user by username or country: a (globally unique) slug first, else the name
+      // within the viewer's realm — names repeat across realms (ruling E-p).
+      const targetCountry =
+        (await ctx.db.country.findFirst({
+          where: { slug: { equals: clean, mode: "insensitive" } },
+        })) ??
+        (await ctx.db.country.findFirst({
+          where: {
+            realmId: await viewerRealmId(ctx),
+            name: { equals: clean, mode: "insensitive" },
+          },
+        }));
 
       const targetUser = await ctx.db.user.findFirst({
         where: {

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -23,7 +24,10 @@ import { useNotify } from "~/hooks/useNotify";
 export function CountryAdminPanel() {
   const notify = useNotify();
   // Fetch all countries
-  const { data, isLoading, error, refetch } = api.countries.getAll.useQuery({ limit: 1000 });
+  const { data, isLoading, error, refetch } = api.countries.getAll.useQuery({
+    limit: 1000,
+    realm: ALL_REALMS,
+  });
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});

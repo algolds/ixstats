@@ -1,15 +1,20 @@
 import { z } from "zod";
 import { publicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { calculateCountryDataWithAtomicEnhancement } from "~/lib/economy/atomic-integration.server";
 import { type CountryWithAtomicComponents } from "~/lib/economy/atomic-integration";
 
 export const atomicProcedures = {
   // Get country with atomic enhancement
   getByNameWithAtomic: publicProcedure
-    .input(z.object({ name: z.string() }))
+    .input(z.object({ name: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
+      // Names repeat across realms (ruling E-p): /maps?name= resolves in the viewer's realm.
       const country = (await ctx.db.country.findFirst({
-        where: { name: { equals: input.name, mode: "insensitive" as const } },
+        where: {
+          realmId: await viewerRealmId(ctx, input.realm),
+          name: { equals: input.name, mode: "insensitive" as const },
+        },
         include: {
           governmentComponents: {
             where: { isActive: true },

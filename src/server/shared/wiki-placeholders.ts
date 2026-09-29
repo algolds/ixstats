@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 export interface WikiPlaceholderMetadata {
   label: string;
@@ -74,8 +75,14 @@ export async function resolveWikiPlaceholderValues(
     where: {
       OR: [
         ...(activeCountryId ? [{ id: activeCountryId }] : []),
+        // CountryData:<name> names an IxWorld nation — names repeat across realms (ruling E-p).
         ...(countryNames.size > 0
-          ? [{ name: { in: Array.from(countryNames), mode: "insensitive" } }]
+          ? [
+              {
+                realmId: DEFAULT_REALM_ID,
+                name: { in: Array.from(countryNames), mode: "insensitive" },
+              },
+            ]
           : []),
       ],
     },

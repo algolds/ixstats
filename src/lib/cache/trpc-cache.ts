@@ -232,8 +232,10 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     type: TrpcProcedureType;
     input: unknown;
     next: () => Promise<T>;
+    /** The viewer's realm when it isn't IxWorld (computed by the tRPC middleware, ruling E-q). */
+    realmKey?: string;
   }): Promise<T> {
-    const { ctx, path, type, input, next } = opts;
+    const { ctx, path, type, input, next, realmKey } = opts;
 
     // Only queries are cached
     if (shouldSkipCache(type, path, skipPatterns)) {
@@ -243,8 +245,7 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     // Generate cache key. Realm-scoped listings fall back to the viewer's active nation's realm
     // when the input names none, so that realm is part of the key (ruling E-h).
     const userId = userAware ? (ctx.auth?.userId ?? undefined) : undefined;
-    const activeRealmId: string | undefined = ctx.user?.country?.realmId ?? undefined;
-    const cacheKey = generateCacheKey(path, input, userId, namespace, activeRealmId);
+    const cacheKey = generateCacheKey(path, input, userId, namespace, realmKey);
 
     // Check cache
     const cached = await getCachedValue<T>(cacheKey);

@@ -18,6 +18,7 @@ import {
   getGrowthRates,
   stddev,
   getCountryComponentsStatsData,
+  resolveCountryRefId,
 } from "./utils";
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
@@ -38,10 +39,14 @@ export const economyProcedures = {
       z.object({
         id: z.string(),
         timestamp: z.number().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
+      const realmId = await viewerRealmId(ctx, input.realm);
+      const countryId = await resolveCountryRefId(ctx.db, input.id, realmId);
+      if (!countryId) return null;
       const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
       const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -66,20 +71,14 @@ export const economyProcedures = {
 
       let country;
       try {
-        const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({
-          where: {
-            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
-          },
+          where: { id: countryId },
           omit: HEAVY_COUNTRY_GEO_OMIT,
           include: includeObject,
         });
       } catch {
-        const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({
-          where: {
-            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
-          },
+          where: { id: countryId },
           omit: HEAVY_COUNTRY_GEO_OMIT,
           include: {
             storytellerEffects: {

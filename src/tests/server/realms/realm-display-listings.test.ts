@@ -217,7 +217,7 @@ describe("a country's own rankings compare it within its own realm", () => {
     expect(findMany.mock.calls[0][0].where).toMatchObject({ realmId: "r_eurth" });
   });
 
-  it("wiki placeholders rank a country among its own realm", async () => {
+  it("wiki placeholders rank the viewer's nation among its own realm", async () => {
     const eurthNation = {
       id: "c_eu",
       name: "Gallambria",
@@ -236,7 +236,7 @@ describe("a country's own rankings compare it within its own realm", () => {
       },
       pointOfInterest: { findMany: jest.fn().mockResolvedValue([]) },
     };
-    const [result] = await resolveWikiPlaceholderValues(["CountryData:Gallambria:population"], db);
+    const [result] = await resolveWikiPlaceholderValues(["MyCountry:population"], db, "c_eu");
 
     expect(result?.metadata?.comparisonRank).toBe("Ranked #1 globally");
   });

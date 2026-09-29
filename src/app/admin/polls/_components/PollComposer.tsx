@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -48,7 +49,10 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
   const [countryId, setCountryId] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
 
-  const { data: countriesData } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countriesData } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   const createMutation = api.polls.create.useMutation({
     onSuccess: () => {
