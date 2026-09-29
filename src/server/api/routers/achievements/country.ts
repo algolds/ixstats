@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 
 export const achievementsCountryRouter = createTRPCRouter({
   // Get recent achievements for a country
@@ -89,11 +90,13 @@ export const achievementsCountryRouter = createTRPCRouter({
       z.object({
         limit: z.number().optional().default(20),
         category: z.string().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       try {
         const countries = await ctx.db.country.findMany({
+          where: { realmId: await viewerRealmId(ctx, input.realm) },
           include: {
             owner: {
               select: {
@@ -199,11 +202,14 @@ export const achievementsCountryRouter = createTRPCRouter({
           .default("totalGdp"),
         limit: z.number().optional().default(20),
         searchQuery: z.string().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       try {
-        const whereClause: Record<string, unknown> = {};
+        const whereClause: Record<string, unknown> = {
+          realmId: await viewerRealmId(ctx, input.realm),
+        };
         if (input.searchQuery && input.searchQuery.trim().length > 0) {
           whereClause.name = {
             contains: input.searchQuery.trim(),

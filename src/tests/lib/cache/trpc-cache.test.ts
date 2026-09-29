@@ -59,6 +59,20 @@ describe("createCacheMiddlewareFactory (memory tier)", () => {
     expect(next).toHaveBeenCalledTimes(2);
   });
 
+  it("keys a query by the viewer's active realm, so one realm's listing is never served to another", async () => {
+    const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t1" });
+    const next = jest.fn(async () => ({ ok: true }));
+    const inRealm = (realmId: string) =>
+      ({ user: { country: { realmId } } }) as unknown as CacheMiddlewareOpts["ctx"];
+    const opts = { path: "countries.getAll", type: "query" as const, input: { limit: 10 } };
+
+    await mw({ ...opts, ctx: inRealm("r_eurth"), next });
+    await mw({ ...opts, ctx: inRealm("default"), next });
+    await mw({ ...opts, ctx: inRealm("r_eurth"), next });
+
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
   it("does not cache a failed procedure result", async () => {
     const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t1" });
     const next = jest.fn(async () => ({ ok: false }));

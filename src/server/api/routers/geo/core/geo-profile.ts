@@ -347,7 +347,7 @@ export const geoProfileProcedures = {
         const neighborRows = await ctx.db.$queryRawUnsafe<PostGISNeighborRow[]>(
           `
           WITH country AS (
-            SELECT id, name,
+            SELECT id, name, "realmId",
               ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
             FROM "Country"
             WHERE id = $1
@@ -366,7 +366,7 @@ export const geoProfileProcedures = {
             AND ml."isActive" = true
             AND ml."countryId" IS NOT NULL
             AND ml."countryId" != c.id
-          JOIN "Country" c2 ON c2.id = ml."countryId"
+          JOIN "Country" c2 ON c2.id = ml."countryId" AND c2."realmId" = c."realmId"
           WHERE ST_Intersects(
             ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
             c.geom

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import {
   Star,
@@ -274,9 +275,11 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
   const [activeDomain, setActiveDomain] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [limit, setLimit] = useState<number>(25);
+  // ?realm=<slug> ranks that realm; without it the server uses the viewer's active nation's realm.
+  const realm = useSearchParams().get("realm") ?? undefined;
 
   const { data: achievementsData } = api.achievements.getLeaderboard.useQuery(
-    { limit },
+    { limit, realm },
     { enabled: !leaderboard && filter === "achievements" }
   );
 
@@ -287,6 +290,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
       metric: filter as Exclude<FilterId, "achievements">,
       limit,
       searchQuery: searchQuery.trim() || undefined,
+      realm,
     },
     { enabled: filter !== "achievements" }
   );

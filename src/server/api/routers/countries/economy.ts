@@ -7,6 +7,7 @@ import {
   rateLimitedPublicProcedure,
   cachedStaticProcedure,
 } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
@@ -391,28 +392,30 @@ export const economyProcedures = {
       };
     }),
 
-  getGlobalStats: cachedStaticProcedure.query(async ({ ctx }) => {
-    const countries = await ctx.db.country.findMany({
-      where: { isDemo: false },
-      select: {
-        currentPopulation: true,
-        currentTotalGdp: true,
-        landArea: true,
-      },
-    });
+  getGlobalStats: cachedStaticProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false, realmId: await viewerRealmId(ctx, input?.realm) },
+        select: {
+          currentPopulation: true,
+          currentTotalGdp: true,
+          landArea: true,
+        },
+      });
 
-    const totalPop = countries.reduce((acc, c) => acc + (c.currentPopulation || 0), 0);
-    const totalGdp = countries.reduce((acc, c) => acc + (c.currentTotalGdp || 0), 0);
-    const totalArea = countries.reduce((acc, c) => acc + (c.landArea || 0), 0);
+      const totalPop = countries.reduce((acc, c) => acc + (c.currentPopulation || 0), 0);
+      const totalGdp = countries.reduce((acc, c) => acc + (c.currentTotalGdp || 0), 0);
+      const totalArea = countries.reduce((acc, c) => acc + (c.landArea || 0), 0);
 
-    return {
-      totalPopulation: totalPop,
-      totalGdp: totalGdp,
-      totalLandArea: totalArea,
-      avgGdpPerCapita: totalPop > 0 ? totalGdp / totalPop : 0,
-      count: countries.length,
-    };
-  }),
+      return {
+        totalPopulation: totalPop,
+        totalGdp: totalGdp,
+        totalLandArea: totalArea,
+        avgGdpPerCapita: totalPop > 0 ? totalGdp / totalPop : 0,
+        count: countries.length,
+      };
+    }),
 
   // Get trade data for a country
   getTradeData: publicProcedure

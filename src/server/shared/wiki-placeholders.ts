@@ -28,6 +28,19 @@ export interface CanonicalPlaceholderResult {
   metadata?: WikiPlaceholderMetadata;
 }
 
+interface RankRow {
+  id: string;
+  realmId: string;
+}
+
+/** A country's rank within its own realm (ruling E-h): an Eurth nation is never ranked against IxWorld. */
+function realmRankLabel(sorted: readonly RankRow[], country: RankRow): string | undefined {
+  const index = sorted
+    .filter((c) => c.realmId === country.realmId)
+    .findIndex((c) => c.id === country.id);
+  return index !== -1 ? `Ranked #${index + 1} globally` : undefined;
+}
+
 function hashCode(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -88,8 +101,8 @@ export async function resolveWikiPlaceholderValues(
       : [];
 
   // Fetch all countries sorted to calculate rank
-  let allCountriesSortedGdp: Array<{ id: string; currentTotalGdp: number | null }> = [];
-  let allCountriesSortedPop: Array<{ id: string; currentPopulation: number | null }> = [];
+  let allCountriesSortedGdp: Array<RankRow & { currentTotalGdp: number | null }> = [];
+  let allCountriesSortedPop: Array<RankRow & { currentPopulation: number | null }> = [];
 
   const hasRankNeed = placeholders.some(
     (p) =>
@@ -99,11 +112,11 @@ export async function resolveWikiPlaceholderValues(
   if (hasRankNeed) {
     [allCountriesSortedGdp, allCountriesSortedPop] = await Promise.all([
       db.country.findMany({
-        select: { id: true, currentTotalGdp: true },
+        select: { id: true, realmId: true, currentTotalGdp: true },
         orderBy: { currentTotalGdp: "desc" },
       }),
       db.country.findMany({
-        select: { id: true, currentPopulation: true },
+        select: { id: true, realmId: true, currentPopulation: true },
         orderBy: { currentPopulation: "desc" },
       }),
     ]);
@@ -275,14 +288,12 @@ export async function resolveWikiPlaceholderValues(
       val = country.currentPopulation;
       formattedVal = formatNumber(Number(val ?? 0));
       label = "Population";
-      const rIndex = allCountriesSortedPop.findIndex((c) => c.id === country.id);
-      rank = rIndex !== -1 ? `Ranked #${rIndex + 1} globally` : undefined;
+      rank = realmRankLabel(allCountriesSortedPop, country);
     } else if (f === "currenttotalgdp" || f === "gdp") {
       val = country.currentTotalGdp;
       formattedVal = formatCurrency(Number(val ?? 0));
       label = "Total GDP";
-      const rIndex = allCountriesSortedGdp.findIndex((c) => c.id === country.id);
-      rank = rIndex !== -1 ? `Ranked #${rIndex + 1} globally` : undefined;
+      rank = realmRankLabel(allCountriesSortedGdp, country);
     } else if (f === "currentgdppercapita" || f === "gdppercapita" || f === "gdp_per_capita") {
       val =
         country.currentGdpPerCapita ??

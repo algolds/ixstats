@@ -112,7 +112,8 @@ function generateCacheKey(
   path: string,
   input: unknown,
   userId?: string,
-  namespace: string = "default"
+  namespace: string = "default",
+  realmId?: string
 ): string {
   // Use hash-based key generation for better performance with complex inputs
   // MD5 is fast and collision-resistant enough for cache keys
@@ -120,7 +121,8 @@ function generateCacheKey(
     ? createHash("md5").update(safeJsonStringify(input)).digest("hex").substring(0, 16)
     : "no-input";
   const userPart = userId ? `:u:${userId.substring(0, 12)}` : "";
-  return `trpc:${namespace}:${path}${userPart}:${inputHash}`;
+  const realmPart = realmId ? `:r:${realmId}` : "";
+  return `trpc:${namespace}:${path}${userPart}${realmPart}:${inputHash}`;
 }
 
 export type TrpcProcedureType = "query" | "mutation" | "subscription";
@@ -238,9 +240,11 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
       return next();
     }
 
-    // Generate cache key
+    // Generate cache key. Realm-scoped listings fall back to the viewer's active nation's realm
+    // when the input names none, so that realm is part of the key (ruling E-h).
     const userId = userAware ? (ctx.auth?.userId ?? undefined) : undefined;
-    const cacheKey = generateCacheKey(path, input, userId, namespace);
+    const activeRealmId: string | undefined = ctx.user?.country?.realmId ?? undefined;
+    const cacheKey = generateCacheKey(path, input, userId, namespace, activeRealmId);
 
     // Check cache
     const cached = await getCachedValue<T>(cacheKey);
