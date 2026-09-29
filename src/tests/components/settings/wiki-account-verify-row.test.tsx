@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
 
 const mockStartMutate = jest.fn();
@@ -8,6 +8,7 @@ const mockListWikiLinksInvalidate = jest.fn();
 const mockGetStatusInvalidate = jest.fn();
 
 let startOnSuccess: ((res: unknown) => void) | undefined;
+let unlinkOnSuccess: (() => void) | undefined;
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -22,7 +23,10 @@ jest.mock("~/trpc/react", () => ({
         useMutation: () => ({ mutate: mockConfirmMutate, isPending: false }),
       },
       unlinkWikiAccount: {
-        useMutation: () => ({ mutate: mockUnlinkMutate, isPending: false }),
+        useMutation: (opts?: { onSuccess?: () => void }) => {
+          unlinkOnSuccess = opts?.onSuccess;
+          return { mutate: mockUnlinkMutate, isPending: false };
+        },
       },
     },
     useUtils: () => ({
@@ -37,7 +41,9 @@ jest.mock("~/trpc/react", () => ({
 describe("WikiAccountVerifyRow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStartMutate.mockReset();
     startOnSuccess = undefined;
+    unlinkOnSuccess = undefined;
   });
 
   it("offers to get a code when nothing is linked", () => {
@@ -55,6 +61,39 @@ describe("WikiAccountVerifyRow", () => {
       />
     );
     expect(screen.getByRole("button", { name: /verify/i })).toBeInTheDocument();
+  });
+
+  it("a pending link can be unlinked (ruling F-4) — no dead end", () => {
+    render(
+      <WikiAccountVerifyRow
+        source="iiwiki"
+        label="IIWiki"
+        link={{ source: "iiwiki", username: "Kir", verified: false, pending: true }}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /unlink/i }));
+    expect(mockUnlinkMutate).toHaveBeenCalledWith({ source: "iiwiki" });
+  });
+
+  it("a code fetched this session can be abandoned with Unlink, which clears the code on success", () => {
+    mockStartMutate.mockImplementation(() => {
+      startOnSuccess?.({
+        token: "ABC123",
+        username: "Kir",
+        expiresAt: "2026-01-01T00:00:00Z",
+        userPageUrl: "https://iiwiki.com/wiki/User:Kir",
+      });
+    });
+    render(<WikiAccountVerifyRow source="iiwiki" label="IIWiki" link={undefined} />);
+    fireEvent.change(screen.getByPlaceholderText(/iiwiki username/i), { target: { value: "Kir" } });
+    fireEvent.click(screen.getByRole("button", { name: /get code/i }));
+    expect(screen.getByText("ABC123")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /unlink/i }));
+    expect(mockUnlinkMutate).toHaveBeenCalledWith({ source: "iiwiki" });
+    act(() => unlinkOnSuccess?.());
+    expect(screen.queryByText("ABC123")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /get code/i })).toBeInTheDocument();
   });
 
   it("shows Verified and Unlink once verified", () => {

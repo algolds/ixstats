@@ -195,9 +195,16 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     });
   }
 
+  /** `pending` only while the code can still be confirmed — an expired one offers a fresh start (ruling F-4). */
   async function list(userId: string): Promise<WikiLinkView[]> {
     const links = await db.wikiAccountLink.findMany({ where: { userId }, orderBy: { source: "asc" } });
-    return links.map((l) => ({ source: l.source, username: l.username, verified: !!l.verifiedAt, pending: !!l.token }));
+    const at = now();
+    return links.map((l) => ({
+      source: l.source,
+      username: l.username,
+      verified: !!l.verifiedAt,
+      pending: !!l.token && !!l.tokenExpiresAt && l.tokenExpiresAt > at,
+    }));
   }
 
   return { start, confirm, unlink, list, adminVerify };

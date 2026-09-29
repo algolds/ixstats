@@ -46,7 +46,10 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
   });
 
   const unlink = api.ixnayid.unlinkWikiAccount.useMutation({
-    onSuccess: refresh,
+    onSuccess: () => {
+      setCode(null);
+      refresh();
+    },
     onError: (err) => notify.error(err.message || `Failed to unlink ${label} account`),
   });
 
@@ -103,6 +106,14 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
               New code
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={unlink.isPending}
+            onClick={() => unlink.mutate({ source })}
+          >
+            Unlink
+          </Button>
         </div>
       </div>
     );

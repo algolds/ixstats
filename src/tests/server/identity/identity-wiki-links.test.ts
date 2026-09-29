@@ -369,12 +369,24 @@ describe("wiki link verification — unlink() and list()", () => {
   it("maps verified/pending flags for each linked source", async () => {
     const { db, service } = setup();
     db.wikiAccountLink.findMany.mockResolvedValue([
-      { source: "ixwiki", username: "Kir", verifiedAt: NOW, token: null },
-      { source: "iiwiki", username: "Kir", verifiedAt: null, token: "t" },
+      { source: "ixwiki", username: "Kir", verifiedAt: NOW, token: null, tokenExpiresAt: null },
+      { source: "iiwiki", username: "Kir", verifiedAt: null, token: "t", tokenExpiresAt: new Date(NOW.getTime() + 1000) },
     ]);
     await expect(service.list("u1")).resolves.toEqual([
       { source: "ixwiki", username: "Kir", verified: true, pending: false },
       { source: "iiwiki", username: "Kir", verified: false, pending: true },
+    ]);
+  });
+
+  it("an expired code is not pending (ruling F-4) — the row offers a fresh start instead of a dead Verify", async () => {
+    const { db, service } = setup();
+    db.wikiAccountLink.findMany.mockResolvedValue([
+      { source: "iiwiki", username: "Kir", verifiedAt: null, token: "t", tokenExpiresAt: new Date(NOW.getTime() - 1) },
+      { source: "althistory", username: "Kir", verifiedAt: null, token: "t", tokenExpiresAt: null },
+    ]);
+    await expect(service.list("u1")).resolves.toEqual([
+      { source: "iiwiki", username: "Kir", verified: false, pending: false },
+      { source: "althistory", username: "Kir", verified: false, pending: false },
     ]);
   });
 });
