@@ -407,7 +407,7 @@ git push origin production-pre-v1.4.0
 
 Choose your deployment method:
 
-**Option A: Platform Deployment (Vercel/Netlify)** — not used; the repo ships no `vercel.json`/`netlify.toml`
+**Option A: Platform Deployment (Vercel/Netlify)** — not used. The repo is connected to a Vercel project, but `vercel.json` turns off its git deployments (`git.deploymentEnabled: false`): every Vercel build failed, since the app needs a database, Clerk keys, the `/projects/ixstates` base path and the git-ignored `next.config.js`. There is no `netlify.toml`
 - [ ] See [Platform Deployment](#platform-deployment)
 
 **Option B: VPS/Dedicated Server** — **production path**

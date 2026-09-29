@@ -4,6 +4,8 @@
 
 IxStats ships as a Next.js app. On the production VPS the web app runs as plain `next start` (via `start-production.sh`), with WebSockets and scheduled jobs in separate PM2 processes: `ixstats-ws` (`ws-backend.mjs`) and `ixstats-cron` (`cron-runner.mjs`). A custom Node server (`server.mjs`) that serves Next plus the WebSockets in one process remains available through `bun run start`. Production builds wrap `next build` with base-path tooling.
 
+Vercel is not a deployment target. The repository is connected to a Vercel project, but `vercel.json` sets `git.deploymentEnabled: false` so pushes and pull requests no longer trigger Vercel builds (they had all failed). Remove that setting, or disconnect the project in Vercel, to change this.
+
 For the step-by-step release procedure see [`deployment-checklist.md`](deployment-checklist.md); for the current release see [`deploy-rose-garden-2026-09.md`](deploy-rose-garden-2026-09.md).
 
 ## Build Pipeline
