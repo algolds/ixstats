@@ -220,9 +220,11 @@ Without this, `/maps?realm=eurth` is empty — **expected**, not a bug, until yo
    id is the nation's name → check the feature counts and any warnings/validation errors → **Proceed to
    Import** → check that the confirmation reads "Ready to import … features into **Eurth**" → **Import
    to Database**. The import merges into Eurth's map only; an unknown target realm is refused.
-   - The tracer is the optional `potrace` package. If the **Pipeline Log** shows `potrace not available`
-     for every colour, the server doesn't have it installed and no regions are produced — install it
-     before retrying.
+   - The tracer is the `potrace` package (a dependency since E8 — `bun install` brings it). It is loaded
+     at run time from the `node_modules` of the directory the server was started in. If the **Pipeline
+     Log** shows `ERROR potrace could not be loaded, no region was traced: <reason>`, no regions are
+     produced: run `bun install` in that directory and restart. A single `ERROR tracing #rrggbb: …` line
+     means only that colour failed.
 5. **Regions become nations' territory:**
    - **Nations claimed after the import take their region automatically.** When a nation-page claim is
      approved (instantly or by review), the new country is linked to Eurth's unlinked political region

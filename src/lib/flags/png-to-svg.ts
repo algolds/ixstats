@@ -109,10 +109,73 @@ export async function createColorMask(
     .toBuffer();
 }
 
+/** The part of the `potrace` package (pure JS, no type definitions) this module uses. */
+interface PotraceModule {
+  trace(
+    image: Buffer,
+    options: { turdSize: number; optTolerance: number; threshold: number; blackOnWhite: boolean },
+    callback: (err: Error | null, svg: string) => void
+  ): void;
+}
+
+/**
+ * Load potrace from the project's node_modules at run time. A require created at run time (not a static
+ * import) keeps bundlers from pulling potrace and its image stack into the server bundle, and works under
+ * Node, Bun and Jest alike — unlike `eval("require")`, which is undefined in ES modules.
+ */
+async function loadPotrace(): Promise<PotraceModule> {
+  const [{ createRequire }, { join }] = await Promise.all([
+    import("node:module"),
+    import("node:path"),
+  ]);
+  return createRequire(join(process.cwd(), "package.json"))("potrace") as PotraceModule;
+}
+
+/** Trace a colour mask's white (matching) pixels into one SVG path `d`. */
+function traceMask(potrace: PotraceModule, mask: Buffer, config: PngToSvgConfig): Promise<string> {
+  const options = {
+    turdSize: config.minRegionSize ?? 10,
+    optTolerance: config.smoothing ?? 0.2,
+    threshold: 128,
+    blackOnWhite: false,
+  };
+  return new Promise((resolve, reject) => {
+    potrace.trace(mask, options, (err, svg) => {
+      if (err) reject(err);
+      else resolve(svg.match(/d="([^"]+)"/)?.[1] ?? "");
+    });
+  });
+}
+
 export interface PoliticalSvgPath {
   featureId: string;
   d: string;
   fill: string;
+}
+
+/** One path per colour, named by its feature id; a colour that fails to trace is logged and skipped. */
+async function traceColours(
+  potrace: PotraceModule,
+  pngBuffer: Buffer,
+  colorEntries: PngToSvgResult["detectedColors"],
+  config: PngToSvgConfig,
+  log: string[]
+): Promise<PoliticalSvgPath[]> {
+  const svgPaths: PoliticalSvgPath[] = [];
+  for (const entry of colorEntries) {
+    try {
+      const mask = await createColorMask(pngBuffer, entry.hex);
+      const pathData = await traceMask(potrace, mask, config);
+      if (pathData) {
+        const featureId = entry.featureId ?? `feature_${svgPaths.length}`;
+        svgPaths.push({ featureId, d: pathData, fill: entry.hex });
+        log.push(`Vectorized: ${featureId} (${entry.hex}, ${entry.pixelCount}px)`);
+      }
+    } catch (err) {
+      log.push(`ERROR tracing ${entry.hex}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  return svgPaths;
 }
 
 /** Feature ids are nation names from the colour mapping (e.g. "Trinidad & Tobago"): escape them for XML. */
@@ -188,56 +251,11 @@ export async function convertPngToSvg(
   }
 
   // Step 2: For each color, create mask and vectorize
-  const svgPaths: PoliticalSvgPath[] = [];
-
-  for (const entry of colorEntries) {
-    try {
-      const mask = await createColorMask(pngBuffer, entry.hex);
-
-      // Use potrace to vectorize the mask
-      let pathData: string;
-      try {
-        // Optional native dependency — use eval to hide from Webpack static analysis
-        const potrace = eval("require")("potrace") as {
-          trace: (
-            buf: Buffer,
-            opts: Record<string, unknown>,
-            cb: (err: Error | null, svg: string) => void
-          ) => void;
-        };
-        pathData = await new Promise<string>((resolve, reject) => {
-          potrace.trace(
-            mask,
-            {
-              turdSize: config.minRegionSize ?? 10,
-              optTolerance: config.smoothing ?? 0.2,
-            },
-            (err: Error | null, svg: string) => {
-              if (err) reject(err);
-              else {
-                // Extract path d attribute from potrace SVG output
-                const match = svg.match(/d="([^"]+)"/);
-                resolve(match?.[1] ?? "");
-              }
-            }
-          );
-        });
-      } catch {
-        log.push(`WARNING: potrace not available for ${entry.hex}, skipping`);
-        continue;
-      }
-
-      if (pathData) {
-        const featureId = entry.featureId ?? `feature_${svgPaths.length}`;
-        svgPaths.push({ featureId, d: pathData, fill: entry.hex });
-        log.push(`Vectorized: ${featureId} (${entry.hex}, ${entry.pixelCount}px)`);
-      }
-    } catch (err) {
-      log.push(
-        `ERROR processing ${entry.hex}: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
-  }
+  const potrace = await loadPotrace().catch((err: Error) => {
+    log.push(`ERROR potrace could not be loaded, no region was traced: ${err.message}`);
+    return null;
+  });
+  const svgPaths = potrace ? await traceColours(potrace, pngBuffer, colorEntries, config, log) : [];
 
   // Step 3: Assemble SVG
   const svg = assemblePoliticalSvg(width, height, svgPaths);

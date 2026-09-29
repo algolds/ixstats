@@ -41,6 +41,12 @@ describe("runMapPipeline — PNG source", () => {
     expect(result.metadata.log).toContain("Using 2 provided color mappings");
   });
 
+  it("keeps the nations out of the altitude layer: a PNG map is political only", async () => {
+    const result = await runMapPipeline({ source: "png", pngBuffer: Buffer.from([1]) });
+    expect(Object.keys(result.layers)).toEqual(["political"]);
+    expect(result.metadata.featureCounts).toEqual({ political: 1 });
+  });
+
   it("requires the PNG buffer", async () => {
     await expect(runMapPipeline({ source: "png" })).rejects.toThrow("PNG buffer required");
     expect(convertMock).not.toHaveBeenCalled();

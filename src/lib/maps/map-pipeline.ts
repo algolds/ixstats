@@ -142,6 +142,8 @@ export async function runMapPipeline(
       // Feed the generated SVG into the parsing stage
       input.svgContent = pngResult.svg;
       input.source = "svg"; // Now treat as SVG for parsing
+      // The converter writes only a political layer; an altitude pass would re-read the nations as altitudes
+      input.targetLayers = ["political"];
       report("conversion", 25, `PNG converted: ${pngResult.detectedColors.length} colors detected`);
     }
 
