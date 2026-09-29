@@ -8,30 +8,87 @@ platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **chann
 **IxStates 1.4 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
-## [1.4.0] — 2026-08-20 — "Lobster Crosby" (Release Candidate)
+## [Unreleased] — `rose-garden` (1.4 RC2)
 
-### 🚀 Bun 1.4 & TypeScript 7.0 Native Modernization (RC-1)
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-22 → 2026-09-29) is listed first; the
+2026-08-21 → 2026-09-22 work follows it. The version registry (`src/lib/buildVersion.ts`) still reads 1.4.0 until the
+RC2 cut.
 
-- **TypeScript 7.0 Native Go Engine Upgrade**:
-  - Upgraded compiler to `typescript@^7.0.0` with native Go shared-memory concurrency and multi-threaded `--checkers`.
-  - Slashes V8 JS heap memory overhead by ~80% and accelerates typechecking duration from ~30s down to ~2s.
-  - Eliminated legacy `node --max-old-space-size=6144` memory ceiling wrappers across all typecheck commands.
-  - Deprecated `baseUrl: "."` across `tsconfig.base.json` and `tsconfig.json` in accordance with TS 7.0 module resolution standards, adding root-relative `"*": ["./*"]` path mappings.
-- **Bun 1.4 Runtime & Virtual Store**:
-  - Enabled `virtual-store = true` in `bunfig.toml` for hardlinked deduplication and up to 7× faster package installations.
-  - Replaced `tsx` with native `bun` across all 45 package scripts, completely pruning `tsx` from devDependencies.
-  - Migrated background scheduled tasks in `server.mjs` and `cron-runner.mjs` to native `Bun.cron()`, purging `node-cron` and `@types/node-cron`.
-  - Added `bun run test:unit` for sub-second parallel execution of 39+ mathematical, simulation, and spatial test suites.
-- **Ponytail Dependency Pruning**:
-  - Replaced external `color` library with zero-dependency native HSL/RGB/Hex conversion math in `ColorPicker`.
-  - Cleaned ghost packages from `next.config.js` (`xlsx`, `node-schedule`, `sharp`, `@node-rs/argon2`).
-  - Preserved `iconoir-react` for Onoma glyphs and labs interfaces per specification.
-- **Apple / Facet Design CLI Modernization**:
-  - Redesigned `start-development.sh` and `start-production.sh` with Apple/Facet ANSI terminal design tokens, box layout, and non-destructive PID discovery on port conflicts.
-  - Implemented sub-10ms atomic single-batch metadata extraction, eliminating 7 separate subshell invocations.
-  - Modernized `scripts/deploy-ixworld.sh` to native `bun run next build` while preserving zero-downtime hardlink rollback snapshotting.
+### 🏰 Realms Phase 1 & Eurth, the First Hosted Realm (2026-09-27 → 09-29)
 
-## [Unreleased]
+- **Realm model**: `worldId` → `realmId` everywhere; countries carry `ownerUserId` and every ownership write goes
+  through `assignNation`. Realm settings, moderation access and nation ownership live in `src/server/modules/realms/`.
+  The Clerk-organisation realm UI and the `WorldConfig` loaders are gone.
+- **Nation claims**: players claim a realm's nation page; a claim from a verified wiki account that created the page is
+  auto-approved, others go to the admin claims queue. Approval creates the realm's country. Claims re-verify and
+  upgrade in place, a cross-realm claim never strands a player's first nation, and "Play as" switches between owned
+  nations.
+- **Realm viewer context**: `?realm` → active nation → IxWorld. Cross-country listings, name lookups and map layers are
+  realm-scoped (the simulation stays global); admins read every realm.
+- **Realm hub & lore index**: admin realm creation, a one-time lore index import, and a realm page listing claimable
+  nations and lore. Eurth nations come from its curated roster.
+- **Realm maps**: PNG realm maps run through the Full Pipeline with colour → nation mapping; claimed nations take their
+  map region; the map's IndexedDB cache is keyed by the realm the server resolved.
+- **Operations**: throttled `lastSeenAt`, the Phase 1 ownership backfill script (refuses `--apply` while owner
+  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/realms/eurth-onboarding.md).
+  Spec: [realms-framework-spec.md](docs/architecture/realms-framework-spec.md).
+
+### 🪪 Identity: Verified Wiki Accounts & Passport (Plan 188)
+
+- Wiki accounts on ixwiki, iiwiki and althistory are linked only by a token the player saves to their own user page;
+  the revision that first introduced the token since it was issued must be the account's (rulings F-3, F-6).
+  Unverified wiki linking is removed. Admins can revoke links on any wiki; pending verifications can be unlinked.
+- Passport procedures split into `getPassport` / `getRealms` / `getWork` / `getHistory` (`src/server/modules/identity`)
+  with new Overview and Work tabs; `/@user` is the canonical passport URL and `/r/[realm]/[username]` resolves.
+
+### 🔒 Security & Correctness Hardening (2026-09-23 → 09-27, Plans 326–340)
+
+- Authorization: play-as cannot target equal/higher roles and drops admin rights; every country-scoped mutation checks
+  write access (Plan 332); Commons import and archetype CRUD require admin; custom wiki template writes require auth;
+  vault balance/level queries are scoped to the caller.
+- WebSockets authenticate with a Clerk session token and check the Origin (Plan 333); the unused intelligence socket
+  pair is deleted.
+- Wiki HTML is sanitised on the server, wiki webhooks require `WIKI_SYNC_WEBHOOK_SECRET`, and the image proxy rejects
+  SVG and caps body size (Plan 335).
+- Atomicity: credit moves run inside the caller's transaction (327); trades, daily claims, card serials and scenario
+  choices change state atomically (331); scheduled changes apply once, only for the owner (329).
+- Rate limiting honours per-procedure limits and derives identity from trusted sources (340).
+- One cron scheduler: `cron-runner.mjs` runs a typed job table (`src/server/cron/jobs.ts`) under locks, gated by
+  `CRON_ENABLED_JOBS` (Plan 330). The Discord bot is the IxTime source of truth and the game clock stays continuous
+  across multiplier changes (334). Cache layers are deduplicated and memory-bounded (337).
+- Dependencies: Next 16.3.6, `@xmldom/xmldom` 0.9, `maplibre-gl` 6.x for published advisories.
+
+### 🧹 Codebase Deletion & Consolidation (Plans 312, 341–346)
+
+- Removed 14 dead tRPC mounts and 16 dead router files (341), then 508 zero-caller procedures (312): 1,455 → 947.
+- Untracked 106 MB of artifacts, deleted one-off scripts, dropped 15 unused dependencies and retired the ESLint stack in
+  favour of oxlint (343). Removed the labs sandbox/design-bible and unlinked `/studio` UI; MediaWiki proxies 8 → 2 (344).
+- One toast system, one set of formatters/colour helpers, 27 feature components moved out of `src/components/ui`; help
+  articles, terms and privacy are markdown under `src/content/` rendered by one layout.
+- Facet rules enforced: no `scale(0)` entrances, no sub-12px text, no `transition-all` (346); hard-coded UI colours
+  replaced with tokens where the value matched exactly.
+- The Jest gate is blocking behind a shrink-only quarantine, now empty (326).
+
+### ✍️ WikiOS Canvas Editor on Plate & Multi-Wiki Reading (Plans 196, 205–208, 301–304)
+
+- IxWiki AST block model; the visual editor runs on Plate with lossless atomic blocks, a slash-command menu with
+  template presets, and instant source ↔ visual switching. Templates serialise canonically, TemplateData drives field
+  order, unknown templates survive as placeholders, and saves that would lose content are blocked.
+- Real revision references for history/diff/undo, a Watch button, red links and section edit links (196).
+- `?source=` pages from another wiki keep that wiki's links and stay read-only; the Halo, Watch, edit route, margin
+  and recent/paused pages follow the page's wiki.
+
+### 🛠️ Builder, Map Editor & Sports
+
+- Builder: advanced fields behind a "Show advanced options" disclosure (Plan 003); edit mode gains change markers, a
+  save bar and 50-step undo (Plan 004).
+- Map editor: snap to coastline, trace along rivers and coasts, per-layer snap toggles (Plan 048). Sea routes get
+  current- and wind-aware transit estimates (Plan 049).
+- Sports: hockey 2/1 overtime-loss points, predictions after full-season sims, one team history, replayable knockout
+  bouts.
+
+### RC2 development log (2026-08-21 → 2026-09-22)
+
 
 ### 🌍 Countries Page UI/UX Polish & Apple Design Alignment (Plan 319)
 
@@ -423,6 +480,32 @@ capability integer. Each release entry below lists which components advanced and
   - **Inline Message Editing & Emoji Reactions**: Added inline textarea editing with keyboard shortcuts (Enter to save, Esc to cancel), quick emoji reaction picker, and delete confirmation popovers in `MessagesBubble.tsx`.
   - **Tactile Micro-interactions & National Flags**: Integrated `UnifiedCountryFlag` on conversation cards with normalized flag URLs, unread badge pulses, and `:active:scale-[0.985]` press feedback.
   - **Input Bar & Empty States**: Themed Stash lore attachment trigger in `MessagesInputBar.tsx` and refreshed action buttons in `MessagesEmptyState.tsx`.
+
+## [1.4.0] — 2026-08-20 — "Lobster Crosby" (Release Candidate)
+
+### 🚀 Bun 1.4 & TypeScript 7.0 Native Modernization (RC-1)
+
+- **TypeScript 7.0 Native Go Engine Upgrade**:
+  - Upgraded compiler to `typescript@^7.0.0` with native Go shared-memory concurrency and multi-threaded `--checkers`.
+  - Slashes V8 JS heap memory overhead by ~80% and accelerates typechecking duration from ~30s down to ~2s.
+  - Eliminated legacy `node --max-old-space-size=6144` memory ceiling wrappers across all typecheck commands.
+  - Deprecated `baseUrl: "."` across `tsconfig.base.json` and `tsconfig.json` in accordance with TS 7.0 module resolution standards, adding root-relative `"*": ["./*"]` path mappings.
+- **Bun 1.4 Runtime & Virtual Store**:
+  - Enabled `virtual-store = true` in `bunfig.toml` for hardlinked deduplication and up to 7× faster package installations.
+  - Replaced `tsx` with native `bun` across all 45 package scripts, completely pruning `tsx` from devDependencies.
+  - Migrated background scheduled tasks in `server.mjs` and `cron-runner.mjs` to native `Bun.cron()`, purging `node-cron` and `@types/node-cron`.
+  - Added `bun run test:unit` for sub-second parallel execution of 39+ mathematical, simulation, and spatial test suites.
+- **Ponytail Dependency Pruning**:
+  - Replaced external `color` library with zero-dependency native HSL/RGB/Hex conversion math in `ColorPicker`.
+  - Cleaned ghost packages from `next.config.js` (`xlsx`, `node-schedule`, `sharp`, `@node-rs/argon2`).
+  - Preserved `iconoir-react` for Onoma glyphs and labs interfaces per specification.
+- **Apple / Facet Design CLI Modernization**:
+  - Redesigned `start-development.sh` and `start-production.sh` with Apple/Facet ANSI terminal design tokens, box layout, and non-destructive PID discovery on port conflicts.
+  - Implemented sub-10ms atomic single-batch metadata extraction, eliminating 7 separate subshell invocations.
+  - Modernized `scripts/deploy-ixworld.sh` to native `bun run next build` while preserving zero-downtime hardlink rollback snapshotting.
+
+
+### Development log included in 1.4.0 (2026-08-04 → 2026-08-20)
 
 ### 💬 Messaging & Atomic Architecture Consolidation (Wave 7: Plans 163, 166)
 
@@ -1302,7 +1385,7 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
-- **Intent ↔ Issues Resistance Rhythm** ([plan 002](plans/002-intent-vs-issues-rhythm-verified-implementation.md)):
+- **Intent ↔ Issues Resistance Rhythm** (plan 002; `plans/` is a local, git-ignored directory):
   - **Dual spawn mode** (`spawnMode` runtime toggle in [data/national-issues-config.json](data/national-issues-config.json) and `getNationalIssuesConfig()` in `national-issues-config.ts`): `"probability"` (default, existing boosted evaluation) | `"deterministic"` (issue spawns immediately at intent commit) | `"off"`.
   - **Deterministic spawn engine** [resistance.ts](src/lib/intent/resistance.ts): `spawnIntentResistance()` maps intent categories → template domains (`defense → military/security`, `fiscal/economy → economic`, `social → social`, `infrastructure → infrastructure`, `security → political/governance`), dedupes per intent+template, respects `cooldownDays`/`maxActivePerCountry`, and instantiates via `forceGenerate`. Hooked into `intent.commit` (moderate/extreme only, try/catch — never fails the commit).
   - **Maintenance cron rework**: `policy-maintenance-cron.ts` now has a real `spawnVolatileIssues()` covering policies (fixed matching) **and** intents (probability-mode risk roll, mapped categories).
@@ -3316,4 +3399,4 @@ We applied several minor tweaks to ensure stability:
 
 ## Historical Releases (Pre-Ogma)
 
-For release history prior to the 1.0 Ogma epoch reset (v0.9 through v2.2.0), see [`docs/archive/CHANGELOG_PRE_OGMA.md`](./docs/archive/CHANGELOG_PRE_OGMA.md).
+For release history prior to the 1.0 Ogma epoch reset (v0.9 through v2.2.0), see `docs/archive/CHANGELOG_PRE_OGMA.md` (kept locally; `docs/archive/` is git-ignored and not in the repository).

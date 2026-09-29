@@ -58,7 +58,7 @@ Every commitment produces a **bounded, clamped** world-state change, an automati
 | **IxTime** (Temporal) | Continuous dilated clock (currently 2.0×) with piecewise-linear epoch math, automated drift correction, and a client-side interpolation store. Governs issue deadlines, elections, budget cycles, match clocks, and wiki timestamps. |
 | **Statecraft** (MyCountry Engine v4) | Validates Civil Service Capacity (CivCap) throughput, applies clamped stat modifiers, classifies intent, and spawns resistance issues from 5 domestic power brokers. |
 | **Concord** (Living-World, v2) | NPC nation AI (8 traits → 6 behavioral archetypes, naturalistic drift), crisis lifecycle state machine (`BREWING → ACTIVE → ESCALATING → CONTAINED → RESOLVING → RESOLVED`), and event fatigue dampening. |
-| **Atlas** (Spatial, v4) | 100,000-cell Voronoi procedural worldgen (tectonic plates, coastal hypsometric damping, Coriolis hydrology, 12 Trewartha biomes). PostGIS `ST_Touches` geometry is the Tier-0 source of truth for borders, neighbors, and regional rollups. |
+| **Atlas** (Spatial, v5) | 100,000-cell Voronoi procedural worldgen (tectonic plates, coastal hypsometric damping, Coriolis hydrology, 12 Trewartha biomes). PostGIS `ST_Touches` geometry is the Tier-0 source of truth for borders, neighbors, and regional rollups. |
 
 ### Apps & Core Systems
 
@@ -73,13 +73,13 @@ Every commitment produces a **bounded, clamped** world-state change, an automati
 
 ### Realm-First Product Model
 
-IxWorld is architecturally just the `realm="default"` tenant — it shares identical code paths, models, and engines with the multi-tenant **Realms** platform, where external players create isolated realms with procedural geography and sovereign simulation instances. Everything is realm-scoped.
+IxWorld is one realm among several: every country belongs to a realm (`Country.realmId`) and has an owner (`Country.ownerUserId`). Realms Phase 1 shipped in September 2026 with **Eurth** as the first hosted realm — players claim a realm's nation page (auto-approved when their verified wiki account created it), realm hubs list claimable nations and lore, and cross-country listings and map layers are realm-scoped while the simulation stays global. See [`docs/architecture/realms-framework-spec.md`](docs/architecture/realms-framework-spec.md) and the [Eurth onboarding runbook](docs/realms/eurth-onboarding.md).
 
 ### 🏛️ MyCountry — Head of State Command Suite & Simulation
 
-The flagship executive desk (`MYCOUNTRY_VERSION = 5`, `MYCOUNTRY_ENGINE_VERSION = 4`). Lead your nation through authentic governance systems centered around executive power:
+The flagship executive desk (`systems.mycountry` v6, `engines.mycountry` v4 in `src/lib/buildVersion.ts`). Lead your nation through authentic governance systems centered around executive power:
 
-- **The Single Command Surface**: Unified leadership cockpit (`CommandSurface.tsx`) featuring Telemetry Standing Bands (Approval, Stability, CivCap, Vitality Rings), an interactive 7-day IxTime Executive Agenda horizon strip, and Priority Crisis hero spotlights.
+- **The Single Command Surface**: Unified leadership cockpit (`src/components/mycountry/shell/CommandSurface.tsx`) featuring Telemetry Standing Bands (Approval, Stability, CivCap, Vitality Rings), an interactive 7-day IxTime Executive Agenda horizon strip, and Priority Crisis hero spotlights.
 - **National Directives & Statecraft Engine**: Declare national policy packages across 3 intensity levels (Measured, Moderate, Extreme). The Statecraft simulation engine validates Civil Service Capacity (CivCap) throughput, applies clamped stat modifiers, and broadcasts narrative bulletins across global feeds. Committing extreme directives triggers the **Intent ↔ Issues Resistance Rhythm**, spawning political pushback from 5 domestic power brokers (Military Junta, Merchant Guilds, Clerisy, Bureaucracy, Industrialists). Over-allocating CivCap activates **Information Fog**, masking exact numeric outcomes into qualitative risk bands.
 - **Grounded National Issues & 4-Branch Briefs**: The dynamic issue engine builds real-time national dilemmas by resolving live PostGIS `ST_Touches` neighboring countries, active cabinet ministers, and trade partners into templates (`{{neighborName}}`, `{{ministerName}}`). Leaders resolve dilemmas via 4 distinct action paths:
   - `Delegate`: Consumes 15 CivCap to pass non-urgent matters to the civil service for 5 in-game days.
@@ -97,7 +97,7 @@ The flagship executive desk (`MYCOUNTRY_VERSION = 5`, `MYCOUNTRY_ENGINE_VERSION 
 
 ### 🌍 IxWorld — Interactive Maps, Map Editor & Worldgen
 
-A complete cartography, spatial analytics, and procedural world generation suite powered by GPU-accelerated MapLibre GL (`IXWORLD_VERSION = 1.2`, `ATLAS_ENGINE_VERSION = 4`):
+A complete cartography, spatial analytics, and procedural world generation suite powered by GPU-accelerated MapLibre GL (`apps.ixworld` v2, `engines.atlas` v5):
 
 - **The Interactive World Map**: High-performance WebGL vector globe and map rendering 7 distinct layers (rivers, lakes, icecaps, sovereign borders, altitudes, climate, and background) with deterministic hypsometry (hydrology rendering strictly above political borders). Features projection switching (Globe, Mercator, Equal Earth) and standalone deployment as **IxMaps** (`maps.ixwiki.com`).
 - **Professional In-App Vector Map Editor**: Draw and edit sovereign borders with vertex snapping, paint provinces and administrative regions, place cities and Points of Interest (POIs), route trade networks, attach localized lore stories to territories, and import/export raw vector SVG and GeoJSON cartography.
@@ -108,7 +108,7 @@ A complete cartography, spatial analytics, and procedural world generation suite
 
 ### 🎴 Vault — Collectible Cards, Economy & Rewards
 
-A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`IXVAULT_VERSION = 2`):
+A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`apps.ixvault` v2):
 
 - **Four-Pillar Card System (IxCards)**: Collectible cards powered by Force, Wealth, Influence, and Legacy attributes across 5 core card types:
   - `NATION`: Dynamically minted and continuously recalculated from live country telemetry (GDP per capita, military readiness, embassy network, social vitality).
@@ -124,7 +124,7 @@ A living micro-economic and collectible card ecosystem backed by immutable finan
 
 ### 📖 WikiOS — The Living Knowledge Platform
 
-A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headlessly integrates MediaWiki (`WIKIOS_VERSION = 1`, `CANVAS_VERSION = 1`):
+A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headlessly integrates MediaWiki (`apps.wikios` v1, `subSystems.canvas` v1):
 
 - **Instant Client-Side Navigation**: Multi-tier IndexedDB caching, speculative link prefetching, hover previews, sticky tables of contents, and sub-10ms page loads backed by direct MariaDB SQL caching.
 - **Canvas Visual Block Editor (PlateJS)**: Dual-mode editing studio supporting visual WYSIWYG block authoring (HTML $\leftrightarrow$ Parsoid $\leftrightarrow$ Wikitext roundtrip) and CodeMirror 6 raw source editing with live preview and template parameter forms.
@@ -136,7 +136,7 @@ A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headl
 
 ### 💬 ThinkPages & ThinkShare — In-Universe Social & Comms
 
-- **ThinkPages**: The in-universe social and intelligence feed (`THINKPAGES_VERSION = 2`). Features rich post authoring, hashtag exploration, community polling, headline blurb integration, and persistent collaborative ThinkTanks.
+- **ThinkPages**: The in-universe social and intelligence feed (`systems.thinkpages` v2). Features rich post authoring, hashtag exploration, community polling, headline blurb integration, and persistent collaborative ThinkTanks.
 - **ThinkShare**: Unified, cross-platform encrypted messaging powering personal DMs, diplomatic communiqués, and secure group channels across 5 classification clearance levels (`PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`) with digital signatures.
 
 ---
@@ -144,9 +144,9 @@ A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headl
 ### 🏆 MyLeague & Creative Labs
 
 - **MyLeague & MyClub**: 7-sport simulation engine (soccer, Formula 1, hockey, boxing, basketball, baseball, American football) with seeded play-by-play match engines, club finances, ticket revenue, and Markov-chain player career lifecycles.
-- **⟨ONOMA⟩ Linguistics Studio (`ONOMA_VERSION = 4`)**: Procedural phonology engine with Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries for conlangs.
+- **⟨ONOMA⟩ Linguistics Studio (`systems.onoma` v4)**: Procedural phonology engine with Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries for conlangs.
 - **Vexel Heraldry**: Vector blazon generator creating heraldic shields, charges, and national flags adhering to classic tincture rules.
-- **Simulation Sandbox**: Interactive formula tester and verification suite for economic, demographic, and tax algorithms.
+
 
 
 ---
@@ -171,8 +171,6 @@ Specialized creative toolkits and simulation sandboxes:
 | **⟨ONOMA⟩** | `/labs/onoma` | **Active** | Procedural phonology engine: Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries. |
 | **Vexel** | `/labs/vexel` | **Active** | Structured heraldry composer: vector blazon generation, tincture rules, and deterministic charge composition from Commons assets. |
 | **Map Pipeline** | `/labs/map-pipeline` | **Active** | Procedural worldgen testbed for testing 100k-cell Voronoi meshes and hypsometric algorithms without touching live data. |
-| **Design Bible** | `/labs/design-bible` | **Active** | Interactive design token and component showcase for the Facet design system. |
-| **Sandbox** | `/labs/sandbox` | **Active** | Interactive formula tester and verification suite for economic and demographic simulation algorithms. |
 | **Strata & Dynas** | — | *Roadmap* | Planned laboratories for tectonic relief simulation and dynastic genealogy modeling. |
 
 ---
@@ -228,7 +226,7 @@ IxStates follows an OS-inspired release model where all components read from a c
 ### Prerequisites
 
 - [Bun](https://bun.sh/) $\ge 1.4$ (strictly required runtime & package manager)
-- Docker & Docker Compose (for PostgreSQL + PostGIS & Redis)
+- PostgreSQL with PostGIS, and Redis (optional — rate limiting falls back to in-memory)
 - Node.js $\ge 20$
 
 ### Quickstart Setup
@@ -265,7 +263,7 @@ For comprehensive instructions on WSL2 automation, SSH VPS tunneling, and databa
 ### Testing & Verification
 
 ```bash
-bun run test                   # Execute all 153 Jest test suites across the repository
+bun run test                   # Run the Jest suites (src/tests and colocated *.test.ts[x])
 bun run test:unit              # Fast sub-second parallel unit tests (Bun 1.4 native runner)
 bun run test -- <pattern>      # Run tests matching a specific pattern (e.g., bun run test -- ixtime)
 bun run test:watch             # Interactive Jest watch mode
@@ -286,7 +284,7 @@ bun run audit:arch             # Architecture guard: enforces ≤700L ceilings &
 
 ```bash
 bun run format:write           # Format TypeScript, TSX, and CSS with Prettier + Tailwind plugin
-bun run lint                   # Run ESLint with cache
+bun run lint                   # Run oxlint over src/
 bun run db:studio              # Launch Prisma Studio GUI
 ```
 
@@ -307,7 +305,7 @@ The repository includes a comprehensive, single-source-of-truth documentation sy
 
 ## Contributing & Architectural Standards
 
-1. Active work branch is `v2`.
+1. Active integration branch is `rose-garden`; the Realms work landed there on 2026-09-29.
 2. Follow the 4-tier modular separation: business logic in `src/lib/`, state in `src/hooks/`, UI in `src/components/`, API contracts in `src/server/`.
 3. Keep all files strictly $\le 700$ lines to satisfy `bun run audit:arch`.
 4. Ensure all unit and integration tests pass via `bun run test` prior to submitting pull requests.
