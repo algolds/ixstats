@@ -14,7 +14,8 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
-import { MAX_PNG_BASE64_LENGTH, MAX_PNG_BYTES } from "~/lib/maps/png-realm-map";
+import { MAX_PNG_BASE64_LENGTH, MAX_PNG_BYTES, PngDecodeError } from "~/lib/maps/png-realm-map";
+import { polygonMetrics } from "~/lib/maps/feature-metrics";
 import type { PipelineInput } from "~/lib/maps/map-pipeline";
 import { clearLayerCache } from "../core";
 
@@ -55,6 +56,14 @@ function pngPipelineInput(input: z.infer<typeof runPipelineInput>): PipelineInpu
   };
 }
 
+/** An image the decoder refuses (corrupt, not an image, over the pixel limit) is the admin's input: BAD_REQUEST. */
+function decodeFailureAsBadRequest(error: Error): never {
+  if (error instanceof PngDecodeError) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+  }
+  throw error;
+}
+
 // ──────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────
@@ -81,7 +90,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
               import("~/lib/worldgen/types").WorldGenParams | undefined,
             targetLayers: input.targetLayers,
           }
-    );
+    ).catch(decodeFailureAsBadRequest);
 
     const validation = validatePipelineResult(result);
 
@@ -131,6 +140,8 @@ export const geoEditorProceduralRouter = createTRPCRouter({
               (feature.id as string) ??
               `${layerType}_${imported}`;
 
+            // The parser's centroid/bbox/area, so a country linked to this region later syncs real values
+            const metrics = polygonMetrics(feature.geometry);
             await tx.mapLayer.upsert({
               where: {
                 realmId_layerType_featureId: { realmId: input.realmId, layerType, featureId },
@@ -138,6 +149,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
               update: {
                 geometry: feature.geometry as any,
                 properties: (feature.properties ?? {}) as any,
+                ...metrics,
                 isActive: true,
                 realmId: input.realmId,
               },
@@ -146,6 +158,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
                 featureId,
                 geometry: feature.geometry as any,
                 properties: (feature.properties ?? {}) as any,
+                ...metrics,
                 isActive: true,
                 realmId: input.realmId,
               },

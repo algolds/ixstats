@@ -205,19 +205,22 @@ Without this, `/maps?realm=eurth` is empty — **expected**, not a bug, until yo
 > IxWorld's map. Only **Full Pipeline** has a **Target realm** setting.
 
 1. Obtain a **flat-colour political map** of Eurth as a **PNG** (JPEG is accepted, but compression noise
-   adds stray colours): one solid colour per nation, equirectangular projection, at most **25 MB**.
-   Hand-drawn or textured maps vectorise poorly — it must be flat colour. Colours covering less than
-   0.01% of the image are dropped as noise.
+   adds stray colours): one solid colour per nation, equirectangular projection, at most **25 MB** and
+   **64 megapixels** (8192×8192). Hand-drawn or textured maps vectorise poorly — it must be flat colour.
+   Colours covering less than 0.01% of the image are dropped as noise. A file that isn't a readable
+   image, or is over the pixel limit, is refused with the reason ("The map image could not be read …").
 2. `/admin/maps` → **Import Pipeline** tab → switch from **Quick Update** to **Full Pipeline** → set
-   **Target realm** to `Eurth` → **Choose File** (the PNG) → **Analyse colours**. The pipeline lists the
-   map's colours, largest first, each with its swatch, hex and share of the map.
+   **Target realm** to `Eurth` → **Choose File** (the PNG) → **Analyse colours**. This only counts the
+   map's colours (nothing is traced yet, so it is quick even for a large map) and lists them, largest
+   first, each with its swatch, hex and share of the map.
 3. **Map colours → nations.** For each colour, pick its nation in the searchable box — the list holds
    Eurth's existing countries plus the claimable nation pages of its lore index (step 3), and you can type
    a name that isn't listed. Tick **Ignore** for the ocean and any other background colour. The summary
    under the list counts the **unmapped colours that will be dropped** from the map; a nation can hold
    only one colour (the wizard won't continue while a nation has two — merge them in the image first).
 4. **Vectorise N mapped colours** → each mapped colour is traced into one political region whose feature
-   id is the nation's name → check the feature counts and any warnings/validation errors → **Proceed to
+   id is the nation's name (only now is anything traced; the import stores each region's centroid,
+   bounding box and approximate area alongside its outline) → check the feature counts and any warnings/validation errors → **Proceed to
    Import** → check that the confirmation reads "Ready to import … features into **Eurth**" → **Import
    to Database**. The import merges into Eurth's map only; an unknown target realm is refused.
    - The tracer is the `potrace` package (a dependency since E8 — `bun install` brings it). It is loaded
@@ -228,9 +231,10 @@ Without this, `/maps?realm=eurth` is empty — **expected**, not a bug, until yo
 5. **Regions become nations' territory:**
    - **Nations claimed after the import take their region automatically.** When a nation-page claim is
      approved (instantly or by review), the new country is linked to Eurth's unlinked political region
-     whose feature id (or display name) equals the nation's title, and the country's geometry and land
-     area are synced, in the same transaction as the claim. No region of that name → the claim still
-     goes through, unlinked. The public map can take up to 15 minutes (its political-layer cache) to
+     whose feature id (or display name) equals the nation's title, and the country takes the region's
+     outline, centroid, bounding box and land area, in the same transaction as the claim. A value the
+     region doesn't have never clears the country's own (its baseline land area stays). No region of
+     that name → the claim still goes through, unlinked. The public map can take up to 15 minutes (its political-layer cache) to
      show the new owner.
    - **Nations that already existed** when you imported, and regions whose names don't match a title
      exactly, are linked in the world editor: `/admin/maps/editor?realm=eurth` → **Links** tab →

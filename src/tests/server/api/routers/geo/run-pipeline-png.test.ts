@@ -10,7 +10,7 @@ jest.mock("~/lib/maps/map-pipeline", () => ({
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoEditorProceduralRouter } from "~/server/api/routers/geo/editor/procedural";
 import { runMapPipeline } from "~/lib/maps/map-pipeline";
-import { MAX_PNG_BASE64_LENGTH } from "~/lib/maps/png-realm-map";
+import { MAX_PNG_BASE64_LENGTH, PngDecodeError } from "~/lib/maps/png-realm-map";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const runMock = runMapPipeline as jest.Mock;
@@ -118,6 +118,96 @@ describe("geoEditor.runPipeline — PNG input", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(runMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("geoEditor.runPipeline — unreadable images", () => {
+  it("an image the decoder refuses is BAD_REQUEST with the decoder's reason, not a 500", async () => {
+    runMock.mockRejectedValue(new PngDecodeError("corrupt header"));
+    await expect(
+      caller().runPipeline({ source: "png", pngBase64: PNG_BYTES.toString("base64") })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringMatching(/could not be read .*64 megapixels.*: corrupt header$/),
+    });
+  });
+
+  it("any other pipeline failure is not disguised as bad input", async () => {
+    runMock.mockRejectedValue(new Error("disk full"));
+    await expect(
+      caller().runPipeline({ source: "png", pngBase64: PNG_BYTES.toString("base64") })
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+});
+
+describe("geoEditor.importPipelineResult — region metrics", () => {
+  function importDb() {
+    const db = {
+      realm: { findUnique: jest.fn().mockResolvedValue({ id: "r_eurth" }) },
+      mapLayer: {
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        upsert: jest.fn().mockResolvedValue({}),
+      },
+      sharedVertex: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(db)),
+    };
+    return db;
+  }
+
+  it("stores each region's centroid, bounding box and area, as the parser computes them", async () => {
+    const db = importDb();
+    const square = [
+      [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+        [0, 10],
+        [0, 0],
+      ],
+    ];
+    await createCallerFactory(geoEditorProceduralRouter)(
+      createMockRouterContext({
+        db,
+        auth: { userId: "admin_1" },
+        user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
+      }) as never
+    ).importPipelineResult({
+      realmId: "r_eurth",
+      layers: {
+        political: {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              id: "Aurelia",
+              geometry: { type: "Polygon", coordinates: square },
+              properties: {},
+            },
+            {
+              type: "Feature",
+              id: "Pin",
+              geometry: { type: "Point", coordinates: [1, 1] },
+              properties: {},
+            },
+          ],
+        },
+      },
+    });
+
+    const [aurelia, pin] = db.mapLayer.upsert.mock.calls.map((c) => c[0]);
+    const metrics = {
+      centroid: [4, 4],
+      boundingBox: [0, 0, 10, 10],
+      areaSqKm: expect.any(Number),
+    };
+    expect(aurelia.create).toMatchObject({ featureId: "Aurelia", ...metrics });
+    expect(aurelia.update).toMatchObject(metrics);
+    expect(aurelia.create.areaSqKm).toBeGreaterThan(1_000_000);
+    expect(pin.create).not.toHaveProperty("areaSqKm");
+    expect(pin.update).not.toHaveProperty("centroid");
   });
 });
 

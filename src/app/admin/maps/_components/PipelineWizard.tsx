@@ -17,6 +17,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   MAX_PNG_BYTES,
+  MAX_PNG_MEGAPIXELS,
   nationNameOptions,
   rankColours,
   type RankedColour,
@@ -745,7 +746,7 @@ function FullPipelinePanel() {
             <p className="text-foreground mb-2 text-sm font-medium">Drop your map file here</p>
             <p className="text-muted-foreground mb-4 text-xs">
               SVG files with Inkscape layers, or flat-colour PNG/JPEG political maps (one colour per
-              nation, up to {MAX_PNG_MB} MB)
+              nation, up to {MAX_PNG_MB} MB and {MAX_PNG_MEGAPIXELS} megapixels)
             </p>
             <div className="mb-4 flex items-center justify-center gap-3">
               <label className="text-foreground text-sm font-medium">Target realm:</label>
@@ -980,7 +981,7 @@ interface PngColourStepProps {
 }
 
 /**
- * First run: detect the PNG's colours. The admin maps them to the target realm's nations; second run:
+ * First run: detect the PNG's colours only (no tracing — quick on a large map). The admin maps them to the target realm's nations; second run:
  * vectorise the mapped colours, each region named after its nation (unmapped colours are dropped).
  */
 function PngColourStep({

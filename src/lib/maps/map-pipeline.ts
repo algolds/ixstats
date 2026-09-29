@@ -104,6 +104,39 @@ function invalidGeometryWarnings(layers: Record<string, FeatureCollection>): str
   return warnings;
 }
 
+const isColourAnalysis = (input: PipelineInput) =>
+  input.source === "png" && !input.pngConfig?.colorMapping;
+
+/**
+ * The colour-mapping step's first run (decisions 10–11): a PNG with no colour → nation mapping yet only has
+ * its colours detected — no tracing, parsing or layers, so a large map is analysed in a single decode.
+ */
+async function detectPngColours(
+  input: PipelineInput,
+  log: string[],
+  report: (stage: PipelineStage, progress: number, message: string) => void
+): Promise<PipelineResult> {
+  if (!input.pngBuffer) throw new Error("PNG buffer required for PNG source");
+  report("conversion", 10, "Detecting colours...");
+  const { extractColors } = await import("~/lib/flags/png-to-svg");
+  const colours = await extractColors(input.pngBuffer, {
+    backgroundColor: input.pngConfig?.backgroundColor,
+    minPixels: input.pngConfig?.minRegionSize,
+  });
+  report("complete", 100, `Detected ${colours.length} colours`);
+  return {
+    layers: {},
+    detectedColors: colours.map((c) => ({ ...c, featureId: null })),
+    metadata: {
+      source: "png",
+      featureCounts: {},
+      coordinateSystem: input.coordinateConfig ?? null,
+      log,
+      warnings: [],
+    },
+  };
+}
+
 async function convertPng(input: PipelineInput): Promise<PngToSvgResult> {
   if (!input.pngBuffer) throw new Error("PNG buffer required for PNG source");
   const { convertPngToSvg } = await import("~/lib/flags/png-to-svg");
@@ -132,6 +165,8 @@ export async function runMapPipeline(
 
   try {
     // ────── Stage 1: Convert to intermediate format ──────
+    if (isColourAnalysis(input)) return await detectPngColours(input, log, report);
+
     let detectedColors: PipelineResult["detectedColors"];
     if (input.source === "png") {
       report("conversion", 10, "Converting PNG to SVG...");

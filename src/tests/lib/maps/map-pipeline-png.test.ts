@@ -8,6 +8,7 @@ jest.mock("~/lib/flags/png-to-svg", () => ({
 import { assemblePoliticalSvg, convertPngToSvg } from "~/lib/flags/png-to-svg";
 import { runMapPipeline } from "~/lib/maps/map-pipeline";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
+import { twoNationPng } from "~/tests/fixtures/png-maps";
 
 const convertMock = convertPngToSvg as jest.Mock;
 const detectedColors = [
@@ -42,14 +43,38 @@ describe("runMapPipeline — PNG source", () => {
   });
 
   it("keeps the nations out of the altitude layer: a PNG map is political only", async () => {
-    const result = await runMapPipeline({ source: "png", pngBuffer: Buffer.from([1]) });
+    const result = await runMapPipeline({
+      source: "png",
+      pngBuffer: Buffer.from([1]),
+      pngConfig: { colorMapping: { "#ff0000": "Aurelia" } },
+    });
     expect(Object.keys(result.layers)).toEqual(["political"]);
     expect(result.metadata.featureCounts).toEqual({ political: 1 });
   });
 
-  it("requires the PNG buffer", async () => {
+  it("requires the PNG buffer, with or without a colour mapping", async () => {
     await expect(runMapPipeline({ source: "png" })).rejects.toThrow("PNG buffer required");
+    await expect(
+      runMapPipeline({ source: "png", pngConfig: { colorMapping: { "#ff0000": "Aurelia" } } })
+    ).rejects.toThrow("PNG buffer required");
     expect(convertMock).not.toHaveBeenCalled();
+  });
+
+  it("without a colour mapping it only detects the colours — nothing is traced, parsed or layered", async () => {
+    const result = await runMapPipeline({
+      source: "png",
+      pngBuffer: await twoNationPng(),
+      pngConfig: { autoDetectColors: true, backgroundColor: "#0000ff" },
+    });
+
+    expect(convertMock).not.toHaveBeenCalled();
+    expect(result.detectedColors).toEqual([
+      { hex: "#ff0000", pixelCount: 288, featureId: null },
+      { hex: "#00ff00", pixelCount: 288, featureId: null },
+    ]);
+    expect(result.layers).toEqual({});
+    expect(result.metadata.featureCounts).toEqual({});
+    expect(result.metadata.log.join("\n")).not.toMatch(/Parsing SVG|Vectorized/);
   });
 
   it("has no detected colours for SVG input", async () => {

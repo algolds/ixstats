@@ -1,7 +1,13 @@
 /** @jest-environment node */
-import sharp from "sharp";
-import { assemblePoliticalSvg, convertPngToSvg } from "~/lib/flags/png-to-svg";
+import {
+  assemblePoliticalSvg,
+  convertPngToSvg,
+  createColorMask,
+  extractColors,
+} from "~/lib/flags/png-to-svg";
 import { parseSvgToGeoJson } from "~/lib/flags/svg-parser";
+import { PngDecodeError } from "~/lib/maps/png-realm-map";
+import { pngClaimingSize, twoNationPng } from "~/tests/fixtures/png-maps";
 
 const square = "M 100 100 L 200 100 L 200 200 L 100 200 Z";
 
@@ -25,25 +31,6 @@ describe("assemblePoliticalSvg", () => {
     expect(parsed.featureCollection.features[0]!.id).toBe(name);
   });
 });
-
-const WIDTH = 40;
-const HEIGHT = 20;
-type Rgb = [number, number, number];
-
-/** A 40×20 flat-colour map: Aurelia (red) west, Borealis (green) east, inside a 2px blue ocean. */
-function twoNationPng(): Promise<Buffer> {
-  const raw = Buffer.alloc(WIDTH * HEIGHT * 3);
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = 0; x < WIDTH; x++) {
-      const ocean = x < 2 || x >= WIDTH - 2 || y < 2 || y >= HEIGHT - 2;
-      const rgb: Rgb = ocean ? [0, 0, 255] : x < WIDTH / 2 ? [255, 0, 0] : [0, 255, 0];
-      raw.set(rgb, (y * WIDTH + x) * 3);
-    }
-  }
-  return sharp(raw, { raw: { width: WIDTH, height: HEIGHT, channels: 3 } })
-    .png()
-    .toBuffer();
-}
 
 /** The x extent of a traced path (its numbers alternate x, y). */
 function xRange(d: string): [number, number] {
@@ -89,5 +76,25 @@ describe("convertPngToSvg — real vectorisation (sharp + potrace)", () => {
     } finally {
       cwd.mockRestore();
     }
+  });
+});
+
+describe("decoding the map image", () => {
+  const decoders: Array<[string, (png: Buffer) => Promise<unknown>]> = [
+    ["extractColors", (png) => extractColors(png)],
+    ["createColorMask", (png) => createColorMask(png, "#ff0000")],
+    ["convertPngToSvg", (png) => convertPngToSvg(png, { colorMapping: { "#ff0000": "Aurelia" } })],
+  ];
+
+  it.each(decoders)("%s turns an unreadable image into a PngDecodeError", async (_name, decode) => {
+    await expect(decode(Buffer.from("not an image at all"))).rejects.toThrow(PngDecodeError);
+  });
+
+  it.each(decoders)("%s refuses an image over 64 megapixels", async (_name, decode) => {
+    const huge = await pngClaimingSize(8193, 8192);
+    await expect(decode(huge)).rejects.toMatchObject({
+      name: "PngDecodeError",
+      message: expect.stringMatching(/64 megapixels/),
+    });
   });
 });

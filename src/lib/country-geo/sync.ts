@@ -18,14 +18,18 @@ export async function syncCountryGeometryFromMapLayer(db: any, countryId: string
   });
 
   if (mapLayer) {
+    // Only what the region actually has: a region imported without metrics must not null the country's
+    // centroid, bounding box or (baseline) land area.
     await db.country.update({
       where: { id: countryId },
       data: {
-        geometry: mapLayer.geometry as any,
-        centroid: mapLayer.centroid as any,
-        boundingBox: mapLayer.boundingBox as any,
-        landArea: mapLayer.areaSqKm,
-        areaSqMi: mapLayer.areaSqKm ? mapLayer.areaSqKm * 0.386102 : null,
+        geometry: mapLayer.geometry,
+        ...(mapLayer.centroid != null && { centroid: mapLayer.centroid }),
+        ...(mapLayer.boundingBox != null && { boundingBox: mapLayer.boundingBox }),
+        ...(mapLayer.areaSqKm != null && {
+          landArea: mapLayer.areaSqKm,
+          areaSqMi: mapLayer.areaSqKm * 0.386102,
+        }),
       },
     });
   } else {

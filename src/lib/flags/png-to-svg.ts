@@ -9,6 +9,7 @@
 
 import { Buffer } from "node:buffer";
 import { hslToHex, hexToRgbArray } from "~/lib/color";
+import { MAX_PNG_PIXELS, PngDecodeError } from "~/lib/maps/png-realm-map";
 
 export interface PngToSvgConfig {
   /** Color map: hex color → feature ID. If not provided, auto-detects colors. */
@@ -31,6 +32,40 @@ export interface PngToSvgResult {
   log: string[];
 }
 
+const decodeFailure = (err: Error) => new PngDecodeError(err.message);
+
+/**
+ * Decode a map image to raw RGB. Images over MAX_PNG_PIXELS are refused before any pixel buffer is allocated;
+ * anything sharp cannot read is a PngDecodeError (bad input, not a server fault).
+ */
+async function decodeRgb(pngBuffer: Buffer) {
+  // Dynamic import to avoid bundling sharp in client code
+  const sharp = (await import("sharp")).default;
+  return sharp(pngBuffer, { limitInputPixels: MAX_PNG_PIXELS })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+    .catch((err: Error) => {
+      throw decodeFailure(err);
+    });
+}
+
+/** The image's dimensions from its header, refusing unreadable or over-limit images like decodeRgb. */
+async function imageSize(pngBuffer: Buffer): Promise<{ width: number; height: number }> {
+  const sharp = (await import("sharp")).default;
+  const metadata = await sharp(pngBuffer)
+    .metadata()
+    .catch((err: Error) => {
+      throw decodeFailure(err);
+    });
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  if (width * height > MAX_PNG_PIXELS) {
+    throw new PngDecodeError(`it is ${width}×${height} pixels`);
+  }
+  return { width, height };
+}
+
 /**
  * Extract distinct colors from a PNG image buffer.
  * Returns an array of { hex, count } sorted by pixel count descending.
@@ -41,11 +76,7 @@ export async function extractColors(
   pngBuffer: Buffer,
   options: { backgroundColor?: string; minPixels?: number } = {}
 ): Promise<Array<{ hex: string; pixelCount: number }>> {
-  // Dynamic import to avoid bundling sharp in client code
-  const sharp = (await import("sharp")).default;
-
-  const image = sharp(pngBuffer).removeAlpha().raw();
-  const { data, info } = await image.toBuffer({ resolveWithObject: true });
+  const { data, info } = await decodeRgb(pngBuffer);
 
   const colorCounts = new Map<string, number>();
   const bgHex = options.backgroundColor?.toLowerCase().replace("#", "");
@@ -82,8 +113,7 @@ export async function createColorMask(
   const sharp = (await import("sharp")).default;
 
   const target = hexToRgbArray(targetHex);
-  const image = sharp(pngBuffer).removeAlpha().raw();
-  const { data, info } = await image.toBuffer({ resolveWithObject: true });
+  const { data, info } = await decodeRgb(pngBuffer);
 
   // Create mask: white for matching pixels, black for others
   const mask = Buffer.alloc(info.width * info.height);
@@ -219,13 +249,10 @@ export async function convertPngToSvg(
   pngBuffer: Buffer,
   config: PngToSvgConfig = {}
 ): Promise<PngToSvgResult> {
-  const sharp = (await import("sharp")).default;
   const log: string[] = [];
 
   // Get image dimensions
-  const metadata = await sharp(pngBuffer).metadata();
-  const width = metadata.width ?? 0;
-  const height = metadata.height ?? 0;
+  const { width, height } = await imageSize(pngBuffer);
   log.push(`Image size: ${width}x${height}`);
 
   // Step 1: Detect or use provided colors
