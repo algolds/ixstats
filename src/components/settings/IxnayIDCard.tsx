@@ -17,6 +17,7 @@ import {
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Input } from "~/components/ui/input";
+import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
 
 interface ServiceRowProps {
   name: string;
@@ -118,18 +119,14 @@ interface IxnayIDCardProps {
 export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   const utils = api.useUtils();
   const { data: status, isLoading } = api.ixnayid.getStatus.useQuery();
+  const wikiLinks = api.ixnayid.listWikiLinks.useQuery();
 
   // Linking state
   const [forumInput, setForumInput] = useState("");
-  const [wikiInput, setWikiInput] = useState("");
   const [showForumInput, setShowForumInput] = useState(false);
-  const [showWikiInput, setShowWikiInput] = useState(false);
 
   // Lookup previews
   const [forumLookup, setForumLookup] = useState<string | null>(null);
-  const [wikiLookup, setWikiLookup] = useState<{ username: string; editCount: number } | null>(
-    null
-  );
 
   // Mutations
   const linkForum = api.ixnayid.linkForum.useMutation({
@@ -142,19 +139,6 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   });
 
   const unlinkForum = api.ixnayid.unlinkForum.useMutation({
-    onSuccess: () => utils.ixnayid.getStatus.invalidate(),
-  });
-
-  const linkWiki = api.ixnayid.linkWiki.useMutation({
-    onSuccess: () => {
-      utils.ixnayid.getStatus.invalidate();
-      setShowWikiInput(false);
-      setWikiInput("");
-      setWikiLookup(null);
-    },
-  });
-
-  const unlinkWiki = api.ixnayid.unlinkWiki.useMutation({
     onSuccess: () => utils.ixnayid.getStatus.invalidate(),
   });
 
@@ -187,11 +171,6 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
     { enabled: false }
   );
 
-  const wikiLookupQuery = api.ixnayid.lookupWikiUser.useQuery(
-    { username: wikiInput },
-    { enabled: false }
-  );
-
   const handleForumLookup = async () => {
     if (!forumInput.trim()) return;
     const result = await forumLookupQuery.refetch();
@@ -199,16 +178,6 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
       setForumLookup(result.data.username);
     } else {
       setForumLookup(null);
-    }
-  };
-
-  const handleWikiLookup = async () => {
-    if (!wikiInput.trim()) return;
-    const result = await wikiLookupQuery.refetch();
-    if (result.data) {
-      setWikiLookup({ username: result.data.username, editCount: result.data.editCount });
-    } else {
-      setWikiLookup(null);
     }
   };
 
@@ -330,95 +299,24 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
             </div>
           )}
 
-          {/* Wiki */}
-          <ServiceRow
-            name="Global Wiki"
-            icon={<BookOpen className="h-6 w-6 text-blue-500" />}
-            color="bg-blue-100 dark:bg-blue-900/30"
-            linked={status?.wiki.linked ?? false}
-            username={
-              status?.wiki.username
-                ? `${status.wiki.username} ${status.wiki.isCustomClaimed ? "(Claimed)" : "(Unified)"}`
-                : null
-            }
-            lastSync={status?.wiki.lastSync ?? null}
-            onLink={() => setShowWikiInput(true)}
-            onUnlink={() => {
-              if (status?.wiki.isCustomClaimed) {
-                unlinkWiki.mutate();
-              } else {
-                setShowWikiInput(true);
-              }
-            }}
-            isLinking={linkWiki.isPending}
-            isUnlinking={unlinkWiki.isPending}
-          />
-
-          {/* Wiki input */}
-          {showWikiInput && (
-            <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Claim a legacy MediaWiki account to preserve your historical edits and
-                contributions.
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={wikiInput}
-                  onChange={(e) => {
-                    setWikiInput(e.target.value);
-                    setWikiLookup(null);
-                  }}
-                  placeholder="Legacy wiki username..."
-                  className="flex-1"
-                  onKeyDown={(e) => e.key === "Enter" && handleWikiLookup()}
-                />
-                <button
-                  onClick={handleWikiLookup}
-                  disabled={!wikiInput.trim() || wikiLookupQuery.isFetching}
-                  className="flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-                >
-                  {wikiLookupQuery.isFetching ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Search className="h-3 w-3" />
-                  )}
-                  Look up
-                </button>
-              </div>
-              {wikiLookup && (
-                <div className="flex items-center justify-between rounded-md bg-green-50 px-3 py-2 dark:bg-green-900/20">
-                  <span className="text-xs text-green-700 dark:text-green-400">
-                    Found: <strong>{wikiLookup.username}</strong> (
-                    {wikiLookup.editCount.toLocaleString()} edits)
-                  </span>
-                  <button
-                    onClick={() => linkWiki.mutate({ wikiUsername: wikiLookup.username })}
-                    disabled={linkWiki.isPending}
-                    className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                  >
-                    {linkWiki.isPending ? "Claiming..." : "Confirm Claim"}
-                  </button>
-                </div>
-              )}
-              {wikiLookupQuery.isError && (
-                <p className="text-xs text-red-500">
-                  User not found. Check the username and try again.
-                </p>
-              )}
-              {linkWiki.error && <p className="text-xs text-red-500">{linkWiki.error.message}</p>}
-              <button
-                onClick={() => {
-                  setShowWikiInput(false);
-                  setWikiInput("");
-                  setWikiLookup(null);
-                }}
-                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                Cancel
-              </button>
+          {/* Wiki (verified by user-page token) */}
+          <div className="facet-hierarchy-child flex items-start gap-4 rounded-2xl border border-slate-200 bg-white/30 p-4 dark:border-slate-700/50 dark:bg-slate-800/20">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 shadow-inner dark:bg-blue-900/30">
+              <BookOpen className="h-6 w-6 text-blue-500" />
             </div>
-          )}
+            <div className="min-w-0 flex-1">
+              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                Global Wiki
+              </span>
+              <div className="mt-2">
+                <WikiAccountVerifyRow
+                  source="ixwiki"
+                  label="IxWiki"
+                  link={wikiLinks.data?.find((l) => l.source === "ixwiki")}
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Discord */}
           <ServiceRow

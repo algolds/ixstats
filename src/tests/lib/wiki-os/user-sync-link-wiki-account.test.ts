@@ -1,6 +1,8 @@
 /**
- * Regression for fix-round-1 Critical 1: the self-service path (ixnayid.linkWiki ->
- * linkWikiAccount) must never write a WikiAccountLink row — it has no proof of account control.
+ * Regression for fix-round-1 Critical 1: the self-service path (the admin `linkUserWiki` mutation
+ * calling linkWikiAccount; the former ixnayid self-service mutation of the same shape was removed
+ * in favor of token-on-user-page verification) must never write a WikiAccountLink row — it has no
+ * proof of account control.
  * Only start()/confirm() (token-on-user-page) and adminVerify() (admin authority) may verify a link.
  * Heavy real deps (~/server/db, the MediaWiki bridge barrel) are mocked out per the task brief's own
  * guidance, since they pull in Prisma/DB wiring that isn't relevant to this unit.

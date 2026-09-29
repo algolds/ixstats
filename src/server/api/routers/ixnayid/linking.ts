@@ -2,7 +2,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { linkWikiAccount } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { linkDiscordAccount } from "~/lib/discord/user-sync";
 import { linkForumAccount } from "~/server/modules/forum";
 import {
@@ -24,37 +23,6 @@ function toTrpcError(error: Error): never {
 }
 
 export const ixnayidLinkingRouter = createTRPCRouter({
-  // =========================================================================
-  // WIKI LINKING
-  // =========================================================================
-
-  linkWiki: protectedProcedure
-    .input(z.object({ wikiUsername: z.string().min(1).max(100) }))
-    .mutation(async ({ ctx, input }) => {
-      const result = await linkWikiAccount(ctx.user.id, input.wikiUsername, ctx.auth.userId);
-
-      if (!result.success) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error ?? "Failed to link wiki account",
-        });
-      }
-
-      return { success: true, wikiUsername: result.wikiUsername };
-    }),
-
-  unlinkWiki: protectedProcedure.mutation(async ({ ctx }) => {
-    await db.user.update({
-      where: { id: ctx.user.id },
-      data: {
-        wikiUserId: null,
-        wikiUsername: null,
-        lastWikiSync: null,
-      },
-    });
-    return { success: true };
-  }),
-
   // =========================================================================
   // VERIFIED WIKI ACCOUNT LINKING (token-on-user-page proof)
   // =========================================================================
