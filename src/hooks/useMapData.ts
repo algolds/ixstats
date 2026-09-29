@@ -55,26 +55,28 @@ export const MAP_QUERY_OPTIONS = {
   refetchOnReconnect: false,
 } as const;
 
-export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
+/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
+export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?: string) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
 
-  // IndexedDB cached data (loaded once on mount)
+  // IndexedDB cached data for this realm (reloaded when the realm changes; only in browser)
   const [idbData, setIdbData] = useState<Record<string, unknown> | null>(null);
-  const idbLoadedRef = useRef(false);
 
-  // Load from IndexedDB on mount (only in browser)
   useEffect(() => {
-    if (idbLoadedRef.current) return;
-    idbLoadedRef.current = true;
-    getCachedMapLayers().then((cached) => {
-      if (cached) {
+    let cancelled = false;
+    setIdbData(null);
+    getCachedMapLayers(realm).then((cached) => {
+      if (cached && !cancelled) {
         console.log("[useMapData] Loaded map data from IndexedDB cache");
         setIdbData(cached);
       }
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [realm]);
 
   // Compute zoom bucket (0=globe, 1=mid, 2=detail) — only re-fetches on bucket change
   const zoomBucket = useMemo(() => {
@@ -99,6 +101,7 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
       layers: allRequestedLayers,
       zoom:
         zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
+      realm,
     },
     {
       ...MAP_QUERY_OPTIONS,
@@ -112,12 +115,12 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
   useEffect(() => {
     if (!layerData) return;
     // Only persist once per unique dataset (avoid re-writing on every render)
-    const keys = Object.keys(layerData).sort().join(",");
-    if (persistedRef.current === keys) return;
-    persistedRef.current = keys;
-    setCachedMapLayers(layerData as Record<string, unknown>);
+    const marker = `${realm ?? ""}|${Object.keys(layerData).sort().join(",")}`;
+    if (persistedRef.current === marker) return;
+    persistedRef.current = marker;
+    setCachedMapLayers(layerData as Record<string, unknown>, realm);
     console.log("[useMapData] Persisted map data to IndexedDB cache");
-  }, [layerData]);
+  }, [layerData, realm]);
 
   // Use server data if available, otherwise IDB cache
   const effectiveData = layerData ?? idbData;

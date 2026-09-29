@@ -9,7 +9,7 @@ import { z } from "zod/v4";
 import type { Geometry } from "geojson";
 import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
-import { DEFAULT_REALM_ID } from "~/server/modules/realms";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import {
   calculateTAMI,
   calculateMaintenanceDegradation,
@@ -105,13 +105,13 @@ export const transportRouteQueriesRouter = createTRPCRouter({
     }),
 
   /**
-   * Get ALL transport routes as GeoJSON for map overlay.
+   * Get the viewed realm's transport routes as GeoJSON for map overlay.
    */
   getAllRoutesGeoJSON: cachedPublicProcedure
-    .input(z.object({ realmId: z.string().default(DEFAULT_REALM_ID) }).optional())
+    .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
       const routes = await ctx.db.transportRoute.findMany({
-        where: { realmId: input?.realmId ?? DEFAULT_REALM_ID },
+        where: { realmId: await viewerRealmId(ctx, input?.realm) },
         select: {
           id: true,
           routeType: true,

@@ -9,6 +9,8 @@ const DB_NAME = "ixworld-map-cache";
 const STORE_NAME = "layers";
 const DB_VERSION = 2;
 const CACHE_KEY = "worldMapLayers";
+/** One entry per realm slug (`?realm=`); the unsuffixed key is the viewer's own realm. */
+const cacheKeyFor = (realm?: string) => (realm ? `${CACHE_KEY}:${realm}` : CACHE_KEY);
 // 24 hours - matches server-side static layer TTL
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -38,13 +40,14 @@ function openDB(): Promise<IDBDatabase> {
  * Get cached map layers from IndexedDB.
  * Returns null if not found or expired.
  */
-export async function getCachedMapLayers(): Promise<Record<string, unknown> | null> {
+export async function getCachedMapLayers(realm?: string): Promise<Record<string, unknown> | null> {
+  const key = cacheKeyFor(realm);
   try {
     const db = await openDB();
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
-      const req = store.get(CACHE_KEY);
+      const req = store.get(key);
       req.onsuccess = () => {
         const entry = req.result as CachedEntry | undefined;
         if (!entry) {
@@ -54,7 +57,7 @@ export async function getCachedMapLayers(): Promise<Record<string, unknown> | nu
         if (Date.now() - entry.timestamp > CACHE_TTL) {
           // Expired — delete in background
           const delTx = db.transaction(STORE_NAME, "readwrite");
-          delTx.objectStore(STORE_NAME).delete(CACHE_KEY);
+          delTx.objectStore(STORE_NAME).delete(key);
           resolve(null);
           return;
         }
@@ -70,12 +73,15 @@ export async function getCachedMapLayers(): Promise<Record<string, unknown> | nu
 /**
  * Store map layers in IndexedDB for persistent caching.
  */
-export async function setCachedMapLayers(data: Record<string, unknown>): Promise<void> {
+export async function setCachedMapLayers(
+  data: Record<string, unknown>,
+  realm?: string
+): Promise<void> {
   try {
     const db = await openDB();
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    store.put({ key: CACHE_KEY, data, timestamp: Date.now() } satisfies CachedEntry);
+    store.put({ key: cacheKeyFor(realm), data, timestamp: Date.now() } satisfies CachedEntry);
   } catch {
     // Silently fail — cache is best-effort
   }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "../../core";
@@ -9,150 +10,153 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 
 export const geoEditorLinkageValidationRouter = createTRPCRouter({
   /** Validate country ↔ map feature linkage. Returns inconsistencies. */
-  validateLinkage: adminProcedure.query(async ({ ctx }) => {
-    // Get all political map layers with country links
-    const mapLayers = await ctx.db.mapLayer.findMany({
-      where: { layerType: "political", isActive: true },
-      select: {
-        id: true,
-        featureId: true,
-        displayName: true,
-        countryId: true,
-        areaSqKm: true,
-        centroid: true,
-        boundingBox: true,
-      },
-    });
+  validateLinkage: adminProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      // The edited realm's political map layers and countries (ruling E-o)
+      const realmId = await viewerRealmId(ctx, input?.realm);
+      const mapLayers = await ctx.db.mapLayer.findMany({
+        where: { layerType: "political", isActive: true, realmId },
+        select: {
+          id: true,
+          featureId: true,
+          displayName: true,
+          countryId: true,
+          areaSqKm: true,
+          centroid: true,
+          boundingBox: true,
+        },
+      });
 
-    // Get all countries with their owners
-    const countries = await ctx.db.country.findMany({
-      where: { isDemo: false },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        flag: true,
-        landArea: true,
-        geometry: true,
-        centroid: true,
-        boundingBox: true,
-        owner: { select: { clerkUserId: true, forumUsername: true } },
-      },
-    });
+      // Get all countries with their owners
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false, realmId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          landArea: true,
+          geometry: true,
+          centroid: true,
+          boundingBox: true,
+          owner: { select: { clerkUserId: true, forumUsername: true } },
+        },
+      });
 
-    const mapLayerByCountryId = new Map(
-      mapLayers.filter((l) => l.countryId).map((l) => [l.countryId!, l])
-    );
-    const countryById = new Map(countries.map((c) => [c.id, c]));
+      const mapLayerByCountryId = new Map(
+        mapLayers.filter((l) => l.countryId).map((l) => [l.countryId!, l])
+      );
+      const countryById = new Map(countries.map((c) => [c.id, c]));
 
-    const issues: Array<{
-      type:
-        | "no_map_link"
-        | "orphan_geometry"
-        | "missing_geometry_sync"
-        | "missing_area_sync"
-        | "stale_map_link";
-      countryId: string;
-      countryName: string;
-      featureId?: string;
-      featureName?: string;
-      detail: string;
-    }> = [];
+      const issues: Array<{
+        type:
+          | "no_map_link"
+          | "orphan_geometry"
+          | "missing_geometry_sync"
+          | "missing_area_sync"
+          | "stale_map_link";
+        countryId: string;
+        countryName: string;
+        featureId?: string;
+        featureName?: string;
+        detail: string;
+      }> = [];
 
-    // Countries with no MapLayer link
-    for (const country of countries) {
-      const mapLayer = mapLayerByCountryId.get(country.id);
+      // Countries with no MapLayer link
+      for (const country of countries) {
+        const mapLayer = mapLayerByCountryId.get(country.id);
 
-      if (!mapLayer) {
-        // Country has no linked map feature
-        if (country.geometry || (country.landArea && country.landArea > 0)) {
-          issues.push({
-            type: "orphan_geometry",
-            countryId: country.id,
-            countryName: country.name,
-            detail: `Country has geometry/landArea but no MapLayer link`,
-          });
+        if (!mapLayer) {
+          // Country has no linked map feature
+          if (country.geometry || (country.landArea && country.landArea > 0)) {
+            issues.push({
+              type: "orphan_geometry",
+              countryId: country.id,
+              countryName: country.name,
+              detail: `Country has geometry/landArea but no MapLayer link`,
+            });
+          } else {
+            issues.push({
+              type: "no_map_link",
+              countryId: country.id,
+              countryName: country.name,
+              detail: `Country has no linked map feature`,
+            });
+          }
         } else {
-          issues.push({
-            type: "no_map_link",
-            countryId: country.id,
-            countryName: country.name,
-            detail: `Country has no linked map feature`,
-          });
+          // Country IS linked — check data sync
+          if (!country.geometry) {
+            issues.push({
+              type: "missing_geometry_sync",
+              countryId: country.id,
+              countryName: country.name,
+              featureId: mapLayer.featureId,
+              featureName: mapLayer.displayName ?? mapLayer.featureId,
+              detail: `MapLayer linked but Country.geometry is null`,
+            });
+          }
+          if (!country.landArea && mapLayer.areaSqKm) {
+            issues.push({
+              type: "missing_area_sync",
+              countryId: country.id,
+              countryName: country.name,
+              featureId: mapLayer.featureId,
+              featureName: mapLayer.displayName ?? mapLayer.featureId,
+              detail: `MapLayer has areaSqKm=${mapLayer.areaSqKm?.toFixed(0)} but Country.landArea is null`,
+            });
+          }
         }
-      } else {
-        // Country IS linked — check data sync
-        if (!country.geometry) {
+      }
+
+      // MapLayers pointing to non-existent countries
+      for (const layer of mapLayers) {
+        if (layer.countryId && !countryById.has(layer.countryId)) {
           issues.push({
-            type: "missing_geometry_sync",
-            countryId: country.id,
-            countryName: country.name,
-            featureId: mapLayer.featureId,
-            featureName: mapLayer.displayName ?? mapLayer.featureId,
-            detail: `MapLayer linked but Country.geometry is null`,
-          });
-        }
-        if (!country.landArea && mapLayer.areaSqKm) {
-          issues.push({
-            type: "missing_area_sync",
-            countryId: country.id,
-            countryName: country.name,
-            featureId: mapLayer.featureId,
-            featureName: mapLayer.displayName ?? mapLayer.featureId,
-            detail: `MapLayer has areaSqKm=${mapLayer.areaSqKm?.toFixed(0)} but Country.landArea is null`,
+            type: "stale_map_link",
+            countryId: layer.countryId,
+            countryName: "(deleted)",
+            featureId: layer.featureId,
+            featureName: layer.displayName ?? layer.featureId,
+            detail: `MapLayer links to non-existent country ${layer.countryId}`,
           });
         }
       }
-    }
 
-    // MapLayers pointing to non-existent countries
-    for (const layer of mapLayers) {
-      if (layer.countryId && !countryById.has(layer.countryId)) {
-        issues.push({
-          type: "stale_map_link",
-          countryId: layer.countryId,
-          countryName: "(deleted)",
-          featureId: layer.featureId,
-          featureName: layer.displayName ?? layer.featureId,
-          detail: `MapLayer links to non-existent country ${layer.countryId}`,
-        });
-      }
-    }
+      // Build linkage summary
+      const linked = countries.filter((c) => mapLayerByCountryId.has(c.id));
+      const unlinked = countries.filter((c) => !mapLayerByCountryId.has(c.id));
 
-    // Build linkage summary
-    const linked = countries.filter((c) => mapLayerByCountryId.has(c.id));
-    const unlinked = countries.filter((c) => !mapLayerByCountryId.has(c.id));
-
-    return {
-      totalCountries: countries.length,
-      linkedCount: linked.length,
-      unlinkedCount: unlinked.length,
-      issueCount: issues.length,
-      issues,
-      linked: linked.map((c) => {
-        const ml = mapLayerByCountryId.get(c.id)!;
-        return {
+      return {
+        totalCountries: countries.length,
+        linkedCount: linked.length,
+        unlinkedCount: unlinked.length,
+        issueCount: issues.length,
+        issues,
+        linked: linked.map((c) => {
+          const ml = mapLayerByCountryId.get(c.id)!;
+          return {
+            countryId: c.id,
+            countryName: c.name,
+            countryFlag: normalizeFlagUrl(c.flag),
+            featureId: ml.featureId,
+            featureName: ml.displayName ?? ml.featureId,
+            areaSqKm: ml.areaSqKm,
+            hasOwner: c.owner !== null,
+            ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
+          };
+        }),
+        unlinked: unlinked.map((c) => ({
           countryId: c.id,
           countryName: c.name,
           countryFlag: normalizeFlagUrl(c.flag),
-          featureId: ml.featureId,
-          featureName: ml.displayName ?? ml.featureId,
-          areaSqKm: ml.areaSqKm,
+          hasGeometry: !!c.geometry,
+          hasLandArea: !!(c.landArea && c.landArea > 0),
           hasOwner: c.owner !== null,
           ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
-        };
-      }),
-      unlinked: unlinked.map((c) => ({
-        countryId: c.id,
-        countryName: c.name,
-        countryFlag: normalizeFlagUrl(c.flag),
-        hasGeometry: !!c.geometry,
-        hasLandArea: !!(c.landArea && c.landArea > 0),
-        hasOwner: c.owner !== null,
-        ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
-      })),
-    };
-  }),
+        })),
+      };
+    }),
 
   /** Repair linkage: sync geometry/area from MapLayer to Country, or auto-match by name. */
   repairLinkage: adminProcedure
@@ -162,10 +166,13 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
         /** For link_by_name: map featureId to countryId */
         featureId: z.string().optional(),
         countryId: z.string().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .mutation(async ({ ctx, input }) => {
       let repaired = 0;
+      // auto_match and link_by_name work inside the edited realm; sync_all re-syncs every linked country
+      const realmId = await viewerRealmId(ctx, input.realm);
 
       if (input.action === "sync_all") {
         // Re-sync geometry + area from MapLayer → Country for all linked countries
@@ -190,7 +197,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
       if (input.action === "auto_match") {
         // Try to match unlinked countries to unlinked features by name
         const unlinkedLayers = await ctx.db.mapLayer.findMany({
-          where: { layerType: "political", countryId: null, isActive: true },
+          where: { layerType: "political", countryId: null, isActive: true, realmId },
           select: {
             id: true,
             featureId: true,
@@ -204,6 +211,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
         const unlinkedCountries = await ctx.db.country.findMany({
           where: {
             isDemo: false,
+            realmId,
             id: {
               notIn: (
                 await ctx.db.mapLayer.findMany({
@@ -237,7 +245,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
 
       if (input.action === "link_by_name" && input.featureId && input.countryId) {
         const ml = await ctx.db.mapLayer.findFirst({
-          where: { layerType: "political", featureId: input.featureId, isActive: true },
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
         });
         if (!ml) throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
 

@@ -5,6 +5,7 @@
  * 2. IxWorld realm slug default → ixworld
  * 3. WikiAccountLink (ixwiki, unverified) for every legacy User.wikiUsername
  * 4. realms.visibility private → unlisted
+ * 5. map_layers with no realm (legacy NULL worldId) → IxWorld — map reads filter by realm since E4
  */
 import { PrismaClient } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
@@ -58,11 +59,29 @@ async function backfillWikiLinks() {
   }
 }
 
+async function backfillMapLayerRealms() {
+  const orphans = await db.mapLayer.count({ where: { realmId: null } });
+  // A NULL row whose (layerType, featureId) IxWorld already has would collide on the realm-scoped unique key
+  const [{ clashes }] = await db.$queryRaw<Array<{ clashes: bigint }>>`
+    SELECT count(*) AS clashes FROM map_layers a
+    JOIN map_layers b ON b."worldId" = ${DEFAULT_REALM_ID}
+      AND b."layerType" = a."layerType" AND b."featureId" = a."featureId"
+    WHERE a."worldId" IS NULL`;
+  console.log(`map layers with no realm → IxWorld: ${orphans} (${clashes} clash with an IxWorld feature)`);
+  if (!apply || orphans === 0) return;
+  if (Number(clashes) > 0) {
+    console.log("  SKIPPED — resolve the clashing rows by hand (deactivate or delete the NULL duplicates), then re-run");
+    return;
+  }
+  await db.mapLayer.updateMany({ where: { realmId: null }, data: { realmId: DEFAULT_REALM_ID } });
+}
+
 async function main() {
   console.log(apply ? "APPLY mode — writing" : "DRY RUN — pass --apply to write");
   await backfillOwners();
   await backfillRealms();
   await backfillWikiLinks();
+  await backfillMapLayerRealms();
 }
 
 main()

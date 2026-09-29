@@ -13,6 +13,7 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
+import { clearLayerCache } from "../core";
 
 // ──────────────────────────────────────────────
 // Router
@@ -146,8 +147,9 @@ export const geoEditorProceduralRouter = createTRPCRouter({
         }
       }
 
-      // Invalidate layer cache
-      invalidateCache(["geoCore.getWorldMap"]);
+      // Invalidate the assembled-layer cache and the cached map responses (keys carry the realm)
+      clearLayerCache();
+      invalidateCache(["geoCore.getWorldMap", "geoCore.getMapBundle"]);
 
       return { imported, mode: input.mode };
     }),

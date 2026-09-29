@@ -104,6 +104,7 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
          FROM map_layers ml1
          JOIN map_layers ml2 ON ml2."layerType" = 'political'
            AND ml2."isActive" = true
+           AND ml2."worldId" IS NOT DISTINCT FROM ml1."worldId"
            AND ml2.id != ml1.id
            AND ml1.geom_postgis IS NOT NULL
            AND ml2.geom_postgis IS NOT NULL

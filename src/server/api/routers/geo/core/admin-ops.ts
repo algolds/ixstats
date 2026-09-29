@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { adminProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import {
@@ -15,10 +16,14 @@ import { estimateBboxOverlap } from "./geometry";
 
 export const adminOpsProcedures = {
   recalculateArea: adminProcedure
-    .input(z.object({ featureId: z.string() }))
+    .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
       const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId },
+        where: {
+          layerType: "political",
+          featureId: input.featureId,
+          realmId: await viewerRealmId(ctx, input.realm),
+        },
       });
 
       if (!mapLayer) {
@@ -95,6 +100,7 @@ export const adminOpsProcedures = {
               geometry: true,
               centroid: true,
               boundingBox: true,
+              realmId: true,
             },
           });
 
@@ -110,10 +116,11 @@ export const adminOpsProcedures = {
             (profileResult.areaSqMi ? profileResult.areaSqMi / 0.386102 : 0);
           const bbox = profileResult.boundingBox as [number, number, number, number] | null;
 
-          // Get climate/altitude layers for this country's bbox
+          // Get climate/altitude layers (the country's own realm's) for this country's bbox
+          const realmId = profileResult.realmId;
           const [climateLayers, altitudeLayers] = await Promise.all([
             ctx.db.mapLayer.findMany({
-              where: { layerType: "climate", isActive: true },
+              where: { layerType: "climate", isActive: true, realmId },
               select: {
                 featureId: true,
                 geometry: true,
@@ -123,7 +130,7 @@ export const adminOpsProcedures = {
               },
             }),
             ctx.db.mapLayer.findMany({
-              where: { layerType: "altitudes", isActive: true },
+              where: { layerType: "altitudes", isActive: true, realmId },
               select: { featureId: true, geometry: true, properties: true, areaSqKm: true },
             }),
           ]);

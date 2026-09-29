@@ -11,6 +11,7 @@ import { api } from "~/trpc/react";
 
 import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type {
   BorderEditorState,
   BorderEditorActions,
@@ -47,6 +48,7 @@ interface PropertiesPanelContentProps {
       countryId?: string | null;
       properties?: Record<string, string | number | boolean | null>;
       wikiPageTitle?: string | null;
+      realm?: string;
     }) => Promise<{ ok?: boolean; success?: boolean } | void>;
   };
   isEditingJson: boolean;
@@ -131,6 +133,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
   handleEditRoute,
 }: PropertiesPanelContentProps) {
   const effectiveOnEditRoute = onEditRoute ?? handleEditRoute;
+  const realm = useMapRealm();
   const utils = api.useUtils();
   const updateRouteMutation = api.transport.updateRoute.useMutation({
     onSuccess: () => {
@@ -175,6 +178,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
           featureId: feat.id,
           displayName: typeof updates.name === "string" ? updates.name : feat.name,
           wikiPageTitle: (updates.wikiPageTitle as string | null) ?? null,
+          realm,
         });
       }
 
@@ -253,7 +257,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
         }
       }
     },
-    [editor, updatePropertiesMutation, activeCountryId, updateRouteMutation]
+    [editor, updatePropertiesMutation, activeCountryId, updateRouteMutation, realm]
   );
 
   // 1. Multi-feature selection (Pathfinder and batch overview)

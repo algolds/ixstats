@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import type { LayerInfoItemDto } from "~/types/geo.dto";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
@@ -7,73 +8,81 @@ import { computeVisualCenter } from "./geometry";
 import { getColorForFeature } from "./layer-loader";
 
 export const discoveryProcedures = {
-  listCountries: cachedPublicProcedure.query(async ({ ctx }): Promise<LayerInfoItemDto[]> => {
-    const layers = await ctx.db.mapLayer.findMany({
-      where: { layerType: "political", isActive: true },
-      select: {
-        featureId: true,
-        displayName: true,
-        properties: true,
-        countryId: true,
-        areaSqKm: true,
-        centroid: true,
-      },
-      orderBy: { displayName: "asc" },
-    });
+  listCountries: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }): Promise<LayerInfoItemDto[]> => {
+      const layers = await ctx.db.mapLayer.findMany({
+        where: {
+          layerType: "political",
+          isActive: true,
+          realmId: await viewerRealmId(ctx, input?.realm),
+        },
+        select: {
+          featureId: true,
+          displayName: true,
+          properties: true,
+          countryId: true,
+          areaSqKm: true,
+          centroid: true,
+        },
+        orderBy: { displayName: "asc" },
+      });
 
-    return layers.map(
-      (l: {
-        featureId: string;
-        displayName: string | null;
-        properties: unknown;
-        countryId: string | null;
-        areaSqKm: number | null;
-        centroid: unknown;
-      }) => {
-        const raw = l.centroid as [number, number] | { coordinates?: [number, number] } | null;
-        let cLng = 0,
-          cLat = 0;
-        if (Array.isArray(raw) && raw.length >= 2) {
-          cLng = raw[0];
-          cLat = raw[1];
-        } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
-          cLng = raw.coordinates[0];
-          cLat = raw.coordinates[1];
+      return layers.map(
+        (l: {
+          featureId: string;
+          displayName: string | null;
+          properties: unknown;
+          countryId: string | null;
+          areaSqKm: number | null;
+          centroid: unknown;
+        }) => {
+          const raw = l.centroid as [number, number] | { coordinates?: [number, number] } | null;
+          let cLng = 0,
+            cLat = 0;
+          if (Array.isArray(raw) && raw.length >= 2) {
+            cLng = raw[0];
+            cLat = raw[1];
+          } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
+            cLng = raw.coordinates[0];
+            cLat = raw.coordinates[1];
+          }
+          return {
+            featureId: l.featureId,
+            displayName: l.displayName || featureIdToDisplayName(l.featureId),
+            fillColor: getColorForFeature(l.featureId, l.properties as Record<string, unknown>),
+            countryId: l.countryId,
+            areaSqKm: l.areaSqKm,
+            centroidLng: cLng,
+            centroidLat: cLat,
+            isClaimed: !!l.countryId,
+          };
         }
-        return {
-          featureId: l.featureId,
-          displayName: l.displayName || featureIdToDisplayName(l.featureId),
-          fillColor: getColorForFeature(l.featureId, l.properties as Record<string, unknown>),
-          countryId: l.countryId,
-          areaSqKm: l.areaSqKm,
-          centroidLng: cLng,
-          centroidLat: cLat,
-          isClaimed: !!l.countryId,
-        };
-      }
-    );
-  }),
+      );
+    }),
 
   /**
    * Get available layer types and their metadata.
    */
-  getLayerInfo: cachedPublicProcedure.query(async ({ ctx }) => {
-    const counts = (await (ctx.db as any).mapLayer.groupBy({
-      by: ["layerType"],
-      where: { isActive: true },
-      _count: { id: true },
-    })) as Array<{ layerType: string; _count: { id: number } }>;
+  getLayerInfo: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const counts = (await (ctx.db as any).mapLayer.groupBy({
+        by: ["layerType"],
+        where: { isActive: true, realmId: await viewerRealmId(ctx, input?.realm) },
+        _count: { id: true },
+      })) as Array<{ layerType: string; _count: { id: number } }>;
 
-    const countMap = new Map(
-      counts.map((c: { layerType: string; _count: { id: number } }) => [c.layerType, c._count.id])
-    );
+      const countMap = new Map(
+        counts.map((c: { layerType: string; _count: { id: number } }) => [c.layerType, c._count.id])
+      );
 
-    return MAP_LAYER_TYPES.map((type) => ({
-      type,
-      featureCount: (countMap.get(type) as number) || 0,
-      available: ((countMap.get(type) as number) || 0) > 0,
-    }));
-  }),
+      return MAP_LAYER_TYPES.map((type) => ({
+        type,
+        featureCount: (countMap.get(type) as number) || 0,
+        available: ((countMap.get(type) as number) || 0) > 0,
+      }));
+    }),
 
   /**
    * Search map features by name (full-text search).
@@ -84,10 +93,12 @@ export const discoveryProcedures = {
         query: z.string().min(1).max(100),
         types: z.array(z.enum(["political", "city", "poi", "subdivision"])).optional(),
         limit: z.number().int().min(1).max(50).optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 20;
+      const realmId = await viewerRealmId(ctx, input.realm);
       const results: Array<{
         type: string;
         id: string;
@@ -105,6 +116,7 @@ export const discoveryProcedures = {
           where: {
             layerType: "political",
             isActive: true,
+            realmId,
             OR: [
               { displayName: { contains: input.query, mode: "insensitive" as const } },
               { featureId: { contains: input.query, mode: "insensitive" as const } },
@@ -148,6 +160,7 @@ export const discoveryProcedures = {
           where: {
             name: { contains: input.query, mode: "insensitive" as const },
             status: "approved",
+            country: { realmId },
           },
           select: {
             id: true,
@@ -177,6 +190,7 @@ export const discoveryProcedures = {
           where: {
             name: { contains: input.query, mode: "insensitive" as const },
             status: "approved",
+            country: { realmId },
           },
           select: {
             id: true,

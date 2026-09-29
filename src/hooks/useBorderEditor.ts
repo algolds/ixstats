@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { api } from "~/trpc/react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { applyBrushStroke } from "~/lib/maps/territory-brush";
 import {
   type UndoStack,
@@ -133,6 +134,8 @@ const INITIAL_STATE: BorderEditorState = {
 export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const [state, setState] = useState<BorderEditorState>(INITIAL_STATE);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Feature ids are unique only within a realm: every lookup names the realm being edited
+  const realm = useMapRealm();
 
   const startSession = api.geoEditor.startBorderEditSession.useMutation();
   const saveDraft = api.geoEditor.saveBorderEditDraft.useMutation();
@@ -195,7 +198,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     (featureId: string) => {
       setState((s) => ({ ...s, isLoading: true, error: null }));
       startSession.mutate(
-        { featureId },
+        { featureId, realm },
         {
           onSuccess: (data) => {
             const geom = data.feature.geometry as unknown as Polygon | MultiPolygon;
@@ -245,7 +248,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         }
       );
     },
-    [startSession]
+    [startSession, realm]
   );
 
   const setMode = useCallback((mode: BorderEditMode) => {
@@ -530,6 +533,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         neighborUpdates,
         applyDirectly,
         reason,
+        realm,
       });
 
       if (result.applied) {
@@ -549,7 +553,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
 
       return result;
     },
-    [state.featureId, state.geometry, state.dirtyNeighbors, submitBorderEdit, utils]
+    [state.featureId, state.geometry, state.dirtyNeighbors, submitBorderEdit, utils, realm]
   );
 
   const executeSplitAction = useCallback(
@@ -563,6 +567,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         splitLine: state.splitLine as [number, number][],
         nameA,
         nameB,
+        realm,
       });
 
       await utils.geoCore.getWorldMap.invalidate();
@@ -572,7 +577,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       await utils.geoCore.getNeighborGeometries.invalidate();
       setState(INITIAL_STATE);
     },
-    [state.featureId, state.splitLine, splitCountry, utils]
+    [state.featureId, state.splitLine, splitCountry, utils, realm]
   );
 
   const executeMergeAction = useCallback(
@@ -584,6 +589,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       await mergeCountries.mutateAsync({
         featureIds: [state.featureId, ...state.mergeTargets],
         newName,
+        realm,
       });
 
       await utils.geoCore.getWorldMap.invalidate();
@@ -593,7 +599,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       await utils.geoCore.getNeighborGeometries.invalidate();
       setState(INITIAL_STATE);
     },
-    [state.featureId, state.mergeTargets, mergeCountries, utils]
+    [state.featureId, state.mergeTargets, mergeCountries, utils, realm]
   );
 
   const reset = useCallback(() => {

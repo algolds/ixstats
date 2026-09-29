@@ -19,6 +19,10 @@ import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { clearLayerCache, extractAllPositions } from "../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
+
+/** SVG uploads carry no realm: the Quick Update commit/rollback flow reads and replaces IxWorld's layers only. */
+const SVG_REALM = { realmId: DEFAULT_REALM_ID };
 
 // ──────────────────────────────────────────────
 // Router
@@ -69,7 +73,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
 
       // Layer 1: Preserve ALL existing featureId→countryId linkages from DB
       const existingLinked = await ctx.db.mapLayer.findMany({
-        where: { layerType: upload.layerType, countryId: { not: null } },
+        where: { layerType: upload.layerType, countryId: { not: null }, ...SVG_REALM },
         select: { featureId: true, countryId: true },
       });
       const existingFeatureIds = new Set<string>();
@@ -79,7 +83,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
       }
       // Also track all existing featureIds (even unlinked) to identify truly new features
       const allExisting = await ctx.db.mapLayer.findMany({
-        where: { layerType: upload.layerType },
+        where: { layerType: upload.layerType, ...SVG_REALM },
         select: { featureId: true },
       });
       for (const e of allExisting) existingFeatureIds.add(e.featureId);
@@ -88,6 +92,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
       if (upload.layerType === "political") {
         const { matchFeaturesToCountries } = await import("~/lib/flags/svg-parser");
         const countries = await ctx.db.country.findMany({
+          where: SVG_REALM,
           select: { id: true, name: true, slug: true },
         });
 
@@ -198,7 +203,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
         async (tx) => {
           // Remove all existing records for this layer
           await tx.mapLayer.deleteMany({
-            where: { layerType: upload.layerType },
+            where: { layerType: upload.layerType, ...SVG_REALM },
           });
 
           // Bulk create all new records
@@ -214,6 +219,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
               boundingBox: r.bbox as any,
               isActive: true,
               sourceUploadId: upload.id,
+              ...SVG_REALM,
             })),
           });
 
@@ -261,8 +267,9 @@ export const geoAdminCommitsRouter = createTRPCRouter({
       try {
         await ctx.db.$executeRawUnsafe(
           `UPDATE map_layers SET "areaSqKm" = ST_Area(geom_postgis::geography) / 1000000.0
-           WHERE "layerType" = $1 AND "isActive" = true AND geom_postgis IS NOT NULL`,
-          upload.layerType
+           WHERE "layerType" = $1 AND "worldId" = $2 AND "isActive" = true AND geom_postgis IS NOT NULL`,
+          upload.layerType,
+          DEFAULT_REALM_ID
         );
       } catch (e) {
         console.warn("PostGIS area recalculation skipped:", e instanceof Error ? e.message : e);
@@ -313,7 +320,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
 
       // Load existing country linkages to preserve during rollback
       const existingLinks = await ctx.db.mapLayer.findMany({
-        where: { layerType: targetUpload.layerType, countryId: { not: null } },
+        where: { layerType: targetUpload.layerType, countryId: { not: null }, ...SVG_REALM },
         select: { featureId: true, countryId: true },
       });
       const linkageMap = new Map(existingLinks.map((l) => [l.featureId, l.countryId!]));
@@ -328,7 +335,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
       await ctx.db.$transaction(
         async (tx) => {
           await tx.mapLayer.deleteMany({
-            where: { layerType: targetUpload.layerType },
+            where: { layerType: targetUpload.layerType, ...SVG_REALM },
           });
 
           // Rebuild full records with centroid, bbox, displayName, and preserved linkages
@@ -371,6 +378,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
               boundingBox: bbox as any,
               isActive: true,
               sourceUploadId: targetUpload.id,
+              ...SVG_REALM,
             };
           });
           await tx.mapLayer.createMany({ data: rollbackRecords });

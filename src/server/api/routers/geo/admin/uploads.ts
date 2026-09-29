@@ -13,6 +13,7 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { FeatureCollection } from "geojson";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 // ──────────────────────────────────────────────
 // Router
@@ -82,7 +83,9 @@ export const geoAdminUploadsRouter = createTRPCRouter({
           { countryId: string; countryName: string; matchType: string }
         > = {};
         if (upload.layerType === "political") {
+          // SVG uploads are IxWorld's (no realm on SvgUpload): match and diff against IxWorld only
           const countries = await ctx.db.country.findMany({
+            where: { realmId: DEFAULT_REALM_ID },
             select: { id: true, name: true, slug: true },
           });
           const matches = matchFeaturesToCountries(result.features, countries);
@@ -92,7 +95,7 @@ export const geoAdminUploadsRouter = createTRPCRouter({
         // Compute diff against current DB state
         const { computeLayerDiff } = await import("~/lib/flags/svg-parser");
         const existingFeatures = await ctx.db.mapLayer.findMany({
-          where: { layerType: upload.layerType, isActive: true },
+          where: { layerType: upload.layerType, isActive: true, realmId: DEFAULT_REALM_ID },
           select: {
             featureId: true,
             displayName: true,

@@ -54,6 +54,8 @@ interface MapDynamicIslandProps {
   onProjectionChange: (mode: ProjectionMode) => void;
   onSearchResult: (result: MapSearchResult) => void;
   onOpenWelcome?: () => void;
+  /** Realm slug the map shows; search stays inside it */
+  realm?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +67,7 @@ export function MapDynamicIsland({
   onProjectionChange,
   onSearchResult,
   onOpenWelcome,
+  realm,
 }: MapDynamicIslandProps) {
   const isMobile = useIsMobile();
   const {
@@ -96,7 +99,7 @@ export function MapDynamicIsland({
     closeSearch,
     handleSelect,
     handleKeyDown,
-  } = useDynamicIslandState({ onSearchResult });
+  } = useDynamicIslandState({ onSearchResult, realm });
 
   const debouncedQueryLength = query.trim().length;
 

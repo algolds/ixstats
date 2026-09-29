@@ -8,14 +8,15 @@ export const statsProcedures = {
       const realmId = await viewerRealmId(ctx, input?.realm);
       const [totalFeatures, politicalFeatures, linkedFeatures, unlinkedFeatures] =
         await Promise.all([
-          ctx.db.mapLayer.count({ where: { isActive: true } }),
+          ctx.db.mapLayer.count({ where: { isActive: true, realmId } }),
           ctx.db.mapLayer.count({
-            where: { layerType: "political", isActive: true },
+            where: { layerType: "political", isActive: true, realmId },
           }),
           ctx.db.mapLayer.count({
             where: {
               layerType: "political",
               isActive: true,
+              realmId,
               countryId: { not: null },
             },
           }),
@@ -23,6 +24,7 @@ export const statsProcedures = {
             where: {
               layerType: "political",
               isActive: true,
+              realmId,
               countryId: null,
             },
           }),

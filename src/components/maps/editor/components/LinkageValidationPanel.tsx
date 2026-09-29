@@ -3,6 +3,7 @@
 import React from "react";
 import { Refresh as RefreshCw, MagicWand as Wand2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type {
@@ -32,8 +33,14 @@ interface LinkageValidationPanelProps {
   setFeatureFilter: (f: "all" | "linked" | "unlinked") => void;
   filteredFeatures?: LinkageFeatureItem[];
   featureList?: LinkageFeatureItem[];
-  syncMutation: { isPending: boolean; mutate: (args: { action: "sync_all" }) => void };
-  autoMatchMutation: { isPending: boolean; mutate: (args: { action: "auto_match" }) => void };
+  syncMutation: {
+    isPending: boolean;
+    mutate: (args: { action: "sync_all"; realm?: string }) => void;
+  };
+  autoMatchMutation: {
+    isPending: boolean;
+    mutate: (args: { action: "auto_match"; realm?: string }) => void;
+  };
   setActiveCountryId: (id: string | null) => void;
   setMapSelectedCountry: (country: SelectedCountry | null) => void;
 }
@@ -53,6 +60,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
   setActiveCountryId,
   setMapSelectedCountry,
 }: LinkageValidationPanelProps) {
+  const realm = useMapRealm();
   return (
     <div className="space-y-4 p-3 text-xs">
       <div className="bg-muted/10 border-border/20 flex items-center justify-between rounded-lg border p-3">
@@ -66,7 +74,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
         </div>
         <div className="flex gap-1">
           <button
-            onClick={() => syncMutation.mutate({ action: "sync_all" })}
+            onClick={() => syncMutation.mutate({ action: "sync_all", realm })}
             disabled={syncMutation.isPending}
             className="rounded bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20 active:scale-[0.98]"
             title="Sync All Linked"
@@ -74,7 +82,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
             <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
           </button>
           <button
-            onClick={() => autoMatchMutation.mutate({ action: "auto_match" })}
+            onClick={() => autoMatchMutation.mutate({ action: "auto_match", realm })}
             disabled={autoMatchMutation.isPending}
             className="rounded bg-emerald-500/10 p-1.5 text-emerald-500 transition-colors hover:bg-emerald-500/20 active:scale-[0.98]"
             title="Auto-Match by Name"

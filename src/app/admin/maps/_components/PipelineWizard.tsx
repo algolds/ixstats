@@ -318,7 +318,8 @@ function QuickUpdatePanel() {
                 Drop SVG file here or click to browse
               </p>
               <p className="text-muted-foreground mt-1 text-xs">
-                Layer type will be auto-detected from filename
+                Layer type will be auto-detected from filename. Quick Update changes IxWorld's map;
+                use Full Pipeline to import another realm's.
               </p>
             </div>
             <input
@@ -553,9 +554,12 @@ function FullPipelinePanel() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<{ imported: number } | null>(null);
+  // Realm the layers are imported into; "" = the server default, IxWorld
+  const [targetRealmId, setTargetRealmId] = useState("");
 
   const runPipeline = api.geoEditor.runPipeline.useMutation();
   const importPipeline = api.geoEditor.importPipelineResult.useMutation();
+  const { data: realms } = api.realms.adminListRealms.useQuery();
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -613,6 +617,7 @@ function FullPipelinePanel() {
       const result = await importPipeline.mutateAsync({
         layers: pipelineResult.layers as Record<string, unknown>,
         mode: "merge",
+        realmId: targetRealmId || undefined,
       });
       setImportResult(result);
       setStep("complete");
@@ -621,7 +626,7 @@ function FullPipelinePanel() {
     } finally {
       setIsProcessing(false);
     }
-  }, [pipelineResult, importPipeline]);
+  }, [pipelineResult, importPipeline, targetRealmId]);
 
   const handleReset = useCallback(() => {
     setStep("upload");
@@ -698,6 +703,21 @@ function FullPipelinePanel() {
             <p className="text-muted-foreground mb-4 text-xs">
               SVG files with Inkscape layers, or PNG maps with distinct country colors
             </p>
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <label className="text-foreground text-sm font-medium">Target realm:</label>
+              <Select value={targetRealmId} onValueChange={setTargetRealmId}>
+                <SelectTrigger className="border-border bg-muted/50 w-48">
+                  <SelectValue placeholder="IxWorld (default)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {realms?.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button asChild>
               <label className="cursor-pointer">
                 Choose File
@@ -791,7 +811,11 @@ function FullPipelinePanel() {
           <p className="text-muted-foreground text-sm">
             Ready to import{" "}
             {Object.values(pipelineResult?.metadata.featureCounts ?? {}).reduce((a, b) => a + b, 0)}{" "}
-            features into the database. This will merge with existing map data.
+            features into{" "}
+            <span className="text-foreground font-medium">
+              {realms?.find((r) => r.id === targetRealmId)?.name ?? "IxWorld"}
+            </span>
+            . This will merge with that realm's existing map data.
           </p>
           <div className="flex gap-2">
             <Button

@@ -69,12 +69,20 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
       <section className="border-border bg-card/70 rounded-2xl border p-6">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-foreground text-sm font-bold">Nations · {realm.countries.length}</h2>
-          <Link
-            href={createUrl(`/countries?realm=${encodeURIComponent(realm.slug)}`)}
-            className="text-muted-foreground hover:text-foreground text-xs font-medium"
-          >
-            View all in the directory
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={createUrl(`/maps?realm=${encodeURIComponent(realm.slug)}`)}
+              className="text-muted-foreground hover:text-foreground text-xs font-medium"
+            >
+              View map
+            </Link>
+            <Link
+              href={createUrl(`/countries?realm=${encodeURIComponent(realm.slug)}`)}
+              className="text-muted-foreground hover:text-foreground text-xs font-medium"
+            >
+              View all in the directory
+            </Link>
+          </div>
         </div>
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {realm.countries.map((c) => (

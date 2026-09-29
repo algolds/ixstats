@@ -17,14 +17,15 @@ export interface PinPosition {
   lat: number;
 }
 
-export function useMapPinInfo() {
+/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
+export function useMapPinInfo(realm?: string) {
   const [pinPosition, setPinPosition] = useState<PinPosition | null>(null);
   const [isPinToolActive, setIsPinToolActive] = useState(false);
   const [clientResult, setClientResult] = useState<ClientPointQueryResult | null>(null);
 
   // Server-side enrichment query — only fires when pin is placed
   const serverQuery = api.geoCore.getPointInfo.useQuery(
-    { lng: pinPosition?.lng ?? 0, lat: pinPosition?.lat ?? 0 },
+    { lng: pinPosition?.lng ?? 0, lat: pinPosition?.lat ?? 0, realm },
     { enabled: !!pinPosition }
   );
 

@@ -36,22 +36,25 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
 /** Decorative layers load in a deferred second request */
 const DECORATIVE_LAYERS: MapLayerType[] = [];
 
-export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number) {
+/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
+export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number, realm?: string) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
 
-  // IndexedDB cached data (loaded once on mount)
+  // IndexedDB cached data for this realm (reloaded when the realm changes)
   const [idbData, setIdbData] = useState<Record<string, unknown> | null>(null);
-  const idbLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (idbLoadedRef.current) return;
-    idbLoadedRef.current = true;
-    getCachedMapLayers().then((cached) => {
-      if (cached) setIdbData(cached);
+    let cancelled = false;
+    setIdbData(null);
+    getCachedMapLayers(realm).then((cached) => {
+      if (cached && !cancelled) setIdbData(cached);
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [realm]);
 
   // Compute zoom bucket — only re-fetches on bucket change
   const zoomBucket = useMemo(() => {
@@ -84,7 +87,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     isLoading: criticalLoading,
     error: criticalError,
   } = api.geoCore.getMapBundle.useQuery(
-    { layers: CRITICAL_LAYERS, zoom: zoomParam },
+    { layers: CRITICAL_LAYERS, zoom: zoomParam, realm },
     {
       ...MAP_QUERY_OPTIONS,
       placeholderData: (prev) =>
@@ -102,7 +105,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
   );
 
   const { data: decorativeData, isLoading: _decorativeLoading } = api.geoCore.getWorldMap.useQuery(
-    { layers: decorativeLayersToFetch }, // Exclude zoom parameter to keep cache key stable and prevent re-fetching on zoom
+    { layers: decorativeLayersToFetch, realm }, // Exclude zoom parameter to keep cache key stable and prevent re-fetching on zoom
     {
       ...MAP_QUERY_OPTIONS,
       // Don't block the map from rendering — load in background
@@ -127,15 +130,15 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     return Object.keys(merged).length > 0 ? merged : null;
   }, [idbData, criticalBundle?.worldMap, decorativeData]);
 
-  // Persist to IndexedDB when both phases are loaded
+  // Persist to IndexedDB (under this realm's key) when both phases are loaded
   const persistedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!mergedWorldMap) return;
-    const keys = Object.keys(mergedWorldMap).sort().join(",");
-    if (persistedRef.current === keys) return;
-    persistedRef.current = keys;
-    setCachedMapLayers(mergedWorldMap);
-  }, [mergedWorldMap]);
+    const marker = `${realm ?? ""}|${Object.keys(mergedWorldMap).sort().join(",")}`;
+    if (persistedRef.current === marker) return;
+    persistedRef.current = marker;
+    setCachedMapLayers(mergedWorldMap, realm);
+  }, [mergedWorldMap, realm]);
 
   const isLoading = criticalLoading && !mergedWorldMap;
 

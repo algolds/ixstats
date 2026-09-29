@@ -16,6 +16,7 @@
  *   ?layers=political,POIs — comma-separated initial layers
  *   ?embed=true            — chromeless mode for iframe embedding (no nav, no controls)
  *   ?controls=true         — force-show zoom/layer controls even in embed mode
+ *   ?realm=<slug>          — show that realm's map (default: the viewer's active nation's realm, else IxWorld)
  *
  * When running on maps.ixwiki.com, renders full-screen (standalone mode).
  */
@@ -76,6 +77,9 @@ export default function WorldMapPage() {
   // --- Embed with controls override ---
   const embedControls = searchParams.get("controls") === "true";
 
+  // --- Realm: whose map this is (ruling E-h) ---
+  const realm = searchParams.get("realm") || undefined;
+
   const [, setSelectedCountry] = useState<SelectedCountry | null>(null);
 
   const handleCountrySelect = useCallback((country: SelectedCountry | null) => {
@@ -97,6 +101,7 @@ export default function WorldMapPage() {
         initialCenter={initialCenter}
         initialZoom={initialZoom}
         initialLayers={initialLayers}
+        realm={realm}
       />
     </div>
   );

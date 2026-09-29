@@ -13,8 +13,9 @@
  */
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { mergeBordersAsOf } from "~/lib/maps/border-history-asof";
-import { loadLayerFromDB, loadGeoJSONFromFile } from "./layer-loader";
+import { loadLayerWithFallback } from "./layer-loader";
 import { getZoomBucket } from "./cache";
 import { IxTime } from "~/lib/ixtime";
 
@@ -28,15 +29,18 @@ export const borderHistoryProcedures = {
       z.object({
         ixTime: z.number(),
         zoom: z.number().min(0).max(20).optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       const asOf = new Date(input.ixTime);
 
-      const zoomBucket = getZoomBucket(input.zoom);
-      const politicalFC =
-        (await loadLayerFromDB(ctx.db, "political", zoomBucket)) ??
-        (await loadGeoJSONFromFile("political").catch(() => null));
+      const politicalFC = await loadLayerWithFallback(
+        ctx.db,
+        "political",
+        getZoomBucket(input.zoom),
+        await viewerRealmId(ctx, input.realm)
+      );
 
       if (!politicalFC) {
         return { type: "FeatureCollection" as const, features: [] };
