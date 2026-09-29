@@ -39,10 +39,10 @@ live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurt
 | 10–11 | Image maps | Auto-vectorised by the IxMap pipeline (`runMapPipeline`: PNG → potrace → SVG → GeoJSON); the admin runs `PipelineWizard` at approval and maps colours → nations. Founders supply a clean flat-colour political PNG |
 | 12 | Membership | Owning a nation in a realm = membership. Founder = `Realm.ownerId`; no other roles yet |
 | 13–14 | Claims | Claim anything that already exists (nation page, territory, existing country); create new nations freely. Founder (site admins for IxWorld) approves; **auto-approved** when the claimant is the verified creator of the nation's wiki page. Wiki accounts are verified by a token on the user page (ixwiki, iiwiki, althistory) |
-| 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) |
+| 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) — today site admins set it in `/admin/realms` (1–20); founder tooling is planned |
 | 16 | Vault income | Only the active nation pays |
 | 17 | Simulation | Identical in every realm |
-| 18 | Time | One shared IxTime clock; per-realm calendar label via `Realm.settings.yearOffset` (display only) |
+| 18 | Time | One shared IxTime clock; per-realm calendar label (display only) — not implemented yet (planned) |
 | 19 | Visibility | `public` or `unlisted` only — never private |
 | 20 | Founder powers | Settings, claim queue, remove nations (data kept → claimable; appeal to site admin), moderate their realm's WikiOS articles and feed posts. One check: `canModerateRealm(user, realmId)` = site admin ∨ `realm.ownerId === user.id` |
 | 21 | Lifecycle | Automatic founder succession (60 days unseen → earliest active nation owner; admin override); archived realms are read-only, excluded from crons and payouts |
@@ -63,31 +63,44 @@ Clerk Organizations as realms.
   from dev through the production proxy (`IIWIKI_DEV_PROXY_URL=https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php`).
 - Hand-drawn / textured maps will vectorise poorly; flat-colour political PNGs are required.
 
-## Status (2026-09-28)
+## Status (2026-09-29)
 
-Phase 1 (foundation, `.superpowers/sdd/2026-09-27-realms-foundation`) and the Eurth slice
-(`.superpowers/sdd/2026-09-28-realms-eurth`) are both complete on `realms-foundation`. Runbook:
+Both plans are implemented on `realms-foundation`; the ledgers (`.superpowers/sdd/2026-09-27-realms-foundation`,
+`.superpowers/sdd/2026-09-28-realms-eurth`) record where each task stands. Runbook:
 [`docs/realms/eurth-onboarding.md`](../realms/eurth-onboarding.md).
 
-**Shipped — Phase 1 (tasks 1–8):**
+- **Complete (reviewed clean):** Phase 1 tasks 1–8; Eurth tasks E1, E2, E3, E5 and E6.
+- **E4 (realm-scoped maps):** its review asked for two fixes, which landed in `a4b8a5fb` — the map's
+  IndexedDB cache now holds the realm the server resolved (an Eurth viewer can no longer be shown a cached
+  IxWorld map), and the cross-realm link guard now also covers `updateFeatureProperties` and
+  `repairLinkage`'s `link_by_name`, not only `assignCountryGeometry`. Its re-review was still pending when
+  this was written.
+- **E7 (this runbook and status):** in fix round 1, which also carries the final-wave code items (ruling
+  E-t, listed below).
+- **Still owed before merge:** the final typecheck gates (baseline 0/0/0/0) and one whole-branch review
+  (Phase 1 ruling 21).
+
+**Implemented — Phase 1 (tasks 1–8):**
 
 - Schema: `Realm`, `RealmClaim`, `WikiAccountLink` models; `Country.ownerUserId`/`realmId`;
   `User.lastSeenAt` (T1).
 - Wiki account verification — a token pasted on the player's own wiki user page proves control of an
   ixwiki/iiwiki/althistory account; the verified-link write is an admin-only path, separate from
   self-service linking (T2).
-- Per-realm nation ownership with a per-user cap (`Realm.settings.maxNationsPerUser`, default 1); a
-  system owner *acting as* a nation is no longer treated as its real owner for notifications, crons, or
-  auctions (T3, T5).
+- Per-realm nation ownership with a per-user cap (`Realm.settings.maxNationsPerUser`, default 1; site
+  admins set it in `/admin/realms` → Realms → edit → Nations per player, 1–20); a system owner *acting as*
+  a nation is no longer treated as its real owner for notifications, crons, or auctions (T3, T5).
 - `MapLayer` realm scaffolding and admin nation-assignment tooling (T4, T5).
 - `scripts/realms/backfill-foundation.ts` — one-shot data backfill for owners, the IxWorld slug,
-  unverified wiki links, visibility, and orphaned map layers (T8).
+  unverified wiki links, visibility, and orphaned map layers; it checks the IxWorld realm row before any
+  write and skips the map-layer move (reporting the ids) when NULL-realm rows clash with IxWorld's or with
+  each other (T8, E4, E-t).
 - Nation claim flow (`/r/eurth`-style `claimCountry`) with instant approval for the verified creator of
   the claimed page, and an `/admin/realms` → Claims review queue for everyone else (T6).
 - Settings UI to link and verify wiki accounts (`WikiAccountVerifyRow`, Settings → IxnayID & Passport →
   Linked Accounts) (T7).
 
-**Shipped — Eurth slice, first realm outside IxWorld (tasks E1–E7):**
+**Implemented — Eurth slice, first realm outside IxWorld (tasks E1–E7; status above):**
 
 - `RealmPage` model indexing a realm's lore (titles only, never content) (E1).
 - `DEFAULT_REALM_ID` and realm-scope query helpers; viewer-realm resolution (`?realm=` → active nation →
@@ -98,13 +111,22 @@ Phase 1 (foundation, `.superpowers/sdd/2026-09-27-realms-foundation`) and the Eu
 - Claims extended to lore/nation pages (claiming creates the `Country`); WikiOS read-only rendering for
   non-ixwiki sources end-to-end — links, Halo, Watch, the edit route, and recent/paused sessions all carry
   the page's `?source=` (E6).
-- Country-facing queries and caches made realm-correct (name lookups resolve within one realm; admin tools
-  opt into every realm via `realm: "*"`; IxWorld's cache keys are unaffected) (E3).
-- Map layers and the pipeline wizard are realm-scoped; the map editor's realm follows the map it's drawn
-  over, not a hardcoded IxWorld default (E4).
+- Country-facing queries and caches made realm-correct (name lookups resolve within one realm; a nation
+  name a player types — block, mute — is looked up in their own realm before any slug; admin tools and the
+  admin flag warmers opt into every realm via `realm: "*"`; IxWorld's cache keys are unaffected) (E3, E-s).
+- Map layers and the pipeline wizard are realm-scoped: the **Full Pipeline** mode imports into a chosen
+  target realm and refuses an unknown one, while **Quick Update** always edits IxWorld's map. The world
+  editor's realm follows the map it's drawn over; the country editor always works in the realm of the
+  viewer's own nation, even when opened from another realm's map (E4, E-t).
 - This runbook, `docs/realms/eurth-onboarding.md` (E7).
 
-**Rulings (E-a..E-r):** E-a–E-j are the Eurth design spec's binding decisions
+**Not implemented yet (planned):** the per-realm calendar label (decision 18), founder tooling (settings
+such as the nation cap, moderation, removal, succession), the public founding application, a per-realm
+ThinkPages feed, the passport realm/nation switcher, and PNG input in the pipeline wizard (the Full
+Pipeline takes SVG only; linking features to nations is done afterwards in the world editor's Links tab,
+not by colour in the wizard).
+
+**Rulings (E-a..E-t):** E-a–E-j are the Eurth design spec's binding decisions
 (`docs/superpowers/specs/2026-09-28-realms-eurth-design.md`) — index lore rather than copy it (E-a), a
 5,000-page crawl cap for this slice (E-b), follow only keyword subcategories (E-c), infobox-based nation
 detection (E-d), a script-based one-time import (E-e), claiming creates the `Country` (E-f), a
@@ -119,4 +141,9 @@ rankings scope by that country's own realm, not the viewer's (E-n); admin tools 
 every realm (E-o); name-based country lookups across ~8 call sites are made deterministic and
 realm-correct (E-p); cache keys omit the realm segment for the default realm, preserving IxWorld's cache
 sharing (E-q); the map editor's realm is the realm of the map being edited, not a fixed IxWorld default
-(E-r).
+(E-r); a nation name a player types (block, mute) resolves by name within the viewer's realm first, then
+by slug — IxWorld holds the plain slugs — while URL/id lookups keep id → slug → name (E-s); and the E7
+fix round carries the remaining final-wave code items so the docs describe the final code — E-s, the
+`CountryData:` placeholder realm check, procedure-level `realmWhere` tests, all-realm admin flag warmers,
+the admin nation-cap setting, the backfill preflight and duplicate report, the unknown-realm import guard,
+and the country editor's realm (E-t).

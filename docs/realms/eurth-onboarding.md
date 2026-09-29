@@ -43,32 +43,44 @@ running this against prod.
 bun scripts/realms/backfill-foundation.ts
 ```
 
-Read all four sections of the output before doing anything else:
+Before it reads anything else, the script checks that the IxWorld realm row (`id = "default"`) exists; if
+it doesn't, it stops with `realms row id="default" (IxWorld) is missing — …` and exits non-zero **before
+writing anything** (with or without `--apply`). Create that row first — `Country.realmId` depends on it.
 
-1. **Owners** — `Country.ownerUserId` derived from `User.countryId`. Any `COLLISION <countryId>: users
-   <id>, <id>` line means two-plus users point at the same country — the script will **not** guess; you
-   must resolve it by hand (pick the real owner and null out the others' `User.countryId`, or reassign
-   them) before applying.
-2. **IxWorld realm slug** — reports `default → ixworld`.
-3. **Wiki links** — counts legacy `User.wikiUsername` rows that will become **unverified** `ixwiki`
-   `WikiAccountLink` rows (players re-verify later from Settings).
-4. **Visibility** — counts `private` realms that will flip to `unlisted` (private is no longer a valid
-   value).
-5. **Map layers** — `map layers with no realm → IxWorld: N (M clash with an IxWorld feature)`. Compare `N`
-   to your 1.1 baseline. If `M > 0`, `--apply` will **skip this step** and print `SKIPPED — resolve the
-   clashing rows by hand` — deactivate or delete the NULL-realm duplicates that collide with an existing
-   IxWorld `(layerType, featureId)` pair, then re-run the dry run until `M = 0`.
+The first line is `DRY RUN — pass --apply to write`. Read all five sections that follow before doing
+anything else:
+
+1. **Owners** — `owners: <n> to assign, <n> collisions`: `Country.ownerUserId` derived from
+   `User.countryId`. Any `  COLLISION <countryId>: users <id>, <id> — resolve by hand` line means two-plus
+   users point at the same country — the script will **not** guess; you must resolve it by hand (pick the
+   real owner and null out the others' `User.countryId`, or reassign them) before applying.
+2. **IxWorld realm slug** — `IxWorld slug: default → ixworld` (the current slug, then the new one).
+3. **Wiki links** — `ixwiki links to record (unverified): <n>`: legacy `User.wikiUsername` rows that
+   will become **unverified** `ixwiki` `WikiAccountLink` rows (players re-verify later from Settings).
+4. **Visibility** — `private realms → unlisted: <n>`: `private` realms that will flip to `unlisted`
+   (private is no longer a valid value).
+5. **Map layers** — `map layers with no realm → IxWorld: N (M clash with an IxWorld feature, D keys held
+   by more than one of them)`, then one `  DUPLICATE <layerType>/<featureId>: <id>, <id>` line per
+   duplicated key. Compare `N` to your 1.1 baseline. `M` counts NULL-realm rows whose
+   `(layerType, featureId)` IxWorld already has; `D` counts keys shared by two or more NULL-realm rows.
+   Either would break the realm-scoped unique key, so if `M > 0` or `D > 0`, `--apply` **skips this step**
+   (no rows are moved) and prints `  SKIPPED — resolve the clashing/duplicate rows by hand (deactivate or
+   delete the NULL duplicates), then re-run`. Deactivate or delete the offending NULL-realm rows (the
+   `DUPLICATE` lines list their ids), then re-run the dry run until `M = 0` and `D = 0`.
 
 ### 1.4 Resolve collisions, then apply
 
-Once owner collisions are resolved and map-layer clashes are `0`:
+Once owner collisions are resolved and map-layer clashes and duplicates are both `0`:
 
 ```bash
 bun scripts/realms/backfill-foundation.ts --apply
 ```
 
-Re-run the dry run afterward (omit `--apply`) as a sanity check — it should report `0` outstanding
-collisions, clashes, and orphaned map layers.
+Re-run the dry run afterward (omit `--apply`) as a sanity check — it should report
+`owners: 0 to assign, 0 collisions`, `IxWorld slug: ixworld → ixworld`, `private realms → unlisted: 0` and
+`map layers with no realm → IxWorld: 0 (0 clash with an IxWorld feature, 0 keys held by more than one of
+them)`. The wiki-link count stays above `0` only for users whose legacy username duplicated another's
+(`--apply` printed a `  skip <userId>: …` line for each; they re-verify from Settings).
 
 ### 1.5 Deploy the code
 
@@ -121,12 +133,19 @@ bun scripts/realms/import-realm-lore.ts \
   --nation-roster "Category:Countries (Eurth)"
 ```
 
-Check the printed counts before applying. A live dry run on 2026-09-28 crawled in ~25s and reported:
+Check the printed counts before applying. The output has this shape (placeholders in `<>`):
 
 ```
-pages 2,746 (crawled 2,746), nations 100, categories 49, truncated no
+DRY RUN — pass --apply to write
+realm Eurth (<realm id>) ← iiwiki
+pages <P> (crawled <C>), nations <N>, categories <K>, truncated no
 nation method: roster Category:Countries (Eurth)
+  nation: <first 20 nation titles, A–Z, one per line>
 ```
+
+Live read-only checks on 2026-09-28 found `C` = 2746 crawled pages in `K` = 49 categories, not truncated,
+in about 25 s, and `N` = 100 roster nations. `P` can be a little higher than `C`: roster nation titles the
+crawl missed are added to the index.
 
 If `truncated yes` appears, the crawl hit the 5,000-page / depth-5 cap — that would be unusual for Eurth;
 investigate before applying (a runaway category, not expected here).
@@ -136,7 +155,8 @@ roster outright (retired nations aren't claimable).
 
 ### 3.2 Apply
 
-Same command, plus `--apply`:
+Same command, plus `--apply` (it prints the same lines, then `written: <n> new rows, <n> → nation, <n> →
+lore`):
 
 ```bash
 bun scripts/realms/import-realm-lore.ts \
@@ -166,9 +186,9 @@ Tell players, in order:
      the country is created in Eurth and assigned to you.
    - Otherwise the claim goes to **pending**; a site admin reviews it in `/admin/realms` → **Claims**.
 
-Default cap is **one nation per player per realm**. Raising it (`Realm.settings.maxNationsPerUser`, 1–20)
-has no admin UI yet — it takes a direct `Realm.settings` JSON edit in the database; there is no supported
-way to do it from `/admin/realms` today.
+Default cap is **one nation per player per realm**. A site admin can raise it (1–20) in `/admin/realms` →
+**Realms** tab → the realm's pencil (edit) button → **Nations per player** → the check (save) button. It is
+stored as `Realm.settings.maxNationsPerUser`; other keys in `Realm.settings` are kept.
 
 Eurth's lore reads live inside WikiOS at `/wiki/<Title>?source=iiwiki` (read-only — edit/history/talk
 links point at iiwiki, not IxStats). The realm hub (`/r/eurth`) links to the lore portal, the country
@@ -180,10 +200,23 @@ directory (`/countries?realm=eurth`), and the map (`/maps?realm=eurth`).
 
 Without this, `/maps?realm=eurth` is empty — **expected**, not a bug, until you do this step.
 
-1. Obtain a **flat-colour political PNG** of Eurth: one solid colour per nation, equirectangular
+> **Warning — don't use Quick Update for Eurth.** The Import Pipeline tab opens in **Quick Update** mode,
+> and Quick Update always writes **IxWorld's** map — an Eurth SVG applied there replaces that layer of
+> IxWorld's map. Only **Full Pipeline** has a **Target realm** setting.
+
+1. Obtain a **flat-colour political map** of Eurth: one solid colour per nation, equirectangular
    projection. Hand-drawn or textured maps vectorise poorly — it must be flat colour.
-2. `/admin/maps` → **Pipeline wizard** → set **Target realm** to `Eurth` → upload the PNG → step through
-   detection/preview/import, mapping each detected colour to the matching Eurth nation.
+2. Convert it to **SVG** first. The Full Pipeline refuses a PNG/JPG ("PNG files must first be converted to
+   SVG"), so trace the PNG outside IxStats (for example Inkscape's Trace Bitmap) into one closed path per
+   nation. Giving each nation's path an `id` equal to the nation's name lets step 4's Auto-Match pair them.
+3. `/admin/maps` → **Import Pipeline** tab → switch from **Quick Update** to **Full Pipeline** → set
+   **Target realm** to `Eurth` → **Choose File** (the SVG) → **Run Pipeline** → check the feature counts
+   and any warnings/validation errors → **Proceed to Import** → check that the confirmation reads "Ready to
+   import … features into **Eurth**" → **Import to Database**. The import merges into Eurth's map only; an
+   unknown target realm is refused.
+4. Link features to nations: open the world editor on Eurth's map (`/admin/maps/editor?realm=eurth`) →
+   **Links** tab → **Auto-Match by Name**, then link any leftovers by hand. Only nations that have been
+   **claimed** exist as countries, so re-run the auto-match as more Eurth nations are claimed.
 
 Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 (`(realmId, layerType, featureId)`), so nothing you draw here touches IxWorld's map or vice versa.
@@ -200,9 +233,11 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
   presets). If Eurth wants caps enforced, that's a future feature, not a config flag today.
 - **No founder account yet.** The realm's `ownerId` is `"system"` until an Eurth admin is handed the
   realm; until then, site admins are the only ones who can act on Eurth's claims.
-- **Not shipped yet** (later phases, don't promise these): a public founding application form, a
-  per-realm calendar label (`yearOffset` is stored but not surfaced), founder moderation/removal/
-  succession tooling, a per-realm ThinkPages feed, and the passport realm/nation switcher.
+- **Not shipped yet** (later phases, don't promise these): a public founding application form, the
+  per-realm calendar label (not implemented yet — planned), founder moderation/removal/succession tooling
+  (including a founder raising their own realm's nation cap — today only site admins can, in
+  `/admin/realms`), a per-realm ThinkPages feed, the passport realm/nation switcher, and PNG upload in the
+  map pipeline (convert to SVG first, step 5).
 
 ---
 
@@ -210,8 +245,9 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 
 | Need to… | Do this |
 |---|---|
-| Check for unresolved owner collisions or map-layer clashes | Re-run `bun scripts/realms/backfill-foundation.ts` (no `--apply`) |
+| Check for unresolved owner collisions or map-layer clashes/duplicates | Re-run `bun scripts/realms/backfill-foundation.ts` (no `--apply`) |
 | Re-import Eurth's lore after iiwiki changes | Re-run the step 3 command with `--apply` (safe, but see the re-run caveat in 3.2) |
-| See Eurth's realm row / edit name, description, visibility, status | `/admin/realms` → Realms tab |
+| See Eurth's realm row / edit name, description, visibility, status, nations per player | `/admin/realms` → Realms tab → pencil |
+| Import or update Eurth's map | `/admin/maps` → Import Pipeline → **Full Pipeline** → Target realm `Eurth` (never Quick Update) |
 | Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab |
 | See who owns what in Eurth | `/admin/realms` → User Access tab, or `/countries?realm=eurth` |
