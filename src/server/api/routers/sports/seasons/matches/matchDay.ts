@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
 import { transitionToNextStage } from "~/lib/sports";
 import type { EventTraceStep } from "~/lib/sports/types";
 import type { MatchDayResultLine } from "~/lib/sports/feed-bulletins";
@@ -85,6 +86,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
         if (!season) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
         }
+        assertCanManageLeague(ctx, season.league);
 
         const activeStage = season.activeStage;
 
@@ -208,6 +210,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
         if (!match) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
         }
+        assertCanManageLeague(ctx, match.season.league);
 
         if (match.status === "completed") {
           return {

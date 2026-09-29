@@ -132,11 +132,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 ## Known blockers on `rose-garden`
 
-- **CI `test:ci` fails:** three suites need git-ignored files (`next.config.js`, `public/icons/game-icons-manifest.json`, `public/data/vector-seeds/`) that CI runners don't have.
-- **CI `audit:arch` fails:** 15 source files are over their line ceiling (largest: `routers/wikios/templates.ts`, 1,298 lines).
-  Split them or add them to `RELAXED_FILES`.
-- **Security findings from the audit, not yet fixed:**
-  - `achievements.unlock` lets any signed-in user unlock any achievement for any `userId`.
-  - `onoma.getKokoroAdminConfig` returns the Kokoro API key to the client (`routers/onoma/speech.ts:77`).
-  - Sports simulation procedures (`simulateMatchDay`, `startSeason`, `simulateFullSeason`, `transitionToNextSeason`) have no server-side league-ownership check.
-  - A Postgres password for `ixstats_readonly` is hard-coded in `scripts/refresh-local-db.sh` and in git history; rotate it (plan 325).
+- **`audit:arch` (non-blocking in CI) reports 15 source files over their line ceiling** (largest:
+  `routers/wikios/templates.ts`, 1,298 lines). Split them or add them to `RELAXED_FILES`.
+- **Rotate the `ixstats_readonly` Postgres password** (plan 325): the old one is in git history since 2026-05-31.
+  The script no longer contains it.

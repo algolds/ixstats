@@ -176,8 +176,8 @@ async function handleTts(request: NextRequest) {
       defaultSpeedVal != null && defaultSpeedVal !== "" ? Number(defaultSpeedVal) : 1.0;
     // Phoneme-native engine + its base URL. kokoro-fastapi is primary; kokoro-web
     // (the re-spelling path) stays as fallback so the swap is rollback-safe.
-    const engine = parseEngine(map.get("onoma.kokoro.engine"));
-    const fastApiUrl = map.get("onoma.kokoro.fastApiUrl") || "";
+    let engine = parseEngine(map.get("onoma.kokoro.engine"));
+    let fastApiUrl = map.get("onoma.kokoro.fastApiUrl") || "";
 
     // Per-culture voice assignments (JSON in systemConfig).
     let voiceMap: Record<string, string> = {};
@@ -218,10 +218,13 @@ async function handleTts(request: NextRequest) {
         if (body.stripStress !== undefined) stripStress = Boolean(body.stripStress);
         if (body.prosody !== undefined) prosody = body.prosody;
 
-        // Allow overrides for baseUrl and apiKey only if Admin
+        // Allow overrides of the engine settings only if Admin (the admin panel's unsaved values)
         if (isAdmin) {
+          if (body.engine) engine = parseEngine(body.engine);
+          if (body.fastApiUrl) fastApiUrl = body.fastApiUrl;
           if (body.baseUrl) baseUrl = body.baseUrl;
-          if (body.apiKey !== undefined) apiKey = body.apiKey;
+          // An empty key means "use the saved one" (the admin form never holds it).
+          if (body.apiKey) apiKey = body.apiKey;
           // In test mode we bypass the "enabled" switch
           enabled = true;
         }

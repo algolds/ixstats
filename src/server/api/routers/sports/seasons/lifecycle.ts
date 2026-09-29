@@ -8,6 +8,10 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import {
+  assertCanManageLeague,
+  viewerCanManageLeague,
+} from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
 import {
   generateSchedule,
@@ -65,6 +69,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         if (!league) {
           throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
         }
+        assertCanManageLeague(ctx, league);
 
         if (league.teams.length === 0) {
           throw new TRPCError({
@@ -313,6 +318,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
                     name: true,
                     sportPreset: true,
                     archetype: true,
+                    createdByUserId: true,
                   },
                 },
               },
@@ -412,6 +418,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
 
         return {
           ...match,
+          viewerCanManage: viewerCanManageLeague(ctx, match.season.league),
           playerStats,
           evaluation: stats?.evaluation ?? null,
           trace: stats?.trace ?? null,
@@ -429,6 +436,15 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
   transitionToNextSeason: protectedProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const season = await ctx.db.sportSeason.findUnique({
+        where: { id: input.seasonId },
+        select: { league: { select: { createdByUserId: true } } },
+      });
+      if (!season) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
+      }
+      assertCanManageLeague(ctx, season.league);
+
       try {
         const result = await transitionSeasonAction(ctx.db as any, input.seasonId);
         return result;

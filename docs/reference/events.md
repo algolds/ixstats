@@ -80,7 +80,7 @@ Manual scripts under `scripts/`:
 ## Event Producers
 - **ThinkShare messages** – `messages` router (`messaging.ts`, `conversations.ts`, `participants.ts`) → `getThinkPagesBroadcaster().broadcastMessage()`
 - **Marketplace auctions** – `src/lib/economy/auction-service.ts` (card-market router and `auction-completion` job) → Market WS broadcasts
-- **Achievements** – `achievements.unlock` mutation (awards 5 credits on first unlock); collector achievements resync via `syncMyCollectorAchievements`
+- **Achievements** – `achievements.unlock` admin mutation (awards 5 credits on first unlock); collector achievements resync via `syncMyCollectorAchievements`
 - **Cron jobs** – economy, politics, diplomacy, national-issue and wiki jobs listed above
 
 ## Consumers

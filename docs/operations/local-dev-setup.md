@@ -182,7 +182,7 @@ To inspect production data securely without making modifications:
    DATABASE_READONLY="true"
    DATABASE_URL="postgresql://ixstats_readonly:PASSWORD@localhost:5433/ixstats"
    ```
-2. Create the `ixstats_readonly` login role inside your local docker container (`./scripts/refresh-local-db.sh` also creates it if it is missing). Use the password from your `.env.local.dev`; never paste it into docs:
+2. Create the `ixstats_readonly` login role inside your local docker container (`./scripts/refresh-local-db.sh` also creates it if it is missing — with login only when `IXSTATS_READONLY_PASSWORD` is set, e.g. `IXSTATS_READONLY_PASSWORD='…' ./scripts/refresh-local-db.sh`). Use the password from your `.env.local.dev`; never paste it into docs:
    ```bash
    docker exec -it ixstats-postgres psql -U postgres -d ixstats -c "CREATE ROLE ixstats_readonly WITH LOGIN PASSWORD '<password from .env.local.dev>';"
    ```

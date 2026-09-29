@@ -584,6 +584,7 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
         league: {
           sportPreset: "soccer",
           archetype: "league",
+          createdByUserId: "test-manager-id",
         },
       });
 

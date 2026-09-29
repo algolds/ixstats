@@ -79,6 +79,8 @@ export function MatchCenter({
   });
 
   const isCompleted = match?.status === "completed";
+  // The server decides with the same rule it enforces (sports/league-access.ts).
+  const canSimulate = Boolean(match?.viewerCanManage);
 
   // Derive COMPETE State Machine status
   const competeStatus: CompeteStatus = isSimulatingState || simulateMutation.isPending
@@ -88,7 +90,7 @@ export function MatchCenter({
       : "READY";
 
   const handleSimulate = useCallback(() => {
-    if (isCompleted || isSimulatingState || simulateMutation.isPending) return;
+    if (!canSimulate || isCompleted || isSimulatingState || simulateMutation.isPending) return;
 
     soundEffects.press();
     setIsSimulatingState(true);
@@ -100,13 +102,14 @@ export function MatchCenter({
     } else {
       simulateMutation.mutate({ matchId });
     }
-  }, [isCompleted, isSimulatingState, simulateMutation, simulationSpeed, matchId]);
+  }, [canSimulate, isCompleted, isSimulatingState, simulateMutation, simulationSpeed, matchId]);
 
   // Spacebar trigger for Simulate
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e.code === "Space" &&
+        canSimulate &&
         competeStatus === "READY" &&
         !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
       ) {
@@ -116,7 +119,7 @@ export function MatchCenter({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [competeStatus, handleSimulate]);
+  }, [canSimulate, competeStatus, handleSimulate]);
 
   const effectiveSportPreset =
     sportPreset || (match as any)?.season?.league?.sportPreset || "soccer";
@@ -222,7 +225,7 @@ export function MatchCenter({
 
         {/* Speed Controls & Simulate Action */}
         <div className="flex items-center gap-2">
-          {!isCompleted && (
+          {!isCompleted && canSimulate && (
             <>
               <div className="flex items-center rounded-xl border border-border/40 bg-muted/20 p-0.5 text-xs font-bold">
                 <button

@@ -20,11 +20,28 @@ import type {
 import { makeRng } from "~/lib/worldgen/rng";
 import { ELEVATION_ZONES } from "~/lib/maps/elevation-config";
 
-// Load vector seed datasets (bundled statically)
-import CONTINENTS_SEED from "../../../../public/data/vector-seeds/continents.json";
-import ELEVATION_SEED from "../../../../public/data/vector-seeds/elevation-contours.json";
-import RIVERS_SEED from "../../../../public/data/vector-seeds/rivers.json";
-import LAKES_SEED from "../../../../public/data/vector-seeds/lakes.json";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+
+/**
+ * Vector seed datasets live in `public/data/vector-seeds/`, which is git-ignored (deployed
+ * alongside the other static map assets). They are read at call time so the module still
+ * loads and typechecks where the files are absent (CI, fresh clones); a missing seed file
+ * yields an empty collection.
+ */
+export const VECTOR_SEED_DIR = path.join(process.cwd(), "public", "data", "vector-seeds");
+
+export function vectorSeedsAvailable(): boolean {
+  return ["continents", "elevation-contours", "rivers", "lakes"].every((name) =>
+    existsSync(path.join(VECTOR_SEED_DIR, `${name}.json`))
+  );
+}
+
+function loadVectorSeed(name: string): FeatureCollection {
+  const file = path.join(VECTOR_SEED_DIR, `${name}.json`);
+  if (!existsSync(file)) return { type: "FeatureCollection", features: [] };
+  return JSON.parse(readFileSync(file, "utf8")) as FeatureCollection;
+}
 
 function round4(val: number): number {
   return Math.round(val * 10000) / 10000;
@@ -129,6 +146,10 @@ export interface HybridVectorWorld {
 export function synthesizeHybridVectorWorld(seed: number): HybridVectorWorld {
   // oxlint-disable-next-line typescript/no-unused-vars
   const rng = makeRng(seed);
+  const CONTINENTS_SEED = loadVectorSeed("continents");
+  const ELEVATION_SEED = loadVectorSeed("elevation-contours");
+  const RIVERS_SEED = loadVectorSeed("rivers");
+  const LAKES_SEED = loadVectorSeed("lakes");
 
   // 1. Synthesize background (landmass)
   const bgFeatures: Feature[] = (CONTINENTS_SEED as FeatureCollection).features.map(

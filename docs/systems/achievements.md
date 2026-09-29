@@ -77,7 +77,7 @@ sequenceDiagram
 
 - **Ribbons** (user-bound OOC honors, pinned signature shelf, `?tab=ribbons`) from the [2026-08-10 spec](../specs/2026-08-10-achievements-ribbons-design.md) are not implemented; `FloatingRibbonRack` shows static defaults.
 - Achievements unlock only when the owner visits `/achievements`; there is no background evaluation.
-- `achievements.unlock` is a `protectedProcedure` that accepts an arbitrary `userId` and achievement key.
+- `achievements.unlock` (grant a specific achievement to any `userId`) is admin-only; the app itself has no caller.
 
 ---
 

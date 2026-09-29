@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsManagementRouter = createTRPCRouter({
@@ -17,8 +17,9 @@ export const achievementsManagementRouter = createTRPCRouter({
     return { success: true, unlocked };
   }),
 
-  // Unlock achievement (internal use & backward compatibility)
-  unlock: protectedProcedure
+  // Admin: grant a specific achievement to a user. Admin-only because it takes an
+  // arbitrary userId and pays the achievement's reward.
+  unlock: adminProcedure
     .input(
       z.object({
         userId: z.string(),

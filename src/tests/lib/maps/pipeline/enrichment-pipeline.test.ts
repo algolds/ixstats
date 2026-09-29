@@ -73,7 +73,10 @@ import {
   evaluateWorldAccuracy,
   auditWorldGenerationBatch,
 } from "~/lib/maps/pipeline/accuracy-normalizer";
-import { synthesizeHybridVectorWorld } from "~/lib/maps/pipeline/vector-synthesis";
+import {
+  synthesizeHybridVectorWorld,
+  vectorSeedsAvailable,
+} from "~/lib/maps/pipeline/vector-synthesis";
 import { auditGeographicalAccuracy } from "~/lib/maps/pipeline/geographical-accuracy-analyzer";
 
 describe("accuracy-normalizer", () => {
@@ -122,7 +125,10 @@ describe("azgaar-normalizer", () => {
   });
 });
 
-describe("Vector Synthesis Engine", () => {
+// The seed datasets are git-ignored deployment assets; without them there is nothing to synthesize.
+const describeWithSeeds = vectorSeedsAvailable() ? describe : describe.skip;
+
+describeWithSeeds("Vector Synthesis Engine", () => {
   it("synthesizes valid RFC 7946 GeoJSON collections across random seeds", () => {
     const world = synthesizeHybridVectorWorld(12345);
 
