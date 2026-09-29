@@ -269,7 +269,7 @@ model MapLayer {
 
   country      Country?                 @relation("CountryMapFeatures", fields: [countryId], references: [id], onDelete: SetNull)
 
-  @@unique([layerType, featureId])
+  @@unique([realmId, layerType, featureId])
   @@index([layerType, isActive])
   @@index([countryId])
   @@index([realmId])
@@ -516,6 +516,7 @@ model Realm {
   generationParams Json?       // WorldGenParams snapshot
   countries       Country[]        @relation("RealmCountries")
   claims          RealmClaim[]
+  pages           RealmPage[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -764,5 +765,21 @@ model RealmClaim {
   @@index([userId])
   @@index([countryId])
   @@map("realm_claims")
+}
+
+/// One wiki page belonging to a realm's lore (indexed, not copied — WikiOS renders it live from `wikiSource`).
+/// kind: "lore" | "nation" (a nation page can be claimed; claiming creates the Country).
+model RealmPage {
+  id         String   @id @default(cuid())
+  realmId    String
+  realm      Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  wikiSource String   // ixwiki | iiwiki | althistory
+  title      String
+  kind       String   @default("lore")
+  importedAt DateTime @default(now())
+
+  @@unique([realmId, wikiSource, title])
+  @@index([realmId, kind])
+  @@map("realm_pages")
 }
 

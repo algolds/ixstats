@@ -89,7 +89,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
 
             await tx.mapLayer.upsert({
               where: {
-                layerType_featureId: { layerType, featureId },
+                realmId_layerType_featureId: { realmId: input.realmId, layerType, featureId },
               },
               update: {
                 geometry: feature.geometry as any,
