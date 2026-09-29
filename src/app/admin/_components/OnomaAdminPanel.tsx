@@ -193,6 +193,8 @@ export function OnomaAdminPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: testWord,
+          // kokoro-fastapi synthesizes from IPA; without it the route falls back to kokoro-web.
+          ipa: translateToIPA(testWord, testCulture),
           culture: testCulture,
           engine: kokoroEngine,
           fastApiUrl: kokoroFastApiUrl,
