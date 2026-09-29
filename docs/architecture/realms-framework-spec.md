@@ -58,6 +58,65 @@ Clerk Organizations as realms.
 
 ## Known risks
 
-- iiwiki's Cloudflare challenge blocked `IxStats-Builder` from a dev machine (2026-09-27); the allowlist may
-  be IP-bound to production. Phase 2 imports may only run on prod.
+- iiwiki's Cloudflare challenge blocks `IxStats-Builder` from a dev machine — confirmed 2026-09-28 the
+  allowlist is IP-bound to production. Live wiki imports (verification, lore import) must run on prod, or
+  from dev through the production proxy (`IIWIKI_DEV_PROXY_URL=https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php`).
 - Hand-drawn / textured maps will vectorise poorly; flat-colour political PNGs are required.
+
+## Status (2026-09-28)
+
+Phase 1 (foundation, `.superpowers/sdd/2026-09-27-realms-foundation`) and the Eurth slice
+(`.superpowers/sdd/2026-09-28-realms-eurth`) are both complete on `realms-foundation`. Runbook:
+[`docs/realms/eurth-onboarding.md`](../realms/eurth-onboarding.md).
+
+**Shipped — Phase 1 (tasks 1–8):**
+
+- Schema: `Realm`, `RealmClaim`, `WikiAccountLink` models; `Country.ownerUserId`/`realmId`;
+  `User.lastSeenAt` (T1).
+- Wiki account verification — a token pasted on the player's own wiki user page proves control of an
+  ixwiki/iiwiki/althistory account; the verified-link write is an admin-only path, separate from
+  self-service linking (T2).
+- Per-realm nation ownership with a per-user cap (`Realm.settings.maxNationsPerUser`, default 1); a
+  system owner *acting as* a nation is no longer treated as its real owner for notifications, crons, or
+  auctions (T3, T5).
+- `MapLayer` realm scaffolding and admin nation-assignment tooling (T4, T5).
+- `scripts/realms/backfill-foundation.ts` — one-shot data backfill for owners, the IxWorld slug,
+  unverified wiki links, visibility, and orphaned map layers (T8).
+- Nation claim flow (`/r/eurth`-style `claimCountry`) with instant approval for the verified creator of
+  the claimed page, and an `/admin/realms` → Claims review queue for everyone else (T6).
+- Settings UI to link and verify wiki accounts (`WikiAccountVerifyRow`, Settings → IxnayID & Passport →
+  Linked Accounts) (T7).
+
+**Shipped — Eurth slice, first realm outside IxWorld (tasks E1–E7):**
+
+- `RealmPage` model indexing a realm's lore (titles only, never content) (E1).
+- `DEFAULT_REALM_ID` and realm-scope query helpers; viewer-realm resolution (`?realm=` → active nation →
+  IxWorld) (E2).
+- Realm lore crawler/importer (`scripts/realms/import-realm-lore.ts`): keyword-subcategory crawl (depth 5,
+  5,000-page cap, truncation reported), nations from an optional curated `--nation-roster` category or an
+  infobox-heuristic fallback (E5).
+- Claims extended to lore/nation pages (claiming creates the `Country`); WikiOS read-only rendering for
+  non-ixwiki sources end-to-end — links, Halo, Watch, the edit route, and recent/paused sessions all carry
+  the page's `?source=` (E6).
+- Country-facing queries and caches made realm-correct (name lookups resolve within one realm; admin tools
+  opt into every realm via `realm: "*"`; IxWorld's cache keys are unaffected) (E3).
+- Map layers and the pipeline wizard are realm-scoped; the map editor's realm follows the map it's drawn
+  over, not a hardcoded IxWorld default (E4).
+- This runbook, `docs/realms/eurth-onboarding.md` (E7).
+
+**Rulings (E-a..E-r):** E-a–E-j are the Eurth design spec's binding decisions
+(`docs/superpowers/specs/2026-09-28-realms-eurth-design.md`) — index lore rather than copy it (E-a), a
+5,000-page crawl cap for this slice (E-b), follow only keyword subcategories (E-c), infobox-based nation
+detection (E-d), a script-based one-time import (E-e), claiming creates the `Country` (E-f), a
+realm-suffixed slug on a name collision (E-g), realm-scoped cross-country queries (E-h), a per-realm
+`MapLayer` unique key (E-i), and an admin-created realm owned by `"system"` until a founder exists (E-j).
+Rulings made during implementation, superseding or extending those where noted: `?realm=` resolves any
+realm status, including draft/archived (E-k); an optional `--nation-roster` category — never a retired
+one — drives nation membership, superseding the infobox-only rule (E-d′); the WikiOS reader, Halo, Watch,
+the edit route, and session history are all read-only and source-aware for non-ixwiki pages (E-l, E-l′,
+E-l″); `ArticleNotFound` extracted to keep reader complexity under threshold (E-m); single-country
+rankings scope by that country's own realm, not the viewer's (E-n); admin tools pass `realm: "*"` to see
+every realm (E-o); name-based country lookups across ~8 call sites are made deterministic and
+realm-correct (E-p); cache keys omit the realm segment for the default realm, preserving IxWorld's cache
+sharing (E-q); the map editor's realm is the realm of the map being edited, not a fixed IxWorld default
+(E-r).
