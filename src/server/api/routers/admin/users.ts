@@ -12,7 +12,7 @@ import {
   releaseNation,
 } from "~/server/modules/realms";
 import {
-  fetchUserPageLatest,
+  fetchUserPageHistory,
   fetchWikiUser,
   PROOF_SOURCES,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
@@ -20,7 +20,7 @@ import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/
 
 /** The wiki-links service for admin link/unlink — the admin's authority stands in for the token proof. */
 const adminWikiLinks = (db: PrismaClient) =>
-  createWikiLinkService(db, { fetchWikiUser, fetchUserPageLatest });
+  createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
 
 export const adminUsersRouter = createTRPCRouter({
   // List all users and their claimed countries

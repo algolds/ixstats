@@ -5,14 +5,14 @@ import { db } from "~/server/db";
 import { linkDiscordAccount } from "~/lib/discord/user-sync";
 import { linkForumAccount } from "~/server/modules/forum";
 import {
-  fetchUserPageLatest,
+  fetchUserPageHistory,
   fetchWikiUser,
   PROOF_SOURCES,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
 
 const wikiSourceInput = z.enum(PROOF_SOURCES);
-const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageLatest });
+const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
 
 function toTrpcError(error: Error): never {
   if (error instanceof WikiLinkError) {

@@ -8,6 +8,7 @@ import {
   normalizeWikiUsername,
   wikiUserPageUrl,
   type ProofSource,
+  type UserPageHistory,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
@@ -32,10 +33,7 @@ export class WikiLinkError extends Error {
 
 export interface WikiLinkDeps {
   fetchWikiUser: (source: ProofSource, username: string) => Promise<{ username: string; userId: number } | null>;
-  fetchUserPageLatest: (
-    source: ProofSource,
-    username: string
-  ) => Promise<{ content: string; author: string } | null>;
+  fetchUserPageHistory: (source: ProofSource, username: string) => Promise<UserPageHistory>;
   now?: () => Date;
   newToken?: () => string;
 }
@@ -49,6 +47,22 @@ export interface WikiLinkView {
   username: string;
   verified: boolean;
   pending: boolean;
+}
+
+type TokenProof = "SAVED_BY_ACCOUNT" | "NOT_ON_PAGE" | "SAVED_BY_SOMEONE_ELSE" | "OUT_OF_REACH";
+
+/**
+ * Ruling F-3 — who saved the token. The newest revision must contain it; walking back, the revision that
+ * INTRODUCED it is the oldest of that unbroken run (its older neighbour lacks the token, or it created the page).
+ * A run that reaches past the fetched window cannot be attributed.
+ */
+function proveToken(history: UserPageHistory, token: string, username: string): TokenProof {
+  const { revisions, complete } = history;
+  const runEnd = revisions.findIndex((revision) => !revision.content.includes(token));
+  if (revisions.length === 0 || runEnd === 0) return "NOT_ON_PAGE";
+  if (runEnd === -1 && !complete) return "OUT_OF_REACH";
+  const introducer = revisions[runEnd === -1 ? revisions.length - 1 : runEnd - 1];
+  return introducer?.author === username ? "SAVED_BY_ACCOUNT" : "SAVED_BY_SOMEONE_ELSE";
 }
 
 async function wikiCall<T>(call: () => Promise<T>): Promise<T> {
@@ -113,8 +127,12 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
       throw new WikiLinkError("EXPIRED", "That code expired — request a new one");
     }
     const token = link.token;
-    const latest = await wikiCall(() => deps.fetchUserPageLatest(source, link.username));
-    if (!latest?.content.includes(token) || latest.author !== link.username) {
+    const history = await wikiCall(() => deps.fetchUserPageHistory(source, link.username));
+    const proof = proveToken(history, token, link.username);
+    if (proof === "OUT_OF_REACH") {
+      throw new WikiLinkError("TOKEN_NOT_FOUND", "Save the code on your user page yourself, then press Verify");
+    }
+    if (proof !== "SAVED_BY_ACCOUNT") {
       throw new WikiLinkError(
         "TOKEN_NOT_FOUND",
         `The code must be saved on User:${link.username} by ${link.username} themself`

@@ -1,6 +1,6 @@
 import {
   fetchPageCreator,
-  fetchUserPageLatest,
+  fetchUserPageHistory,
   fetchWikiUser,
   normalizeWikiUsername,
   WikiApiError,
@@ -34,31 +34,59 @@ describe("account-proof", () => {
     await expect(fetchWikiUser("iiwiki", "nobody")).resolves.toBeNull();
   });
 
-  it("reads the latest user page revision (content + author) and the page creator", async () => {
-    global.fetch = jest
+  it("reads up to 20 user page revisions newest first (content + author), and the page creator", async () => {
+    const fetchMock = jest
       .fn()
       .mockReturnValueOnce(
         json({
           query: {
-            pages: [{ revisions: [{ user: "Kir", slots: { main: { content: "hi ixstates-verify-abc" } } }] }],
+            pages: [
+              {
+                revisions: [
+                  { user: "Kir", slots: { main: { content: "hi ixstates-verify-abc" } } },
+                  { user: "some_editor", slots: { main: { content: "hi" } } },
+                ],
+              },
+            ],
           },
         })
       )
-      .mockReturnValueOnce(json({ query: { pages: [{ revisions: [{ user: "Founder_Name" }] }] } })) as any;
-    await expect(fetchUserPageLatest("ixwiki", "Kir")).resolves.toEqual({
-      content: "hi ixstates-verify-abc",
-      author: "Kir",
+      .mockReturnValueOnce(json({ query: { pages: [{ revisions: [{ user: "Founder_Name" }] }] } }));
+    global.fetch = fetchMock as any;
+    await expect(fetchUserPageHistory("ixwiki", "kir")).resolves.toEqual({
+      revisions: [
+        { content: "hi ixstates-verify-abc", author: "Kir" },
+        { content: "hi", author: "Some editor" },
+      ],
+      complete: true,
     });
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url.searchParams.get("titles")).toBe("User:Kir");
+    expect(url.searchParams.get("rvprop")).toBe("content|user");
+    expect(url.searchParams.get("rvlimit")).toBe("20");
+    expect(url.searchParams.get("rvdir")).toBeNull(); // default: newest first
     await expect(fetchPageCreator("ixwiki", "Aurelia")).resolves.toBe("Founder Name");
   });
 
-  it("returns null when the latest revision has no author (cannot prove who saved it)", async () => {
-    global.fetch = jest
-      .fn()
-      .mockReturnValueOnce(
-        json({ query: { pages: [{ revisions: [{ slots: { main: { content: "hi ixstates-verify-abc" } } }] }] } })
-      ) as any;
-    await expect(fetchUserPageLatest("ixwiki", "Kir")).resolves.toBeNull();
+  it("reports an incomplete history when older revisions exist, and blanks a hidden author or content", async () => {
+    global.fetch = jest.fn().mockReturnValueOnce(
+      json({
+        continue: { rvcontinue: "20260101000000|42", continue: "||" },
+        query: { pages: [{ revisions: [{ slots: { main: { content: "x" } } }, { user: "Kir" }] }] },
+      })
+    ) as any;
+    await expect(fetchUserPageHistory("ixwiki", "Kir")).resolves.toEqual({
+      revisions: [
+        { content: "x", author: "" },
+        { content: "", author: "Kir" },
+      ],
+      complete: false,
+    });
+  });
+
+  it("a user page that does not exist has an empty, complete history", async () => {
+    global.fetch = jest.fn().mockReturnValueOnce(json({ query: { pages: [{ missing: true }] } })) as any;
+    await expect(fetchUserPageHistory("ixwiki", "Kir")).resolves.toEqual({ revisions: [], complete: true });
   });
 
   it("throws WikiApiError on a non-JSON (Cloudflare) response", async () => {

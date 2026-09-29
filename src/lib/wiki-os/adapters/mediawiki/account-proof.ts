@@ -78,6 +78,8 @@ export async function fetchWikiUser(source: ProofSource, username: string): Prom
 }
 
 const RevisionsSchema = z.object({
+  /** Present when older revisions exist beyond the ones returned. */
+  continue: z.object({ rvcontinue: z.string().optional() }).optional(),
   query: z.object({
     pages: z.array(
       z.object({
@@ -95,24 +97,43 @@ const RevisionsSchema = z.object({
   }),
 });
 
+/** How many of a user page's most recent revisions the proof walks back through (ruling F-3). */
+export const USER_PAGE_REVISION_WINDOW = 20;
+
+export interface UserPageRevision {
+  content: string;
+  /** Normalised; "" when the author is hidden. */
+  author: string;
+}
+
+/** A user page's most recent revisions, newest first; `complete` when no older revision exists. */
+export interface UserPageHistory {
+  revisions: UserPageRevision[];
+  complete: boolean;
+}
+
 /**
- * Latest revision of a user page — content AND author. Stock MediaWiki lets anyone (often anonymous)
- * edit another user's `User:` page, so the token alone does not prove control of the account; the
- * caller must also check that `author` is the account being verified.
+ * The last USER_PAGE_REVISION_WINDOW revisions of a user page — content AND author. Stock MediaWiki lets anyone
+ * (often anonymous) edit another user's `User:` page, so the token alone does not prove control of the account;
+ * the caller must attribute the token to the revision that introduced it. A missing page has no revisions.
  */
-export async function fetchUserPageLatest(
-  source: ProofSource,
-  username: string
-): Promise<{ content: string; author: string } | null> {
+export async function fetchUserPageHistory(source: ProofSource, username: string): Promise<UserPageHistory> {
   const data = await wikiQuery(
     source,
-    { prop: "revisions", titles: `User:${normalizeWikiUsername(username)}`, rvprop: "content|user", rvslots: "main" },
+    {
+      prop: "revisions",
+      titles: `User:${normalizeWikiUsername(username)}`,
+      rvprop: "content|user",
+      rvslots: "main",
+      rvlimit: String(USER_PAGE_REVISION_WINDOW),
+    },
     RevisionsSchema
   );
-  const revision = data.query.pages[0]?.revisions?.[0];
-  const content = revision?.slots?.main.content;
-  if (content === undefined || !revision?.user) return null;
-  return { content, author: normalizeWikiUsername(revision.user) };
+  const revisions = (data.query.pages[0]?.revisions ?? []).map((revision) => ({
+    content: revision.slots?.main.content ?? "",
+    author: revision.user ? normalizeWikiUsername(revision.user) : "",
+  }));
+  return { revisions, complete: !data.continue };
 }
 
 /** Author of the page's first revision, normalised; null if the page does not exist. */
