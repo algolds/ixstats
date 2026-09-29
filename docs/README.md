@@ -1,185 +1,216 @@
 # IxStates Documentation Hub
 
-The authoritative index for all IxStates architecture, systems, operations, specifications, reference, and research. Version information is governed by the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
+The index for IxStates architecture, systems, operations, specifications, reference and research. Version information
+comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-> Refreshed August 2026 — platform **IxStates 1.4.0 "Lobster Crosby"** (Release Candidate), integration branch `rose-garden`. Treat this structure as the source of truth.  
-> Active implementation plans live in `plans/`; historical completion records live in `docs/archive/` and `plans/archive/`. All three are git-ignored and exist only in the maintainer's local checkout.
-
----
-
-## 🗺️ Quick Navigation
-
-- **Platform Overview** — [overview/platform.md](overview/platform.md)
-- **Master System Status & Going Gold Audit** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
-- **Statecraft Engine & Decision Simulator** — [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md)
-- **WikiOS Platform & Architecture** — [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md)
-- **Versioning & Release Architecture** — [reference/revision.md](reference/revision.md)
-- **API Catalog (90 Routers / 1,450+ Endpoints)** — [reference/api-complete.md](reference/api-complete.md)
-- **Database Schema Models** — [reference/database.md](reference/database.md)
-- **Facet Design System & Interaction Bible (v2)** — [reference/facet-design-system.md](reference/facet-design-system.md)
-- **Frontend & UI Cheatsheet (Junior Dev Guide)** — [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
-- **Maps & Geographic Engine (UPG v2)** — [systems/maps.md](systems/maps.md)
-- **Local Dev Setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
-- **Production Deployment** — [operations/deployment.md](operations/deployment.md)
+> Audited 2026-09-29 against the code — platform **IxStates 1.4.0 "Lobster Crosby"** (Release Candidate), integration
+> branch `rose-garden`. Every doc below was checked claim by claim; statuses reflect the code, not earlier plans.
+> Implementation plans live in `plans/` and completion records in `docs/archive/` and `plans/archive/`. All three are
+> git-ignored and exist only in the maintainer's local checkout.
 
 ---
 
-## 🏛️ Architecture & Core Engineering
+## 🗺️ Start here
 
-| Document | Purpose & Scope |
+- **What's live** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
+- **What's pending** — [roadmap/pending-features.md](roadmap/pending-features.md) (security findings, broken loops, unfinished and unstarted features, tech debt)
+- **Platform overview** — [overview/platform.md](overview/platform.md)
+- **Local dev setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
+- **Production deployment** — [operations/deployment.md](operations/deployment.md) · current release runbook: [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md)
+- **API catalog (77 routers, ~960 procedures)** — [reference/api-complete.md](reference/api-complete.md)
+- **Database (18 schema files, 332 models)** — [reference/database.md](reference/database.md)
+- **Facet design system** — [reference/facet-design-system.md](reference/facet-design-system.md) · [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
+
+Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 📐 Design / spec · 🗄️ Historical
+
+---
+
+## 🏛️ Architecture & core engineering
+
+| Document | Purpose & scope |
 | --- | --- |
-| [architecture/frontend.md](architecture/frontend.md) | Next.js 16 App Router architecture, component layers, and Facet design rules |
-| [architecture/backend.md](architecture/backend.md) | tRPC router patterns, modular sub-routers, middleware, rate limiting, and auth context |
-| [architecture/data.md](architecture/data.md) | Prisma schema domains (15 schema files), PostGIS models, seeders, and data lifecycle |
-| [architecture/autosave.md](architecture/autosave.md) | Universal autosave engine (`useGenericAutoSync`), debounced delta sync, and conflict handling |
-| [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) | Realms — separate worlds; the realm wall is the country |
-| [architecture/ts-graph-isolation.md](architecture/ts-graph-isolation.md) | TypeScript partitioned sub-project checks (`typecheck:ui`, `server`, `trpc`, `db`) and safe heap bounds |
-| [architecture/caching.md](architecture/caching.md) | Multi-tier caching architecture (in-memory layer-cache, Redis rate-limiting, WikiOS shadow store) |
+| [architecture/frontend.md](architecture/frontend.md) | Next.js 16 App Router, providers, component layers, hubs, Facet rules |
+| [architecture/backend.md](architecture/backend.md) | tRPC builders and middleware (`src/server/api/trpc/`), router composition, rate limiting, auth context |
+| [architecture/data.md](architecture/data.md) | Prisma schema domains (18 files), PostGIS, `db.ts` guards, seeders |
+| [architecture/autosave.md](architecture/autosave.md) | `useGenericAutoSync` engine and where it is (and isn't yet) used |
+| [architecture/caching.md](architecture/caching.md) | Cache layers in `src/lib/cache/`, Redis-backed tRPC cache, wiki caches |
+| [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) | Realms — separate worlds; Phase 1 shipped, Phases 2–4 pending |
+| [architecture/ts-graph-isolation.md](architecture/ts-graph-isolation.md) | Partitioned typechecks (`typecheck:ui`, `server`, `trpc`, `db`) and the arch guard |
 
 ---
 
-## ⚙️ Systems & Platform Pillars (App-Centric Organization)
+## ⚙️ Systems
 
-### 🏛️ 1. MyCountry Suite (Executive Simulation & Governance)
-| System / Tool | Document | Scope & Architecture | Status |
+### 🏛️ MyCountry — executive simulation
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Command Suite** | [systems/mycountry.md](systems/mycountry.md) | Single-surface executive console across active public domains (Identity, Economy, Politics, Diplomacy) | 📀 **Gold Master** |
-| **Statecraft Engine** | [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md) | Statecraft Philosophy — Executive decision simulator vs spreadsheet simulation | 📀 **Gold Master** |
-| **Game Loops** | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | Closed decision loops: Directives, Volatility, National Issues, Consequences | 📀 **Gold Master** |
-| **Design Philosophy**| [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | MyCountry design bible, 12 commandments, and statecraft loop PRDs | 📀 **Gold Master** |
-| **Country Builder** | [systems/builder.md](systems/builder.md) | Sovereign onboarding wizard (Builder v3), atomic component matrix, wiki caching | 📀 **Gold Master** |
-| **Economy Domain** | [systems/economy.md](systems/economy.md) · [systems/calculations.md](systems/calculations.md) | Macroeconomic indicators, 42-tax system, ERI/PII index formulas, growth tiers | 📀 **Gold Master** |
-| **Diplomacy Domain** | [systems/diplomacy.md](systems/diplomacy.md) | Embassies, bilateral missions, cultural exchanges, treaty dashboards | 📀 **Gold Master** |
-| **Politics & Elections**| [systems/elections.md](systems/elections.md) | Legislature config, political parties, D'Hondt/FPTP simulation, hemicycle | 📀 **Gold Master** |
-| *Defense (Preview)* | [systems/defense.md](systems/defense.md) | Force readiness, military deployments, equipment procurement (preview) | 🧪 **Preview** |
-| *Intel (Preview)* | [systems/intelligence.md](systems/intelligence.md) | Executive threat briefings, vitality dashboard, recon research ops (preview) | 🧪 **Preview** |
+| **Command Suite** | [systems/mycountry.md](systems/mycountry.md) | Command surface, directives, national issues, CivCap, meetings, gating | ✅ Live (meetings schedule-only) |
+| **Country Builder** | [systems/builder.md](systems/builder.md) | Builder v4: 4-step wizard, wiki import, edit mode | ✅ Live |
+| **Economy** | [systems/economy.md](systems/economy.md) · [systems/calculations.md](systems/calculations.md) | Indicators, 42 atomic taxes, archetypes, vitality and reference formulas | ✅ Live |
+| **Diplomacy** | [systems/diplomacy.md](systems/diplomacy.md) | Embassies, alliances, cultural exchange, stances with drift | ✅ Live |
+| **Politics & Elections** | [systems/elections.md](systems/elections.md) | Parties, legislatures, bills, power brokers, elections | 🟡 Partial (follow-up elections broken) |
+| **Defense** | [systems/defense.md](systems/defense.md) | Branches, units, procurement, readiness, threats | 🔒 Premium |
+| **Intelligence** | [systems/intelligence.md](systems/intelligence.md) | Where recon and fog live now; no standalone dashboard | 🟡 Partial |
+| **Synergies** | [reference/synergies.md](reference/synergies.md) | 45 additive + 45 conflicting government component relationships | ✅ Live |
+| Statecraft vision audit | [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md) | June 2026 audit of the vision vs the build | 🗄️ Historical |
+| Statecraft game loops | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | IN → SEE → OUT → RIPPLE loop design | 📐 Design (partly built) |
+| Design philosophy & PRDs | [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | Design bible and statecraft PRDs, with a status matrix | 📐 Design (partly built) |
 
-### 🗺️ 2. Atlas (Spatial Geography & Cartography Studio)
-| System / Tool | Document | Scope & Architecture | Status |
+### 🌍 Atlas & Realms — geography and worlds
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Atlas Maps** | [systems/maps.md](systems/maps.md) | Atlas v2 & Atlas Engine v5: "Geography is King", grounded manual IxEarth cartography + UPG v2 | 📀 **Gold Master** |
-| **Map Editor** | [systems/maps.md](systems/maps.md) · [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | Full-screen vector editor for borders, regions, provinces, cities, POIs, and Voronoi snapping | 📀 **Gold Master** |
+| **Maps & map editor** | [systems/maps.md](systems/maps.md) · [app README](../src/app/maps/README.md) | `/maps`, `/admin/maps/editor`, pipelines, layers, overlays, geo routers | ✅ Live (inspector spec partial) |
+| **Worldgen (UPG v2)** | [src/lib/worldgen/README.md](../src/lib/worldgen/README.md) | Procedural mesh, terrain, hydrology, climate, export | ✅ Live |
+| **Realms & Eurth** | [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) · [realms/eurth-onboarding.md](realms/eurth-onboarding.md) | Ownership, claims, realm hubs, realm-scoped listings; Eurth runbook | ✅ Phase 1 · ⛔ Phases 2–4 |
+| Map editor improvements | [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | June–August editor plans (all shipped or superseded) | 🗄️ Historical |
 
-### 📖 3. WikiOS (Lore & Knowledge Operating System)
-| System / Tool | Document | Scope & Architecture | Status |
+### 📖 WikiOS — lore platform
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Native Lore Engine**| [systems/wikios.md](systems/wikios.md) · [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | Native PostgreSQL lore engine, sub-2ms O(1) link graph, Canvas Editor (v1) | 📀 **Gold Master** |
-| **Margin** | [systems/wikios/wikios-margin-spec.md](systems/wikios/wikios-margin-spec.md) | Split-canvas inspector, text markup, gutter pins, threaded notes directly on text | 📀 **Gold Master** |
-| **Stash System** | [systems/stash.md](systems/stash.md) · [systems/stash-style-guide.md](systems/stash-style-guide.md) | Save articles, quotes, media, and forum threads for later | 📀 **Gold Master** |
-| **Lore Lifecycle** | [systems/lore-lifecycle.md](systems/lore-lifecycle.md) | Complete lore lifecycle from ThinkTanks/Stashes to Canvas Publishing and Wiki Awards | 📀 **Gold Master** |
+| **Native lore engine** | [systems/wikios.md](systems/wikios.md) · [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | PostgreSQL store, inbound MediaWiki sync, Plate Canvas editor, `?source=` multi-wiki | ✅ Live |
+| **Margin** | [systems/wikios/wikios-margin-spec.md](systems/wikios/wikios-margin-spec.md) | Inline notes, markup, gutter pins | 🟡 Partial |
+| **Stash** | [systems/stash.md](systems/stash.md) · [systems/stash-style-guide.md](systems/stash-style-guide.md) | Save articles, quotes, images and threads | 🟡 Partial (no sharing) |
+| **Lore lifecycle** | [systems/lore-lifecycle.md](systems/lore-lifecycle.md) | Drafting → publishing → Lorewards (`/util/lorewards`) | ✅ Live |
+| WikiOS style guide | [systems/wikios/style-guide.md](systems/wikios/style-guide.md) | WikiOS tokens and typography | ✅ Live |
+| Stage 3 config plan | [systems/wikios/wikios-stage3-config-plan.md](systems/wikios/wikios-stage3-config-plan.md) | MediaWiki render-service isolation | 📐 Staged, not cut over |
+| Independence 2b/3 | [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | Stage 2b (shipped) and Stage 3 proposal | 🗄️ Historical after Stage 3 |
+| Longevity workflow | [systems/wikios/wikios-longevity-workflow.md](systems/wikios/wikios-longevity-workflow.md) | Portability rules; Workstream C not started | 🗄️ Historical |
 
-### 💎 4. Vault (Metagame Incentives, Social Economy & Collectibles)
-| System / Tool | Document | Scope & Architecture | Status |
+### 💎 Vault — credits, cards, achievements
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Metagame Incentive Hub**| [systems/myvault.md](systems/myvault.md) | Central incentive and metagame engine, dividend payouts, social currency | 📀 **Gold Master** |
-| **Cards System** | [systems/cards.md](systems/cards.md) | 3D holographic cards across 5 editions, physics pack peeling, dynamic rarity | 📀 **Gold Master** |
-| **IxCredits Ledger** | [systems/ixcredits.md](systems/ixcredits.md) | Virtual currency ledger, atomic conditional balance locks, daily UTC streaks | 📀 **Gold Master** |
-| **Achievements** | [systems/achievements.md](systems/achievements.md) | Achievement unlocks (Achievements v2), ribbon racks, leaderboard progression | 📀 **Gold Master** |
-| **NationStates Bridge**| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import, image proxy, takedown verification | 📀 **Gold Master** |
+| **Vault hub** | [systems/myvault.md](systems/myvault.md) | Dashboard, Cards, Marketplace, Import; admin toggles | ✅ Live |
+| **Cards & packs** | [systems/cards.md](systems/cards.md) | 5 card types, rarity, 20 seeded packs, crafting, junking | 🟡 Partial (pack guarantees, crafting broken) |
+| **IxCredits** | [systems/ixcredits.md](systems/ixcredits.md) | Ledger, passive income, daily streak, bonuses, fees | ✅ Live |
+| **Achievements** | [systems/achievements.md](systems/achievements.md) | 76 achievements, leaderboards | ✅ Live (evaluated on page visit) |
+| **NationStates bridge** | [systems/ns-integration.md](systems/ns-integration.md) | Deck import, verification, dump sync, image proxy, takedowns | ✅ Live |
+| **Premium tiers** | [reference/premium-features.md](reference/premium-features.md) | Planned tiers; only Defense gating is enforced | 🟡 Partial |
 
-### 💬 5. ThinkPages (Real-Time Knowledge Feed & Communications)
-| System / Tool | Document | Scope & Architecture | Status |
+### 💬 ThinkPages — social
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Sovereign Feed** | [systems/social.md](systems/social.md) | Sovereign micro-posts, `[blurb:slug]` tag embedding, poll items, rich wiki cards | 📀 **Gold Master** |
-| **Account Manager** | [systems/social.md](systems/social.md) | Multi-account switching, automated Discord webhook syndication, bot telemetry | 📀 **Gold Master** |
-| **ThinkTanks** | [systems/thinktanks.md](systems/thinktanks.md) | Multilateral policy drafting rooms, research workgroups, shared drafts | 📀 **Gold Master** |
+| **Feed & accounts** | [systems/social.md](systems/social.md) | Posts, reactions, polls, hashtags, personas, Discord mirror | ✅ Live |
+| **ThinkTanks** | [systems/thinktanks.md](systems/thinktanks.md) | Group feed and members; docs and chat pending | 🟡 Partial |
 
-### 🗨️ 6. IxForum App (Archival Community Discourse)
-| System / Tool | Document | Scope & Architecture | Status |
+### 🗨️ Forum & identity
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Forum Integration** | [systems/forum.md](systems/forum.md) | XenForo REST bridge (IxForum v1.4), Orange theme, BBCode transformation, IxnayID SSO | 📀 **Gold Master** |
+| **IxForum** | [systems/forum.md](systems/forum.md) | XenForo bridge: read, write, stash, IxnayID account linking | ✅ Live |
 
-### ⚙️ 7. Concord Engine (Living-World Simulation Backend)
-| System / Tool | Document | Scope & Architecture | Status |
+### ⚙️ Concord — living world
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **IxTime Master Clock**| [systems/ixtime.md](systems/ixtime.md) | Continuous temporal simulation engine, epoch conversion, daemon synchronization | 📀 **Gold Master** |
-| **Crisis Events** | [systems/crisis-events.md](systems/crisis-events.md) | Dynamic crisis event management, 5-stage lifecycle, player response modes | 📀 **Gold Master** |
-| **NPC Personality AI**| [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits (8 traits), archetypes, behavioral prediction, drift | 📀 **Gold Master** |
+| **IxTime** | [systems/ixtime.md](systems/ixtime.md) | World clock, epoch maths, bot sync | ✅ Live |
+| **Crisis events** | [systems/crisis-events.md](systems/crisis-events.md) | Read-only today; lifecycle and responses planned | 🟡 Partial |
+| **NPC personality AI** | [systems/npc-ai.md](systems/npc-ai.md) | 8 traits; drives cultural-exchange responses; drift not wired | 🟡 Partial |
 
-### 🎨 8. Facet UI Design System & Ambient Runtime
-| System / Tool | Document | Scope & Architecture | Status |
+### 🎨 Design, overlay & admin
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Facet Primitives** | [reference/facet-design-system.md](reference/facet-design-system.md) | Volumetric Z-depth, physical materials, glare, 100% Radix UI encapsulation | 📀 **Gold Master** |
-| **Halo Overlay** | [systems/halo.md](systems/halo.md) | Facet contextual overlay, wayfinding suite, and `Cmd+K` command palette | 📀 **Gold Master** |
-| **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, dynamic reference catalogs, RBAC, audit logging | 📀 **Gold Master** |
-| **Help Center** | [systems/help.md](systems/help.md) | In-app help center architecture, 10 categories, authoring workflow | 📀 **Gold Master** |
+| **Facet** | [reference/facet-design-system.md](reference/facet-design-system.md) | Materials, depth, Radix primitives, Cuelume, motion | ✅ Live |
+| **Halo** | [systems/halo.md](systems/halo.md) | Contextual overlay, plugins, `Cmd+K` palette | ✅ Live |
+| **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) · [app README](../src/app/admin/README.md) | 39 admin sections, reference catalogs, RBAC, audit logging | ✅ Live |
+| **Help center** | [systems/help.md](systems/help.md) · [app README](../src/app/help/README.md) | Markdown help in `src/content/help/` | 🟡 Partial |
 
-### 🧪 Labs (Experimental & Incubation Studio)
-| System / Tool | Document | Scope & Architecture | Status |
+### 🧪 Labs
+| System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Onoma Studio** | [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) · [systems/onoma-roadmap.md](systems/onoma-roadmap.md) | Procedural linguistic engine, phonetic Markov chains, Kokoro TTS, glyphs | 🧪 **Labs Preview** |
-| **MyLeague & MyClub** | [systems/myleague.md](systems/myleague.md) · [systems/myleague-top5-features.md](systems/myleague-top5-features.md) | Sports simulation engine (7 sports, tactics, transfers, athlete cards) | 🧪 **Labs Preview** |
+| **Onoma** | [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) · [roadmap](systems/onoma-roadmap.md) · [glyphs](systems/onoma-glyph-spec.md) · [voice](systems/onoma-voice-guide.md) | Naming and conlang studio, Kokoro TTS | 🧪 Labs |
+| **MyLeague & MyClub** | [systems/myleague.md](systems/myleague.md) · [top-5 features](systems/myleague-top5-features.md) · [lore integration](systems/myleague-lore-integration.md) | 7-sport league simulation at `/myleague`, `/myclub` | 🧪 Labs |
+| **Vexel** | [specs/vexel-prd.md](specs/vexel-prd.md) | Heraldry studio at `/labs/vexel` | 🧪 Labs (not in menu) |
 
 ---
 
+## 📋 Specifications & PRDs
 
-## 📋 Formal Specifications & PRDs
+| Document | Scope | Status |
+| --- | --- | :---: |
+| [superpowers/specs/2026-09-27-realms-foundation-design.md](superpowers/specs/2026-09-27-realms-foundation-design.md) | Realms Phase 1 foundation | ✅ Implemented |
+| [superpowers/specs/2026-09-28-realms-eurth-design.md](superpowers/specs/2026-09-28-realms-eurth-design.md) | Eurth first-realm slice | ✅ Implemented |
+| [superpowers/specs/2026-09-12-route-travel-time-design.md](superpowers/specs/2026-09-12-route-travel-time-design.md) | Route travel time | ✅ Implemented |
+| [superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md](superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md) | Map editor inspector and history | 🟡 Partial |
+| [superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md](superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) | Builder companion guide | 🟡 Mostly implemented |
+| [specs/2026-08-13-ixcards-lore-first-rebuild.md](specs/2026-08-13-ixcards-lore-first-rebuild.md) | IxCards lore-first rebuild | 🟡 Phases 1–5 done; 6–7 pending |
+| [specs/2026-08-10-achievements-ribbons-design.md](specs/2026-08-10-achievements-ribbons-design.md) | Achievements ribbons | 🟡 Ribbons pending |
+| [specs/vexel-prd.md](specs/vexel-prd.md) | Vexel heraldry studio | 🟡 P0 mostly built |
+| [specs/mysports-v0.md](specs/mysports-v0.md) | MySports architecture reference | 🟡 Partly built |
+| [specs/myleague-v1-prd.md](specs/myleague-v1-prd.md) | Original MyLeague scoping PRD | 🗄️ Superseded |
 
-| Document | Scope |
+---
+
+## 🛠️ Operations & processes
+
+| Document | Focus |
 | --- | --- |
-| [specs/vexel-prd.md](specs/vexel-prd.md) | **Vexel v1.0 PRD** — Heraldic symbol and coat-of-arms generator in IxLabs |
-| [specs/myleague-v1-prd.md](specs/myleague-v1-prd.md) | **MyLeague v1.0 PRD** — Comprehensive sports league and simulation engine requirements |
-| [specs/2026-08-13-ixcards-lore-first-rebuild.md](specs/2026-08-13-ixcards-lore-first-rebuild.md) | IxCards lore-first rebuilt specification |
-| [specs/2026-08-10-achievements-ribbons-design.md](specs/2026-08-10-achievements-ribbons-design.md) | Achievements ribbon award design specification |
+| [operations/local-dev-setup.md](operations/local-dev-setup.md) | WSL2 dev environment, DB sync from production, dev scripts |
+| [operations/deployment.md](operations/deployment.md) | Production reference: PM2 apps (web, ws, cron), env vars, health checks |
+| [operations/deployment-checklist.md](operations/deployment-checklist.md) | Pre-flight and post-deploy procedure |
+| [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md) | Release runbook for rose-garden (Realms schema push, backfill, Eurth) |
+| [operations/credentials.md](operations/credentials.md) | Credentials and environment variables |
+| [operations/rate-limiting.md](operations/rate-limiting.md) | Rate-limit tiers, identity and coverage (sketches marked) |
+| [operations/monitoring.md](operations/monitoring.md) | Logging, Discord alerts, health endpoints |
+| [operations/huggingface-spaces-guide.md](operations/huggingface-spaces-guide.md) | Kokoro TTS on a Hugging Face Space |
+| [processes/testing.md](processes/testing.md) | Jest strategy, quarantine CI, typecheck partitions |
+| [processes/contributing.md](processes/contributing.md) | Code style, PR lifecycle, branch conventions (`rose-garden`) |
+| [processes/dev-onboarding.md](processes/dev-onboarding.md) | New-developer onboarding |
+| [processes/refactoring.md](processes/refactoring.md) | Modular patterns, file-size ceilings, router-split recipe |
+| [../scripts/README.md](../scripts/README.md) | Scripts catalog |
 
 ---
 
-## 🛠️ Operations & Development Processes
-
-| Document | Focus Area |
-| --- | --- |
-| [operations/local-dev-setup.md](operations/local-dev-setup.md) | Native Linux dev environment, DB syncing, Redis, and dev commands |
-| [operations/deployment.md](operations/deployment.md) | Standalone build output, basePath wrapper, PM2 process management, and health checks |
-| [operations/deployment-checklist.md](operations/deployment-checklist.md) | Pre-flight and post-deployment checklist |
-| [operations/credentials.md](operations/credentials.md) | Credential and environment variables configuration |
-| [operations/rate-limiting.md](operations/rate-limiting.md) | Redis-backed rate limiting configuration and endpoint protection |
-| [operations/monitoring.md](operations/monitoring.md) | Logging, webhook alerts, disk space monitoring, and runtime health checks |
-| [processes/testing.md](processes/testing.md) | Jest testing strategy, typecheck partition gates, and test fixtures |
-| [processes/contributing.md](processes/contributing.md) | Code style, PR lifecycle, and branch conventions (`v2`) |
-| [processes/refactoring.md](processes/refactoring.md) | Modular architecture patterns, file size ceilings (≤700L), and router-split recipe |
-| [../scripts/README.md](../scripts/README.md) | **Active & Archived Scripts Catalog** — tooling, migration archives, and GIS calculators |
-| [audits/src-monolith-candidates.md](audits/src-monolith-candidates.md) | Large file refactoring tracker (>800 lines) |
-| [audits/test-suite-audit-and-justification.md](audits/test-suite-audit-and-justification.md) | **Test Suite Audit & Justification** — 122-file inventory, value stack ranking (Tiers 0–4), and ponytail prune candidates |
-
-
----
-
-## 📚 Reference Documentation
+## 📚 Reference
 
 | Document | Topic |
 | --- | --- |
-| [reference/api-complete.md](reference/api-complete.md) | Complete tRPC API catalog (90 routers, 1,450+ procedures) |
-| [reference/database.md](reference/database.md) | Prisma models, relations, PostGIS extensions, and data ownership |
-| [reference/revision.md](reference/revision.md) | **Versioning & Release Architecture** — platform/app/engine/system versions |
-| [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, typography, and visual tokens |
-| [reference/facet-design-system.md](reference/facet-design-system.md) | **Facet Design System & Interaction Bible (v2)** — materials, Z-depth scale, 100% Radix primitives, Cuelume audio matrix, and Apple/Emil motion physics |
-| [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md) | **Frontend & UI Cheatsheet (Junior Dev Guide)** — component recipes, code snippets, zero-hex tokens, and anti-pitfall guide |
-| [reference/events.md](reference/events.md) | WebSocket channels, notification payloads, and scheduled cron jobs |
-| [reference/edge-cases.md](reference/edge-cases.md) | Edge case handling, error boundaries, and recovery scenarios |
-| [reference/oceanography-report.md](reference/oceanography-report.md) | Ocean basins, seas, currents, shipping routes, and marine ecology |
-| [reference/premium-features.md](reference/premium-features.md) | Premium tiers, perk mappings, and feature access |
-| [reference/synergies.md](reference/synergies.md) | Government and economic component synergy calculation tables |
-| [reference/user-profile-utils.md](reference/user-profile-utils.md) | User display name, avatar, and profile resolution utilities |
-| [reference/admin-endpoint-security-map.md](reference/admin-endpoint-security-map.md) | Admin endpoint security mappings & RBAC requirements |
+| [reference/api-complete.md](reference/api-complete.md) | tRPC catalog (generated inventory + per-procedure catalog) |
+| [reference/database.md](reference/database.md) | Prisma models, relations, PostGIS |
+| [reference/revision.md](reference/revision.md) | Versioning & release architecture |
+| [reference/events.md](reference/events.md) | WebSocket channels, SSE, cron jobs, notification registry |
+| [reference/edge-cases.md](reference/edge-cases.md) | Edge-case handling (some sections describe intended design; marked) |
+| [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, typography, tokens |
+| [reference/facet-design-system.md](reference/facet-design-system.md) | Facet design system & interaction bible (v2) |
+| [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md) | Frontend recipes and anti-pitfall guide |
+| [reference/admin-endpoint-security-map.md](reference/admin-endpoint-security-map.md) | Admin procedures, middleware chain, RBAC |
+| [reference/oceanography-report.md](reference/oceanography-report.md) | Ocean basins, currents, shipping routes |
+| [reference/caphiria-geographical-report.md](reference/caphiria-geographical-report.md) | Caphiria physical geography |
+| [reference/user-profile-utils.md](reference/user-profile-utils.md) | 🗄️ Obsolete — the module was deleted in June 2026 |
 
 ---
 
-## 🔬 Research & Player Feedback
+## 🔍 Audits
+
+Point-in-time audits. Each opens with a "Status (2026-09-29)" block of resolved and open items; open items are rolled
+into [roadmap/pending-features.md](roadmap/pending-features.md).
 
 | Document | Topic |
 | --- | --- |
-| [research/community-feedback-analysis.md](research/community-feedback-analysis.md) | Player feedback analysis (Urcea, Burg, Keaor, Heku) establishing the Statecraft Loop |
-| [research/chatgpt-logs.md](research/chatgpt-logs.md) | Historical architectural synthesis and foundational game loops transcript |
-| [research/community-logs.md](research/community-logs.md) | Community discussion logs and playtesting feedback |
-| [research/sports-llm-commentary.md](research/sports-llm-commentary.md) | Research spike on LLM-generated sports commentary and match tickers |
+| [audits/AUDIT_2026-09-23_bloat-slop.md](audits/AUDIT_2026-09-23_bloat-slop.md) | Bloat and design-slop audit behind plans 341–346 |
+| [audits/HEX_COLOUR_INVENTORY_2026-09-27.md](audits/HEX_COLOUR_INVENTORY_2026-09-27.md) | Hard-coded colour inventory |
+| [audits/src-monolith-candidates.md](audits/src-monolith-candidates.md) | Files ≥800 lines (recomputed) |
+| [audits/AUDIT_2026-06-13.md](audits/AUDIT_2026-06-13.md) · [audits/AUDIT_2026-06.md](audits/AUDIT_2026-06.md) | June architecture audits |
+| [audits/REFACTOR_PLAN_2026-06.md](audits/REFACTOR_PLAN_2026-06.md) | June refactor plan (all items resolved) |
+| [audits/test-suite-audit-and-justification.md](audits/test-suite-audit-and-justification.md) | Test-suite inventory (removals done) |
 
 ---
 
-## 🗄️ Historical Archive (`docs/archive/`)
+## 🔬 Research & player feedback
 
-Completed implementation plans, feature spike records, and legacy changelogs live in `docs/archive/`, which is git-ignored (local only, not in the repository):
-- **Superpowers Brainstorming Archive**: `docs/archive/superpowers/` (25 plans and 67 design specs from June–August 2026 feature sprints).
-- **Design Spikes Archive**: `docs/archive/design/` (`province-generator.md`, `territory-brush.md`).
-- **Legacy Changelog**: `docs/archive/CHANGELOG_PRE_OGMA.md` (v0.9 to v2.2.0).
-- **Command Surface Migration Record**: `docs/archive/mycountry-v2-command-surface-plan.md`.
-- **Pre-UPG v2 Maps Spec**: `docs/archive/maps-1.1.md`.
+| Document | Topic |
+| --- | --- |
+| [research/community-feedback-analysis.md](research/community-feedback-analysis.md) | Player feedback analysis behind the Statecraft loop |
+| [systems/community-feedback-audit.md](systems/community-feedback-audit.md) | How the feedback was addressed in code |
+| [research/sports-llm-commentary.md](research/sports-llm-commentary.md) | LLM match commentary (implemented) |
+| [research/chatgpt-logs.md](research/chatgpt-logs.md) | Historical architecture transcript |
+| [research/community-logs.md](research/community-logs.md) | Community discussion and playtest logs |
+
+---
+
+## 🗄️ Historical archive (`docs/archive/`)
+
+Completed plans, spike records and legacy changelogs live in `docs/archive/`, which is git-ignored (local only, not in
+the repository):
+- **Superpowers brainstorming archive**: `docs/archive/superpowers/` (plans and design specs from June–August 2026).
+- **Design spikes**: `docs/archive/design/` (`province-generator.md`, `territory-brush.md`).
+- **Legacy changelog**: `docs/archive/CHANGELOG_PRE_OGMA.md` (v0.9 to v2.2.0).
+- **Command Surface migration record**: `docs/archive/mycountry-v2-command-surface-plan.md`.
+- **Pre-UPG v2 maps spec**: `docs/archive/maps-1.1.md`.

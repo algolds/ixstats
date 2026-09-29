@@ -6,29 +6,31 @@ badge: IxVault & Cards
 
 ## What the Vault Is
 
-The Vault is your home for collecting — your trading cards, your IxCredits, and the progress you make as you play. You’ll find it in the main menu, organized into five simple areas:
+The Vault is your home for collecting — your trading cards, your IxCredits, and the progress you make as you play. You’ll find it under **Cards** in the main menu, organized into a few simple areas:
 
 - **Dashboard** — your balance, your level, your daily bonus, and quick actions.
 - **Cards** — browse and sort your whole collection.
-- **Acquire** — open packs and shop the marketplace.
-- **Create** — make your own cards and set up trades.
+- **Marketplace** — buy packs and cosmetics in the Vault Shop, bid in Auctions, and set up Trades.
 - **Import** — bring cards in from NationStates.
+- **Achievements** — your milestones, with a link to the global leaderboards.
 
 ## Kinds of Cards
 
 - **Nation Cards** — countries, with their stats, flags, and government on show.
 - **Lore Cards** — made from wiki articles, complete with excerpts and holographic shine.
 - **NationStates Cards** — pulled straight from NationStates profiles.
+- **Special & Community Cards** — one-offs and cards from the community.
 
 ## Rarity
 
-> **Five tiers, from plain to dazzling**
+> **Six tiers, from plain to dazzling**
 >
 > Every card has a rarity, and the rarer it is, the more it shows off:
 >
 > - **Common** — clean and classic.
 > - **Uncommon** — a subtle shimmer.
 > - **Rare** — a glowing border.
+> - **Ultra Rare** — cyan liquid-crystal glass.
 > - **Epic** — holographic, with motion.
 > - **Legendary** — the full dazzling treatment.
 

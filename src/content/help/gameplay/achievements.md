@@ -12,28 +12,31 @@ Achievements are automatic rewards that unlock when your country data meets spec
 
 > **Achievement Rarities**
 >
-> - **Common** — 5 IxCredits. Basic milestones like creating your first country or establishing your first embassy.
-> - **Uncommon** — 10 IxCredits. Intermediate goals like reaching specific GDP thresholds or diplomatic relationship counts.
-> - **Rare** — 25 IxCredits. Significant accomplishments like top-10 leaderboard placement or advanced military readiness.
-> - **Epic** — 50 IxCredits. Major milestones like reaching higher economic tiers or completing complex diplomatic missions.
-> - **Legendary** — 100 IxCredits. The rarest achievements for exceptional accomplishments. Some legendary achievements also award special cards.
+> Default rewards are shown below; administrators can tune them.
+>
+> - **Common** — 100 IxCredits. Basic milestones like creating your first country or establishing your first embassy.
+> - **Uncommon** — 250 IxCredits. Intermediate goals like reaching specific GDP thresholds or diplomatic relationship counts.
+> - **Rare** — 500 IxCredits. Significant accomplishments like top-10 leaderboard placement or advanced military readiness.
+> - **Epic** — 1,000 IxCredits. Major milestones like reaching higher economic tiers.
+> - **Legendary** — 2,500 IxCredits. The rarest achievements for exceptional accomplishments. Some legendary achievements also award special cards.
 
 ## Achievement Categories
 
 - **Economic:** GDP milestones, growth rate targets, trade volume thresholds, economic tier advancement
 - **Diplomatic:** Embassy count goals, alliance formation, cultural exchange completion, diplomatic influence ranking
 - **Military:** Military readiness levels, equipment milestones, operation completion, defense score thresholds
+- **Government:** Milestones for how your nation is governed
 - **Social:** ThinkPages engagement metrics, ThinkTank participation, collaboration milestones
-- **Collection:** Card collection completeness, rare card acquisitions, vault level milestones
+- **General:** Getting started and platform-wide milestones
 
 ## Notification & Display
 
 When an achievement unlocks:
 
-- **Unlock Modal:** A celebration modal appears with the achievement details and IxCredits reward
-- **Real-Time Notifications:** Achievement alerts appear in the notification feed
+- **Real-Time Notifications:** An "Achievement Unlocked" alert appears in the notification feed
+- **Achievements Page:** Browse every achievement, unlocked and locked, on the [Achievements](/achievements) page
+- **Showcase Shelf:** Turn on the Showcase Shelf on the Achievements page to display your highlights
 - **Achievement Tooltips:** Hover over achievement badges for detailed information
-- **Constellation Map:** Visual progress map showing unlocked and locked achievements
 
 > **Related Documentation**
 >

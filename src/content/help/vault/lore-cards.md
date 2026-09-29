@@ -6,7 +6,7 @@ badge: IxVault & Cards
 
 ## What Are Lore Cards?
 
-Lore Cards are a unique card type generated from IxWiki articles. Each card features an excerpt from a wiki article, a link to the source material, and visual effects based on the article's importance and content quality.
+Lore Cards are a unique card type generated from IxWiki and IIWiki articles. Each card features an excerpt from a wiki article, a link to the source material, and visual effects based on the article's importance and content quality.
 
 Unlike nation cards which represent countries, lore cards capture the world-building content of the IxWiki — historical events, cultural phenomena, notable figures, organizations, and more.
 
@@ -18,11 +18,11 @@ Use the article search to find wiki articles worth turning into cards. Search by
 
 > **How Lore Cards Are Created**
 >
-> 1. Search for a wiki article using the Article Search
-> 2. The Lore Card Generator extracts key information from the article
-> 3. Card layout is composed with wiki excerpt and metadata
-> 4. Rarity is assigned based on article quality and content
-> 5. The card is added to your collection
+> 1. Search for a wiki article on the [Lore Card Generator](/vault/lore-generator) page
+> 2. Submit a request — it costs 50 IxCredits (or a Lore Request Token)
+> 3. An admin reviews the request; if it's rejected, your IxCredits are refunded
+> 4. Once approved, the generator extracts key information from the article and composes the card, with rarity assigned based on article quality and content
+> 5. The new card joins the card pool, where it can turn up in packs and trades
 
 ## Card Display
 
@@ -37,7 +37,7 @@ Lore cards can be obtained in three ways:
 
 - **Card Packs:** Random lore cards may appear in pack openings
 - **Trading:** Trade with other players on the marketplace
-- **Generation:** Create lore cards directly from wiki articles
+- **Requests:** Ask for a favorite wiki article to become a lore card
 
 > **Related Articles**
 >

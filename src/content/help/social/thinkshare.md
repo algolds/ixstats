@@ -8,7 +8,7 @@ badge: Community
 
 ThinkShare Messages is the platform-wide messaging backbone. It unifies all communication across IxStats, WikiOS, the Forum, and diplomatic systems into a single interface at **/messages**.
 
-- **Smart Folders** — messages are automatically organized into Inbox, Personal, Diplomatic, Discussions, Groups, and System folders.
+- **One Inbox** — direct messages, group chats, diplomatic channels, and wiki and system messages all live in one list, with **System Messages** and the **LoreBot** WikiOS feed pinned at the top.
 - **Contextual Identity** — your display name and avatar change based on context. Diplomatic channels show your country name, wiki discussions show your wiki username.
 - **Cross-System** — wiki edit notifications, forum private messages, and diplomatic cables all appear in your unified inbox.
 
@@ -16,9 +16,9 @@ ThinkShare Messages is the platform-wide messaging backbone. It unifies all comm
 
 > **How to Message**
 >
-> 1. Open [Messages](/messages) from the main navigation menu.
-> 2. Use the folder rail on the left to switch between Personal, Diplomatic, Discussions, Groups, and System messages.
-> 3. Select a conversation to view it, or click **New Conversation** to start a new one.
+> 1. Open [Messages](/messages) — from the ThinkPages menu, or with the command palette (`Ctrl` + `K`).
+> 2. Scroll your conversation list — System Messages and LoreBot are pinned at the top.
+> 3. Select a conversation to view it, or click **New Conversation** to start a new one. Add people to a direct chat and it becomes a group chat.
 > 4. Use reactions, replies, and rich text to keep discussions organized.
 
 > [!WARNING]

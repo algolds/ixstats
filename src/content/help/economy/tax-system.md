@@ -1,50 +1,48 @@
 ---
 title: Taxes & Revenue
-description: Set your tax rates, brackets, and exemptions — and fund the nation you want to build.
+description: Set your tax rates — and fund the nation you want to build.
 badge: Economy & Finances
 ---
 
 ## How Your Tax System Works
 
-Your tax system is built from dozens of tax pieces you choose and tune. The Tax Builder walks you through it step by step, helping you craft a tax policy that fits the nation you want to be.
+Your tax rates live in **MyCountry → Economy & Budget → Fiscal Policy**. Your starting rates can come from the economic archetype you pick in the builder; after launch you tune them here to fit the nation you want to be.
 
 ## Setting Up Taxes
 
-> **Tax Builder Steps**
+> **Tuning Your Rates**
 >
-> 1. **Configuration:** Choose your overall tax system type and set the base rate parameters that shape your fiscal framework
-> 2. **Choose your taxes:** Pick from dozens of tax types — each shows how effective it is, so you can see what works. Income tax, corporate tax, VAT, property tax, capital gains, and more.
-> 3. **Exemptions & Deductions:** Set up tax breaks for specific sectors, income levels, or activities. Deductions reduce what gets taxed, giving you fine-grained control over your fiscal policy.
-> 4. **Preview Revenue:** See estimated revenue based on your current economy before you commit. Try different configurations to find the right balance.
+> 1. **Open Fiscal Policy:** In MyCountry, open **Economy & Budget** and choose the **Fiscal Policy** tab.
+> 2. **Adjust a rate:** Use the **National Tax Rate Controls** to set each tax. An optimal zone (15–35%) is marked to guide you.
+> 3. **Watch the projections:** **Tax Revenue Projections** shows how much each tax contributes to your revenue.
+> 4. **That's it:** Changes save automatically.
 
 ## Tax Types Available
 
-- **Income Taxes:** Progressive brackets on personal income with configurable rates and thresholds
-- **Corporate Taxes:** Business income taxation with sector-specific adjustments
-- **Value Added Tax (VAT):** Consumption-based tax with exemptions for essentials
-- **Property Taxes:** Real estate and asset taxation
-- **Capital Gains:** Taxes on investment returns with holding period adjustments
-- **Specialized Taxes:** Tariffs, excise duties, environmental levies, and financial transaction taxes
+- **Income Tax:** 0–60% on personal income
+- **Corporate Tax:** 0–50% on business income
+- **VAT / Sales Tax:** 0–30% on consumption
+- **Tariff Rate:** 0–25% on imports (sector tariff schedules live in the Trade & Commerce tab)
+- **Wealth Tax:** 0–10% on accumulated wealth
+- **Capital Gains Tax:** 0–40% on investment returns
 
 ## How Taxes Connect to Your Nation
 
 Your tax configuration doesn't exist in isolation — it connects to other parts of your nation:
 
-- **Government:** Your government components affect which taxes are available. Some government types require or restrict certain tax components.
+- **Government:** Your government components affect how effectively your taxes are collected.
 - **Economy:** Tax revenue feeds directly into your economic model, affecting GDP calculations, government spending capacity, and debt management.
-- **Effectiveness Score:** Your combined tax effectiveness is displayed alongside government and economic effectiveness, giving you a unified view of how well your nation is configured.
 
 ## Revenue Analysis Tools
 
-The Tax Calculator helps you understand and optimize your revenue:
+Tax Revenue Projections helps you understand and optimize your revenue:
 
-- See how much each tax component contributes to your total revenue
-- Run what-if scenarios by adjusting rates and seeing the impact
-- Track historical revenue trends over time
-- Get suggestions for fixing configuration issues and improving efficiency
+- See how much each tax contributes to your total revenue
+- Try out different rates and see the impact right away
+- Use the **National Budget** tab to see where that revenue goes
 
 > **Related Help Pages**
 >
 > - [Economic Calculations](/help/economy/calculations) — How GDP and revenue formulas work
-> - [The Component Library](/help/government/components) — browse the full set of government, economic, and tax pieces
+> - [The Component Library](/help/government/components) — browse the full set of government and economic pieces
 > - [Country Building Guide](/help/gameplay/country-building) — Complete guide to the builder workflow

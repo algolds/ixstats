@@ -8,7 +8,7 @@ badge: Government & Structure
 
 The Traditional Government Builder gives you a straightforward way to define your country's government using classic, recognizable structures. If you're more comfortable thinking in terms of presidents, parliaments, and courts than individual policy components, this is the place to start.
 
-- Choose your executive type (e.g., presidential, parliamentary, monarchical), your legislative body, and your judicial system during the setup process.
+- Choose your executive type (e.g., presidential, parliamentary, monarchical), your legislative body, and your judicial system in the builder’s Government step (the **Structure** tab, available in expert mode).
 - Your traditional choices create a quick summary that other players see on your country profile, making it easy to understand your government at a glance.
 - You can mix these traditional selections with [Atomic Components](/help/government/atomic) to build unique hybrid governments that go beyond the standard archetypes.
 
@@ -16,15 +16,14 @@ The Traditional Government Builder gives you a straightforward way to define you
 
 > **How to Use the Builder**
 >
-> 1. Open the Country Builder and navigate to the Government step.
+> 1. Open the Country Builder, navigate to the Government step, and open the **Structure** tab (expert mode).
 > 2. Set your government type, leadership titles, and descriptions for each branch.
 > 3. Fill in optional details like your national motto or founding events to make your country richer — these also sync with your IxWiki page if you have one.
-> 4. Use the Review step to preview everything before saving.
+> 4. Use the **Preview & Create** step to preview everything before saving.
 
 ## After You Save
 
-- Your MyCountry Government tab shows your selections along with any policy levers connected to them.
-- ThinkPages posts from your country are automatically tagged with your governance type, making them easier for other players to find.
+- Your government’s shape carries into MyCountry → **Politics**, where you manage your cabinet, parties, and legislature.
 - You can return to the builder at any time to update your government as your country evolves — the same forms are used for both creation and editing.
 
 ## Learn More

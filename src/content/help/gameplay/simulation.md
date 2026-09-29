@@ -25,7 +25,7 @@ One in-world day passes every twelve real hours. Pop in once a day and you’ll 
 
 The world keeps you on your toes in three ways:
 
-- [**Crises**](/help/defense/crisis-events) — disasters, downturns, and unrest, each with a severity and choices that shape how it ends.
+- [**Crises**](/help/defense/crisis-events) — disasters, downturns, and unrest, each with a severity.
 - [**National issues**](/help/gameplay/national-issues) — decisions that grow out of your nation’s own situation, with consequences that stick.
 - [**Diplomatic scenarios**](/help/diplomacy/scenarios) — trade, culture, and security situations with other nations, shaped by who you’re dealing with.
 
