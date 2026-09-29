@@ -95,6 +95,21 @@ export function getWikiUserAgent(_source: WikiSource = "ixwiki"): string {
   return DEFAULT_USER_AGENT;
 }
 
+function isWikiSource(value: string): value is WikiSource {
+  return Object.hasOwn(WIKI_SOURCES, value);
+}
+
+/** A `?source=` value as a wiki source; anything else reads as ixwiki. */
+export function parseWikiSource(value: string | null | undefined): WikiSource {
+  return value && isWikiSource(value) ? value : "ixwiki";
+}
+
+/** The WikiOS reader path for a page; a page of another wiki carries `?source=`. */
+export function wikiReaderPath(title: string, source: WikiSource = "ixwiki"): string {
+  const path = `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  return source === "ixwiki" ? path : `${path}?source=${source}`;
+}
+
 /**
  * Get the appropriate MediaWiki API URL based on context and wiki source
  */

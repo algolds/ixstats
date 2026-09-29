@@ -8,7 +8,12 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { ClaimError, createClaimsService, type NationAssignedEvent } from "~/server/modules/realms";
+import {
+  ClaimError,
+  createClaimsService,
+  getRealmHub,
+  type NationAssignedEvent,
+} from "~/server/modules/realms";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { parsePrismaError } from "~/lib/prisma-error";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
@@ -69,39 +74,30 @@ export const realmsRouter = createTRPCRouter({
   /** Public realm page data (public and unlisted realms are both readable by link). */
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string().min(1).max(100) }))
-    .query(async ({ ctx, input }) => {
-      const realm = await ctx.db.realm.findUnique({
-        where: { slug: input.slug },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true,
-          thumbnail: true,
-          status: true,
-          visibility: true,
-          countries: {
-            orderBy: { name: "asc" },
-            select: { id: true, name: true, slug: true, flag: true, ownerUserId: true },
-          },
-        },
-      });
-      if (!realm) return null;
-      // Public endpoint: expose "claimed", never internal user ids.
-      return {
-        ...realm,
-        countries: realm.countries.map(({ ownerUserId, ...c }) => ({
-          ...c,
-          claimed: ownerUserId !== null,
-        })),
-      };
-    }),
+    .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug)),
 
   claimCountry: protectedProcedure
     .input(z.object({ countryId: z.string().min(1) }))
     .mutation(({ ctx, input }) =>
       claims(ctx.db).claimCountry(ctx.user, input.countryId).catch(claimError)
     ),
+
+  /** Claim a nation page of the realm's lore index; approval creates the realm's country (ruling E-f). */
+  claimNationPage: protectedProcedure
+    .input(
+      z.object({
+        realmSlug: z.string().min(1).max(100),
+        title: z.string().trim().min(1).max(255),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const realm = await ctx.db.realm.findUnique({
+        where: { slug: input.realmSlug },
+        select: { id: true },
+      });
+      if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+      return claims(ctx.db).claimNationPage(ctx.user, realm.id, input.title).catch(claimError);
+    }),
 
   myClaims: protectedProcedure.query(({ ctx }) => claims(ctx.db).myClaims(ctx.user)),
 

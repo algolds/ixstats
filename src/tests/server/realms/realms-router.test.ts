@@ -5,8 +5,15 @@ import { Prisma } from "@prisma/client";
 import { realmsRouter } from "~/server/api/routers/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
-function caller(findUnique: jest.Mock) {
-  const ctx = createMockRouterContext({ db: { realm: { findUnique } }, auth: null, user: null });
+function caller(
+  findUnique: jest.Mock,
+  realmPage = { findFirst: jest.fn().mockResolvedValue(null) }
+) {
+  const ctx = createMockRouterContext({
+    db: { realm: { findUnique }, realmPage },
+    auth: null,
+    user: null,
+  });
   return realmsRouter.createCaller(ctx as never);
 }
 
@@ -24,6 +31,8 @@ describe("realms.getBySlug", () => {
         { id: "c1", name: "Aurelia", slug: "aurelia", flag: null, ownerUserId: "u_secret" },
         { id: "c2", name: "Borea", slug: "borea", flag: null, ownerUserId: null },
       ],
+      pages: [],
+      _count: { pages: 0 },
     });
     const realm = await caller(findUnique).getBySlug({ slug: "ixworld" });
 
@@ -38,6 +47,164 @@ describe("realms.getBySlug", () => {
   it("returns null for an unknown slug", async () => {
     const findUnique = jest.fn().mockResolvedValue(null);
     await expect(caller(findUnique).getBySlug({ slug: "nowhere" })).resolves.toBeNull();
+  });
+
+  it("lists the nation pages no country of the realm has taken, and the size and source of the lore index", async () => {
+    const findUnique = jest.fn().mockResolvedValue({
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      description: null,
+      thumbnail: null,
+      status: "active",
+      visibility: "public",
+      countries: [
+        { id: "c1", name: "Gallambria", slug: "gallambria-eurth", flag: null, ownerUserId: "u1" },
+      ],
+      pages: [
+        { title: "Aurelia", wikiSource: "iiwiki" },
+        { title: "Gallambria", wikiSource: "iiwiki" },
+      ],
+      _count: { pages: 2637 },
+    });
+    const realmPage = { findFirst: jest.fn().mockResolvedValue({ wikiSource: "iiwiki" }) };
+    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "eurth" });
+
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { slug: "eurth" },
+      select: expect.objectContaining({
+        pages: {
+          where: { kind: "nation" },
+          orderBy: { title: "asc" },
+          select: { title: true, wikiSource: true },
+        },
+        _count: { select: { pages: true } },
+      }),
+    });
+    expect(realmPage.findFirst).toHaveBeenCalledWith({
+      where: { realmId: "eurth-id" },
+      select: { wikiSource: true },
+    });
+    expect(realm).toMatchObject({
+      nationPages: [{ title: "Aurelia", wikiSource: "iiwiki" }],
+      lorePageCount: 2637,
+      loreSource: "iiwiki",
+    });
+    expect(realm).not.toHaveProperty("pages");
+    expect(realm).not.toHaveProperty("_count");
+    expect(JSON.stringify(realm)).not.toContain("u1");
+  });
+
+  it("a realm without a lore index has no nation pages and no lore source", async () => {
+    const findUnique = jest.fn().mockResolvedValue({
+      id: "default",
+      slug: "ixworld",
+      name: "IxWorld",
+      description: null,
+      thumbnail: null,
+      status: "active",
+      visibility: "public",
+      countries: [],
+      pages: [],
+      _count: { pages: 0 },
+    });
+    const realmPage = { findFirst: jest.fn() };
+    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "ixworld" });
+    expect(realm).toMatchObject({ nationPages: [], lorePageCount: 0, loreSource: null });
+    expect(realmPage.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("realms.claimNationPage", () => {
+  const player = {
+    id: "u1",
+    clerkUserId: "clerk_u1",
+    countryId: null,
+    role: { name: "user", level: 100 },
+  };
+
+  function claimDb(realm: { id: string } | null = { id: "eurth-id" }) {
+    return {
+      realm: { findUnique: jest.fn().mockResolvedValue(realm) },
+      realmPage: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({ wikiSource: "iiwiki", realm: { slug: "eurth", settings: null } }),
+      },
+      country: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        count: jest.fn().mockResolvedValue(0),
+      },
+      wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+      realmClaim: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockImplementation(({ data }) => Promise.resolve({ id: "cl1", ...data })),
+      },
+      $transaction: jest.fn(),
+    };
+  }
+
+  function claimCaller(db: ReturnType<typeof claimDb>, signedIn = true) {
+    const ctx = createMockRouterContext({
+      db,
+      auth: signedIn ? { userId: player.clerkUserId } : null,
+      user: signedIn ? player : null,
+    });
+    return realmsRouter.createCaller(ctx as never);
+  }
+
+  it("claims the realm's nation page by realm slug; without a verified wiki account it is pending", async () => {
+    const db = claimDb();
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+    ).resolves.toEqual({ claimId: "cl1", status: "pending", autoApproved: false });
+    expect(db.realm.findUnique).toHaveBeenCalledWith({
+      where: { slug: "eurth" },
+      select: { id: true },
+    });
+    expect(db.realmPage.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { realmId: "eurth-id", kind: "nation", title: "Aurelia" } })
+    );
+    expect(db.realmClaim.create).toHaveBeenCalledWith({
+      data: {
+        realmId: "eurth-id",
+        userId: "u1",
+        wikiSource: "iiwiki",
+        wikiPageTitle: "Aurelia",
+        countryId: null,
+        status: "pending",
+      },
+    });
+  });
+
+  it("an unknown realm is NOT_FOUND", async () => {
+    const db = claimDb(null);
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "nowhere", title: "Aurelia" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Realm not found" });
+    expect(db.realmPage.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("a page outside the realm's index is NOT_FOUND and a nation that exists is CONFLICT", async () => {
+    const missing = claimDb();
+    missing.realmPage.findFirst.mockResolvedValue(null);
+    await expect(
+      claimCaller(missing).claimNationPage({ realmSlug: "eurth", title: "Nowhere" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    const taken = claimDb();
+    taken.country.findFirst.mockResolvedValue({ id: "c1" });
+    await expect(
+      claimCaller(taken).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("requires sign-in", async () => {
+    const db = claimDb();
+    await expect(
+      claimCaller(db, false).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+    ).rejects.toThrow("Authentication required");
+    expect(db.realm.findUnique).not.toHaveBeenCalled();
   });
 });
 

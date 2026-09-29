@@ -11,6 +11,7 @@ import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { getWikiBaseUrl, parseWikiSource, WIKI_SOURCES } from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 
 const RESERVED_TOOL_PAGES: Record<string, string> = {
@@ -50,8 +51,12 @@ export default function WikiOSArticlePage() {
   const title = slug.replace(/_/g, " ");
   const isMainPage = title === "Main Page" || title === "Main_Page" || slug === "Main_Page";
 
+  // ?source= reads another wiki's page (e.g. a realm's iiwiki lore); only ixwiki pages are editable here
+  const wikiSource = parseWikiSource(searchParams.get("source"));
+  const isIxWiki = wikiSource === "ixwiki";
+
   // Check URL search param for edit mode (e.g. ?action=edit)
-  const isEditAction = searchParams.get("action") === "edit";
+  const isEditAction = isIxWiki && searchParams.get("action") === "edit";
   const isMarginParam = searchParams.get("margin");
   const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
 
@@ -147,7 +152,7 @@ export default function WikiOSArticlePage() {
 
   // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
-    { title },
+    { title, wikiSource },
     {
       enabled: !!title && !isCategoryOrSpecialOrMain,
       staleTime: 10 * 60 * 1000,
@@ -157,14 +162,14 @@ export default function WikiOSArticlePage() {
 
   // Background idle wikitext warmup so clicking Edit is 0ms
   useEffect(() => {
-    if (data && !isMainPage) {
+    if (data && !isMainPage && isIxWiki) {
       if ("requestIdleCallback" in window) {
         window.requestIdleCallback(() => {
           void utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
         });
       }
     }
-  }, [data, title, isMainPage, utils]);
+  }, [data, title, isMainPage, isIxWiki, utils]);
 
   // Canonical link and page title
   useEffect(() => {
@@ -172,16 +177,17 @@ export default function WikiOSArticlePage() {
       document.title = "IxWiki — WikiOS";
     } else if (data?.title) {
       const prefix = mode !== "reading" ? `Editing ${data.title}` : data.title;
-      document.title = `${prefix} — IxWiki`;
+      document.title = `${prefix} — ${WIKI_SOURCES[wikiSource].name}`;
       let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
       if (!canonical) {
         canonical = document.createElement("link");
         canonical.rel = "canonical";
         document.head.appendChild(canonical);
       }
-      canonical.href = `https://ixwiki.com/wiki/${encodeURIComponent(data.title.replace(/ /g, "_"))}`;
+      const origin = getWikiBaseUrl(wikiSource).replace(/\/+$/, "");
+      canonical.href = `${origin}/wiki/${encodeURIComponent(data.title.replace(/ /g, "_"))}`;
     }
-  }, [data?.title, isMainPage, mode]);
+  }, [data?.title, isMainPage, mode, wikiSource]);
 
   const handleEnterEdit = useCallback((editMode: "source" | "visual" = "source") => {
     setMode(editMode);
@@ -231,17 +237,19 @@ export default function WikiOSArticlePage() {
               <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
                 <h2 className="mb-2 text-lg font-semibold text-red-400">Article not found</h2>
                 <p className="text-sm text-zinc-400">
-                  The page &ldquo;{title}&rdquo; does not exist on IxWiki.
+                  The page &ldquo;{title}&rdquo; does not exist on {WIKI_SOURCES[wikiSource].name}.
                 </p>
-                <div className="mt-4 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleEnterEdit("source")}
-                    className="wikios-action-btn cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
-                  >
-                    Create this page
-                  </button>
-                </div>
+                {isIxWiki && (
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleEnterEdit("source")}
+                      className="wikios-action-btn cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+                    >
+                      Create this page
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             {data && (
@@ -253,6 +261,7 @@ export default function WikiOSArticlePage() {
                 toc={data.toc}
                 categories={data.categories}
                 lastModified={data.lastModified ?? null}
+                wikiSource={wikiSource}
                 authorInfo={
                   data.authorInfo
                     ? {

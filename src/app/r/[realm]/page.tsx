@@ -3,10 +3,39 @@
 import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Globe } from "iconoir-react";
+import { Globe, OpenBook } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
+import { ClaimableNations } from "./_components/ClaimableNations";
+
+/** The realm's lore lives on its wiki (ruling E-a); WikiOS renders the portal live from that wiki. */
+function LoreSection({
+  realmName,
+  count,
+  source,
+}: {
+  realmName: string;
+  count: number;
+  source: string;
+}) {
+  const portal = `Portal:${realmName}`;
+  return (
+    <section className="border-border bg-card/70 rounded-2xl border p-6">
+      <h2 className="text-foreground mb-3 text-sm font-bold">
+        Lore · {count.toLocaleString()} pages
+      </h2>
+      <Link
+        href={createUrl(wikiReaderPath(portal, parseWikiSource(source)))}
+        className="hover:bg-muted text-foreground inline-flex items-center gap-2 rounded-xl p-2 text-sm"
+      >
+        <OpenBook className="h-4 w-4" />
+        Read {portal} in WikiOS
+      </Link>
+    </section>
+  );
+}
 
 export default function RealmPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
@@ -58,6 +87,14 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
           ))}
         </ul>
       </section>
+
+      {realm.nationPages.length > 0 && (
+        <ClaimableNations realmSlug={realm.slug} pages={realm.nationPages} />
+      )}
+
+      {realm.lorePageCount > 0 && realm.loreSource && (
+        <LoreSection realmName={realm.name} count={realm.lorePageCount} source={realm.loreSource} />
+      )}
     </div>
   );
 }

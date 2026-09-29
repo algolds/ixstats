@@ -11,3 +11,4 @@ export {
   type OwnershipTx,
 } from "./realms.ownership";
 export { ClaimError, createClaimsService, type ClaimErrorCode, type ClaimsDeps, type NationAssignedEvent } from "./realms.claims";
+export { getRealmHub } from "./realms.hub";

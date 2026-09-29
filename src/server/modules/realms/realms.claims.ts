@@ -1,9 +1,13 @@
 /**
- * Realm claims: "claim anything that already exists". Phase 1 claims existing countries. A claim is
- * auto-approved when the claimant's *verified* wiki account created the nation's wiki page; otherwise
- * it waits for a realm moderator (site admins for IxWorld, whose owner is "system").
+ * Realm claims: "claim anything that already exists" — an existing country, or a nation page in the realm's
+ * lore index, whose approval creates the country (ruling E-f). A claim is auto-approved when the claimant's
+ * *verified* wiki account created the nation's wiki page; otherwise it waits for a realm moderator (site
+ * admins for IxWorld, whose owner is "system").
  */
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
+import { parsePrismaError } from "~/lib/prisma-error";
+import { generateSlug } from "~/lib/utils/slug-utils";
 import {
   isProofSource,
   normalizeWikiUsername,
@@ -42,8 +46,21 @@ export interface ClaimsDeps {
 
 type ClaimsDb = Pick<
   PrismaClient,
-  "country" | "user" | "wikiAccountLink" | "realmClaim" | "$transaction"
+  "country" | "user" | "wikiAccountLink" | "realmClaim" | "realmPage" | "$transaction"
 >;
+type ClaimsTx = Pick<Prisma.TransactionClient, "country" | "user" | "realmClaim">;
+
+/** A nation page of a realm's lore index — the claimable unit before its Country exists. */
+interface NationPage {
+  realmId: string;
+  realmSlug: string;
+  wikiSource: string;
+  title: string;
+}
+
+/** What an approval hands over: an existing country, or a nation page whose country is created then. */
+type ClaimTarget =
+  { kind: "country"; countryId: string; countryName: string } | { kind: "page"; page: NationPage };
 
 interface ClaimDecision {
   status: "approved" | "rejected";
@@ -56,6 +73,109 @@ const AUTO_REVIEWER = "system:auto";
 const canonical = (name: string) =>
   normalizeWikiUsername(resolvePrimaryWikiUsername(normalizeWikiUsername(name)));
 const notPending = () => new ClaimError("NOT_PENDING", "This claim was already decided");
+const pending = (claimId: string) => ({ claimId, status: "pending" as const, autoApproved: false });
+const rivalRejected = () => ({
+  status: "rejected",
+  reviewedBy: AUTO_REVIEWER,
+  reviewedAt: new Date(),
+  rejectionReason: "Another claim for this nation was approved",
+});
+
+async function nationExists(
+  client: Pick<PrismaClient, "country">,
+  realmId: string,
+  name: string
+): Promise<boolean> {
+  return !!(await client.country.findFirst({ where: { realmId, name }, select: { id: true } }));
+}
+
+const nationTaken = () =>
+  new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
+
+/** A concurrent approval that created the same (realm, name) first surfaces as a unique violation. */
+function uniqueAsTaken(error: Error): never {
+  throw parsePrismaError(error)?.type === "unique_constraint" ? nationTaken() : error;
+}
+
+/** Ruling E-f: the claimed nation's Country with baseline data. A slug taken elsewhere gets -<realm slug> (E-g). */
+async function createNationCountry(tx: ClaimsTx, page: NationPage) {
+  if (await nationExists(tx, page.realmId, page.title)) throw nationTaken();
+  const slug = generateSlug(page.title);
+  const slugTaken = await tx.country.findUnique({ where: { slug }, select: { id: true } });
+  return tx.country
+    .create({
+      data: {
+        ...buildBaselineCountryData(page.title),
+        slug: slugTaken ? `${slug}-${page.realmSlug}` : slug,
+        realmId: page.realmId,
+        wikiSource: page.wikiSource,
+        wikiPageTitle: page.title,
+      },
+      select: { id: true, name: true },
+    })
+    .catch(uniqueAsTaken);
+}
+
+/** Inside the approving transaction: hand the nation over and turn away rival pending claims for it. */
+async function handOver(
+  tx: ClaimsTx,
+  claim: { id: string; userId: string },
+  target: ClaimTarget
+): Promise<{ id: string; name: string }> {
+  if (target.kind === "country") {
+    await assignNation(tx, { userId: claim.userId, countryId: target.countryId });
+    await tx.realmClaim.updateMany({
+      where: { countryId: target.countryId, status: "pending", id: { not: claim.id } },
+      data: rivalRejected(),
+    });
+    return { id: target.countryId, name: target.countryName };
+  }
+  const { page } = target;
+  const country = await createNationCountry(tx, page);
+  await assignNation(tx, { userId: claim.userId, countryId: country.id });
+  await tx.realmClaim.update({ where: { id: claim.id }, data: { countryId: country.id } });
+  await tx.realmClaim.updateMany({
+    where: {
+      realmId: page.realmId,
+      wikiPageTitle: page.title,
+      status: "pending",
+      id: { not: claim.id },
+    },
+    data: rivalRejected(),
+  });
+  return country;
+}
+
+function claimTarget(claim: {
+  realmId: string;
+  countryId: string | null;
+  wikiSource: string | null;
+  wikiPageTitle: string | null;
+  realm: { slug: string };
+  country: { name: string } | null;
+}): ClaimTarget | null {
+  if (claim.countryId) {
+    return { kind: "country", countryId: claim.countryId, countryName: claim.country?.name ?? "" };
+  }
+  if (!claim.wikiPageTitle || !claim.wikiSource) return null;
+  return {
+    kind: "page",
+    page: {
+      realmId: claim.realmId,
+      realmSlug: claim.realm.slug,
+      wikiSource: claim.wikiSource,
+      title: claim.wikiPageTitle,
+    },
+  };
+}
+
+/** A race lost inside an auto-approval surfaces as the matching claim error, never as a 500. */
+function ownershipAsClaimError(error: Error): never {
+  if (error instanceof NationOwnershipError && error.code !== "COUNTRY_NOT_FOUND") {
+    throw new ClaimError(error.code, error.message);
+  }
+  throw error;
+}
 
 /**
  * pending → decided, guarded on the current status so overlapping reviews (READ COMMITTED) cannot both win.
@@ -92,6 +212,20 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     }
   }
 
+  async function assertUnderCap(
+    actor: RealmActor,
+    realmId: string,
+    settings: Prisma.JsonValue | null | undefined
+  ) {
+    const held = await db.country.count({ where: { ownerUserId: actor.id, realmId } });
+    if (held >= realmSettings(settings).maxNationsPerUser) {
+      throw new ClaimError(
+        "CAP_REACHED",
+        "You already hold the maximum number of nations in this realm"
+      );
+    }
+  }
+
   async function loadClaimable(actor: RealmActor, countryId: string) {
     const country = await db.country.findUnique({
       where: { id: countryId },
@@ -108,15 +242,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     if (!country) throw new ClaimError("NOT_FOUND", "Country not found");
     if (country.ownerUserId)
       throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
-    const held = await db.country.count({
-      where: { ownerUserId: actor.id, realmId: country.realmId },
-    });
-    if (held >= realmSettings(country.realm?.settings).maxNationsPerUser) {
-      throw new ClaimError(
-        "CAP_REACHED",
-        "You already hold the maximum number of nations in this realm"
-      );
-    }
+    await assertUnderCap(actor, country.realmId, country.realm?.settings);
     return country;
   }
 
@@ -125,13 +251,13 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const existing = await db.realmClaim.findFirst({
       where: { userId: actor.id, countryId, status: "pending" },
     });
-    if (existing) return { claimId: existing.id, status: "pending" as const, autoApproved: false };
+    if (existing) return pending(existing.id);
 
     if (!(await isVerifiedCreator(actor.id, country))) {
       const claim = await db.realmClaim.create({
         data: { realmId: country.realmId, userId: actor.id, countryId, status: "pending" },
       });
-      return { claimId: claim.id, status: "pending" as const, autoApproved: false };
+      return pending(claim.id);
     }
     const claim = await db.$transaction(async (tx) => {
       const created = await tx.realmClaim.create({
@@ -157,6 +283,65 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     return { claimId: claim.id, status: "approved" as const, autoApproved: true };
   }
 
+  async function loadClaimablePage(
+    actor: RealmActor,
+    realmId: string,
+    title: string
+  ): Promise<NationPage> {
+    const page = await db.realmPage.findFirst({
+      where: { realmId, kind: "nation", title },
+      select: { wikiSource: true, realm: { select: { slug: true, settings: true } } },
+    });
+    if (!page) throw new ClaimError("NOT_FOUND", "That page is not a nation of this realm");
+    if (await nationExists(db, realmId, title))
+      throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
+    await assertUnderCap(actor, realmId, page.realm.settings);
+    return { realmId, realmSlug: page.realm.slug, wikiSource: page.wikiSource, title };
+  }
+
+  /** Claim a nation page of the realm's lore index; approval (now or by review) creates its Country. */
+  async function claimNationPage(actor: RealmActor, realmId: string, title: string) {
+    const page = await loadClaimablePage(actor, realmId, title);
+    const existing = await db.realmClaim.findFirst({
+      where: { userId: actor.id, realmId, wikiPageTitle: title, status: "pending" },
+    });
+    if (existing) return pending(existing.id);
+
+    const filed = { realmId, userId: actor.id, wikiSource: page.wikiSource, wikiPageTitle: title };
+    const verified = await isVerifiedCreator(actor.id, {
+      name: title,
+      wikiSource: page.wikiSource,
+      wikiPageTitle: title,
+    });
+    if (!verified) {
+      const claim = await db.realmClaim.create({
+        data: { ...filed, countryId: null, status: "pending" },
+      });
+      return pending(claim.id);
+    }
+    const { claim, country } = await db
+      .$transaction(async (tx) => {
+        const created = await tx.realmClaim.create({
+          data: {
+            ...filed,
+            status: "approved",
+            autoApproved: true,
+            reviewedBy: AUTO_REVIEWER,
+            reviewedAt: new Date(),
+          },
+        });
+        return { claim: created, country: await handOver(tx, created, { kind: "page", page }) };
+      })
+      .catch(ownershipAsClaimError);
+    await deps.onNationAssigned({
+      userId: actor.id,
+      clerkUserId: actor.clerkUserId,
+      countryId: country.id,
+      countryName: country.name,
+    });
+    return { claimId: claim.id, status: "approved" as const, autoApproved: true };
+  }
+
   async function reject(claimId: string, reviewer: string, reason: string) {
     await decide(db, claimId, {
       status: "rejected",
@@ -175,7 +360,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const claim = await db.realmClaim.findUnique({
       where: { id: claimId },
       include: {
-        realm: { select: { ownerId: true } },
+        realm: { select: { ownerId: true, slug: true } },
         user: { select: { clerkUserId: true } },
         country: { select: { name: true } },
       },
@@ -183,30 +368,22 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     if (!claim) throw new ClaimError("NOT_FOUND", "Claim not found");
     if (!canModerateRealm(actor, claim.realm))
       throw new ClaimError("FORBIDDEN", "Only this realm's moderators can review claims");
-    if (claim.status !== "pending" || !claim.countryId) throw notPending();
+    const target = claimTarget(claim);
+    if (claim.status !== "pending" || !target) throw notPending();
     if (!decision.approve) {
       const reason = decision.reason?.trim() ?? "";
       if (reason.length < 3) throw new ClaimError("REASON_REQUIRED", "Give the player a reason");
       return reject(claimId, actor.clerkUserId, reason);
     }
-    const countryId = claim.countryId;
+    let country: { id: string; name: string };
     try {
-      await db.$transaction(async (tx) => {
+      country = await db.$transaction(async (tx) => {
         await decide(tx, claimId, {
           status: "approved",
           reviewedBy: actor.clerkUserId,
           reviewedAt: new Date(),
         });
-        await assignNation(tx, { userId: claim.userId, countryId });
-        await tx.realmClaim.updateMany({
-          where: { countryId, status: "pending", id: { not: claimId } },
-          data: {
-            status: "rejected",
-            reviewedBy: AUTO_REVIEWER,
-            reviewedAt: new Date(),
-            rejectionReason: "Another claim for this nation was approved",
-          },
-        });
+        return handOver(tx, claim, target);
       });
     } catch (error) {
       if (error instanceof NationOwnershipError) {
@@ -221,8 +398,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     await deps.onNationAssigned({
       userId: claim.userId,
       clerkUserId: claim.user.clerkUserId,
-      countryId,
-      countryName: claim.country?.name ?? "",
+      countryId: country.id,
+      countryName: country.name,
     });
     return { status: "approved" as const };
   }
@@ -262,5 +439,5 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     });
   }
 
-  return { claimCountry, reviewClaim, listClaims, myClaims };
+  return { claimCountry, claimNationPage, reviewClaim, listClaims, myClaims };
 }

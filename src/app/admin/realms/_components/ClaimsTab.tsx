@@ -5,7 +5,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 
-type Claimant = RouterOutputs["realms"]["listClaims"][number]["user"];
+type Claim = RouterOutputs["realms"]["listClaims"][number];
+type Claimant = Claim["user"];
 
 const WIKI_LABELS: Record<string, string> = {
   ixwiki: "IxWiki",
@@ -32,6 +33,19 @@ function ClaimantName({ user }: { user: Claimant }) {
     );
   }
   return <span className="font-mono">{user.clerkUserId}</span>;
+}
+
+/** A claim on an existing country names the country; a nation-page claim names the page its approval turns into a country. */
+function ClaimedNation({ claim }: { claim: Claim }) {
+  if (claim.country) return <>{claim.country.name}</>;
+  if (!claim.wikiPageTitle) return <>Unknown nation</>;
+  const wiki = WIKI_LABELS[claim.wikiSource ?? ""] ?? claim.wikiSource;
+  return (
+    <>
+      {claim.wikiPageTitle}{" "}
+      <span className="text-muted-foreground text-xs font-normal">(new nation from {wiki})</span>
+    </>
+  );
 }
 
 export function ClaimsTab() {
@@ -64,7 +78,7 @@ export function ClaimsTab() {
         >
           <div>
             <p className="text-foreground text-sm font-semibold">
-              {claim.country?.name ?? "Unknown nation"}{" "}
+              <ClaimedNation claim={claim} />{" "}
               <span className="text-muted-foreground">· {claim.realm.name}</span>
             </p>
             <p className="text-muted-foreground text-xs">
