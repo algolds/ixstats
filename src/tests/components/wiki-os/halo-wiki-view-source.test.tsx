@@ -56,6 +56,24 @@ describe("Halo wiki view: This Page actions follow the page's wiki (ruling E-lâ€
     );
   });
 
+  it("reading-progress rows reopen each page on its own wiki; entries without a wiki open on IxWiki (ruling E-lâ€³)", () => {
+    mockSource = "ixwiki";
+    localStorage.setItem(
+      "wikios:pausedSessions",
+      JSON.stringify([
+        { title: "Gallambria", source: "iiwiki", scrollPercent: 40, updatedAt: Date.now() },
+        { title: "Aurelia", scrollPercent: 10, updatedAt: Date.now() },
+      ])
+    );
+    render(<WikiView onClose={jest.fn()} />);
+
+    fireEvent.click(screen.getByText("Gallambria"));
+    expect(mockPush).toHaveBeenLastCalledWith("/wiki/Gallambria?source=iiwiki");
+    fireEvent.click(screen.getByText("Aurelia"));
+    expect(mockPush).toHaveBeenLastCalledWith("/wiki/Aurelia");
+    localStorage.clear();
+  });
+
   it("an IxWiki page keeps Edit, History and What links here, and opens on IxWiki", () => {
     mockSource = "ixwiki";
     render(<WikiView onClose={jest.fn()} />);

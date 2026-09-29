@@ -29,6 +29,7 @@ import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import * as IconoirIcons from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { PausedSession } from "../types";
+import { pageRefPath } from "~/lib/wiki-os/page-ref";
 
 export interface WikiProfileViewProps {
   onClose: () => void;
@@ -92,9 +93,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
     }
   };
 
-  const handleResumeSession = (title: string) => {
+  const handleResumeSession = (session: PausedSession) => {
     onClose();
-    restoreSession(title);
+    restoreSession(session);
   };
 
   return (
@@ -168,7 +169,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     <div className="space-y-2">
                       {pausedSessions.map((session) => (
                         <div
-                          key={session.title}
+                          key={pageRefPath(session)}
                           className="border-foreground/30 bg-foreground/[0.02] hover:bg-foreground/[0.04] flex flex-col gap-2 rounded-xl border p-3 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -176,7 +177,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                               {session.title}
                             </span>
                             <button
-                              onClick={() => handleResumeSession(session.title)}
+                              onClick={() => handleResumeSession(session)}
                               className="flex cursor-pointer items-center gap-1 rounded bg-blue-500/10 px-2 py-1 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30"
                             >
                               Resume
@@ -338,17 +339,17 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        {recentArticles.slice(0, 3).map((title) => (
+                        {recentArticles.slice(0, 3).map((page) => (
                           <button
-                            key={title}
+                            key={pageRefPath(page)}
                             onClick={() => {
                               onClose();
-                              restoreSession(title);
+                              restoreSession(page);
                             }}
                             className="bg-foreground/[0.02] border-border/50 text-foreground hover:bg-foreground/[0.04] flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                           >
                             <History className="h-3.5 w-3.5 text-blue-500" />
-                            <span className="truncate">{title}</span>
+                            <span className="truncate">{page.title}</span>
                           </button>
                         ))}
                       </div>

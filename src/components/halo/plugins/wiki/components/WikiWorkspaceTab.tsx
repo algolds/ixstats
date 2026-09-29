@@ -35,7 +35,8 @@ interface WikiWorkspaceTabProps {
     timestamp?: string | null;
   }> | null;
   onClose: () => void;
-  onNavigateToArticle: (title: string) => void;
+  /** Opens the page on its own wiki (IxWiki when none is given) */
+  onNavigateToArticle: (title: string, source?: WikiSource) => void;
 }
 
 export function WikiWorkspaceTab({
@@ -114,7 +115,7 @@ export function WikiWorkspaceTab({
               <button
                 key={idx}
                 type="button"
-                onClick={() => onNavigateToArticle(session.title)}
+                onClick={() => onNavigateToArticle(session.title, session.source)}
                 className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
