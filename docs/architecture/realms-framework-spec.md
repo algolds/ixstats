@@ -80,8 +80,8 @@ Both plans are complete on `realms-foundation`; the ledgers (`.superpowers/sdd/2
 - Schema: `Realm`, `RealmClaim`, `WikiAccountLink` models; `Country.ownerUserId`/`realmId`;
   `User.lastSeenAt` (T1).
 - Wiki account verification — a token pasted on the player's own wiki user page proves control of an
-  ixwiki/iiwiki/althistory account, provided the revision that introduced the token is the account's own
-  (F-3); the verified-link write is an admin-only path, separate from self-service linking (T2).
+  ixwiki/iiwiki/althistory account, provided the token's first appearance since the code was issued was
+  saved by the account itself (F-3, F-6); the verified-link write is an admin-only path, separate from self-service linking (T2).
 - Per-realm nation ownership with a per-user cap (`Realm.settings.maxNationsPerUser`, default 1; site
   admins set it in `/admin/realms` → Realms → edit → Nations per player, 1–20); a system owner *acting as*
   a nation is no longer treated as its real owner for notifications, crons, or auctions (T3, T5).
@@ -162,9 +162,10 @@ The final whole-branch review added five more. **F-1:** `assignNation` makes a n
 when the player has none; `users.setActiveNation` ("Play as") lets an owner switch between their nations;
 `adminAssignNation` releases only the player's nations in the target country's realm. **F-2:**
 `admin.unlinkUserWiki` takes a `source` and revokes through the wiki-links service; `admin.linkUserWiki`
-writes nothing when `adminVerify` refuses (TAKEN). **F-3:** verification walks back up to 20 revisions of the
-user page and requires the revision that introduced the token to be the account's; a token already in every
-fetched revision cannot be attributed and is refused. **F-4:** a pending verification can be unlinked, and
+writes nothing when `adminVerify` refuses (TAKEN). **F-3/F-6:** verification reads the user page's revisions from 5 minutes before the code was
+issued to now and requires the token's first appearance in that window to be the account's own save (so a
+revert cannot launder a planted code); a truncated window or a hidden revision cannot be attributed and is
+refused. **F-4:** a pending verification can be unlinked, and
 only an unexpired code counts as pending. **F-5:** a reused pending claim re-runs the creator check and is
 upgraded in place; known alt accounts merge on ixwiki only; a lost auto-approval race is a claim error;
 claims, verification and Play as use the light mutation rate limit; the backfill refuses `--apply` while
