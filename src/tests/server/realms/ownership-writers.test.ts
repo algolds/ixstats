@@ -31,6 +31,7 @@ function db(user: any, country: any) {
       findUnique: jest.fn().mockResolvedValue(country),
       count: jest.fn().mockResolvedValue(0),
       update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
   return d;
@@ -53,8 +54,8 @@ describe("adminAssignNation", () => {
       where: { id: "c1" },
       data: { ownerUserId: null },
     });
-    expect(d.country.update).toHaveBeenCalledWith({
-      where: { id: "c2" },
+    expect(d.country.updateMany).toHaveBeenCalledWith({
+      where: { id: "c2", ownerUserId: null },
       data: { ownerUserId: "u1" },
     });
     expect(d.user.update).toHaveBeenCalledWith({ where: { id: "u1" }, data: { countryId: "c2" } });
@@ -64,6 +65,7 @@ describe("adminAssignNation", () => {
     const d = db({ id: "u9", clerkUserId: "sys_owner", countryId: null }, country);
     await adminAssignNation(d, { clerkUserId: "sys_owner", countryId: "c2" });
     expect(d.country.update).not.toHaveBeenCalled();
+    expect(d.country.updateMany).not.toHaveBeenCalled();
     expect(d.user.update).toHaveBeenCalledWith({ where: { id: "u9" }, data: { countryId: "c2" } });
   });
 
@@ -73,9 +75,10 @@ describe("adminAssignNation", () => {
       { ...country, ownerUserId: null }
     );
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
-    expect(d.country.update).toHaveBeenCalledTimes(2);
-    expect(d.country.update).toHaveBeenLastCalledWith({
-      where: { id: "c2" },
+    expect(d.country.update).toHaveBeenCalledTimes(1);
+    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c2" }, data: { ownerUserId: null } });
+    expect(d.country.updateMany).toHaveBeenCalledWith({
+      where: { id: "c2", ownerUserId: null },
       data: { ownerUserId: "u1" },
     });
   });

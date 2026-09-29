@@ -1,9 +1,38 @@
 "use client";
 import { useState } from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+
+type Claimant = RouterOutputs["realms"]["listClaims"][number]["user"];
+
+const WIKI_LABELS: Record<string, string> = {
+  ixwiki: "IxWiki",
+  iiwiki: "IIWiki",
+  althistory: "AltHistory",
+};
+
+/** Verified wiki accounts identify the claimant; the legacy wikiUsername was never proven, so it is labelled. */
+function ClaimantName({ user }: { user: Claimant }) {
+  if (user.wikiAccountLinks.length > 0) {
+    return (
+      <span className="text-foreground">
+        {user.wikiAccountLinks
+          .map((link) => `${WIKI_LABELS[link.source] ?? link.source}: ${link.username} ✓`)
+          .join(", ")}
+      </span>
+    );
+  }
+  if (user.wikiUsername) {
+    return (
+      <span>
+        {user.wikiUsername} <span className="text-amber-500">(unverified)</span>
+      </span>
+    );
+  }
+  return <span className="font-mono">{user.clerkUserId}</span>;
+}
 
 export function ClaimsTab() {
   const utils = api.useUtils();
@@ -39,7 +68,7 @@ export function ClaimsTab() {
               <span className="text-muted-foreground">· {claim.realm.name}</span>
             </p>
             <p className="text-muted-foreground text-xs">
-              Claimed by {claim.user.wikiUsername ?? claim.user.clerkUserId} on{" "}
+              Claimed by <ClaimantName user={claim.user} /> on{" "}
               {new Date(claim.createdAt).toLocaleDateString()}
             </p>
           </div>

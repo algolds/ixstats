@@ -45,9 +45,33 @@ type ClaimsDb = Pick<
   "country" | "user" | "wikiAccountLink" | "realmClaim" | "$transaction"
 >;
 
+interface ClaimDecision {
+  status: "approved" | "rejected";
+  reviewedBy: string;
+  reviewedAt: Date;
+  rejectionReason?: string;
+}
+
 const AUTO_REVIEWER = "system:auto";
 const canonical = (name: string) =>
   normalizeWikiUsername(resolvePrimaryWikiUsername(normalizeWikiUsername(name)));
+const notPending = () => new ClaimError("NOT_PENDING", "This claim was already decided");
+
+/**
+ * pending → decided, guarded on the current status so overlapping reviews (READ COMMITTED) cannot both win.
+ * Runs before any other write of a decision.
+ */
+async function decide(
+  client: Pick<PrismaClient, "realmClaim">,
+  claimId: string,
+  data: ClaimDecision
+): Promise<void> {
+  const { count } = await client.realmClaim.updateMany({
+    where: { id: claimId, status: "pending" },
+    data,
+  });
+  if (count === 0) throw notPending();
+}
 
 export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
   async function isVerifiedCreator(
@@ -134,14 +158,11 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
   }
 
   async function reject(claimId: string, reviewer: string, reason: string) {
-    await db.realmClaim.update({
-      where: { id: claimId },
-      data: {
-        status: "rejected",
-        reviewedBy: reviewer,
-        reviewedAt: new Date(),
-        rejectionReason: reason,
-      },
+    await decide(db, claimId, {
+      status: "rejected",
+      reviewedBy: reviewer,
+      reviewedAt: new Date(),
+      rejectionReason: reason,
     });
     return { status: "rejected" as const };
   }
@@ -162,8 +183,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     if (!claim) throw new ClaimError("NOT_FOUND", "Claim not found");
     if (!canModerateRealm(actor, claim.realm))
       throw new ClaimError("FORBIDDEN", "Only this realm's moderators can review claims");
-    if (claim.status !== "pending" || !claim.countryId)
-      throw new ClaimError("NOT_PENDING", "This claim was already decided");
+    if (claim.status !== "pending" || !claim.countryId) throw notPending();
     if (!decision.approve) {
       const reason = decision.reason?.trim() ?? "";
       if (reason.length < 3) throw new ClaimError("REASON_REQUIRED", "Give the player a reason");
@@ -172,11 +192,12 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const countryId = claim.countryId;
     try {
       await db.$transaction(async (tx) => {
-        await assignNation(tx, { userId: claim.userId, countryId });
-        await tx.realmClaim.update({
-          where: { id: claimId },
-          data: { status: "approved", reviewedBy: actor.clerkUserId, reviewedAt: new Date() },
+        await decide(tx, claimId, {
+          status: "approved",
+          reviewedBy: actor.clerkUserId,
+          reviewedAt: new Date(),
         });
+        await assignNation(tx, { userId: claim.userId, countryId });
         await tx.realmClaim.updateMany({
           where: { countryId, status: "pending", id: { not: claimId } },
           data: {
@@ -214,7 +235,18 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       include: {
         realm: { select: { id: true, name: true, slug: true } },
         country: { select: { id: true, name: true, slug: true, flag: true, wikiPageTitle: true } },
-        user: { select: { id: true, clerkUserId: true, wikiUsername: true } },
+        user: {
+          select: {
+            id: true,
+            clerkUserId: true,
+            wikiUsername: true,
+            // Only proven accounts identify the claimant; wikiUsername is the legacy, unverified column.
+            wikiAccountLinks: {
+              where: { verifiedAt: { not: null } },
+              select: { source: true, username: true },
+            },
+          },
+        },
       },
     });
   }

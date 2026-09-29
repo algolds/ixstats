@@ -15,6 +15,7 @@ function tx(country: any, ownedInRealm = 0) {
       findUnique: jest.fn().mockResolvedValue(country),
       count: jest.fn().mockResolvedValue(ownedInRealm),
       update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     user: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
   } as any;
@@ -34,8 +35,18 @@ describe("assignNation", () => {
   it("sets owner and active pointer (invariant I1)", async () => {
     const t = tx(unowned);
     await assignNation(t, { userId: "u1", countryId: "c1" });
-    expect(t.country.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: "u1" } });
+    expect(t.country.updateMany).toHaveBeenCalledWith({
+      where: { id: "c1", ownerUserId: null },
+      data: { ownerUserId: "u1" },
+    });
     expect(t.user.update).toHaveBeenCalledWith({ where: { id: "u1" }, data: { countryId: "c1" } });
+  });
+
+  it("loses a concurrent race: the guarded ownership write matches nothing → ALREADY_OWNED, no pointer move", async () => {
+    const t = tx(unowned);
+    t.country.updateMany.mockResolvedValue({ count: 0 });
+    await expect(assignNation(t, { userId: "u1", countryId: "c1" })).rejects.toMatchObject({ code: "ALREADY_OWNED" });
+    expect(t.user.update).not.toHaveBeenCalled();
   });
 
   it("refuses a country owned by someone else", async () => {
@@ -47,13 +58,13 @@ describe("assignNation", () => {
   it("enforces the per-realm cap (invariant I2)", async () => {
     const t = tx(unowned, 1);
     await expect(assignNation(t, { userId: "u1", countryId: "c1" })).rejects.toBeInstanceOf(NationOwnershipError);
-    expect(t.country.update).not.toHaveBeenCalled();
+    expect(t.country.updateMany).not.toHaveBeenCalled();
   });
 
   it("re-activating an owned country skips the cap and ownership write", async () => {
     const t = tx({ ...unowned, ownerUserId: "u1" }, 1);
     await assignNation(t, { userId: "u1", countryId: "c1" });
-    expect(t.country.update).not.toHaveBeenCalled();
+    expect(t.country.updateMany).not.toHaveBeenCalled();
     expect(t.user.update).toHaveBeenCalled();
   });
 });
@@ -71,6 +82,7 @@ describe("releaseNation / pointActiveNation", () => {
     await pointActiveNation(t, "u9", "c1");
     expect(t.user.update).toHaveBeenCalledWith({ where: { id: "u9" }, data: { countryId: "c1" } });
     expect(t.country.update).not.toHaveBeenCalled();
+    expect(t.country.updateMany).not.toHaveBeenCalled();
   });
 });
 

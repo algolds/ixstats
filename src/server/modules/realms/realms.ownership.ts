@@ -20,6 +20,8 @@ export class NationOwnershipError extends Error {
   }
 }
 
+const alreadyOwned = () => new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
+
 /** Give `countryId` to `userId` and make it their active nation. */
 export async function assignNation(tx: OwnershipTx, input: { userId: string; countryId: string }): Promise<void> {
   const country = await tx.country.findUnique({
@@ -27,16 +29,19 @@ export async function assignNation(tx: OwnershipTx, input: { userId: string; cou
     select: { id: true, realmId: true, ownerUserId: true, realm: { select: { settings: true } } },
   });
   if (!country) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
-  if (country.ownerUserId && country.ownerUserId !== input.userId) {
-    throw new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
-  }
+  if (country.ownerUserId && country.ownerUserId !== input.userId) throw alreadyOwned();
   if (!country.ownerUserId) {
     const held = await tx.country.count({ where: { ownerUserId: input.userId, realmId: country.realmId } });
     const { maxNationsPerUser } = realmSettings(country.realm?.settings);
     if (held >= maxNationsPerUser) {
       throw new NationOwnershipError("CAP_REACHED", `You already hold ${maxNationsPerUser} nation(s) in this realm`);
     }
-    await tx.country.update({ where: { id: country.id }, data: { ownerUserId: input.userId } });
+    // Conditional write: at READ COMMITTED a concurrent assignment may have taken the nation since the read above.
+    const { count } = await tx.country.updateMany({
+      where: { id: country.id, ownerUserId: null },
+      data: { ownerUserId: input.userId },
+    });
+    if (count === 0) throw alreadyOwned();
   }
   await tx.user.update({ where: { id: input.userId }, data: { countryId: country.id } });
 }
