@@ -41,10 +41,13 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(RARITY_BASE_VALUES.DIVINE).toBe(50000);
   });
 
-  it("should have generated game-icons manifest with >4,000 icons", () => {
-    const manifestPath = join(process.cwd(), "public/icons/game-icons-manifest.json");
-    expect(existsSync(manifestPath)).toBe(true);
+  // public/icons/ is git-ignored and the manifest is built by an archived download script
+  // (scripts/archive/gis_tools/download-and-index-game-icons.ts), so it exists on dev machines
+  // and the server but not in CI.
+  const manifestPath = join(process.cwd(), "public/icons/game-icons-manifest.json");
+  const itWithManifest = existsSync(manifestPath) ? it : it.skip;
 
+  itWithManifest("should have generated game-icons manifest with >4,000 icons", () => {
     const data = JSON.parse(readFileSync(manifestPath, "utf8"));
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThan(4000);
