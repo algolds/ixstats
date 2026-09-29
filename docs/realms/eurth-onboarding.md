@@ -204,19 +204,35 @@ Without this, `/maps?realm=eurth` is empty — **expected**, not a bug, until yo
 > and Quick Update always writes **IxWorld's** map — an Eurth SVG applied there replaces that layer of
 > IxWorld's map. Only **Full Pipeline** has a **Target realm** setting.
 
-1. Obtain a **flat-colour political map** of Eurth: one solid colour per nation, equirectangular
-   projection. Hand-drawn or textured maps vectorise poorly — it must be flat colour.
-2. Convert it to **SVG** first. The Full Pipeline refuses a PNG/JPG ("PNG files must first be converted to
-   SVG"), so trace the PNG outside IxStats (for example Inkscape's Trace Bitmap) into one closed path per
-   nation. Giving each nation's path an `id` equal to the nation's name lets step 4's Auto-Match pair them.
-3. `/admin/maps` → **Import Pipeline** tab → switch from **Quick Update** to **Full Pipeline** → set
-   **Target realm** to `Eurth` → **Choose File** (the SVG) → **Run Pipeline** → check the feature counts
-   and any warnings/validation errors → **Proceed to Import** → check that the confirmation reads "Ready to
-   import … features into **Eurth**" → **Import to Database**. The import merges into Eurth's map only; an
-   unknown target realm is refused.
-4. Link features to nations: open the world editor on Eurth's map (`/admin/maps/editor?realm=eurth`) →
-   **Links** tab → **Auto-Match by Name**, then link any leftovers by hand. Only nations that have been
-   **claimed** exist as countries, so re-run the auto-match as more Eurth nations are claimed.
+1. Obtain a **flat-colour political map** of Eurth as a **PNG** (JPEG is accepted, but compression noise
+   adds stray colours): one solid colour per nation, equirectangular projection, at most **25 MB**.
+   Hand-drawn or textured maps vectorise poorly — it must be flat colour. Colours covering less than
+   0.01% of the image are dropped as noise.
+2. `/admin/maps` → **Import Pipeline** tab → switch from **Quick Update** to **Full Pipeline** → set
+   **Target realm** to `Eurth` → **Choose File** (the PNG) → **Analyse colours**. The pipeline lists the
+   map's colours, largest first, each with its swatch, hex and share of the map.
+3. **Map colours → nations.** For each colour, pick its nation in the searchable box — the list holds
+   Eurth's existing countries plus the claimable nation pages of its lore index (step 3), and you can type
+   a name that isn't listed. Tick **Ignore** for the ocean and any other background colour. The summary
+   under the list counts the **unmapped colours that will be dropped** from the map; a nation can hold
+   only one colour (the wizard won't continue while a nation has two — merge them in the image first).
+4. **Vectorise N mapped colours** → each mapped colour is traced into one political region whose feature
+   id is the nation's name → check the feature counts and any warnings/validation errors → **Proceed to
+   Import** → check that the confirmation reads "Ready to import … features into **Eurth**" → **Import
+   to Database**. The import merges into Eurth's map only; an unknown target realm is refused.
+   - The tracer is the optional `potrace` package. If the **Pipeline Log** shows `potrace not available`
+     for every colour, the server doesn't have it installed and no regions are produced — install it
+     before retrying.
+5. **Regions become nations' territory:**
+   - **Nations claimed after the import take their region automatically.** When a nation-page claim is
+     approved (instantly or by review), the new country is linked to Eurth's unlinked political region
+     whose feature id (or display name) equals the nation's title, and the country's geometry and land
+     area are synced, in the same transaction as the claim. No region of that name → the claim still
+     goes through, unlinked. The public map can take up to 15 minutes (its political-layer cache) to
+     show the new owner.
+   - **Nations that already existed** when you imported, and regions whose names don't match a title
+     exactly, are linked in the world editor: `/admin/maps/editor?realm=eurth` → **Links** tab →
+     **Auto-Match by Name**, then link any leftovers by hand.
 
 Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 (`(realmId, layerType, featureId)`), so nothing you draw here touches IxWorld's map or vice versa.
@@ -236,8 +252,7 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 - **Not shipped yet** (later phases, don't promise these): a public founding application form, the
   per-realm calendar label (not implemented yet — planned), founder moderation/removal/succession tooling
   (including a founder raising their own realm's nation cap — today only site admins can, in
-  `/admin/realms`), a per-realm ThinkPages feed, the passport realm/nation switcher, and PNG upload in the
-  map pipeline (convert to SVG first, step 5).
+  `/admin/realms`), a per-realm ThinkPages feed, and the passport realm/nation switcher.
 
 ---
 

@@ -7,7 +7,7 @@ import { clearLayerCache } from "../../core";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
-import { assertCountryInFeatureRealm } from "./realm-link-guard";
+import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 
 export const geoEditorLinkageValidationRouter = createTRPCRouter({
   /** Validate country ↔ map feature linkage. Returns inconsistencies. */

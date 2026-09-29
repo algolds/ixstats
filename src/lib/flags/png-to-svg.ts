@@ -109,6 +109,41 @@ export async function createColorMask(
     .toBuffer();
 }
 
+export interface PoliticalSvgPath {
+  featureId: string;
+  d: string;
+  fill: string;
+}
+
+/** Feature ids are nation names from the colour mapping (e.g. "Trinidad & Tobago"): escape them for XML. */
+function escapeXmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/** The political layer SVG the parser reads back: one path per region, its id the feature id. */
+export function assemblePoliticalSvg(
+  width: number,
+  height: number,
+  paths: readonly PoliticalSvgPath[]
+): string {
+  return [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"`,
+    `     viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
+    `  <g inkscape:label="political" inkscape:groupmode="layer">`,
+    ...paths.map(
+      (p) =>
+        `  <path id="${escapeXmlAttribute(p.featureId)}" d="${p.d}" fill="${p.fill}" stroke="none" />`
+    ),
+    `  </g>`,
+    `</svg>`,
+  ].join("\n");
+}
+
 /**
  * Convert a PNG political map to SVG.
  *
@@ -153,7 +188,7 @@ export async function convertPngToSvg(
   }
 
   // Step 2: For each color, create mask and vectorize
-  const svgPaths: string[] = [];
+  const svgPaths: PoliticalSvgPath[] = [];
 
   for (const entry of colorEntries) {
     try {
@@ -194,9 +229,7 @@ export async function convertPngToSvg(
 
       if (pathData) {
         const featureId = entry.featureId ?? `feature_${svgPaths.length}`;
-        svgPaths.push(
-          `  <path id="${featureId}" d="${pathData}" fill="${entry.hex}" stroke="none" />`
-        );
+        svgPaths.push({ featureId, d: pathData, fill: entry.hex });
         log.push(`Vectorized: ${featureId} (${entry.hex}, ${entry.pixelCount}px)`);
       }
     } catch (err) {
@@ -207,15 +240,7 @@ export async function convertPngToSvg(
   }
 
   // Step 3: Assemble SVG
-  const svg = [
-    `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"`,
-    `     viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
-    `  <g inkscape:label="political" inkscape:groupmode="layer">`,
-    ...svgPaths,
-    `  </g>`,
-    `</svg>`,
-  ].join("\n");
+  const svg = assemblePoliticalSvg(width, height, svgPaths);
 
   log.push(`Generated SVG with ${svgPaths.length} features`);
 

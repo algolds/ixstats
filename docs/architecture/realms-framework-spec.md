@@ -120,11 +120,15 @@ Both plans are implemented on `realms-foundation`; the ledgers (`.superpowers/sd
   viewer's own nation, even when opened from another realm's map (E4, E-t).
 - This runbook, `docs/realms/eurth-onboarding.md` (E7).
 
+- Image maps (decisions 10–11): the **Full Pipeline** takes a flat-colour PNG/JPEG (≤ 25 MB), detects its
+  colours, lets the admin map each colour to one of the target realm's nations (existing countries and
+  claimable nation pages) or ignore it, and vectorises only the mapped colours into regions named after
+  their nations. Approving a nation-page claim links the new country to its realm's unlinked region of
+  that name and syncs its geometry in the approving transaction (E8).
+
 **Not implemented yet (planned):** the per-realm calendar label (decision 18), founder tooling (settings
 such as the nation cap, moderation, removal, succession), the public founding application, a per-realm
-ThinkPages feed, the passport realm/nation switcher, and PNG input in the pipeline wizard (the Full
-Pipeline takes SVG only; linking features to nations is done afterwards in the world editor's Links tab,
-not by colour in the wizard).
+ThinkPages feed, and the passport realm/nation switcher.
 
 **Rulings (E-a..E-t):** E-a–E-j are the Eurth design spec's binding decisions
 (`docs/superpowers/specs/2026-09-28-realms-eurth-design.md`) — index lore rather than copy it (E-a), a

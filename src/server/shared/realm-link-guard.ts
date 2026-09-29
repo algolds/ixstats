@@ -10,6 +10,7 @@ interface LinkableCountry {
  * A map feature links only to a country of its own realm: every link is followed by a geometry
  * sync that would otherwise overwrite another realm's country (geometry, centroid, land area).
  * No country id (an unlink, or a link left unchanged) passes without a lookup.
+ * Shared by the geo linkage routers and the realm claims module (a claimed nation takes its region).
  */
 export async function assertCountryInFeatureRealm(
   db: Pick<PrismaClient, "country">,

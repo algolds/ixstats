@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { createClaimsService } from "~/server/modules/realms";
+import { createClaimsService, DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 jest.mock("~/lib/wiki-os/adapters/ixstates/user-sync", () => ({
@@ -31,6 +31,44 @@ const uniqueViolation = () =>
     }
   );
 
+interface RegionRow {
+  id: string;
+  realmId: string;
+  layerType: string;
+  featureId: string;
+  displayName: string | null;
+  countryId: string | null;
+  isActive: boolean;
+  geometry: object;
+  centroid: object;
+  boundingBox: number[];
+  areaSqKm: number;
+}
+type Where = Record<string, unknown> & { OR?: Where[] };
+
+/** Prisma-style equality where (plus OR) over rows — enough for map layer lookups and guarded links. */
+function matches(row: RegionRow, where: Where): boolean {
+  return Object.entries(where).every(([key, value]) =>
+    key === "OR"
+      ? (value as Where[]).some((w) => matches(row, w))
+      : row[key as keyof RegionRow] === value
+  );
+}
+
+/** An in-memory map_layers table: finds read it, guarded updates write it. */
+function mapLayerTable(rows: RegionRow[]) {
+  return {
+    findFirst: jest.fn(({ where }: { where: Where }) =>
+      Promise.resolve(rows.find((r) => matches(r, where)) ?? null)
+    ),
+    updateMany: jest.fn(({ where, data }: { where: Where; data: Partial<RegionRow> }) => {
+      const hit = rows.filter((r) => matches(r, where));
+      hit.forEach((r) => Object.assign(r, data));
+      return Promise.resolve({ count: hit.length });
+    }),
+  };
+}
+
 function setup() {
   const db: any = {
     $transaction: jest.fn((cb: any) => cb(db)),
@@ -44,6 +82,7 @@ function setup() {
         .mockImplementation(({ data }: any) => Promise.resolve({ id: "new-c", name: data.name })),
     },
     realmPage: { findFirst: jest.fn().mockResolvedValue(nationPage) },
+    mapLayer: mapLayerTable([]),
     user: { update: jest.fn().mockResolvedValue({}) },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue({ username: "Kir" }) },
     realmClaim: {
@@ -583,5 +622,120 @@ describe("reviewClaim — nation page claims", () => {
     await expect(claims.reviewClaim(admin, "cl1", { approve: true })).rejects.toMatchObject({
       code: "NOT_PENDING",
     });
+  });
+});
+
+describe("approved nation-page claims take their map region (decision 11)", () => {
+  const region = (overrides: Partial<RegionRow> = {}): RegionRow => ({
+    id: "ml-eurth",
+    realmId: EURTH,
+    layerType: "political",
+    featureId: "Aurelia",
+    displayName: null,
+    countryId: null,
+    isActive: true,
+    geometry: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 0],
+        ],
+      ],
+    },
+    centroid: { type: "Point", coordinates: [0.5, 0.5] },
+    boundingBox: [0, 0, 1, 1],
+    areaSqKm: 1000,
+    ...overrides,
+  });
+  const ixworldRegion = () => region({ id: "ml-ixworld", realmId: DEFAULT_REALM_ID });
+  const pendingPage = {
+    id: "cl1",
+    status: "pending",
+    userId: "u1",
+    countryId: null,
+    realmId: EURTH,
+    wikiSource: "iiwiki",
+    wikiPageTitle: "Aurelia",
+    realm: { ownerId: "system", slug: "eurth" },
+    user: { clerkUserId: "clerk_u1" },
+    country: null,
+  };
+
+  /** The map is reachable only through the approving transaction, whose client writes its own country rows. */
+  function regionSetup(rows: RegionRow[]) {
+    const s = pageSetup();
+    const table = mapLayerTable(rows);
+    const tx = {
+      ...s.db,
+      mapLayer: table,
+      country: { ...s.db.country, update: jest.fn().mockResolvedValue({}) },
+    };
+    delete s.db.mapLayer;
+    s.db.$transaction.mockImplementation((cb: (client: typeof tx) => unknown) => cb(tx));
+    return { ...s, tx, table };
+  }
+
+  it("auto-approval links the realm's unlinked region named after the nation and syncs its geometry in the transaction", async () => {
+    const rows = [ixworldRegion(), region()];
+    const { tx, claims } = regionSetup(rows);
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
+      status: "approved",
+    });
+    expect(rows.map((r) => r.countryId)).toEqual([null, "new-c"]);
+    expect(tx.country.findUnique).toHaveBeenCalledWith({
+      where: { id: "new-c" },
+      select: { name: true, realmId: true },
+    });
+    expect(tx.country.update).toHaveBeenCalledWith({
+      where: { id: "new-c" },
+      data: expect.objectContaining({
+        geometry: rows[1]!.geometry,
+        centroid: rows[1]!.centroid,
+        landArea: 1000,
+      }),
+    });
+  });
+
+  it("review approval matches the region by its display name too", async () => {
+    const rows = [region({ featureId: "country_3", displayName: "Aurelia" })];
+    const { db, tx, claims } = regionSetup(rows);
+    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
+    });
+    expect(rows[0]!.countryId).toBe("new-c");
+    expect(tx.country.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("no region of that name is a no-op: the claim is approved and no geometry is written", async () => {
+    const { deps, table, tx, claims } = regionSetup([region({ featureId: "Borealis" })]);
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
+      status: "approved",
+    });
+    expect(table.updateMany).not.toHaveBeenCalled();
+    expect(tx.country.update).not.toHaveBeenCalled();
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
+  });
+
+  it("never takes another realm's region, one already linked, or an inactive one", async () => {
+    const rows = [
+      ixworldRegion(),
+      region({ id: "ml-linked", countryId: "c-other" }),
+      region({ id: "ml-old", isActive: false }),
+    ];
+    const { table, tx, claims } = regionSetup(rows);
+    await claims.claimNationPage(actor, EURTH, "Aurelia");
+    expect(rows.map((r) => r.countryId)).toEqual([null, "c-other", null]);
+    expect(table.updateMany).not.toHaveBeenCalled();
+    expect(tx.country.update).not.toHaveBeenCalled();
+  });
+
+  it("claiming an existing country leaves the map alone", async () => {
+    const { table, claims } = regionSetup([region()]);
+    await claims.claimCountry(actor, "c1");
+    expect(table.findFirst).not.toHaveBeenCalled();
   });
 });

@@ -6,6 +6,7 @@
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo/sync";
 import { parsePrismaError } from "~/lib/prisma-error";
 import { generateSlug } from "~/lib/utils/slug-utils";
 import {
@@ -14,6 +15,7 @@ import {
   type ProofSource,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { resolvePrimaryWikiUsername } from "~/lib/wiki-os/adapters/ixstates/user-sync";
+import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { canModerateRealm, isSiteAdmin, type RealmActor } from "./realms.access";
 import { assignNation, NationOwnershipError } from "./realms.ownership";
 import { realmSettings } from "./realms.settings";
@@ -48,7 +50,7 @@ type ClaimsDb = Pick<
   PrismaClient,
   "country" | "user" | "wikiAccountLink" | "realmClaim" | "realmPage" | "$transaction"
 >;
-type ClaimsTx = Pick<Prisma.TransactionClient, "country" | "user" | "realmClaim">;
+type ClaimsTx = Pick<Prisma.TransactionClient, "country" | "user" | "realmClaim" | "mapLayer">;
 
 /** A nation page of a realm's lore index — the claimable unit before its Country exists. */
 interface NationPage {
@@ -116,6 +118,31 @@ async function createNationCountry(tx: ClaimsTx, page: NationPage) {
     .catch(uniqueAsTaken);
 }
 
+/**
+ * Decision 11: the realm's unlinked political region named after the nation (its feature id, or display name,
+ * from the colour → nation mapping) becomes the new country's — linked, then its geometry synced, in the
+ * approving transaction. No such region: nothing to link.
+ */
+async function takeMapRegion(tx: ClaimsTx, countryId: string, page: NationPage): Promise<void> {
+  const unlinked = {
+    realmId: page.realmId,
+    layerType: "political",
+    isActive: true,
+    countryId: null,
+  };
+  const region = await tx.mapLayer.findFirst({
+    where: { ...unlinked, OR: [{ featureId: page.title }, { displayName: page.title }] },
+    select: { id: true },
+  });
+  if (!region) return;
+  await assertCountryInFeatureRealm(tx, countryId, page.realmId);
+  const { count } = await tx.mapLayer.updateMany({
+    where: { ...unlinked, id: region.id },
+    data: { countryId },
+  });
+  if (count > 0) await syncCountryGeometryFromMapLayer(tx, countryId);
+}
+
 /** Inside the approving transaction: hand the nation over and turn away rival pending claims for it. */
 async function handOver(
   tx: ClaimsTx,
@@ -133,6 +160,7 @@ async function handOver(
   const { page } = target;
   const country = await createNationCountry(tx, page);
   await assignNation(tx, { userId: claim.userId, countryId: country.id });
+  await takeMapRegion(tx, country.id, page);
   await tx.realmClaim.update({ where: { id: claim.id }, data: { countryId: country.id } });
   await tx.realmClaim.updateMany({
     where: {

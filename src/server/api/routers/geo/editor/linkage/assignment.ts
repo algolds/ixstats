@@ -7,7 +7,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { IxTime } from "~/lib/ixtime";
-import { assertCountryInFeatureRealm } from "./realm-link-guard";
+import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
