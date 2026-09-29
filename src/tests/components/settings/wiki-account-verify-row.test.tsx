@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
 
 const mockStartMutate = jest.fn();
@@ -7,11 +7,16 @@ const mockUnlinkMutate = jest.fn();
 const mockListWikiLinksInvalidate = jest.fn();
 const mockGetStatusInvalidate = jest.fn();
 
+let startOnSuccess: ((res: unknown) => void) | undefined;
+
 jest.mock("~/trpc/react", () => ({
   api: {
     ixnayid: {
       startWikiVerification: {
-        useMutation: () => ({ mutate: mockStartMutate, isPending: false }),
+        useMutation: (opts?: { onSuccess?: (res: unknown) => void }) => {
+          startOnSuccess = opts?.onSuccess;
+          return { mutate: mockStartMutate, isPending: false };
+        },
       },
       confirmWikiVerification: {
         useMutation: () => ({ mutate: mockConfirmMutate, isPending: false }),
@@ -32,6 +37,7 @@ jest.mock("~/trpc/react", () => ({
 describe("WikiAccountVerifyRow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    startOnSuccess = undefined;
   });
 
   it("offers to get a code when nothing is linked", () => {
@@ -61,5 +67,27 @@ describe("WikiAccountVerifyRow", () => {
     );
     expect(screen.getByText(/verified/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /unlink/i })).toBeInTheDocument();
+  });
+
+  it("shows the verified account's username in the instructions on first-time Get code, before link refetches", () => {
+    mockStartMutate.mockImplementation(() => {
+      startOnSuccess?.({
+        token: "ABC123",
+        username: "Kir",
+        expiresAt: "2026-01-01T00:00:00Z",
+        userPageUrl: "https://iiwiki.com/wiki/User:Kir",
+      });
+    });
+
+    render(<WikiAccountVerifyRow source="iiwiki" label="IIWiki" link={undefined} />);
+
+    fireEvent.change(screen.getByPlaceholderText(/iiwiki username/i), {
+      target: { value: "Kir" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /get code/i }));
+
+    // link is still undefined here (listWikiLinks hasn't refetched yet) — the username must
+    // come from the mutation's own response, not from `link`.
+    expect(screen.getByText(/Kir/)).toBeInTheDocument();
   });
 });

@@ -19,7 +19,9 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
   const notify = useNotify();
   const utils = api.useUtils();
   const [username, setUsername] = useState("");
-  const [code, setCode] = useState<{ token: string; userPageUrl: string } | null>(null);
+  const [code, setCode] = useState<{ token: string; userPageUrl: string; username: string } | null>(
+    null
+  );
 
   const refresh = () => {
     void utils.ixnayid.listWikiLinks.invalidate();
@@ -28,7 +30,7 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
 
   const start = api.ixnayid.startWikiVerification.useMutation({
     onSuccess: (res) => {
-      setCode({ token: res.token, userPageUrl: res.userPageUrl });
+      setCode({ token: res.token, userPageUrl: res.userPageUrl, username: res.username });
       refresh();
     },
     onError: (err) => notify.error(err.message || `Failed to start ${label} verification`),
@@ -74,7 +76,8 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
             Paste{" "}
             <code className="bg-muted rounded px-1 font-mono">{code.token}</code> anywhere on
             your {label} user page and save it while logged in as{" "}
-            <strong>{link?.username}</strong>, then press Verify. The code works for 24 hours.{" "}
+            <strong>{code?.username ?? link?.username}</strong>, then press Verify. The code
+            works for 24 hours.{" "}
             <a
               href={code.userPageUrl}
               target="_blank"
