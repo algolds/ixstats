@@ -30,7 +30,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Information fog | — | policy creator | `PolicyReconBanner.tsx` | 🟡 Partial | Warnings only; numbers are not masked into bands |
 | Cabinet meetings | — | `/mycountry` agenda | `meetings/`, `quickactions/meetings.ts` | 🟡 Partial | Schedule-only; outcome and decision mutations were deleted (plans 312/332) |
 | Event spine / canon feed | — | `/mycountry` | `src/lib/activity/event-spine.ts` | 🟡 Partial | Directives and issues write to it; diplomacy, defense, elections and meetings bypass it |
-| Economy & 42-tax system | — | `/mycountry/economy` | `economics/`, `taxSystem/`, `src/lib/economy/`, `src/lib/government/` | ✅ Live | 20 built-in archetypes; ERI, PII and GDP projection are reference formulas only |
+| Economy & fiscal policy | — | `/mycountry/economy` | `economics/`, `taxSystem/`, `src/lib/economy/`, `src/lib/government/` | ✅ Live | 20 built-in archetypes; 6 player tax-rate sliders over 42 engine tax components (the tax builder UI was removed); ERI, PII and GDP projection are reference formulas only |
 | Politics: parties, legislature, bills, brokers | — | `/mycountry/politics` | `elections/`, `legislation.ts` | ✅ Live | |
 | Elections | — | `/mycountry/politics` | `elections/`, `src/lib/government/election-simulation.ts` | 🟡 Partial | **Broken loop:** candidate registration was deleted (plan 312), so cron-scheduled follow-up elections never resolve |
 | Diplomacy | — | `/mycountry/diplomacy` | `diplomacy/`, `diplomaticScenarios/` | ✅ Live | Embassies, alliances, cultural exchange, stances with drift cron. Embassy missions are not playable |

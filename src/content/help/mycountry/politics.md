@@ -14,7 +14,6 @@ Everything about who governs your nation lives in **Politics** in the MyCountry 
 - **Bills & Reforms** — draft a bill and call it to a vote.
 - **Power Brokers** — the interest groups whose favor shapes your budget.
 
-
 ## Your Legislature
 
 > **Setting up parliament**

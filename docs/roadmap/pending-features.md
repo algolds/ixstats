@@ -45,6 +45,9 @@ Fix before the RC2 release.
 | Premium check disagrees for owners/admins | Premium | Client ability check passes them; `premiumMiddleware` blocks them |
 | "Cabinet Research" shown with `STATECRAFT_SPINE` off | MyCountry | The action is visible but the recon spine is disabled by default |
 | `db.ts` runs `syncAchievements` on import | Platform | Fires whenever the module loads, including in scripts |
+| Defense/Intelligence admin toggles do nothing | Admin › MyCountry | `showDefenseTab` / `showIntelligenceTab` only feed `MyCountrySidebarNav`, which nothing renders; the command bar and mobile menu show both to everyone |
+| Auctions filter offers "Mythic" | Vault | Not a `CardRarity` value |
+| Diplomatic missions and embassy upgrades removed | MyCountry › Diplomacy | `startMission`, `completeMission`, `upgradeEmbassy`, `allocateBudget` deleted as zero-caller (plan 312); the UI shows "Coming Soon" and help articles still describe them |
 
 ## 3. Partly built — finish the documented scope
 
@@ -218,11 +221,16 @@ From the status blocks in [`docs/audits/`](../audits/):
 ## 7. Documentation gaps
 
 - **Help center (see [help.md](../systems/help.md)):**
-  - register the 13 unregistered articles and add a `systems` filter;
-  - add articles for shipped systems with no help: Realms and nation claims, verified wiki accounts and the passport, Atlas maps, WikiOS and the Canvas editor, Stash, Forum, MyLeague, Onoma.
-- **Help copy that overpromises:**
-  - pack "minimum rarity guarantees" and an "Acquire" section in `vault/card-packs.md`;
-  - "encrypted diplomatic messaging".
+  - 13 of 54 articles are not in the `helpSections` registry (`src/app/help/_components/HelpExplorer.tsx`): `defense/*` (6), `diplomacy/scenarios`, `economy/modeling`, `government/synergy`, and `intelligence/{executive-operations,forecasting,strategic-intelligence,unified-overview}`. Register or delete them; `strategic-intelligence` and `unified-overview` have no inbound links at all. Add a `systems` filter and refresh stale hub descriptions (Embassies, Intel).
+  - Shipped systems with no article:
+    - Realms, nation claims (`/setup`) and `/r/[realm]`; the passport and verified wiki accounts;
+    - Atlas `/maps` and the map editor; WikiOS, the Canvas editor and Lorewards; Stash; Forum;
+    - MyCountry → Economy & Budget; how to get Premium;
+    - MyLeague/MyClub; Onoma;
+    - ribbons and the showcase shelf; Vault import, crafting and shop items;
+    - the activity feed, Blurbs, hashtags, Explore/country profiles; the Halo command palette; Settings.
+  - Articles now carry "Preview feature" / "Not available yet" notes for Intelligence, Defense (Premium), diplomatic missions and crisis responses; remove them as those features land.
+- **Docs that still overpromise gating:** some `docs/systems/*` text describes Defense and Intelligence as "developer preview, gated from public nav"; in code they are premium-gated and visible to everyone (see §2).
 - **Docs to archive once their work closes:**
 
   | Doc | When |
