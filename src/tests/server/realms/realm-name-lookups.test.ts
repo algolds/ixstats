@@ -31,7 +31,7 @@ type Row = {
 type Where = Record<string, any> | undefined;
 
 /** Just enough of Prisma's `where` for these lookups: equality, in, not, equals(+insensitive), OR. */
-function matches(row: Row, where: Where): boolean {
+function matches(row: Record<string, unknown>, where: Where): boolean {
   return Object.entries(where ?? {}).every(([key, cond]) => {
     if (key === "OR") return (cond as Where[]).some((w) => matches(row, w));
     if (cond === undefined) return true;
@@ -144,7 +144,7 @@ describe("E-p: a name resolves inside one realm; ids and slugs win first", () =>
     ).resolves.toBeNull();
   });
 
-  it("blockAccount matches a slug first, then a name only within the viewer's realm", async () => {
+  it("blockAccount matches a name only within the viewer's realm, else a slug", async () => {
     const table = countryTable([EURTH_GALLAMBRIA, IX_GALLAMBRIA]);
     const db = createMockPrisma({ country: table });
     db.userConnection.create.mockImplementation(async (args: { data: object }) => args.data);
@@ -186,6 +186,53 @@ describe("E-p: a name resolves inside one realm; ids and slugs win first", () =>
 
     expect(table.update).not.toHaveBeenCalled();
     expect(table.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("E-s: a typed nation name resolves in the viewer's realm before any slug", () => {
+  // IxWorld holds the plain slug; Eurth's same-name nation was suffixed on claim.
+  const IX_PLAIN = { ...IX_GALLAMBRIA, slug: "gallambria" };
+  const users = [
+    { id: "u_ix", clerkUserId: "clerk_ix", countryId: "c_ix" },
+    { id: "u_eu", clerkUserId: "clerk_eu", countryId: "c_eu" },
+  ];
+
+  function viewer(realmId = "r_eurth") {
+    const db = createMockPrisma({ country: countryTable([IX_PLAIN, EURTH_GALLAMBRIA]) });
+    db.user.findFirst.mockImplementation(
+      async (args: { where?: Where }) => users.find((u) => matches(u, args.where)) ?? null
+    );
+    db.userConnection.create.mockImplementation(async (args: { data: object }) => args.data);
+    const ctx = createMockRouterContext({
+      db,
+      user: {
+        id: "u1",
+        clerkUserId: "test_user_clerk_id",
+        country: { id: "c_me", name: "Me", slug: "me", realmId },
+      },
+    });
+    return { db, caller: createCallerFactory(usersPreferencesRouter)(ctx as never) };
+  }
+
+  it("blockAccount blocks the Eurth nation and its owner, not IxWorld's plain-slug holder", async () => {
+    const { db, caller } = viewer();
+    await caller.blockAccount({ identifier: "Gallambria" });
+    expect(db.userConnection.create.mock.calls[0][0].data).toMatchObject({
+      targetCountryId: "c_eu",
+      targetUserId: "u_eu",
+    });
+  });
+
+  it("muteAccount mutes the Eurth nation's owner", async () => {
+    const { db, caller } = viewer();
+    await caller.muteAccount({ identifier: "@gallambria" });
+    expect(db.userConnection.create.mock.calls[0][0].data.targetUserId).toBe("u_eu");
+  });
+
+  it("a slug still resolves (any realm) when no nation in the viewer's realm has that name", async () => {
+    const { db, caller } = viewer(DEFAULT_REALM_ID);
+    await caller.muteAccount({ identifier: "gallambria-eurth" });
+    expect(db.userConnection.create.mock.calls[0][0].data.targetUserId).toBe("u_eu");
   });
 });
 

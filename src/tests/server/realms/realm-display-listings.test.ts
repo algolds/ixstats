@@ -16,6 +16,7 @@ import { resolveWikiPlaceholderValues } from "~/server/shared/wiki-placeholders"
 import { runPoliticsDrift } from "~/lib/government/politics-drift-cron";
 import { generateNationalIssues } from "~/lib/national-issues/generation-cron";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 
 const directory = createTRPCRouter({ ...listProcedures });
 
@@ -203,6 +204,32 @@ describe("every cross-country display listing is scoped to the viewer's realm", 
   });
 });
 
+describe("countries.getAll and getSelectList scope through realmWhere (ruling E-o)", () => {
+  beforeEach(() => clearTrpcMemoryCache());
+
+  const admin = { ...eurthViewer(), role: { name: "admin", level: 10 } };
+  const member = { ...eurthViewer(), role: { name: "member", level: 100 } };
+  type Caller = ReturnType<ReturnType<typeof createCallerFactory<typeof directory>>>;
+  const listings: Array<[string, (caller: Caller) => Promise<object>]> = [
+    ["getAll", (caller) => caller.getAll({ realm: ALL_REALMS })],
+    ["getSelectList", (caller) => caller.getSelectList({ realm: ALL_REALMS })],
+  ];
+
+  it.each(listings)('%s: a site admin\'s "*" reads every realm', async (_name, list) => {
+    const db = makeDb();
+    await list(createCallerFactory(directory)(ctxFor(db, admin)));
+
+    expect(db.country.findMany.mock.calls[0][0].where).not.toHaveProperty("realmId");
+  });
+
+  it.each(listings)('%s: a member\'s "*" stays in their own realm', async (_name, list) => {
+    const db = makeDb();
+    await list(createCallerFactory(directory)(ctxFor(db, member)));
+
+    expect(db.country.findMany.mock.calls[0][0].where).toMatchObject({ realmId: "r_eurth" });
+  });
+});
+
 describe("a country's own rankings compare it within its own realm", () => {
   const dbModule = mockedDb as unknown as Record<string, unknown>;
 
@@ -239,6 +266,27 @@ describe("a country's own rankings compare it within its own realm", () => {
     const [result] = await resolveWikiPlaceholderValues(["MyCountry:population"], db, "c_eu");
 
     expect(result?.metadata?.comparisonRank).toBe("Ranked #1 globally");
+  });
+});
+
+describe("CountryData:<name> placeholders name an IxWorld nation", () => {
+  it("resolves IxWorld's nation even when the viewer's same-name Eurth nation is loaded first", async () => {
+    const db = {
+      country: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: "c_eu", name: "Gallambria", realmId: "r_eurth", currentPopulation: 5 },
+          { id: "c_ix", name: "Gallambria", realmId: DEFAULT_REALM_ID, currentPopulation: 900 },
+        ]),
+      },
+      pointOfInterest: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const [result] = await resolveWikiPlaceholderValues(
+      ["CountryData:Gallambria:population"],
+      db,
+      "c_eu"
+    );
+
+    expect(result?.rawVal).toBe(900);
   });
 });
 

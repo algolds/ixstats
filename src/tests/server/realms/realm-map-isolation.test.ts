@@ -67,10 +67,11 @@ function emptyDb(): Db {
       return models.get(key);
     },
   });
-  // ?realm=eurth resolves to the Eurth realm id
+  // ?realm=eurth resolves to the Eurth realm id; the two known realm ids resolve to themselves
   db.realm!.findUnique!.mockImplementation(
-    async (args: { where: { slug?: string } }) =>
-      ({ eurth: { id: EURTH }, ixworld: { id: DEFAULT_REALM_ID } })[args.where.slug ?? ""] ?? null
+    async (args: { where: { slug?: string; id?: string } }) =>
+      ({ eurth: { id: EURTH }, ixworld: { id: DEFAULT_REALM_ID } })[args.where.slug ?? ""] ??
+      ([EURTH, DEFAULT_REALM_ID].includes(args.where.id ?? "") ? { id: args.where.id } : null)
   );
   return db;
 }
@@ -420,6 +421,22 @@ describe("imports and SVG commits never touch another realm's layers", () => {
     expect(wheres(db, "country").map(realmOf)).toEqual([DEFAULT_REALM_ID]);
     const created = db.mapLayer!.createMany!.mock.calls[0][0].data as Array<{ realmId: string }>;
     expect(created.map((r) => r.realmId)).toEqual([DEFAULT_REALM_ID]);
+  });
+
+  it("a pipeline import into an unknown realm is refused before any write", async () => {
+    const db = emptyDb();
+    await expect(
+      createCallerFactory(geoEditorProceduralRouter)(adminCtx(db)).importPipelineResult({
+        layers: { lakes: { type: "FeatureCollection", features: [] } },
+        realmId: "no-such-realm",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Unknown realm" });
+
+    expect(db.realm!.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "no-such-realm" } })
+    );
+    expect(db.mapLayer!.updateMany).not.toHaveBeenCalled();
+    expect(db.mapLayer!.upsert).not.toHaveBeenCalled();
   });
 
   it("a pipeline import drops the assembled-layer cache so the target realm's map rebuilds", async () => {

@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { serverFlagResolver } from "~/lib/flags/server";
 import { api } from "~/trpc/server";
 import { isSystemOwner } from "~/lib/auth";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 
 // Helper to check admin access
 async function requireAdminAccess(): Promise<{ authorized: boolean; error?: NextResponse }> {
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
         }
 
         if (countryNames.length === 0) {
-          const allCountries = await api.countries.getAll({ limit: 1000 });
+          const allCountries = await api.countries.getAll({ limit: 1000, realm: ALL_REALMS });
           const names = allCountries.countries.map((c: any) => c.name);
           countryNames.push(...names);
         }
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
         const updateCountryNames = body.countries || [];
 
         if (updateCountryNames.length === 0) {
-          const allCountries = await api.countries.getAll({ limit: 1000 });
+          const allCountries = await api.countries.getAll({ limit: 1000, realm: ALL_REALMS });
           const names = allCountries.countries.map((c: any) => c.name);
           serverFlagResolver.prefetch(names);
         } else {
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
       }
 
       case "initialize": {
-        const initAllCountries = await api.countries.getAll({ limit: 1000 });
+        const initAllCountries = await api.countries.getAll({ limit: 1000, realm: ALL_REALMS });
         const initCountryNames = initAllCountries.countries.map((c: any) => c.name);
 
         serverFlagResolver.prefetch(initCountryNames);

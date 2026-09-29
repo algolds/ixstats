@@ -10,6 +10,7 @@
  */
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
@@ -68,6 +69,13 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // An unknown id would otherwise write layers no realm's map ever reads
+      const realm = await ctx.db.realm.findUnique({
+        where: { id: input.realmId },
+        select: { id: true },
+      });
+      if (!realm) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown realm" });
+
       const layers = input.layers as Record<string, import("geojson").FeatureCollection>;
       let imported = 0;
 

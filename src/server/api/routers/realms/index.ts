@@ -12,6 +12,8 @@ import {
   ClaimError,
   createClaimsService,
   getRealmHub,
+  realmSettings,
+  withMaxNationsPerUser,
   type NationAssignedEvent,
 } from "~/server/modules/realms";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
@@ -119,14 +121,18 @@ export const realmsRouter = createTRPCRouter({
         .catch(claimError)
     ),
 
-  /** Admin: list all realms with full details */
+  /** Admin: list all realms with full details, plus each realm's effective nation cap */
   adminListRealms: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.realm.findMany({
+    const realms = await ctx.db.realm.findMany({
       orderBy: { updatedAt: "desc" },
       include: {
         _count: { select: { countries: true } },
       },
     });
+    return realms.map((realm) => ({
+      ...realm,
+      maxNationsPerUser: realmSettings(realm.settings).maxNationsPerUser,
+    }));
   }),
 
   /** Admin: list users with their realm associations (via country) */
@@ -177,10 +183,19 @@ export const realmsRouter = createTRPCRouter({
         description: z.string().max(1000).optional(),
         visibility: z.enum(["unlisted", "public"]).optional(),
         status: z.enum(["draft", "generating", "active", "archived"]).optional(),
+        /** Decision 15's per-realm nation cap, merged into `Realm.settings`. */
+        maxNationsPerUser: z.number().int().min(1).max(20).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return ctx.db.realm.update({ where: { id }, data });
+      const { id, maxNationsPerUser, ...data } = input;
+      if (maxNationsPerUser === undefined) return ctx.db.realm.update({ where: { id }, data });
+
+      const realm = await ctx.db.realm.findUnique({ where: { id }, select: { settings: true } });
+      if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+      return ctx.db.realm.update({
+        where: { id },
+        data: { ...data, settings: withMaxNationsPerUser(realm.settings, maxNationsPerUser) },
+      });
     }),
 });

@@ -511,8 +511,9 @@ export function MapContainer({
         totalSteps={totalSteps}
       />
 
-      {/* Map editor overlays edit the realm this map shows (ruling E-o) */}
-      <MapRealmProvider value={realm}>
+      {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
+          nation's realm — undefined = the viewer's realm — even when opened from /maps?realm=<other> */}
+      <MapRealmProvider value={undefined}>
         {isEditing && editingCountryId && (
           <MapEditorOverlay
             countryId={editingCountryId}
@@ -522,8 +523,10 @@ export function MapContainer({
             mapInstance={mapRef.current?.getMap() ?? null}
           />
         )}
+      </MapRealmProvider>
 
-        {/* World map editor overlay */}
+      {/* The world editor edits the realm this map shows (ruling E-r) */}
+      <MapRealmProvider value={realm}>
         {isWorldEditing && (
           <MapEditorOverlay
             isWorldMode={true}

@@ -279,3 +279,78 @@ describe("realms.adminCreateRealm", () => {
     expect(create).not.toHaveBeenCalled();
   });
 });
+
+describe("realms.adminUpdateRealm", () => {
+  const admin = { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
+
+  function adminCaller(realm: { findUnique: jest.Mock; update: jest.Mock; findMany?: jest.Mock }) {
+    const ctx = createMockRouterContext({
+      db: { realm, auditLog: { create: jest.fn() } },
+      auth: { userId: admin.clerkUserId },
+      user: admin,
+    });
+    return realmsRouter.createCaller(ctx as never);
+  }
+
+  it("adminListRealms reports each realm's effective cap (default 1)", async () => {
+    const realm = {
+      findMany: jest.fn().mockResolvedValue([
+        { id: "r_eurth", settings: { maxNationsPerUser: 3 } },
+        { id: "default", settings: null },
+      ]),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    };
+    await expect(adminCaller(realm).adminListRealms()).resolves.toMatchObject([
+      { id: "r_eurth", maxNationsPerUser: 3 },
+      { id: "default", maxNationsPerUser: 1 },
+    ]);
+  });
+
+  it("merges maxNationsPerUser into Realm.settings and keeps the other keys", async () => {
+    const realm = {
+      findUnique: jest.fn().mockResolvedValue({ settings: { maxNationsPerUser: 1, theme: "dusk" } }),
+      update: jest.fn().mockResolvedValue({ id: "r_eurth" }),
+    };
+    await adminCaller(realm).adminUpdateRealm({ id: "r_eurth", name: "Eurth", maxNationsPerUser: 3 });
+
+    expect(realm.update).toHaveBeenCalledWith({
+      where: { id: "r_eurth" },
+      data: { name: "Eurth", settings: { maxNationsPerUser: 3, theme: "dusk" } },
+    });
+  });
+
+  it("starts settings from empty when the realm has none", async () => {
+    const realm = {
+      findUnique: jest.fn().mockResolvedValue({ settings: null }),
+      update: jest.fn().mockResolvedValue({ id: "r_eurth" }),
+    };
+    await adminCaller(realm).adminUpdateRealm({ id: "r_eurth", maxNationsPerUser: 2 });
+
+    expect(realm.update.mock.calls[0][0].data).toEqual({ settings: { maxNationsPerUser: 2 } });
+  });
+
+  it("leaves settings untouched when no cap is sent", async () => {
+    const realm = { findUnique: jest.fn(), update: jest.fn().mockResolvedValue({ id: "r_eurth" }) };
+    await adminCaller(realm).adminUpdateRealm({ id: "r_eurth", status: "archived" });
+
+    expect(realm.findUnique).not.toHaveBeenCalled();
+    expect(realm.update).toHaveBeenCalledWith({ where: { id: "r_eurth" }, data: { status: "archived" } });
+  });
+
+  it.each([0, 21, 1.5])("rejects a cap of %p", async (maxNationsPerUser) => {
+    const realm = { findUnique: jest.fn(), update: jest.fn() };
+    await expect(
+      adminCaller(realm).adminUpdateRealm({ id: "r_eurth", maxNationsPerUser })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(realm.update).not.toHaveBeenCalled();
+  });
+
+  it("reports an unknown realm as NOT_FOUND", async () => {
+    const realm = { findUnique: jest.fn().mockResolvedValue(null), update: jest.fn() };
+    await expect(
+      adminCaller(realm).adminUpdateRealm({ id: "nope", maxNationsPerUser: 2 })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(realm.update).not.toHaveBeenCalled();
+  });
+});

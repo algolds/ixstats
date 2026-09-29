@@ -22,3 +22,24 @@ export function planOwnerBackfill(rows: OwnerRow[], isSystemOwner: (clerkUserId:
   }
   return plan;
 }
+
+export interface LayerKeyRow {
+  id: string;
+  layerType: string;
+  featureId: string;
+}
+
+/**
+ * NULL-realm map layers that share a (layerType, featureId): moving them all to IxWorld would break the
+ * realm-scoped unique key half-way through the update, so they must be resolved first.
+ */
+export function findDuplicateLayerKeys(rows: LayerKeyRow[]): Array<Omit<LayerKeyRow, "id"> & { ids: string[] }> {
+  const groups = new Map<string, Omit<LayerKeyRow, "id"> & { ids: string[] }>();
+  for (const { id, layerType, featureId } of rows) {
+    const key = JSON.stringify([layerType, featureId]);
+    const group = groups.get(key) ?? { layerType, featureId, ids: [] };
+    group.ids.push(id);
+    groups.set(key, group);
+  }
+  return [...groups.values()].filter((g) => g.ids.length > 1);
+}

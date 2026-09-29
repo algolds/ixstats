@@ -12,3 +12,13 @@ export function realmSettings(settings: Prisma.JsonValue | null | undefined): Re
   const parsed = RealmSettingsSchema.safeParse(settings ?? {});
   return parsed.success ? parsed.data : { maxNationsPerUser: 1 };
 }
+
+/** `Realm.settings` with the nation cap set; every other stored key is kept (a non-object becomes `{}`). */
+export function withMaxNationsPerUser(
+  settings: Prisma.JsonValue | null | undefined,
+  maxNationsPerUser: number
+): Prisma.JsonObject {
+  const stored =
+    settings && typeof settings === "object" && !Array.isArray(settings) ? settings : {};
+  return { ...stored, maxNationsPerUser };
+}

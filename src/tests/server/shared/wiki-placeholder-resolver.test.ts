@@ -3,6 +3,7 @@ import {
   resolveWikiPlaceholdersInternal,
 } from "~/server/shared/wiki-placeholders";
 import { ixstatsTemplateProvider } from "~/server/shared/ixstats-template-provider";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
   const fixedDate = new Date("2026-06-01T12:00:00Z");
@@ -10,6 +11,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
   const mockCountry = {
     id: "c-1",
     name: "Sanctuary",
+    realmId: DEFAULT_REALM_ID,
     currentPopulation: 50000000,
     currentTotalGdp: 2500000000000,
     currentGdpPerCapita: 50000,
@@ -36,6 +38,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
   const mockZeroCountry = {
     id: "c-zero",
     name: "ZeroLand",
+    realmId: DEFAULT_REALM_ID,
     currentPopulation: 0,
     currentTotalGdp: 0,
     currentGdpPerCapita: 0,

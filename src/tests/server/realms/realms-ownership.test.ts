@@ -5,6 +5,7 @@ import {
   pointActiveNation,
   realmSettings,
   releaseNation,
+  withMaxNationsPerUser,
 } from "~/server/modules/realms";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: (id: string) => id === "sys_owner" }));
@@ -28,6 +29,15 @@ describe("realmSettings", () => {
     expect(realmSettings(null)).toEqual({ maxNationsPerUser: 1 });
     expect(realmSettings({ maxNationsPerUser: "x" })).toEqual({ maxNationsPerUser: 1 });
     expect(realmSettings({ maxNationsPerUser: 3, other: true })).toEqual({ maxNationsPerUser: 3 });
+  });
+
+  it("withMaxNationsPerUser sets the cap and keeps other keys; non-objects start empty", () => {
+    expect(withMaxNationsPerUser({ maxNationsPerUser: 1, other: true }, 4)).toEqual({
+      maxNationsPerUser: 4,
+      other: true,
+    });
+    expect(withMaxNationsPerUser(["junk"], 2)).toEqual({ maxNationsPerUser: 2 });
+    expect(withMaxNationsPerUser("junk", 2)).toEqual({ maxNationsPerUser: 2 });
   });
 });
 

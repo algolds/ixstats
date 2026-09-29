@@ -1,4 +1,4 @@
-export { realmSettings, type RealmSettings } from "./realms.settings";
+export { realmSettings, withMaxNationsPerUser, type RealmSettings } from "./realms.settings";
 export { DEFAULT_REALM_ID, resolveViewerRealmId } from "./realms.context";
 export { canModerateRealm, isSiteAdmin, type RealmActor } from "./realms.access";
 export {

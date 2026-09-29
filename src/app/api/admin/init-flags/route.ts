@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { api } from "~/trpc/server";
 import { isSystemOwner } from "~/lib/auth";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,8 +23,8 @@ export async function POST(request: NextRequest) {
 
     console.log("[InitFlags] Starting flag cache initialization...");
 
-    // Get all countries
-    const allCountries = await api.countries.getAll({ limit: 1000 });
+    // Every realm's countries (ALL_REALMS is honoured for site admins only — ruling E-o)
+    const allCountries = await api.countries.getAll({ limit: 1000, realm: ALL_REALMS });
     const countryNames = allCountries.countries.map((c: any) => c.name);
 
     console.log(`[InitFlags] Found ${countryNames.length} countries to process`);

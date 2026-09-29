@@ -41,6 +41,35 @@ interface NewRealm {
 }
 const EMPTY_REALM: NewRealm = { slug: "", name: "", description: "", visibility: "unlisted" };
 
+/** Decision 15's per-realm cap: a number field while editing, else the realm's current value. */
+function NationCapCell({
+  editing,
+  current,
+  draft,
+  onChange,
+}: {
+  editing: boolean;
+  current: number;
+  draft: string | undefined;
+  onChange: (value: string) => void;
+}) {
+  if (!editing) return <td className="px-4 py-3 text-center font-medium">{current}</td>;
+  return (
+    <td className="px-4 py-3">
+      <Input
+        type="number"
+        min={1}
+        max={20}
+        step={1}
+        aria-label="Nations per player"
+        className="h-8 w-20 text-xs"
+        value={draft ?? String(current)}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </td>
+  );
+}
+
 /** "New realm" (ruling E-j): realms are created here by an admin, active, founder "system". */
 function NewRealmForm() {
   const utils = api.useUtils();
@@ -151,12 +180,14 @@ function NewRealmForm() {
 }
 
 export function RealmsTab() {
+  const notify = useNotify();
   const { data: realms, isLoading, refetch } = api.realms.adminListRealms.useQuery();
   const updateMutation = api.realms.adminUpdateRealm.useMutation({
     onSuccess: () => {
       refetch();
       setEditingId(null);
     },
+    onError: (error) => notify.error("Could not update realm", error.message),
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -165,6 +196,7 @@ export function RealmsTab() {
     status?: string;
     visibility?: string;
     description?: string;
+    maxNationsPerUser?: string;
   }>({});
 
   if (isLoading) {
@@ -194,6 +226,7 @@ export function RealmsTab() {
       status: realm.status,
       visibility: realm.visibility,
       description: realm.description ?? "",
+      maxNationsPerUser: String(realm.maxNationsPerUser),
     });
   }
 
@@ -204,6 +237,7 @@ export function RealmsTab() {
       status: editForm.status as "draft" | "generating" | "active" | "archived",
       visibility: editForm.visibility as "unlisted" | "public",
       description: editForm.description,
+      maxNationsPerUser: Number(editForm.maxNationsPerUser),
     });
   }
 
@@ -219,6 +253,9 @@ export function RealmsTab() {
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Status</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Visibility</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Countries</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">
+                Nations per player
+              </th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Owner</th>
               <th className="text-muted-foreground px-4 py-3 text-left font-medium">Updated</th>
               <th className="text-muted-foreground px-4 py-3 text-right font-medium">Actions</th>
@@ -286,6 +323,12 @@ export function RealmsTab() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-center font-medium">{realm._count.countries}</td>
+                  <NationCapCell
+                    editing={isEditing}
+                    current={realm.maxNationsPerUser}
+                    draft={editForm.maxNationsPerUser}
+                    onChange={(v) => setEditForm((f) => ({ ...f, maxNationsPerUser: v }))}
+                  />
                   <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
                     {realm.ownerId === "system" ? "system" : realm.ownerId.slice(0, 12) + "..."}
                   </td>
@@ -296,6 +339,7 @@ export function RealmsTab() {
                     {isEditing ? (
                       <span className="inline-flex gap-1">
                         <button
+                          aria-label={`Save ${realm.name}`}
                           onClick={() => saveEdit(realm.id)}
                           disabled={updateMutation.isPending}
                           className="rounded-lg p-1 text-emerald-500 transition-transform hover:bg-emerald-500/10 active:scale-[0.98]"
@@ -307,6 +351,7 @@ export function RealmsTab() {
                           )}
                         </button>
                         <button
+                          aria-label="Cancel edit"
                           onClick={() => setEditingId(null)}
                           className="text-muted-foreground hover:bg-muted/50 rounded-lg p-1 transition-transform active:scale-[0.98]"
                         >
@@ -315,6 +360,7 @@ export function RealmsTab() {
                       </span>
                     ) : (
                       <button
+                        aria-label={`Edit ${realm.name}`}
                         onClick={() => startEdit(realm)}
                         className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                       >

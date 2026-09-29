@@ -156,7 +156,9 @@ export async function resolveWikiPlaceholderValues(
         results.push({ key: p, value: "Unknown Field", rawVal: null, status: "malformed" });
         continue;
       }
-      const country = countries.find((c: any) => c.name.toLowerCase() === cName.toLowerCase());
+      const country = countries.find(
+        (c: any) => c.realmId === DEFAULT_REALM_ID && c.name.toLowerCase() === cName.toLowerCase()
+      );
       if (!country) {
         results.push({ key: p, value: "Unknown Country", rawVal: null, status: "not-found" });
         continue;
