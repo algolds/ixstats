@@ -7,6 +7,7 @@ const mockPrefetch = jest.fn();
 const mockRenderer = jest.fn();
 const mockEditor = jest.fn();
 const mockLayout = jest.fn();
+const mockSetActiveModal = jest.fn();
 let mockSearch = "";
 let mockSlug = "Portal%3AEurth";
 
@@ -28,7 +29,7 @@ jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
   },
 }));
 jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
-  useWikiContext: () => ({ setActiveModal: jest.fn() }),
+  useWikiContext: () => ({ setActiveModal: mockSetActiveModal }),
 }));
 jest.mock("~/components/wiki-os/reader/ArticleRenderer", () => ({
   ArticleRenderer: (props: { title: string }) => {
@@ -108,6 +109,19 @@ describe("WikiOS reader ?source=", () => {
       "href",
       "https://ixwiki.com/wiki/Aurelia"
     );
+  });
+
+  it("?margin=1 opens the margin on an IxWiki page only (ruling E-l′)", () => {
+    mockSearch = "source=iiwiki&margin=1";
+    found();
+    render(<WikiOSArticlePage />);
+    expect(mockSetActiveModal).not.toHaveBeenCalled();
+
+    mockSearch = "margin=1";
+    mockSlug = "Aurelia";
+    found("Aurelia");
+    render(<WikiOSArticlePage />);
+    expect(mockSetActiveModal).toHaveBeenCalledWith("margin");
   });
 
   it("never opens the ixwiki editor for another wiki's page", () => {

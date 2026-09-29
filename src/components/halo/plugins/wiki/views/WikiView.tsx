@@ -30,8 +30,15 @@ export interface WikiViewProps extends DIViewProps {}
 export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { articleTitle, tocEntries, themeColors, activeSectionId, narratorState, narratorActions } =
-    useWikiContext();
+  const {
+    articleTitle,
+    articleSource,
+    tocEntries,
+    themeColors,
+    activeSectionId,
+    narratorState,
+    narratorActions,
+  } = useWikiContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
@@ -310,6 +317,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
       {(!hasNarratorAccess || wikiTab === "workspace") && (
         <WikiWorkspaceTab
           articleTitle={articleTitle}
+          wikiSource={articleSource}
           isMainPage={isMainPage}
           isSignedIn={isSignedIn}
           slug={slug}

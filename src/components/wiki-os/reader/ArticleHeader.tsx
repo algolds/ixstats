@@ -379,7 +379,7 @@ export function WikiOSHeader({
               {title.replace(/_/g, " ")}
             </h1>
 
-            <WatchButton title={title} />
+            <WatchButton title={title} wikiSource={wikiSource} />
 
             {awardsData?.hasAwards && primaryAward && badgeConfig && (
               <Popover open={showPopover} onOpenChange={setShowPopover}>

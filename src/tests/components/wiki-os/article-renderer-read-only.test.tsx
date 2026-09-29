@@ -4,6 +4,7 @@ import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { api } from "~/trpc/react";
 
 const mockToggleMargin = jest.fn();
+const mockSetWikiPage = jest.fn();
 const mockMargin = jest.fn();
 let mockMarginOpen = false;
 
@@ -11,7 +12,7 @@ jest.mock("next/dynamic", () => () => () => null);
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({ useWikiAuth: () => ({ isSignedIn: true }) }));
 jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
   useWikiContext: () => ({
-    setWikiPage: jest.fn(),
+    setWikiPage: mockSetWikiPage,
     activeModal: null,
     setActiveModal: jest.fn(),
     setActiveSectionId: jest.fn(),
@@ -114,6 +115,9 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
     expect(screen.queryByTitle("Revision History")).not.toBeInTheDocument();
     expect(screen.queryByTitle("What Links Here")).not.toBeInTheDocument();
     expect(screen.queryByText("Margin notes")).not.toBeInTheDocument();
+
+    // The Halo's "This Page" actions read the page's wiki from the context (ruling E-l′)
+    expect(mockSetWikiPage).toHaveBeenCalledWith("Portal:Eurth", [], expect.anything(), "iiwiki");
 
     expect(screen.getByText(/From IIWiki — read only/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "open on iiwiki.com" })).toHaveAttribute(

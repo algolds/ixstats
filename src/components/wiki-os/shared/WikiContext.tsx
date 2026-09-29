@@ -15,6 +15,7 @@ import {
 import { useRouter } from "next/navigation";
 import { navigateWithBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 export interface WikiThemeColors {
   primary: string;
@@ -50,6 +51,8 @@ interface WikiContextState {
   isWikiPage: boolean;
   /** Current article title (null if not on an article page) */
   articleTitle: string | null;
+  /** The wiki the current article lives on; only IxWiki pages are editable in WikiOS (ruling E-l′) */
+  articleSource: WikiSource;
   /** TOC entries for the current article */
   tocEntries: TocEntry[];
   /** Theme colors of the current wiki article */
@@ -58,8 +61,13 @@ interface WikiContextState {
   activeSectionId: string | null;
   /** Recent wiki articles visited (from sessionStorage, newest first) */
   recentArticles: string[];
-  /** Set the wiki page state */
-  setWikiPage: (title: string | null, toc: TocEntry[], colors?: WikiThemeColors | null) => void;
+  /** Set the wiki page state (source defaults to IxWiki) */
+  setWikiPage: (
+    title: string | null,
+    toc: TocEntry[],
+    colors?: WikiThemeColors | null,
+    source?: WikiSource
+  ) => void;
   /** Update the active section */
   setActiveSectionId: (id: string | null) => void;
   /** Navigate to a section */
@@ -93,6 +101,7 @@ interface WikiContextState {
 const WikiContext = createContext<WikiContextState>({
   isWikiPage: false,
   articleTitle: null,
+  articleSource: "ixwiki",
   tocEntries: [],
   themeColors: null,
   activeSectionId: null,
@@ -125,6 +134,7 @@ const WikiContext = createContext<WikiContextState>({
 export function WikiContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [articleTitle, setArticleTitle] = useState<string | null>(null);
+  const [articleSource, setArticleSource] = useState<WikiSource>("ixwiki");
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
   const [themeColors, setThemeColors] = useState<WikiThemeColors | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
@@ -182,8 +192,14 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setWikiPage = useCallback(
-    (title: string | null, toc: TocEntry[], colors: WikiThemeColors | null = null) => {
+    (
+      title: string | null,
+      toc: TocEntry[],
+      colors: WikiThemeColors | null = null,
+      source: WikiSource = "ixwiki"
+    ) => {
       setArticleTitle(title);
+      setArticleSource(source);
       setTocEntries(toc);
       setThemeColors(colors);
 
@@ -309,6 +325,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     () => ({
       isWikiPage: articleTitle !== null,
       articleTitle,
+      articleSource,
       tocEntries,
       themeColors,
       activeSectionId,
@@ -331,6 +348,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     }),
     [
       articleTitle,
+      articleSource,
       tocEntries,
       themeColors,
       activeSectionId,

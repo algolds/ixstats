@@ -50,8 +50,12 @@ const RESERVED_TOOL_PAGES: Record<string, string> = {
  */
 function readerParams(searchParams: Pick<URLSearchParams, "get">) {
   const wikiSource = parseWikiSource(searchParams.get("source"));
-  const isEditAction = wikiSource === "ixwiki" && searchParams.get("action") === "edit";
-  return { wikiSource, isEditAction };
+  const isIxWiki = wikiSource === "ixwiki";
+  return {
+    wikiSource,
+    isEditAction: isIxWiki && searchParams.get("action") === "edit",
+    isMarginParam: isIxWiki && Boolean(searchParams.get("margin")),
+  };
 }
 
 export default function WikiOSArticlePage() {
@@ -67,9 +71,8 @@ export default function WikiOSArticlePage() {
   const title = slug.replace(/_/g, " ");
   const isMainPage = title === "Main Page" || title === "Main_Page" || slug === "Main_Page";
 
-  const { wikiSource, isEditAction } = readerParams(searchParams);
+  const { wikiSource, isEditAction, isMarginParam } = readerParams(searchParams);
   const isIxWiki = wikiSource === "ixwiki";
-  const isMarginParam = searchParams.get("margin");
   const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
 
   // Normalized keys for reserved tool detection

@@ -483,9 +483,9 @@ export function ArticleRenderer({
   }, [countryData, categories, title]);
 
   useEffect(() => {
-    setWikiPage(title, toc, themeColors);
+    setWikiPage(title, toc, themeColors, source);
     return () => setWikiPage(null, [], null);
-  }, [title, toc, themeColors, setWikiPage]);
+  }, [title, toc, themeColors, source, setWikiPage]);
 
   // Scroll spy — single owner now in WikiArticleRightRail; this keeps WikiContext activeSectionId in sync
   useEffect(() => {

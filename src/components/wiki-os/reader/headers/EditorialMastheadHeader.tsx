@@ -20,7 +20,6 @@ interface EditorialMastheadProps extends ArticleHeaderProps {
 export function EditorialMastheadHeader({
   title,
   lastModified,
-  // oxlint-disable-next-line eslint/no-unused-vars
   wikiSource,
   themeColors,
   authorInfo,
@@ -63,7 +62,7 @@ export function EditorialMastheadHeader({
         <h1 className="text-foreground font-['Host_Grotesk'] text-3xl leading-[1.15] font-bold tracking-tight sm:text-4xl lg:text-[42px]">
           {title.replace(/_/g, " ")}
         </h1>
-        <WatchButton title={title} />
+        <WatchButton title={title} wikiSource={wikiSource} />
       </div>
 
       {/* Metadata & Awards Ledger */}
