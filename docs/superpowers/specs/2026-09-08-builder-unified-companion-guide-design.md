@@ -3,12 +3,12 @@
 ## 1. Overview & Problem Statement
 
 The current help architecture in the IxStates Nation Builder is fragmented across two competing paradigms:
-1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](file:///home/jxsig/projects/ixstats/src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp.ts`.
+1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](../../../src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp.ts`.
 2. **Multiple Viewport-Blocking Centered Modals**:
-   - [`AtomicWelcomeModal.tsx`](file:///home/jxsig/projects/ixstats/src/components/mycountry/domains/government/atomic/AtomicWelcomeModal.tsx) (Government component walkthrough)
-   - [`EconomicWelcomeModal.tsx`](file:///home/jxsig/projects/ixstats/src/components/mycountry/domains/economy/atomic/EconomicWelcomeModal.tsx) (Economy component walkthrough)
-   - [`BenchmarkHelpModal.tsx`](file:///home/jxsig/projects/ixstats/src/app/builder/components/enhanced/BenchmarkHelpModal.tsx) (Country benchmark template guide)
-   - [`GovernmentHelpSystem.tsx`](file:///home/jxsig/projects/ixstats/src/app/builder/components/help/GovernmentHelpSystem.tsx) (Legacy government dialog)
+   - [`AtomicWelcomeModal.tsx`](../../../src/components/mycountry/domains/government/atomic/AtomicWelcomeModal.tsx) (Government component walkthrough)
+   - [`EconomicWelcomeModal.tsx`](../../../src/components/mycountry/domains/economy/atomic/EconomicWelcomeModal.tsx) (Economy component walkthrough)
+   - `BenchmarkHelpModal.tsx` (Country benchmark template guide)
+   - `GovernmentHelpSystem.tsx` (Legacy government dialog)
 
 ### Key Problems:
 - **Spatial Wayfinding Conflict**: Users encounter two competing buttons labeled "Guide" within 150px of each other (e.g. `[ 📖 Guide ]` in the studio header and `[ ? Component Guide ]` in the component subheader).

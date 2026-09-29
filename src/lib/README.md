@@ -14,18 +14,18 @@ The root level of `src/lib/` is strictly reserved for platform-wide architectura
 
 | Layer | File | Description |
 |---|---|---|
-| **Core Architecture** | [`app-error.ts`](file:///home/jxsig/projects/ixstats/src/lib/app-error.ts) | Universal `AppError` exception class with HTTP and tRPC status codes. |
-| | [`prisma-error.ts`](file:///home/jxsig/projects/ixstats/src/lib/prisma-error.ts) | Database error translation and duplicate/foreign key constraint handlers. |
-| | [`buildVersion.ts`](file:///home/jxsig/projects/ixstats/src/lib/buildVersion.ts) | Canonical single source of truth for platform versions, release names, and component capability integers (per `revision.md`). |
-| | [`buildVersion.generated.ts`](file:///home/jxsig/projects/ixstats/src/lib/buildVersion.generated.ts) | Automated pre-build git commit SHA generator output. |
-| | [`base-path.ts`](file:///home/jxsig/projects/ixstats/src/lib/base-path.ts) | Subdomain host inspector and URL prefix routing helper (`/projects/ixstates` vs standalone). |
-| | [`enums.ts`](file:///home/jxsig/projects/ixstats/src/lib/enums.ts) | Universal system-level enumeration constants. |
-| **Type Normalization** | [`type-guards.ts`](file:///home/jxsig/projects/ixstats/src/lib/type-guards.ts) | Generic runtime type guards for strings, numbers, arrays, and objects. |
-| | [`interface-standardizer.ts`](file:///home/jxsig/projects/ixstats/src/lib/interface-standardizer.ts) | Schema normalizer for priority codes and category labels. |
-| **Platform Config** | [`config-service.ts`](file:///home/jxsig/projects/ixstats/src/lib/config-service.ts) | Database-backed `SystemConfig` settings cache and retrieval client. |
-| | [`navigation-config.ts`](file:///home/jxsig/projects/ixstats/src/lib/navigation-config.ts) | App shell navigation tree, topbar links, sidebar menus, and command palettes. |
-| | [`event-bus.ts`](file:///home/jxsig/projects/ixstats/src/lib/event-bus.ts) | Universal EventEmitter singleton for cross-cutting in-memory pub/sub events. |
-| | [`gameplay-flags.ts`](file:///home/jxsig/projects/ixstats/src/lib/gameplay-flags.ts) | Runtime evaluation for gameplay feature toggles and flags. |
+| **Core Architecture** | [`app-error.ts`](app-error.ts) | Universal `AppError` exception class with HTTP and tRPC status codes. |
+| | [`prisma-error.ts`](prisma-error.ts) | Database error translation and duplicate/foreign key constraint handlers. |
+| | [`buildVersion.ts`](buildVersion.ts) | Canonical single source of truth for platform versions, release names, and component capability integers (per `revision.md`). |
+| | [`buildVersion.generated.ts`](buildVersion.generated.ts) | Automated pre-build git commit SHA generator output. |
+| | [`base-path.ts`](base-path.ts) | Subdomain host inspector and URL prefix routing helper (`/projects/ixstates` vs standalone). |
+| | [`enums.ts`](enums.ts) | Universal system-level enumeration constants. |
+| **Type Normalization** | `type-guards.ts` | Generic runtime type guards for strings, numbers, arrays, and objects. |
+| | `interface-standardizer.ts` | Schema normalizer for priority codes and category labels. |
+| **Platform Config** | [`config-service.ts`](config-service.ts) | Database-backed `SystemConfig` settings cache and retrieval client. |
+| | [`navigation-config.ts`](navigation-config.ts) | App shell navigation tree, topbar links, sidebar menus, and command palettes. |
+| | [`event-bus.ts`](event-bus.ts) | Universal EventEmitter singleton for cross-cutting in-memory pub/sub events. |
+| | [`gameplay-flags.ts`](gameplay-flags.ts) | Runtime evaluation for gameplay feature toggles and flags. |
 
 ---
 

@@ -146,4 +146,4 @@ The platform maintains strict separation between the **Platform SemVer Level** a
 
 # 4. Source of Truth
 
-The single source of truth for all runtime version constants is [`src/lib/buildVersion.ts`](file:///home/jxsig/projects/ixstats/src/lib/buildVersion.ts). No version strings or numbers may be hardcoded in UI components or routers.
+The single source of truth for all runtime version constants is [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts). No version strings or numbers may be hardcoded in UI components or routers.

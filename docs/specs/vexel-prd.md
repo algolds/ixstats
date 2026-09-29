@@ -5,7 +5,7 @@
 **Status:** 🟢 Product Definition
 **Date:** July 15, 2026
 **Product Family:** IxLabs (`/labs/vexel`)
-**Supersedes:** [Vexel_PRD_v0.1.md](file:///ixwiki/public/projects/ixstats/docs/Vexel_PRD_v0.1.md) (Draft)
+**Supersedes:** `Vexel_PRD_v0.1.md` (Draft)
 
 ---
 
@@ -317,7 +317,7 @@ The editor follows a **Figma-style layer paradigm** applied to heraldry:
 
 #### Commons Browser Integration
 
-An in-editor panel (slide-over or modal) powered by the existing [`commons.ts`](file:///ixwiki/public/projects/ixstats/src/server/api/routers/commons.ts) tRPC router:
+An in-editor panel (slide-over or modal) powered by the existing [`commons.ts`](../../src/server/api/routers/commons.ts) tRPC router:
 
 - Browse by category (maps to Commons' `Category:Heraldry_by_elements` tree: charges, divisions, tinctures, shields, badges, etc.)
 - Search by keyword
@@ -405,7 +405,7 @@ When a composition uses Commons-sourced charges, the exported SVG/PNG includes a
 
 ### Caching Strategy
 
-Following the existing pattern established by the [`commons.ts`](file:///ixwiki/public/projects/ixstats/src/server/api/routers/commons.ts) router:
+Following the existing pattern established by the [`commons.ts`](../../src/server/api/routers/commons.ts) router:
 - SVG assets are downloaded and cached server-side
 - The editor renders from cached assets, never hitting Commons at runtime
 - Cache invalidation is manual (admin-triggered re-import)
@@ -501,7 +501,7 @@ New router: `src/server/api/routers/heraldry.ts` (or `heraldry/` subdirectory if
 - `heraldry.attachToCountry` — Link an achievement to a country record
 - `heraldry.createRevision` — Save a revision snapshot
 
-Register in [`src/server/api/root.ts`](file:///ixwiki/public/projects/ixstats/src/server/api/root.ts).
+Register in [`src/server/api/root.ts`](../../src/server/api/root.ts).
 
 ---
 
@@ -665,7 +665,7 @@ Rampant, Passant, Sejant, Couchant, Dormant, Salient, Statant, Guardant, Reguard
 
 ## Versioning
 
-Per the [Versioning & Release Architecture](file:///ixwiki/public/projects/ixstats/docs/reference/revision.md), Vexel will receive a **capability integer** in the Version Registry at [`src/lib/buildVersion.ts`](file:///ixwiki/public/projects/ixstats/src/lib/buildVersion.ts) (e.g. `VEXEL_VERSION = 1`) once implementation begins. The platform minor version bumps when Vexel ships.
+Per the [Versioning & Release Architecture](../reference/revision.md), Vexel will receive a **capability integer** in the Version Registry at [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) (e.g. `VEXEL_VERSION = 1`) once implementation begins. The platform minor version bumps when Vexel ships.
 
 ---
 

@@ -200,11 +200,11 @@ All components live in `src/components/wiki-os/stashes/`:
 
 | Component | Responsibility |
 | :--- | :--- |
-| [`StashSidebar.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/stashes/StashSidebar.tsx) | Collection rail with preset color pills, inline rename, count badges, and delete confirmation. |
-| [`StashPagesList.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/stashes/StashPagesList.tsx) | Article card list with lead image thumbnail fallback to `WikiOSLogomark`, highlight counts, and note badges. |
-| [`StashQuotesList.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/stashes/StashQuotesList.tsx) | Dedicated reader for clipped quotes and Margin highlights with copy button and article anchors. |
-| [`StashImagesGrid.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/stashes/StashImagesGrid.tsx) | 4-column responsive media gallery with aspect ratio badges, lightbox, and wikitext copy. |
-| [`StashThreadsList.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/stashes/StashThreadsList.tsx) | Bookmarked forum discussion cards with direct links and user summary text. |
-| [`StashSettingsMenu.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/stashes/StashSettingsMenu.tsx) | Apple Design settings popover with rename, 8-swatch picker, MD/JSON export, share, and delete. |
-| [`CreateStashPopover.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/stashes/CreateStashPopover.tsx) | Non-disruptive creation popover anchored to trigger button. |
-| [`StashWelcomeModal.tsx`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/shared/StashWelcomeModal.tsx) | Un-slopped 4-tab user guide explaining core features and workflows. |
+| [`StashSidebar.tsx`](../../src/components/wiki-os/stashes/StashSidebar.tsx) | Collection rail with preset color pills, inline rename, count badges, and delete confirmation. |
+| [`StashPagesList.tsx`](../../src/components/wiki-os/stashes/StashPagesList.tsx) | Article card list with lead image thumbnail fallback to `WikiOSLogomark`, highlight counts, and note badges. |
+| [`StashQuotesList.tsx`](../../src/components/wiki-os/stashes/StashQuotesList.tsx) | Dedicated reader for clipped quotes and Margin highlights with copy button and article anchors. |
+| [`StashImagesGrid.tsx`](../../src/components/wiki-os/stashes/StashImagesGrid.tsx) | 4-column responsive media gallery with aspect ratio badges, lightbox, and wikitext copy. |
+| [`StashThreadsList.tsx`](../../src/components/wiki-os/stashes/StashThreadsList.tsx) | Bookmarked forum discussion cards with direct links and user summary text. |
+| [`StashSettingsMenu.tsx`](../../src/components/wiki-os/stashes/StashSettingsMenu.tsx) | Apple Design settings popover with rename, 8-swatch picker, MD/JSON export, share, and delete. |
+| [`CreateStashPopover.tsx`](../../src/components/wiki-os/stashes/CreateStashPopover.tsx) | Non-disruptive creation popover anchored to trigger button. |
+| [`StashWelcomeModal.tsx`](../../src/components/wiki-os/shared/StashWelcomeModal.tsx) | Un-slopped 4-tab user guide explaining core features and workflows. |

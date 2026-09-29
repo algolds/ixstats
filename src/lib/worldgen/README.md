@@ -1,6 +1,6 @@
 # Unified Physical Geography Engine (UPG v2)
 
-The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedural realm map generator for IxStates. Located in [`src/lib/worldgen/v2/`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/), UPG v2 generates 100% topologically aligned, cartographically smooth, scientifically realistic fictional realm maps matching the aesthetic quality of the IxWorld reference map.
+The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedural realm map generator for IxStates. Located in [`src/lib/worldgen/v2/`](v2/), UPG v2 generates 100% topologically aligned, cartographically smooth, scientifically realistic fictional realm maps matching the aesthetic quality of the IxWorld reference map.
 
 ---
 
@@ -64,14 +64,14 @@ The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedur
 
 | Stage | Module | Key Operations |
 |-------|--------|----------------|
-| 1. Mesh | [`mesh.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/mesh.ts) | 100,000 Voronoi cells, 5 Lloyd relaxation passes, adjacency graph, boundary cell classification. |
-| 2. Tectonics | [`tectonics.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/tectonics.ts) | 10 tectonic plates, continental vs oceanic assignment, velocity vectors, convergent/divergent/transform classification, BFS distance fields. |
-| 3. Terrain | [`terrain.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/terrain.ts) | Multi-octave fractal noise heightmap (meters), convergent mountain uplift, polar cosine soft clamping (North/South poles), 2-pass spatial Laplacian heightmap smoothing. |
-| 4. Coastlines | [`coastlines.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/coastlines.ts) | Fjord carving ($|lat| > 48^\circ$), peninsula extension, bay formation, island filtering (< 5 cells), smooth exponential coastal slope damping (`coastDist <= 8`), geographic feature classification. |
-| 5. Hydro-Climate | [`hydro-climate.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/hydro-climate.ts) | 8 sub-passes: temperature, lapse rate, Coriolis wind vectoring, rain shadow precipitation, priority-queue depression filling, steepest-descent river flow, tributary networks, lake basins, and 12 Trewartha biomes. Post-routing `elevZone` recalibration. |
-| 6. Quality Gate | [`quality-gate.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/quality-gate.ts) | 9 scientific/aesthetic checks (continent count, shape diversity, mountain alignment, river drainage, rain shadow, lake placement, coastline complexity, land/ocean ratio, 9-zone elevation coverage). Performs in-place repairs. |
-| 7. Politics | [`politics.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/politics.ts) | Culture centers, habitability-scored settlement seeding, Dijkstra shortest-path country expansion over natural border cost fields (rivers, mountains, coastlines), exclave repair, island capital proximity assignment. |
-| 8. Export & Vector Synthesis | [`export.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/export.ts) | Polygon ring merging, 3-stage vector synthesis (Douglas-Peucker decimation $\rightarrow$ 3-pass Catmull-Rom spline subdivision $\rightarrow$ multi-octave harmonic noise perturbation), 7 topology-locked GeoJSON layer collections. |
+| 1. Mesh | [`mesh.ts`](v2/mesh.ts) | 100,000 Voronoi cells, 5 Lloyd relaxation passes, adjacency graph, boundary cell classification. |
+| 2. Tectonics | [`tectonics.ts`](v2/tectonics.ts) | 10 tectonic plates, continental vs oceanic assignment, velocity vectors, convergent/divergent/transform classification, BFS distance fields. |
+| 3. Terrain | [`terrain.ts`](v2/terrain.ts) | Multi-octave fractal noise heightmap (meters), convergent mountain uplift, polar cosine soft clamping (North/South poles), 2-pass spatial Laplacian heightmap smoothing. |
+| 4. Coastlines | [`coastlines.ts`](v2/coastlines.ts) | Fjord carving ($|lat| > 48^\circ$), peninsula extension, bay formation, island filtering (< 5 cells), smooth exponential coastal slope damping (`coastDist <= 8`), geographic feature classification. |
+| 5. Hydro-Climate | [`hydro-climate.ts`](v2/hydro-climate.ts) | 8 sub-passes: temperature, lapse rate, Coriolis wind vectoring, rain shadow precipitation, priority-queue depression filling, steepest-descent river flow, tributary networks, lake basins, and 12 Trewartha biomes. Post-routing `elevZone` recalibration. |
+| 6. Quality Gate | [`quality-gate.ts`](v2/quality-gate.ts) | 9 scientific/aesthetic checks (continent count, shape diversity, mountain alignment, river drainage, rain shadow, lake placement, coastline complexity, land/ocean ratio, 9-zone elevation coverage). Performs in-place repairs. |
+| 7. Politics | [`politics.ts`](v2/politics.ts) | Culture centers, habitability-scored settlement seeding, Dijkstra shortest-path country expansion over natural border cost fields (rivers, mountains, coastlines), exclave repair, island capital proximity assignment. |
+| 8. Export & Vector Synthesis | [`export.ts`](v2/export.ts) | Polygon ring merging, 3-stage vector synthesis (Douglas-Peucker decimation $\rightarrow$ 3-pass Catmull-Rom spline subdivision $\rightarrow$ multi-octave harmonic noise perturbation), 7 topology-locked GeoJSON layer collections. |
 
 ---
 
@@ -173,9 +173,9 @@ bun test ./src/lib/worldgen/v2/__tests__/ ./src/lib/map-pipeline/
 ```
 
 ### Key Test Suites:
-- [`mesh.test.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/__tests__/mesh.test.ts): Voronoi mesh density, spatial distribution, and boundary detection.
-- [`terrain.test.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/__tests__/terrain.test.ts): Heightmaps, elevation zone assignments, mountain ridges, and polar soft clamps.
-- [`coastlines.test.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/__tests__/coastlines.test.ts): Feature classification, island filtering, and coastal slope damping.
-- [`quality-gate.test.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/__tests__/quality-gate.test.ts): 9-check quality evaluation and deterministic in-place repairs.
-- [`integration.test.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/__tests__/integration.test.ts): Multi-seed end-to-end pipeline validation across seeds `1`, `42`, `100`, `256`, `777`.
-- [`geographical-accuracy-analyzer.test.ts`](file:///home/jxsig/projects/ixstats/src/lib/map-pipeline/geographical-accuracy-analyzer.test.ts): Multi-seed scientific composite score enforcement ($\ge 85\%$).
+- `mesh.test.ts`: Voronoi mesh density, spatial distribution, and boundary detection.
+- `terrain.test.ts`: Heightmaps, elevation zone assignments, mountain ridges, and polar soft clamps.
+- `coastlines.test.ts`: Feature classification, island filtering, and coastal slope damping.
+- `quality-gate.test.ts`: 9-check quality evaluation and deterministic in-place repairs.
+- `integration.test.ts`: Multi-seed end-to-end pipeline validation across seeds `1`, `42`, `100`, `256`, `777`.
+- `geographical-accuracy-analyzer.test.ts`: Multi-seed scientific composite score enforcement ($\ge 85\%$).

@@ -136,7 +136,7 @@ Audio feedback is wired via the centralized `cuelume` sound system:
    - All body text and headings maintain a minimum contrast ratio of `12.5:1` in dark mode and `14:1` in light mode against card surfaces.
    - Metadata captions maintain at least `5.5:1` contrast, exceeding the 4.5:1 AA requirement.
 2. **Image Error Handling**:
-   - All article cards wrap remote thumbnails in a stateful component with `onError` fallback to the vector [`WikiOSLogomark`](file:///home/jxsig/projects/ixstats/src/components/wiki-os/shared/WikiOSLogomark.tsx), preventing native broken image squares.
+   - All article cards wrap remote thumbnails in a stateful component with `onError` fallback to the vector [`WikiOSLogomark`](../../src/components/wiki-os/shared/WikiOSLogomark.tsx), preventing native broken image squares.
 3. **Keyboard Shortcuts**:
    - `Enter`: Submits inline collection rename and creation forms.
    - `Escape`: Smoothly dismisses open popovers and inline inputs without state corruption.

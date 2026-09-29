@@ -28,15 +28,15 @@ gantt
 
 | Phase | Objective | Status | Core Source Files / Modules |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **Foundation** | **100% Completed** | [markov-chain.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/markov-chain.ts), [useOnomaGenerator.ts](file:///home/jxsig/projects/ixstats/src/hooks/useOnomaGenerator.ts), [GeneratorPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/GeneratorPanel.tsx), [OnomaRouter.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/OnomaRouter.tsx) |
-| **Phase 2** | **Corpus Intelligence** | **100% Completed** | [lexicon-analytics.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-analytics.ts), [LexiconExplorer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/LexiconExplorer.tsx), [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) |
-| **Phase 3** | **Linguistics Engine** | **100% Completed** | [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts), [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts), [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts), [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx), [StudioPhonology.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioPhonology.tsx) |
+| **Phase 1** | **Foundation** | **100% Completed** | [markov-chain.ts](../../src/lib/onoma/markov-chain.ts), [useOnomaGenerator.ts](../../src/hooks/useOnomaGenerator.ts), `GeneratorPanel.tsx`, [OnomaRouter.tsx](../../src/app/labs/onoma/components/OnomaRouter.tsx) |
+| **Phase 2** | **Corpus Intelligence** | **100% Completed** | [lexicon-analytics.ts](../../src/lib/onoma/lexicon-analytics.ts), [LexiconExplorer.tsx](../../src/app/labs/onoma/components/sections/LexiconExplorer.tsx), [MarkovVisualizer.tsx](../../src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) |
+| **Phase 3** | **Linguistics Engine** | **100% Completed** | [phonology.ts](../../src/lib/onoma/phonology.ts), [morphology.ts](../../src/lib/onoma/morphology.ts), [orthography.ts](../../src/lib/onoma/orthography.ts), [StudioLexicon.tsx](../../src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx), [StudioPhonology.tsx](../../src/app/labs/onoma/components/sections/studio/StudioPhonology.tsx) |
 | **Phase 4** | **Living Languages** | *Planned* | Evolution engine, timelines, loanword/dialect tracking. |
 | **Phase 5** | **ML Layer** | *In Progress* | ✅ Phonotactic perplexity scorer (`perplexity.ts`, card border refractions). ⏳ TF-IDF semantic search, lexicon gap recommender. |
 | **Phase 6** | **AI Linguist** | *Planned* | Local LLM-backed dictionary writing & etymologies. |
-| **Phase 7** | **Voice** | **100% Completed** | [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts), [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts), [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx), [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml), [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) |
+| **Phase 7** | **Voice** | **100% Completed** | [browser-speech.ts](../../src/lib/onoma/browser-speech.ts), [branding-utils.ts](../../src/lib/onoma/branding-utils.ts), [NameResultCard.tsx](../../src/app/labs/onoma/components/shared/NameResultCard.tsx), `docker-compose.yml`, [verify-environment.ts](../../scripts/deployment/verify-environment.ts) |
 | **Phase 8** | **Translation Engine** | *Planned* | Grammar-aware English <=> conlang translators. |
-| **Phase 9** | **Language Studio** | *In Progress* | ✅ Visual Naming Conventions editor and Presets simulator ([StudioNameSets.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioNameSets.tsx)). ⏳ Visual grammar/alphabet editor. |
+| **Phase 9** | **Language Studio** | *In Progress* | ✅ Visual Naming Conventions editor and Presets simulator ([StudioNameSets.tsx](../../src/app/labs/onoma/components/sections/studio/StudioNameSets.tsx)). ⏳ Visual grammar/alphabet editor. |
 | **Phase 10**| **Onoma AI** | *Planned* | Generative language simulation agents. |
 
 ---
@@ -46,36 +46,36 @@ gantt
 ### Phase 1: Foundation (Naming Engine)
 - **Status**: Complete.
 - **Architectural Delivery**:
-  - **Markov Chains & Backoff**: Rebuilt the character & syllable training algorithms. Features multi-order lookback models that automatically back off to order $N-1$ down to $1$ when tight constraints cannot be met. Implemented in [markov-chain.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/markov-chain.ts).
-  - **Culture Classifier**: A Naive-Bayes bigram classifier in [culture-classifier.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon/culture-classifier.ts) that groups training inputs into single cultures or compound blends (e.g. `celtic+germanic`).
-  - **Wiki Extractors & Cleaning**: Automation scripts under [scripts/onoma/](file:///home/jxsig/projects/ixstats/scripts/onoma/) that pull, clean, and bucket over 28,000 wiki names.
-  - **Custom Studio Workspace**: Paste-in text areas, drag-and-drop file upload streams, and local-storage session caching implemented in [StudioWorkshop.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioWorkshop.tsx) and [useStudioState.ts](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/hooks/useStudioState.ts).
+  - **Markov Chains & Backoff**: Rebuilt the character & syllable training algorithms. Features multi-order lookback models that automatically back off to order $N-1$ down to $1$ when tight constraints cannot be met. Implemented in [markov-chain.ts](../../src/lib/onoma/markov-chain.ts).
+  - **Culture Classifier**: A Naive-Bayes bigram classifier in [culture-classifier.ts](../../src/lib/onoma/lexicon/culture-classifier.ts) that groups training inputs into single cultures or compound blends (e.g. `celtic+germanic`).
+  - **Wiki Extractors & Cleaning**: Automation scripts under [scripts/onoma/](../../scripts/onoma/) that pull, clean, and bucket over 28,000 wiki names.
+  - **Custom Studio Workspace**: Paste-in text areas, drag-and-drop file upload streams, and local-storage session caching implemented in [StudioWorkshop.tsx](../../src/app/labs/onoma/components/sections/studio/StudioWorkshop.tsx) and [useStudioState.ts](../../src/app/labs/onoma/hooks/useStudioState.ts).
 
 ### Phase 2: Corpus Intelligence
 - **Status**: Complete.
 - **Architectural Delivery**:
-  - **Lexicon Analytics**: Functions in [lexicon-analytics.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-analytics.ts) calculate Shannon entropy (phonetic diversity), letter density arrays, and bigram/trigram frequencies.
-  - **Visualizer Graph Canvas**: Interactive center-panning graph using `@xyflow/react` in [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) demonstrating next-token transition pathways and executing weighted random walks.
+  - **Lexicon Analytics**: Functions in [lexicon-analytics.ts](../../src/lib/onoma/lexicon-analytics.ts) calculate Shannon entropy (phonetic diversity), letter density arrays, and bigram/trigram frequencies.
+  - **Visualizer Graph Canvas**: Interactive center-panning graph using `@xyflow/react` in [MarkovVisualizer.tsx](../../src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) demonstrating next-token transition pathways and executing weighted random walks.
   - **Dictionary Health Auditing**: Real-time quality audits that flag duplicates, punctuation errors, length outliers, and compute a `Corpus Quality Score (0-100)` before model compilation.
 
 ### Phase 3: Linguistics Engine
 - **Status**: Complete (Core UI/UX & Primitives).
 - **Architectural Delivery**:
-  - **Grapheme-to-IPA Parser**: Custom sound rules mapping graphemes to IPA transcriptions across all 8 cultures, including a consonant-onset stress stress heuristic (`ˈ`). Implemented in [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts).
-  - **Orthography script mapping**: Transcribes IPA characters to Cyrillic, Greek, and Arabic (RTL-rendered) scripts in [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts).
-  - **Morphological Declensions**: Calculates grammatical gender (masculine, feminine, neuter) and plural/singular cases (Nominative, Genitive, Accusative, Dative, Ablative) in [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts).
+  - **Grapheme-to-IPA Parser**: Custom sound rules mapping graphemes to IPA transcriptions across all 8 cultures, including a consonant-onset stress stress heuristic (`ˈ`). Implemented in [phonology.ts](../../src/lib/onoma/phonology.ts).
+  - **Orthography script mapping**: Transcribes IPA characters to Cyrillic, Greek, and Arabic (RTL-rendered) scripts in [orthography.ts](../../src/lib/onoma/orthography.ts).
+  - **Morphological Declensions**: Calculates grammatical gender (masculine, feminine, neuter) and plural/singular cases (Nominative, Genitive, Accusative, Dative, Ablative) in [morphology.ts](../../src/lib/onoma/morphology.ts).
   - **UI Integrations**:
-    - Interactive audio pronunciation player badges in [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx).
-    - Split-screen Lexicon Dictionary and terms catalog editor in [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx).
+    - Interactive audio pronunciation player badges in [NameResultCard.tsx](../../src/app/labs/onoma/components/shared/NameResultCard.tsx).
+    - Split-screen Lexicon Dictionary and terms catalog editor in [StudioLexicon.tsx](../../src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx).
 
 ### Phase 7: Voice (Audio Synthesis)
 - **Status**: Complete.
 - **Architectural Delivery**:
-  - **Browser Native Speech Synthesis**: Implemented [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
-  - **Phonetic IPA spelling translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
-  - **Three-Tier Fallback Playback**: Refactored [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback $\rightarrow$ client-side meSpeak.
-  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml) mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
-  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](file:///home/jxsig/projects/ixstats/scripts/deploy-ixworld.sh).
+  - **Browser Native Speech Synthesis**: Implemented [browser-speech.ts](../../src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
+  - **Phonetic IPA spelling translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](../../src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
+  - **Three-Tier Fallback Playback**: Refactored [NameResultCard.tsx](../../src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback $\rightarrow$ client-side meSpeak.
+  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in `docker-compose.yml` mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
+  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](../../scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](../../scripts/deploy-ixworld.sh).
 
 ---
 

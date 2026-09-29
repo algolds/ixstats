@@ -200,7 +200,7 @@ Instead of running Docker, SSH, and Next.js separately, run:
 ```bash
 bun run dev:local
 ```
-This runs the internal [dev-local.sh](file:///ixwiki/public/projects/ixstats/scripts/dev-local.sh) script, which:
+This runs the internal [dev-local.sh](../../scripts/dev-local.sh) script, which:
 - Starts your background OpenSSH tunnels to `ixwiki`.
 - Spins up local Docker Postgres (`5433`) and Redis (`6379`) containers.
 - Pulls and restores the latest production database dump.
@@ -220,7 +220,7 @@ Run code quality checks and push local work to staging/production in one line:
 ```bash
 bun run deploy:local
 ```
-This script runs the [deploy-local.sh](file:///ixwiki/public/projects/ixstats/scripts/deploy-local.sh) wrapper, which:
+This script runs the [deploy-local.sh](../../scripts/deploy-local.sh) wrapper, which:
  - Verifies code formatting with Prettier (`bun run format:check`).
  - Runs strict Oxlint checks (`bun run lint:strict` — TS 7 native, 50-100× faster).
  - Runs unit and integration tests (`bun run test`).
