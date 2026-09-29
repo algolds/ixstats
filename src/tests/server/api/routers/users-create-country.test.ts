@@ -14,6 +14,7 @@ function setup() {
       findUnique: jest.fn().mockResolvedValue({ id: "db_new", countryId: null }),
       upsert: jest.fn().mockResolvedValue({ id: "db_new" }),
       update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     country: {
       create: jest.fn(({ data }: { data: object }) => Promise.resolve({ id: "c_new", ...data })),
@@ -72,6 +73,11 @@ describe("users.createCountry builds its row from the shared baseline", () => {
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c_new", ownerUserId: null },
       data: { ownerUserId: "db_new" },
+    });
+    // A player with no nation (the only one createCountry accepts) acts as the new one at once (ruling F-1).
+    expect(db.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "db_new", countryId: null },
+      data: { countryId: "c_new" },
     });
     expect(db.historicalDataPoint.create).toHaveBeenCalledWith({
       data: {
