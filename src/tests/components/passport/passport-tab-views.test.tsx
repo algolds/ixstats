@@ -21,6 +21,15 @@ const passport: PassportPayload = {
     clerkUsername: "alex",
     clerkDisplayName: "Alex Pav",
     clerkImageUrl: null,
+    signature: null,
+  },
+  privacy: {
+    accolades: true,
+    impact: true,
+    forumStats: true,
+    vaultCards: true,
+    historyStream: true,
+    achievements: true,
   },
   featuredRealm: {
     id: "default",
@@ -55,12 +64,9 @@ const passport: PassportPayload = {
   forum: {
     linked: false,
     username: null,
-    userTitle: null,
     isStaff: false,
-    messageCount: 0,
-    reactionScore: 0,
-    trophyPoints: 0,
     joinedDate: null,
+    stats: null,
   },
   vault: {
     totalCards: 0,
@@ -68,7 +74,11 @@ const passport: PassportPayload = {
     collectorLevel: 3,
     collectorXp: 120,
     credits: 0,
+    focus: { categoryCount: 0, categoryTotal: 12, topCategory: null },
     topCards: [],
+  },
+  showcase: {
+    achievements: { unlockedCount: 0, totalCount: 76, points: 0, ribbons: [] },
   },
   thinkpages: { linked: false, username: null, bio: null, postCount: 0, followerCount: 0 },
   discord: { linked: true, username: "alexpav" },

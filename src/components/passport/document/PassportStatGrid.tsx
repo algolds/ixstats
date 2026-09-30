@@ -9,35 +9,35 @@ import type { PassportPayload, PassportVault, PassportVisibility } from "../type
 interface PassportStatGridProps {
   visibility: PassportVisibility;
   lorewards: PassportPayload["wiki"]["lorewards"];
-  forum: PassportPayload["forum"];
-  vault: PassportVault;
+  forumStats: PassportPayload["forum"]["stats"];
+  vault: PassportVault | null;
   onOpenLorewards: () => void;
   onOpenVault: () => void;
 }
 
-/** Category breadth of the newest vault cards (e.g. "3/12", "Military focus"). */
-function categorySummary(vault: PassportVault): { label: string; sub: string } {
-  if (vault.topCards.length === 0) return { label: "—", sub: "No categories yet" };
-  const cats = vault.topCards
-    .map((c) => c.category)
-    .filter((x): x is string => !!x && x !== "NS_IMPORT");
-  const distinct = new Set(cats).size;
-  const topCat = cats[0] ?? null;
-  const label = distinct ? `${distinct}/12` : "—";
-  const sub = topCat ? `${topCat.charAt(0) + topCat.slice(1).toLowerCase()} focus` : "Collecting";
-  return { label, sub };
+/** Category breadth of the whole live collection (e.g. "3/12", "Military focus"). */
+function categorySummary(focus: PassportVault["focus"]): { label: string; sub: string } {
+  if (!focus || focus.categoryCount === 0) return { label: "—", sub: "No categories yet" };
+  const top = focus.topCategory;
+  return {
+    label: `${focus.categoryCount}/${focus.categoryTotal}`,
+    sub: top ? `${top.charAt(0) + top.slice(1).toLowerCase()} focus` : "Collecting",
+  };
 }
 
-/** Front-face stat row: Lorewards, Focus, Forum and IxCredits cells. */
+/**
+ * Front-face stat row: Lorewards, Focus, Forum and IxCredits cells. A cell whose section the owner
+ * hid is not rendered (the server did not send its data either).
+ */
 export const PassportStatGrid = React.memo(function PassportStatGrid({
   visibility,
   lorewards,
-  forum,
+  forumStats,
   vault,
   onOpenLorewards,
   onOpenVault,
 }: PassportStatGridProps) {
-  const focus = categorySummary(vault);
+  const focus = categorySummary(vault?.focus ?? null);
 
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -64,7 +64,7 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
         </button>
       )}
 
-      {visibility.impact && (
+      {visibility.vaultCards && visibility.impact && (
         <button
           type="button"
           onClick={onOpenVault}
@@ -86,14 +86,16 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
             <span className="font-mono text-xs text-stone-400 uppercase">Forum</span>
             <MessageSquare className="h-3 w-3 text-blue-500" />
           </div>
-          <p className="text-foreground text-sm font-bold">{forum.messageCount} Posts</p>
+          <p className="text-foreground text-sm font-bold">
+            {forumStats ? `${forumStats.messageCount.toLocaleString()} Posts` : "—"}
+          </p>
           <p className="text-muted-foreground font-mono text-xs">
-            {forum.reactionScore} reactions
+            {forumStats ? `${forumStats.reactionScore.toLocaleString()} reactions` : "Not linked"}
           </p>
         </div>
       )}
 
-      {visibility.vaultCards && (
+      {vault && (
         <Link
           href="/vault"
           data-cuelume-press="soft"

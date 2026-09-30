@@ -2,6 +2,7 @@
 
 import React from "react";
 import { api } from "~/trpc/react";
+import { EyeClosed } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
 import { PassportOverviewTab } from "./tabs/PassportOverviewTab";
@@ -17,6 +18,28 @@ function TabSkeleton() {
     <div className="space-y-4">
       <Skeleton className="h-28 w-full rounded-3xl" />
       <Skeleton className="h-28 w-full rounded-3xl" />
+    </div>
+  );
+}
+
+/** Shown in place of a section the owner hid (the server did not send its data). */
+export function HiddenSection({
+  what,
+  handle,
+  isOwner,
+}: {
+  what: string;
+  handle: string;
+  isOwner: boolean;
+}) {
+  return (
+    <div className="space-y-2 rounded-3xl border border-black/8 bg-black/[0.015] p-10 text-center dark:border-white/10 dark:bg-white/[0.02]">
+      <EyeClosed className="text-muted-foreground mx-auto h-6 w-6" />
+      <p className="text-muted-foreground mx-auto max-w-md text-xs">
+        {isOwner
+          ? `You hide your ${what} from your passport. Change it on the back of your passport.`
+          : `@${handle} keeps their ${what} private.`}
+      </p>
     </div>
   );
 }
@@ -74,8 +97,7 @@ interface PassportTabBodyProps {
   activeTab: PassportTabType;
   handle: string;
   data: PassportPayload;
-  /** Owner's session toggle: when off, the History stream is hidden and not fetched. */
-  showHistory: boolean;
+  onOpenVault?: () => void;
 }
 
 /**
@@ -86,18 +108,28 @@ export const PassportTabBody = React.memo(function PassportTabBody({
   activeTab,
   handle,
   data,
-  showHistory,
+  onOpenVault,
 }: PassportTabBodyProps) {
+  const isOwner = data.account.isOwner;
   switch (activeTab) {
     case "overview":
-      return <PassportOverviewTab data={data} cleanUsername={handle} />;
+      return <PassportOverviewTab data={data} cleanUsername={handle} onOpenVault={onOpenVault} />;
     case "realms":
       return <RealmsPanel handle={handle} />;
     case "work":
       return <WorkPanel handle={handle} wiki={data.wiki} />;
     case "vault":
-      return <PassportVaultTab vault={data.vault} cleanUsername={handle} />;
+      return data.vault ? (
+        <PassportVaultTab vault={data.vault} cleanUsername={handle} />
+      ) : (
+        <HiddenSection what="Vault collection" handle={handle} isOwner={isOwner} />
+      );
     case "history":
-      return <HistoryPanel handle={handle} enabled={showHistory} />;
+      // The server returns an empty stream when the owner hides it; skip the fetch entirely.
+      return data.privacy.historyStream ? (
+        <HistoryPanel handle={handle} enabled />
+      ) : (
+        <HiddenSection what="activity history" handle={handle} isOwner={isOwner} />
+      );
   }
 });
