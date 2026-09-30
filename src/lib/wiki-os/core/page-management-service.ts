@@ -53,6 +53,7 @@ export class PageManagementService {
           source: realm,
           OR: [{ slug: oldSlug }, { title: oldSlugOrTitle.replace(/_/g, " ") }],
         },
+        select: { id: true, title: true, namespace: true },
       });
 
       if (!original) {
@@ -65,6 +66,7 @@ export class PageManagementService {
           source: realm,
           OR: [{ slug: newSlug }, { title: newCanonicalTitle }],
         },
+        select: { id: true },
       });
 
       if (existingTarget && existingTarget.id !== original.id) {
@@ -82,6 +84,7 @@ export class PageManagementService {
           lastEditorId: userId,
           updatedAt: new Date(),
         },
+        select: { id: true },
       });
 
       // 4. Create redirect article at the old location
@@ -101,6 +104,7 @@ export class PageManagementService {
           authorId: userId,
           lastEditorId: userId,
         },
+        select: { id: true },
       });
 
       // 5. Update Link Graph: Repoint incoming links to new article ID
@@ -156,6 +160,7 @@ export class PageManagementService {
         source: realm,
         OR: [{ slug }, { title: slugOrTitle.replace(/_/g, " ") }],
       },
+      select: { id: true, title: true, status: true },
     });
 
     if (!article) {
@@ -169,6 +174,7 @@ export class PageManagementService {
         lastEditorId: userId,
         updatedAt: new Date(),
       },
+      select: { id: true },
     });
 
     await db.wikiLog.create({
@@ -202,6 +208,7 @@ export class PageManagementService {
         source: realm,
         OR: [{ slug }, { title: slugOrTitle.replace(/_/g, " ") }],
       },
+      select: { id: true, title: true },
     });
 
     if (!article) {
@@ -215,6 +222,7 @@ export class PageManagementService {
         lastEditorId: userId,
         updatedAt: new Date(),
       },
+      select: { id: true },
     });
 
     await db.wikiLog.create({

@@ -17,10 +17,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing required query param: slug" }, { status: 400 });
   }
 
+  // The raw HTML goes out only in the JSON export; the view bundle never does.
   const article: any = await (db as any).wikiArticle.findFirst({
     where: {
       source: realm,
       OR: [{ slug }, { title: slug.replace(/_/g, " ") }],
+    },
+    select: {
+      title: true,
+      slug: true,
+      source: true,
+      namespace: true,
+      status: true,
+      format: true,
+      summary: true,
+      wordCount: true,
+      readingTime: true,
+      wikitext: true,
+      contentHtml: format === "json",
     },
   });
 
