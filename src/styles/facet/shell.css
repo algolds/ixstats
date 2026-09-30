@@ -1,0 +1,86 @@
+/* ==========================================================================
+   FACET 3 — NAVIGATION SHELL (spec §7.4, Phase 3)
+
+   The `facet-nav` flag lives on <html> as `data-nav="facet"` and the
+   sidebar's collapsed state as `data-sidebar="collapsed"`; both are written
+   before first paint by the inline script in src/app/layout.tsx
+   (src/lib/design/appearance.ts). Everything here keys off those attributes,
+   so the server HTML (which contains both shells) and the first paint agree
+   and nothing flashes. See docs/reference/facet-design-system.md §Navigation.
+
+   Shell variables (read them; don't redefine them in feature code):
+   --shell-sidebar-width   Width the AppSidebar takes at ≥1024px (0 / 16rem / 4rem collapsed).
+   --shell-tabbar-height   Space the TabBar takes at the bottom below 1024px (0 when off).
+   --shell-top-offset      `top` for sticky rails so they clear the top chrome
+                           (legacy nav: 5rem = `lg:top-20`; new shell: the Halo band).
+   --shell-header-top      `top` for a sticky page toolbar (PageHeader).
+   --shell-halo-reserve    Width kept clear in the middle of a page toolbar for Halo.
+   ========================================================================== */
+
+/* AppSidebar collapsed to icons. */
+@custom-variant sidebar-collapsed (&:where([data-sidebar="collapsed"] *));
+
+@layer base {
+  :root {
+    --shell-sidebar-width: 0px;
+    --shell-tabbar-height: 0px;
+    --shell-top-offset: 5rem;
+    --shell-header-top: var(--nav-height-mobile);
+    --shell-halo-reserve: 0px;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --shell-header-top: var(--nav-height-desktop);
+    }
+  }
+
+  :root[data-density="compact"] {
+    --shell-header-top: var(--nav-height-compact);
+  }
+
+  :root[data-nav="facet"] {
+    /* 3.5rem bar + 0.5rem float gap + the home indicator. */
+    --shell-tabbar-height: calc(4rem + env(safe-area-inset-bottom));
+    /* Halo floats in a 3.5rem band at the top; rails start 1rem below it. */
+    --shell-top-offset: calc(4.5rem + env(safe-area-inset-top));
+    --shell-header-top: 0px;
+    --shell-halo-reserve: 11rem;
+  }
+
+  @media (min-width: 1024px) {
+    :root[data-nav="facet"] {
+      --shell-sidebar-width: 16rem;
+      --shell-tabbar-height: 0px;
+      --shell-halo-reserve: 25rem;
+    }
+
+    :root[data-nav="facet"][data-sidebar="collapsed"] {
+      --shell-sidebar-width: 4rem;
+    }
+  }
+
+  /* Chromeless routes (Maps, the full-screen map editors): no sidebar, no tab bar. */
+  :root[data-nav="facet"] [data-app-shell][data-chromeless] {
+    --shell-sidebar-width: 0px;
+    --shell-tabbar-height: 0px;
+  }
+}
+
+@layer components {
+  /* <ShellGate>: both variants are in the server HTML; only the active one is displayed. */
+  [data-shell-variant] {
+    display: contents;
+  }
+
+  :root[data-nav="facet"] [data-shell-variant="legacy"],
+  :root:not([data-nav="facet"]) [data-shell-variant="facet"] {
+    display: none;
+  }
+
+  /* The sidebar pushes content; the tab bar reserves the bottom. */
+  :root[data-nav="facet"] [data-shell-main] {
+    padding-left: var(--shell-sidebar-width);
+    padding-bottom: var(--shell-tabbar-height);
+  }
+}

@@ -57,6 +57,9 @@ const FACET_CONVERTED = [
   "components/shared/atomic-picker/",
   "app/help/",
   "app/builder/components/editor/",
+  // Facet 3 navigation shell (spec §7.4, Phase 3).
+  "components/shell/",
+  "lib/navigation/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));
@@ -171,6 +174,11 @@ describe("Facet anti-slop guards", () => {
       expect(convertedHits(/\bbg-gradient-to-[a-z]+/g).length).toBeLessThanOrEqual(
         CONVERTED_GRADIENT_CEILING
       );
+    });
+
+    it("keep the navigation shell on the z-* tokens (no arbitrary z-[…] at all)", () => {
+      const shellDir = path.join("components", "shell") + path.sep;
+      expect(hits(/\bz-\[[^\]]+\]/g).filter((hit) => hit.startsWith(shellDir))).toEqual([]);
     });
 
     it("do not bring back the retired MyCountry surface-kit", () => {

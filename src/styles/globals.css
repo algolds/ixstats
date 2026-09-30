@@ -17,6 +17,7 @@
 @import "./facet.css";
 @import "./integrations.css";
 @import "./layout.css";
+@import "./facet/shell.css";
 @import "./clerk.css";
 
 @theme inline {

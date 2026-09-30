@@ -97,4 +97,17 @@ describe("AppearanceAccessibilityPanel", () => {
     expect(mockTheme.setTextScale).toHaveBeenCalledWith(1.05);
     expect(screen.getByText(/shown at 100% of the default size/)).toBeInTheDocument();
   });
+
+  it("turns the new navigation preview on and off (facet-nav flag)", () => {
+    document.documentElement.removeAttribute("data-nav");
+    render(<AppearanceAccessibilityPanel />);
+    const toggle = screen.getByRole("switch", { name: "New navigation (preview)" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(toggle);
+    expect(document.documentElement.getAttribute("data-nav")).toBe("facet");
+    expect(localStorage.getItem("ixstats-facet-nav")).toBe("true");
+    fireEvent.click(screen.getByRole("switch", { name: "New navigation (preview)" }));
+    expect(document.documentElement.hasAttribute("data-nav")).toBe(false);
+    localStorage.removeItem("ixstats-facet-nav");
+  });
 });

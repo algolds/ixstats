@@ -9,15 +9,16 @@ text styles, glass only for floating chrome, concentric shape, springs, accessib
 identity on top: the Swiss typeface, per-app tints, Cuelume sound and Halo. This page documents **what ships**. The spec
 records why; where the two differ, this page is right and the spec notes the deviation.
 
-**Status:** Phases 1 (foundations) and 2 (primitives, settings) are live. Phase 3 (sidebar + tab bar navigation) and
-Phase 4 (per-app migration) are pending, so many screens still use legacy classes that now alias onto the tokens below.
+**Status:** Phases 1 (foundations) and 2 (primitives, settings) are live. Phase 3 (sidebar + tab bar navigation) ships
+behind the `facet-nav` flag, off by default (§12). Phase 4 (per-app migration) is pending, so many screens still use
+legacy classes that now alias onto the tokens below.
 
 ---
 
 ## 1. Rules of the road
 
 1. **Content is opaque, chrome is glass.** Pages, cards, rows and dialogs are opaque. Glass (`material-*`) is only for
-   floating chrome: map panels and toolbars, Halo, popovers and menus, the future sidebar/tab bar. Glass never nests.
+   floating chrome: map panels and toolbars, Halo, popovers and menus, the sidebar/tab bar (§12). Glass never nests.
 2. **Use roles, not colours.** `text-label`, `bg-surface`, `border-separator`, `bg-tint`… switch with the theme and
    the Increase Contrast preference. No `dark:` overrides, no hex in class names, no raw palette for UI chrome.
 3. **Use primitives, not hand-rolled markup.** Every card, row, button, badge, tab, switch, overlay and list on this
@@ -113,7 +114,7 @@ utilities, so `cn("text-body text-label")` keeps both.
 | Utility | Use |
 |---|---|
 | `material-thin` | Toolbars, sub-headers, small floating buttons |
-| `material-regular` | Map panels, Halo, (future) sidebar and tab bar |
+| `material-regular` | Map panels, Halo, AppSidebar and TabBar |
 | `material-thick` | Popovers, menus, map context menus and floating dialogs over the map |
 
 Materials switch to opaque under Reduce Transparency and step down one blur level on small screens. Anything inside a
@@ -191,7 +192,7 @@ new code uses `soundCues` or the primitives (dialogs and sheets already play pre
 
 A blocking, nonce'd script in `src/app/layout.tsx` (`src/lib/design/appearance.ts`) applies the stored preferences to
 `<html>` before first paint: `data-theme` (System default), `data-density`, `data-contrast`, `data-transparency`,
-`data-motion`, `data-sound` and `--text-scale`. Users change them in **Settings → Appearance & accessibility**; code
+`data-motion`, `data-sound` and `--text-scale`, plus the navigation shell's `data-nav` and `data-sidebar` (§12). Users change them in **Settings → Appearance & accessibility**; code
 reads them through `useTheme()` (`src/context/theme-context.tsx`). Variants: `motion-reduce:`, `contrast-more:`,
 `transparency-reduced:`, `compact:`.
 
@@ -209,7 +210,7 @@ labels; no exclamation marks in UI chrome.
 
 - `src/styles/globals.css` imports, in order: Tailwind, `facet/tokens.css`, then the layered sheets (typography,
   utilities, animations, themes aliases, theming, components, domains, `wiki-os/tokens.css`, facet, integrations,
-  layout, clerk). Route sheets: `wiki-os.css` (WikiOS), `forum.css` (Forum), `facet/lab.css` (materials lab only).
+  layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS), `forum.css` (Forum), `facet/lab.css` (materials lab only).
 - Material and surface classes never set position, z-index, radius, margin or letter-spacing.
 - Third-party overrides (Clerk, sonner, MapLibre) live unlayered in `integrations.css`/`clerk.css` with a comment.
 
@@ -227,9 +228,90 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 | `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor): no `dark:`, no hex classes, no arbitrary z, capped gradients |
 | `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
 | `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
+| `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |
+
+## 12. Navigation (Phase 3 — behind `facet-nav`)
+
+Spec §7.4. The new shell replaces the top navigation bar and its scroll modes with an **AppSidebar** (≥1024px), a
+bottom **TabBar** (<1024px) and a **PageHeader** per page; **Halo** stays as the floating island for search,
+notifications, live activity and quick actions. It ships behind the `facet-nav` flag, **off by default**; with the
+flag off the legacy shell renders exactly as before.
+
+### 12.1 Turning it on
+
+| How | Effect |
+|---|---|
+| `NEXT_PUBLIC_FACET_NAV=1` | Deployment default: on for everyone who hasn't chosen otherwise. |
+| Settings → Appearance & accessibility → **New navigation (preview)** | Per-user override on this device (`localStorage["ixstats-facet-nav"]` = `"true"`/`"false"`). |
+| `useFacetNav()` (`src/lib/navigation/use-facet-nav.ts`) | `{ enabled, resolved, setEnabled }` for code that must branch. |
+
+The pre-paint script (`APPEARANCE_INIT_SCRIPT`, `src/lib/design/appearance.ts`) writes `html[data-nav="facet"]` and
+`html[data-sidebar="collapsed"]` before first paint. The server HTML contains **both** shells; CSS in
+`src/styles/facet/shell.css` shows the one matching `data-nav`, so nothing flashes and hydration matches. After
+hydration `useFacetNav().resolved` turns true and the inactive shell unmounts. Use `<ShellGate variant="facet|legacy">`
+to do the same for page-level differences (e.g. adopting `PageHeader` only under the new shell).
+
+### 12.2 Components (`src/components/shell`)
+
+| Component | API and behaviour |
+|---|---|
+| `AppShell` | Root frame in `app/layout.tsx`: `legacyNav`, `beforeMain`, `children`. Renders `<main data-shell-main>`; sets `data-chromeless` on chromeless routes. |
+| `FacetShell` | Wires the sidebar, tab bar and Halo to the route, user, admin role, admin navigation settings and persisted collapsed state. |
+| `AppSidebar` | `pathname`, `searchParams`, `apps`, `collapsed`, `onCollapsedChange`, `account`, `signIn`. Floating `material-regular` panel, `z-chrome`, 256px / 64px collapsed (persisted, `ixstats-sidebar-collapsed`). App switcher (menu) on top, the current app's sections (current one tinted, `aria-current="page"`, spring-smooth indicator), account + Settings + collapse toggle at the bottom. `<nav aria-label="App navigation">`; collapsed rows keep their names (sr-only) and get tooltips. |
+| `TabBar` | `pathname`, `searchParams`, `apps`. Floating `material-regular` bar above the safe-area inset, `z-chrome`: four primary apps (`TAB_BAR_PRIORITY`) + **More**, which opens a bottom `Sheet` (medium/large detents) with the current app's sections and the other apps as a `FacetList`. 44px targets, `aria-current`. |
+| `PageHeader` | `title`, `subtitle?`, `back?: { href, label? }`, `actions?`. `text-large-title` `<h1>` that collapses into a sticky `material-thin` toolbar title when it scrolls under the toolbar (opacity only; instant under Reduce Motion). Reference adoption: `/help` (flag on only). |
+| `ShellGate` | `variant="facet" \| "legacy"`: render children only under that shell (CSS-gated until hydrated). |
+| `ShellHalo` | Halo floating top-centre over the content area, clear of the sidebar, `z-nav`. Hidden on /maps (MapDynamicIsland). |
+
+### 12.3 Section map (`src/lib/navigation/app-sections.ts`)
+
+One list of apps — `id`, `label`, `href`, iconoir `icon`, `data-app` `tint`, `match` prefixes, visibility
+(`requiresAuth`, `adminOnly`, the admin `navSetting`) and `sections` (`href`, `icon`, optional `exact`, extra `match`
+prefixes, `isDefault` for query tabs, a per-section `tint`). Resolvers: `getAppForPath`, `getActiveSectionId` (most
+specific section wins; query sections such as `/settings?tab=appearance` match on the query),
+`getTintForPath`, `getVisibleApps`, `splitTabBarApps`, `isChromelessPath`.
+
+| App | Tint | Sections |
+|---|---|---|
+| Home | default | Dashboard, Activity, Achievements, What's new |
+| MyCountry | `mycountry` | Overview, Directives, Economy, Diplomacy, Defense (`intel`), Politics, Intelligence (`intel`), Map editor, Editor |
+| Maps | `maps` | — (chromeless) |
+| ThinkPages | `thinkpages` | Accounts, ThinkTanks, Messages |
+| Vault | `vault` | Dashboard, Cards, Collections, Marketplace, Crafting, Import |
+| Wiki | `wiki` | Main page, Search, Recent changes, Categories, Random article, Watchlist, Contributions, Blurbs, Utilities |
+| Forum | `forum` | All forums, Search, Bookmarks, New thread |
+| Sports | `sports` | MyLeague, MyClub |
+| Countries | default | Directory, Explore, Collections, Leaderboards, Realms |
+| Help | default | — |
+| Admin (admins) | `admin` | Overview, Platform, Users, Roles, Countries, Maps, WikiOS, Vault, ThinkPages, Notifications, Logs |
+| Settings (sidebar footer) | default | The `?tab=` panels of `/settings` |
+
+Link only to routes that render (the guard rejects redirect stubs such as `/wiki/recent-changes` → use `/util/…`).
+Chromeless routes (`CHROMELESS_PREFIXES`): `/maps`, `/mycountry/map-editor`, `/admin/maps/editor`,
+`/admin/maps/style-editor` — no sidebar or tab bar.
+
+### 12.4 Layout variables
+
+Set by `shell.css` on `:root` (and zeroed on chromeless routes); read them, don't redefine them.
+
+| Variable | Legacy shell | New shell |
+|---|---|---|
+| `--shell-sidebar-width` | 0 | 16rem (4rem collapsed) at ≥1024px, else 0 — `<main>` gets it as `padding-left` |
+| `--shell-tabbar-height` | 0 | `4rem + safe-area-inset-bottom` below 1024px — `<main>` gets it as `padding-bottom` |
+| `--shell-top-offset` | 5rem (= `lg:top-20`) | `4.5rem + safe-area-inset-top` (below the Halo band) |
+| `--shell-header-top` | the nav bar height | 0 — `top` of `PageHeader`'s sticky toolbar |
+| `--shell-halo-reserve` | 0 | 11rem / 25rem — kept clear in the middle of a page toolbar for Halo |
+
+Sticky rails that hard-code `lg:top-20` still clear the Halo band under the new shell; new rails should use
+`top-(--shell-top-offset)`. Fixed-position page elements must offset themselves by `--shell-sidebar-width` /
+`--shell-tabbar-height` if they sit at the leading or bottom edge. Variant: `sidebar-collapsed:` (styles inside the
+collapsed sidebar).
 
 ## Changelog
 
+- **3.0 + Phase 3 (2026-09-30)** — Navigation shell behind `facet-nav`: `AppShell`, `AppSidebar`, `TabBar`,
+  `PageHeader`, `ShellGate`, Halo as island; the app section map and its route guard; `--shell-*` layout variables;
+  "New navigation (preview)" in Settings.
 - **3.0 (2026-09-30)** — Facet 3: HIG colour roles and per-app tints, text styles, concentric radii, glass materials
   for chrome only, one z scale, springs; layered CSS (~19.8k → ~12.6k lines); pre-paint appearance with Increase
   Contrast, Reduce Transparency, Reduce Motion, density and text size; new primitives (FacetList/Row, Stat,

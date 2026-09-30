@@ -1,0 +1,93 @@
+import React from "react";
+import { render, screen, act } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+import { PageHeader } from "~/components/shell/PageHeader";
+
+type ObserverCallback = (entries: Partial<IntersectionObserverEntry>[]) => void;
+
+let observerCallback: ObserverCallback | undefined;
+let observerOptions: IntersectionObserverInit | undefined;
+const originalObserver = globalThis.IntersectionObserver;
+
+beforeEach(() => {
+  observerCallback = undefined;
+  globalThis.IntersectionObserver = class {
+    constructor(callback: ObserverCallback, options?: IntersectionObserverInit) {
+      observerCallback = callback;
+      observerOptions = options;
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  } as unknown as typeof IntersectionObserver;
+});
+
+afterEach(() => {
+  globalThis.IntersectionObserver = originalObserver;
+});
+
+function scrollTitle(bottom: number, isIntersecting: boolean) {
+  act(() => {
+    observerCallback?.([
+      {
+        isIntersecting,
+        boundingClientRect: { bottom } as DOMRectReadOnly,
+        rootBounds: { top: 56 } as DOMRectReadOnly,
+      },
+    ]);
+  });
+}
+
+describe("PageHeader", () => {
+  it("renders the large title as the page heading, with subtitle, back and actions", () => {
+    render(
+      <PageHeader
+        title="Help Center"
+        subtitle="Plain guides"
+        back={{ href: "/dashboard", label: "Home" }}
+        actions={<button type="button">Contact</button>}
+      />
+    );
+    const heading = screen.getByRole("heading", { level: 1, name: "Help Center" });
+    expect(heading.className).toContain("text-large-title");
+    expect(screen.getByText("Plain guides")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("button", { name: "Contact" })).toBeInTheDocument();
+    // One heading: the compact toolbar title is a hidden visual copy.
+    expect(screen.getAllByRole("heading")).toHaveLength(1);
+  });
+
+  it("collapses the large title into the toolbar once it scrolls under it", () => {
+    const { container } = render(<PageHeader title="Help Center" />);
+    const header = container.querySelector('[data-slot="page-header"]')!;
+    const compact = container.querySelector('[data-slot="page-header-compact-title"]')!;
+    expect(observerOptions?.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);
+    expect(header).not.toHaveAttribute("data-collapsed");
+    expect(compact.className).toContain("opacity-0");
+
+    scrollTitle(20, false);
+    expect(header).toHaveAttribute("data-collapsed");
+    expect(compact.className).toContain("opacity-100");
+
+    scrollTitle(200, true);
+    expect(header).not.toHaveAttribute("data-collapsed");
+  });
+
+  it("does not collapse when the title is below the viewport", () => {
+    const { container } = render(<PageHeader title="Help Center" />);
+    scrollTitle(2000, false);
+    expect(container.querySelector('[data-slot="page-header"]')).not.toHaveAttribute(
+      "data-collapsed"
+    );
+  });
+
+  it("keeps the toolbar sticky at the shell's header offset", () => {
+    const { container } = render(<PageHeader title="Help Center" />);
+    const toolbar = container.querySelector('[data-slot="page-header-toolbar"]')!;
+    expect(toolbar.className).toContain("sticky");
+    expect(toolbar.className).toContain("top-(--shell-header-top)");
+  });
+});

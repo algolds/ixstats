@@ -25,6 +25,7 @@ import {
   Component,
   Compress,
   CursorPointer,
+  SidebarExpand,
 } from "iconoir-react";
 import { useTheme, type Theme } from "~/context/theme-context";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
@@ -34,6 +35,7 @@ import { Switch } from "~/components/ui/switch";
 import { Slider } from "~/components/ui/slider";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { TEXT_SCALE_MAX, TEXT_SCALE_MIN } from "~/lib/design/appearance";
+import { useFacetNav } from "~/lib/navigation/use-facet-nav";
 import { SettingsHeader } from "../SettingsHeader";
 
 const THEME_OPTIONS = [
@@ -92,6 +94,7 @@ export function AppearanceAccessibilityPanel() {
     setInteractiveHover,
   } = useTheme();
   const sound = useSoundSettings();
+  const facetNav = useFacetNav();
   const textSizeLabelId = useId();
   const volumeLabelId = useId();
 
@@ -136,18 +139,34 @@ export function AppearanceAccessibilityPanel() {
               />
             }
           />
+          <FacetRow
+            leading={<SidebarExpand className="size-5" />}
+            title="New navigation (preview)"
+            subtitle="A sidebar on large screens and a tab bar on phones replace the top bar. Halo stays for search and notifications."
+            trailing={
+              <PreferenceSwitch
+                label="New navigation (preview)"
+                checked={facetNav.enabled}
+                onCheckedChange={facetNav.setEnabled}
+              />
+            }
+          />
           <li className="flex list-none items-start pl-4">
-            <TextSize aria-hidden className="my-3 mr-3 size-5 shrink-0 text-label-secondary" />
-            <div className="flex min-w-0 flex-1 flex-col gap-3 border-t border-separator py-3 pr-4">
+            <TextSize aria-hidden className="text-label-secondary my-3 mr-3 size-5 shrink-0" />
+            <div className="border-separator flex min-w-0 flex-1 flex-col gap-3 border-t py-3 pr-4">
               <div className="flex items-center gap-3">
-                <span id={textSizeLabelId} className="flex-1 text-headline text-label">
+                <span id={textSizeLabelId} className="text-headline text-label flex-1">
                   Text size
                 </span>
                 <span className="text-body text-label-secondary tabular-nums" aria-hidden>
                   {textPercent}%
                 </span>
               </div>
-              <div role="group" aria-labelledby={textSizeLabelId} className="flex items-center gap-3">
+              <div
+                role="group"
+                aria-labelledby={textSizeLabelId}
+                className="flex items-center gap-3"
+              >
                 <span aria-hidden className="text-footnote text-label-secondary">
                   A
                 </span>
@@ -166,7 +185,7 @@ export function AppearanceAccessibilityPanel() {
                 </span>
               </div>
               {/* Live preview — text styles scale with --text-scale, so this tracks the slider. */}
-              <div className="flex flex-col gap-1 rounded-row bg-surface-secondary p-3">
+              <div className="rounded-row bg-surface-secondary flex flex-col gap-1 p-3">
                 <Eyebrow>Preview</Eyebrow>
                 <span className="text-title-3 text-label">Quarterly budget</span>
                 <span className="text-body text-label-secondary">
@@ -242,10 +261,10 @@ export function AppearanceAccessibilityPanel() {
             }
           />
           <li className="flex list-none items-start pl-4">
-            <SoundLow aria-hidden className="my-3 mr-3 size-5 shrink-0 text-label-secondary" />
-            <div className="flex min-w-0 flex-1 flex-col gap-2 border-t border-separator py-3 pr-4">
+            <SoundLow aria-hidden className="text-label-secondary my-3 mr-3 size-5 shrink-0" />
+            <div className="border-separator flex min-w-0 flex-1 flex-col gap-2 border-t py-3 pr-4">
               <div className="flex items-center gap-3">
-                <span id={volumeLabelId} className="flex-1 text-headline text-label">
+                <span id={volumeLabelId} className="text-headline text-label flex-1">
                   Volume
                 </span>
                 <span className="text-body text-label-secondary tabular-nums" aria-hidden>

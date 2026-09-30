@@ -355,7 +355,18 @@ values on hover or tap.
    floating panels via `material="regular"|"thick"`; (e) `appearance.ts` still writes `data-typography` (the picker is
    gone); (f) hero surfaces may carry identity imagery (MyCountry's `FlagWatermark`: circular corner flag, plus `TintHairline`; no full-width wash).
 3. **Navigation shell** behind a flag: `AppSidebar`, `TabBar`, `PageHeader`, Halo as island; flip the flag once every
-   app has a section map.
+   app has a section map. **🟡 Shipped behind `facet-nav` (off) 2026-09-30.** `NEXT_PUBLIC_FACET_NAV=1` or Settings →
+   Appearance & accessibility → "New navigation (preview)"; the pre-paint script writes `html[data-nav]`/
+   `[data-sidebar]` and both shells are in the server HTML, CSS-gated (`styles/facet/shell.css`), so nothing flashes.
+   `src/components/shell` (`AppShell`, `FacetShell`, `AppSidebar`, `TabBar`, `PageHeader`, `ShellGate`, `ShellHalo`),
+   the app section map `src/lib/navigation/app-sections.ts` (12 apps; route guard in
+   `tests/lib/navigation/app-sections.test.ts`) and the `--shell-*` layout variables (`--shell-top-offset` for sticky
+   rails). `PageHeader` is adopted on `/help` under the flag. Maps and the full-screen map editors stay chromeless.
+   **Before flipping the flag:** apps with their own sub-navigation (vault, admin, settings, wiki-os, sports, forum)
+   still render it next to the sidebar — fold it into the section map as each app converts in Phase 4; Labs/Onoma is
+   not in the map yet; fixed-position page chrome (map editor overlays, the builder, WikiOS drawers) doesn't offset by
+   `--shell-sidebar-width`; retire `navigation.tsx`, `useNavigationScroll` and `lib/navigation-config.ts` with the
+   legacy shell.
 4. **Apps, worst-first:** dashboard, achievements, passport/settings, ThinkPages, WikiOS, labs chrome, Halo views,
    vault, messages, forum, admin, sports, countries, builder; then re-check MyCountry and maps against Facet 3.
    `facet-guards` gains each app's rules as it converts.
