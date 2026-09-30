@@ -1,20 +1,22 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-// Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
+import { resolveDisplayName } from "~/server/modules/identity/identity.display-names";
+import { getGroupAccess, requireGroupMember, requireGroupReader } from "./access";
 
 export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====
 
-  // Get collaborative documents for a ThinkTank
+  // Get collaborative documents for a ThinkTank. Non-public groups: members only (SL-2).
   getThinktankDocuments: publicProcedure
     .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // Verify user is a member of the group
+      await requireGroupReader(db, input.groupId, ctx.auth?.userId);
+
       const documents = await db.collaborativeDoc.findMany({
         where: { groupId: input.groupId },
         orderBy: { updatedAt: "desc" },
@@ -30,7 +32,6 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
       z.object({
         groupId: z.string(),
         title: z.string().min(1).max(200),
-        createdBy: z.string(), // userId (clerkUserId)
         content: z
           .string()
           .optional()
@@ -42,6 +43,10 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const createdBy = ctx.auth.userId;
+
+      // Only members can create documents
+      await requireGroupMember(db, input.groupId, createdBy);
 
       // Check document count limit (10 per group)
       const documentCount = await db.collaborativeDoc.count({
@@ -55,31 +60,14 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
         });
       }
 
-      // Verify user is a member of the group
-      const member = await db.thinktankMember.findUnique({
-        where: {
-          groupId_userId: {
-            groupId: input.groupId,
-            userId: input.createdBy,
-          },
-        },
-      });
-
-      if (!member || !member.isActive) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Not a member of this group",
-        });
-      }
-
       const document = await db.collaborativeDoc.create({
         data: {
           groupId: input.groupId,
           title: input.title,
           content: input.content || "",
           version: 1,
-          createdBy: input.createdBy,
-          lastEditBy: input.createdBy,
+          createdBy,
+          lastEditBy: createdBy,
           isPublic: input.isPublic,
         },
       });
@@ -90,24 +78,20 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
           where: { id: input.groupId },
           include: {
             members: {
-              where: { isActive: true, userId: { not: input.createdBy } },
+              where: { isActive: true, userId: { not: createdBy } },
               select: { userId: true },
             },
           },
         });
 
-        const creator = await db.user.findUnique({
-          where: { clerkUserId: input.createdBy },
-        });
-
-        if (group && group.members.length > 0 && creator) {
-          const creatorDisplayName = `User ${input.createdBy.slice(0, 8)}`;
+        if (group && group.members.length > 0) {
+          const creatorDisplayName = await resolveDisplayName(db, createdBy);
           await notificationHooks.onThinktankActivity({
             activityType: "document_created",
             groupId: input.groupId,
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: input.createdBy,
+            actorUserId: createdBy,
             actorUserName: creatorDisplayName,
             targetUserIds: group.members.map((m) => m.userId),
             contentTitle: input.title,
@@ -126,7 +110,6 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     .input(
       z.object({
         documentId: z.string(),
-        userId: z.string(),
         title: z.string().min(1).max(200).optional(),
         content: z
           .string()
@@ -139,6 +122,7 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const userId = ctx.auth.userId;
 
       // Get the document to check permissions
       const document = await db.collaborativeDoc.findUnique({
@@ -154,7 +138,9 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
       }
 
       // Verify user is a member
-      const isMember = document.group.members.some((m) => m.userId === input.userId && m.isActive);
+      const isMember =
+        document.group.createdBy === userId ||
+        document.group.members.some((m) => m.userId === userId && m.isActive);
 
       if (!isMember) {
         throw new TRPCError({
@@ -164,7 +150,7 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
       }
 
       const updateData: any = {
-        lastEditBy: input.userId,
+        lastEditBy: userId,
         version: { increment: 1 },
       };
 
@@ -183,24 +169,20 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
           where: { id: document.groupId },
           include: {
             members: {
-              where: { isActive: true, userId: { not: input.userId } },
+              where: { isActive: true, userId: { not: userId } },
               select: { userId: true },
             },
           },
         });
 
-        const editor = await db.user.findUnique({
-          where: { clerkUserId: input.userId },
-        });
-
-        if (group && group.members.length > 0 && editor) {
-          const editorDisplayName = `User ${input.userId.slice(0, 8)}`;
+        if (group && group.members.length > 0) {
+          const editorDisplayName = await resolveDisplayName(db, userId);
           await notificationHooks.onThinktankActivity({
             activityType: "document_updated",
             groupId: document.groupId,
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: input.userId,
+            actorUserId: userId,
             actorUserName: editorDisplayName,
             targetUserIds: group.members.map((m) => m.userId),
             contentTitle: updatedDocument.title,
@@ -219,11 +201,11 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     .input(
       z.object({
         documentId: z.string(),
-        userId: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const userId = ctx.auth.userId;
 
       const document = await db.collaborativeDoc.findUnique({
         where: { id: input.documentId },
@@ -237,14 +219,14 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
         });
       }
 
-      // Only creator or group owner can delete
-      const isCreator = document.createdBy === input.userId;
-      const isGroupOwner = document.group.createdBy === input.userId;
+      // Only the document's creator (while still a member) or a group owner/admin can delete
+      const access = await getGroupAccess(db, document.group, userId);
+      const isCreator = document.createdBy === userId && access.isMember;
 
-      if (!isCreator && !isGroupOwner) {
+      if (!isCreator && !access.isManager) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Only document creator or group owner can delete documents",
+          message: "Only the document creator or a group owner/admin can delete documents",
         });
       }
 

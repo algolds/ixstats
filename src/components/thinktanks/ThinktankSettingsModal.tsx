@@ -155,7 +155,6 @@ export function ThinktankSettingsModal({
     inviteMutation.mutate({
       groupId,
       userIds: [inviteInput.trim()],
-      invitedBy: currentUserId,
     });
   };
 

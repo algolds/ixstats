@@ -152,7 +152,6 @@ export function ThinktankPapersTab({
         title: docTitle.trim(),
         content: docContent.trim(),
         isPublic: docIsPublic,
-        createdBy: currentUserId,
       });
     } else if (isEditing && activeDoc) {
       updateDocMutation.mutate({
@@ -160,7 +159,6 @@ export function ThinktankPapersTab({
         title: docTitle.trim(),
         content: docContent.trim(),
         isPublic: docIsPublic,
-        userId: currentUserId,
       });
     }
   };
@@ -355,10 +353,7 @@ export function ThinktankPapersTab({
                     size="sm"
                     onClick={() => {
                       if (confirm("Are you sure you want to delete this doc?")) {
-                        deleteDocMutation.mutate({
-                          documentId: activeDoc.id,
-                          userId: currentUserId,
-                        });
+                        deleteDocMutation.mutate({ documentId: activeDoc.id });
                       }
                     }}
                     className="h-8 rounded-lg text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"

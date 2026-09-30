@@ -1,22 +1,22 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-// Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
+import { resolveDisplayName } from "~/server/modules/identity/identity.display-names";
 
 export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====
 
-  // Join a ThinkTank group
+  // Join a ThinkTank group as the caller. Private and invite-only groups need an open invite.
   joinThinktank: protectedProcedure
     .input(
       z.object({
         groupId: z.string(),
-        userId: z.string(), // Changed to userId (clerkUserId)
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const userId = ctx.auth.userId;
 
       // Check if group exists and is active
       const group = await db.thinktankGroup.findUnique({
@@ -30,50 +30,71 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
         });
       }
 
-      // Verify user exists and is active
-      const user = await db.user.findUnique({
-        where: { clerkUserId: input.userId },
-      });
-
-      if (!user || !user.isActive) {
+      if (ctx.user && ctx.user.isActive === false) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found or inactive",
+          code: "FORBIDDEN",
+          message: "Your account is inactive",
         });
       }
-
-      // Generate display name (User model doesn't have firstName/lastName - uses Clerk)
-      const userDisplayName = `User ${input.userId.slice(0, 8)}`;
 
       // Check if user is already a member
       const existingMember = await db.thinktankMember.findUnique({
         where: {
           groupId_userId: {
             groupId: input.groupId,
-            userId: input.userId,
+            userId,
           },
         },
       });
 
-      if (existingMember) {
-        if (existingMember.isActive) {
+      if (existingMember?.isActive) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Already a member of this group",
+        });
+      }
+
+      // Private and invite-only groups: consume an open invite addressed to the caller.
+      if (group.type !== "public" && group.createdBy !== userId) {
+        const invite = await db.thinktankInvite.findFirst({
+          where: {
+            groupId: input.groupId,
+            invitedUser: userId,
+            isUsed: false,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+          select: { id: true },
+        });
+        if (!invite) {
           throw new TRPCError({
-            code: "CONFLICT",
-            message: "Already a member of this group",
-          });
-        } else {
-          // Reactivate membership
-          await db.thinktankMember.update({
-            where: { id: existingMember.id },
-            data: { isActive: true, joinedAt: new Date() },
+            code: "FORBIDDEN",
+            message: "This group is invite-only. Ask the group owner for an invitation.",
           });
         }
+        const claimed = await db.thinktankInvite.updateMany({
+          where: { id: invite.id, isUsed: false },
+          data: { isUsed: true },
+        });
+        if (claimed.count === 0) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This invitation has already been used",
+          });
+        }
+      }
+
+      if (existingMember) {
+        // Reactivate membership
+        await db.thinktankMember.update({
+          where: { id: existingMember.id },
+          data: { isActive: true, joinedAt: new Date() },
+        });
       } else {
         // Create new membership
         await db.thinktankMember.create({
           data: {
             groupId: input.groupId,
-            userId: input.userId,
+            userId,
             role: "member",
           },
         });
@@ -92,7 +113,7 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
             where: {
               conversationId_userId: {
                 conversationId: group.conversationId,
-                userId: input.userId,
+                userId,
               },
             },
           });
@@ -106,7 +127,7 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
             await db.conversationParticipant.create({
               data: {
                 conversationId: group.conversationId,
-                userId: input.userId,
+                userId,
                 role: "participant",
               },
             });
@@ -123,7 +144,7 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
             groupId: input.groupId,
             role: { in: ["admin", "owner"] },
             isActive: true,
-            userId: { not: input.userId },
+            userId: { not: userId },
           },
           select: { userId: true },
         });
@@ -134,8 +155,8 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
             groupId: input.groupId,
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: input.userId,
-            actorUserName: userDisplayName,
+            actorUserId: userId,
+            actorUserName: await resolveDisplayName(db, userId),
             targetUserIds: admins.map((a) => a.userId),
           });
         }
@@ -146,22 +167,22 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
       return { success: true, message: "Successfully joined group" };
     }),
 
-  // Leave a ThinkTank group
+  // Leave a ThinkTank group (the caller's own membership)
   leaveThinktank: protectedProcedure
     .input(
       z.object({
         groupId: z.string(),
-        userId: z.string(), // Changed to userId (clerkUserId)
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const userId = ctx.auth.userId;
 
       const member = await db.thinktankMember.findUnique({
         where: {
           groupId_userId: {
             groupId: input.groupId,
-            userId: input.userId,
+            userId,
           },
         },
       });
@@ -178,7 +199,7 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
         const otherActiveMembers = await db.thinktankMember.count({
           where: {
             groupId: input.groupId,
-            userId: { not: input.userId },
+            userId: { not: userId },
             isActive: true,
           },
         });
@@ -211,7 +232,7 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
           .updateMany({
             where: {
               conversationId: updatedGroup.conversationId,
-              userId: input.userId,
+              userId,
             },
             data: { isActive: false, leftAt: new Date() },
           })
@@ -225,23 +246,19 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
             groupId: input.groupId,
             role: { in: ["admin", "owner"] },
             isActive: true,
-            userId: { not: input.userId },
+            userId: { not: userId },
           },
           select: { userId: true },
         });
 
-        const leavingUser = await db.user.findUnique({
-          where: { clerkUserId: input.userId },
-        });
-
-        if (admins.length > 0 && leavingUser) {
-          const leavingUserDisplayName = `User ${input.userId.slice(0, 8)}`;
+        if (admins.length > 0) {
+          const leavingUserDisplayName = await resolveDisplayName(db, userId);
           await notificationHooks.onThinktankActivity({
             activityType: "member_left",
             groupId: input.groupId,
             groupName: updatedGroup.name,
             groupType: updatedGroup.type as "public" | "private" | "invite_only",
-            actorUserId: input.userId,
+            actorUserId: userId,
             actorUserName: leavingUserDisplayName,
             targetUserIds: admins.map((a) => a.userId),
           });
