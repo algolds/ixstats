@@ -33,14 +33,17 @@ describe("createCacheMiddlewareFactory (memory tier)", () => {
 
   it("caches an import-named query (next called once)", async () => {
     const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t1" });
-    const next = jest.fn(async () => ({ ok: true }));
+    const next = jest.fn(async () => ({ ok: true, data: { n: 1 }, ctx: { stale: true } }));
     const opts = { ctx, path: "countries.getImportData", type: "query" as const, input: { a: 1 } };
 
     const first = await mw({ ...opts, next });
     const second = await mw({ ...opts, next });
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(second).toEqual(first);
+    expect(second).toMatchObject({ marker: "middlewareMarker", ok: true, data: { n: 1 } });
+    expect(second.data).toEqual(first.data);
+    // The cached hit carries this request's ctx, never the one from the request that filled it
+    expect(second.ctx).toBe(ctx);
   });
 
   it("never caches a mutation (next called every time)", async () => {
@@ -61,7 +64,7 @@ describe("createCacheMiddlewareFactory (memory tier)", () => {
 
   it("keys a query by the viewer's realm, so one realm's listing is never served to another", async () => {
     const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t1" });
-    const next = jest.fn(async () => ({ ok: true }));
+    const next = jest.fn(async () => ({ ok: true, data: 1 }));
     const opts = { ctx, path: "countries.getAll", type: "query" as const, input: { limit: 10 } };
 
     await mw({ ...opts, realmKey: "r_eurth", next });
@@ -105,7 +108,8 @@ describe("createCacheMiddlewareFactory (Redis tier)", () => {
     });
 
     const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "t2" });
-    const next = jest.fn(async () => ({ ok: true, data: 1 }));
+    // ctx with a `constructor` key is what superjson rejects when the whole envelope is stored
+    const next = jest.fn(async () => ({ ok: true, data: 1, ctx: { constructor: "x" } }));
     const opts = { ctx, path: "countries.getAll", type: "query" as const, input: { a: 1 } };
 
     // Redis not ready: result goes to the memory tier only
@@ -121,7 +125,7 @@ describe("createCacheMiddlewareFactory (Redis tier)", () => {
     // The value written to Redis (superjson envelope) is now served from Redis
     const [, , raw] = fakeRedis.setex.mock.calls[0]!;
     expect(JSON.parse(raw)).toHaveProperty("json");
-    await expect(mw({ ...opts, next })).resolves.toEqual({ ok: true, data: 1 });
+    await expect(mw({ ...opts, next })).resolves.toMatchObject({ ok: true, data: 1 });
     expect(next).toHaveBeenCalledTimes(2);
   });
 });
