@@ -1,12 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  OpenBook as BookOpen,
-  InfoCircle,
-  Sparks,
-} from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { OpenBook as BookOpen, InfoCircle } from "iconoir-react";
 import type { BuilderSection } from "../lib/builder-theme";
 import { contextualHelp } from "../data/contextual-help";
 import { GUIDE_RULES } from "../data/guide-rules";
@@ -19,6 +14,9 @@ import {
   SheetDescription,
 } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 interface BuilderGuideSheetProps {
   activeSection?: BuilderSection;
@@ -35,13 +33,13 @@ const SECTION_TITLES: Record<BuilderSection, string> = {
   import: "External Lore Import",
 };
 
-const SECTION_BADGES: Record<BuilderSection, { label: string; color: string; border: string }> = {
-  foundation: { label: "Step 1: Baseline", color: "text-blue-400", border: "border-blue-500/30" },
-  identity: { label: "Step 2: Sovereignty", color: "text-indigo-400", border: "border-indigo-500/30" },
-  government: { label: "Step 3: Institutions", color: "text-amber-400", border: "border-amber-500/30" },
-  economics: { label: "Step 4: Economy", color: "text-emerald-400", border: "border-emerald-500/30" },
-  preview: { label: "Step 5: Review", color: "text-cyan-400", border: "border-cyan-500/30" },
-  import: { label: "Data Pipeline", color: "text-purple-400", border: "border-purple-500/30" },
+const SECTION_BADGES: Record<BuilderSection, string> = {
+  foundation: "Step 1: Baseline",
+  identity: "Step 2: Sovereignty",
+  government: "Step 3: Institutions",
+  economics: "Step 4: Economy",
+  preview: "Step 5: Review",
+  import: "Data Pipeline",
 };
 
 export function BuilderGuideSheet({
@@ -73,182 +71,141 @@ export function BuilderGuideSheet({
         }
       }}
     >
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col border-l border-white/10 bg-card/95 p-0 backdrop-blur-2xl sm:max-w-md lg:max-w-lg"
-      >
-        {/* Header */}
-        <SheetHeader className="border-b border-border/40 p-5 text-left">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 shadow-inner">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <SheetTitle className="text-base font-bold text-foreground">
+      <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md lg:max-w-lg">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {/* Header */}
+          <SheetHeader className="border-border border-b p-5 text-left">
+            <div className="flex items-start gap-3">
+              <BookOpen aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <SheetTitle className="text-foreground text-base font-semibold">
                     {sectionTitle}
                   </SheetTitle>
-                  <span
-                    className={cn(
-                      "rounded-full border px-2 py-0.5 text-xs font-semibold tracking-wide uppercase",
-                      sectionBadge.border,
-                      sectionBadge.color
-                    )}
-                  >
-                    {sectionBadge.label}
-                  </span>
+                  <Badge variant="outline">{sectionBadge}</Badge>
                 </div>
-                <SheetDescription className="mt-0.5 text-xs text-muted-foreground">
+                <SheetDescription className="text-muted-foreground mt-0.5 text-xs">
                   Companion reference, roadmap & core mechanics
                 </SheetDescription>
               </div>
             </div>
-          </div>
 
-          {/* Segmented Control Tabs (Milestones & Rules) */}
-          <div className="mt-4 flex rounded-xl border border-border/40 bg-muted/40 p-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab("milestones")}
-              className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer active:scale-[0.98]",
-                activeTab === "milestones"
-                  ? "bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+            <TabsList
+              role="tablist"
+              aria-label="Guide sections"
+              className="border-border bg-muted mt-4 rounded-full border p-1"
             >
-              Milestones
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("rules")}
-              className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer active:scale-[0.98]",
-                activeTab === "rules"
-                  ? "bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Rules & Mechanics
-            </button>
-          </div>
-        </SheetHeader>
+              <TabsTrigger role="tab" value="milestones" className="flex-1 py-1.5 text-xs">
+                Milestones
+              </TabsTrigger>
+              <TabsTrigger role="tab" value="rules" className="flex-1 py-1.5 text-xs">
+                Rules & Mechanics
+              </TabsTrigger>
+            </TabsList>
+          </SheetHeader>
 
-        {/* Scrollable Content Body */}
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
-          {/* TAB 1: MILESTONES */}
-          {activeTab === "milestones" && (
-            <div className="space-y-4 animate-in fade-in-50 duration-200">
+          {/* Scrollable Content Body */}
+          <div className="flex-1 space-y-4 overflow-y-auto p-5">
+            <TabsContent value="milestones" role="tabpanel" className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Section Roadmap
-                </span>
-                <Badge variant="outline" className="border-border/40 text-xs font-mono">
+                <Eyebrow>Section Roadmap</Eyebrow>
+                <Badge variant="outline" className="font-mono">
                   {milestones.length} Steps
                 </Badge>
               </div>
 
-              <div className="space-y-3">
+              <ol className="space-y-3">
                 {milestones.map((step, index) => (
-                  <div
-                    key={index}
-                    className="group relative rounded-xl border border-border/40 bg-card/40 p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-amber-500/30 hover:bg-card/70"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400">
+                  <li key={index}>
+                    <FacetContainer
+                      depth={3}
+                      surface="solid"
+                      className="flex items-start gap-3 rounded-xl p-3.5"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="text-muted-foreground w-5 shrink-0 pt-px text-xs font-semibold tabular-nums"
+                      >
                         {index + 1}
                       </span>
                       <div className="min-w-0 flex-1 space-y-1">
-                        <h4 className="text-xs font-bold text-foreground group-hover:text-amber-300 transition-colors">
-                          {step.title}
-                        </h4>
-                        <p className="text-xs leading-relaxed text-muted-foreground">
+                        <h4 className="text-foreground text-sm font-semibold">{step.title}</h4>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
                           {step.description}
                         </p>
                       </div>
-                    </div>
-                  </div>
+                    </FacetContainer>
+                  </li>
                 ))}
-              </div>
-            </div>
-          )}
+              </ol>
+            </TabsContent>
 
-          {/* TAB 2: RULES & DOMAIN MECHANICS */}
-          {activeTab === "rules" && (
-            <div className="space-y-4 animate-in fade-in-50 duration-200">
+            <TabsContent value="rules" role="tabpanel" className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Core Mechanics & Rules
-                </span>
-                <Badge variant="outline" className="border-border/40 text-xs font-mono">
+                <Eyebrow>Core Mechanics & Rules</Eyebrow>
+                <Badge variant="outline" className="font-mono">
                   {rules.length} Directives
                 </Badge>
               </div>
 
-              <div className="space-y-3">
+              <ul className="space-y-3">
                 {rules.map((rule, idx) => {
                   const Icon = rule.icon;
                   return (
-                    <div
-                      key={idx}
-                      className="group relative rounded-xl border border-border/40 bg-card/40 p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-border/80 hover:bg-card/70"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={cn(
-                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-                            rule.bg ?? "bg-amber-500/10 border-amber-500/20",
-                            rule.color ?? "text-amber-400"
-                          )}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </div>
+                    <li key={idx}>
+                      <FacetContainer
+                        depth={3}
+                        surface="solid"
+                        className="flex items-start gap-3 rounded-xl p-3.5"
+                      >
+                        <Icon
+                          aria-hidden="true"
+                          className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0"
+                        />
                         <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold text-foreground">
-                              {rule.title}
-                            </h4>
-                            {rule.badge && (
-                              <span className="rounded-md border border-border/50 bg-muted/40 px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                                {rule.badge}
-                              </span>
-                            )}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-foreground text-sm font-semibold">{rule.title}</h4>
+                            {rule.badge && <Badge variant="secondary">{rule.badge}</Badge>}
                           </div>
-                          <p className="text-xs leading-relaxed text-muted-foreground">
+                          <p className="text-muted-foreground text-xs leading-relaxed">
                             {rule.description}
                           </p>
                         </div>
-                      </div>
-                    </div>
+                      </FacetContainer>
+                    </li>
                   );
                 })}
-              </div>
-            </div>
-          )}
+              </ul>
+            </TabsContent>
 
-          {/* Quick Tip Footer Box */}
-          <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5">
-            <div className="flex items-start gap-2.5">
-              <Sparks className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-              <div className="text-xs leading-relaxed text-muted-foreground">
-                <span className="font-semibold text-amber-300">Statecraft Tip:</span> Choices made
-                in this section dynamically calculate your starting power balance, CivCap yields, and
-                economic vitality rings across IxStates.
-              </div>
-            </div>
+            {/* Quick tip */}
+            <FacetContainer
+              depth={3}
+              surface="solid"
+              role="note"
+              className="mt-6 flex items-start gap-2.5 rounded-xl border-amber-500/30 p-3.5"
+            >
+              <InfoCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                <span className="text-foreground font-semibold">Statecraft Tip:</span> Choices made
+                in this section dynamically calculate your starting power balance, CivCap yields,
+                and economic vitality rings across IxStates.
+              </p>
+            </FacetContainer>
           </div>
-        </div>
+        </Tabs>
 
         {/* Footer info bar */}
-        <div className="flex items-center justify-between border-t border-border/40 px-5 py-3 text-xs text-muted-foreground">
+        <div className="border-border text-muted-foreground flex items-center justify-between border-t px-5 py-3 text-xs">
           <span className="flex items-center gap-1.5">
-            <InfoCircle className="h-3.5 w-3.5" />
+            <InfoCircle aria-hidden="true" className="h-3.5 w-3.5" />
             Changes auto-save in draft
           </span>
-          <span className="font-mono text-xs text-muted-foreground/60">
-            IxStates Studio
-          </span>
+          <span className="font-mono">IxStates Studio</span>
         </div>
       </SheetContent>
     </Sheet>

@@ -19,7 +19,7 @@ export function BuilderRealmPicker({ value, onChange }: BuilderRealmPickerProps)
   const selectedId = value ?? data.defaultRealmId;
   const selected = data.realms.find((realm) => realm.id === selectedId);
   const full = selected && !selected.canCreate && (
-    <p role="status" className="text-xs text-amber-700 dark:text-amber-300">
+    <p role="status" className="text-xs text-amber-600">
       You hold {selected.held} of {selected.cap} {selected.cap === 1 ? "nation" : "nations"} allowed
       in {selected.name}.
     </p>

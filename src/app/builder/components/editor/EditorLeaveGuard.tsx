@@ -96,12 +96,12 @@ export function EditorLeaveGuard({ hasUnsavedChanges, onSave }: EditorLeaveGuard
         if (!open && !isSaving) setPendingUrl(null);
       }}
     >
-      <AlertDialogContent className="border-border bg-card sm:max-w-md">
+      <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-foreground text-lg font-semibold">
+          <AlertDialogTitle className="text-foreground">
             Save your changes before leaving?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-muted-foreground text-sm leading-relaxed">
+          <AlertDialogDescription className="leading-relaxed">
             {saveFailed
               ? "Your changes still couldn't be saved. Check your connection and try again, or leave without them."
               : "Your latest changes haven't reached the server yet. If you leave now, they'll be kept only on this device."}

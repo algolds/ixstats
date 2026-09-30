@@ -16,7 +16,8 @@ import {
 } from "iconoir-react";
 import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { Card, CardFooter } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardFooter } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { useRef } from "react";
@@ -100,44 +101,29 @@ export function CountryListCard({
   };
 
   return (
-    <Card
+    <FacetCard
+      depth={2}
       className={cn(
-        "group facet-card relative flex h-full cursor-pointer flex-col overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-lg active:scale-[0.98]",
+        "group hover:border-foreground/20 flex h-full flex-col overflow-hidden rounded-2xl",
         dominantColor && "border-l-2"
       )}
+      // The flag's dominant colour is data, not decoration: a thin identity edge.
       style={dominantColor ? { borderLeftColor: dominantColor } : undefined}
       onClick={goToDetail}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          goToDetail();
+        }
+      }}
+      aria-label={`Open ${country.name}`}
     >
-      {/* Flag as subtle background accent - constrained to top portion */}
-      {flagUrl && (
-        <div
-          className="flag-background-accent absolute top-0 right-0 left-0 z-0 h-16"
-          style={{
-            backgroundImage: `url(${flagUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "blur(8px) brightness(0.4) saturate(1.1)",
-            opacity: 0.3,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {/* Subtle color accent overlay - constrained to top */}
-      {dominantColor && (
-        <div
-          className="color-accent-overlay pointer-events-none absolute top-0 right-0 left-0 z-10 h-16"
-          style={{
-            background: `linear-gradient(180deg, ${dominantColor}20 0%, transparent 100%)`,
-          }}
-        />
-      )}
-      <div className="country-card-content relative z-20 min-h-0 grow p-3">
+      <FacetCardContent className="min-h-0 grow p-3">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <div className="relative h-6 w-8 shrink-0">
-              {flagLoading && (
-                <div className="bg-muted border-border h-6 w-8 animate-pulse rounded" />
-              )}
+              {flagLoading && <Skeleton className="h-6 w-8 rounded" />}
               {!flagLoading && flagUrl && (
                 <img
                   src={flagUrl}
@@ -147,20 +133,20 @@ export function CountryListCard({
               )}
               {!flagLoading && !flagUrl && (
                 <div className="bg-muted flex h-6 w-8 items-center justify-center rounded border">
-                  <FlagIcon className="text-muted-foreground h-4 w-4" />
+                  <FlagIcon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
                 </div>
               )}
             </div>
             <div className="min-w-0">
-              <h3
-                className="text-foreground group-hover:text-primary truncate text-base font-semibold transition-colors"
-                title={country.name}
-              >
+              <h3 className="text-foreground truncate text-base font-semibold" title={country.name}>
                 {country.name}
               </h3>
               {(country.continent || country.region) && (
                 <div className="text-muted-foreground mt-0.5 flex items-center truncate text-xs">
-                  <LocateFixed className="text-primary/70 mr-1 h-3 w-3" />
+                  <LocateFixed
+                    aria-hidden="true"
+                    className="text-muted-foreground mr-1 h-3 w-3 shrink-0"
+                  />
                   <span className="truncate">
                     {country.continent || "—"}
                     {country.continent && country.region ? " – " : ""}
@@ -181,32 +167,35 @@ export function CountryListCard({
               aria-label={`View ${country.name} on IxWiki`}
               className="h-7 w-7"
             >
-              <BookOpen className="text-muted-foreground h-3.5 w-3.5" />
+              <BookOpen aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
             </Button>
-            <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5" />
+            <ArrowRight
+              aria-hidden="true"
+              className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+            />
           </div>
         </div>
 
         {/* Compact stats row */}
         <div className="mb-2 flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1">
-            <Users className="h-3 w-3 text-blue-500" />
+            <Users aria-hidden="true" className="text-muted-foreground h-3 w-3" />
             <span>{formatPopulation(country.currentPopulation)}</span>
           </div>
           <div className="flex items-center gap-1">
             {country.adjustedGdpGrowth != null ? (
               <GrowthArrow value={country.adjustedGdpGrowth * 100} iconOnly size={12} />
             ) : (
-              <TrendingUp className="h-3 w-3 text-green-500" />
+              <TrendingUp aria-hidden="true" className="text-muted-foreground h-3 w-3" />
             )}
             <span>{formatCurrency(country.currentGdpPerCapita)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <GlobeIcon className="h-3 w-3 text-purple-500" />
+            <GlobeIcon aria-hidden="true" className="text-muted-foreground h-3 w-3" />
             <span>{formatCurrency(country.currentTotalGdp)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Scaling className="h-3 w-3 text-orange-500" />
+            <Scaling aria-hidden="true" className="text-muted-foreground h-3 w-3" />
             <span>
               {country.populationDensity != null
                 ? `${country.populationDensity.toFixed(0)}/km²`
@@ -214,31 +203,12 @@ export function CountryListCard({
             </span>
           </div>
         </div>
-      </div>
+      </FacetCardContent>
 
-      <CardFooter className="country-card-content relative z-20 flex min-h-0 items-center justify-between gap-2 px-3 pt-0 pb-3">
-        <Badge className="px-2 py-0.5 text-xs">{country.economicTier ?? "—"}</Badge>
-        <Badge variant="outline" className="px-2 py-0.5 text-xs">
-          {country.populationTier ?? "—"}
-        </Badge>
-      </CardFooter>
-      <style jsx>{`
-        .flag-background-accent {
-          mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
-          transition: opacity 0.3s ease;
-        }
-        .color-accent-overlay {
-          transition: opacity 0.3s ease;
-        }
-
-        /* Hover enhancements for flag and color overlays */
-        .facet-interactive:hover .flag-background-accent {
-          opacity: 0.5;
-        }
-        .facet-interactive:hover .color-accent-overlay {
-          opacity: 0.7;
-        }
-      `}</style>
-    </Card>
+      <FacetCardFooter className="flex min-h-0 items-center justify-between gap-2 px-3 pt-0 pb-3">
+        <Badge variant="secondary">{country.economicTier ?? "—"}</Badge>
+        <Badge variant="outline">{country.populationTier ?? "—"}</Badge>
+      </FacetCardFooter>
+    </FacetCard>
   );
 }

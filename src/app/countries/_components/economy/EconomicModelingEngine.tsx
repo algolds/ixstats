@@ -17,6 +17,7 @@ import {
   Plus,
   Minus,
   InfoCircle as Info,
+  SystemRestart,
 } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
@@ -770,7 +771,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
         <div className="flex justify-end gap-2">
           <Button onClick={model.saveModel} disabled={model.isLoading} size="lg">
             {model.isLoading ? (
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <SystemRestart aria-hidden="true" className="h-4 w-4 animate-spin" />
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}

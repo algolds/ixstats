@@ -10,7 +10,7 @@ import {
   SelectContent,
   SelectItem,
 } from "~/components/ui/select";
-import { Card } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
 import { TIER_FILTER_OPTIONS, isTierFilter, type TierFilter } from "~/lib/economic-tier-filter";
 // import { Slider } from '~/components/ui/slider'; // Uncomment if you have a slider component
 
@@ -28,6 +28,7 @@ export default function CountriesFilterSidebar({
   availableContinents,
   availableRegions,
   onClearAll,
+  surface = "glass",
 }: {
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -42,6 +43,8 @@ export default function CountriesFilterSidebar({
   availableContinents: string[];
   availableRegions: string[];
   onClearAll: () => void;
+  /** "solid" when rendered inside another glass surface (the mobile filter sheet). */
+  surface?: "glass" | "solid";
 }) {
   const hasFilters =
     searchTerm !== "" ||
@@ -52,8 +55,7 @@ export default function CountriesFilterSidebar({
     populationRange.max !== undefined;
 
   return (
-    <Card className="facet-card space-y-4 p-4">
-      {/* All content is now direct children of GlassCard. No nested Card/GlassCard. */}
+    <FacetCard depth={2} surface={surface} className="space-y-4 rounded-2xl p-4">
       {hasFilters && (
         <div className="mb-2 flex flex-wrap gap-1">
           {searchTerm && <Badge variant="secondary">Search: {searchTerm}</Badge>}
@@ -67,7 +69,7 @@ export default function CountriesFilterSidebar({
               Pop: {populationRange.min ?? 0}-{populationRange.max ?? "∞"}
             </Badge>
           )}
-          <Button size="sm" variant="destructive" onClick={onClearAll} className="ml-auto">
+          <Button size="sm" variant="outline" onClick={onClearAll} className="ml-auto">
             Clear All
           </Button>
         </div>
@@ -75,13 +77,16 @@ export default function CountriesFilterSidebar({
       <div>
         <label className="text-muted-foreground mb-1 block text-xs font-medium">Search</label>
         <div className="relative flex items-center">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2"
+          />
           <Input
             type="text"
             placeholder="Search by country name..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="glass-input h-10 w-full pl-9"
+            className="facet-refraction-none h-10 w-full pl-9"
             autoComplete="off"
           />
         </div>
@@ -96,7 +101,7 @@ export default function CountriesFilterSidebar({
             if (isTierFilter(value)) onTierFilterChange(value);
           }}
         >
-          <SelectTrigger className="glass-input">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select tier" />
           </SelectTrigger>
           <SelectContent>
@@ -111,7 +116,7 @@ export default function CountriesFilterSidebar({
       <div>
         <label className="text-muted-foreground mb-1 block text-xs font-medium">Continent</label>
         <Select value={continentFilter} onValueChange={onContinentFilterChange}>
-          <SelectTrigger className="glass-input">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select continent" />
           </SelectTrigger>
           <SelectContent>
@@ -131,7 +136,7 @@ export default function CountriesFilterSidebar({
           onValueChange={onRegionFilterChange}
           disabled={continentFilter === "all" || availableRegions.length === 0}
         >
-          <SelectTrigger className="glass-input">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select region" />
           </SelectTrigger>
           <SelectContent>
@@ -159,7 +164,7 @@ export default function CountriesFilterSidebar({
                 max: populationRange.max,
               })
             }
-            className="glass-input flex-1"
+            className="facet-refraction-none flex-1"
           />
           <Input
             type="number"
@@ -171,13 +176,13 @@ export default function CountriesFilterSidebar({
                 max: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }
-            className="glass-input flex-1"
+            className="facet-refraction-none flex-1"
           />
         </div>
         {/*
         <Slider ... />
         */}
       </div>
-    </Card>
+    </FacetCard>
   );
 }

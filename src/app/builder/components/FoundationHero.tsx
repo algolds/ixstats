@@ -4,7 +4,9 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Globe, EditPencil as Edit3, ArrowRight, ClockRotateRight, Trash } from "iconoir-react";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
@@ -24,22 +26,18 @@ interface FoundationHeroProps {
 interface PathCardProps {
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>;
   iconClassName?: string;
-  accent: "amber" | "blue" | "emerald" | "indigo";
   onClick: () => void;
   badge?: string;
 }
 
-function IIWikiLogoIcon({ className }: { className?: string }) {
+function IIWikiLogoIcon({ className }: { className?: string; "aria-hidden"?: boolean | "true" }) {
   return (
     <img
       src={withBasePath("/images/IIWikiLogo.png")}
-      alt="IIWiki Logo"
-      className={cn(
-        "h-7 w-7 rounded-full object-contain drop-shadow-xs transition-transform duration-200 group-hover:scale-105",
-        className
-      )}
+      alt=""
+      className={cn("h-7 w-7 rounded-full object-contain", className)}
       loading="lazy"
     />
   );
@@ -50,102 +48,51 @@ function PathCard({
   description,
   icon: Icon,
   iconClassName,
-  accent,
   onClick,
   badge,
 }: PathCardProps) {
-  const accentStyles = {
-    amber: {
-      border: "hover:border-amber-500/40 border-amber-500/20",
-      glow: "group-hover:bg-amber-500/10 bg-amber-500/5",
-      iconText: "text-amber-400",
-      theme: "gold" as const,
-      badgeClass: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-    },
-    blue: {
-      border: "hover:border-blue-500/40 border-blue-500/20",
-      glow: "group-hover:bg-blue-500/10 bg-blue-500/5",
-      iconText: "text-blue-400",
-      theme: "blue" as const,
-      badgeClass: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-    },
-    emerald: {
-      border: "hover:border-emerald-500/40 border-emerald-500/20",
-      glow: "group-hover:bg-emerald-500/10 bg-emerald-500/5",
-      iconText: "text-emerald-400",
-      theme: "emerald" as const,
-      badgeClass: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-    },
-    indigo: {
-      border: "hover:border-indigo-500/40 border-indigo-500/20",
-      glow: "group-hover:bg-indigo-500/10 bg-indigo-500/5",
-      iconText: "text-indigo-400",
-      theme: "indigo" as const,
-      badgeClass: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
-    },
-  }[accent];
-
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-      className="h-full"
+    <button
+      type="button"
+      onClick={onClick}
+      className="group focus-visible:ring-ring h-full w-full rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      data-cuelume-press
+      data-cuelume-hover="tick"
     >
-      <button
-        type="button"
-        onClick={onClick}
-        className="group relative h-full w-full text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
-        data-cuelume-press
+      <FacetCard
+        depth={2}
+        className="h-full rounded-2xl p-6 transition-[border-color,transform] duration-150 group-hover:border-amber-500/40 group-active:scale-[0.98]"
       >
-        <FacetCard
-          depth="base"
-          theme={accentStyles.theme}
-          texture="chevron"
-          textureOpacity={0.05}
-          className={cn(
-            "h-full border p-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-            accentStyles.border,
-            "hover:shadow-lg hover:shadow-black/20"
-          )}
-        >
-          <FacetCardContent className="flex h-full flex-col justify-between p-0">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div
-                  className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 transition-colors",
-                    accentStyles.glow
-                  )}
-                >
-                  <Icon className={cn("h-6 w-6", accentStyles.iconText, iconClassName)} />
-                </div>
-                {badge && (
-                  <span
-                    className={cn(
-                      "rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase",
-                      accentStyles.badgeClass
-                    )}
-                  >
-                    {badge}
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <h3 className="text-foreground text-lg font-bold tracking-tight">{title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
-              </div>
+        <FacetCardContent className="flex h-full flex-col justify-between p-0">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Icon
+                aria-hidden="true"
+                className={cn("text-muted-foreground h-6 w-6", iconClassName)}
+              />
+              {badge && (
+                <Badge variant="outline" className="border-amber-500/40 text-amber-600">
+                  {badge}
+                </Badge>
+              )}
             </div>
 
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors group-hover:text-foreground">
-              <span>Continue</span>
-              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+            <div className="space-y-1.5">
+              <h3 className="text-foreground text-lg font-semibold tracking-tight">{title}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
             </div>
-          </FacetCardContent>
-        </FacetCard>
-      </button>
-    </motion.div>
+          </div>
+
+          <div className="text-muted-foreground group-hover:text-foreground mt-6 flex items-center gap-1.5 text-xs font-semibold transition-colors">
+            <span>Continue</span>
+            <ArrowRight
+              aria-hidden="true"
+              className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-1"
+            />
+          </div>
+        </FacetCardContent>
+      </FacetCard>
+    </button>
   );
 }
 
@@ -272,21 +219,11 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
       {/* Brand Header */}
       <div className="flex flex-col items-center space-y-4 text-center">
         <motion.div
-          initial={{ opacity: 0, y: -10, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{
-            type: "spring",
-            stiffness: 380,
-            damping: 34,
-          }}
-          className="group relative select-none"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+          className="relative select-none"
         >
-          {/* Ambient Warm Glow Halo */}
-          <div
-            className="pointer-events-none absolute -inset-6 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-500/10 opacity-70 blur-2xl transition-opacity duration-700 group-hover:opacity-100 dark:opacity-40 dark:group-hover:opacity-75"
-            aria-hidden="true"
-          />
-
           <MyCountryLogo
             size="xl"
             variant="full"
@@ -298,10 +235,10 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
         </motion.div>
 
         <div className="space-y-2">
-          <h1 className="text-foreground text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
+          <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
             Build your country.
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-lg text-base sm:text-lg leading-relaxed">
+          <p className="text-muted-foreground mx-auto max-w-lg text-base leading-relaxed sm:text-lg">
             Choose a starting point below. All 140+ options can be modified later.
           </p>
         </div>
@@ -316,11 +253,8 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
               opacity: 0,
-              scale: 0.96,
-              y: -10,
-              height: 0,
-              marginBottom: 0,
-              transition: { duration: 0.22, ease: [0.23, 1, 0.32, 1] },
+              y: -8,
+              transition: { duration: 0.15, ease: [0.23, 1, 0.32, 1] },
             }}
             transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
             className="w-full"
@@ -333,29 +267,22 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                  className="relative overflow-hidden rounded-2xl border border-destructive/40 bg-card/90 p-4 sm:p-5 shadow-xl shadow-destructive/10 backdrop-blur-xl"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* Ambient destructive glow */}
-                  <div
-                    className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-destructive/15 blur-3xl"
-                    aria-hidden="true"
-                  />
-
-                  <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    {/* Left: Icon & Warning copy */}
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/15 text-destructive shadow-xs">
-                        <Trash className="h-6 w-6" />
-                      </div>
-
+                  <FacetCard
+                    depth={2}
+                    role="alertdialog"
+                    aria-labelledby="foundation-discard-title"
+                    className="border-destructive/40 flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                  >
+                    <div className="flex min-w-0 items-center gap-4">
+                      <Trash aria-hidden="true" className="text-destructive h-6 w-6 shrink-0" />
                       <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/15 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-destructive">
-                            Confirmation Required
-                          </span>
-                        </div>
-                        <h3 className="text-foreground truncate text-base sm:text-lg font-bold tracking-tight">
+                        <Eyebrow className="text-destructive block">Confirmation Required</Eyebrow>
+                        <h3
+                          id="foundation-discard-title"
+                          className="text-foreground truncate text-base font-semibold tracking-tight sm:text-lg"
+                        >
                           Discard draft for {inProgressData.name}?
                         </h3>
                         <p className="text-muted-foreground text-xs sm:text-sm">
@@ -364,8 +291,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                       </div>
                     </div>
 
-                    {/* Right: Cancel & Confirm buttons */}
-                    <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+                    <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-center">
                       <Button
                         type="button"
                         variant="ghost"
@@ -375,12 +301,9 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           soundEffects.press();
                           setShowDiscardConfirm(false);
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground active:scale-[0.98] transition-colors"
-                        data-cuelume-press="soft"
                       >
                         Cancel
                       </Button>
-
                       <Button
                         type="button"
                         variant="destructive"
@@ -389,14 +312,12 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           e.stopPropagation();
                           handleConfirmDiscard();
                         }}
-                        className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs sm:text-sm font-bold active:scale-[0.98] shadow-md shadow-destructive/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
-                        data-cuelume-press
                       >
-                        <Trash className="h-3.5 w-3.5" />
-                        <span>Discard Draft</span>
+                        <Trash aria-hidden="true" className="h-3.5 w-3.5" />
+                        Discard Draft
                       </Button>
                     </div>
-                  </div>
+                  </FacetCard>
                 </motion.div>
               ) : (
                 <motion.div
@@ -405,64 +326,46 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                  onClick={handleResumeClick}
-                  className="group relative cursor-pointer overflow-hidden rounded-2xl border border-amber-500/30 bg-card/60 p-4 sm:p-5 shadow-lg shadow-amber-500/5 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-amber-500/50 hover:bg-card/80 hover:shadow-amber-500/10 active:scale-[0.99]"
-                  data-cuelume-press
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleResumeClick();
-                    }
-                  }}
                 >
-                  {/* Background ambient gradient glow */}
-                  <div
-                    className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="pointer-events-none absolute -left-12 -bottom-12 h-40 w-40 rounded-full bg-yellow-500/5 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
-                    aria-hidden="true"
-                  />
+                  <FacetCard
+                    depth={2}
+                    onClick={handleResumeClick}
+                    data-cuelume-press
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleResumeClick();
+                      }
+                    }}
+                    className="focus-visible:ring-ring flex flex-col gap-4 rounded-2xl border-amber-500/30 p-4 hover:border-amber-500/50 focus-visible:ring-2 focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                  >
+                    <div className="flex min-w-0 items-center gap-4">
+                      {inProgressData.flag ? (
+                        <div className="border-border bg-muted h-12 w-16 shrink-0 overflow-hidden rounded-lg border">
+                          <img
+                            src={inProgressData.flag}
+                            alt={inProgressData.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <ClockRotateRight
+                          aria-hidden="true"
+                          className="h-6 w-6 shrink-0 text-amber-500"
+                        />
+                      )}
 
-                  <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    {/* Left Side: Avatar / Flag + Info */}
-                    <div className="flex items-center gap-4 min-w-0">
-                      {/* Flag / Emblem Thumbnail */}
-                      <div className="relative shrink-0">
-                        {inProgressData.flag ? (
-                          <div className="relative h-12 w-16 overflow-hidden rounded-lg border border-white/10 shadow-xs bg-muted/40">
-                            <img
-                              src={inProgressData.flag}
-                              alt={inProgressData.name}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-xs">
-                            <ClockRotateRight className="h-6 w-6" />
-                          </div>
-                        )}
-                        <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-background ring-2 ring-background">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                        </span>
-                      </div>
-
-                      {/* Text Content */}
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400">
+                          <Badge variant="outline" className="border-amber-500/40 text-amber-600">
                             Draft In Progress
-                          </span>
-                          <span className="text-muted-foreground/40 text-xs">•</span>
+                          </Badge>
                           <span className="text-muted-foreground text-xs font-medium">
                             {inProgressData.stepLabel}
                           </span>
                         </div>
-
-                        <h3 className="text-foreground truncate text-base sm:text-lg font-bold tracking-tight">
+                        <h3 className="text-foreground truncate text-base font-semibold tracking-tight sm:text-lg">
                           Resume {inProgressData.name}
                         </h3>
                         <p className="text-muted-foreground truncate text-xs sm:text-sm">
@@ -471,8 +374,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                       </div>
                     </div>
 
-                    {/* Right Side: Action Buttons */}
-                    <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+                    <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-center">
                       <Button
                         type="button"
                         variant="ghost"
@@ -482,28 +384,25 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           soundEffects.press();
                           setShowDiscardConfirm(true);
                         }}
-                        className="text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-[0.98] transition-colors"
+                        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         title="Discard this draft and start fresh"
-                        data-cuelume-press
                       >
                         Discard
                       </Button>
-
                       <Button
                         type="button"
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleResumeClick();
                         }}
-                        size="sm"
-                        className="group/btn flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-xs sm:text-sm font-bold text-zinc-950 shadow-md shadow-amber-500/20 hover:from-amber-400 hover:to-yellow-400 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
-                        data-cuelume-press
+                        className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
                       >
-                        <span>Resume Building</span>
-                        <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                        Resume Building
+                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </div>
-                  </div>
+                  </FacetCard>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -517,7 +416,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start with a Template"
           description="Select a real country or archetype to use as a template. We'll do the heavy lifting to get you started."
           icon={Globe}
-          accent="amber"
           badge="Recommended"
           onClick={() => onSelectPath("template")}
         />
@@ -526,7 +424,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start from Scratch"
           description="Customize every aspect of your country from the ground up. Only for the most dedicated worldbuilders."
           icon={Edit3}
-          accent="emerald"
           onClick={() => onSelectPath("scratch")}
         />
 
@@ -535,7 +432,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           description="Use your existing country data from IIWiki to build your country. Core stats, flag, and relevant lore are automatically parsed."
           icon={IIWikiLogoIcon}
           iconClassName="h-7 w-7"
-          accent="indigo"
           onClick={() => onSelectPath("import")}
         />
       </div>

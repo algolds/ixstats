@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Xmark as X, Plus, StatsReport as BarChart3 } from "iconoir-react";
+import { Xmark as X, Plus, StatsReport as BarChart3, SystemRestart } from "iconoir-react";
 import { ComparisonCharts } from "./charts/ComparisonCharts";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -193,10 +193,10 @@ export function CountryComparisonModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-background text-foreground border-border max-h-[90vh] max-w-6xl overflow-hidden backdrop-blur-md">
+      <DialogContent className="max-h-[90vh] max-w-6xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-foreground flex items-center gap-2">
-            <BarChart3 className="text-primary h-5 w-5" />
+            <BarChart3 aria-hidden="true" className="h-5 w-5 text-blue-500" />
             Compare Countries
           </DialogTitle>
         </DialogHeader>
@@ -205,14 +205,14 @@ export function CountryComparisonModal({
           {/* Country Selection */}
           <div className="flex flex-wrap items-center gap-2">
             <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
-              <PopoverTrigger>
+              <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" disabled={selectedCountries.length >= 8}>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus aria-hidden="true" className="h-4 w-4" />
                   Add Country ({selectedCountries.length}/8)
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="bg-background text-foreground border-border w-80 backdrop-blur-md"
+                className="w-80"
                 align="start"
                 onOpenAutoFocus={(e) => {
                   e.preventDefault();
@@ -248,7 +248,10 @@ export function CountryComparisonModal({
                               {country.economicTier}
                             </Badge>
                             {loadingCountries.has(country.id) && (
-                              <div className="border-border-current h-3 w-3 animate-spin rounded-full border-t-transparent" />
+                              <SystemRestart
+                                aria-label="Loading"
+                                className="text-muted-foreground h-3 w-3 animate-spin"
+                              />
                             )}
                           </div>
                         </div>

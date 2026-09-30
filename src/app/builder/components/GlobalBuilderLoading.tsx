@@ -1,290 +1,98 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
+import { SystemRestart } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import {
-  City as Building2,
-  Group as Users,
-  Dollar as DollarSign,
-  Globe,
-  Heart,
-  Shield,
-  Crown,
-  Sparks as Sparkles,
-} from "iconoir-react";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface GlobalBuilderLoadingProps {
   message?: string;
   className?: string;
   variant?: "full" | "compact" | "minimal";
+  /** Kept for API compatibility; the Facet loader shows no decorative subsystem strip. */
   showSubsystems?: boolean;
 }
 
+/** A small spinner plus a message: the one meaningful live indicator while the builder loads. */
+function LoadingLabel({ message, size = "sm" }: { message: string; size?: "sm" | "md" }) {
+  return (
+    <p className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
+      <SystemRestart
+        aria-hidden="true"
+        className={cn("animate-spin text-amber-500", size === "md" ? "h-5 w-5" : "h-4 w-4")}
+      />
+      {message}
+    </p>
+  );
+}
+
 /**
- * GlobalBuilderLoading - Comprehensive loading animation for the entire builder
+ * GlobalBuilderLoading - route-level loading state for the builder.
  *
- * Features the economic growth chart animation from the economy builder
- * combined with subsystem indicators and builder-specific theming.
- *
- * @param message - Custom loading message
- * @param className - Additional CSS classes
- * @param variant - Loading display variant (full, compact, minimal)
- * @param showSubsystems - Whether to show subsystem loading indicators
+ * `full` renders a Facet skeleton shaped like the builder (header card and a section card);
+ * `compact` a short card; `minimal` an inline spinner.
  */
 export function GlobalBuilderLoading({
   message = "Building your nation...",
   className,
   variant = "full",
-  showSubsystems = true,
 }: GlobalBuilderLoadingProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const sizeClass =
-    variant === "minimal" ? "w-6 h-6" : variant === "compact" ? "w-12 h-12" : "w-16 h-16";
-
-  // Subsystem icons and colors for the builder
-  const subsystems = [
-    { icon: Building2, color: "text-blue-500", label: "Government" },
-    { icon: DollarSign, color: "text-green-500", label: "Economy" },
-    { icon: Users, color: "text-purple-500", label: "Society" },
-    { icon: Globe, color: "text-amber-500", label: "Diplomacy" },
-    { icon: Shield, color: "text-red-500", label: "Security" },
-    { icon: Heart, color: "text-pink-500", label: "Welfare" },
-  ];
-
   if (variant === "minimal") {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
-        <div className="relative">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-        </div>
-        <span className="text-muted-foreground text-sm">{message}</span>
+      <div role="status" className={cn("flex items-center gap-2", className)}>
+        <LoadingLabel message={message} />
       </div>
     );
   }
 
   if (variant === "compact") {
     return (
-      <div className={cn("flex flex-col items-center justify-center gap-3 p-4", className)}>
-        <div className="relative">
-          {/* Economic growth chart simulation */}
-          <div className="absolute inset-0 flex items-end justify-center gap-1">
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "30%",
-                animationDelay: "0s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "60%",
-                animationDelay: "0.2s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "45%",
-                animationDelay: "0.4s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "80%",
-                animationDelay: "0.6s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "70%",
-                animationDelay: "0.8s",
-                animationDuration: "1.5s",
-              }}
-            />
-          </div>
-
-          {/* GDP trend line */}
-          <div className="absolute inset-0 flex items-center">
-            <div
-              className="h-px w-full animate-pulse bg-gradient-to-r from-green-400 via-emerald-500 to-green-400 opacity-60"
-              style={{ animationDuration: "2s" }}
-            />
-          </div>
-        </div>
-
-        <div className="text-center">
-          <p className="text-foreground text-sm font-medium">{message}</p>
-        </div>
+      <div role="status" className={cn("flex items-center justify-center p-6", className)}>
+        <FacetCard depth={2} className="w-full max-w-sm space-y-3 rounded-2xl p-5">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-3 w-full" />
+          <LoadingLabel message={message} />
+        </FacetCard>
       </div>
     );
   }
 
-  // Full variant with all features
   return (
     <div
-      className={cn(
-        "from-background via-background flex min-h-screen items-center justify-center bg-gradient-to-br to-amber-50/10",
-        className
-      )}
+      role="status"
+      aria-label={message}
+      className={cn("flex min-h-screen w-full flex-col pt-24 sm:pt-28 lg:pt-32", className)}
     >
-      <div className="mx-auto max-w-2xl space-y-8 p-8 text-center">
-        {/* Main loading animation */}
-        <div className="relative">
-          <div className="relative mx-auto h-24 w-24">
-            {/* Economic growth chart simulation */}
-            <div className="absolute inset-0 flex items-end justify-center gap-1">
-              <div
-                className="w-1 animate-pulse rounded-t bg-emerald-500"
-                style={{
-                  height: "30%",
-                  animationDelay: "0s",
-                  animationDuration: "1.5s",
-                }}
-              />
-              <div
-                className="w-1 animate-pulse rounded-t bg-emerald-500"
-                style={{
-                  height: "60%",
-                  animationDelay: "0.2s",
-                  animationDuration: "1.5s",
-                }}
-              />
-              <div
-                className="w-1 animate-pulse rounded-t bg-emerald-500"
-                style={{
-                  height: "45%",
-                  animationDelay: "0.4s",
-                  animationDuration: "1.5s",
-                }}
-              />
-              <div
-                className="w-1 animate-pulse rounded-t bg-emerald-500"
-                style={{
-                  height: "80%",
-                  animationDelay: "0.6s",
-                  animationDuration: "1.5s",
-                }}
-              />
-              <div
-                className="w-1 animate-pulse rounded-t bg-emerald-500"
-                style={{
-                  height: "70%",
-                  animationDelay: "0.8s",
-                  animationDuration: "1.5s",
-                }}
-              />
-            </div>
-
-            {/* GDP trend line */}
-            <div className="absolute inset-0 flex items-center">
-              <div
-                className="h-px w-full animate-pulse bg-gradient-to-r from-green-400 via-emerald-500 to-green-400 opacity-60"
-                style={{ animationDuration: "2s" }}
-              />
-            </div>
-
-            {/* Central spinning indicator */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-            </div>
-          </div>
-        </div>
-
-        {/* Main content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-center gap-2">
-            <Crown className="h-8 w-8 text-amber-500" />
-            <h2 className="text-foreground text-3xl font-bold">MyCountry Builder</h2>
-            <Sparkles className="h-6 w-6 animate-pulse text-amber-500" />
-          </div>
-
-          <p className="text-muted-foreground mx-auto max-w-xl text-lg">{message}</p>
-        </motion.div>
-
-        {/* Subsystem indicators */}
-        {showSubsystems && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="grid grid-cols-3 gap-4 pt-6 md:grid-cols-6"
-          >
-            {subsystems.map((subsystem, index) => (
-              <motion.div
-                key={subsystem.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.8 + index * 0.1 }}
-                className="flex flex-col items-center gap-2"
-              >
-                <div className="facet-hierarchy-child border-border/40 rounded-lg border p-3">
-                  <subsystem.icon className={cn("h-6 w-6", subsystem.color)} />
-                </div>
-                <div className="text-muted-foreground text-center text-xs">{subsystem.label}</div>
-                <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
-                    initial={{ width: 0 }}
-                    animate={{ width: "100%" }}
-                    transition={{
-                      delay: 1 + index * 0.2,
-                      duration: 1.5,
-                      ease: "easeOut",
-                    }}
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Progress indicators */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="flex items-center justify-center gap-2 pt-4"
-        >
-          <div className="flex gap-1">
-            {[...Array(5)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="h-2 w-2 rounded-full bg-amber-500"
-                animate={{
-                  opacity: [0.3, 1, 0.3],
-                  scale: [0.8, 1.2, 0.8],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              />
+      <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-8">
+        <FacetCard depth={2} className="flex items-center justify-between gap-3 rounded-2xl p-3">
+          <Skeleton className="h-8 w-24" />
+          <div className="hidden gap-2 sm:flex">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Skeleton key={i} className="h-7 w-20 rounded-full" />
             ))}
           </div>
-        </motion.div>
+          <Skeleton className="h-8 w-28" />
+        </FacetCard>
+        <FacetCard depth={2} className="space-y-6 rounded-2xl p-6 sm:p-8">
+          <Skeleton className="h-6 w-56" />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+          <LoadingLabel message={message} size="md" />
+        </FacetCard>
       </div>
     </div>
   );
 }
 
 /**
- * BuilderStepLoading - Loading animation for individual builder steps
- *
- * A more compact version for use within builder steps
+ * BuilderStepLoading - loading state inside a builder step (Suspense fallback).
  */
 export function BuilderStepLoading({
   message = "Loading step...",
@@ -294,85 +102,28 @@ export function BuilderStepLoading({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center justify-center p-8", className)}>
-      <div className="space-y-4 text-center">
-        <div className="relative mx-auto h-16 w-16">
-          {/* Economic growth chart simulation */}
-          <div className="absolute inset-0 flex items-end justify-center gap-1">
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "30%",
-                animationDelay: "0s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "60%",
-                animationDelay: "0.2s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "45%",
-                animationDelay: "0.4s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "80%",
-                animationDelay: "0.6s",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div
-              className="w-1 animate-pulse rounded-t bg-emerald-500"
-              style={{
-                height: "70%",
-                animationDelay: "0.8s",
-                animationDuration: "1.5s",
-              }}
-            />
-          </div>
-
-          {/* GDP trend line */}
-          <div className="absolute inset-0 flex items-center">
-            <div
-              className="h-px w-full animate-pulse bg-gradient-to-r from-green-400 via-emerald-500 to-green-400 opacity-60"
-              style={{ animationDuration: "2s" }}
-            />
-          </div>
-
-          {/* Central spinning indicator */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-          </div>
-        </div>
-
-        <p className="text-muted-foreground">{message}</p>
+    <div role="status" className={cn("space-y-4 p-4 sm:p-6", className)}>
+      <Skeleton className="h-6 w-48" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
       </div>
+      <LoadingLabel message={message} />
     </div>
   );
 }
 
 /**
- * TabLoadingFallback - Skeleton loader for tab content
- * Used as fallback for lazy-loaded tab components
+ * TabLoadingFallback - loading state for a builder tab panel.
  */
 export function TabLoadingFallback() {
   return (
-    <div className="animate-pulse space-y-4">
-      <div className="h-8 w-1/3 rounded bg-muted" />
-      <div className="space-y-3">
-        <div className="h-20 rounded bg-muted" />
-        <div className="h-20 rounded bg-muted" />
-        <div className="h-20 rounded bg-muted" />
+    <div role="status" aria-label="Loading tab" className="space-y-4">
+      <Skeleton className="h-8 w-1/3" />
+      <Skeleton className="h-4 w-2/3" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
       </div>
     </div>
   );

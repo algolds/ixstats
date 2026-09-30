@@ -1,31 +1,27 @@
 "use client";
 
 import React, { memo } from "react";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 
 interface StepContentProps {
   children: React.ReactNode;
 }
 
 /**
- * StepContent - Wrapper for step-specific content
- *
- * Provides:
- * - Animated transitions between steps
- * - Consistent card styling
- * - Step-specific theming
+ * StepContent - the Facet shell (depth 1) that frames the active builder/editor section.
+ * Section forms render their own cards inside it.
  */
 export const StepContent = memo(function StepContent({ children }: StepContentProps) {
   return (
-    <div className="mx-auto max-w-6xl">
-      <CutoutCard
-        className="border-border bg-card overflow-hidden rounded-2xl"
+    <div className="mx-auto w-full max-w-6xl">
+      <FacetCard
+        depth={1}
         texture="dots"
         textureOpacity={0.03}
-        trackPointerHover={false}
+        className="overflow-hidden rounded-2xl"
       >
-        <CutoutCardContent className="bg-transparent p-6 sm:p-8">{children}</CutoutCardContent>
-      </CutoutCard>
+        <FacetCardContent className="p-6 sm:p-8">{children}</FacetCardContent>
+      </FacetCard>
     </div>
   );
 });

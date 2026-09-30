@@ -10,6 +10,9 @@ import {
 } from "~/components/mycountry/dossier/CountryFocusCard";
 import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface CountriesFocusGridModularProps {
   countries: CountryCardData[];
@@ -117,19 +120,20 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
           <ProgressiveBlur>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div
+                <FacetCard
                   key={i}
-                  className="facet-surface facet-refraction flex h-60 flex-col justify-end rounded-2xl border border-white/10 p-5 md:h-96"
+                  depth={2}
+                  className="flex h-60 flex-col justify-end rounded-2xl p-5 md:h-96"
                 >
                   <div className="space-y-3">
-                    <div className="bg-muted/40 h-6 w-3/4 rounded-lg animate-pulse" />
-                    <div className="bg-muted/20 h-4 w-1/2 rounded-md animate-pulse" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
                     <div className="mt-4 space-y-2 pt-2">
-                      <div className="bg-muted/15 h-3.5 w-full rounded animate-pulse" />
-                      <div className="bg-muted/15 h-3.5 w-4/5 rounded animate-pulse" />
+                      <Skeleton className="h-3.5 w-full" />
+                      <Skeleton className="h-3.5 w-4/5" />
                     </div>
                   </div>
-                </div>
+                </FacetCard>
               ))}
             </div>
           </ProgressiveBlur>
@@ -139,42 +143,36 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* Load More Button */}
       {!isLoading && visibleCount < countries.length && (
         <div className="mt-12 text-center">
-          <button
-            onClick={loadMore}
-            data-cuelume-press="tick"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-8 py-3 font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
-          >
+          <Button type="button" size="lg" onClick={loadMore}>
             Load More Countries
-          </button>
+          </Button>
         </div>
       )}
 
       {/* End Message */}
       {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
         <div className="mt-12 text-center">
-          <div className="facet-floating facet-refraction inline-block rounded-xl px-6 py-4">
-            <p className="text-muted-foreground text-sm font-medium">You've viewed all {countries.length} countries</p>
-          </div>
+          <p className="text-muted-foreground text-sm font-medium">
+            You've viewed all {countries.length} countries
+          </p>
         </div>
       )}
 
       {/* Empty State */}
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
-          <div className="facet-floating facet-refraction mx-auto max-w-md rounded-2xl p-12">
-            <Globe className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
-            <h3 className="mb-2 text-xl font-bold tracking-tight">No Countries Found</h3>
+          <FacetCard depth={2} className="mx-auto max-w-md rounded-2xl p-12">
+            <Globe aria-hidden="true" className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="text-foreground mb-2 text-xl font-semibold tracking-tight">
+              No Countries Found
+            </h3>
             <p className="text-muted-foreground mb-6 text-sm">
               Try adjusting your search or filter criteria
             </p>
-            <button
-              onClick={onClearFilters}
-              data-cuelume-press="tick"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
-            >
+            <Button type="button" onClick={onClearFilters}>
               Clear Filters
-            </button>
-          </div>
+            </Button>
+          </FacetCard>
         </div>
       )}
     </div>

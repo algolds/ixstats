@@ -4,6 +4,8 @@ import React from "react";
 import { Search, Xmark as X, DiceSix as Dices, Globe } from "iconoir-react";
 import { TIER_FILTER_OPTIONS, type TierFilter } from "~/lib/economic-tier-filter";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 
 interface CountriesHeaderProps {
   searchInput?: string;
@@ -24,65 +26,61 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
 }) => {
   return (
     <div className="bg-background sticky top-0 z-40 mb-6 pt-2 pb-3">
-      {/* Solid Opaque Apple Panel */}
-      <div className="bg-card text-card-foreground border-border relative overflow-hidden rounded-2xl border p-4 shadow-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] md:p-5">
-        {/* Subtle Micro-Texture Overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.055]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-            backgroundSize: "16px 16px",
-          }}
-        />
-
+      <FacetContainer
+        depth={2}
+        texture="dots"
+        textureOpacity={0.4}
+        className="overflow-hidden rounded-2xl p-4 md:p-5"
+      >
         {/* Header Title */}
         <div className="relative z-10 mb-3">
-          <h1 className="text-foreground flex items-center gap-2.5 text-2xl font-bold tracking-tight md:text-3xl">
-            <Globe className="h-6 w-6 text-primary" />
+          <h1 className="text-foreground flex items-center gap-2.5 text-2xl font-semibold tracking-tight md:text-3xl">
+            <Globe aria-hidden="true" className="h-6 w-6 text-blue-500" />
             <span>Countries</span>
           </h1>
         </div>
 
-        {/* Prominent Inline Search Bar with Halo / Dynamic Island Pill Feeling Lucky Button */}
+        {/* Search with the "Feeling Lucky" random-country action */}
         <div className="relative z-10 mb-3">
-          <div className="facet-surface facet-interactive group relative flex items-center rounded-xl border border-border/80 bg-background/60 px-3.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-focus-within:text-foreground" />
+          <div className="border-border bg-background focus-within:border-ring focus-within:ring-ring/25 flex items-center rounded-xl border px-3.5 py-1.5 transition-[border-color,box-shadow] duration-150 focus-within:ring-2">
+            <Search aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => onSearchChange?.(e.target.value)}
+              aria-label="Search countries"
               placeholder="Search by country name, economic tier, region, or continent..."
-              className="text-foreground placeholder:text-muted-foreground/60 w-full bg-transparent px-3 text-sm font-medium focus:outline-none"
+              className="facet-refraction-none text-foreground placeholder:text-muted-foreground w-full min-w-0 bg-transparent px-3 py-1 text-sm font-medium focus:outline-none"
             />
 
-            {/* Clear Button */}
             {searchInput && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => onSearchChange?.("")}
-                className="text-muted-foreground hover:text-foreground mr-2 rounded-md p-1 transition-colors"
+                className="text-muted-foreground mr-1 h-8 w-8 shrink-0"
                 aria-label="Clear search"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X aria-hidden="true" className="h-4 w-4" />
+              </Button>
             )}
 
-            {/* "Feeling Lucky" Random Country Button */}
             {onImFeelingLucky && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="xs"
                 onClick={(e) => {
                   e.preventDefault();
                   onImFeelingLucky();
                 }}
-                data-cuelume-press="tick"
-                className="group relative flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-3 py-1 text-xs font-medium text-foreground backdrop-blur-md transition-colors hover:border-border hover:bg-accent/40 active:scale-95"
+                className="shrink-0 rounded-full"
                 title="Explore a random country"
               >
-                <Dices className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-hover:rotate-45 group-hover:text-foreground" />
-                <span className="font-medium tracking-wide">Feeling Lucky</span>
-              </button>
+                <Dices aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                Feeling Lucky
+              </Button>
             )}
           </div>
         </div>
@@ -103,11 +101,13 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
                   role="radio"
                   aria-checked={selected}
                   onClick={() => onTierFilterChange(opt.value)}
+                  data-cuelume-press="tick"
+                  data-cuelume-hover="tick"
                   className={cn(
-                    "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                    "focus-visible:ring-ring rounded-full border px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,transform] duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]",
                     selected
-                      ? "border-purple-400/50 bg-purple-500/15 text-purple-300"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted border-white/10"
+                      ? "text-foreground border-blue-500/50 bg-blue-500/10"
+                      : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
                   )}
                 >
                   {opt.label}
@@ -117,9 +117,9 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
           </div>
         )}
 
-        {/* 4 Stat Cards rendered inside the unified sticky container */}
+        {/* Stat cards rendered inside the unified sticky container */}
         {children && <div className="relative z-10">{children}</div>}
-      </div>
+      </FacetContainer>
     </div>
   );
 };

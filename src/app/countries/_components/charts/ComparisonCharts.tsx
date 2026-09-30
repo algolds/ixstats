@@ -28,10 +28,10 @@ import {
   Component as Layers,
   Minus,
 } from "iconoir-react";
-import { useTheme } from "~/context/theme-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -81,23 +81,14 @@ export function ComparisonCharts({
   currentIxTime,
   isLoading = false,
 }: ComparisonChartsProps) {
-  const { theme } = useTheme();
   const [selectedChartType, setSelectedChartType] = useState<ComparisonChartType>("population");
 
-  // Chart theme
-  const chartTheme = useMemo(() => {
-    const isDark = theme === "dark";
-    return {
-      grid: isDark ? "#374151" : "#e5e7eb",
-      text: isDark ? "#9ca3af" : "#6b7280",
-      axis: isDark ? "#6b7280" : "#9ca3af",
-      tooltip: {
-        backgroundColor: isDark ? "#1f2937" : "#ffffff",
-        border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
-        color: isDark ? "#f9fafb" : "#111827",
-      },
-    };
-  }, [theme]);
+  // Chart theme: semantic tokens, so both themes resolve without a manual dark branch.
+  const chartTheme = {
+    grid: "var(--border)",
+    text: "var(--muted-foreground)",
+    axis: "var(--muted-foreground)",
+  };
 
   // Remove country from comparison
   const removeCountry = (countryId: string) => {
@@ -212,7 +203,7 @@ export function ComparisonCharts({
     };
 
     return (
-      <div className="rounded-lg border p-3 shadow-lg backdrop-blur-sm" style={chartTheme.tooltip}>
+      <div className="bg-popover text-popover-foreground border-border rounded-lg border p-3 shadow-md">
         <div className="space-y-2">
           <div className="font-medium">{label}</div>
           {payload.map((entry: any) => (
@@ -239,13 +230,13 @@ export function ComparisonCharts({
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 10, fill: chartTheme.text }}
+              tick={{ fontSize: 12, fill: chartTheme.text }}
               angle={-20}
               textAnchor="end"
               height={60}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: chartTheme.text }}
+              tick={{ fontSize: 12, fill: chartTheme.text }}
               label={{ value: "Population (M)", angle: -90, style: { fontSize: 10 } }}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -265,7 +256,7 @@ export function ComparisonCharts({
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 10, fill: chartTheme.text }}
+              tick={{ fontSize: 12, fill: chartTheme.text }}
               angle={-20}
               textAnchor="end"
               height={60}
@@ -273,13 +264,13 @@ export function ComparisonCharts({
             <YAxis
               yAxisId="left"
               orientation="left"
-              tick={{ fontSize: 10, fill: chartTheme.text }}
+              tick={{ fontSize: 12, fill: chartTheme.text }}
               label={{ value: "GDP/Cap ($K)", angle: -90, style: { fontSize: 9 } }}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
-              tick={{ fontSize: 10, fill: chartTheme.text }}
+              tick={{ fontSize: 12, fill: chartTheme.text }}
               label={{ value: "Total GDP ($B)", angle: 90, style: { fontSize: 9 } }}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -297,13 +288,13 @@ export function ComparisonCharts({
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 10, fill: chartTheme.text }}
+              tick={{ fontSize: 12, fill: chartTheme.text }}
               angle={-20}
               textAnchor="end"
               height={60}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: chartTheme.text }}
+              tick={{ fontSize: 12, fill: chartTheme.text }}
               label={{ value: "Growth Rate (%)", angle: -90, style: { fontSize: 10 } }}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -347,8 +338,8 @@ export function ComparisonCharts({
         component: (
           <RadarChart data={chartData as any} margin={{ top: 20, right: 60, bottom: 20, left: 60 }}>
             <PolarGrid />
-            <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fill: chartTheme.text }} />
-            <PolarRadiusAxis tick={{ fontSize: 7, fill: chartTheme.text }} />
+            <PolarAngleAxis dataKey="name" tick={{ fontSize: 12, fill: chartTheme.text }} />
+            <PolarRadiusAxis tick={{ fontSize: 12, fill: chartTheme.text }} />
             <Tooltip content={<CustomTooltip />} />
             <Radar
               name="Population"
@@ -399,13 +390,13 @@ export function ComparisonCharts({
     return (
       <Card>
         <CardHeader>
-          <div className="animate-pulse space-y-2">
-            <div className="h-6 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-4 w-1/2" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-96 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          <Skeleton className="h-96" />
         </CardContent>
       </Card>
     );

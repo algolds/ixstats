@@ -5,8 +5,10 @@ import Link from "next/link";
 import { NavArrowLeft, OpenBook, WhiteFlag, WarningCircle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { BuilderSection } from "../../lib/builder-theme";
 import type { BuilderAlertResult } from "../../lib/builder-alerts";
@@ -66,7 +68,7 @@ export const EditorHeader = React.memo(function EditorHeader({
 
   return (
     <header className="mx-auto w-full max-w-6xl px-4 pb-4">
-      <div className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-4 shadow-sm sm:p-6">
+      <FacetCard depth={2} className="flex flex-col gap-4 rounded-2xl p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button asChild variant="ghost" size="sm" className="-ml-2 gap-1 text-sm">
             <Link href="/mycountry">
@@ -132,12 +134,14 @@ export const EditorHeader = React.memo(function EditorHeader({
                     onClick={() => onNavigate(item.section)}
                     aria-current={isActive ? "page" : undefined}
                     data-cuelume-press="tick"
+                    data-cuelume-hover="tick"
                     className={cn(
-                      "flex h-full w-full items-start gap-3 rounded-xl border p-3 text-left transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]",
+                      // Interactive row (depth 3) nested in the header card: a solid surface, no stacked blur.
+                      "flex h-full min-h-11 w-full items-start gap-3 rounded-xl border p-3 text-left transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]",
                       "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                       isActive
                         ? "border-amber-500/50 bg-amber-500/10"
-                        : "border-border bg-background hover:bg-accent"
+                        : "border-border bg-card hover:bg-accent"
                     )}
                   >
                     <Icon
@@ -159,9 +163,12 @@ export const EditorHeader = React.memo(function EditorHeader({
                     <span aria-hidden="true" className="flex shrink-0 items-center gap-1">
                       {errors > 0 && <WarningCircle className="text-destructive h-4 w-4" />}
                       {changes > 0 && (
-                        <span className="text-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500/20 px-1.5 text-xs font-semibold tabular-nums">
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 bg-amber-500/10 tabular-nums"
+                        >
                           {changes}
-                        </span>
+                        </Badge>
                       )}
                     </span>
                   </button>
@@ -170,7 +177,7 @@ export const EditorHeader = React.memo(function EditorHeader({
             })}
           </ul>
         </nav>
-      </div>
+      </FacetCard>
     </header>
   );
 });

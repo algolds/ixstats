@@ -88,9 +88,7 @@ export function BuilderSidebarLayout({
       data-builder-content
     >
       {/* Hero Section */}
-      {heroSection && (
-        <div className="container mx-auto px-4 pt-2 sm:pt-4">{heroSection}</div>
-      )}
+      {heroSection && <div className="container mx-auto px-4 pt-2 sm:pt-4">{heroSection}</div>}
 
       {/* Docked Studio Header (Non-sticky, directly in normal flow above main container) */}
       {headerElement}
@@ -122,11 +120,7 @@ export function BuilderSidebarLayout({
                 variant="ghost"
                 size="sm"
                 onClick={handleResetClick}
-                data-cuelume-press
-                className={cn(
-                  "px-4 text-xs font-medium select-none transition-colors active:scale-[0.98]",
-                  "text-muted-foreground/60 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
-                )}
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive px-4 text-xs font-medium select-none"
               >
                 {mode === "edit" ? (
                   <>
@@ -149,4 +143,3 @@ export function BuilderSidebarLayout({
 }
 
 export { BuilderSidebarLayout as BuilderStudioLayout };
-

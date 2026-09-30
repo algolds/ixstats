@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { EditPencil } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
 import type { BuilderSection } from "../../lib/builder-theme";
 import {
   EDITOR_SECTIONS,
@@ -46,9 +47,11 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
   }, [changes]);
 
   return (
-    <section
+    <FacetCard
+      depth={2}
+      role="region"
       aria-labelledby="editor-change-summary-title"
-      className="border-border bg-card space-y-4 rounded-2xl border p-4 sm:p-6"
+      className="space-y-4 rounded-2xl p-4 sm:p-6"
     >
       <div>
         <Eyebrow className="block">Review</Eyebrow>
@@ -67,7 +70,7 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
       {groups.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {groups.map(({ section, items }) => (
-            <div key={section} className="border-border bg-background rounded-xl border p-4">
+            <FacetContainer key={section} depth={3} surface="solid" className="rounded-xl p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="text-foreground text-sm font-semibold">
                   {EDITOR_SECTION_LABELS[section]}
@@ -108,10 +111,10 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
                   </li>
                 )}
               </ul>
-            </div>
+            </FacetContainer>
           ))}
         </div>
       )}
-    </section>
+    </FacetCard>
   );
 }

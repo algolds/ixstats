@@ -2,16 +2,15 @@
 
 import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle,
-  SystemRestart as Loader2,
-} from "iconoir-react";
+import { ArrowLeft, ArrowRight, CheckCircle, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { createUrl } from "~/lib/utils";
-import { type BuilderSection, isScratchOrImportOrigin, getBuilderSteps } from "../lib/builder-theme";
+import {
+  type BuilderSection,
+  isScratchOrImportOrigin,
+  getBuilderSteps,
+} from "../lib/builder-theme";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 
 import { useBuilderFilter } from "./builder-filter-context";
@@ -66,10 +65,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
     }
   };
 
-  const isScratchOrImport = useMemo(
-    () => isScratchOrImportOrigin(builderState),
-    [builderState]
-  );
+  const isScratchOrImport = useMemo(() => isScratchOrImportOrigin(builderState), [builderState]);
 
   const steps = useMemo(
     () => getBuilderSteps(activeSection, mode, isScratchOrImport),
@@ -79,7 +75,6 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
   const currentIndex = steps.indexOf(activeSection);
   const isBackDisabled = currentIndex <= 0;
   const isOnPreview = activeSection === "preview";
-
 
   const previousStepLabel = useMemo(() => {
     if (currentIndex > 0) {
@@ -98,28 +93,23 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
   }, [steps, currentIndex]);
 
   return (
-    <div className="border-border/40 mt-10 flex flex-col gap-3 border-t pt-6 pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="border-border mt-10 flex flex-col gap-3 border-t pt-6 pb-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Left: Previous step navigation & subtle discard link */}
       <div className="flex items-center gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onBack}
-          disabled={isBackDisabled}
-          data-cuelume-press
-          className="border-border/60 hover:bg-accent/40 rounded-xl text-xs font-semibold active:scale-[0.97] cursor-pointer"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+        <Button type="button" variant="outline" onClick={onBack} disabled={isBackDisabled}>
+          <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
           <span>{previousStepLabel ? `Back to ${previousStepLabel}` : "Back"}</span>
         </Button>
 
-        <button
+        <Button
           type="button"
+          variant="link"
+          size="xs"
           onClick={handleReset}
-          className="text-muted-foreground/60 hover:text-destructive text-xs transition-colors underline-offset-4 hover:underline cursor-pointer"
+          className="text-muted-foreground hover:text-destructive"
         >
           {mode === "edit" ? "Discard changes & exit" : "Restart builder"}
-        </button>
+        </Button>
       </div>
 
       {/* Right: Forward action button */}
@@ -135,17 +125,17 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            data-cuelume-press
-            className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 text-xs font-bold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] cursor-pointer"
+            aria-busy={isSubmitting}
+            className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                 <span>{mode === "edit" ? "Saving..." : "Creating Nation..."}</span>
               </>
             ) : (
               <>
-                <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                <CheckCircle aria-hidden="true" className="h-3.5 w-3.5" />
                 <span>{mode === "edit" ? "Save Nation" : "Create Nation"}</span>
               </>
             )}
@@ -154,11 +144,10 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
           <Button
             type="button"
             onClick={onContinue}
-            data-cuelume-press
-            className="rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97] cursor-pointer"
+            className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
           >
             <span>{nextStepLabel ? `Continue to ${nextStepLabel}` : "Continue"}</span>
-            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>

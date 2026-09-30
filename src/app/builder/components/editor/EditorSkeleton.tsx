@@ -1,3 +1,4 @@
+import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 
 /**
@@ -12,7 +13,7 @@ export function EditorSkeleton() {
       className="flex w-full flex-1 flex-col pt-24 sm:pt-28 lg:pt-32"
     >
       <div className="mx-auto w-full max-w-6xl px-4 pb-4">
-        <div className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-4 sm:p-6">
+        <FacetCard depth={2} className="flex flex-col gap-4 rounded-2xl p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
             <Skeleton className="h-8 w-28" />
             <Skeleton className="h-8 w-40" />
@@ -30,10 +31,10 @@ export function EditorSkeleton() {
               <Skeleton key={i} className="h-16 rounded-xl" />
             ))}
           </div>
-        </div>
+        </FacetCard>
       </div>
       <div className="mx-auto w-full max-w-6xl px-4 pb-8">
-        <div className="border-border bg-card space-y-6 rounded-2xl border p-6 sm:p-8">
+        <FacetCard depth={2} className="space-y-6 rounded-2xl p-6 sm:p-8">
           <Skeleton className="h-6 w-56" />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {Array.from({ length: 6 }, (_, i) => (
@@ -43,7 +44,7 @@ export function EditorSkeleton() {
               </div>
             ))}
           </div>
-        </div>
+        </FacetCard>
       </div>
       <span className="sr-only">Loading…</span>
     </div>

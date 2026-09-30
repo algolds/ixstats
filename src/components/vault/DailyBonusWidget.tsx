@@ -4,14 +4,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Sparks as Sparkles,
-  Trophy,
-  FireFlame as Flame,
-  SystemRestart as Loader,
-} from "iconoir-react";
+import { Trophy, FireFlame as Flame, SystemRestart as Loader } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Progress } from "~/components/ui/progress";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
@@ -74,21 +73,17 @@ function markAutoOpenedToday(userId: string) {
   }
 }
 
-/** Seven-day streak strip: filled dots for the days completed in the current week of the streak. */
-function StreakStrip({ streak }: { streak: number }) {
+/** Seven-day streak progress: how far into the current week of the streak the player is. */
+function StreakProgress({ streak }: { streak: number }) {
   const filled = streak > 0 ? ((streak - 1) % 7) + 1 : 0;
   return (
-    <div className="flex items-center gap-1.5" aria-label={`${streak} day streak`}>
-      {Array.from({ length: 7 }, (_, i) => (
-        <span
-          key={i}
-          className={cn(
-            "h-1.5 flex-1 rounded-full transition-colors",
-            i < filled ? "bg-amber-500" : "bg-muted"
-          )}
-        />
-      ))}
-    </div>
+    <Progress
+      value={(filled / 7) * 100}
+      aria-label="Streak this week"
+      aria-valuetext={`${filled} of 7 days`}
+      className="bg-muted h-1.5"
+      indicatorClassName="bg-amber-600"
+    />
   );
 }
 
@@ -96,7 +91,6 @@ function ChoiceCard({
   title,
   description,
   icon,
-  tone,
   loading,
   disabled,
   onClick,
@@ -104,7 +98,6 @@ function ChoiceCard({
   title: string;
   description: string;
   icon: React.ReactNode;
-  tone: "amber" | "blue";
   loading: boolean;
   disabled: boolean;
   onClick: () => void;
@@ -115,30 +108,29 @@ function ChoiceCard({
       onClick={onClick}
       disabled={disabled}
       aria-busy={loading}
+      data-cuelume-press="press"
+      data-cuelume-hover="tick"
       className={cn(
-        "group bg-card relative flex min-h-[148px] flex-col items-center justify-center gap-3 rounded-2xl border p-4 text-center transition-[border-color,box-shadow,opacity,transform]",
+        "group rounded-2xl text-left transition-[opacity,transform] duration-150",
         "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-        "enabled:hover:-translate-y-0.5 enabled:hover:shadow-md enabled:active:scale-[0.98] disabled:cursor-not-allowed",
-        tone === "amber"
-          ? "border-amber-500/25 enabled:hover:border-amber-500/50"
-          : "border-blue-500/25 enabled:hover:border-blue-500/50",
+        "enabled:active:scale-[0.98] disabled:cursor-not-allowed",
         disabled && !loading && "opacity-50"
       )}
     >
-      <span
-        className={cn(
-          "grid h-12 w-12 place-items-center rounded-full transition-transform group-enabled:group-hover:scale-105",
-          tone === "amber"
-            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-            : "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-        )}
+      {/* Interactive row (depth 3) inside the dialog: solid, so blur never stacks. */}
+      <FacetContainer
+        depth={3}
+        surface="solid"
+        className="flex h-full min-h-[148px] flex-col items-center justify-center gap-3 rounded-2xl p-4 text-center transition-[border-color] duration-150 group-enabled:group-hover:border-amber-600/50"
       >
-        {loading ? <Loader className="h-6 w-6 animate-spin" /> : icon}
-      </span>
-      <span className="space-y-1">
-        <span className="text-foreground block text-sm font-semibold">{title}</span>
-        <span className="text-muted-foreground block text-xs leading-snug">{description}</span>
-      </span>
+        <span aria-hidden="true" className="grid h-8 place-items-center">
+          {loading ? <Loader className="text-muted-foreground h-6 w-6 animate-spin" /> : icon}
+        </span>
+        <span className="space-y-1">
+          <span className="text-foreground block text-sm font-semibold">{title}</span>
+          <span className="text-muted-foreground block text-xs leading-snug">{description}</span>
+        </span>
+      </FacetContainer>
     </button>
   );
 }
@@ -204,12 +196,7 @@ export const DailyBonusWidget: React.FC = () => {
   if (!userId) return null;
 
   if (isLoading) {
-    return (
-      <div className="border-border bg-muted/40 flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5">
-        <Skeleton className="h-3 w-20" />
-        <Skeleton className="h-3 w-8" />
-      </div>
-    );
+    return <Skeleton className="h-8 w-full" />;
   }
 
   // Nothing to claim and no reveal in progress — stay out of the sidebar.
@@ -224,34 +211,34 @@ export const DailyBonusWidget: React.FC = () => {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={() => setIsOpen(true)}
-        className="focus-visible:ring-ring flex w-full items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-xs font-semibold text-amber-800 shadow-sm transition-[color,background-color,border-color,transform] hover:bg-amber-500/25 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98] dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/15"
+        className="w-full justify-start gap-2 border-amber-600/40 px-2.5 text-xs font-semibold"
       >
-        <Trophy className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <Trophy aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-amber-600" />
         <span className="flex-1 text-left leading-tight select-none">Claim daily reward</span>
         {streak > 0 && (
-          <span className="flex items-center gap-0.5 tabular-nums opacity-90">
-            <Flame className="h-3 w-3 fill-amber-500/25 text-amber-600 dark:text-amber-400" />
+          <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
+            <Flame aria-hidden="true" className="h-3 w-3 text-amber-600" />
             {streak}d
           </span>
         )}
-      </button>
+      </Button>
 
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent
           showCloseButton={!claiming}
-          className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden rounded-3xl p-0 sm:max-w-md"
+          className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-md"
         >
           <AnimatePresence mode="wait" initial={false}>
             {!claimResult ? (
               <motion.div key="choice" {...fade} transition={{ duration: 0.18 }}>
                 <div className="space-y-4 px-6 pt-6 pb-5">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                      <Trophy className="h-6 w-6" />
-                    </span>
+                  <div className="flex items-start gap-3 pr-6">
+                    <Trophy aria-hidden="true" className="mt-0.5 h-6 w-6 shrink-0 text-amber-600" />
                     <div className="min-w-0">
                       <DialogTitle className="text-foreground text-lg leading-tight font-semibold">
                         Daily reward
@@ -262,23 +249,22 @@ export const DailyBonusWidget: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-muted/40 space-y-2 rounded-2xl px-4 py-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-foreground flex items-center gap-1 font-medium">
-                        <Flame className="h-3.5 w-3.5 fill-amber-500/25 text-amber-500" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-foreground flex items-center gap-1 text-sm font-medium">
+                        <Flame aria-hidden="true" className="h-4 w-4 text-amber-600" />
                         {streak > 0 ? `${streak}-day streak` : "Start a streak today"}
                       </span>
-                      <span className="text-muted-foreground">Claim daily to grow bonuses</span>
+                      <Eyebrow>Claim daily to grow bonuses</Eyebrow>
                     </div>
-                    <StreakStrip streak={streak} />
+                    <StreakProgress streak={streak} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <ChoiceCard
                       title="IxCredits"
                       description="A random roll boosted by vault level and streak, paid up to your daily earning cap"
-                      icon={<IxCreditsSymbol className="h-6 w-6" />}
-                      tone="amber"
+                      icon={<IxCreditsSymbol className="h-6 w-6 text-amber-600" />}
                       loading={claiming === "CREDITS"}
                       disabled={claiming !== null}
                       onClick={() => handleClaim("CREDITS")}
@@ -286,8 +272,7 @@ export const DailyBonusWidget: React.FC = () => {
                     <ChoiceCard
                       title="Card pull"
                       description="One random collectible card for your collection"
-                      icon={<IxCardIcon className="h-6 w-6" />}
-                      tone="blue"
+                      icon={<IxCardIcon className="text-muted-foreground h-6 w-6" />}
                       loading={claiming === "CARD"}
                       disabled={claiming !== null}
                       onClick={() => handleClaim("CARD")}
@@ -296,14 +281,15 @@ export const DailyBonusWidget: React.FC = () => {
                 </div>
 
                 <div className="border-border border-t px-6 py-3">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => handleOpenChange(false)}
                     disabled={claiming !== null}
-                    className="text-muted-foreground hover:text-foreground w-full rounded-lg py-1.5 text-sm font-medium transition-colors disabled:opacity-50"
+                    className="text-muted-foreground w-full"
                   >
                     Maybe later
-                  </button>
+                  </Button>
                 </div>
               </motion.div>
             ) : (
@@ -321,12 +307,12 @@ export const DailyBonusWidget: React.FC = () => {
                 {claimResult.creditsAwarded != null && (
                   <>
                     <motion.span
-                      initial={{ scale: 0.6, opacity: 0 }}
+                      initial={{ scale: 0.95, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                      className="grid h-16 w-16 place-items-center rounded-full bg-amber-500/15 text-amber-600 ring-8 ring-amber-500/5 dark:text-amber-400"
+                      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+                      className="text-amber-600"
                     >
-                      <IxCreditsSymbol className="h-8 w-8" />
+                      <IxCreditsSymbol className="h-10 w-10" />
                     </motion.span>
                     <div>
                       <p className="text-foreground font-mono text-4xl font-bold tabular-nums">
@@ -342,10 +328,10 @@ export const DailyBonusWidget: React.FC = () => {
                 {claimResult.cardAwarded && (
                   <>
                     <motion.div
-                      initial={{ y: 16, rotate: -3, opacity: 0 }}
-                      animate={{ y: 0, rotate: 0, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 220, damping: 20 }}
-                      className="border-border relative h-56 w-40 overflow-hidden rounded-2xl border bg-black/40 shadow-2xl"
+                      initial={{ y: 12, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
+                      className="border-border bg-muted relative h-56 w-40 overflow-hidden rounded-2xl border"
                     >
                       <CardHolographicCover
                         cardType="LORE"
@@ -359,27 +345,33 @@ export const DailyBonusWidget: React.FC = () => {
                           className="absolute inset-0 h-full w-full object-cover"
                         />
                       )}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-black/40 px-2.5 py-2 text-left">
-                        <span className="block truncate text-xs font-semibold text-white">
-                          {claimResult.cardAwarded.title}
-                        </span>
-                        <span className="block text-xs text-white/70 capitalize">
+                    </motion.div>
+                    <div className="space-y-1.5">
+                      <p className="text-foreground max-w-60 truncate text-sm font-semibold">
+                        {claimResult.cardAwarded.title}
+                      </p>
+                      <div className="flex items-center justify-center gap-2">
+                        <Badge variant="secondary" className="capitalize">
                           {claimResult.cardAwarded.rarity.toLowerCase().replace(/_/g, " ")}
+                        </Badge>
+                        <span className="text-muted-foreground text-sm">
+                          Added to your collection
                         </span>
                       </div>
-                    </motion.div>
-                    <p className="text-muted-foreground text-sm">Added to your collection</p>
+                    </div>
                   </>
                 )}
 
-                <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  <Flame className="h-3.5 w-3.5 fill-amber-500/25" />
+                <Badge variant="outline" className="border-amber-600/40">
+                  <Flame aria-hidden="true" className="text-amber-600" />
                   {claimResult.streak}-day streak
-                  <Sparkles className="h-3.5 w-3.5" />
-                </div>
+                </Badge>
 
                 <div className="flex w-full flex-col gap-2 pt-1 sm:flex-row-reverse">
-                  <Button className="flex-1" onClick={() => handleOpenChange(false)}>
+                  <Button
+                    className="flex-1 bg-amber-600 text-white hover:bg-amber-600/90"
+                    onClick={() => handleOpenChange(false)}
+                  >
                     Done
                   </Button>
                   {claimResult.cardAwarded && (

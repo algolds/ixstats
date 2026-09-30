@@ -7,10 +7,10 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Lock, LockSlash as UnlockIcon, ArrowRight } from "iconoir-react";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
-import { cn } from "~/lib/utils";
 import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
@@ -487,35 +487,29 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Auth guard - using MyCountry gold theme
   if (!user) {
     return (
-      <div className="from-background via-background flex h-full items-center justify-center bg-gradient-to-br to-amber-50/20 p-4 dark:to-amber-950/20">
+      <div className="flex h-full items-center justify-center p-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         >
-          <Card className="mx-auto max-w-md border-2 border-amber-500/20 shadow-xl">
-            <CardContent className="space-y-6 p-8 text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10">
-                <Lock className="h-10 w-10 text-amber-500" />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold">Authentication Required</h2>
-                <p className="text-muted-foreground">
-                  Sign in to access the MyCountry Builder and create your custom nation
-                </p>
-              </div>
-              <Button
-                onClick={() => router.push(createUrl("/sign-in"))}
-                size="lg"
-                className={cn(
-                  "w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
-                )}
-              >
-                <UnlockIcon className="mr-2 h-4 w-4" />
-                Sign In to Continue
-              </Button>
-            </CardContent>
-          </Card>
+          <FacetCard depth={2} className="mx-auto max-w-md space-y-6 rounded-2xl p-8 text-center">
+            <Lock aria-hidden="true" className="mx-auto h-10 w-10 text-amber-500" />
+            <div className="space-y-2">
+              <h2 className="text-foreground text-2xl font-semibold">Authentication Required</h2>
+              <p className="text-muted-foreground">
+                Sign in to access the MyCountry Builder and create your custom nation
+              </p>
+            </div>
+            <Button
+              onClick={() => router.push(createUrl("/sign-in"))}
+              size="lg"
+              className="w-full bg-amber-600 text-white hover:bg-amber-600/90"
+            >
+              <UnlockIcon aria-hidden="true" className="h-4 w-4" />
+              Sign In to Continue
+            </Button>
+          </FacetCard>
         </motion.div>
       </div>
     );
@@ -528,13 +522,12 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   if (isEdit && countryLoadError) {
     return (
       <div className="flex w-full flex-1 items-start justify-center px-4 pt-24 sm:pt-28 lg:pt-32">
-        <div
+        <FacetCard
+          depth={2}
           role="alert"
-          className="border-border bg-card w-full max-w-md space-y-4 rounded-2xl border p-6 text-center shadow-sm"
+          className="w-full max-w-md space-y-4 rounded-2xl p-6 text-center"
         >
-          <span className="bg-destructive/10 text-destructive mx-auto flex h-12 w-12 items-center justify-center rounded-full">
-            <WarningTriangle aria-hidden="true" className="h-6 w-6" />
-          </span>
+          <WarningTriangle aria-hidden="true" className="text-destructive mx-auto h-6 w-6" />
           <div className="space-y-1">
             <h1 className="text-foreground text-lg font-semibold">Couldn't open your country</h1>
             <p className="text-muted-foreground text-sm">{countryLoadError}</p>
@@ -549,7 +542,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
               Try again
             </Button>
           </div>
-        </div>
+        </FacetCard>
       </div>
     );
   }
@@ -599,15 +592,8 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       <WelcomeModalWrapper />
       <BuilderGuideSheet />
       <div className="relative flex min-h-screen w-full flex-1 flex-col">
-        {/* Tactile Paper Texture Background Overlay */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-0 opacity-[0.06] select-none dark:opacity-[0.04]"
-          style={{
-            backgroundImage: `url(${withBasePath("/textures/groovepaper.png")})`,
-            backgroundRepeat: "repeat",
-          }}
-        />
+        {/* Facet paper-grain canvas behind the builder/editor */}
+        <TextureOverlay texture="paperGrain" opacity={0.3} className="fixed z-0 select-none" />
         <BuilderSidebarLayout
           activeSection={activeSection}
           onNavigate={handleNavigate}

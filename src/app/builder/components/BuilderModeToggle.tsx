@@ -58,7 +58,7 @@ export const BuilderModeToggle = React.memo(function BuilderModeToggle({
           role="radiogroup"
           aria-label="Editor View Mode"
           className={cn(
-            "relative flex h-8 items-center rounded-xl border border-border/50 bg-muted/40 p-0.5 shadow-xs backdrop-blur-md",
+            "border-border bg-muted relative flex h-8 items-center rounded-xl border p-0.5",
             className
           )}
         >
@@ -71,15 +71,13 @@ export const BuilderModeToggle = React.memo(function BuilderModeToggle({
             data-cuelume-press
             className={cn(
               "relative z-10 flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors duration-150 active:scale-[0.97]",
-              !isAdvanced
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground/80"
+              !isAdvanced ? "text-foreground" : "text-muted-foreground hover:text-foreground/80"
             )}
           >
             {!isAdvanced && (
               <motion.span
                 layoutId="builder-mode-pill"
-                className="absolute inset-0 z-[-1] rounded-lg border border-border/60 bg-card shadow-xs"
+                className="border-border bg-card absolute inset-0 z-[-1] rounded-lg border"
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
               />
             )}
@@ -96,36 +94,28 @@ export const BuilderModeToggle = React.memo(function BuilderModeToggle({
             data-cuelume-press
             className={cn(
               "relative z-10 flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors duration-150 active:scale-[0.97]",
-              isAdvanced
-                ? "text-amber-500 dark:text-amber-400"
-                : "text-muted-foreground hover:text-foreground/80"
+              isAdvanced ? "text-amber-600" : "text-muted-foreground hover:text-foreground/80"
             )}
           >
             {isAdvanced && (
               <motion.span
                 layoutId="builder-mode-pill"
-                className="absolute inset-0 z-[-1] rounded-lg border border-amber-500/30 bg-amber-500/10 shadow-xs dark:bg-amber-500/15"
+                className="absolute inset-0 z-[-1] rounded-lg border border-amber-500/30 bg-amber-500/10"
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
               />
             )}
             <Zap className="h-3.5 w-3.5" />
             <span>Advanced</span>
-            {isAdvanced && (
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
-              </span>
-            )}
           </button>
         </div>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs font-medium max-w-[260px] text-center">
+      <TooltipContent side="bottom" className="max-w-[260px] text-center text-xs font-medium">
         <p>
           {isAdvanced
             ? "Advanced Mode active: deep simulation tabs (Sectors, Workforce, Departments) unlocked."
             : "Switch to Advanced Mode for deep economic levers & department hierarchy."}
         </p>
-        <span className="mt-1 inline-block text-xs font-mono text-muted-foreground opacity-80">
+        <span className="text-muted-foreground mt-1 inline-block font-mono text-xs opacity-80">
           Shortcut: {shortcutLabel}
         </span>
       </TooltipContent>

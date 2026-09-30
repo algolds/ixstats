@@ -4,7 +4,7 @@ import { Globe } from "iconoir-react";
 import { Pagination } from "~/components/ui/pagination";
 import { CountryListCard } from "./CountryListCard";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 import { useMemo } from "react";
 // Define the type locally to avoid circular imports
@@ -51,13 +51,13 @@ export function CountriesGrid({
     return (
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 9 }).map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="pb-4">
+          <FacetCard key={i} depth={2} className="rounded-2xl">
+            <FacetCardHeader className="pb-4">
               <Skeleton className="h-6 w-8 rounded" />
               <Skeleton className="mt-2 h-6 w-32 rounded" />
-            </CardHeader>
-            <CardContent className="h-40" />
-          </Card>
+            </FacetCardHeader>
+            <FacetCardContent className="h-40" />
+          </FacetCard>
         ))}
       </div>
     );
@@ -65,21 +65,21 @@ export function CountriesGrid({
 
   if (countries.length === 0) {
     return (
-      <Card className="col-span-full py-16 text-center">
-        <CardHeader>
-          <Globe className="text-muted-foreground mx-auto h-16 w-16 opacity-50" />
-          <CardTitle className="text-foreground mt-4 text-xl font-medium">
+      <FacetCard depth={2} className="col-span-full rounded-2xl py-16 text-center">
+        <FacetCardHeader className="items-center">
+          <Globe aria-hidden="true" className="text-muted-foreground mx-auto h-12 w-12" />
+          <h2 className="text-foreground mt-4 text-xl font-semibold">
             {searchTerm ? "No countries match your search" : "No countries available"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm">
+          </h2>
+        </FacetCardHeader>
+        <FacetCardContent className="px-6">
+          <p className="text-muted-foreground mx-auto max-w-md text-sm">
             {searchTerm
               ? `Try adjusting "${searchTerm}" or clear filters.`
               : "No data. Please upload via Admin Panel."}
           </p>
-        </CardContent>
-      </Card>
+        </FacetCardContent>
+      </FacetCard>
     );
   }
 

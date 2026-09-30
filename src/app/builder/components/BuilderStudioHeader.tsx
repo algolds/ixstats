@@ -19,15 +19,16 @@ import {
   XmarkCircle as XCircle,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { soundEffects } from "~/lib/sound/cuelume";
-import { type BuilderSection, isScratchOrImportOrigin, getBuilderSteps } from "../lib/builder-theme";
+import {
+  type BuilderSection,
+  isScratchOrImportOrigin,
+  getBuilderSteps,
+} from "../lib/builder-theme";
 import type { BuilderAlertResult } from "../lib/builder-alerts";
 
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
@@ -36,7 +37,10 @@ import { useBuilderGuide } from "./builder-guide-context";
 import { BuilderModeToggle } from "./BuilderModeToggle";
 import { Eyebrow } from "~/components/ui/eyebrow";
 
-const SECTION_ICONS: Record<BuilderSection, React.ComponentType<{ className?: string }>> = {
+const SECTION_ICONS: Record<
+  BuilderSection,
+  React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
+> = {
   foundation: Globe,
   identity: Flag,
   government: Building2,
@@ -101,10 +105,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
     }
   };
 
-  const isScratchOrImport = useMemo(
-    () => isScratchOrImportOrigin(builderState),
-    [builderState]
-  );
+  const isScratchOrImport = useMemo(() => isScratchOrImportOrigin(builderState), [builderState]);
 
   const steps = useMemo(
     () => getBuilderSteps(activeSection, mode, isScratchOrImport),
@@ -114,7 +115,6 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
   const stepIndex = Math.max(0, steps.indexOf(activeSection));
   const isBackDisabled = activeSection === steps[0] || steps.indexOf(activeSection) <= 0;
   const isOnPreview = activeSection === "preview";
-
 
   const sectionAlerts = useMemo(
     () => alertResult?.forSection(activeSection) || [],
@@ -132,57 +132,56 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
 
   return (
     <TooltipProvider delayDuration={150}>
-      <header className="relative w-full pb-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+      <header className="relative w-full pb-3">
         <div className="mx-auto w-full max-w-6xl px-4">
-          <div className="border-border/50 bg-card/60 relative flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border p-2 sm:p-2.5 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-nowrap">
+          <FacetCard
+            depth={2}
+            className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl p-2 sm:flex-nowrap sm:p-2.5"
+          >
             {/* Left Group: Back Button & Step Context */}
             <div className="flex shrink-0 items-center gap-1.5">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={onBack}
                 disabled={isBackDisabled}
-                data-cuelume-press
-                className={cn(
-                  "flex h-8 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-                  isBackDisabled
-                    ? "cursor-not-allowed text-muted-foreground/30 opacity-40"
-                    : "cursor-pointer text-foreground/75 hover:bg-accent/50 hover:text-foreground"
-                )}
+                className="shrink-0 gap-1.5"
                 aria-label="Previous step"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
+                <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Back</span>
-              </button>
+              </Button>
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={handleReset}
-                    data-cuelume-press
-                    className="hover:bg-destructive/10 hover:text-destructive flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted-foreground/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                    className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8 shrink-0"
                     aria-label={mode === "edit" ? "Discard Changes & Exit" : "Restart Builder"}
                   >
                     {mode === "edit" ? (
-                      <XCircle className="h-3.5 w-3.5" />
+                      <XCircle aria-hidden="true" className="h-3.5 w-3.5" />
                     ) : (
-                      <RefreshCw className="h-3.5 w-3.5" />
+                      <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
                     )}
-                  </button>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
                   {mode === "edit" ? "Discard Changes & Exit" : "Restart Builder"}
                 </TooltipContent>
               </Tooltip>
 
-              <div className="h-4 w-px shrink-0 bg-border/60" />
+              <div aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
 
               <div className="hidden items-center gap-1.5 px-1 md:flex">
                 <Eyebrow>
                   Step {stepIndex + 1} of {steps.length}
                 </Eyebrow>
               </div>
-
             </div>
 
             {/* Center: Connected Step Progression Track */}
@@ -213,11 +212,13 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                       <motion.button
                         layout
                         type="button"
-                        transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.25 }}
                         onClick={() => onNavigate(stepKey)}
-                        className="border-amber-500/40 bg-amber-500/15 text-amber-500 dark:text-amber-400 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold shadow-xs active:scale-[0.97]"
+                        aria-current="step"
+                        data-cuelume-press="tick"
+                        className="text-foreground flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-xs font-semibold active:scale-[0.97]"
                       >
-                        <Icon className="h-3.5 w-3.5" />
+                        <Icon aria-hidden="true" className="h-3.5 w-3.5 text-amber-500" />
                         <span className="whitespace-nowrap">{label}</span>
                       </motion.button>
                     ) : (
@@ -229,21 +230,22 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                             disabled={!isAccessible}
                             onClick={() => isAccessible && onNavigate(stepKey)}
                             className={cn(
-                              "flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
+                              "flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2 text-xs font-medium transition-[color,background-color,border-color,opacity,transform] active:scale-[0.97]",
                               isCompleted
-                                ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 hover:bg-emerald-500/25 cursor-pointer"
+                                ? "bg-card hover:bg-accent cursor-pointer border-emerald-500/40 text-emerald-600"
                                 : isAccessible
-                                  ? "border-border/60 bg-muted/30 text-muted-foreground hover:border-border hover:bg-accent/40 hover:text-foreground cursor-pointer"
-                                  : "border-border/30 bg-muted/10 text-muted-foreground/30 opacity-40 cursor-not-allowed"
+                                  ? "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                                  : "border-border bg-card text-muted-foreground cursor-not-allowed opacity-40"
                             )}
                             aria-label={label}
+                            data-cuelume-press="tick"
                           >
                             {isCompleted ? (
                               <Check className="h-3 w-3 stroke-[2.5]" />
                             ) : (
                               <span className="h-1.5 w-1.5 rounded-full bg-current" />
                             )}
-                            <span className="hidden lg:inline text-xs">{label}</span>
+                            <span className="hidden text-xs lg:inline">{label}</span>
                           </motion.button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="text-xs font-medium">
@@ -259,37 +261,39 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
             {/* Right Group: Guide Trigger & Primary Action CTA */}
             <div className="flex shrink-0 items-center gap-2">
               {hasAlerts && (
-                <div
-                  className={cn(
-                    "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold",
+                <Badge
+                  variant="outline"
+                  className={
                     activeErrors.length > 0
-                      ? "bg-destructive/15 text-destructive"
-                      : "bg-amber-500/15 text-amber-500 dark:text-amber-400"
-                  )}
+                      ? "border-destructive/50 text-destructive"
+                      : "border-amber-500/50 text-amber-600"
+                  }
                   title={`${activeErrors.length} errors, ${activeWarnings.length} warnings`}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  <span>{activeErrors.length > 0 ? `${activeErrors.length} req` : `${activeWarnings.length} tip`}</span>
-                </div>
+                  {activeErrors.length > 0
+                    ? `${activeErrors.length} req`
+                    : `${activeWarnings.length} tip`}
+                </Badge>
               )}
 
               <BuilderModeToggle />
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => {
                       soundEffects.press();
                       openGuide({ tab: "milestones", section: activeSection });
                     }}
-                    data-cuelume-press
-                    className="border-blue-500/30 bg-blue-500/10 text-blue-500 dark:text-blue-400 hover:border-blue-500/40 hover:bg-blue-500/20 flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                    className="shrink-0 gap-1.5"
                     aria-label="Open Step Guide"
                   >
-                    <BookOpen className="h-3.5 w-3.5" />
+                    <BookOpen aria-hidden="true" className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Guide</span>
-                  </button>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
                   Step Companion & Guidelines
@@ -301,16 +305,17 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                   size="sm"
                   onClick={onSubmit}
                   disabled={isSubmitting}
-                  className="h-8 shrink-0 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 text-xs font-bold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97]"
+                  aria-busy={isSubmitting}
+                  className="shrink-0 bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                       <span>{mode === "edit" ? "Saving..." : "Creating..."}</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                      <CheckCircle aria-hidden="true" className="h-3.5 w-3.5" />
                       <span>{mode === "edit" ? "Save Nation" : "Create Nation"}</span>
                     </>
                   )}
@@ -319,14 +324,14 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                 <Button
                   size="sm"
                   onClick={onContinue}
-                  className="h-8 shrink-0 rounded-xl bg-emerald-600 px-3.5 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97]"
+                  className="shrink-0 bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
                 >
                   <span>Continue</span>
-                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
-          </div>
+          </FacetCard>
         </div>
       </header>
     </TooltipProvider>

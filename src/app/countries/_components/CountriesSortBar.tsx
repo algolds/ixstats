@@ -64,20 +64,17 @@ export default function CountriesSortBar({
     <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>
-          <DropdownMenuTrigger className="ring-offset-background focus-visible:ring-ring border-border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
-            {sortDirection === "asc" ? (
-              <SortAsc className="h-4 w-4" />
-            ) : (
-              <SortDesc className="h-4 w-4" />
-            )}
-            <span className="ml-2">
-              {sortOptions.find((o) => o.value === sortField)?.label || "Sort"}
-            </span>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-10">
+              {sortDirection === "asc" ? (
+                <SortAsc aria-hidden="true" className="h-4 w-4" />
+              ) : (
+                <SortDesc aria-hidden="true" className="h-4 w-4" />
+              )}
+              <span>{sortOptions.find((o) => o.value === sortField)?.label || "Sort"}</span>
+            </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="bg-background/90 border-border/50 backdrop-blur-md"
-          >
+          <DropdownMenuContent align="start">
             <DropdownMenuGroup>
               <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
               <DropdownMenuSeparator />
@@ -112,12 +109,16 @@ export default function CountriesSortBar({
         {/* Search input (optional) */}
         {onSearchChange && (
           <div className="relative flex items-center">
-            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
+            <Search
+              aria-hidden="true"
+              className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2"
+            />
             <Input
               placeholder="Search countries..."
+              aria-label="Search countries"
               value={searchTerm || ""}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-10 w-64 pl-9 focus:scale-100"
+              className="facet-refraction-none h-10 w-full pl-9 sm:w-64"
               autoComplete="off"
             />
           </div>

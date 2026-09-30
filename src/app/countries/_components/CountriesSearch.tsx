@@ -159,10 +159,7 @@ export function CountriesSearch({
                 {sortOptions.find((o) => o.value === sortField)?.label}
               </span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="bg-background border-border backdrop-blur-md"
-            >
+            <DropdownMenuContent align="end">
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel className="text-muted-foreground">
                   Sort By
@@ -232,7 +229,7 @@ export function CountriesSearch({
                 <SelectTrigger id="tierFilter">
                   <SelectValue placeholder="Select tier" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-border backdrop-blur-md">
+                <SelectContent>
                   {TIER_FILTER_OPTIONS.map((opt) => (
                     <SelectItem
                       key={opt.value}
@@ -257,7 +254,7 @@ export function CountriesSearch({
                 <SelectTrigger id="continentFilter">
                   <SelectValue placeholder="Select continent" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-border backdrop-blur-md">
+                <SelectContent>
                   <SelectItem
                     value="all"
                     className="text-foreground hover:bg-accent hover:text-accent-foreground"
@@ -292,7 +289,7 @@ export function CountriesSearch({
                 <SelectTrigger id="regionFilter">
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-border backdrop-blur-md">
+                <SelectContent>
                   <SelectItem
                     value="all"
                     className="text-foreground hover:bg-accent hover:text-accent-foreground"

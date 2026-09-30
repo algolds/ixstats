@@ -17,6 +17,16 @@ import { useCountryComparison } from "~/hooks/useCountryComparison";
 import { useAllCountriesData } from "~/hooks/useAllCountriesData";
 import { createUrl } from "~/lib/utils";
 import { matchesTierFilter } from "~/lib/economic-tier-filter";
+import { Filter } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
 
 import type { PageCountryData } from "../countries/_components/CountriesGrid";
 
@@ -205,7 +215,7 @@ export default function ExplorePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Error Loading Countries</h1>
+          <h1 className="text-destructive text-2xl font-semibold">Error Loading Countries</h1>
           <p className="text-muted-foreground mt-2">{error.message}</p>
         </div>
       </div>
@@ -244,6 +254,25 @@ export default function ExplorePage() {
     }
   };
 
+  const renderFilterSidebar = (surface: "glass" | "solid") => (
+    <CountriesFilterSidebar
+      surface={surface}
+      searchTerm={searchTerm}
+      onSearchChange={setSearchTerm}
+      tierFilter={tierFilter}
+      onTierFilterChange={setTierFilter}
+      continentFilter={continentFilter}
+      onContinentFilterChange={setContinentFilter}
+      regionFilter={regionFilter}
+      onRegionFilterChange={setRegionFilter}
+      populationRange={populationRange}
+      onPopulationRangeChange={setPopulationRange}
+      availableContinents={availableContinents}
+      availableRegions={availableRegions}
+      onClearAll={handleClearAll}
+    />
+  );
+
   return (
     <div className="bg-background min-h-screen">
       <div className="container mx-auto px-4 py-8">
@@ -255,30 +284,30 @@ export default function ExplorePage() {
         />
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
-          {/* Sidebar: Filters (sticky on desktop) */}
-          <div className="hidden lg:block">
-            <CountriesFilterSidebar
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              tierFilter={tierFilter}
-              onTierFilterChange={setTierFilter}
-              continentFilter={continentFilter}
-              onContinentFilterChange={setContinentFilter}
-              regionFilter={regionFilter}
-              onRegionFilterChange={setRegionFilter}
-              populationRange={populationRange}
-              onPopulationRangeChange={setPopulationRange}
-              availableContinents={availableContinents}
-              availableRegions={availableRegions}
-              onClearAll={handleClearAll}
-            />
-          </div>
+          {/* Sidebar: Filters (sticky rail on desktop) */}
+          <aside aria-label="Filters" className="hidden lg:block">
+            <div className="lg:sticky lg:top-20">{renderFilterSidebar("glass")}</div>
+          </aside>
 
           {/* Main content: Sort/search bar, grid, pagination */}
           <div>
-            {/* On mobile, show filter button to open modal (not implemented yet) */}
+            {/* On mobile, the same filters open in a sheet */}
             <div className="mb-4 lg:hidden">
-              <button className="btn-secondary w-full rounded-md py-2">Show Filters</button>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="secondary" className="w-full">
+                    <Filter aria-hidden="true" className="h-4 w-4" />
+                    Show Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-sm">
+                  <SheetHeader className="mb-4 text-left">
+                    <SheetTitle>Filters</SheetTitle>
+                    <SheetDescription>Narrow the list of countries.</SheetDescription>
+                  </SheetHeader>
+                  {renderFilterSidebar("solid")}
+                </SheetContent>
+              </Sheet>
             </div>
 
             {/* Sort/search bar and compare button */}

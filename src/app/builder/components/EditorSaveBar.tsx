@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { CloudCheck, CloudSync, CloudXmark, FloppyDisk, SystemRestart, Undo } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { describeSaveStatus, type EditorSaveStatus } from "./editor/editor-sections";
 
 interface EditorSaveBarProps {
@@ -62,21 +63,23 @@ export function EditorSaveBar({
         animate={{ opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } }}
         className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="border-border bg-card/95 pointer-events-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border px-4 py-3 shadow-lg backdrop-blur-xl">
+        <FacetContainer
+          depth={3}
+          className="pointer-events-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl px-4 py-3"
+        >
           <div aria-live="polite" className="flex min-w-0 flex-1 items-center gap-3">
-            <span
+            <StatusIcon
               aria-hidden="true"
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                "h-5 w-5 shrink-0",
                 status === "error"
-                  ? "bg-destructive/10 text-destructive"
+                  ? "text-destructive"
                   : hasChanges
-                    ? "bg-amber-500/15 text-amber-500"
-                    : "bg-muted text-muted-foreground"
+                    ? "text-amber-500"
+                    : "text-muted-foreground",
+                status === "saving" && "animate-spin"
               )}
-            >
-              <StatusIcon className={cn("h-4 w-4", status === "saving" && "animate-spin")} />
-            </span>
+            />
             <div className="min-w-0">
               <p
                 className="text-foreground truncate text-sm font-semibold"
@@ -94,13 +97,15 @@ export function EditorSaveBar({
                 {status === "error" && (
                   <>
                     {" · "}
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       onClick={onRetry}
-                      className="font-semibold underline underline-offset-2"
+                      className="text-destructive h-auto p-0 font-semibold underline"
                     >
                       Try again
-                    </button>
+                    </Button>
                   </>
                 )}
               </p>
@@ -145,7 +150,7 @@ export function EditorSaveBar({
               {isSaving ? "Saving…" : "Save"}
             </Button>
           </div>
-        </div>
+        </FacetContainer>
       </motion.div>
     </>
   );
