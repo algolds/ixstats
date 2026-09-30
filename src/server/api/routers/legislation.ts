@@ -164,7 +164,7 @@ export const legislationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "No seated legislature — hold an election (and seat parties) before voting on bills",
+            "No seated legislature yet — bills can go to a vote once an election seats the parties",
         });
       }
 
@@ -235,7 +235,10 @@ export const legislationRouter = createTRPCRouter({
 
       const blocs = await loadBlocs(ctx.db as PrismaClient, bill.countryId);
       if (blocs.length === 0) {
-        return { available: false as const, reason: "No seated legislature to whip." };
+        return {
+          available: false as const,
+          reason: "No seated legislature to whip yet — the next election seats the parties.",
+        };
       }
 
       const standing = await getGovernmentBacking(ctx.db as PrismaClient, bill.countryId);

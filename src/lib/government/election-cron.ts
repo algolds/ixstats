@@ -1,19 +1,22 @@
 /**
  * Scheduled elections — cron driver.
  *
- * Resolves elections whose `scheduledIxTime` has arrived on the IxTime clock, then
- * auto-schedules the next one a full term later. This is what makes politics run on
- * its own: return after a while and your legislature has turned over. The simulation
- * itself lives in election-simulation.ts (shared with the manual "Simulate" button).
+ * 1. Resolves elections whose `scheduledIxTime` has arrived on the IxTime clock
+ *    (resolveElection: parties go on the ballot, the shared simulation seats them, and
+ *    the next general election is queued a full term later).
+ * 2. Sweeps legislatures with no upcoming election and schedules one
+ *    (ensureUpcomingElection) — this is what gives nations that configured their
+ *    legislature and parties before MC-2 their first election.
+ *
+ * This is what makes politics run on its own: return after a while and your legislature
+ * has turned over. See election-lifecycle.ts for the lifecycle, election-simulation.ts
+ * for the count.
  *
  * ⚠️ Compares against IxTime.getCurrentIxTime(), never the wall clock.
  */
 import { db } from "~/server/db";
 import { IxTime } from "~/lib/ixtime";
-import { simulateElectionCore } from "./election-simulation";
-
-const GAME_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
-const DEFAULT_TERM_YEARS = 4;
+import { ensureUpcomingElection, resolveElection } from "./election-lifecycle";
 
 export interface ElectionCronResult {
   resolved: number;
@@ -27,55 +30,37 @@ export async function processDueElections(): Promise<ElectionCronResult> {
 
   const due = await db.election.findMany({
     where: { status: "upcoming", scheduledIxTime: { lte: now } },
-    select: {
-      id: true,
-      countryId: true,
-      legislatureId: true,
-      scheduledIxTime: true,
-    },
+    select: { id: true },
   });
 
   for (const election of due) {
     try {
-      const sim = await simulateElectionCore(db, election.id);
-      if (!sim.ok) {
-        // Most commonly: fewer than 2 candidates registered. Leave it upcoming so the
-        // owner can still register candidates and it resolves on a later pass.
+      const { outcome, nextElectionId } = await resolveElection(db, election.id);
+      if (outcome !== "resolved") {
+        // Most commonly: fewer than 2 active parties. It stays upcoming, and resolves on a
+        // later pass once a second party exists.
         result.skipped++;
         continue;
       }
       result.resolved++;
-
-      // Auto-schedule the next election one term later — unless one is already queued.
-      const alreadyQueued = await db.election.count({
-        where: { countryId: election.countryId, status: "upcoming" },
-      });
-      if (alreadyQueued > 0) continue;
-
-      const legislature = await db.legislature.findUnique({
-        where: { id: election.legislatureId },
-        select: { termLength: true },
-      });
-      const termYears =
-        legislature?.termLength && legislature.termLength > 0
-          ? legislature.termLength
-          : DEFAULT_TERM_YEARS;
-      const nextScheduled = (election.scheduledIxTime ?? now) + termYears * GAME_YEAR_MS;
-
-      await db.election.create({
-        data: {
-          countryId: election.countryId,
-          legislatureId: election.legislatureId,
-          name: `General Election (Year ${IxTime.getCurrentGameYear(nextScheduled)})`,
-          electionType: "general",
-          scheduledIxTime: nextScheduled,
-          status: "upcoming",
-        },
-      });
-      result.scheduled++;
+      if (nextElectionId) result.scheduled++;
     } catch (err) {
       console.error(`[ElectionCron] Failed to process ${election.id}:`, err);
       result.skipped++;
+    }
+  }
+
+  // First elections (and any missing follow-up) for legislatures with nothing queued.
+  const unscheduled = await db.legislature.findMany({
+    where: { country: { elections: { none: { status: { in: ["upcoming", "voting"] } } } } },
+    select: { countryId: true },
+  });
+  for (const { countryId } of unscheduled) {
+    try {
+      const ensured = await ensureUpcomingElection(db, countryId);
+      if (ensured.status === "created") result.scheduled++;
+    } catch (err) {
+      console.error(`[ElectionCron] Failed to schedule an election for ${countryId}:`, err);
     }
   }
 

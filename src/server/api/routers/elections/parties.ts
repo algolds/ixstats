@@ -2,6 +2,19 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
+import { ensureUpcomingElection } from "~/lib/government/election-lifecycle";
+
+/** MC-2: a new (or re-activated) party may complete the setup the first election needs. */
+async function scheduleElectionIfReady(
+  db: Parameters<typeof ensureUpcomingElection>[0],
+  countryId: string
+) {
+  try {
+    await ensureUpcomingElection(db, countryId);
+  } catch (e) {
+    console.warn("[Elections] could not schedule an election:", e);
+  }
+}
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -63,6 +76,8 @@ export const electionsPartiesRouter = createTRPCRouter({
         },
       });
 
+      await scheduleElectionIfReady(ctx.db, input.countryId);
+
       try {
         await notificationAPI.create({
           title: "Political Party Formed",
@@ -113,7 +128,9 @@ export const electionsPartiesRouter = createTRPCRouter({
       }
 
       const { id, ...data } = input;
-      return ctx.db.politicalParty.update({ where: { id }, data });
+      const updated = await ctx.db.politicalParty.update({ where: { id }, data });
+      if (input.isActive === true) await scheduleElectionIfReady(ctx.db, party.countryId);
+      return updated;
     }),
 
   deleteParty: protectedProcedure

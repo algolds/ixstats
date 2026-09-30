@@ -2,6 +2,10 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
+import {
+  ensureUpcomingElection,
+  type EnsureElectionResult,
+} from "~/lib/government/election-lifecycle";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -172,6 +176,17 @@ export const electionsLegislatureRouter = createTRPCRouter({
         data: seatsToCreate,
       });
 
+      // MC-2: the seats above are vacant. Schedule the first election — or, when the
+      // legislature is being reconfigured (dissolved), pull the next one forward as a snap
+      // election — so the chamber gets seated and bills can reach a vote. The elections
+      // cron sweep retries this if it fails here.
+      let election: EnsureElectionResult | null = null;
+      try {
+        election = await ensureUpcomingElection(ctx.db, input.countryId, { snap: true });
+      } catch (e) {
+        console.warn("[Elections] configureLegislature: could not schedule an election:", e);
+      }
+
       try {
         await notificationAPI.create({
           title: "Legislature Configured",
@@ -187,6 +202,6 @@ export const electionsLegislatureRouter = createTRPCRouter({
         console.warn("[Notifications] elections.configureLegislature:", e);
       }
 
-      return legislature;
+      return { ...legislature, election };
     }),
 });
