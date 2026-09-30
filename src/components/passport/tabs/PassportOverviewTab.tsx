@@ -14,11 +14,13 @@ import {
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { PassportShowcase } from "../showcase/PassportShowcase";
 import type { PassportPayload } from "../types";
 
 interface PassportOverviewTabProps {
   data: PassportPayload;
   cleanUsername: string;
+  onOpenVault?: () => void;
 }
 
 const SECTION_LABEL =
@@ -120,31 +122,47 @@ function StatCell({ label, value, sub }: { label: string; value: string; sub: st
   );
 }
 
+/** Civic stature cells; a section the owner hid is left out (the server did not send it). */
 function civicStats(data: PassportPayload) {
   const lore = data.wiki.lorewards;
   const laurels = lore ? lore.dailyWins + lore.weeklyWins + lore.monthlyWins : 0;
+  const forumStats = data.forum.stats;
   return [
-    {
-      label: "Lorewards",
-      value: lore?.rank ? `#${lore.rank}` : "Unranked",
-      sub: `${(lore?.totalScore ?? 0).toLocaleString()} pts`,
-    },
-    {
-      label: "Streak",
-      value: `${lore?.currentStreak ?? 0}d`,
-      sub: `Best ${lore?.longestStreak ?? 0}d`,
-    },
-    { label: "Laurels", value: laurels.toLocaleString(), sub: "Daily · weekly · monthly" },
-    {
-      label: "Collector",
-      value: `Lv ${data.vault.collectorLevel}`,
-      sub: `${data.vault.collectorXp.toLocaleString()} XP`,
-    },
-    {
-      label: "Forum",
-      value: data.forum.userTitle || "Member",
-      sub: `${data.forum.trophyPoints.toLocaleString()} trophy pts`,
-    },
+    ...(data.privacy.accolades
+      ? [
+          {
+            label: "Lorewards",
+            value: lore?.rank ? `#${lore.rank}` : "Unranked",
+            sub: `${(lore?.totalScore ?? 0).toLocaleString()} pts`,
+          },
+          {
+            label: "Streak",
+            value: `${lore?.currentStreak ?? 0}d`,
+            sub: `Best ${lore?.longestStreak ?? 0}d`,
+          },
+          { label: "Laurels", value: laurels.toLocaleString(), sub: "Daily · weekly · monthly" },
+        ]
+      : []),
+    ...(data.vault
+      ? [
+          {
+            label: "Collector",
+            value: `Lv ${data.vault.collectorLevel}`,
+            sub: `${data.vault.collectorXp.toLocaleString()} XP`,
+          },
+        ]
+      : []),
+    ...(data.privacy.forumStats
+      ? [
+          {
+            label: "Forum",
+            value: forumStats ? forumStats.userTitle || "Member" : "—",
+            sub: forumStats
+              ? `${forumStats.trophyPoints.toLocaleString()} trophy pts`
+              : "Forum stats unavailable",
+          },
+        ]
+      : []),
     {
       label: "WikiOS",
       value: data.wiki.editCount === null ? "-" : data.wiki.editCount.toLocaleString(),
@@ -153,10 +171,14 @@ function civicStats(data: PassportPayload) {
   ];
 }
 
-/** Tab 1 — identity overview: featured realm, linked platforms and civic stature (plan 188). */
+/**
+ * Tab 1 — identity overview: featured realm, the showcase, linked platforms and civic stature
+ * (plan 188).
+ */
 export const PassportOverviewTab = React.memo(function PassportOverviewTab({
   data,
   cleanUsername,
+  onOpenVault,
 }: PassportOverviewTabProps) {
   const { forum, wiki, thinkpages, discord } = data;
   const forumJoined = forum.joinedDate
@@ -174,6 +196,8 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
           <FeaturedRealm data={data} cleanUsername={cleanUsername} />
         </FacetCard>
       </section>
+
+      <PassportShowcase data={data} cleanUsername={cleanUsername} onOpenVault={onOpenVault} />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <section className="space-y-3">

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
 import {
   publicProcedure,
   protectedProcedure,
@@ -12,6 +11,7 @@ import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
+import { loadVitalityExtras, scoreGovernmentalEfficiency } from "~/server/shared/mycountry-helpers";
 import {
   safelyIncludeRelations,
   prepareBaseCountryData,
@@ -20,6 +20,7 @@ import {
   getCountryComponentsStatsData,
   resolveCountryRefId,
 } from "./utils";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
 
@@ -353,17 +354,7 @@ export const economyProcedures = {
   getEditorRelations: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        include: { role: true },
-      });
-      const role = user?.role?.name;
-      if (user?.countryId !== input.countryId && role !== "admin" && role !== "system-owner") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to load this country's editor data.",
-        });
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const [
         demographics,
@@ -512,32 +503,14 @@ export const economyProcedures = {
           return (growthHealth + densityFactor) / 2;
         };
 
-        const calculateDiplomaticStanding = () => {
-          return Math.min(
-            100,
-            Math.max(
-              40,
-              ((country as any).globalDiplomaticInfluence || 50) +
-                ((country as any).tradeRelationshipStrength || 10) +
-                ((country as any).allianceStrength || 15) -
-                ((country as any).diplomaticTensions || 5)
-            )
-          );
-        };
-
-        const calculateGovernmentalEfficiency = () => {
-          const economicTierScore =
-            {
-              Extravagant: 95,
-              "Very Strong": 85,
-              Strong: 75,
-              Healthy: 65,
-              Developed: 50,
-              Developing: 35,
-              Impoverished: 25,
-            }[currentStats.newStats.economicTier] || 25;
-          return economicTierScore * 0.8;
-        };
+        // Diplomatic Standing and Governmental Efficiency come from the diplomacy tables and
+        // the government structure (null = no data, shown as "—"), never from stored fields.
+        const vitalityExtras = await loadVitalityExtras(country.id, ctx.db);
+        const diplomaticStanding = vitalityExtras.diplomaticStanding ?? null;
+        const governmentalEfficiency = scoreGovernmentalEfficiency(
+          vitalityExtras.governmentEffectiveness
+        );
+        const diplomaticInputs = vitalityExtras.diplomaticInputs;
 
         const economicVitality =
           country.economicVitality && country.economicVitality > 5
@@ -549,21 +522,11 @@ export const economyProcedures = {
             ? country.populationWellbeing
             : calculatePopulationWellbeing();
 
-        const diplomaticStanding =
-          country.diplomaticStanding && country.diplomaticStanding > 5
-            ? country.diplomaticStanding
-            : calculateDiplomaticStanding();
-
-        const governmentalEfficiency =
-          country.governmentalEfficiency && country.governmentalEfficiency > 5
-            ? country.governmentalEfficiency
-            : calculateGovernmentalEfficiency();
-
         return {
           economicVitality: Math.round(economicVitality),
           populationWellbeing: Math.round(populationWellbeing),
-          diplomaticStanding: Math.round(diplomaticStanding),
-          governmentalEfficiency: Math.round(governmentalEfficiency),
+          diplomaticStanding,
+          governmentalEfficiency,
           economicMetrics: {
             gdpPerCapita: `$${currentStats.newStats.currentGdpPerCapita.toLocaleString()}`,
             growthRate: `${(currentStats.newStats.adjustedGdpGrowth * 100).toFixed(1)}%`,
@@ -575,25 +538,31 @@ export const economyProcedures = {
             tier: currentStats.newStats.populationTier,
           },
           diplomaticMetrics: {
-            allies: `${Math.floor(((country as any).globalDiplomaticInfluence || 50) / 10) + 3}`,
+            allies: `${diplomaticInputs.allianceMemberships}`,
             reputation:
-              diplomaticStanding > 75
-                ? "Strong"
-                : diplomaticStanding > 50
-                  ? "Stable"
-                  : "Developing",
-            treaties: `${Math.floor(((country as any).tradeRelationshipStrength || 25) / 2) + 5}`,
+              diplomaticStanding === null
+                ? "—"
+                : diplomaticStanding > 75
+                  ? "Strong"
+                  : diplomaticStanding > 50
+                    ? "Stable"
+                    : "Developing",
+            treaties: `${diplomaticInputs.activeTreaties}`,
           },
           governmentMetrics: {
-            approval: `${Math.round(Math.min(95, Math.max(25, 50 + currentStats.newStats.adjustedGdpGrowth * 1500)))}%`,
+            approval: `${Math.round(country.publicApproval)}%`,
             efficiency:
-              governmentalEfficiency > 80
-                ? "Excellent"
-                : governmentalEfficiency > 60
-                  ? "Good"
-                  : "Improving",
+              governmentalEfficiency === null
+                ? "—"
+                : governmentalEfficiency > 80
+                  ? "Excellent"
+                  : governmentalEfficiency > 60
+                    ? "Good"
+                    : "Improving",
             stability:
-              diplomaticStanding > 70 && governmentalEfficiency > 60 ? "Stable" : "Monitored",
+              (diplomaticStanding ?? 0) > 70 && (governmentalEfficiency ?? 0) > 60
+                ? "Stable"
+                : "Monitored",
           },
           generatedAt: currentTime,
         };

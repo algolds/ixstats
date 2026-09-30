@@ -2,6 +2,20 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
+import { ensureUpcomingElection } from "~/lib/government/election-lifecycle";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+
+/** MC-2: a new (or re-activated) party may complete the setup the first election needs. */
+async function scheduleElectionIfReady(
+  db: Parameters<typeof ensureUpcomingElection>[0],
+  countryId: string
+) {
+  try {
+    await ensureUpcomingElection(db, countryId);
+  } catch (e) {
+    console.warn("[Elections] could not schedule an election:", e);
+  }
+}
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -41,13 +55,8 @@ export const electionsPartiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify user owns this country
-      if (ctx.user?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only manage parties for your own country",
-        });
-      }
+      // Verify user owns this country (any nation they own, not only the active one)
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const party = await ctx.db.politicalParty.create({
         data: {
@@ -62,6 +71,8 @@ export const electionsPartiesRouter = createTRPCRouter({
           currentSupport: input.baseSupport,
         },
       });
+
+      await scheduleElectionIfReady(ctx.db, input.countryId);
 
       try {
         await notificationAPI.create({
@@ -108,12 +119,12 @@ export const electionsPartiesRouter = createTRPCRouter({
       if (!party) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Party not found" });
       }
-      if (ctx.user?.countryId !== party.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertCountryWriteAccess(ctx, party.countryId);
 
       const { id, ...data } = input;
-      return ctx.db.politicalParty.update({ where: { id }, data });
+      const updated = await ctx.db.politicalParty.update({ where: { id }, data });
+      if (input.isActive === true) await scheduleElectionIfReady(ctx.db, party.countryId);
+      return updated;
     }),
 
   deleteParty: protectedProcedure
@@ -125,9 +136,7 @@ export const electionsPartiesRouter = createTRPCRouter({
       if (!party) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      if (ctx.user?.countryId !== party.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertCountryWriteAccess(ctx, party.countryId);
 
       return ctx.db.politicalParty.delete({ where: { id: input.id } });
     }),

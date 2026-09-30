@@ -13,6 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
+import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { globalCache } from "~/lib/cache";
 
@@ -27,6 +28,11 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const cacheKey = `user_vault_balance:${userId}`;
       const cached = await globalCache.get<any>(cacheKey);
       if (cached) return cached;
+
+      // Accounts that predate the sign-up bonus get it on first Vault open (no-op once paid)
+      if (NEW_PLAYER_BONUS_ON_VAULT_OPEN) {
+        await grantNewPlayerBonus(ctx.db as any, userId, "vault_opened");
+      }
 
       const balance = await vaultService.getBalance(userId, ctx.db as any);
       await globalCache.set(cacheKey, balance, { ttl: 30 });

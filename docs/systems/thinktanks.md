@@ -2,7 +2,7 @@
 
 **Last updated:** August 2026  
 **Status:** 🟡 Partial — ThinkTanks v2 (Feed + Members live; Docs and Chat deferred); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
-**Route:** `/thinktanks` · `/thinktanks/[groupId]`  
+**Route:** `/thinktanks` · `/thinktanks/[groupId]` · realm boards at `/r/[realm]/board`  
 **Design System:** Facet Glass Physics (see [Facet Design System](../reference/facet-design-system.md); there is no `/apple-design` route)  
 
 ThinkTanks is IxStates' dedicated group collaboration and worldbuilding environment. It bridges real-time messaging, asynchronous discussion, collaborative document authoring, and institutional roleplay into a cohesive workspace that acts as a sister interface to the [ThinkShare Unified Messaging](./social.md#4-thinkshare-real-time-messaging-messages) platform.
@@ -76,7 +76,7 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
   - `🔍 Critique wanted` — Requests for feedback and critique
   - `🗺️ Lore & Maps` — Cartographic crops and regional lore drafts
 - **Multi-Persona vs. Authentic User Identity**:
-  - **When Multi-Persona Posting is Disabled (Default)**: Group members post directly as their **authentic user account** (`User` profile, nation name, and sovereignty flag). No persona selector chips or roleplay badges (`CITIZEN`, `MEDIA`) are shown.
+  - **When Multi-Persona Posting is Disabled (Default)**: Group members post as themselves. `createGroupPost` without an `accountId` posts through the caller's **personal persona** (`accountType: "personal"`, no country; created on first use, one per user, see [social.md](./social.md#2-account-manager--discord-bridge)). It never borrows the user's oldest persona (which could be a government account) and never attaches an arbitrary nation. The group feed card shows the real user's name and nation. No persona selector chips or roleplay badges (`CITIZEN`, `MEDIA`) are shown.
   - **When Multi-Persona Posting is Enabled**: Members can switch between distinct ThinkPages personas (the ThinkPages account types `government`, `media` and `citizen`, `accounts.ts`), displaying the persona name and corresponding badge on feed cards.
 
 ### Pillar 2: Members (`ThinktankRosterTab.tsx`)
@@ -102,6 +102,41 @@ To preserve group privacy and encourage participation while providing a rich bro
    - The bottom tab bar (`Members`) is completely concealed for non-members, keeping the header clean and uncluttered.
 3. **Instant Seamless Unlock**:
    - Clicking **`Join Group`** joins the group, executes Cuelume sound effects, unblurs the feed, and smoothly reveals workspace tabs without a page reload.
+
+---
+
+## 4a. Realm Boards (`type: "realm_board"`)
+
+Every realm has a board, the NationStates regional message board, built on this group primitive
+(`src/server/api/routers/thinkpages/thinktanks/realm-board.ts`; see [Realms](./realms.md)).
+
+- **Storage.** A `ThinktankGroup` with `type: "realm_board"`, mapped to its realm by `RealmBoard`
+  (`prisma/schema/realm-boards.prisma`: `realmId` and `groupId`, both unique). It has the usual linked
+  ThinkShare conversation (the Chat tab) and settings `{ allowPersonaPosting: true }`.
+- **Created on demand.** `realms.getBoard` creates the board, its chat and its `RealmBoard` row in one
+  transaction the first time anyone opens `/r/[realm]/board`. When two first opens race, the unique
+  `realmId` lets one win and the other returns the winner's board. There is no bulk migration.
+- **Access follows nation ownership, not member rows.** `getGroupAccess` hands realm boards to
+  `getRealmBoardAccess`:
+  - **Read:** anyone, signed out included (`REALM_BOARD_PUBLIC_READ = true`; realms are never private).
+    Non-members see the feed without the frosted blur, and a notice replaces the composer.
+  - **Member (post, chat, docs):** owners of a nation in the realm (`Country.ownerUserId`), and its moderators.
+  - **Manager (moderate):** site admins and the realm's founder (`canModerateRealm`).
+  - A leftover `ThinktankMember` row never lets someone post after they lose their last nation there.
+- **Membership sync.** Each `realms.getBoard` call joins the caller on their first visit (a member row
+  plus a chat participant; a later Leave is respected until they press Join). It also deactivates the
+  rows and chat participants of anyone who no longer owns a nation in the realm (the founder is kept),
+  and recounts `memberCount`. `joinThinktank` on a board needs nation ownership, not an invite.
+- **Personas.** A persona posting to a board must belong to a nation of the realm (`requireRealmPersona`).
+  "Post as yourself" uses the caller's oldest persona of one of their nations there, or creates a
+  citizen persona of their first nation there. Board posts are stamped in real time (other group posts
+  still use IxTime) because they also appear in the realm feed, which is ordered by real time.
+- **Not group-managed.** A board cannot be deleted, invited to, or have its `type` changed, even by its
+  moderators (`BAD_REQUEST`). Boards are left out of the `/thinktanks` Discover list (`getThinktanks`
+  `type: "all"`); the directory at `/realms` lists them.
+- **Moderation.** `removeGroupPost` (group owners and admins; on a board, the realm's moderators)
+  removes the group tag from a post and sets `visibility: "removed"`, so it leaves the board, the realm
+  feed and the main feed. It works for every ThinkTank.
 
 ---
 
@@ -151,6 +186,7 @@ ThinkTanks utilizes models defined across `prisma/schema/social.prisma`:
 | **`ThinktankInvite`** | Invitation record (`invitedBy`, `invitedUser`, `inviteCode`, `expiresAt`, `isUsed`) |
 | **`CollaborativeDoc`** | Shared document (`id`, `groupId`, `title`, `content`, `version`, `createdBy`, `lastEditBy`, `isPublic`, `createdAt`, `updatedAt`) |
 | **`ThinkshareConversation`** | Linked real-time chat channel for group discussions |
+| **`RealmBoard`** | `prisma/schema/realm-boards.prisma`: maps a realm (`realmId`, unique) to its board group (`groupId`, unique). Plain ids, no relations |
 
 ---
 
@@ -169,7 +205,8 @@ All ThinkTank operations are exposed via the `thinkpages` tRPC router (`src/serv
 | `api.thinkpages.updateGroupSettings` | Mutation | `{ groupId, allowPersonaPosting?, bannerUrl?, rules?, themeAccent?, pinnedDocIds? }` | Updates group configurations and banner art |
 | `api.thinkpages.inviteToThinktank` | Mutation | `{ groupId, userIds }` | Dispatches group invitations to specified users |
 | `api.thinkpages.getGroupFeed` | Query | `{ groupId: string, limit?: number, cursor?: string }` | Returns group timeline posts with author accounts and reactions |
-| `api.thinkpages.createGroupPost` | Mutation | `{ groupId, accountId?, content, hashtags?, mediaUrls? }` | Publishes a note to the group feed |
+| `api.thinkpages.createGroupPost` | Mutation | `{ groupId, accountId?, content, hashtags?, mediaUrls? }` | Publishes a note to the group feed (realm boards: see §4a) |
+| `api.thinkpages.removeGroupPost` | Mutation | `{ groupId, postId }` | Group owners and admins (realm-board moderators) remove a post from the group feed and hide it |
 | `api.thinkpages.getThinktankDocuments` / `createThinktankDocument` / `updateThinktankDocument` / `deleteThinktankDocument` | Query / Mutation | `{ groupId }` / `{ groupId, title, content?, isPublic? }` / … | Collaborative doc CRUD (backend for the deferred Docs pillar) |
 
 ---

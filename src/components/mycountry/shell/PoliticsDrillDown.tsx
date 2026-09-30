@@ -43,6 +43,14 @@ const BillsPanel = dynamic(
   { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
 );
 
+const ElectionStatusCard = dynamic(
+  () =>
+    import("~/components/executive/politics/ElectionStatusCard").then((m) => ({
+      default: m.ElectionStatusCard,
+    })),
+  { loading: () => <div className="h-20 animate-pulse rounded-xl bg-white/5" /> }
+);
+
 const PowerBrokersPanel = dynamic(
   () =>
     import("~/components/executive/politics/PowerBrokersPanel").then((m) => ({
@@ -85,8 +93,8 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
           <div>
             <span className="text-foreground font-extrabold">Executive Fiat Mode</span>
             <p className="text-muted-foreground text-xs">
-              Political structure, party seats, cabinet posts, and legislative rules are 100% player
-              configurable.
+              Political structure, parties, cabinet posts, and legislative rules are player
+              configurable. Legislative seats are won at elections.
             </p>
           </div>
         </div>
@@ -94,6 +102,9 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
           Player Fiat Enabled
         </span>
       </div>
+
+      {/* Election lifecycle: first election date, results, seated chamber (MC-2) */}
+      <ElectionStatusCard countryId={countryId} />
 
       {/* Sub-tab switcher (shared with the other domain sections) */}
       <SectionTabBar

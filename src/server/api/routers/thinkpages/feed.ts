@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 // Import the wiki search service
 import { globalCache } from "~/lib/cache";
 import { resolveReactionCounts } from "./post-utils";
+import { realmFeedWhere } from "./realm-feed";
 
 interface PostDateFields {
   createdAt?: string | Date | null;
@@ -92,8 +94,26 @@ const pollInclude = {
   },
 };
 
+/**
+ * Feed ordering. "trending" (posts the thinkpages-trending cron flagged) and "hot" (every post)
+ * rank by the cron's engagement-decay `trendingScore`, newest first among equals; "recent" is
+ * pinned-then-newest.
+ */
+export function feedOrderBy(
+  filter: "recent" | "trending" | "hot"
+): Prisma.ThinkpagesPostOrderByWithRelationInput[] {
+  if (filter === "trending") {
+    return [{ trendingScore: "desc" }, { ixTimeTimestamp: "desc" }];
+  }
+  if (filter === "hot") {
+    return [{ pinned: "desc" }, { trendingScore: "desc" }, { ixTimeTimestamp: "desc" }];
+  }
+  return [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }];
+}
+
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
+  realmId: z.string().max(100).optional(), // Feed filtered by realm (its nations' posts + its board); omitted = all realms
   hashtag: z.string().optional(),
   filter: z.enum(["recent", "trending", "hot"]).default("recent"),
   limit: z.number().min(1).max(50).default(20),
@@ -131,7 +151,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
     try {
-      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
+      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.realmId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
 
       const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
       if (cached) {
@@ -152,6 +172,12 @@ export const thinkpagesFeedRouter = createTRPCRouter({
         whereClause.account = {
           countryId: (input as any).countryId,
         };
+      }
+
+      if (input.realmId) {
+        // Realm board posts are "thinktank" posts, so the realm clause carries its own visibility.
+        delete whereClause.visibility;
+        whereClause.AND = [await realmFeedWhere(db, input.realmId)];
       }
 
       if (input.filter === "trending") {
@@ -245,7 +271,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
             },
           },
         },
-        orderBy: [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }],
+        orderBy: feedOrderBy(input.filter),
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         skip: input.cursor ? 1 : 0,

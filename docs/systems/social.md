@@ -3,7 +3,7 @@
 **Parent App Suite:** ThinkPages (`THINKPAGES_VERSION = 2`)  
 **Subsystems:** Sovereign Feed, Account Manager, Collaborative ThinkTanks, ThinkShare Messaging  
 **Primary Action:** `DELIBERATE` | **Domain Accent:** Blue (`#3B82F6` / `--color-blue-500`, the `/thinkpages` accent in `NavTray.tsx` and [branding.md](../reference/branding.md))  
-**Routes:** `/dashboard` (feed), `/thinkpages` (account hub), `/thinkpages/post/[postId]`, `/hashtags/[tag]`, `/thinktanks`, `/messages` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md): feed and Blurbs ✅ Live; Accounts, ThinkShare and ThinkTanks 🟡 Partial  
+**Routes:** `/dashboard` (feed), `/thinkpages` (account hub), `/thinkpages/post/[postId]`, `/thinkpages/profile/[username]`, `/hashtags/[tag]`, `/thinktanks`, `/messages` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md): feed and Blurbs ✅ Live; Accounts, ThinkShare and ThinkTanks 🟡 Partial  
 
 ThinkPages is the real-time communications and publishing network of IxStates. It pairs public sovereign micro-publishing with multilateral ThinkTank working rooms, automated Discord distribution, and ThinkShare direct messaging.
 
@@ -17,11 +17,31 @@ The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects t
 - **National Polls**: Real-time polling widgets let rulers gauge international sentiment and domestic approval with instant visual tallying.
 - **Hashtag Indexing**: Hashtags are extracted on submit and each tag has its own page (`/hashtags/[tag]`) aggregating discussions across sovereign borders.
 
+### Trending, Hot & engagement counters
+
+- **`thinkpages-trending` cron job** (`src/lib/thinkpages/trending-cron.ts`, every 15 min, schedule override `cronSchedule_thinkpagesTrending`; off unless listed in `CRON_ENABLED_JOBS`). It scores each post from the real reactions (`PostReaction`), public replies and reposts it received in the last 72 h. Weights are reaction 1, reply 2 and repost/quote 3, and each event halves every 12 h. Engagement from any persona of the post author's own user is ignored, and each user counts once per kind per post. Tunables live in `TRENDING_CONFIG` (`src/lib/thinkpages/trending.ts`).
+- **Trending posts**: public, top-level posts (not replies or plain reposts) with a score of at least 3 are ranked, and the top 25 get `trending = true`; every other post is cleared. Each eligible post's score is stored in `ThinkpagesPost.trendingScore`, and scores outside the window reset to 0.
+- **Feed filters** (`thinkpages.getFeed`): `trending` lists only flagged posts, by score. `hot` lists all posts, pinned first and then by `trendingScore`, newest among equals. `recent` is newest first. The `/dashboard` **Trending** tab shows the flagged posts and trending hashtags. When nothing qualifies it shows an empty state ("Nothing is trending right now"), with no recency fallback.
+- **Trending topics** (`TrendingTopic`): hashtags on public posts from the window, grouped case-insensitively. A hashtag needs at least 2 posts by at least 2 users. The top 10 by `postCount + engagement` are `isActive`; the rest are deactivated. `peakTimestamp` records when a topic last hit a new high. `activities.getTrendingTopics` reads these rows for the `/feed` "Trending Now" list and the Trending tab chips. A topic shows as rising if it peaked in the last 6 h.
+- **Unified trending** (`activities.getUnifiedTrending`, dashboard sidebar): the ThinkPages source is the posts with `trendingScore > 0`, by score.
+- **Engagement counters**: `likeCount` mirrors the `like` entry of the `reactionCounts` tally and is written by every reaction add, change and remove. `createPost` increments the parent's `replyCount` and the original's `repostCount`, and `deletePost` decrements them (never below 0). Other writers (Discord import, ThinkTanks, auto-posts) don't maintain them, so the cron job also reconciles all three counters with the real rows on every run.
+
+### Social notifications
+
+Notifications are keyed by Clerk user id. The recipient is always the **owning user** of the target persona, never the persona id, and a user is never notified about their own personas. Titles name the acting persona (display name, else `@username`), and every link goes to `/thinkpages/post/<id>` (base path applied).
+- **Like** (`reactions/mutations.ts`) and **reply** (`createPost`): "*Persona* liked / commented on your ThinkPage".
+- **Mention** (`createPost`): one notification per mentioned user ("*Persona* mentioned you"), linked to the new post. Mentions are still recorded in `PostMention`.
+- **Repost / quote** (`createPost`): "*Persona* reposted your post" links to the original; "*Persona* quoted your post" links to the quoting post.
+- Mention, repost and quote notifications are sent only for `public` and `unlisted` posts, since only the author can open private and draft posts.
+
 ---
 
 ## 2. Account Manager & Discord Bridge
 
-- **Multi-Account Switching**: Each user owns up to 25 persona accounts (government, media, citizen; `accounts.ts`), optionally tagged with a `countryId` that is not checked against the user's nations, managed from the `/thinkpages` account hub; the composer switches identities with a single click without logging out.
+- **Multi-Account Switching**: Each user owns up to 25 persona accounts (government, media, citizen; `accounts.ts`), each tied to a country the user can write to, managed from the `/thinkpages` account hub; the composer switches identities with a single click without logging out.
+- **Personal persona ("post as yourself")**: Each user can also have exactly one personal persona: a `ThinkpagesAccount` with `accountType: "personal"` and **no `countryId`** (`thinkpages/personal-account.ts`). One per user is enforced by the `ThinkpagesPersonalAccount` row (primary key = Clerk id, `prisma/schema/social-follows.prisma`). It is created on first use by `api.thinkpages.ensurePersonalAccount` (username from the IxnayID username, then forum/wiki name, sanitized and de-duplicated), read with `getMyPersonalAccount`, and does not count toward the 25-account cap. Its type cannot be changed and it starts unverified. The composer's identity picker offers **Post as yourself** when the user has none yet, and users with no country can post through it (the composer no longer requires a country). Readers that look for "the user's nation via their ThinkPages account" skip it (`countryId: { not: null }` in `identity.resolve.ts`, `users/profile.ts`, `ixnayid/core.ts`); post cards show no country for it.
+- **Follows**: Personas follow personas (`ThinkpagesFollow`, unique per follower/followed pair). `api.activities.followPersona` / `unfollowPersona` take the persona to follow and, optionally, which of the caller's own personas follows; by default the caller's personal persona follows (created on the first follow). You cannot follow your own personas. The row and the `followerCount` / `followingCount` increments or decrements happen in one transaction; a repeat follow is a no-op. A new follow notifies the followed persona's owner (by Clerk id, `category: "social"`, linking the follower's profile); imported `system_` personas get none. Profiles (`api.thinkpages.getAccountProfile`, page `/thinkpages/profile/[username]`) count followers, following and public posts from rows rather than trusting the stored counters, and never return the owner's Clerk id. Post cards open an author card with the same counts and a **Follow** button.
+- **Following feed**: The dashboard's Following tab (`api.activities.getFollowingFeed`) merges posts from personas the user follows (from any of their personas) with activity and posts from countries their country follows. It is shown to every signed-in user; persona follows need no country.
 - **Automated Discord Syndication**: Publishing a public post autoposts it to the Discord IxTwitter channel (`postToDiscord`, default on) and can mirror it to a dedicated `#thinkpages` Discord feed (`src/lib/discord/thinkpages-feed.ts`). The mirror is **off by default** (`ThinkpagesDiscordFeedConfig.enabled = false`) and there is no admin save procedure or UI (only `getThinkpagesDiscordFeedConfig`), so it cannot be enabled from the app.
 - **Discord → ThinkPages Sync**: IxTwitter channel messages are imported into the feed (`syncIxTwitterToThinkPages`; the bulk import runs from the PM2 script `scripts/run-ixtwitter-sync.ts`), reactions mirror to Discord, and the feed reads the Discord channel topic and custom server emoji (`getDiscordChannelTopic`, `getDiscordEmojis`).
 
@@ -32,6 +52,7 @@ The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects t
 ThinkTanks are dedicated research and policy drafting rooms for alliances, international coalitions, and co-authors:
 - **Group Feed**: Asynchronous notes, lore drafts, and critique requests with quick intent tags.
 - **Role-Based Membership**: Group ownership, admin/member roles, invitations, and member roster management.
+- **Realm Boards**: every realm has a board ThinkTank at `/r/[realm]/board`. Anyone can read it, owners of a nation in the realm post there, and its posts also appear in the realm-filtered feed (`thinkpages.getFeed({ realmId })`). See [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board) and [Realms](./realms.md).
 - **Joint Working Papers** *(pending)*: `CollaborativeDoc` CRUD procedures and a `ThinktankPapersTab` component exist, but the Docs tab is not yet mounted in the workspace. Real-time group chat is likewise deferred (see [ThinkTanks](./thinktanks.md#roadmap-pillars-deferred--future-phases)).
 
 ---

@@ -41,6 +41,44 @@ export enum StorytellerEffectType {
   TRADE_AGREEMENT = "trade_agreement",
   NATURAL_DISASTER = "natural_disaster",
   ECONOMIC_POLICY = "economic_policy",
+  /** Scales GDP per capita by `1 + value`; phased in over `duration` years, then kept. */
+  GDP_LEVEL_ADJUSTMENT = "gdp_level_adjustment",
+  /** Scales population by `1 + value`; phased in over `duration` years, then kept. */
+  POPULATION_LEVEL_ADJUSTMENT = "population_level_adjustment",
+}
+
+/**
+ * Share (0-1) of a level effect in force at `targetTimeMs`: 0 before it starts, rising linearly
+ * over its `duration` (IxTime years), 1 afterwards. An effect with no duration applies at once.
+ */
+export function levelPhaseIn(
+  effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp" | "duration">,
+  targetTimeMs: number
+): number {
+  const start =
+    effect.ixTimeTimestamp instanceof Date
+      ? effect.ixTimeTimestamp.getTime()
+      : effect.ixTimeTimestamp;
+  if (targetTimeMs < start) return 0;
+  if (!effect.duration || effect.duration <= 0) return 1;
+  return Math.min(1, IxTime.getYearsElapsed(start, targetTimeMs) / effect.duration);
+}
+
+/** Growth rate a relative growth modifier is sized against when it becomes a level effect. */
+export const REFERENCE_GDP_GROWTH = 0.03;
+
+/**
+ * GDP level shift equivalent to multiplying a `referenceGrowth` growth rate by `1 + modifier`
+ * for `years`: ((1 + g(1 + m)) / (1 + g))^years − 1. Rounded to 6 decimals.
+ */
+export function growthModifierToLevelShift(
+  modifier: number,
+  years: number,
+  referenceGrowth = REFERENCE_GDP_GROWTH
+): number {
+  const g = referenceGrowth;
+  const shift = Math.pow((1 + g * (1 + modifier)) / (1 + g), years) - 1;
+  return Math.round(shift * 1e6) / 1e6;
 }
 
 /** Floor for the summed annual population growth rate; keeps `1 + rate` positive. */
@@ -260,7 +298,7 @@ export class IxStatsCalculator {
       ),
     };
 
-    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
+    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects, targetTimeMs);
 
     if (
       modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
@@ -493,7 +531,7 @@ export class IxStatsCalculator {
       ),
     };
 
-    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
+    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects, nowIxTimeMs);
 
     if (
       modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
@@ -538,13 +576,24 @@ export class IxStatsCalculator {
 
   private applySpecialModifiers(
     stats: CountryStats,
-    effects: StorytellerEffectRecord[]
+    effects: StorytellerEffectRecord[],
+    targetTimeMs: number
   ): CountryStats {
     const modifiedStats = { ...stats };
 
     effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
       switch (input.inputType) {
+        // Level effects (national-issue consequences): unlike the growth effects above they
+        // never rewrite the path before their own start, and they persist after `duration`.
+        case StorytellerEffectType.GDP_LEVEL_ADJUSTMENT:
+          modifiedStats.currentGdpPerCapita *= 1 + inputValue * levelPhaseIn(input, targetTimeMs);
+          break;
+
+        case StorytellerEffectType.POPULATION_LEVEL_ADJUSTMENT:
+          modifiedStats.currentPopulation *= 1 + inputValue * levelPhaseIn(input, targetTimeMs);
+          break;
+
         case StorytellerEffectType.NATURAL_DISASTER:
           modifiedStats.currentPopulation *= 1 + inputValue;
           modifiedStats.currentTotalGdp *= 1 + inputValue * 1.5;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 /**
  * AutosaveHistory Router
@@ -28,17 +28,8 @@ export const autosaveHistoryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { countryId, limit, offset } = input;
 
-      // Verify user owns the country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-      });
-
-      if (!userProfile || userProfile.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this country's autosave history",
-        });
-      }
+      // Verify user owns the country (any nation they own, not only the active one)
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Get total count for pagination
       const total = await ctx.db.auditLog.count({
@@ -87,17 +78,8 @@ export const autosaveHistoryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { countryId } = input;
 
-      // Verify user owns the country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-      });
-
-      if (!userProfile || userProfile.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this country's autosave statistics",
-        });
-      }
+      // Verify user owns the country (any nation they own, not only the active one)
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Aggregate at the DB layer instead of loading every autosave row and scanning
       // it 4+ times in JS. autosave: actions are a small set of distinct strings

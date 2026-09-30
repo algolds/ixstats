@@ -6,11 +6,13 @@
  */
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { IxTime } from "~/lib/ixtime";
 import {
   countryEconomicInputsSchema,
@@ -28,7 +30,27 @@ import {
   syncGovernmentComponents,
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
-import { assignNation, DEFAULT_REALM_ID } from "~/server/modules/realms";
+import {
+  assignNation,
+  BuilderRealmError,
+  DEFAULT_REALM_ID,
+  NationOwnershipError,
+  pointActiveNation,
+  resolveBuilderRealm,
+} from "~/server/modules/realms";
+
+const BUILDER_REALM_ERROR_CODES = {
+  REALM_NOT_FOUND: "NOT_FOUND",
+  REALM_CLOSED: "FORBIDDEN",
+  CAP_REACHED: "CONFLICT",
+} as const;
+
+function builderRealmError(error: Error): never {
+  if (error instanceof BuilderRealmError) {
+    throw new TRPCError({ code: BUILDER_REALM_ERROR_CODES[error.code], message: error.message });
+  }
+  throw error;
+}
 
 export const managementCreateProcedures = {
   // Create a new country from builder
@@ -43,6 +65,8 @@ export const managementCreateProcedures = {
         governmentStructure: countryGovernmentStructureInputSchema.nullish(),
         economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
         archetypeId: z.string().optional(),
+        /** Realm to found the nation in; defaults to the realm of the nation the player acts as, else IxWorld. */
+        realmId: z.string().min(1).max(100).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -51,19 +75,33 @@ export const managementCreateProcedures = {
         throw new Error("User not authenticated");
       }
 
-      const userWithCountry = await ctx.db.user.findUnique({
+      const player = await ctx.db.user.findUnique({
         where: { clerkUserId: userId },
-        include: { country: true, role: true },
+        include: { role: true },
       });
-
-      if (userWithCountry?.country) {
-        console.log(
-          `[createCountry] User ${userId} already has country: ${userWithCountry.country.name}`
-        );
-        return userWithCountry.country;
+      if (!player) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User account not found" });
       }
 
-      if (userWithCountry && !userWithCountry.roleId) {
+      // The target realm (input, else the realm of the nation the player acts as, else IxWorld), open and
+      // under the player's nation cap there — a player at the cap gets a clear refusal, never their old nation.
+      const { realmId } = await resolveBuilderRealm(
+        ctx.db,
+        { id: player.id, clerkUserId: userId },
+        input.realmId
+      ).catch(builderRealmError);
+      const nameTaken = await ctx.db.country.findFirst({
+        where: { realmId, name: input.name },
+        select: { id: true },
+      });
+      if (nameTaken) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `A country named "${input.name}" already exists in this realm`,
+        });
+      }
+
+      if (!player.roleId) {
         const defaultRole = await ctx.db.role.findFirst({
           where: { name: "user" },
         });
@@ -259,6 +297,7 @@ export const managementCreateProcedures = {
             data: {
               name: input.name,
               slug,
+              realmId,
               continent: geography.continent || foundationData?.continent || "Custom",
               region: geography.region || foundationData?.region || "Custom",
               landArea: foundationData?.landArea,
@@ -358,11 +397,10 @@ export const managementCreateProcedures = {
           await syncGovernmentComponents(tx, country.id, governmentComponentsList);
           await syncEconomyBuilderState(tx, country.id, economyBuilderState);
 
-          const owner = await tx.user.findUniqueOrThrow({
-            where: { clerkUserId: userId },
-            select: { id: true },
-          });
-          await assignNation(tx, { userId: owner.id, countryId: country.id });
+          // assignNation re-checks the cap inside the transaction (a concurrent build or claim may have
+          // filled it). The nation just built becomes the one the player acts as, so /mycountry shows it.
+          await assignNation(tx, { userId: player.id, countryId: country.id });
+          await pointActiveNation(tx, player.id, country.id);
 
           return country;
         });
@@ -371,10 +409,10 @@ export const managementCreateProcedures = {
         clearLayerCache("political");
         await globalCache.delete(`user_profile:${userId}`);
 
-        // Onboarding bonuses (one-time)
+        // Onboarding bonuses (one-time; a no-op if the account was already paid at sign-up)
         try {
           const bcfg = await getBonusConfig(ctx.db);
-          await grantBonus(ctx.db, userId, "bonus:new_player", bcfg.newPlayer, {
+          await grantBonus(ctx.db, userId, NEW_PLAYER_BONUS_SOURCE, bcfg.newPlayer, {
             oneTime: true,
             metadata: { countryId: result.id, countryName: result.name },
           });
@@ -391,10 +429,14 @@ export const managementCreateProcedures = {
         } catch (bonusError) {
           console.error("[createCountry] Failed to grant onboarding bonus:", bonusError);
         }
+        queueAchievementCheck(userId, result.id);
 
         return result;
       } catch (error) {
         console.error("[createCountry] Transaction failed:", error);
+        if (error instanceof NationOwnershipError && error.code === "CAP_REACHED") {
+          throw new TRPCError({ code: "CONFLICT", message: error.message });
+        }
         throw new Error(
           `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`,
           { cause: error }

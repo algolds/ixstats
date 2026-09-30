@@ -79,6 +79,8 @@ function hasCachedPrivilege(ctx: CountryAuthContext, authUserId: string): boolea
 }
 
 interface FreshWriter {
+  /** The platform user id (`User.id`), which `Country.ownerUserId` stores. */
+  id: string | null;
   privileged: boolean;
   countryId: string | null;
 }
@@ -94,6 +96,7 @@ async function findFreshWriter(
   });
   if (!freshUser) return null;
   return {
+    id: freshUser.id ?? null,
     privileged: isPrivilegedCountryWriter(authUserId, getRoleName(freshUser)),
     countryId: freshUser.countryId ?? null,
   };
@@ -102,9 +105,13 @@ async function findFreshWriter(
 /**
  * Canonical country-write authorization assertion.
  *
- * Checks fast-path cached ownership/privilege, then falls back to a single fresh DB lookup.
- * If unauthorized, checks target country existence (throwing NOT_FOUND if missing)
- * before throwing FORBIDDEN.
+ * A writer is a privileged role, the user acting as the nation (`User.countryId`), or the
+ * nation's owner (`Country.ownerUserId`): a player may own several nations and act on any of
+ * them from its page without first switching their active one.
+ *
+ * Checks fast-path cached active nation/privilege, then falls back to a single fresh DB lookup.
+ * If still unauthorized, loads the target country: NOT_FOUND if missing, allowed if the caller
+ * owns it, FORBIDDEN otherwise.
  */
 export async function assertCountryWriteAccess(
   ctx: CountryAuthContext,
@@ -128,17 +135,21 @@ export async function assertCountryWriteAccess(
     return;
   }
 
-  // 4. Verify target country existence if country delegate is available
+  // 4. Verify target country existence, and allow any nation the caller owns (not only the active one)
   if (ctx.db.country?.findUnique) {
     const country = await ctx.db.country.findUnique({
       where: { id: countryId },
-      select: { id: true },
+      select: { id: true, ownerUserId: true },
     });
     if (!country) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Country not found",
       });
+    }
+    const userId = freshWriter?.id ?? ctx.user?.id ?? null;
+    if (userId && country.ownerUserId === userId) {
+      return;
     }
   }
 

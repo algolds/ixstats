@@ -179,6 +179,83 @@ describe("Plan 149: Canonical Country-Write Authorization Matrix", () => {
       });
     });
 
+    it("allows the owner of a nation that is not their active one (multi-nation accounts)", async () => {
+      const mockUserFindUnique = jest.fn().mockResolvedValue({
+        id: "db_owner",
+        clerkUserId: "user_multi",
+        countryId: "active_nation",
+        role: { name: "member" },
+      });
+      const mockCountryFindUnique = jest
+        .fn()
+        .mockResolvedValue({ id: targetCountryId, ownerUserId: "db_owner" });
+
+      const ctx = {
+        auth: { userId: "user_multi" },
+        user: {
+          id: "db_owner",
+          clerkUserId: "user_multi",
+          countryId: "active_nation",
+          role: "member",
+        },
+        db: {
+          user: { findUnique: mockUserFindUnique },
+          country: { findUnique: mockCountryFindUnique },
+        },
+      };
+
+      await expect(assertCountryWriteAccess(ctx as any, targetCountryId)).resolves.toBeUndefined();
+      expect(mockCountryFindUnique).toHaveBeenCalledWith({
+        where: { id: targetCountryId },
+        select: { id: true, ownerUserId: true },
+      });
+    });
+
+    it("ownership is checked against the fresh user id, not the cached one", async () => {
+      const ctx = {
+        auth: { userId: "user_multi" },
+        user: { id: "db_owner", clerkUserId: "user_multi", countryId: null, role: "member" },
+        db: {
+          // The Clerk id now maps to a different platform user than the cached context says.
+          user: {
+            findUnique: jest
+              .fn()
+              .mockResolvedValue({ id: "db_other", countryId: null, role: { name: "member" } }),
+          },
+          country: {
+            findUnique: jest
+              .fn()
+              .mockResolvedValue({ id: targetCountryId, ownerUserId: "db_owner" }),
+          },
+        },
+      };
+
+      await expect(assertCountryWriteAccess(ctx as any, targetCountryId)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+    });
+
+    it("an unowned nation (NPC) is FORBIDDEN to a player", async () => {
+      const ctx = {
+        auth: { userId: "user_multi" },
+        user: { id: "db_owner", clerkUserId: "user_multi", countryId: "mine", role: "member" },
+        db: {
+          user: {
+            findUnique: jest
+              .fn()
+              .mockResolvedValue({ id: "db_owner", countryId: "mine", role: { name: "member" } }),
+          },
+          country: {
+            findUnique: jest.fn().mockResolvedValue({ id: targetCountryId, ownerUserId: null }),
+          },
+        },
+      };
+
+      await expect(assertCountryWriteAccess(ctx as any, targetCountryId)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+    });
+
     it("throws UNAUTHORIZED defensively when no auth is present", async () => {
       const ctx = {
         auth: null,

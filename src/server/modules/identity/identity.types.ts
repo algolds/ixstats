@@ -88,6 +88,27 @@ export interface AwardHistoryItem {
   score: number | null;
 }
 
+/** Lorewards standing shown on the passport. */
+export interface PassportLorewards {
+  totalScore: number;
+  totalBytes: number;
+  rank: number | null;
+  dailyWins: number;
+  dailyRunnerUps: number;
+  weeklyWins: number;
+  monthlyWins: number;
+  currentStreak: number;
+  longestStreak: number;
+}
+
+/** Forum counters shown on the passport. */
+export interface PassportForumStats {
+  userTitle: string | null;
+  messageCount: number;
+  reactionScore: number;
+  trophyPoints: number;
+}
+
 export type IdentitySystem =
   | "forum"
   | "wikios"

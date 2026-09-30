@@ -200,6 +200,43 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/government/budget-year-rollover-cron")).runBudgetYearRollover,
   },
   {
+    // Persists the economic projection into stored current* stats + monthly history (MC-7).
+    // Same lock as the admin forceRecalculation button.
+    name: "stat-progression",
+    defaultSchedule: "23 */6 * * *",
+    scheduleConfigKey: "cronSchedule_statProgression",
+    lockName: "stat-progression",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/server/cron/stat-progression",
+    exportName: "runStatProgression",
+    load: async () => {
+      const { runStatProgression } = await import("~/server/cron/stat-progression");
+      return () => runStatProgression();
+    },
+  },
+  {
+    // Engagement-decay trending for ThinkPages posts + TrendingTopic hashtags; also reconciles
+    // the posts' like/reply/repost counters.
+    name: "thinkpages-trending",
+    defaultSchedule: "*/15 * * * *",
+    scheduleConfigKey: "cronSchedule_thinkpagesTrending",
+    lockName: "thinkpages-trending",
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/lib/thinkpages/trending-cron",
+    exportName: "runThinkPagesTrending",
+    load: async () => (await import("~/lib/thinkpages/trending-cron")).runThinkPagesTrending,
+  },
+  {
+    // Evaluates achievements (account-level and active-country) for users seen recently.
+    name: "achievements-evaluate",
+    defaultSchedule: "41 * * * *",
+    lockName: "achievements-evaluate",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/lib/achievements/evaluate-cron",
+    exportName: "runAchievementsEvaluate",
+    load: async () => (await import("~/lib/achievements/evaluate-cron")).runAchievementsEvaluate,
+  },
+  {
     // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
     name: "db-backup",
     defaultSchedule: "17 3 * * *",

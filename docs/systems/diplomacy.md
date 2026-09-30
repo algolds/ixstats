@@ -3,7 +3,7 @@
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Concord Living-World Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Primary Action:** `ALLIED` | **Domain Accent:** Cyan Blue (`#06B6D4` / `--color-cyan-500`)  
-**Route:** `/mycountry/diplomacy` (Diplomacy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); embassies, stances and cultural exchange work, consent-based flows do not  
+**Route:** `/mycountry/diplomacy` (Diplomacy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); embassies, stances, cultural exchange and consent-based proposals / alliance invites (Diplomacy Inbox) work  
 
 The diplomacy domain handles international relations, embassy networks, cultural exchanges, multilateral alliances, foreign policy actions, diplomatic scenarios, and NPC reactions to cultural exchanges. Direct diplomatic communications route through **ThinkShare** (`/messages`).
 
@@ -17,6 +17,7 @@ The diplomacy domain handles international relations, embassy networks, cultural
 - `src/components/mycountry/shell/DrillSheets.tsx` – Slide-over relations sheet
 - `src/components/mycountry/domains/diplomacy/` – Embassy network (`embassy-network/`, `EmbassyCreatorSheet`, `EmbassyDetailSheet`), relations list, cultural exchange wizard/program, `DiplomaticEventsHub`, `ScenarioModal`, shared data
 - `src/components/mycountry/domains/diplomacy/alliances/` – `AllianceDashboard`, `CollectiveActionsPanel` (alliance creation via `AllianceCreatorSheet`)
+- `src/components/mycountry/domains/diplomacy/inbox/` – `DiplomacyInbox` (the owner-only **Inbox** tab of `EmbassiesAndRelationsPanel`), `useDiplomacyInboxCount`, and the `InboxCountPill` count badge shown on the Diplomacy entries of `shell/headers/UnifiedGlassCommandBar.tsx` and on the Inbox tab
 
 ### Backend Routers
 - `src/server/api/routers/diplomacy/core/` (`diplomaticCore`) – Relationships, stances (`setDiplomaticGoal`), follows, shared data, diplomatic options
@@ -58,15 +59,31 @@ Each side can set a diplomatic goal ("stance") via `diplomaticCore.setDiplomatic
 ### 2. NPC Personality-Driven Auto-Response (`src/lib/diplomacy/npc-personality.ts`)
 Computes 8 core traits (Assertiveness, Cooperativeness, Economic Focus, Cultural Openness, Risk Tolerance, Ideological Rigidity, Militarism, Isolationism) mapping to 6 behavioral archetypes. Today it predicts NPC participation in cultural exchanges (`diplomaticCultural.getNPCCulturalResponses`, `src/lib/diplomacy/npc-cultural-participation.ts`). See [NPC AI](./npc-ai.md).
 
-### 3. Unified Messaging (ThinkShare)
+### 3. Consent-based proposals & the Diplomacy Inbox
+Cooperative foreign-policy actions (`free_trade`, `military_alliance`; `COOPERATIVE_FP_TYPES` in `src/lib/diplomacy/proposal-lifecycle.ts`) and alliance invites need the other side's consent. Hostile actions (`embargo`, `sanction`, `blockade`) are unilateral and enacted immediately.
+
+| Step | Foreign-policy proposal (`ForeignPolicyAction`) | Alliance invite (`AllianceMember`) |
+|---|---|---|
+| Issue | `proposeForeignPolicyAction` → `status: "proposed"`, no effects yet | `inviteMember` (founder/leader) → inactive row, `status: "invited"`, records `invitedByCountryId` + `invitedAt` |
+| Incoming list (target's owner) | `getForeignPolicyProposals` | `getAllianceInvites` (includes `invitedBy`) |
+| Outgoing list (proposer's owner) | `getOutgoingForeignPolicyProposals` | `getOutgoingAllianceInvites` |
+| Answer (target's owner) | `respondToForeignPolicyProposal` → `active` (effects applied) or `declined` | `respondToAllianceInvite` → member (`active`) or `declined` |
+| Withdraw (proposer's owner) | `withdrawForeignPolicyProposal` → `withdrawn` | `withdrawAllianceInvite` → `withdrawn` |
+
+- **Authorisation:** lists, answers and withdrawals go through `assertCountryWriteAccess` on the relevant country (target for answers, proposer for withdrawals). Invites issued before `invitedByCountryId` existed are treated as issued by the alliance's active founder/leaders.
+- **Expiry:** pending items expire `PROPOSAL_TTL_DAYS` = 14 real days after issue (`createdAt` for proposals; `invitedAt`, falling back to `updatedAt`, for invites). Expiry is lazy: lists (including the public `getActiveForeignPolicies`) hide stale items, the inbox lists also mark them `expired`, answering or withdrawing a stale item marks it `expired` and fails with "…expired on YYYY-MM-DD without an answer", and a stale item no longer blocks a fresh proposal/invite. The `diplomatic-drift` cron also sweeps all stale items (`expireStaleDiplomaticProposals`, reported as `proposalsExpired` / `invitesExpired`) when that job is enabled. Every list result carries `expiresAt`.
+- **Notifications** (`policies/notify.ts`, via `notificationAPI.create`, keyed on the owner's Clerk user id, `href: /mycountry/diplomacy`, gated by the `onDiplomaticEvent` notification toggle): the target's owner is notified when a proposal or invite arrives; the proposer's owner (for legacy invites, the alliance's founder/leaders) when it is accepted or declined. Failures are logged and never fail the mutation. Withdrawals and expiry send no notification.
+- **UI:** the Inbox tab lists Incoming items with Accept / Decline and Outgoing items with their pending status, time left and Withdraw, with loading, empty and error (retry) states. It opens automatically once when something is waiting. Proposals are made from another nation's profile actions menu; invites from `AllianceDashboard`.
+
+### 4. Unified Messaging (ThinkShare)
 Diplomatic channels are `ThinkshareConversation` / `DiplomaticChannel` records carrying security classifications (`PUBLIC` → `TOP_SECRET`), message signatures, and encryption flags.
 
 ---
 
 ## Known Gaps
 
-- **Cooperative foreign policy has no inbox UI yet.** `free_trade` and `military_alliance` (`COOPERATIVE_FP` in `diplomacy/policies/foreignPolicy.ts`) are created with status `proposed`; the target's owner lists them with `getForeignPolicyProposals` and accepts or declines with `respondToForeignPolicyProposal`, but no MyCountry screen calls these yet. Proposals do not expire and cannot be withdrawn. Hostile actions are enacted immediately and now apply their effects.
-- **Alliance invites need consent**: an invite is a pending `AllianceMember` row (`status: "invited"`, inactive) until the invited country's owner calls `respondToAllianceInvite`; `getAllianceInvites` lists them. There is no inbox UI for them yet (`policies/alliances.ts`).
+- **Proposal outcomes are not kept as history in the inbox.** Outgoing lists show pending items only; the proposer learns of an accept/decline through the notification. Expiry and withdrawal are not notified.
+- **Proposing still uses the acting country** (`ctx.user.countryId`) rather than an explicit country id, so a player who owns several countries proposes as whichever one they are currently acting as.
 - **Shared data is synthesised** and the cultural-exchange analysis shows randomised percentages in the UI.
 - Embassy missions and upgrades were deleted (plan 312); no mission is playable.
 

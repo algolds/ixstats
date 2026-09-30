@@ -6,10 +6,39 @@ import { TRPCError } from "@trpc/server";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { computeForeignPolicyImpact } from "~/lib/statecraft/foreign-policy";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  COOPERATIVE_FP_TYPES,
+  PROPOSAL_STATUS,
+  expireStaleDiplomaticProposals,
+  isProposalExpired,
+  proposalExpiresAt,
+  proposalExpiryCutoff,
+} from "~/lib/diplomacy/proposal-lifecycle";
+import { notifyCountryOwners } from "./notify";
 
 // Cooperative actions need the target's consent before they take effect; hostile ones
 // are unilateral. See plans/statecraft-stage2.md (S2.C).
-const COOPERATIVE_FP = new Set(["free_trade", "military_alliance"]);
+const COOPERATIVE_FP = new Set<string>(COOPERATIVE_FP_TYPES);
+
+const FP_LABELS: Record<string, string> = {
+  free_trade: "free trade agreement",
+  military_alliance: "military alliance",
+};
+
+/** Mark a stale pending proposal expired and refuse the action with a clear message. */
+async function rejectExpiredProposal(
+  db: PrismaClient,
+  action: { id: string; createdAt: Date }
+): Promise<never> {
+  await db.foreignPolicyAction.updateMany({
+    where: { id: action.id, status: PROPOSAL_STATUS.pending },
+    data: { status: PROPOSAL_STATUS.expired },
+  });
+  throw new TRPCError({
+    code: "BAD_REQUEST",
+    message: `This proposal expired on ${proposalExpiresAt(action.createdAt).toISOString().slice(0, 10)} without an answer.`,
+  });
+}
 
 /**
  * Apply a foreign-policy action's stored effects and flip its status to "active":
@@ -185,7 +214,19 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const statusFilter = input.includeExpired ? {} : { status: { in: ["proposed", "active"] } };
+      // Pending proposals past their answer window count as expired, not live.
+      const statusFilter = input.includeExpired
+        ? {}
+        : {
+            AND: [
+              {
+                OR: [
+                  { status: "active" },
+                  { status: "proposed", createdAt: { gte: proposalExpiryCutoff() } },
+                ],
+              },
+            ],
+          };
 
       const actions = await ctx.db.foreignPolicyAction.findMany({
         where: {
@@ -255,6 +296,9 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
           message: "Cannot impose embargo/blockade on a close ally (relationship > 80).",
         });
       }
+
+      // Stale pending proposals must not block a fresh one.
+      await expireStaleDiplomaticProposals(ctx.db, { countryId: initiatorId });
 
       // Check for existing active action of same type
       const existingAction = await ctx.db.foreignPolicyAction.findFirst({
@@ -342,7 +386,15 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       });
 
       // Cooperative → no effects yet; surfaces to the target via getForeignPolicyProposals.
-      if (cooperative) return { ...created, pendingConsent: true };
+      if (cooperative) {
+        await notifyCountryOwners(ctx.db, [input.targetId], {
+          title: "Diplomatic Proposal Received",
+          message: `${initiator.name} proposes a ${FP_LABELS[input.actionType] ?? input.actionType} with ${target.name}. Review it in your diplomacy inbox.`,
+          priority: "high",
+          metadata: { foreignPolicyActionId: created.id, actionType: input.actionType },
+        });
+        return { ...created, pendingConsent: true };
+      }
 
       // Hostile → enact immediately.
       const enacted = await enactForeignPolicyEffects(
@@ -359,11 +411,62 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      return ctx.db.foreignPolicyAction.findMany({
-        where: { targetId: input.countryId, status: "proposed" },
+      await expireStaleDiplomaticProposals(ctx.db, { countryId: input.countryId });
+      const proposals = await ctx.db.foreignPolicyAction.findMany({
+        where: {
+          targetId: input.countryId,
+          status: PROPOSAL_STATUS.pending,
+          createdAt: { gte: proposalExpiryCutoff() },
+        },
         orderBy: { createdAt: "desc" },
         include: { initiator: { select: { id: true, name: true, flag: true } } },
       });
+      return proposals.map((p) => ({ ...p, expiresAt: proposalExpiresAt(p.createdAt) }));
+    }),
+
+  // The proposer's view of its own pending cooperative proposals.
+  getOutgoingForeignPolicyProposals: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      await expireStaleDiplomaticProposals(ctx.db, { countryId: input.countryId });
+      const proposals = await ctx.db.foreignPolicyAction.findMany({
+        where: {
+          initiatorId: input.countryId,
+          status: PROPOSAL_STATUS.pending,
+          actionType: { in: [...COOPERATIVE_FP_TYPES] },
+          createdAt: { gte: proposalExpiryCutoff() },
+        },
+        orderBy: { createdAt: "desc" },
+        include: { target: { select: { id: true, name: true, flag: true } } },
+      });
+      return proposals.map((p) => ({ ...p, expiresAt: proposalExpiresAt(p.createdAt) }));
+    }),
+
+  // The proposer withdraws a pending cooperative proposal before it is answered.
+  withdrawForeignPolicyProposal: protectedProcedure
+    .input(z.object({ actionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const action = await ctx.db.foreignPolicyAction.findUnique({
+        where: { id: input.actionId },
+        select: { id: true, initiatorId: true, status: true, createdAt: true },
+      });
+      if (!action) throw new TRPCError({ code: "NOT_FOUND", message: "Proposal not found." });
+      await assertCountryWriteAccess(ctx, action.initiatorId);
+      if (action.status !== PROPOSAL_STATUS.pending) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
+      }
+      if (isProposalExpired(action.createdAt)) {
+        await rejectExpiredProposal(ctx.db as PrismaClient, action);
+      }
+      const withdrawn = await ctx.db.foreignPolicyAction.updateMany({
+        where: { id: action.id, status: PROPOSAL_STATUS.pending },
+        data: { status: PROPOSAL_STATUS.withdrawn },
+      });
+      if (withdrawn.count === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
+      }
+      return { status: PROPOSAL_STATUS.withdrawn };
     }),
 
   // Foreign consent: the target's owner accepts (enact the stored effects) or declines.
@@ -372,13 +475,25 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const action = await ctx.db.foreignPolicyAction.findUnique({
         where: { id: input.actionId },
-        select: { id: true, targetId: true, status: true },
+        select: {
+          id: true,
+          initiatorId: true,
+          targetId: true,
+          actionType: true,
+          status: true,
+          createdAt: true,
+          target: { select: { name: true } },
+        },
       });
       if (!action) throw new TRPCError({ code: "NOT_FOUND", message: "Proposal not found." });
       await assertCountryWriteAccess(ctx, action.targetId);
       if (action.status !== "proposed") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
       }
+      if (isProposalExpired(action.createdAt)) {
+        await rejectExpiredProposal(ctx.db as PrismaClient, action);
+      }
+      const label = FP_LABELS[action.actionType] ?? action.actionType;
 
       if (input.choice === "decline") {
         const declined = await ctx.db.foreignPolicyAction.updateMany({
@@ -388,6 +503,12 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         if (declined.count === 0) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
         }
+        await notifyCountryOwners(ctx.db, [action.initiatorId], {
+          title: "Proposal Declined",
+          message: `${action.target.name} declined your ${label} proposal.`,
+          type: "warning",
+          metadata: { foreignPolicyActionId: action.id, actionType: action.actionType },
+        });
         return { status: "declined" as const };
       }
 
@@ -401,6 +522,13 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       if (!enacted || enacted.status !== "active") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
       }
+      await notifyCountryOwners(ctx.db, [action.initiatorId], {
+        title: "Proposal Accepted",
+        message: `${action.target.name} accepted your ${label} proposal. It is now in effect.`,
+        type: "success",
+        priority: "high",
+        metadata: { foreignPolicyActionId: action.id, actionType: action.actionType },
+      });
       return { status: "active" as const, action: enacted };
     }),
 });

@@ -26,6 +26,7 @@
 import { db } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
 import { vaultService } from "~/lib/vault/vault-service";
+import { resolveDividendCountryId } from "~/lib/vault/dividend-nation";
 import {
   PASSIVE_DIVIDEND_SOURCE,
   passiveIncomeKey,
@@ -57,10 +58,10 @@ export async function distributePassiveIncome(): Promise<PassiveIncomeSummary> {
   let alreadyPaidCount = 0;
 
   try {
-    // Get all users with countries
+    // Users who own a nation, or act as one (legacy link / system-owner override)
     const usersWithCountries = await db.user.findMany({
       where: {
-        countryId: { not: null },
+        OR: [{ countryId: { not: null } }, { ownedCountries: { some: {} } }],
       },
       include: {
         country: true,
@@ -73,12 +74,21 @@ export async function distributePassiveIncome(): Promise<PassiveIncomeSummary> {
     // Process each user
     for (const user of usersWithCountries) {
       try {
-        if (!user.countryId || !user.country) {
+        // One dividend per account, from its primary nation — never the active one, so switching to a
+        // richer nation before the payout changes nothing (resolveDividendCountryId).
+        const countryId = await resolveDividendCountryId(db, user);
+        const country =
+          countryId && countryId === user.countryId
+            ? user.country
+            : countryId
+              ? await db.country.findUnique({ where: { id: countryId } })
+              : null;
+        if (!countryId || !country) {
           continue;
         }
 
-        // Calculate passive income for this user's nation
-        const passiveIncome = await vaultService.calculatePassiveIncome(user.countryId, db);
+        // Calculate passive income for this user's dividend nation
+        const passiveIncome = await vaultService.calculatePassiveIncome(countryId, db);
 
         if (passiveIncome > 0) {
           // Award passive income (at most once per user per UTC day)
@@ -88,12 +98,12 @@ export async function distributePassiveIncome(): Promise<PassiveIncomeSummary> {
             type: "EARN_PASSIVE",
             source: PASSIVE_DIVIDEND_SOURCE,
             metadata: {
-              countryId: user.countryId,
-              countryName: user.country.name,
-              gdpPerCapita: user.country.currentGdpPerCapita,
-              economicTier: user.country.economicTier,
-              population: user.country.currentPopulation,
-              growth: user.country.adjustedGdpGrowth,
+              countryId,
+              countryName: country.name,
+              gdpPerCapita: country.currentGdpPerCapita,
+              economicTier: country.economicTier,
+              population: country.currentPopulation,
+              growth: country.adjustedGdpGrowth,
             },
             idempotencyKey: passiveIncomeKey(user.id, periodDay),
           });
@@ -103,7 +113,7 @@ export async function distributePassiveIncome(): Promise<PassiveIncomeSummary> {
           } else if (result.success) {
             distributedAmount += passiveIncome;
             console.log(
-              `[Passive Income Cron] ✓ Distributed ${passiveIncome.toFixed(2)} IxC to user ${user.clerkUserId} (${user.country.name})`
+              `[Passive Income Cron] ✓ Distributed ${passiveIncome.toFixed(2)} IxC to user ${user.clerkUserId} (${country.name})`
             );
           } else {
             console.error(

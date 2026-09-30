@@ -13,6 +13,8 @@ import {
   ClaimError,
   createClaimsService,
   getRealmHub,
+  listBuilderRealms,
+  listMyNations,
   realmSettings,
   withMaxNationsPerUser,
   type NationAssignedEvent,
@@ -21,8 +23,10 @@ import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof
 import { parsePrismaError } from "~/lib/prisma-error";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { globalCache } from "~/lib/cache";
+import { listRealmDirectory, openRealmBoard } from "./places";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
 async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): Promise<void> {
@@ -37,12 +41,13 @@ async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): P
     .catch((e: Error) => console.error("[realms] claim notification failed:", e));
   await getBonusConfig(db)
     .then((cfg) =>
-      grantBonus(db, event.clerkUserId, "bonus:new_player", cfg.newPlayer, {
+      grantBonus(db, event.clerkUserId, NEW_PLAYER_BONUS_SOURCE, cfg.newPlayer, {
         oneTime: true,
         metadata: { countryId: event.countryId, countryName: event.countryName },
       })
     )
     .catch((e: Error) => console.error("[realms] new-player bonus failed:", e));
+  queueAchievementCheck(event.clerkUserId, event.countryId);
   await globalCache.delete(`user_profile:${event.clerkUserId}`);
 }
 
@@ -103,6 +108,14 @@ export const realmsRouter = createTRPCRouter({
     }),
 
   myClaims: protectedProcedure.query(({ ctx }) => claims(ctx.db).myClaims(ctx.user)),
+
+  /** The player's nations in every realm, grouped by realm, for the nation switcher. */
+  myNations: protectedProcedure.query(({ ctx }) =>
+    listMyNations(ctx.db, { id: ctx.user.id, countryId: ctx.user.countryId ?? null })
+  ),
+
+  /** Realms the builder can create a nation in, with the player's standing against each realm's cap. */
+  builderRealms: protectedProcedure.query(({ ctx }) => listBuilderRealms(ctx.db, ctx.user)),
 
   listClaims: protectedProcedure
     .input(z.object({ status: z.enum(["pending", "approved", "rejected"]).default("pending") }))
@@ -199,4 +212,12 @@ export const realmsRouter = createTRPCRouter({
         data: { ...data, settings: withMaxNationsPerUser(realm.settings, maxNationsPerUser) },
       });
     }),
+
+  /** The realm directory (/realms): open realms, nation counts, board activity, the viewer's holdings. */
+  directory: publicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),
+
+  /** Open a realm's board (created on first open) and sync the caller's membership from their nations. */
+  getBoard: publicProcedure
+    .input(z.object({ slug: z.string().min(1).max(100) }))
+    .query(({ ctx, input }) => openRealmBoard(ctx.db, input.slug, ctx.auth?.userId ?? null)),
 });

@@ -41,7 +41,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 
 Organized into modular sub-files:
 - `vault/index.ts` – Router combination
-- `vault/balance-credits.ts` – Balance, level, today's earnings, user stats, transaction history, passive income & budget multiplier projections
+- `vault/balance-credits.ts` – Balance, level, today's earnings, user stats, transaction history, passive income & budget multiplier projections. `getBalance` also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
 - `vault/daily-claims.ts` – Daily bonus / combined daily claim, daily cap checks
 - `vault/store.ts` – Store listing, purchased items, cosmetic equip
 - `vault/collections.ts` – Collection details, likes, comments, public collections

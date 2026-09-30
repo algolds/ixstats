@@ -54,14 +54,24 @@ export interface Milestone {
 /**
  * International ranking information
  */
+export type RankingCategory =
+  | "GDP per Capita"
+  | "Population"
+  | "Total GDP"
+  | "GDP Growth"
+  | "Public Approval"
+  | "Stability"
+  | "Diplomatic Standing"
+  | "Infrastructure"
+  | "Debt to GDP"
+  | "Income Equality";
+
 export interface Ranking {
-  category:
-    | "GDP per Capita"
-    | "Population"
-    | "Total GDP"
-    | "Quality of Life"
-    | "Innovation"
-    | "Competitiveness";
+  category: RankingCategory;
+  /** The country's own value in this category (units depend on the category). */
+  value: number;
+  /** True when a lower value ranks higher (debt, inequality). */
+  lowerIsBetter?: boolean;
   global: {
     position: number;
     total: number;
@@ -76,7 +86,8 @@ export interface Ranking {
     total: number;
     tier: string;
   };
-  trend: "improving" | "stable" | "declining";
+  /** Only set where a real growth rate backs it (GDP, population). */
+  trend?: "improving" | "stable" | "declining";
   percentile: number; // 0-100, where 100 is the best
   historicalBest?: {
     position: number;
@@ -90,9 +101,9 @@ export interface Ranking {
 export interface VitalityScores {
   economicVitality: number; // 0-100
   populationWellbeing: number; // 0-100
-  diplomaticStanding: number; // 0-100
-  governmentalEfficiency: number; // 0-100
-  overallScore: number; // Average of all scores
+  diplomaticStanding: number | null; // 0-100; null when the country has no diplomatic record
+  governmentalEfficiency: number | null; // 0-100; null when no government structure exists
+  overallScore: number; // Average of the scores that are known
 }
 
 /**

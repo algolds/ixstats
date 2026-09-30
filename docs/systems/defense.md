@@ -38,6 +38,8 @@ Defined in `prisma/schema/military.prisma`:
 - `DefenseBudget`: Defense spending allocation
 - `SecurityThreat`, `ThreatIncident`, `SecurityAssessment`, `NeighborThreatAssessment`, `BorderSecurity`: Threat and border posture
 - `InternalStabilityMetrics`, `SecurityEvent`: Domestic stability and incidents
+
+`security.getInternalStability` recalculates stability from the formula (`src/lib/statecraft/stability-formulas.ts`) on every view through `recalculateInternalStability` (`src/lib/statecraft/stability-store.ts`). Each row stores the formula values it was last computed from (`formulaSnapshot`); on recalculation, the gap between a stored field and its snapshot value (the delta that national issues or other events wrote through `CountryEventSpine`) is added to the new formula value, bounded to 0-100 (rates: at least 0). A row without a snapshot keeps its stored values once and tracks the formula from then on. The formula inputs still use placeholder budgets and several defaulted fields.
 - `MilitaryOperation`, `Deployment`, `MilitaryConflict`: Operations, deployments, and PvP/PvNPC conflicts
 - `MilitaryEquipmentCatalog` / `DefenseManufacturer` / `SmallArmsEquipment` / `SmallArmsManufacturer` / `WeaponEra`: Equipment catalogs
 

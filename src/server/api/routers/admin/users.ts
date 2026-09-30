@@ -79,13 +79,14 @@ export const adminUsersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await ctx.db.$transaction(async (tx) => {
         const user = await tx.user.findUnique({ where: { clerkUserId: input.userId } });
-        if (!user || user.countryId !== input.countryId) return;
+        if (!user) return;
         const country = await tx.country.findUnique({
           where: { id: input.countryId },
           select: { ownerUserId: true },
         });
+        // An owned nation is released whether or not it is the active one (a player may own several).
         if (country?.ownerUserId === user.id) await releaseNation(tx, input.countryId);
-        else await pointActiveNation(tx, user.id, null);
+        else if (user.countryId === input.countryId) await pointActiveNation(tx, user.id, null);
       });
 
       await globalCache.delete(`user_profile:${input.userId}`);

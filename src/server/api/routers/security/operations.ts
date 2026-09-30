@@ -10,6 +10,7 @@ import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/ap
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const securityOperationsRouter = createTRPCRouter({
   // Get active and past operations
@@ -66,16 +67,14 @@ export const securityOperationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const userProfile = await ctx.db.user.findUnique({
         where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true, id: true },
+        select: { id: true },
       });
-
-      if (userProfile?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only create operations for your own country.",
-        });
+      if (!userProfile) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User profile not found." });
       }
 
       // Get country GDP for cost calculation
@@ -204,11 +203,6 @@ export const securityOperationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true },
-      });
-
       const operation = await ctx.db.militaryOperation.findUnique({
         where: { id: input.operationId },
         include: { deployments: true },
@@ -218,9 +212,7 @@ export const securityOperationsRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Operation not found." });
       }
 
-      if (operation.countryId !== userProfile?.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your operation." });
-      }
+      await assertCountryWriteAccess(ctx, operation.countryId);
 
       if (operation.status !== "active" && operation.status !== "planned") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });

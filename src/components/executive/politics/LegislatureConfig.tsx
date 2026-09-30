@@ -156,9 +156,14 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     }
   }, [formData.chamberType, formData.name, formData.totalSeats, formData.electoralSystem]);
 
+  const utils = api.useUtils();
   const configureLegislature = api.elections.configureLegislature.useMutation({
     onSuccess: () => {
       refetch();
+      // Seats were reset and an election (re)scheduled — refresh the lifecycle views.
+      void utils.elections.getElectionStatus.invalidate({ countryId });
+      void utils.elections.getElections.invalidate({ countryId });
+      void utils.elections.getCurrentParliament.invalidate({ countryId });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
@@ -467,6 +472,12 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
             </div>
           )}
 
+          {legislature && (
+            <p className="text-muted-foreground text-xs">
+              Updating the legislature dissolves it: every seat becomes vacant and a snap election
+              is called.
+            </p>
+          )}
           <Button
             onClick={handleSave}
             disabled={!formData.name || configureLegislature.isPending}

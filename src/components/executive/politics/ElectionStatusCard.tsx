@@ -1,0 +1,128 @@
+"use client";
+
+import { CheckSquare as Vote, Calendar, WarningTriangle as AlertTriangle } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
+
+interface ElectionStatusCardProps {
+  countryId: string;
+  /** Only the country owner can count a due election early. */
+  canManage?: boolean;
+}
+
+/**
+ * MC-2: where the country stands in the election lifecycle — what setup is missing, when the
+ * (first) election falls due on the IxTime clock, the last result and the seat composition.
+ * Every number comes from `elections.getElectionStatus`; nothing is estimated.
+ */
+export function ElectionStatusCard({ countryId, canManage = true }: ElectionStatusCardProps) {
+  const utils = api.useUtils();
+  const { data: status } = api.elections.getElectionStatus.useQuery(
+    { countryId },
+    { enabled: !!countryId, staleTime: 30_000 }
+  );
+
+  const resolveDue = api.elections.resolveDueElection.useMutation({
+    onSettled: () => {
+      void utils.elections.invalidate();
+      void utils.legislation.invalidate();
+    },
+  });
+
+  if (!status) return null;
+
+  const { upcoming, lastElection } = status;
+  const needsParties = status.activeParties < status.minParties;
+
+  let headline: string;
+  let detail: string | null = null;
+  if (!status.hasLegislature) {
+    headline = "No legislature configured";
+    detail = `Configure the legislature and register at least ${status.minParties} parties to schedule the first election.`;
+  } else if (needsParties) {
+    headline = "Awaiting parties";
+    detail = `${status.activeParties} of ${status.minParties} active parties registered. The first election is scheduled once ${status.minParties} parties exist.`;
+  } else if (status.counting) {
+    headline = "Votes are being counted";
+  } else if (upcoming?.isDue) {
+    headline = `${upcoming.name}: polls have closed`;
+    detail = `Voting ended ${IxTime.formatIxTime(upcoming.scheduledIxTime)}. Results are counted by the elections job, or count them now.`;
+  } else if (upcoming) {
+    headline = upcoming.isFirst
+      ? `First election scheduled for ${IxTime.formatIxTime(upcoming.scheduledIxTime)}`
+      : `Next election: ${IxTime.formatIxTime(upcoming.scheduledIxTime)}`;
+    detail = upcoming.isFirst
+      ? "Every active party stands. The result seats the legislature, and bills can then go to a vote."
+      : null;
+  } else {
+    headline = "No election scheduled";
+    detail = "The elections job schedules the next one.";
+  }
+
+  const vacant = status.totalSeats - status.seatedSeats;
+
+  return (
+    <div className="border-border space-y-3 rounded-xl border p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="rounded-lg bg-indigo-500/10 p-2.5">
+            {upcoming?.isDue || needsParties || !status.hasLegislature ? (
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+            ) : upcoming ? (
+              <Calendar className="h-5 w-5 text-indigo-500" />
+            ) : (
+              <Vote className="h-5 w-5 text-indigo-500" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold">{headline}</h4>
+            {detail && <p className="text-muted-foreground mt-0.5 text-xs">{detail}</p>}
+          </div>
+        </div>
+        {canManage && upcoming?.isDue && !needsParties && !status.counting && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={resolveDue.isPending}
+            onClick={() => resolveDue.mutate({ countryId })}
+          >
+            {resolveDue.isPending ? "Counting…" : "Count votes"}
+          </Button>
+        )}
+      </div>
+      {resolveDue.error && <p className="text-xs text-red-500">{resolveDue.error.message}</p>}
+
+      {status.hasLegislature && (
+        <p className="text-muted-foreground text-xs">
+          Seats: {status.seatedSeats} of {status.totalSeats} held by parties
+          {vacant > 0 ? ` · ${vacant} vacant` : ""}
+          {status.seatedSeats === 0 ? " · bills cannot pass until the chamber is seated" : ""}
+        </p>
+      )}
+
+      {lastElection && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold">
+            {lastElection.name} · {IxTime.formatIxTime(lastElection.scheduledIxTime)}
+            {lastElection.turnout != null ? ` · turnout ${lastElection.turnout}%` : ""}
+          </p>
+          {lastElection.results.map((r) => (
+            <div key={r.partyId} className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: r.color }}
+                />
+                <span className="truncate">{r.partyName}</span>
+              </span>
+              <span className="text-muted-foreground shrink-0 font-mono">
+                {r.votePercentage.toFixed(1)}% · {r.seatsWon} seats
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

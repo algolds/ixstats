@@ -83,7 +83,12 @@ function setup() {
     },
     realmPage: { findFirst: jest.fn().mockResolvedValue(nationPage) },
     mapLayer: mapLayerTable([]),
-    user: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    user: {
+      // A free-tier account (nationCapacity reads membershipTier).
+      findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }),
+      update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue({ username: "Kir" }) },
     realmClaim: {
       findFirst: jest.fn().mockResolvedValue(null),

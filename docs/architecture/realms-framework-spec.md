@@ -39,8 +39,8 @@ live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurt
 | 10–11 | Image maps | Auto-vectorised by the IxMap pipeline (`runMapPipeline`: PNG → potrace → SVG → GeoJSON); the admin runs `PipelineWizard` at approval and maps colours → nations. Founders supply a clean flat-colour political PNG |
 | 12 | Membership | Owning a nation in a realm = membership. Founder = `Realm.ownerId`; no other roles yet |
 | 13–14 | Claims | Claim anything that already exists (nation page, territory, existing country); create new nations freely. Founder (site admins for IxWorld) approves; **auto-approved** when the claimant is the verified creator of the nation's wiki page. Wiki accounts are verified by a token on the user page (ixwiki, iiwiki, althistory) |
-| 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) — today site admins set it in `/admin/realms` (1–20); founder tooling is planned |
-| 16 | Vault income | Only the active nation pays |
+| 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) — today site admins set it in `/admin/realms` (1–20); founder tooling is planned. The effective cap is min(realm cap, tier cap): 1 for free accounts, 5 for MyCountry Premium (`realms.nation-cap.ts`) |
+| 16 | Vault income | One dividend per account, from its primary (earliest-created owned) nation — not the active one, so switching cannot farm payouts |
 | 17 | Simulation | Identical in every realm |
 | 18 | Time | One shared IxTime clock; per-realm calendar label (display only) — not implemented yet (planned) |
 | 19 | Visibility | `public` or `unlisted` only — never private |
@@ -131,8 +131,9 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
 
 **Not implemented yet (planned):** the per-realm calendar label (decision 18), founder tooling (settings
 such as the nation cap, moderation, removal, succession), the public founding application, a per-realm
-ThinkPages feed and its global-feed setting, and the passport realm/nation switcher and nav chip (today a
-player switches with **Play as** on each realm's page). Also still open: archived-realm handling (read-only,
+ThinkPages feed and its global-feed setting, and the nav chip (a player switches with **Play as** on each
+realm's page, or with the nation switcher in the nav user menu and on their passport's Realms tab). Also
+still open: archived-realm handling (read-only,
 excluded from crons and payouts — decision 21), the WikiOS front page as a portal to every realm's lore and
 realm-tagged forum content (decision 3), and pre-filling the builder from a claimed nation page (E-f).
 Phases 2 (Founding), 3 (Playing) and 4 (Social & governance) have not started as phases; the Eurth slice

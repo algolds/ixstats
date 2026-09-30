@@ -188,3 +188,54 @@ export async function grantBonus(
     reason: res.message,
   };
 }
+
+/**
+ * Ledger source of the one-time new-player bonus. The country builder and realm claims
+ * use the same source (and so the same idempotency key, `bonus:new_player:<User.id>`),
+ * so whichever path runs first pays and every later one is a no-op.
+ */
+export const NEW_PLAYER_BONUS_SOURCE = "bonus:new_player";
+
+/**
+ * Also pay the bonus the first time an existing account opens its Vault, so accounts
+ * created before the bonus moved to sign-up (and never took a country) are not left out.
+ * Set to false to pay it only at account creation and on a country's creation or claim.
+ */
+export const NEW_PLAYER_BONUS_ON_VAULT_OPEN = true;
+
+/** Users this process has already confirmed as paid (or tried), to skip repeat ledger reads. */
+const newPlayerBonusChecked = new Set<string>();
+
+/**
+ * Pay the one-time new-player bonus to an IxnayID (internal or Clerk id). It does not need
+ * a country. Safe to call any number of times: `oneTime` checks the ledger for an existing
+ * `bonus:new_player` row and the grant itself is idempotent on `bonus:new_player:<User.id>`.
+ * Never throws.
+ */
+export async function grantNewPlayerBonus(
+  db: PrismaClient,
+  userIdOrClerkId: string,
+  trigger: "account_created" | "vault_opened"
+): Promise<{ granted: boolean; amount: number; reason?: string }> {
+  if (newPlayerBonusChecked.has(userIdOrClerkId)) {
+    return { granted: false, amount: 0, reason: "already_checked" };
+  }
+  try {
+    const cfg = await getBonusConfig(db);
+    const res = await grantBonus(db, userIdOrClerkId, NEW_PLAYER_BONUS_SOURCE, cfg.newPlayer, {
+      oneTime: true,
+      metadata: { trigger },
+    });
+    // Remember only settled outcomes; a failed grant (e.g. maintenance) is retried next time
+    if (res.granted || res.reason === "already_granted") newPlayerBonusChecked.add(userIdOrClerkId);
+    return { granted: res.granted, amount: res.amount, reason: res.reason };
+  } catch (error) {
+    console.error(`[Vault Bonus] New-player bonus failed for ${userIdOrClerkId}:`, error);
+    return { granted: false, amount: 0, reason: "error" };
+  }
+}
+
+/** Test hook: forget which users this process has checked. */
+export function resetNewPlayerBonusMemo(): void {
+  newPlayerBonusChecked.clear();
+}

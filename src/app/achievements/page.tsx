@@ -49,10 +49,11 @@ export default function AchievementsPage() {
   // Get user profile
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
-  // Get all master achievements with status for current user's country
+  // Achievements belong to the account; the country (if any) only adds country achievements
+  const hasProfile = !!userProfile;
   const { data: achievements, isLoading } = api.achievements.getAllWithStatus.useQuery(
     { countryId: userProfile?.countryId || undefined },
-    { enabled: !!userProfile?.countryId }
+    { enabled: hasProfile }
   );
 
   const utils = api.useUtils();
@@ -63,10 +64,10 @@ export default function AchievementsPage() {
   });
 
   useEffect(() => {
-    if (userProfile?.countryId) {
+    if (hasProfile) {
       syncAchievements();
     }
-  }, [userProfile?.countryId, syncAchievements]);
+  }, [hasProfile, userProfile?.countryId, syncAchievements]);
 
   // Get global leaderboard
   const { data: leaderboard } = api.achievements.getLeaderboard.useQuery({

@@ -694,7 +694,7 @@ model ForeignPolicyAction {
   actionType           String   // "embargo", "sanction", "free_trade", "military_alliance", "blockade"
   category             String   @default("trade") // "trade", "military", "diplomatic"
   severity             String   @default("moderate") // "light", "moderate", "severe"
-  status               String   @default("proposed") // "proposed", "active", "expired", "lifted"
+  status               String   @default("proposed") // "proposed", "active", "declined", "withdrawn", "expired", "lifted"
   effectiveIxTime      Float?
   expiryIxTime         Float?
   initiatorGdpImpact   Float    @default(0)
@@ -774,7 +774,9 @@ model AllianceMember {
   votingPower       Float    @default(1.0)
   contributionLevel String   @default("standard") // "minimal", "standard", "high"
   isActive          Boolean  @default(true)
-  status            String   @default("active") // "active", "invited" (pending consent, isActive=false), "declined", "left"
+  status            String   @default("active") // "active", "invited" (pending consent, isActive=false), "declined", "withdrawn", "expired", "left"
+  invitedByCountryId String? // Country that issued the current pending invite (null on legacy rows)
+  invitedAt         DateTime? // When the current invite was issued; drives the invite expiry window
   joinedAt          DateTime @default(now())
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -786,6 +788,7 @@ model AllianceMember {
   @@index([allianceId])
   @@index([countryId])
   @@index([role])
+  @@index([invitedByCountryId])
 }
 
 model AllianceAction {

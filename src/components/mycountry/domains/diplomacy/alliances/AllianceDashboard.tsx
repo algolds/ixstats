@@ -65,11 +65,13 @@ export function AllianceDashboard({
     { enabled: inviteOpen }
   );
 
+  const utils = api.useUtils();
   const inviteMutation = api.diplomaticPolicies.inviteMember.useMutation({
     onSuccess: () => {
       setInviteOpen(false);
       setInviteTarget("");
       void refetch();
+      void utils.diplomaticPolicies.getOutgoingAllianceInvites.invalidate();
     },
   });
 

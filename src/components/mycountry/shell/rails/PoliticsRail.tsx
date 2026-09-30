@@ -26,8 +26,6 @@ interface PartyItem {
   ideology?: string | null;
   currentSupport?: number | null;
   popularSupport?: number | null;
-  seatsOwned?: number | null;
-  seats?: number | null;
   createdAt?: string | Date | null;
 }
 
@@ -156,6 +154,12 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
 
   const hasParliamentSeats = parliament?.seats && parliament.seats.length > 0;
 
+  // Seats a party actually holds in the chamber (from LegislativeSeat rows; 0 until elected).
+  const seatsByParty = useMemo(
+    () => new Map((parliament?.partySummary ?? []).map((ps) => [ps.party.id, ps.seats])),
+    [parliament]
+  );
+
   return (
     <div className="space-y-4">
       {/* Political Snapshot Header KPIs */}
@@ -204,7 +208,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
             {parties && parties.length > 0 ? (
               <div className="space-y-1.5">
                 {parties.slice(0, 4).map((p) => {
-                  const seats = p.seatsOwned ?? p.seats ?? 0;
+                  const seats = seatsByParty.get(p.id) ?? 0;
                   const total = legislature?.totalSeats ?? 100;
                   const pct = total > 0 ? (seats / total) * 100 : 0;
                   return (
@@ -248,7 +252,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
           ) : (
             parties.slice(0, 4).map((party) => {
               const support = party.currentSupport ?? party.popularSupport ?? 0;
-              const seats = party.seatsOwned ?? party.seats ?? 0;
+              const seats = seatsByParty.get(party.id) ?? 0;
 
               return (
                 <div

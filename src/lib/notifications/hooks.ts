@@ -5,6 +5,7 @@
 
 import { notificationAPI } from "./api";
 import { guardNotificationEvent } from "./guard";
+import { withBasePath } from "~/lib/base-path";
 
 /**
  * Economic Data Change Hook
@@ -52,6 +53,7 @@ export async function onThinkPageActivity(params: {
     title: params.title,
     action: params.action,
     authorId: params.authorId,
+    authorName: params.authorName,
     targetUserId: params.targetUserId,
   });
 }
@@ -267,10 +269,14 @@ export async function onDefenseEvent(params: {
 
 /**
  * Social Activity Hook
- * Triggers notifications for social platform activities
+ * Triggers notifications for social platform activities.
+ *
+ * `toUserId` is the recipient's Clerk user id (for ThinkPages, the persona's owning
+ * `clerkUserId`, never the persona id). `fromUserName` is the acting persona's display name.
+ * `contentId` is a ThinkPages post id; the notification links to that post.
  */
 export async function onSocialActivity(params: {
-  activityType: "follow" | "mention" | "share" | "collaboration_invite";
+  activityType: "follow" | "mention" | "share" | "repost" | "quote" | "collaboration_invite";
   fromUserId: string;
   toUserId: string;
   fromUserName?: string;
@@ -278,11 +284,14 @@ export async function onSocialActivity(params: {
   contentId?: string;
 }) {
   if (!(await guardNotificationEvent("onSocialActivity"))) return;
+  const actor = params.fromUserName?.trim() || "Someone";
   const activityMessages = {
-    follow: `${params.fromUserName || "Someone"} started following you`,
-    mention: `${params.fromUserName || "Someone"} mentioned you`,
-    share: `${params.fromUserName || "Someone"} shared your content`,
-    collaboration_invite: `${params.fromUserName || "Someone"} invited you to collaborate`,
+    follow: `${actor} started following you`,
+    mention: `${actor} mentioned you`,
+    share: `${actor} shared your content`,
+    repost: `${actor} reposted your post`,
+    quote: `${actor} quoted your post`,
+    collaboration_invite: `${actor} invited you to collaborate`,
   };
 
   await notificationAPI.create({
@@ -291,11 +300,12 @@ export async function onSocialActivity(params: {
     userId: params.toUserId,
     category: "social",
     priority: "low",
-    href: params.contentId ? `/content/${params.contentId}` : `/settings/${params.fromUserId}`,
-    actionable: true,
+    href: params.contentId ? withBasePath(`/thinkpages/post/${params.contentId}`) : null,
+    actionable: !!params.contentId,
     metadata: {
       fromUserId: params.fromUserId,
       activityType: params.activityType,
+      ...(params.contentId ? { postId: params.contentId } : {}),
     },
   });
 }

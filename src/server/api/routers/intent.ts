@@ -27,6 +27,7 @@ import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
+import { growthModifierToLevelShift, StorytellerEffectType } from "~/lib/economy/calculations";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
@@ -291,6 +292,8 @@ export const intentRouter = createTRPCRouter({
             cooldownUntil: now + COOLDOWN_MS,
             createdIxTime: now,
             riskRating: TIER_RISK[input.tier as Tier],
+            // Held against CivCap while the directive executes (lib/government/civcap.ts).
+            civCapCost: pkg.civCapCost,
           },
         });
       } else {
@@ -309,6 +312,8 @@ export const intentRouter = createTRPCRouter({
             cooldownUntil: now + COOLDOWN_MS,
             createdIxTime: now,
             riskRating: TIER_RISK[input.tier as Tier],
+            // Held against CivCap while the directive executes (lib/government/civcap.ts).
+            civCapCost: pkg.civCapCost,
           },
         });
       }
@@ -329,15 +334,21 @@ export const intentRouter = createTRPCRouter({
         })),
       });
 
-      // Growth-oriented directives move the GDP projection the same way active policies do:
-      // a time-limited growth_rate_modifier StorytellerEffect (read by IxStatsCalculator).
-      if (pkg.gdpGrowthModifier > 0) {
+      // Growth-oriented directives move the GDP projection through a gdp_level_adjustment
+      // StorytellerEffect: the growth the modifier would add at a reference rate, phased in over
+      // GROWTH_EFFECT_YEARS and kept after. (A growth_rate_modifier applied to the whole span
+      // since the baseline, so it rewrote past history and never lapsed.)
+      const levelShift =
+        pkg.gdpGrowthModifier > 0
+          ? growthModifierToLevelShift(pkg.gdpGrowthModifier, GROWTH_EFFECT_YEARS)
+          : 0;
+      if (levelShift > 0) {
         await ctx.db.storytellerEffect.create({
           data: {
             countryId: input.countryId,
             ixTimeTimestamp: new Date(now),
-            inputType: "growth_rate_modifier",
-            value: pkg.gdpGrowthModifier,
+            inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+            value: levelShift,
             description: `Directive: ${input.goal}`,
             duration: GROWTH_EFFECT_YEARS,
             isActive: true,
