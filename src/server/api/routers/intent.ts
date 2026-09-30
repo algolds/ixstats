@@ -109,6 +109,12 @@ export const intentRouter = createTRPCRouter({
       }
       const weighted = packages.map((p) => ({
         ...p,
+        // The GDP level shift commit() would record (phased in over GROWTH_EFFECT_YEARS, then kept).
+        gdpLevelShift:
+          p.gdpGrowthModifier > 0
+            ? growthModifierToLevelShift(p.gdpGrowthModifier, GROWTH_EFFECT_YEARS)
+            : 0,
+        gdpEffectYears: GROWTH_EFFECT_YEARS,
         acceptance: broker
           ? weightAcceptance(p.acceptance, {
               brokerUnlocked: broker.unlocked,
@@ -419,6 +425,70 @@ export const intentRouter = createTRPCRouter({
       }
 
       return { roots, allIntents: Array.from(intentMap.values()) };
+    }),
+
+  /**
+   * What a directive actually changed: its CountryEventSpine ledger rows (sourceId = intent id)
+   * and the GDP level effect commit() recorded (`createdBy: intent:<id>`). Read-only; the same
+   * rows already surface in `mycountry.getCanonFeed`.
+   */
+  getOutcome: publicProcedure
+    .input(z.object({ intentId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const intent = await ctx.db.intent.findUnique({
+        where: { id: input.intentId },
+        select: { id: true, countryId: true },
+      });
+      if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const [ledger, gdpEffects] = await Promise.all([
+        ctx.db.countryChangeLog.findMany({
+          where: { countryId: intent.countryId, sourceId: intent.id },
+          orderBy: { appliedIxTime: "asc" },
+          take: 50,
+          select: {
+            id: true,
+            targetField: true,
+            previousValue: true,
+            newValue: true,
+            deltaValue: true,
+            appliedIxTime: true,
+          },
+        }),
+        ctx.db.storytellerEffect.findMany({
+          where: { countryId: intent.countryId, createdBy: `intent:${intent.id}` },
+          take: 10,
+          select: { id: true, value: true, duration: true, isActive: true },
+        }),
+      ]);
+
+      const toNumber = (raw: string | null): number | null => {
+        if (raw == null) return null;
+        const n = Number(JSON.parse(raw));
+        return Number.isFinite(n) ? n : null;
+      };
+
+      return {
+        ledger: ledger.map((row) => {
+          let previousValue: number | null = null;
+          let newValue: number | null = null;
+          try {
+            previousValue = toNumber(row.previousValue);
+            newValue = toNumber(row.newValue);
+          } catch {
+            /* non-numeric ledger value — show the delta only */
+          }
+          return {
+            id: row.id,
+            targetField: row.targetField,
+            deltaValue: row.deltaValue,
+            previousValue,
+            newValue,
+            appliedIxTime: row.appliedIxTime,
+          };
+        }),
+        gdpEffects,
+      };
     }),
 
   /** Return resistance issues linked to an intent (progress traceability for the drill sheet). */

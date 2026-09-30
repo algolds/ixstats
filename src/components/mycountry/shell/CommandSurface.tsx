@@ -85,10 +85,12 @@ function CommandSurfaceComponent({
           countryId={countryId}
           initialGoal={goal}
           onDone={(msg) => {
-            setMode("home");
+            // On the Directives page itself, stay put: it shows the declared directive.
+            if (section !== "executive") setMode("home");
             setGoal("");
             if (msg) notify.success("Directive committed", msg);
           }}
+          onOpenDrill={openDrill}
         />
       ) : DOMAIN_SECTIONS.has(section) ? (
         <DomainSurface
