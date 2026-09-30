@@ -246,4 +246,38 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
     expect(again.lastEditor).toMatchObject({ username: "WikiOSUser" });
   });
+
+  it("never has more than a few lookups in flight: a further title is answered from Postgres, without an error", async () => {
+    const releases: Array<() => void> = [];
+    mockFetchAuthors.mockImplementation(
+      (title: string) => new Promise((resolve) => releases.push(() => resolve(mwData(title))))
+    );
+    mockWikiArticleFindFirst.mockResolvedValue(null);
+
+    const lookups = Array.from({ length: 7 }, (_, n) => getArticleAuthors(`Fan out ${n}`));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(6);
+    releases.forEach((release) => release());
+    const results = await Promise.all(lookups);
+    expect(results.slice(0, 6).every((r) => r.creator?.username?.startsWith("creator-of-"))).toBe(
+      true
+    );
+    expect(results[6]).toMatchObject({ creator: null, totalContributors: 0 });
+  });
+
+  it("holds lookups to a steady rate per process", async () => {
+    mockFetchAuthors.mockImplementation(async (title: string) => mwData(title));
+    mockWikiArticleFindFirst.mockResolvedValue(null);
+    const realNow = Date.now.bind(Date);
+    const nowSpy = jest.spyOn(Date, "now").mockImplementation(() => realNow() + 10 * 60 * 1000);
+    mockFetchAuthors.mockClear();
+
+    const results = [];
+    for (let n = 0; n < 125; n++) results.push(await getArticleAuthors(`Steady ${n}`));
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(120);
+    expect(results.filter((r) => r.creator === null)).toHaveLength(5);
+    nowSpy.mockRestore();
+  });
 });

@@ -12,6 +12,7 @@ import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
 import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSource } from "./bridge";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
 import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
+import { OutboundLimiter } from "../../services/outbound-limiter";
 
 export type { ArticleAuthorInfo };
 
@@ -147,6 +148,16 @@ const mwAuthorsCache = new Cache<MediaWikiAuthorsData>({
   namespace: "wiki-authors",
 });
 const mwAuthorsInFlight = new Map<string, Promise<MediaWikiAuthorsData>>();
+/**
+ * Anyone can ask for the authors of any title, and each distinct one is an HTTP call: a few in
+ * flight and a steady rate per process. A title the limiter turns away is answered from Postgres
+ * alone (authorship is decoration, never worth an error).
+ */
+const mwAuthorsLimiter = new OutboundLimiter({
+  name: "Looking up authors",
+  maxConcurrent: 6,
+  perMinute: 120,
+});
 
 /** MediaWiki page history for authorship: cached, single-flight and short-timeout (NEW-5). */
 async function getMediaWikiAuthorsCached(
@@ -163,11 +174,8 @@ async function getMediaWikiAuthorsCached(
   const request = (async () => {
     let data: MediaWikiAuthorsData = null;
     try {
-      data = await fetchMediaWikiPageAuthorsAndRevisions(
-        cleanTitle,
-        source,
-        250,
-        MW_AUTHORS_TIMEOUT_MS
+      data = await mwAuthorsLimiter.run(() =>
+        fetchMediaWikiPageAuthorsAndRevisions(cleanTitle, source, 250, MW_AUTHORS_TIMEOUT_MS)
       );
     } catch {
       data = null;
