@@ -19,7 +19,6 @@ import { useWikiNarrator } from "~/hooks/useWikiNarrator";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
-import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 import { EMBED_CSS, EMBED_JS, EMBED_PREFETCH } from "~/lib/wiki-os/editor/wiki-embed-shared";
 import { parseWikiSource } from "~/lib/wiki-os/config";
 import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
@@ -30,6 +29,7 @@ import { normalizeAuthorInfo } from "./author-info";
 import { QuickHistoryModal, QuickBacklinksModal } from "./ArticleModals";
 import {
   injectPlaceholderElements,
+  extractStatKeys,
   CoordsPill,
   DynamicStatSpan,
   type DynamicStatData,
@@ -333,20 +333,10 @@ export function ArticleRenderer({
   };
 
   // --- Portal & Dynamic Widgets Setup ---
-  const statKeys = useMemo(() => {
-    const keys = new Set<string>();
-    const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi;
-    let match;
-    while ((match = regex.exec(contentHtml)) !== null) {
-      if (match[1]) keys.add(match[1]);
-    }
-    const linkRegex =
-      /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
-    while ((match = linkRegex.exec(contentHtml)) !== null) {
-      if (match[1]) keys.add(safeDecodeURI(match[1]));
-    }
-    return Array.from(keys);
-  }, [contentHtml]);
+  const statKeys = useMemo(
+    () => extractStatKeys(infoboxHtml ? `${contentHtml}${infoboxHtml}` : contentHtml),
+    [contentHtml, infoboxHtml]
+  );
 
   const statsQuery = api.wikios.resolveWikiPlaceholders.useQuery(
     { placeholders: statKeys },

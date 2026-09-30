@@ -59,6 +59,7 @@ jest.mock("~/components/wiki-os/reader/ArticleModals", () => ({
 }));
 jest.mock("~/components/wiki-os/reader/ArticlePlaceholders", () => ({
   injectPlaceholderElements: (html: string) => html,
+  extractStatKeys: () => [],
   CoordsPill: () => null,
   DynamicStatSpan: () => null,
 }));
