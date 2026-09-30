@@ -68,16 +68,32 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getUserInfo: jest.fn().mockResolvedValue(null),
   getBacklinks: jest.fn(),
 }));
+jest.mock("~/lib/wiki-os/templates/preview-service.server", () => ({
+  ...jest.requireActual("~/lib/wiki-os/templates/preview-service.server"),
+  renderTemplateWithRedisCache: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
   __esModule: true,
   PageManagementService: { restoreArticle: jest.fn() },
 }));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
 import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
+import { wikiosTemplatesRouter } from "~/server/api/routers/wikios/templates";
+import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
+import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
+import { wikiosSearchRouter } from "~/server/api/routers/wikios/search";
+import { getTemplatePreview } from "~/lib/wiki-os/templates/template-registry";
+import { canonicalPreviewInput } from "~/lib/wiki-os/templates/preview-service";
+import {
+  previewCacheKey,
+  renderTemplateWithRedisCache,
+} from "~/lib/wiki-os/templates/preview-service.server";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
@@ -312,5 +328,183 @@ describe("S6: getAuthorProfile resolves the requested name only", () => {
 
   it("returns null for an anonymous caller who names nobody", async () => {
     await expect(profile(anonymousCtx())).resolves.toBeNull();
+  });
+});
+
+describe("S7: template preview is signed-in, bounded, sanitised and SHA-256 keyed", () => {
+  const validInput = { template: "Quote box", params: { text: "hi" } };
+  const previewCaller = (ctx: unknown) =>
+    createCallerFactory(wikiosTemplatesRouter)(asCtx(ctx)).getTemplatePreview;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest
+      .mocked(renderTemplateWithRedisCache)
+      .mockResolvedValue({ html: "<p>ok</p>", source: "network", cached: false });
+  });
+
+  it("is no longer a public procedure", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const anonymous = createMockRouterContext({ auth: null, user: null });
+
+    await expect(previewCaller(anonymous)(validInput)).rejects.toThrow(/Authentication required/);
+    expect(renderTemplateWithRedisCache).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it.each([
+    ["an over-long template name", { template: "T".repeat(256), params: {} }],
+    ["template-breaking characters", { template: "Foo}}{{Bar", params: {} }],
+    ["a pipe in the template name", { template: "Foo|bar", params: {} }],
+    ["an over-long parameter name", { template: "T", params: { ["k".repeat(65)]: "v" } }],
+    ["an over-long parameter value", { template: "T", params: { k: "v".repeat(4001) } }],
+    [
+      "more than 60 parameters",
+      { template: "T", params: Object.fromEntries(Array.from({ length: 61 }, (_, i) => [`p${i}`, "v"])) },
+    ],
+  ])("rejects %s", async (_label, input) => {
+    await expect(previewCaller(userCtx())(input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(renderTemplateWithRedisCache).not.toHaveBeenCalled();
+  });
+
+  it("sanitises the rendered HTML before returning it", async () => {
+    jest.mocked(renderTemplateWithRedisCache).mockResolvedValue({
+      html: '<p onclick="alert(1)">ok</p><script>alert(1)</script><img src=x onerror=alert(1)>',
+      source: "network",
+      cached: false,
+    });
+
+    const html = await previewCaller(userCtx())(validInput);
+
+    expect(html).toContain("ok");
+    expect(html).not.toMatch(/<script|onerror|onclick/i);
+  });
+
+  it("previewCacheKey is a SHA-256 key that separates inputs the old 32-bit hash merged", () => {
+    // "Aa" and "BB" collide under the old `h * 31 + c` rolling hash, so these two shared a key.
+    const legacyHash = (text: string) => {
+      let h = 0;
+      for (let i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+      return h >>> 0;
+    };
+    expect(legacyHash(canonicalPreviewInput("T", { a: "Aa" }))).toBe(
+      legacyHash(canonicalPreviewInput("T", { a: "BB" }))
+    );
+
+    const first = previewCacheKey("T", { a: "Aa" });
+    const second = previewCacheKey("T", { a: "BB" });
+
+    expect(first).toMatch(/^tplprev:v2:[0-9a-f]{64}$/);
+    expect(second).toMatch(/^tplprev:v2:[0-9a-f]{64}$/);
+    expect(first).not.toBe(second);
+    expect(previewCacheKey("T", { a: "1", b: "2" })).toBe(previewCacheKey("T", { b: "2", a: "1" }));
+  });
+});
+
+describe("S7: template wikitext cannot be broken out of", () => {
+  let fetchMock: jest.SpiedFunction<typeof fetch>;
+
+  const sentWikitext = () =>
+    new URLSearchParams(String(fetchMock.mock.calls[0]![1]!.body)).get("text");
+
+  beforeEach(() => {
+    fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(Response.json({ parse: { text: "<p>rendered</p>" } }));
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+  });
+
+  it("escapes a literal pipe in a value as {{!}}", async () => {
+    await getTemplatePreview("Quote box", { text: "a|b", author: "Me" });
+
+    expect(sentWikitext()).toBe("{{Quote box|text=a{{!}}b|author=Me}}");
+  });
+
+  it.each([
+    ["closing braces", { text: "x}}{{evil|k=v" }],
+    ["an opening brace pair", { text: "{{evil" }],
+    ["a nested template", { text: "{{Flag|Foo}}" }],
+  ])("refuses a value with %s without calling MediaWiki", async (_label, params) => {
+    await expect(getTemplatePreview("Quote box", params)).resolves.toBe("Invalid parameter");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([["a|b"], ["a=b"], ["a}}b"], ["a\nb"]])(
+    "refuses the parameter name %j without calling MediaWiki",
+    async (key) => {
+      await expect(getTemplatePreview("Quote box", { [key]: "v" })).resolves.toBe(
+        "Invalid parameter"
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
+});
+
+describe("S7: WikiOS write procedures carry limits", () => {
+  const editCaller = () => createCallerFactory(wikiosEditingRouter)(asCtx(userCtx("Legacy")));
+
+  it("rejects wikitext over MediaWiki's 2 MB page limit", async () => {
+    await expect(
+      editCaller().saveWikitext({ title: "Big", wikitext: "x".repeat(2_000_001) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("rejects an upload over ~10 MB decoded before decoding it", async () => {
+    const fromSpy = jest.spyOn(Buffer, "from");
+    await expect(
+      editCaller().uploadFile({ filename: "a.png", fileBase64: "A".repeat(15_000_001) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(fromSpy).not.toHaveBeenCalledWith(expect.any(String), "base64");
+    fromSpy.mockRestore();
+  });
+
+  it("uses the rate-limited procedure builders for every editing mutation", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/server/api/routers/wikios/editing.ts"),
+      "utf8"
+    );
+    for (const name of ["saveWikitext", "revertToRevision", "rollback", "uploadFile", "restoreArticle"]) {
+      expect(source).toMatch(new RegExp(`${name}: lightMutationProcedure`));
+    }
+    expect(source).toMatch(/previewWikitext: readOnlyProcedure/);
+    expect(source).not.toMatch(/: protectedProcedure/);
+  });
+});
+
+describe("S7: unbounded title and query inputs are capped", () => {
+  const ctx = () => asCtx(userCtx());
+
+  it("caps watchlist page titles at 512 characters", async () => {
+    await expect(
+      createCallerFactory(wikiosWatchlistAnnotationsRouter)(ctx()).watchPage({
+        pageTitle: "t".repeat(513),
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("caps page-content titles and sections at 512 characters", async () => {
+    const caller = createCallerFactory(wikiosPageContentRouter)(ctx());
+    await expect(
+      caller.getSectionContent({ title: "t".repeat(513), section: "s" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      caller.getSectionContent({ title: "t", section: "s".repeat(513) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("caps search queries at 256 characters and fileTypes at 20 entries", async () => {
+    const caller = createCallerFactory(wikiosSearchRouter)(ctx());
+    await expect(caller.advancedSearch({ query: "q".repeat(257) })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    await expect(
+      caller.searchFiles({ fileTypes: Array.from({ length: 21 }, () => "png") })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller.searchBusinesses({ query: "q".repeat(257) })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 });

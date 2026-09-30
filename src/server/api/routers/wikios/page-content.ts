@@ -491,8 +491,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getSectionContent: publicProcedure
     .input(
       z.object({
-        title: z.string().min(1),
-        section: z.string().min(1),
+        title: z.string().min(1).max(512),
+        section: z.string().min(1).max(512),
         source: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
@@ -553,7 +553,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getPageImages: publicProcedure
     .input(
       z.object({
-        title: z.string().min(1),
+        title: z.string().min(1).max(512),
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
@@ -566,7 +566,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * Batch get lead thumbnails for article titles.
    */
   getArticleThumbnails: publicProcedure
-    .input(z.object({ titles: z.array(z.string().min(1)).max(100) }))
+    .input(z.object({ titles: z.array(z.string().min(1).max(512)).max(100) }))
     .query(async ({ input }) => {
       if (input.titles.length === 0) return {};
       const { batchFetchThumbnails } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");

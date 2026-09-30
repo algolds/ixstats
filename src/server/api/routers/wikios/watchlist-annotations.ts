@@ -116,7 +116,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
    * Add a page to the user's watchlist (both native WikiWatchlist and Stash).
    */
   watchPage: protectedProcedure
-    .input(z.object({ pageTitle: z.string() }))
+    .input(z.object({ pageTitle: z.string().max(512) }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
 
@@ -166,7 +166,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
    * Remove a page from the user's watchlist.
    */
   unwatchPage: protectedProcedure
-    .input(z.object({ pageTitle: z.string() }))
+    .input(z.object({ pageTitle: z.string().max(512) }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
 
@@ -321,7 +321,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
    * Check whether a page is on the user's watchlist.
    */
   isPageWatched: protectedProcedure
-    .input(z.object({ pageTitle: z.string() }))
+    .input(z.object({ pageTitle: z.string().max(512) }))
     .query(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
 
