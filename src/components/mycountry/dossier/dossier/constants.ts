@@ -26,25 +26,25 @@ import {
  */
 export const CLASSIFICATION_STYLES = {
   PUBLIC: {
-    color: "text-green-600 dark:text-green-400",
+    color: "text-emerald-600",
     bg: "bg-green-500/10",
     border: "border-green-500/30",
     label: "PUBLIC",
   },
   RESTRICTED: {
-    color: "text-yellow-600 dark:text-yellow-400",
+    color: "text-amber-600",
     bg: "bg-yellow-500/10",
     border: "border-yellow-500/30",
     label: "RESTRICTED",
   },
   CONFIDENTIAL: {
-    color: "text-orange-600 dark:text-orange-400",
+    color: "text-orange-600",
     bg: "bg-orange-500/10",
     border: "border-orange-500/30",
     label: "CONFIDENTIAL",
   },
   TOP_SECRET: {
-    color: "text-red-600 dark:text-red-400",
+    color: "text-destructive",
     bg: "bg-red-500/10",
     border: "border-red-500/30",
     label: "TOP SECRET",

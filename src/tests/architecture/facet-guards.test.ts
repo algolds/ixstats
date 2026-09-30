@@ -46,9 +46,36 @@ const MICRO_TYPE_ALLOWED = new Set([
   "components/thinkpages/post/PostComposers.tsx: text-[7px]", // 14px count badge
 ]);
 
-// Plan 346 gate: <= 180 repo-wide, of which 7 live in labs/onoma. Keep only skeletons
+// Plan 346 gate, lowered after the 2026-09-30 Facet conversion (was 173). Keep only skeletons
 // (prefer <Skeleton>) and genuine live/unread indicators.
-const ANIMATE_PULSE_CEILING = 173;
+const ANIMATE_PULSE_CEILING = 84;
+
+/** Surfaces converted to Facet primitives (2026-09-30); their stricter gates live below. */
+const FACET_CONVERTED = [
+  "components/mycountry/",
+  "components/maps/",
+  "components/shared/atomic-picker/",
+  "app/help/",
+  "app/builder/components/editor/",
+].map((dir) => dir.split("/").join(path.sep));
+
+const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));
+
+function convertedHits(pattern: RegExp, allowed: ReadonlySet<string> = new Set()): string[] {
+  return hits(pattern, allowed).filter((hit) => inConverted(hit.slice(0, hit.indexOf(": "))));
+}
+
+// Brand artwork, a monochrome logo image, typography-plugin inversion, and a comment describing
+// legacy class strings.
+const DARK_OVERRIDE_ALLOWED = new Set([
+  `${path.join("components", "mycountry", "shared", "primitives", "mycountry-logo.tsx")}: dark:text-amber-400`,
+  `${path.join("components", "mycountry", "shared", "primitives", "SectionTabBar.tsx")}: dark:text-`,
+  `${path.join("components", "maps", "core", "MapLoadingScreen.tsx")}: dark:invert`,
+  `${path.join("components", "maps", "core", "StoryPinModal.tsx")}: dark:prose-invert`,
+]);
+
+// Image scrims (flag photos, card art) and the MyCountry logo.
+const CONVERTED_GRADIENT_CEILING = 10;
 
 describe("Facet anti-slop guards", () => {
   it("has no arbitrary sub-12px text sizes", () => {
@@ -68,7 +95,9 @@ describe("Facet anti-slop guards", () => {
   });
 
   it("keeps nested drill-sheet cards opaque (only the sheet itself blurs)", () => {
-    const drillSheets = sources.find(({ file }) => file.endsWith("mycountry/shell/DrillSheets.tsx"));
+    const drillSheets = sources.find(({ file }) =>
+      file.endsWith("mycountry/shell/DrillSheets.tsx")
+    );
     expect(drillSheets?.content.match(/backdrop-blur/g) ?? []).toHaveLength(1);
   });
 
@@ -76,5 +105,43 @@ describe("Facet anti-slop guards", () => {
     const layout = sources.find(({ file }) => file === path.join("app", "layout.tsx"));
     expect(layout?.content.match(/<MotionConfig reducedMotion="user">/g) ?? []).toHaveLength(1);
     expect(hits(/RackFocusBlurWrapper/g)).toEqual([]);
+  });
+
+  it("imports icons only from iconoir-react (lucide-react is prohibited)", () => {
+    expect(hits(/from ["']lucide-react["']/g)).toEqual([]);
+  });
+
+  it("keeps @radix-ui imports inside src/components/ui", () => {
+    const uiDir = path.join("components", "ui") + path.sep;
+    const leaks = hits(/from ["']@radix-ui\/[^"']+["']/g).filter((hit) => !hit.startsWith(uiDir));
+    expect(leaks).toEqual([]);
+  });
+
+  it("draws dot grids with the Facet texture prop, not a hand-rolled radial-gradient", () => {
+    expect(hits(/radial-gradient\(circle at 1px 1px/g)).toEqual([]);
+  });
+
+  describe("surfaces converted to Facet", () => {
+    it("use theme tokens instead of dark: overrides", () => {
+      expect(convertedHits(/\bdark:[a-z][a-z0-9-]*/g, DARK_OVERRIDE_ALLOWED)).toEqual([]);
+    });
+
+    it("use the --z-depth scale instead of arbitrary high z-index values", () => {
+      expect(convertedHits(/\bz-\[\d{4,}\]/g)).toEqual([]);
+    });
+
+    it("have no hex colour literals in class names", () => {
+      expect(convertedHits(/\[#[0-9a-fA-F]{3,8}\]/g)).toEqual([]);
+    });
+
+    it(`keep decorative gradients at or below ${CONVERTED_GRADIENT_CEILING}`, () => {
+      expect(convertedHits(/\bbg-gradient-to-[a-z]+/g).length).toBeLessThanOrEqual(
+        CONVERTED_GRADIENT_CEILING
+      );
+    });
+
+    it("do not bring back the retired MyCountry surface-kit", () => {
+      expect(hits(/surface-kit/g)).toEqual([]);
+    });
   });
 });
