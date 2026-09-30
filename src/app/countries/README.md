@@ -58,6 +58,7 @@ The profile renders one model built by `_hooks/useCountryProfileLayer.ts`, which
 
 - `intent.getTree` returns the full tree only to the nation's owner (the user acting as it or its `ownerUserId`) and privileged roles; anyone else gets enacted directives only, with `changesJson`, `civCapCost` and `cooldownUntil` redacted.
 - `nationalIssues.getHistory` is FORBIDDEN unless the caller owns the nation or holds a privileged role (`assertCountryWriteAccess`).
+- The rest of the owner's side is owner/privileged only too: every other `nationalIssues` player procedure (open issues, issue detail, pending count, respond/dismiss/mark viewed, recon), `intent.suggest`, `intent.getStatus`, `intent.getLinkedIssues` and `policies.getPolicyReconContext` (CivCap). `intent.getOutcome` answers for enacted directives only unless the caller owns the nation, and `policies.getPolicies` drops drafts for non-owners. Full list in [MyCountry](../../../docs/systems/mycountry.md) (Visibility); tested in `src/tests/server/api/routers/country-private-record.test.ts`.
 
 Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the signed-in viewer owns the country (`userProfile.countryId === country.id`), a tinted "Only you can see this" strip adds open-issue, draft and in-force directive counts (from the owner's own `intent.getTree` and `nationalIssues.getPendingCount`) and a link to MyCountry.
 

@@ -26,10 +26,15 @@ import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import {
+  assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
   hasCountryWriteAccess,
 } from "~/server/shared/country-authorization";
-import { DRAFT_DIRECTIVE_TIER, PUBLIC_DIRECTIVE_STATUSES } from "~/lib/country/public-record";
+import {
+  DRAFT_DIRECTIVE_TIER,
+  PUBLIC_DIRECTIVE_STATUSES,
+  isPublicDirective,
+} from "~/lib/country/public-record";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 import { growthModifierToLevelShift, StorytellerEffectType } from "~/lib/economy/calculations";
 
@@ -113,10 +118,15 @@ async function cooldownStatus(db: PrismaClient, countryId: string) {
 }
 
 export const intentRouter = createTRPCRouter({
-  /** Propose Measured/Moderate/Extreme packages for a plain-language goal. */
-  suggest: publicProcedure
+  /**
+   * Propose Measured/Moderate/Extreme packages for a plain-language goal. Owner / privileged
+   * roles only: the result carries the nation's weekly slots and its broker standing (read from
+   * the budget).
+   */
+  suggest: protectedProcedure
     .input(z.object({ countryId: z.string(), goal: z.string().min(2).max(200) }))
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
       const { category, packages } = assemblePackages(input.goal);
       const status = await cooldownStatus(ctx.db, input.countryId);
 
@@ -157,10 +167,13 @@ export const intentRouter = createTRPCRouter({
       };
     }),
 
-  /** Cooldown / cap status for the country (for UI gating). */
-  getStatus: publicProcedure
+  /** Cooldown / cap status for the country (for UI gating). Owner / privileged roles only. */
+  getStatus: protectedProcedure
     .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => cooldownStatus(ctx.db, input.countryId)),
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return cooldownStatus(ctx.db, input.countryId);
+    }),
 
   /** Update status of an intent (e.g. mark completed, abandoned). */
   updateStatus: protectedProcedure
@@ -231,6 +244,14 @@ export const intentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
+      // The directive must be the authorised country's: the summation quotes its package.
+      const intent = await ctx.db.intent.findUnique({
+        where: { id: input.intentId },
+        select: { countryId: true },
+      });
+      if (!intent || intent.countryId !== input.countryId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Intent not found." });
+      }
       return await generateIntentSummationDraft({
         db: ctx.db,
         intentId: input.intentId,
@@ -507,16 +528,21 @@ export const intentRouter = createTRPCRouter({
   /**
    * What a directive actually changed: its CountryEventSpine ledger rows (sourceId = intent id)
    * and the GDP level effect commit() recorded (`createdBy: intent:<id>`). Read-only; the same
-   * rows already surface in `mycountry.getCanonFeed`.
+   * rows already surface in `mycountry.getCanonFeed`. The owner and privileged roles read any
+   * directive's outcome; everyone else only an enacted one (`isPublicDirective`), NOT_FOUND
+   * otherwise.
    */
   getOutcome: publicProcedure
     .input(z.object({ intentId: z.string() }))
     .query(async ({ ctx, input }) => {
       const intent = await ctx.db.intent.findUnique({
         where: { id: input.intentId },
-        select: { id: true, countryId: true },
+        select: { id: true, countryId: true, status: true, tier: true },
       });
       if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!isPublicDirective(intent) && !(await hasCountryWriteAccess(ctx, intent.countryId))) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
       const [ledger, gdpEffects] = await Promise.all([
         ctx.db.countryChangeLog.findMany({
@@ -568,12 +594,22 @@ export const intentRouter = createTRPCRouter({
       };
     }),
 
-  /** Return resistance issues linked to an intent (progress traceability for the drill sheet). */
+  /**
+   * Return resistance issues linked to an intent (progress traceability for the drill sheet).
+   * Owner / privileged roles only: open issues are private.
+   */
   getLinkedIssues: protectedProcedure
     .input(z.object({ intentId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const intent = await ctx.db.intent.findUnique({
+        where: { id: input.intentId },
+        select: { countryId: true },
+      });
+      await assertCountryResourceWriteAccess(ctx, intent?.countryId, "Intent");
+      if (!intent) throw new TRPCError({ code: "NOT_FOUND", message: "Intent not found" });
+
       const issues = await ctx.db.nationalIssue.findMany({
-        where: { intentId: input.intentId },
+        where: { intentId: input.intentId, countryId: intent.countryId },
         orderBy: { createdAt: "asc" },
         select: {
           id: true,

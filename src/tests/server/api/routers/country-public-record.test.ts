@@ -8,6 +8,7 @@
 // - intent.getTree: the owner and privileged roles get every intent; everyone else the public
 //   record, redacted.
 // - nationalIssues.getHistory: the owner (or a privileged role) only; FORBIDDEN otherwise.
+// The rest of the owner-only reads and writes are covered in country-private-record.test.ts.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: { user: { findUnique: jest.fn() }, auditLog: { create: jest.fn() } },
