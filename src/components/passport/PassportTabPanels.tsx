@@ -3,6 +3,7 @@
 import React from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
+import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
 import { PassportOverviewTab } from "./tabs/PassportOverviewTab";
 import { PassportRealmsTab } from "./tabs/PassportRealmsTab";
@@ -21,10 +22,18 @@ function TabSkeleton() {
   );
 }
 
-function RealmsPanel({ handle }: { handle: string }) {
+function RealmsPanel({ handle, isOwner }: { handle: string; isOwner: boolean }) {
   const { data, isLoading } = api.ixnayid.getRealms.useQuery({ handle });
   if (isLoading) return <TabSkeleton />;
-  return <PassportRealmsTab realms={data ?? []} cleanUsername={handle} />;
+  return (
+    <>
+      {/* The owner's own nations across realms, to switch which one they play as. */}
+      {isOwner && (
+        <NationSwitcher className="mb-6 rounded-2xl border border-black/8 py-2 dark:border-white/10" />
+      )}
+      <PassportRealmsTab realms={data ?? []} cleanUsername={handle} />
+    </>
+  );
 }
 
 const EMPTY_WORK = {
@@ -76,6 +85,8 @@ interface PassportTabBodyProps {
   data: PassportPayload;
   /** Owner's session toggle: when off, the History stream is hidden and not fetched. */
   showHistory: boolean;
+  /** The viewer is the passport's owner (shows their nation switcher on the Realms tab). */
+  isOwner?: boolean;
 }
 
 /**
@@ -87,12 +98,13 @@ export const PassportTabBody = React.memo(function PassportTabBody({
   handle,
   data,
   showHistory,
+  isOwner = false,
 }: PassportTabBodyProps) {
   switch (activeTab) {
     case "overview":
       return <PassportOverviewTab data={data} cleanUsername={handle} />;
     case "realms":
-      return <RealmsPanel handle={handle} />;
+      return <RealmsPanel handle={handle} isOwner={isOwner} />;
     case "work":
       return <WorkPanel handle={handle} wiki={data.wiki} />;
     case "vault":

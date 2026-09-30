@@ -300,6 +300,7 @@ export function MidRibbonPassportDocument({
                     handle={cleanUsername}
                     data={data}
                     showHistory={visibility.historyStream}
+                    isOwner={isOwner}
                   />
                 </motion.div>
               </AnimatePresence>
