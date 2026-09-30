@@ -16,7 +16,7 @@ const mockNotifyError = jest.fn();
 const mockVisual = jest.fn();
 const mockSource = jest.fn();
 const mockSourceMounted = jest.fn();
-let mockPage: { wikitext: string; revisionRef: string | null } = { wikitext: "", revisionRef: null };
+let mockPage: { wikitext: string; revisionRef: string | null; revisionRefs?: string[] } = { wikitext: "", revisionRef: null };
 
 jest.mock("next/dynamic", () => ({
   __esModule: true,

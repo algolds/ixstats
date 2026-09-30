@@ -135,13 +135,22 @@ describe("draft-store", () => {
 
     it("calls a draft stale when it was started from another revision than the current one", () => {
       const base = { ...draft, savedAt: 1 };
-      expect(isDraftStale({ ...base, baseRevisionRef: "rev-1" }, "rev-1")).toBe(false);
-      expect(isDraftStale({ ...base, baseRevisionRef: "rev-1" }, "rev-2")).toBe(true);
-      expect(isDraftStale({ ...base, baseRevisionRef: null }, null)).toBe(false);
-      expect(isDraftStale({ ...base, baseRevisionRef: null }, "rev-2")).toBe(true);
+      expect(isDraftStale({ ...base, baseRevisionRef: "rev-1" }, ["rev-1"])).toBe(false);
+      expect(isDraftStale({ ...base, baseRevisionRef: "rev-1" }, ["rev-2"])).toBe(true);
+      expect(isDraftStale({ ...base, baseRevisionRef: null }, [])).toBe(false);
+      expect(isDraftStale({ ...base, baseRevisionRef: null }, ["rev-2"])).toBe(true);
       // a draft from before the base was recorded: stale for any page that has a revision
-      expect(isDraftStale(base, "rev-2")).toBe(true);
-      expect(isDraftStale(base, null)).toBe(false);
+      expect(isDraftStale(base, ["rev-2"])).toBe(true);
+      expect(isDraftStale(base, [])).toBe(false);
+    });
+
+    it("recognises either reference of the current revision (the export worker stamps the rev_id)", () => {
+      const base = { ...draft, savedAt: 1 };
+      // written while the head was known by its row id, read after the worker stamped rev_id 4321
+      expect(isDraftStale({ ...base, baseRevisionRef: "cuid-1" }, ["cuid-1", "4321"])).toBe(false);
+      // written after the stamp, read by a caller that also knows the row id
+      expect(isDraftStale({ ...base, baseRevisionRef: "4321" }, ["cuid-1", "4321"])).toBe(false);
+      expect(isDraftStale({ ...base, baseRevisionRef: "4320" }, ["cuid-1", "4321"])).toBe(true);
     });
   });
 });

@@ -144,6 +144,20 @@ describe("wikiosEditingRouter.saveWikitext edit conflicts (WK-2)", () => {
     expect(stale).toMatchObject({ editConflict: true, currentRevisionRef: "4321" });
   });
 
+  it("does not conflict with its own revision once the export worker has stamped its rev_id", async () => {
+    // The editor was opened while the head was known by its row id; the worker stamps it meanwhile.
+    pageNowHeadedBy(headRevision("cuid-of-row", 4321));
+
+    const result = await caller().saveWikitext({
+      title: "Vesperia",
+      wikitext: "x",
+      baseRevisionRef: "cuid-of-row",
+    });
+
+    expect(result).toMatchObject({ success: true });
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+  });
+
   it("conflicts when a page the editor believed new was created in the meantime", async () => {
     pageNowHeadedBy(headRevision("rev-1"), "Created by somebody else");
 

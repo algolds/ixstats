@@ -41,11 +41,15 @@ export function clearEditorBase(title: string, source = "ixwiki"): void {
 }
 
 /**
- * Whether `draft` was started from a different revision than `currentRevisionRef`, i.e. the page
- * changed after the draft was written and restoring it silently would replace fresher text.
+ * Whether `draft` was started from a different revision than the current one, i.e. the page changed
+ * after the draft was written and restoring it silently would replace fresher text.
+ * `currentRevisionRefs` is every reference that names the current revision (its row id and its
+ * MediaWiki rev_id once stamped: a draft written before the stamp is still based on it); empty for
+ * a page with no revision.
  */
-export function isDraftStale(draft: WikiEditorDraft, currentRevisionRef: string | null): boolean {
-  return (draft.baseRevisionRef ?? null) !== currentRevisionRef;
+export function isDraftStale(draft: WikiEditorDraft, currentRevisionRefs: readonly string[]): boolean {
+  const base = draft.baseRevisionRef ?? null;
+  return base === null ? currentRevisionRefs.length > 0 : !currentRevisionRefs.includes(base);
 }
 
 /**

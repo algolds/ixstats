@@ -48,7 +48,15 @@ interface WikiEditBridgeProps {
 interface LoadedPage {
   wikitext: string;
   revisionRef: string | null;
+  /** Every reference that names that revision (its row id, and its MediaWiki rev_id once stamped). */
+  revisionRefs: string[];
 }
+
+/** The revision a server answer names, as the editor keeps it. */
+const revisionOf = (ref: string | null, refs?: string[]): Pick<LoadedPage, "revisionRef" | "revisionRefs"> => ({
+  revisionRef: ref,
+  revisionRefs: refs ?? (ref === null ? [] : [ref]),
+});
 
 /** A save the server refused because the page changed: the page as it is now. */
 interface ConflictState {
@@ -96,7 +104,7 @@ export function WikiEditBridge({
   if (loaded === null && !wtLoading) {
     setLoaded({
       wikitext: wikitextData?.wikitext ?? "",
-      revisionRef: wikitextData?.revisionRef ?? null,
+      ...revisionOf(wikitextData?.revisionRef ?? null, wikitextData?.revisionRefs),
     });
   }
 
@@ -121,7 +129,7 @@ export function WikiEditBridge({
     if (!draft || !(draft.wikitext || draft.html)) {
       // oxlint-disable-next-line react/set-state-in-effect
       setDraftResolved(true);
-    } else if (draft.wikitext !== loaded.wikitext && isDraftStale(draft, loaded.revisionRef)) {
+    } else if (draft.wikitext !== loaded.wikitext && isDraftStale(draft, loaded.revisionRefs)) {
       // (A draft that equals the published text loses nothing whichever way it is restored.)
       setStaleDraft(draft);
     } else {
@@ -136,7 +144,7 @@ export function WikiEditBridge({
     restoreDraft(staleDraft);
     setLoaded((prev) => ({
       wikitext: prev?.wikitext ?? "",
-      revisionRef: staleDraft.baseRevisionRef ?? null,
+      ...revisionOf(staleDraft.baseRevisionRef ?? null),
     }));
     setStaleDraft(null);
     setDraftResolved(true);
@@ -202,7 +210,10 @@ export function WikiEditBridge({
           const res = await refetchWikitext();
           if (res.data) {
             setActiveWikitext(res.data.wikitext);
-            setLoaded({ wikitext: res.data.wikitext, revisionRef: res.data.revisionRef ?? null });
+            setLoaded({
+              wikitext: res.data.wikitext,
+              ...revisionOf(res.data.revisionRef ?? null, res.data.revisionRefs),
+            });
           }
         } else {
           void utils.wikios.getWikitext.invalidate({ title });
@@ -242,7 +253,7 @@ export function WikiEditBridge({
     }
     pendingSave.current = null;
     setActiveWikitext(conflict.currentWikitext);
-    setLoaded({ wikitext: conflict.currentWikitext, revisionRef: conflict.currentRevisionRef });
+    setLoaded({ wikitext: conflict.currentWikitext, ...revisionOf(conflict.currentRevisionRef) });
     setConflict(null);
     setEditorKey((key) => key + 1);
   }, [conflict, mode, title]);
