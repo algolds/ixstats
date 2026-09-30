@@ -35,6 +35,28 @@ describe("canonicalizeTitle", () => {
     expect(titleOf("module:foo")).toBe("Module:Foo");
   });
 
+  it("knows IxWiki's Campaign namespaces (460, 461) next to the standard ones", () => {
+    expect(canonicalizeTitle("campaign:operation dawn")).toMatchObject({
+      title: "Campaign:Operation dawn",
+      namespaceId: 460,
+      namespacePrefix: "Campaign",
+      slug: "campaign:operation_dawn",
+    });
+    expect(canonicalizeTitle("Campaign_talk:Operation dawn")).toMatchObject({
+      title: "Campaign talk:Operation dawn",
+      namespaceId: 461,
+      namespacePrefix: "Campaign talk",
+    });
+  });
+
+  it("keeps Portal: as a plain main-namespace title (IxWiki has no such namespace)", () => {
+    expect(canonicalizeTitle("portal:eurth")).toMatchObject({
+      title: "Portal:eurth",
+      namespaceId: 0,
+      namespacePrefix: null,
+    });
+  });
+
   it("resolves namespace aliases to the canonical name", () => {
     expect(titleOf("Image:x.png")).toBe("File:X.png");
     expect(titleOf("ixwiki:About")).toBe("IxWiki:About");

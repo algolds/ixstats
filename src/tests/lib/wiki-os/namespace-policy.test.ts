@@ -80,6 +80,11 @@ describe("checkEditPolicy: ordinary users", () => {
     expect(allowed("Talk:Caphiria")).toBe(true);
     expect(allowed("User talk:Somebody")).toBe(true);
     expect(allowed("Template talk:Infobox")).toBe(true);
+    expect(allowed("Campaign talk:Operation Dawn")).toBe(true);
+  });
+
+  it("treats Portal: as a main-namespace title, as IxWiki does (it has no Portal namespace)", () => {
+    expect(allowed("Portal:Eurth")).toBe(true);
   });
 
   it.each([
@@ -98,6 +103,8 @@ describe("checkEditPolicy: ordinary users", () => {
     "MediaWiki talk:Common.js",
     "Module talk:Foo",
     "Widget:Foo",
+    "Campaign:Operation Dawn",
+    "campaign : Operation Dawn",
     ":Template:Foo",
     "template:foo",
     "TEMPLATE:foo",

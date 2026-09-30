@@ -244,6 +244,7 @@ describe("talkTitleOf", () => {
     ["template:Foo/doc", "Template talk:Foo/doc"],
     ["module:Foo", "Module talk:Foo"],
     ["ixwiki:Rules", "IxWiki talk:Rules"],
+    ["campaign:Operation Dawn", "Campaign talk:Operation Dawn"],
   ])("%s has the talk page %s", (title, talk) => {
     expect(talkTitleOf(title)).toBe(talk);
   });

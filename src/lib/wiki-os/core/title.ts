@@ -33,6 +33,8 @@ export const NAMESPACE_CANONICAL_NAMES: Readonly<Record<number, string>> = Objec
   14: "Category",
   15: "Category talk",
   274: "Widget",
+  460: "Campaign",
+  461: "Campaign talk",
   275: "Widget talk",
   828: "Module",
   829: "Module talk",

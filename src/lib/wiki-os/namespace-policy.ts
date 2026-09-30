@@ -9,14 +9,14 @@
 // Ordinary signed-in users may edit:
 //   - main / article namespace (0)
 //   - talk namespaces: Talk, User talk, Project talk, File talk, Template talk, Help talk,
-//     Category talk (odd ids 1-15); plain discussion text, never executed
+//     Category talk (odd ids 1-15) and Campaign talk (461); plain discussion text, never executed
 //   - their OWN User: page and its subpages, when they have a verified linked wiki account,
 //     except script/style/data subpages (.js, .css, .json, .less), which are interface pages
 // Interface pages need the matching interface-admin right: MediaWiki:*.css/.js/.json need
 // editsitecss/editsitejs/editsitejson, User:*/*.css/.js/.json need editusercss/edituserjs/edituserjson,
 // and the other MediaWiki: pages need editinterface.
 // Everything else needs `editprotected` (the sysop group): Project/IxWiki:, File:, Template:, Help:,
-// Category:, Module:, Gadget*, Widget*, MediaWiki/Module/Gadget talk, other users' pages.
+// Category:, Module:, Campaign:, Gadget*, Widget*, MediaWiki/Module/Gadget talk, other users' pages.
 // Special: and Media: are never editable, by anyone.
 
 import type { Right } from "~/lib/wiki-os/rights";
@@ -45,6 +45,8 @@ const NAMESPACE_IDS: ReadonlyMap<string, number> = new Map(
     "help talk": 13,
     category: 14,
     "category talk": 15,
+    campaign: 460,
+    "campaign talk": 461,
     module: 828,
     "module talk": 829,
     gadget: 2300,
@@ -58,7 +60,7 @@ const NAMESPACE_IDS: ReadonlyMap<string, number> = new Map(
 );
 
 /** Talk namespaces ordinary users may edit (MediaWiki/Module/Gadget talk are left to admins). */
-const USER_EDITABLE_TALK_IDS: ReadonlySet<number> = new Set([1, 3, 5, 7, 11, 13, 15]);
+const USER_EDITABLE_TALK_IDS: ReadonlySet<number> = new Set([1, 3, 5, 7, 11, 13, 15, 461]);
 
 /** Subpage suffixes that MediaWiki treats as script/style/data (interface) content. */
 const INTERFACE_SUFFIX = /\.(js|css|json|less)$/i;
