@@ -1,18 +1,37 @@
 import {
   buildExpectations,
   evaluateExpectation,
+  ixstatesPath,
   parseArgs,
   planChecks,
+  type ChecklistOptions,
   type Expectation,
   type Observation,
 } from "../../../scripts/ops/verify-wikios-takeover";
 
+const IXSTATES = "https://ixwiki.com/projects/ixstates";
+
 const observed = (partial: Partial<Observation>): Observation => ({
   status: 200,
   location: null,
+  contentType: null,
   body: "",
   ...partial,
 });
+
+const checklist = (partial: Partial<ChecklistOptions> = {}): ChecklistOptions => ({
+  file: "Example.png",
+  image: null,
+  ixstates: IXSTATES,
+  page: "Main_Page",
+  revid: "1",
+  subpage: "Template:Infobox_country/doc",
+  category: "Category:Countries",
+  ...partial,
+});
+
+/** parseArgs with the IxStates URL supplied and no environment to fall back on. */
+const parse = (argv: string[] = []) => parseArgs(["--ixstates", IXSTATES, ...argv], {});
 
 const row = (partial: Partial<Expectation>): Expectation => ({
   name: "row",
@@ -121,6 +140,19 @@ describe("evaluateExpectation", () => {
     ]);
   });
 
+  it("checks the Content-Type case-insensitively", () => {
+    const expectation = row({ expectContentType: "text/x-wiki" });
+    expect(
+      evaluateExpectation(expectation, observed({ contentType: "Text/X-Wiki; charset=UTF-8" })).ok
+    ).toBe(true);
+    expect(
+      evaluateExpectation(expectation, observed({ contentType: "text/html" })).failures
+    ).toEqual(["Content-Type text/html, expected text/x-wiki"]);
+    expect(evaluateExpectation(expectation, observed({ contentType: null })).failures).toEqual([
+      "Content-Type (none), expected text/x-wiki",
+    ]);
+  });
+
   it("collects every failure of one row", () => {
     const expectation = row({ expectStatus: 301, expectLocation: "/a", expectBodyIncludes: "x" });
     const result = evaluateExpectation(
@@ -132,7 +164,7 @@ describe("evaluateExpectation", () => {
 });
 
 describe("buildExpectations", () => {
-  const rows = buildExpectations({ file: "Example.png", image: null });
+  const rows = buildExpectations(checklist());
   const byPath = (path: string) => rows.find((r) => r.path === path);
 
   it("covers the takeover paths from plan 417", () => {
@@ -149,23 +181,66 @@ describe("buildExpectations", () => {
       expectStatus: 301,
       expectLocation: "/wiki/Foo",
     });
-    expect(byPath("/index.php?title=Foo&action=edit")).toMatchObject({ expectStatus: 200 });
     expect(byPath("/index.php?title=Foo&oldid=1")).toMatchObject({ expectStatus: 301 });
-    expect(byPath("/wiki/Special:FilePath/Example.png")).toMatchObject({
-      expectStatus: [200, 302],
-    });
     expect(byPath("/api.php?action=query&meta=siteinfo&format=json")).toMatchObject({
       expectStatus: 200,
     });
-    expect(byPath("/projects/ixstats")).toMatchObject({ expectStatus: { not: 404 } });
+  });
+
+  it("accepts 200 or 403 for the classic edit form", () => {
+    expect(byPath("/index.php?title=Foo&action=edit")).toMatchObject({ expectStatus: [200, 403] });
+  });
+
+  it("requires Special:FilePath to answer 302 to an upload path", () => {
+    expect(byPath("/wiki/Special:FilePath/Example.png")).toMatchObject({
+      expectStatus: 302,
+      expectLocation: "/images/*",
+    });
+  });
+
+  it("gates the routes WikiOS must answer itself", () => {
+    expect(byPath("/robots.txt")).toMatchObject({ expectStatus: 200, standalone: true });
+    expect(byPath("/wiki-sitemap")).toMatchObject({ expectStatus: 200, standalone: true });
+    expect(byPath("/wiki/Template:Infobox_country/doc")).toMatchObject({
+      expectStatus: 200,
+      standalone: true,
+    });
+    expect(byPath("/wiki/Category:Countries")).toMatchObject({
+      expectStatus: 200,
+      standalone: true,
+    });
+    expect(byPath("/wiki/Special:Search?search=x")).toMatchObject({
+      expectStatus: 200,
+      standalone: true,
+    });
+    expect(byPath("/wiki/Main_Page?action=raw")).toMatchObject({
+      expectStatus: 200,
+      expectContentType: "text/x-wiki",
+      standalone: true,
+    });
+    expect(byPath("/wiki/Main_Page?oldid=1")).toMatchObject({
+      expectStatus: 200,
+      standalone: true,
+    });
+  });
+
+  it("uses the given page, revision, subpage and category", () => {
+    const custom = buildExpectations(
+      checklist({ page: "Ixnay", revid: "77", subpage: "Template:Foo/doc", category: "Category:X" })
+    );
+    const paths = custom.map((r) => r.path);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        "/wiki/Ixnay?action=raw",
+        "/wiki/Ixnay?oldid=77",
+        "/wiki/Template:Foo/doc",
+        "/wiki/Category:X",
+      ])
+    );
   });
 
   it("covers the runtime requests of WikiOS pages that are not routes", () => {
     expect(byPath("/api/ixtime/current")).toMatchObject({ expectStatus: 200, expectJson: true });
-    expect(byPath("/maps?embed=true")).toMatchObject({
-      expectStatus: 302,
-      expectLocation: "/projects/ixstats/maps?embed=true",
-    });
     for (const path of [
       "/maplibre/maplibre-gl-worker.mjs",
       "/flags/metadata.json",
@@ -174,6 +249,25 @@ describe("buildExpectations", () => {
     ]) {
       expect(byPath(path)).toMatchObject({ expectStatus: 200, standalone: true });
     }
+  });
+
+  it("takes the IxStates rows from the configured URL", () => {
+    expect(byPath("/maps?embed=true")).toMatchObject({
+      expectStatus: 302,
+      expectLocation: "/projects/ixstates/maps?embed=true",
+    });
+    const reachable = rows.find((r) => r.name.startsWith("IxStates still reachable"));
+    expect(reachable).toMatchObject({
+      url: IXSTATES,
+      path: "/projects/ixstates",
+      expectStatus: { not: 404 },
+    });
+    const other = buildExpectations(checklist({ ixstates: "https://ixstates.example" }));
+    expect(other.find((r) => r.path === "/maps?embed=true")?.expectLocation).toBe(
+      "/maps?embed=true"
+    );
+    expect(other.find((r) => r.name.startsWith("IxStates still reachable"))?.path).toBe("/");
+    expect(JSON.stringify(rows)).not.toContain("/projects/ixstats/");
   });
 
   it("checks the render engine on the internal origin only", () => {
@@ -189,7 +283,7 @@ describe("buildExpectations", () => {
 
   it("adds the /images/ row only when an upload path is given", () => {
     expect(rows.some((r) => r.name === "upload served from /images/")).toBe(false);
-    const withImage = buildExpectations({ file: "Example.png", image: "/images/a/ab/Foo.png" });
+    const withImage = buildExpectations(checklist({ image: "/images/a/ab/Foo.png" }));
     expect(withImage.find((r) => r.path === "/images/a/ab/Foo.png")).toMatchObject({
       expectStatus: 200,
       via: "public",
@@ -197,49 +291,94 @@ describe("buildExpectations", () => {
   });
 
   it("uses the given file name for the Special:FilePath row", () => {
-    const custom = buildExpectations({ file: "Flag_of_Ixnay.svg", image: null });
+    const custom = buildExpectations(checklist({ file: "Flag_of_Ixnay.svg" }));
     expect(custom.some((r) => r.path === "/wiki/Special:FilePath/Flag_of_Ixnay.svg")).toBe(true);
+  });
+});
+
+describe("ixstatesPath", () => {
+  it("returns the path without a trailing slash, empty for a bare host", () => {
+    expect(ixstatesPath("https://ixwiki.com/projects/ixstates")).toBe("/projects/ixstates");
+    expect(ixstatesPath("https://ixwiki.com/projects/ixstats/")).toBe("/projects/ixstats");
+    expect(ixstatesPath("https://ixstates.example")).toBe("");
   });
 });
 
 describe("parseArgs", () => {
   it("defaults to the public site with no internal origin", () => {
-    expect(parseArgs([])).toEqual({
+    expect(parse()).toEqual({
       base: "https://ixwiki.com",
+      ixstates: IXSTATES,
       internal: null,
       file: "Example.png",
       image: null,
+      page: "Main_Page",
+      revid: "1",
+      subpage: "Template:Infobox_country/doc",
+      category: "Category:Countries",
       standalone: false,
     });
   });
 
   it("reads the flags and trims trailing slashes", () => {
     expect(
-      parseArgs([
-        "--base",
-        "http://127.0.0.1:3560/",
-        "--internal",
-        "http://127.0.0.1:8081//",
-        "--file",
-        "Foo.png",
-        "--image",
-        "/images/a/ab/Foo.png",
-        "--standalone",
-      ])
+      parseArgs(
+        [
+          "--base",
+          "http://127.0.0.1:3560/",
+          "--ixstates",
+          "https://ixwiki.com/projects/ixstats/",
+          "--internal",
+          "http://127.0.0.1:8081//",
+          "--file",
+          "Foo.png",
+          "--image",
+          "/images/a/ab/Foo.png",
+          "--page",
+          "Ixnay",
+          "--revid",
+          "77",
+          "--subpage",
+          "Template:Foo/doc",
+          "--category",
+          "Category:X",
+          "--standalone",
+        ],
+        {}
+      )
     ).toEqual({
       base: "http://127.0.0.1:3560",
+      ixstates: "https://ixwiki.com/projects/ixstats",
       internal: "http://127.0.0.1:8081",
       file: "Foo.png",
       image: "/images/a/ab/Foo.png",
+      page: "Ixnay",
+      revid: "77",
+      subpage: "Template:Foo/doc",
+      category: "Category:X",
       standalone: true,
     });
   });
 
-  it("rejects a flag without a value and a relative --image", () => {
-    expect(() => parseArgs(["--base"])).toThrow("--base needs a value");
-    expect(() => parseArgs(["--base", "--standalone"])).toThrow("--base needs a value");
-    expect(() => parseArgs(["--image", "images/a.png"])).toThrow(
-      "--image must be an absolute path"
+  it("requires the IxStates URL: there is no default", () => {
+    expect(() => parseArgs([], {})).toThrow(/--ixstates is required/);
+    expect(() => parseArgs([], { NEXT_PUBLIC_IXSTATES_URL: "  " })).toThrow(
+      /--ixstates is required/
+    );
+  });
+
+  it("reads the IxStates URL from the build environment variable, the flag winning", () => {
+    const env = { NEXT_PUBLIC_IXSTATES_URL: "https://ixwiki.com/projects/ixstats" };
+    expect(parseArgs([], env).ixstates).toBe("https://ixwiki.com/projects/ixstats");
+    expect(parseArgs(["--ixstates", IXSTATES], env).ixstates).toBe(IXSTATES);
+  });
+
+  it("rejects a flag without a value, a relative --image and a relative --ixstates", () => {
+    expect(() => parseArgs(["--base"], {})).toThrow("--base needs a value");
+    expect(() => parse(["--base", "--standalone"])).toThrow("--base needs a value");
+    expect(() => parse(["--image", "images/a.png"])).toThrow("--image must be an absolute path");
+    expect(() => parseArgs(["--ixstates", "/projects/ixstates"], {})).toThrow(
+      /--ixstates must be an absolute URL/
     );
   });
 });
@@ -247,44 +386,52 @@ describe("parseArgs", () => {
 describe("planChecks", () => {
   it("routes public rows to --base and internal rows to --internal", () => {
     const plan = planChecks(
-      parseArgs(["--base", "https://ixwiki.com", "--internal", "http://127.0.0.1:8081"])
+      parse(["--base", "https://ixwiki.com", "--internal", "http://127.0.0.1:8081"])
     );
     const internal = plan.filter((p) => p.expectation.via === "internal");
-    expect(internal.map((p) => p.origin)).toEqual(["http://127.0.0.1:8081"]);
-    expect(
-      plan
-        .filter((p) => p.expectation.via === "public")
-        .every((p) => p.origin === "https://ixwiki.com")
-    ).toBe(true);
+    expect(internal.map((p) => p.url)).toEqual([
+      "http://127.0.0.1:8081/api.php?action=parse&text=x&contentmodel=wikitext&format=json",
+    ]);
+    const publicRows = plan.filter((p) => p.expectation.via === "public" && !p.expectation.url);
+    expect(publicRows.every((p) => p.url === `https://ixwiki.com${p.expectation.path}`)).toBe(true);
+  });
+
+  it("fetches the IxStates row from the configured URL, not from --base", () => {
+    const plan = planChecks(parse(["--base", "http://127.0.0.1:3560"]));
+    const row = plan.find((p) => p.expectation.name.startsWith("IxStates still reachable"));
+    expect(row?.url).toBe(IXSTATES);
   });
 
   it("marks internal rows skipped when --internal is absent", () => {
-    const plan = planChecks(parseArgs([]));
-    expect(plan.filter((p) => p.origin === null).map((p) => p.expectation.via)).toEqual([
-      "internal",
-    ]);
+    const plan = planChecks(parse());
+    expect(plan.filter((p) => p.url === null).map((p) => p.expectation.via)).toEqual(["internal"]);
   });
 
   it("keeps only the pre-takeover rows with --standalone, render engine included when --internal is given", () => {
-    const withoutInternal = planChecks(
-      parseArgs(["--base", "http://127.0.0.1:3560", "--standalone"])
-    );
+    const withoutInternal = planChecks(parse(["--base", "http://127.0.0.1:3560", "--standalone"]));
     expect(withoutInternal.map((p) => p.expectation.path)).toEqual([
       "/",
       "/wiki/Main_Page",
+      "/robots.txt",
+      "/wiki-sitemap",
+      "/wiki/Template:Infobox_country/doc",
+      "/wiki/Category:Countries",
+      "/wiki/Special:Search?search=x",
+      "/wiki/Main_Page?action=raw",
+      "/wiki/Main_Page?oldid=1",
       "/api/ixtime/current",
       "/maps?embed=true",
       "/maplibre/maplibre-gl-worker.mjs",
       "/flags/metadata.json",
       "/images/flags/placeholder.svg",
       "/fonts/National-Book.otf",
-      "/projects/ixstats",
+      "/projects/ixstates",
       "/api.php?action=parse&text=x&contentmodel=wikitext&format=json",
     ]);
-    expect(withoutInternal.filter((p) => p.origin === null)).toHaveLength(1);
+    expect(withoutInternal.filter((p) => p.url === null)).toHaveLength(1);
 
     const withInternal = planChecks(
-      parseArgs([
+      parse([
         "--base",
         "http://127.0.0.1:3560",
         "--internal",
@@ -292,9 +439,7 @@ describe("planChecks", () => {
         "--standalone",
       ])
     );
-    expect(withInternal.map((p) => p.origin)).toEqual([
-      ...Array<string>(9).fill("http://127.0.0.1:3560"),
-      "http://127.0.0.1:8081",
-    ]);
+    expect(withInternal.filter((p) => p.url === null)).toHaveLength(0);
+    expect(withInternal.at(-1)?.url).toMatch(/^http:\/\/127\.0\.0\.1:8081\/api\.php/);
   });
 });

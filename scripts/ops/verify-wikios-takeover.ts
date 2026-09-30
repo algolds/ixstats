@@ -9,12 +9,18 @@
  *
  * Usage:
  *   bun scripts/ops/verify-wikios-takeover.ts --base https://ixwiki.com \
- *     [--internal http://127.0.0.1:8081] [--file Some_Real_File.png] [--image /images/a/ab/Some_Real_File.png]
- *   bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --standalone   # pre-cutover
+ *     --ixstates "$NEXT_PUBLIC_IXSTATES_URL" [--internal http://127.0.0.1:8081] \
+ *     [--file Some_Real_File.png] [--image /images/a/ab/Some_Real_File.png] \
+ *     [--page Main_Page] [--revid 1] [--subpage Template:Infobox_country/doc] [--category Category:Countries]
+ *   bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$URL" --standalone
  *
  * Exit code 1 when any expectation fails.
  *
  * Notes:
+ * - --ixstates is the NEXT_PUBLIC_IXSTATES_URL of the WikiOS build (also read from that environment
+ *   variable). There is no default: the IxStates path differs per server.
+ * - --page, --revid, --subpage and --category must name things that exist: a page and one of its
+ *   revisions, a template subpage and a category page. The defaults are guesses.
  * - /api.php is still MediaWiki's on the public host; when WikiOS serves its own api.php subset the
  *   expected body here changes.
  * - --standalone keeps only the rows that do not need the nginx takeover or classic MediaWiki on --base:
@@ -36,15 +42,20 @@ export interface Expectation {
   /** Checked only on 3xx responses: exact path+query, or a prefix when it ends with "*". */
   readonly expectLocation?: string;
   readonly expectBodyIncludes?: string;
+  /** The Content-Type header must include this text (case-insensitive). */
+  readonly expectContentType?: string;
   /** The body must parse as JSON. */
   readonly expectJson?: boolean;
   /** True when the row holds before the nginx takeover, against a lone WikiOS process on --base. */
   readonly standalone?: boolean;
+  /** Fetched from this absolute URL instead of the origin of `via` (the configured IxStates URL). */
+  readonly url?: string;
 }
 
 export interface Observation {
   readonly status: number;
   readonly location: string | null;
+  readonly contentType: string | null;
   readonly body: string;
 }
 
@@ -55,14 +66,28 @@ export interface Evaluation {
 
 export interface Options {
   readonly base: string;
+  readonly ixstates: string;
   readonly internal: string | null;
   readonly file: string;
   readonly image: string | null;
+  readonly page: string;
+  readonly revid: string;
+  readonly subpage: string;
+  readonly category: string;
   readonly standalone: boolean;
 }
 
+export type ChecklistOptions = Pick<
+  Options,
+  "file" | "image" | "ixstates" | "page" | "revid" | "subpage" | "category"
+>;
+
 const DEFAULT_BASE = "https://ixwiki.com";
 const DEFAULT_FILE = "Example.png";
+const DEFAULT_PAGE = "Main_Page";
+const DEFAULT_REVID = "1";
+const DEFAULT_SUBPAGE = "Template:Infobox_country/doc";
+const DEFAULT_CATEGORY = "Category:Countries";
 const REQUEST_TIMEOUT_MS = 10_000;
 const USER_AGENT = "IxStats-WikiOS-Verify/1.0";
 
@@ -98,39 +123,64 @@ function isJson(body: string): boolean {
   }
 }
 
+type Check = (expectation: Expectation, observed: Observation) => string | null;
+
+function statusFailure(expectation: Expectation, observed: Observation): string | null {
+  return statusMatches(expectation.expectStatus, observed.status)
+    ? null
+    : `status ${observed.status}, expected ${describeStatus(expectation.expectStatus)}`;
+}
+
+function locationFailure(expectation: Expectation, observed: Observation): string | null {
+  const isRedirect = observed.status >= 300 && observed.status < 400;
+  if (expectation.expectLocation === undefined || !isRedirect) return null;
+  return locationMatches(expectation.expectLocation, observed.location)
+    ? null
+    : `Location ${observed.location ?? "(none)"}, expected ${expectation.expectLocation}`;
+}
+
+function bodyFailure(expectation: Expectation, observed: Observation): string | null {
+  const needle = expectation.expectBodyIncludes;
+  if (needle === undefined || observed.body.includes(needle)) return null;
+  return `body does not include ${JSON.stringify(needle)}`;
+}
+
+function contentTypeFailure(expectation: Expectation, observed: Observation): string | null {
+  const needle = expectation.expectContentType;
+  if (needle === undefined) return null;
+  if (observed.contentType?.toLowerCase().includes(needle.toLowerCase())) return null;
+  return `Content-Type ${observed.contentType ?? "(none)"}, expected ${needle}`;
+}
+
+function jsonFailure(expectation: Expectation, observed: Observation): string | null {
+  return expectation.expectJson && !isJson(observed.body) ? "body is not JSON" : null;
+}
+
+const CHECKS: readonly Check[] = [
+  statusFailure,
+  locationFailure,
+  bodyFailure,
+  contentTypeFailure,
+  jsonFailure,
+];
+
 /** Pure check of one observed response against one expectation. */
 export function evaluateExpectation(expectation: Expectation, observed: Observation): Evaluation {
-  const failures: string[] = [];
-  if (!statusMatches(expectation.expectStatus, observed.status)) {
-    failures.push(
-      `status ${observed.status}, expected ${describeStatus(expectation.expectStatus)}`
-    );
-  }
-  const isRedirect = observed.status >= 300 && observed.status < 400;
-  if (
-    expectation.expectLocation !== undefined &&
-    isRedirect &&
-    !locationMatches(expectation.expectLocation, observed.location)
-  ) {
-    failures.push(
-      `Location ${observed.location ?? "(none)"}, expected ${expectation.expectLocation}`
-    );
-  }
-  if (
-    expectation.expectBodyIncludes !== undefined &&
-    !observed.body.includes(expectation.expectBodyIncludes)
-  ) {
-    failures.push(`body does not include ${JSON.stringify(expectation.expectBodyIncludes)}`);
-  }
-  if (expectation.expectJson && !isJson(observed.body)) {
-    failures.push("body is not JSON");
-  }
+  const failures = CHECKS.map((check) => check(expectation, observed)).filter(
+    (failure): failure is string => failure !== null
+  );
   return { ok: failures.length === 0, failures };
 }
 
-/** The takeover checklist. `image` is optional: without a real upload path the row is left out. */
-export function buildExpectations(options: Pick<Options, "file" | "image">): Expectation[] {
-  const rows: Expectation[] = [
+/** Path of the IxStates URL without a trailing slash ("/projects/ixstates"; "" for a bare host). */
+export function ixstatesPath(ixstates: string): string {
+  return new URL(ixstates).pathname.replace(/\/+$/, "");
+}
+
+/** Rows for the paths that only WikiOS can answer: they hold on a lone WikiOS process too. */
+function wikiosRows(options: ChecklistOptions): Expectation[] {
+  const ixPath = ixstatesPath(options.ixstates);
+  return [
     {
       name: "root redirects to the Main Page",
       path: "/",
@@ -148,45 +198,55 @@ export function buildExpectations(options: Pick<Options, "file" | "image">): Exp
       standalone: true,
     },
     {
-      name: "classic MediaWiki under /classic/",
-      path: "/classic/Main_Page",
+      name: "robots.txt comes from WikiOS",
+      path: "/robots.txt",
       via: "public",
       expectStatus: 200,
-      expectBodyIncludes: "mw-",
+      expectBodyIncludes: "User-agent",
+      standalone: true,
     },
     {
-      name: "index.php view redirects to WikiOS",
-      path: "/index.php?title=Foo",
-      via: "public",
-      expectStatus: 301,
-      expectLocation: "/wiki/Foo",
-    },
-    {
-      name: "index.php action=edit stays on classic",
-      path: "/index.php?title=Foo&action=edit",
+      name: "sitemap comes from WikiOS",
+      path: "/wiki-sitemap",
       via: "public",
       expectStatus: 200,
+      standalone: true,
     },
     {
-      name: "index.php oldid view redirects to WikiOS",
-      path: "/index.php?title=Foo&oldid=1",
-      via: "public",
-      expectStatus: 301,
-      expectLocation: "/wiki/Foo?oldid=1*",
-    },
-    {
-      name: "Special:FilePath stays on MediaWiki",
-      path: `/wiki/Special:FilePath/${options.file}`,
-      via: "public",
-      expectStatus: [200, 302],
-      expectLocation: "/images/*",
-    },
-    {
-      name: "public api.php (MediaWiki) still answers",
-      path: "/api.php?action=query&meta=siteinfo&format=json",
+      name: "template subpage (slash in the title)",
+      path: `/wiki/${options.subpage}`,
       via: "public",
       expectStatus: 200,
-      expectBodyIncludes: "sitename",
+      standalone: true,
+    },
+    {
+      name: "category page (namespace with a colon)",
+      path: `/wiki/${options.category}`,
+      via: "public",
+      expectStatus: 200,
+      standalone: true,
+    },
+    {
+      name: "Special:Search is served by WikiOS",
+      path: "/wiki/Special:Search?search=x",
+      via: "public",
+      expectStatus: 200,
+      standalone: true,
+    },
+    {
+      name: "action=raw is served by WikiOS as wikitext",
+      path: `/wiki/${options.page}?action=raw`,
+      via: "public",
+      expectStatus: 200,
+      expectContentType: "text/x-wiki",
+      standalone: true,
+    },
+    {
+      name: "old revision is served by WikiOS",
+      path: `/wiki/${options.page}?oldid=${options.revid}`,
+      via: "public",
+      expectStatus: 200,
+      standalone: true,
     },
     {
       name: "IxTime store endpoint answers (every page fetches it)",
@@ -201,7 +261,7 @@ export function buildExpectations(options: Pick<Options, "file" | "image">): Exp
       path: "/maps?embed=true",
       via: "public",
       expectStatus: 302,
-      expectLocation: "/projects/ixstats/maps?embed=true",
+      expectLocation: `${ixPath}/maps?embed=true`,
       standalone: true,
     },
     {
@@ -233,9 +293,10 @@ export function buildExpectations(options: Pick<Options, "file" | "image">): Exp
       standalone: true,
     },
     {
-      name: "IxStates still reachable",
-      path: "/projects/ixstats",
+      name: "IxStates still reachable at the configured URL",
+      path: ixPath || "/",
       via: "public",
+      url: options.ixstates,
       expectStatus: { not: 404 },
       standalone: true,
     },
@@ -248,6 +309,58 @@ export function buildExpectations(options: Pick<Options, "file" | "image">): Exp
       standalone: true,
     },
   ];
+}
+
+/** Rows that need the nginx takeover and classic MediaWiki behind it. */
+function takeoverRows(options: ChecklistOptions): Expectation[] {
+  return [
+    {
+      name: "classic MediaWiki under /classic/",
+      path: "/classic/Main_Page",
+      via: "public",
+      expectStatus: 200,
+      expectBodyIncludes: "mw-",
+    },
+    {
+      name: "index.php view redirects to WikiOS",
+      path: "/index.php?title=Foo",
+      via: "public",
+      expectStatus: 301,
+      expectLocation: "/wiki/Foo",
+    },
+    {
+      name: "index.php action=edit stays on classic (403 for a protected page)",
+      path: "/index.php?title=Foo&action=edit",
+      via: "public",
+      expectStatus: [200, 403],
+    },
+    {
+      name: "index.php oldid view redirects to WikiOS",
+      path: "/index.php?title=Foo&oldid=1",
+      via: "public",
+      expectStatus: 301,
+      expectLocation: "/wiki/Foo?oldid=1*",
+    },
+    {
+      name: "Special:FilePath stays on MediaWiki and redirects to the upload",
+      path: `/wiki/Special:FilePath/${options.file}`,
+      via: "public",
+      expectStatus: 302,
+      expectLocation: "/images/*",
+    },
+    {
+      name: "public api.php (MediaWiki) still answers",
+      path: "/api.php?action=query&meta=siteinfo&format=json",
+      via: "public",
+      expectStatus: 200,
+      expectBodyIncludes: "sitename",
+    },
+  ];
+}
+
+/** The takeover checklist. `image` is optional: without a real upload path the row is left out. */
+export function buildExpectations(options: ChecklistOptions): Expectation[] {
+  const rows = [...wikiosRows(options), ...takeoverRows(options)];
   if (options.image) {
     rows.push({
       name: "upload served from /images/",
@@ -258,6 +371,8 @@ export function buildExpectations(options: Pick<Options, "file" | "image">): Exp
   }
   return rows;
 }
+
+type Env = Readonly<Record<string, string | undefined>>;
 
 function readFlag(argv: readonly string[], name: string): string | null {
   const index = argv.indexOf(name);
@@ -271,30 +386,48 @@ function stripTrailingSlashes(url: string): string {
   return url.replace(/\/+$/, "");
 }
 
-export function parseArgs(argv: readonly string[]): Options {
-  const base = stripTrailingSlashes(readFlag(argv, "--base") ?? DEFAULT_BASE);
+function requireIxstates(argv: readonly string[], env: Env): string {
+  const value = readFlag(argv, "--ixstates") ?? env.NEXT_PUBLIC_IXSTATES_URL?.trim();
+  if (!value) {
+    throw new Error(
+      "--ixstates is required (the NEXT_PUBLIC_IXSTATES_URL of the WikiOS build; there is no default)"
+    );
+  }
+  if (!URL.canParse(value)) {
+    throw new Error(`--ixstates must be an absolute URL, got ${JSON.stringify(value)}`);
+  }
+  return stripTrailingSlashes(value);
+}
+
+export function parseArgs(argv: readonly string[], env: Env = process.env): Options {
   const internal = readFlag(argv, "--internal");
   const image = readFlag(argv, "--image");
   if (image !== null && !image.startsWith("/")) throw new Error("--image must be an absolute path");
   return {
-    base,
+    base: stripTrailingSlashes(readFlag(argv, "--base") ?? DEFAULT_BASE),
+    ixstates: requireIxstates(argv, env),
     internal: internal === null ? null : stripTrailingSlashes(internal),
     file: readFlag(argv, "--file") ?? DEFAULT_FILE,
     image,
+    page: readFlag(argv, "--page") ?? DEFAULT_PAGE,
+    revid: readFlag(argv, "--revid") ?? DEFAULT_REVID,
+    subpage: readFlag(argv, "--subpage") ?? DEFAULT_SUBPAGE,
+    category: readFlag(argv, "--category") ?? DEFAULT_CATEGORY,
     standalone: argv.includes("--standalone"),
   };
 }
 
-/** Rows to run for these options, each with the origin it is fetched from (null = skipped). */
-export function planChecks(
-  options: Options
-): { expectation: Expectation; origin: string | null }[] {
+function urlFor(expectation: Expectation, options: Options): string | null {
+  if (expectation.url) return expectation.url;
+  const origin = expectation.via === "internal" ? options.internal : options.base;
+  return origin === null ? null : `${origin}${expectation.path}`;
+}
+
+/** Rows to run for these options, each with the URL it is fetched from (null = skipped). */
+export function planChecks(options: Options): { expectation: Expectation; url: string | null }[] {
   return buildExpectations(options)
     .filter((expectation) => !options.standalone || expectation.standalone)
-    .map((expectation) => ({
-      expectation,
-      origin: expectation.via === "internal" ? options.internal : options.base,
-    }));
+    .map((expectation) => ({ expectation, url: urlFor(expectation, options) }));
 }
 
 async function observe(url: string): Promise<Observation> {
@@ -306,6 +439,7 @@ async function observe(url: string): Promise<Observation> {
   return {
     status: response.status,
     location: response.headers.get("location"),
+    contentType: response.headers.get("content-type"),
     body: await response.text(),
   };
 }
@@ -321,17 +455,19 @@ async function runCheck(expectation: Expectation, url: string): Promise<Evaluati
 
 async function main(argv: readonly string[]): Promise<number> {
   const options = parseArgs(argv);
-  console.log(`WikiOS takeover verification against ${options.base}`);
+  console.log(
+    `WikiOS takeover verification against ${options.base} (IxStates ${options.ixstates})`
+  );
   if (!options.internal) console.log("(no --internal: render-engine rows are skipped)");
   if (!options.image) console.log("(no --image: the /images/ row is skipped)");
 
   let failed = 0;
-  for (const { expectation, origin } of planChecks(options)) {
-    if (origin === null) {
+  for (const { expectation, url } of planChecks(options)) {
+    if (url === null) {
       console.log(`SKIP  ${expectation.name}`);
       continue;
     }
-    const result = await runCheck(expectation, `${origin}${expectation.path}`);
+    const result = await runCheck(expectation, url);
     console.log(`${result.ok ? "PASS" : "FAIL"}  ${expectation.name}  [${expectation.path}]`);
     for (const failure of result.failures) console.log(`        ${failure}`);
     if (!result.ok) failed += 1;
