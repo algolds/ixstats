@@ -11,6 +11,7 @@ jest.mock("~/server/db", () => {
   const tx = {
     user: { findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
     wikiArticle: {
+      count: jest.fn().mockResolvedValue(0),
       upsert: jest.fn().mockResolvedValue({
         id: "a1",
         title: "Foo",

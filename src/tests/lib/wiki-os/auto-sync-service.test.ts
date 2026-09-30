@@ -210,7 +210,7 @@ test("inserts revisions with createMany skipDuplicates", async () => {
   );
 });
 
-test("marks the rendered view stale and queues a render when the synced wikitext differs (NEW-2)", async () => {
+test("marks the rendered view stale and queues a background render when the synced wikitext differs (NEW-2)", async () => {
   rcResponses = [{ changes: [change("A", 100, 1)] }];
   mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Old body." });
 
@@ -221,7 +221,7 @@ test("marks the rendered view stale and queues a render when the synced wikitext
   // The previous HTML keeps being served until the render lands: it is never cleared.
   expect(args.update).not.toHaveProperty("contentHtml");
   expect(enqueueRender).toHaveBeenCalledTimes(1);
-  expect(enqueueRender).toHaveBeenCalledWith("art-1");
+  expect(enqueueRender).toHaveBeenCalledWith("art-1", { background: true });
 });
 
 test("queues the first render of a page that is new to Postgres", async () => {
@@ -230,7 +230,7 @@ test("queues the first render of a page that is new to Postgres", async () => {
 
   await runAutoSyncCycle();
 
-  expect(enqueueRender).toHaveBeenCalledWith("art-1");
+  expect(enqueueRender).toHaveBeenCalledWith("art-1", { background: true });
 });
 
 test("leaves the rendered view and the queue alone when the synced wikitext is unchanged", async () => {

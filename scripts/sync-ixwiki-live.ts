@@ -145,6 +145,12 @@ async function syncNamespace(ns: number, prefix: string, name: string, maxPerNs 
           const summary = cleanSum ? cleanSum.substring(0, 480) : null;
           const leadImageUrl = extractLeadImageFromWikitext(wikitext);
 
+          // A changed text leaves the rendered view stale: readers re-render it on their next visit.
+          const textUnchanged =
+            (await prisma.wikiArticle.count({
+              where: { source: "ixwiki", title: rawTitle, wikitext },
+            })) > 0;
+
           const article = await prisma.wikiArticle.upsert({
             where: {
               source_title: { source: "ixwiki", title: rawTitle },
@@ -171,6 +177,7 @@ async function syncNamespace(ns: number, prefix: string, name: string, maxPerNs 
               namespace: ns,
               namespacePrefix: prefix || null,
               wikitext,
+              ...(textUnchanged ? {} : { htmlSyncedAt: null }),
               summary,
               leadImageUrl: leadImageUrl || null,
               wordCount: words,

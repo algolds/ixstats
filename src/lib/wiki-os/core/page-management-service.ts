@@ -8,6 +8,7 @@
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle } from "./title";
+import { enqueueRender } from "../services/render-service";
 
 export interface MovePageResult {
   success: boolean;
@@ -46,7 +47,7 @@ export class PageManagementService {
       throw new Error("Old and new page names are identical.");
     }
 
-    return db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       // 1. Fetch original article
       const original = await tx.wikiArticle.findFirst({
         where: {
@@ -81,6 +82,8 @@ export class PageManagementService {
           slug: newSlug,
           namespace: target.namespaceId,
           namespacePrefix: target.namespacePrefix,
+          // The page's name is part of how it renders ({{PAGENAME}}, the display title): stale.
+          htmlSyncedAt: null,
           lastEditorId: userId,
           updatedAt: new Date(),
         },
@@ -142,6 +145,10 @@ export class PageManagementService {
         linksUpdated: linkUpdateResult.count,
       };
     });
+
+    // The moved page is stale under its new name: render it off the read path.
+    enqueueRender(result.movedArticleId);
+    return result;
   }
 
   /**

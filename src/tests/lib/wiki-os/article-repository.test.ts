@@ -6,6 +6,7 @@ import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 
 const mockUpsert = jest.fn();
+const mockCount = jest.fn();
 const mockRevisionFindFirst = jest.fn();
 const mockRevisionCreate = jest.fn();
 const mockFindUnique = jest.fn();
@@ -16,7 +17,10 @@ const mockRevisionFindMany = jest.fn();
 jest.mock("~/server/db", () => {
   const tx = {
     user: { findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
-    wikiArticle: { upsert: (...a: unknown[]) => mockUpsert(...a) },
+    wikiArticle: {
+      upsert: (...a: unknown[]) => mockUpsert(...a),
+      count: (...a: unknown[]) => mockCount(...a),
+    },
     wikiRevision: {
       findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
       create: (...a: unknown[]) => mockRevisionCreate(...a),
@@ -85,6 +89,7 @@ const articleRow = (title: string, overrides: Record<string, unknown> = {}) => (
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockCount.mockResolvedValue(0);
   mockRevisionFindFirst.mockResolvedValue(null);
   mockRevisionCreate.mockResolvedValue({ id: "r1" });
   mockFindUnique.mockResolvedValue(null);
@@ -241,6 +246,37 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
     expect(args.update).not.toHaveProperty("contentHtml");
     expect(args.create).not.toHaveProperty("htmlSyncedAt");
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml", "");
+  });
+
+  it("compares the text in the database: a count on the title and the new wikitext, nothing read back", async () => {
+    await save("new text");
+
+    expect(mockCount).toHaveBeenCalledTimes(1);
+    expect(mockCount.mock.calls[0]?.[0]).toEqual({
+      where: { source: "ixwiki", title: "Foo", wikitext: "new text" },
+    });
+  });
+
+  it("leaves the view and the queue alone when the saved text is the text already stored", async () => {
+    mockCount.mockResolvedValue(1);
+
+    await save("same text");
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    expect(args.update).not.toHaveProperty("htmlSyncedAt");
+    expect(args.update).not.toHaveProperty("contentHtml");
+    expect(enqueueRender).not.toHaveBeenCalled();
+    // The revision is still recorded: a null edit is an edit.
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("queues the first render of a page that is new", async () => {
+    mockCount.mockResolvedValue(0);
+
+    await save("brand new");
+
+    expect(mockUpsert.mock.calls[0]?.[0].create).not.toHaveProperty("htmlSyncedAt");
+    expect(enqueueRender).toHaveBeenCalledWith("a1");
   });
 
   it("stores HTML only when the caller hands it one", async () => {

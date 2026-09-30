@@ -4,6 +4,7 @@
  * holds a canonical TITLE, so the move writes one and the broken-redirect report compares titles.
  */
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
+import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
@@ -14,6 +15,7 @@ const mockLogCreate = jest.fn();
 const mockDbFindFirst = jest.fn();
 const mockDbUpdate = jest.fn();
 
+jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 jest.mock("~/server/db", () => {
   const tx = {
     wikiArticle: {
@@ -93,6 +95,26 @@ function expectLeanSelect(call: unknown[] | undefined) {
   expect(select).toBeDefined();
   for (const column of HEAVY) expect(select).not.toHaveProperty(column);
 }
+
+describe("PageManagementService.movePage and the rendered view (plan 404)", () => {
+  it("marks the moved page stale under its new name and queues its render after the commit", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", "u1");
+
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ title: "New name", htmlSyncedAt: null });
+    expect(mockUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml");
+    expect(enqueueRender).toHaveBeenCalledTimes(1);
+    expect(enqueueRender).toHaveBeenCalledWith("orig");
+  });
+
+  it("queues nothing for a move that failed", async () => {
+    mockFindFirst.mockReset().mockResolvedValue(null);
+
+    await expect(PageManagementService.movePage("old_name", "new_name", "x", "u1")).rejects.toThrow(
+      "not found"
+    );
+    expect(enqueueRender).not.toHaveBeenCalled();
+  });
+});
 
 describe("PageManagementService reads only the columns it uses (plan 404)", () => {
   it("movePage selects an explicit, lean column list on every wikiArticle call", async () => {

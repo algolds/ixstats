@@ -650,6 +650,9 @@ export class ArticleRepository {
         if (user) resolvedDbUserId = user.id;
       }
 
+      // Is the text any different? Compared in the database: the stored text never crosses the wire.
+      const textUnchanged = (await tx.wikiArticle.count({ where: { source, title, wikitext } })) > 0;
+
       // 1. Upsert WikiArticle
       const article = await tx.wikiArticle.upsert({
         where: {
@@ -676,10 +679,10 @@ export class ArticleRepository {
           namespace: canon.namespaceId,
           namespacePrefix: canon.namespacePrefix,
           wikitext,
-          // The previous HTML and view bundle stay in place (readers keep seeing them) until the
-          // render queued below replaces them; `htmlSyncedAt: null` is what marks them stale.
+          // A changed text marks the view stale (`htmlSyncedAt: null`); the previous HTML and
+          // bundle stay in place, readers keep seeing them until the render queued below replaces them.
           ...(providedHtml ? { contentHtml: providedHtml } : {}),
-          htmlSyncedAt: null,
+          ...(textUnchanged ? {} : { htmlSyncedAt: null }),
           summary: excerpt,
           redirectTargetSlug,
           redirectTargetFragment,
@@ -734,11 +737,11 @@ export class ArticleRepository {
         },
       });
 
-      return { article, revision };
+      return { article, revision, textUnchanged };
     });
 
     // 3. Render the new text off the read path (the commit above marked the old view stale)
-    enqueueRender(result.article.id);
+    if (!result.textUnchanged) enqueueRender(result.article.id);
 
     // 4. Update the link graph outside transaction for performance
     let linksCount = 0;
@@ -780,8 +783,9 @@ export class ArticleRepository {
       : await db.$transaction((tx) => importInto(tx, input), IMPORT_TRANSACTION);
 
     if (!input.dryRun && head && articleId) {
-      // The new head is stale until rendered: render it off the read path, as saveArticle does.
-      enqueueRender(articleId);
+      // The new head is stale until rendered: render it off the read path, as a backlog (an editor's
+      // save renders before it).
+      enqueueRender(articleId, { background: true });
       // Link graph outside the transaction, best effort, exactly as saveArticle does it.
       try {
         await LinkGraphService.syncArticleLinks(articleId, head.wikitext, "", input.source);

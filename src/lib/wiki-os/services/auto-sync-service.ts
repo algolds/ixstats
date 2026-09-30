@@ -269,7 +269,8 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
     },
     select: { id: true },
   });
-  if (wikitextChanged) enqueueRender(article.id);
+  // Inbound sync is a backlog: an editor's save renders before it.
+  if (wikitextChanged) enqueueRender(article.id, { background: true });
 
   // Record revision; (source, mwRevId) is unique, so a known revision is skipped by the DB.
   if (revId > 0) {

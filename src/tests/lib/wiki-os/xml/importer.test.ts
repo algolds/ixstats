@@ -373,7 +373,7 @@ describe("the page's head only moves forward", () => {
       contentHtml: "<p>seeded</p>",
     });
     expect(syncLinks).not.toHaveBeenCalledWith(seeded.id, expect.anything(), "", "ixwiki");
-    expect(enqueueRender).not.toHaveBeenCalledWith(seeded.id); // its head did not change: nothing to render
+    expect(enqueueRender).not.toHaveBeenCalledWith(seeded.id, expect.anything()); // its head did not change: nothing to render
     expect(revisionsOf("Kingdom of Testia")).toHaveLength(4);
   });
 
@@ -390,7 +390,7 @@ describe("the page's head only moves forward", () => {
       htmlSyncedAt: null,
       mwPageId: 101,
     });
-    expect(enqueueRender).toHaveBeenCalledWith(seeded.id);
+    expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
     expect(syncLinks).toHaveBeenCalledWith(seeded.id, KINGDOM_V2, "", "ixwiki");
   });
 
