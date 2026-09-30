@@ -42,6 +42,9 @@ describe("savedTariffRate", () => {
   it("reads the tariff rate the Fiscal Policy tab saves", () => {
     expect(savedTariffRate('{"tariffRate":6.5,"capitalGainsRate":15}')).toBe(6.5);
     expect(savedTariffRate('{"tariffRate":0}')).toBe(0);
+    expect(savedTariffRate('[{"type":"alcohol","rate":20},{"type":"tariff","rate":3.5}]')).toBe(
+      3.5
+    );
   });
 
   it("returns null when no tariff rate is saved", () => {
@@ -49,5 +52,6 @@ describe("savedTariffRate", () => {
     expect(savedTariffRate("")).toBeNull();
     expect(savedTariffRate('{"capitalGainsRate":15}')).toBeNull();
     expect(savedTariffRate("not json")).toBeNull();
+    expect(savedTariffRate('[{"type":"alcohol","rate":20}]')).toBeNull();
   });
 });

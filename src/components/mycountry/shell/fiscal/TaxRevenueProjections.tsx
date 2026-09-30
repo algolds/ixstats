@@ -5,15 +5,15 @@ import { Bank as Landmark } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
-import { TAX_CHANNELS, ACCENT_BORDER } from "./taxChannels";
+import { TAX_CHANNELS, ACCENT_BORDER, type TaxYields } from "./taxChannels";
 import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface TaxRevenueProjectionsProps {
-  yields: Record<string, number>;
+  yields: TaxYields;
 }
 
 export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
-  const totalYield = yields._total || 1;
+  const totalYield = yields.total;
 
   return (
     <FacetCard
@@ -28,30 +28,37 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 md:grid-cols-6">
-        {TAX_CHANNELS.map((ch) => (
-          <div
-            key={ch.key}
-            className={cn(
-              "border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5 backdrop-blur-md",
-              ACCENT_BORDER[ch.accent] ?? "border-border/20"
-            )}
-          >
-            <Eyebrow className="block">
-              {ch.shortLabel} Yield
-            </Eyebrow>
-            <p className={cn("font-mono text-base font-bold tabular-nums", ch.accentClass)}>
-              <CurrencyFlow value={yields[ch.key] ?? 0} decimalPlaces={2} />
-            </p>
-            <p className="text-muted-foreground font-mono text-xs">
-              <PercentageFlow
-                value={((yields[ch.key] ?? 0) / totalYield) * 100}
-                decimalPlaces={1}
-                className="text-muted-foreground"
-              />{" "}
-              of total
-            </p>
-          </div>
-        ))}
+        {TAX_CHANNELS.map((ch) => {
+          const value = yields.byChannel[ch.key] ?? null;
+          return (
+            <div
+              key={ch.key}
+              className={cn(
+                "border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5 backdrop-blur-md",
+                ACCENT_BORDER[ch.accent] ?? "border-border/20"
+              )}
+            >
+              <Eyebrow className="block">{ch.shortLabel} Yield</Eyebrow>
+              <p className={cn("font-mono text-base font-bold tabular-nums", ch.accentClass)}>
+                {value != null ? <CurrencyFlow value={value} decimalPlaces={2} /> : "—"}
+              </p>
+              <p className="text-muted-foreground font-mono text-xs">
+                {value != null && totalYield != null && totalYield > 0 ? (
+                  <>
+                    <PercentageFlow
+                      value={(value / totalYield) * 100}
+                      decimalPlaces={1}
+                      className="text-muted-foreground"
+                    />{" "}
+                    of total
+                  </>
+                ) : (
+                  "No projection"
+                )}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </FacetCard>
   );

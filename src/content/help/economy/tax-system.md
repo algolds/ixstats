@@ -10,23 +10,26 @@ nextLabel: Trade & Commerce
 
 ## Where taxes are set
 
-Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → **Fiscal Policy**, under **National Tax Rate Controls**. New nations start with default rates; after launch you tune them here.
+Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → **Fiscal Policy**, under **National Tax Rate Controls**. Rates you entered in the builder carry over; a tax you haven't set yet is marked **Not set** and has no revenue projection until you set it.
 
 ## How to change a tax rate
 
 1. Open [Economy & Budget](/mycountry/economy) and choose **Fiscal Policy**.
-2. Move a slider or type a value. Changes save automatically.
+2. Click the lock on a tax to unlock it, then move its slider. The rate saves when you let go and is there when you come back.
 3. Check **Tax Revenue Projections** to see what each tax contributes.
 4. Check the insights panel, which places your overall tax burden against an "optimal zone" of 15–35%.
 
-| Tax | Range | Default |
+| Tax | Range | Slider starts at (if not set) |
 | --- | --- | --- |
 | Income tax | 0–60% | 24% |
 | Corporate tax | 0–50% | 21% |
 | VAT / sales tax | 0–30% | 15% |
-| Tariff rate | 0–25% | set by your nation |
-| Wealth tax | 0–10% | set by your nation |
-| Capital gains tax | 0–40% | set by your nation |
+| Tariff rate | 0–25% | 4.5% |
+| Wealth tax | 0–10% | 1.5% |
+| Capital gains tax | 0–40% | 15% |
+
+- **Brackets.** If you set income or corporate tax as brackets in the builder, the tab shows your top rate read-only; change the brackets in the [Country Editor](/help/mycountry/editor).
+- **Projections.** Revenue is your GDP × rate × how much of the economy each tax reaches, reduced by your recorded collection efficiency. With no efficiency recorded, projections are shown before collection losses. Without a GDP figure, projections show "—".
 
 ## What tax rates affect
 

@@ -42,7 +42,7 @@ Set your national tax rates in **National Tax Rate Controls**:
 | Wealth tax | 0–10% |
 | Capital gains tax | 0–40% |
 
-Changes save automatically. **Tax Revenue Projections** shows what each tax brings in, and the insights panel marks where your overall tax burden sits against an "optimal zone" of 15–35%. More in [Taxes & Revenue](/help/economy/tax-system).
+Each rate saves when you let go of its slider; a tax you haven't set yet shows **Not set**. **Tax Revenue Projections** shows what each tax brings in, and the insights panel marks where your overall tax burden sits against an "optimal zone" of 15–35%. More in [Taxes & Revenue](/help/economy/tax-system).
 
 ## Trade & Commerce
 

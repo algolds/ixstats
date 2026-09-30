@@ -20,6 +20,10 @@ export interface LaborMarketRow {
 }
 
 export interface FiscalSystemRow {
+  corporateTaxRates?: string | null;
+  personalIncomeTaxRates?: string | null;
+  salesTaxRate?: number | null;
+  wealthTaxRate?: number | null;
   exciseTaxRates?: string | null;
   taxEfficiency?: number | null;
 }
@@ -57,14 +61,21 @@ export function finiteOrNull(value: unknown): number | null {
 }
 
 /**
- * The overall tariff rate saved by the Fiscal Policy tab, which stores it as
- * `FiscalSystem.exciseTaxRates = {"tariffRate": n, ...}`. Null when none is saved.
+ * The overall tariff rate saved by the Fiscal Policy tab. It lives in `FiscalSystem.exciseTaxRates`,
+ * as `{"tariffRate": n, ...}` or — when the builder stored an excise list — as a
+ * `{"type": "tariff", "rate": n}` entry in that array. Null when none is saved.
  */
 export function savedTariffRate(exciseTaxRates: string | null | undefined): number | null {
   if (!exciseTaxRates) return null;
   try {
     const parsed: unknown = JSON.parse(exciseTaxRates);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    if (Array.isArray(parsed)) {
+      const entry = parsed.find(
+        (e) => e && typeof e === "object" && (e as Record<string, unknown>).type === "tariff"
+      ) as Record<string, unknown> | undefined;
+      return finiteOrNull(entry?.rate);
+    }
+    if (parsed && typeof parsed === "object") {
       return finiteOrNull((parsed as Record<string, unknown>).tariffRate);
     }
   } catch {
