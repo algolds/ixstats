@@ -6,7 +6,31 @@
  */
 
 import { db } from "~/server/db";
+import { cleanWikiMarkup } from "../transformers/wikitext-parser";
 import { toArticleSlug } from "./domain-types";
+
+const SNIPPET_FALLBACK = "WikiOS article entry.";
+
+/**
+ * Search snippets are PLAIN TEXT: clients render them as text, never as HTML. Markup, templates and
+ * tags are stripped here, and `<`/`>` are dropped so not even a truncated tag survives.
+ */
+function toSnippetText(raw: string | null | undefined, maxLength: number): string {
+  return cleanWikiMarkup(raw, maxLength).replace(/[<>]/g, "");
+}
+
+function buildSnippet(summary: string | null | undefined, wikitext: string | null | undefined): string {
+  return toSnippetText(summary, 300) || toSnippetText(wikitext, 160) || SNIPPET_FALLBACK;
+}
+
+/** The wikitext around the first occurrence of `query`, or its opening when the query is not in it. */
+function matchWindow(wikitext: string, query: string): string {
+  const idx = wikitext.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return wikitext.substring(0, 160);
+  const start = Math.max(0, idx - 40);
+  const end = Math.min(wikitext.length, idx + 120);
+  return wikitext.substring(start, end);
+}
 
 export interface SearchOptions {
   query: string;
@@ -79,15 +103,7 @@ export class NativeSearchService {
         id: a.id,
         slug,
         title: a.title,
-        snippet:
-          a.summary ||
-          (a.wikitext
-            ? extractIntroFromWikitext(a.wikitext).slice(0, 160) ||
-              a.wikitext
-                .replace(/^[=\s]+/, "")
-                .replace(/[{}[\]]/g, "")
-                .slice(0, 160)
-            : "WikiOS article entry."),
+        snippet: buildSnippet(a.summary, a.wikitext),
         readingTime: a.readingTime || 1,
         leadImageUrl: a.leadImageUrl ?? null,
         matchType: isExact ? "title_exact" : isPrefix ? "title_fuzzy" : "content",
@@ -158,14 +174,7 @@ export class NativeSearchService {
             id: r.id,
             slug: r.slug || toArticleSlug(r.title),
             title: r.title,
-            snippet:
-              r.summary ||
-              (r.preview
-                ? r.preview
-                    .replace(/^[=\s]+/, "")
-                    .replace(/[{}[\]]/g, "")
-                    .slice(0, 160)
-                : "WikiOS article entry."),
+            snippet: buildSnippet(r.summary, r.preview),
             readingTime: r.readingTime || 1,
             leadImageUrl: r.leadImageUrl || null,
             matchType: r.rank > 0.3 ? "title_exact" : "content",
@@ -211,35 +220,16 @@ export class NativeSearchService {
       }),
     ]);
 
-    const results: SearchResultItem[] = articles.map((a) => {
-      let snippet: string | null = a.summary || null;
-      if (!snippet && a.wikitext) {
-        const idx = a.wikitext.toLowerCase().indexOf(trimmed.toLowerCase());
-        if (idx !== -1) {
-          const start = Math.max(0, idx - 40);
-          const end = Math.min(a.wikitext.length, idx + 120);
-          snippet =
-            (start > 0 ? "…" : "") +
-            a.wikitext.substring(start, end).replace(/[{}[\]]/g, "") +
-            (end < a.wikitext.length ? "…" : "");
-        } else {
-          snippet = a.wikitext.substring(0, 160).replace(/[{}[\]]/g, "") + "…";
-        }
-      }
-
-      return {
-        id: a.id,
-        slug: toArticleSlug(a.title),
-        title: a.title,
-        snippet: snippet || "WikiOS article entry.",
-        readingTime: a.readingTime || 1,
-        leadImageUrl: a.leadImageUrl ?? null,
-        matchType: a.title.toLowerCase().includes(trimmed.toLowerCase())
-          ? "title_fuzzy"
-          : "content",
-        similarityScore: 0.7,
-      };
-    });
+    const results: SearchResultItem[] = articles.map((a) => ({
+      id: a.id,
+      slug: toArticleSlug(a.title),
+      title: a.title,
+      snippet: buildSnippet(a.summary, a.wikitext ? matchWindow(a.wikitext, trimmed) : null),
+      readingTime: a.readingTime || 1,
+      leadImageUrl: a.leadImageUrl ?? null,
+      matchType: a.title.toLowerCase().includes(trimmed.toLowerCase()) ? "title_fuzzy" : "content",
+      similarityScore: 0.7,
+    }));
 
     return { results, total };
   }

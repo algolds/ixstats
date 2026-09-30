@@ -20,6 +20,7 @@ import {
 } from "./domain-types";
 import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
+import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 import {
   planRevisionImport,
@@ -28,6 +29,12 @@ import {
   type RevisionPlan,
 } from "../xml/revision-plan";
 import { mwSha1Base36 } from "../xml/sha1";
+import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
+
+/** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
+const MAX_EXCERPT_LENGTH = 480;
+/** The excerpt is the lead of the article: cleaning more than this is wasted work on a 2 MB page. */
+const EXCERPT_SOURCE_LENGTH = 20_000;
 
 /** The columns a reader needs from a WikiArticle row. */
 const ARTICLE_SELECT = {
@@ -401,6 +408,16 @@ export class ArticleRepository {
     const { title, slug } = canon;
     const wikitext = input.wikitext || "";
     const contentHtml = input.contentHtml || "";
+    // The excerpt (search snippets, link previews) comes from the text, never the edit summary.
+    const excerpt =
+      input.excerpt?.slice(0, MAX_EXCERPT_LENGTH) ??
+      (cleanWikitextExcerpt(wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
+        0,
+        MAX_EXCERPT_LENGTH
+      ) || null);
+    const redirect = parseRedirect(wikitext);
+    const redirectTargetSlug = redirect?.title ?? null;
+    const redirectTargetFragment = redirect?.fragment ?? null;
 
     // Compute basic word count and reading time
     const words = (wikitext || contentHtml).split(/\s+/).filter(Boolean).length;
@@ -415,19 +432,9 @@ export class ArticleRepository {
           where: {
             OR: [{ id: authorId }, { clerkUserId: authorId }],
           },
-          select: { id: true, wikiUsername: true },
+          select: { id: true },
         });
-        if (user) {
-          resolvedDbUserId = user.id;
-          if (!user.wikiUsername && authorName && authorName !== "Community Contributor") {
-            await tx.user
-              .update({
-                where: { id: user.id },
-                data: { wikiUsername: authorName, lastWikiSync: new Date() },
-              })
-              .catch(() => null);
-          }
-        }
+        if (user) resolvedDbUserId = user.id;
       }
 
       // 1. Upsert WikiArticle
@@ -443,7 +450,9 @@ export class ArticleRepository {
           source,
           wikitext,
           contentHtml,
-          summary: input.summary ?? null,
+          summary: excerpt,
+          redirectTargetSlug,
+          redirectTargetFragment,
           authorId: resolvedDbUserId,
           lastEditorId: resolvedDbUserId,
           readingTime,
@@ -455,7 +464,9 @@ export class ArticleRepository {
           namespacePrefix: canon.namespacePrefix,
           wikitext,
           contentHtml,
-          summary: input.summary ?? undefined,
+          summary: excerpt,
+          redirectTargetSlug,
+          redirectTargetFragment,
           lastEditorId: resolvedDbUserId ?? undefined,
           syncedAt: new Date(),
           readingTime,
@@ -488,7 +499,7 @@ export class ArticleRepository {
           articleId: article.id,
           wikitext,
           contentHtml,
-          summary: input.summary ?? null,
+          summary: input.editSummary ?? null,
           minor: input.minor ?? false,
           source,
           author: authorName,
@@ -539,7 +550,7 @@ export class ArticleRepository {
         contentHtml: contentHtml || "",
         contentJson: null,
         wikitext: result.article.wikitext,
-        summary: input.summary ?? null,
+        summary: excerpt,
         namespace: result.article.namespace ?? 0,
         namespacePrefix: result.article.namespacePrefix ?? null,
         protectionLevel: result.article.protectionLevel ?? "ALL",
@@ -549,8 +560,8 @@ export class ArticleRepository {
         wordCount: words,
         viewCount: 0,
         leadImageUrl: null,
-        redirectTargetSlug: null,
-        redirectTargetFragment: null,
+        redirectTargetSlug,
+        redirectTargetFragment,
         authorId: authorId ?? null,
         lastEditorId: authorId ?? null,
         createdAt: result.article.syncedAt || new Date(),

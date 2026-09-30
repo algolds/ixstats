@@ -5,7 +5,14 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ViewColumns2 as Columns2, AlignLeft, Undo, Check } from "iconoir-react";
+import {
+  ArrowLeft,
+  ViewColumns2 as Columns2,
+  AlignLeft,
+  Undo,
+  Check,
+  WarningTriangle,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { DiffViewer } from "~/components/diff-viewer";
@@ -111,7 +118,10 @@ export default function DiffPage() {
                   {!undoConfirm ? (
                     <button
                       type="button"
-                      onClick={() => setUndoConfirm(true)}
+                      onClick={() => {
+                        revertMutation.reset();
+                        setUndoConfirm(true);
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
                     >
                       <Undo className="h-3.5 w-3.5" />
@@ -137,7 +147,10 @@ export default function DiffPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setUndoConfirm(false)}
+                        onClick={() => {
+                          revertMutation.reset();
+                          setUndoConfirm(false);
+                        }}
                         className="border-border/50 bg-secondary text-foreground hover:bg-secondary/80 rounded-xl border px-3 py-1.5 text-xs font-medium"
                       >
                         Cancel
@@ -148,6 +161,15 @@ export default function DiffPage() {
               </div>
 
               {/* Status alerts */}
+              {revertMutation.error && (
+                <div
+                  role="alert"
+                  className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400"
+                >
+                  <WarningTriangle className="h-4 w-4 shrink-0" />
+                  {revertMutation.error.message}
+                </div>
+              )}
               {revertMutation.isSuccess && (
                 <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-400">
                   <Check className="h-4 w-4" />

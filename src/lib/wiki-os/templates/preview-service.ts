@@ -9,7 +9,7 @@
  * Tier 1 (offline): known families render as React components at the UI layer
  *   (`VisualInfoboxPreviewCard` for `Infobox …`, engine chips via
  *   template-resolver providers) — see isKnownInfoboxFamily().
- * Tier 2: hash-keyed cache — memory here; Redis server-side
+ * Tier 2: keyed cache — memory here; Redis server-side, SHA-256 keyed
  *   (preview-service.server.ts via the getTemplatePreview route).
  * Tier 3: direct MediaWiki action=parse render.
  */
@@ -28,9 +28,13 @@ const TTL_MS = 60 * 60 * 24 * 1000; // 24h
 
 // ─── Keys & classification ──────────────────────────────────────────────────
 
-/** Stable cache key: canonical name + sorted params (order-insensitive). */
-export function previewCacheKey(templateName: string, params: Record<string, string>): string {
-  const canonical = JSON.stringify([
+/**
+ * Canonical, order-insensitive form of a template invocation (name + sorted params). It is the
+ * memory-tier key here (collision-free, nothing shared) and the input of the server's SHA-256
+ * Redis key (`previewCacheKey` in preview-service.server.ts).
+ */
+export function canonicalPreviewInput(templateName: string, params: Record<string, string>): string {
+  return JSON.stringify([
     templateName
       .replace(/^Template:/i, "")
       .trim()
@@ -39,11 +43,6 @@ export function previewCacheKey(templateName: string, params: Record<string, str
       .sort()
       .map((k) => [k, params[k]]),
   ]);
-  let h = 0;
-  for (let i = 0; i < canonical.length; i++) {
-    h = ((h << 5) - h + canonical.charCodeAt(i)) | 0;
-  }
-  return `tplprev:${(h >>> 0).toString(36)}`;
 }
 
 /** Tier-1 heuristic: templates the UI renders as React components, offline. */
@@ -88,7 +87,7 @@ export async function renderTemplateCached(
   templateName: string,
   params: Record<string, string>
 ): Promise<TemplatePreview> {
-  const key = previewCacheKey(templateName, params);
+  const key = canonicalPreviewInput(templateName, params);
 
   const memHit = memoryGet(key);
   if (memHit !== null) return { html: memHit, source: "cache", cached: true };

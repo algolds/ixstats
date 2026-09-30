@@ -164,7 +164,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
         });
       }
 
-      const resolvedTitle = await resolveRedirect(rawTitle);
+      const { title: resolvedTitle } = await resolveRedirect(rawTitle);
 
       // Fast-path: Check PostgreSQL Native Article Repository (<2ms)
       const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki").catch(
@@ -405,7 +405,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const resolvedTitle = await resolveRedirect(input.title);
+      const { title: resolvedTitle } = await resolveRedirect(input.title);
       return getArticleAuthors(resolvedTitle, input.wikiSource);
     }),
 
@@ -430,7 +430,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
   checkPageExists: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
-      const resolvedTitle = await resolveRedirect(input.title);
+      const { title: resolvedTitle } = await resolveRedirect(input.title);
       const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
       return { exists: !!article, resolvedTitle };
     }),
@@ -446,9 +446,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
   resolveWikiPlaceholders: publicProcedure
     .input(
       z.object({
-        placeholders: z.array(z.string()).optional(),
-        text: z.string().optional(),
-        countryId: z.string().optional(),
+        placeholders: z.array(z.string().max(512)).max(200).optional(),
+        text: z.string().max(200_000).optional(),
+        countryId: z.string().max(64).optional(),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -467,7 +467,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const cleanTitle = input.title.replace(/_/g, " ").trim();
-      const resolvedTitle = await resolveRedirect(cleanTitle);
+      const { title: resolvedTitle } = await resolveRedirect(cleanTitle);
 
       const summary = await getArticleSummaryFromShadow(resolvedTitle, input.wiki);
       if (summary.intro) {
@@ -500,8 +500,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getSectionContent: publicProcedure
     .input(
       z.object({
-        title: z.string().min(1),
-        section: z.string().min(1),
+        title: z.string().min(1).max(512),
+        section: z.string().min(1).max(512),
         source: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
@@ -562,7 +562,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getPageImages: publicProcedure
     .input(
       z.object({
-        title: z.string().min(1),
+        title: z.string().min(1).max(512),
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
@@ -575,7 +575,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * Batch get lead thumbnails for article titles.
    */
   getArticleThumbnails: publicProcedure
-    .input(z.object({ titles: z.array(z.string().min(1)).max(100) }))
+    .input(z.object({ titles: z.array(z.string().min(1).max(512)).max(100) }))
     .query(async ({ input }) => {
       if (input.titles.length === 0) return {};
       const { batchFetchThumbnails } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");

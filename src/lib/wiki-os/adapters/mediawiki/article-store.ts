@@ -69,11 +69,18 @@ export async function getArticleWikitextShadow(
 }
 
 /**
- * Read a revision's wikitext by the `revid` a history entry carries.
+ * Read a revision's wikitext by the `revid` a history entry carries. `wikitext` is null when the
+ * revision's text was never imported (see `RevisionContent`).
  */
 export async function getRevisionWikitextShadow(
   revid: string
-): Promise<{ wikitext: string; title: string; timestamp: string; fromShadow: boolean } | null> {
+): Promise<{
+  wikitext: string | null;
+  title: string;
+  source: string;
+  timestamp: string;
+  fromShadow: boolean;
+} | null> {
   const revision = await getRevisionWikitext(revid);
   return revision ? { ...revision, fromShadow: true } : null;
 }

@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
 import {
@@ -70,8 +71,15 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
 
       const fromRev = history.revisions.find((r) => r.revid === resolvedFromRevId);
 
+      // A null text is an import placeholder, not an empty page: diffing it would show a lie.
+      if (toData.wikitext === null || fromData?.wikitext === null) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Revision text has not been imported yet.",
+        });
+      }
       const fromWikitext = fromData?.wikitext ?? "";
-      const toWikitext = toData.wikitext ?? "";
+      const toWikitext = toData.wikitext;
 
       // Compute diff using Node.js engine
       const diffHtml = computeWikitextDiff(fromWikitext, toWikitext);

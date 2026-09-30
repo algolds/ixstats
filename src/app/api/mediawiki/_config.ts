@@ -3,8 +3,9 @@
  *
  * `[wiki]/api.php` proxies read-only API calls for every wiki here.
  * `[wiki]/[...path]` proxies media for the external wikis; the local ixwiki media
- * route (`ixwiki/[...path]`) keeps its own handler because it also registers assets
- * and caches buffers. Static segments win over `[wiki]` in Next.js routing.
+ * route (`ixwiki/[...path]`) keeps its own handler because it also registers assets.
+ * Static segments win over `[wiki]` in Next.js routing. Both media routes are image-only
+ * (see `_media-response.ts`).
  */
 import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";

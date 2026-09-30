@@ -7,6 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimiter } from "~/lib/cache";
+import { resolveRateLimitIdentifier } from "~/server/api/trpc/rate-limit-identity";
 import { ALLOWED_API_PARAMS, apiCorsHeaders, getWiki, WIKI_USER_AGENT } from "../../_config";
 
 const CLOUDFLARE_MARKERS = ["Just a moment", "cf_chl_opt", "challenge-platform"];
@@ -22,10 +23,7 @@ export async function GET(
   const corsHeaders = apiCorsHeaders(wiki, request.headers.get("origin"));
 
   try {
-    const clientIp =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "unknown";
+    const clientIp = resolveRateLimitIdentifier(request.headers, null);
     const rateLimit = await rateLimiter.check(clientIp, "wiki_proxy");
     if (!rateLimit.success) {
       console.warn(`[SECURITY] Rate limit exceeded for ${wikiKey} proxy: ip=${clientIp}`);

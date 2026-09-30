@@ -8,7 +8,7 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, lightMutationProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, isWikiAdmin } from "~/lib/wiki-os/auth";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
@@ -216,7 +216,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
   /**
    * Create a new discussion thread anchored to a section or selected text.
    */
-  createThread: protectedProcedure
+  createThread: lightMutationProcedure
     .input(
       z.object({
         articleTitle: z.string().min(1).max(500),
@@ -276,10 +276,10 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
   /**
    * Post a reply to an existing discussion thread.
    */
-  postComment: protectedProcedure
+  postComment: lightMutationProcedure
     .input(
       z.object({
-        threadId: z.string(),
+        threadId: z.string().max(64),
         content: z.string().min(1).max(20000),
         suggestedEdit: z.string().max(50000).optional(),
         countryId: z.string().max(100).optional(),
@@ -327,10 +327,10 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
   /**
    * Toggle thread resolution status (Hold-to-Resolve).
    */
-  resolveThread: protectedProcedure
+  resolveThread: lightMutationProcedure
     .input(
       z.object({
-        threadId: z.string(),
+        threadId: z.string().max(64),
         resolved: z.boolean(),
       })
     )
@@ -360,8 +360,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
   /**
    * Delete a discussion thread (creator or admin only).
    */
-  deleteThread: protectedProcedure
-    .input(z.object({ threadId: z.string() }))
+  deleteThread: lightMutationProcedure
+    .input(z.object({ threadId: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
       const admin = isWikiAdmin(ctx);
