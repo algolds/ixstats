@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { PersonaFollowButton } from "./PersonaFollowButton";
+import { Skeleton } from "~/components/ui/skeleton";
 
 export interface PersonaAuthorCardProps {
   username: string;
@@ -52,8 +53,8 @@ export function PersonaAuthorCard({ username, children }: PersonaAuthorCardProps
       <HoverCardContent side="bottom" align="start" sideOffset={4} className="w-72 p-3">
         {isLoading ? (
           <div className="space-y-2">
-            <div className="bg-muted h-4 w-32 animate-pulse rounded" />
-            <div className="bg-muted/60 h-3 w-40 animate-pulse rounded" />
+            <Skeleton className="bg-muted h-4 w-32 rounded" />
+            <Skeleton className="bg-muted/60 h-3 w-40 rounded" />
           </div>
         ) : isError || !profile ? (
           <p className="text-muted-foreground text-xs">This account is unavailable.</p>

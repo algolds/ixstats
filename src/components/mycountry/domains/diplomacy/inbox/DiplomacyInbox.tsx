@@ -18,6 +18,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { FP_PROPOSAL_LABELS, INBOX_QUERY_OPTIONS, formatExpiry } from "./useDiplomacyInbox";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface DiplomacyInboxProps {
   countryId: string;
@@ -262,8 +263,8 @@ function InboxSection({
       <p className="text-muted-foreground text-xs">{description}</p>
       {loading ? (
         <div className="space-y-2" role="status" aria-label={`Loading ${title.toLowerCase()}`}>
-          <div className="bg-muted/40 h-16 animate-pulse rounded-lg" />
-          <div className="bg-muted/40 h-16 animate-pulse rounded-lg" />
+          <Skeleton className="bg-muted/40 h-16 rounded-lg" />
+          <Skeleton className="bg-muted/40 h-16 rounded-lg" />
         </div>
       ) : error ? (
         <div
