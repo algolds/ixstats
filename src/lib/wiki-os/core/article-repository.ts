@@ -23,6 +23,11 @@ import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 
+/** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
+const MAX_EXCERPT_LENGTH = 480;
+/** The excerpt is the lead of the article: cleaning more than this is wasted work on a 2 MB page. */
+const EXCERPT_SOURCE_LENGTH = 20_000;
+
 /** The columns a reader needs from a WikiArticle row. */
 const ARTICLE_SELECT = {
   id: true,
@@ -160,7 +165,12 @@ export class ArticleRepository {
     const wikitext = input.wikitext || "";
     const contentHtml = input.contentHtml || "";
     // The excerpt (search snippets, link previews) comes from the text, never the edit summary.
-    const excerpt = input.excerpt ?? (cleanWikitextExcerpt(wikitext, 300).slice(0, 480) || null);
+    const excerpt =
+      input.excerpt?.slice(0, MAX_EXCERPT_LENGTH) ??
+      (cleanWikitextExcerpt(wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
+        0,
+        MAX_EXCERPT_LENGTH
+      ) || null);
     const redirect = parseRedirect(wikitext);
     const redirectTargetSlug = redirect?.title ?? null;
     const redirectTargetFragment = redirect?.fragment ?? null;

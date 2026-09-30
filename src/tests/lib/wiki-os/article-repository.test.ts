@@ -176,6 +176,26 @@ describe("ArticleRepository.saveArticle", () => {
     expect(mockUpsert.mock.calls[1]?.[0].update.summary).toBe("Custom excerpt.");
   });
 
+  it("clamps an explicit excerpt to the VarChar(500) column (plan 402)", async () => {
+    await save("Foo", "", "Foo is a country.", { excerpt: "x".repeat(2_000) });
+
+    expect(mockUpsert.mock.calls[0]?.[0].create.summary).toHaveLength(480);
+    expect(mockUpsert.mock.calls[0]?.[0].update.summary).toHaveLength(480);
+  });
+
+  it("derives the excerpt from the lead of a huge page only (plan 402)", async () => {
+    const lead = "Foo is a country in Eurth. ";
+    const text = lead + "filler ".repeat(300_000);
+    const started = performance.now();
+
+    await save("Foo", "", text);
+
+    expect(performance.now() - started).toBeLessThan(1_000);
+    const summary: string = mockUpsert.mock.calls[0]?.[0].create.summary;
+    expect(summary.startsWith("Foo is a country in Eurth.")).toBe(true);
+    expect(summary.length).toBeLessThanOrEqual(480);
+  });
+
   it("stores a null excerpt for a blank page (plan 402)", async () => {
     await save("Foo", "", "");
 
