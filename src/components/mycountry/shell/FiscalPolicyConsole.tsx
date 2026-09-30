@@ -12,160 +12,121 @@ import {
   TaxRateCard,
   TaxRevenueProjections,
   FiscalPolicyInsights,
-  parseRateFromJson,
+  readSavedRates,
+  fiscalUpdateForRate,
+  computeTaxYields,
   deriveSectorWeights,
+  type FiscalRateUpdate,
   type TaxChannel,
 } from "./fiscal";
+import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
+import { economicRelationsOf, finiteOrNull } from "~/lib/economy/country-relations";
 
 export { TAX_CHANNELS, FiscalPolicyInsights };
 export type { TaxChannel };
 
-interface FiscalSystemData {
-  corporateTaxRates?: string | null;
-  personalIncomeTaxRates?: string | null;
-  salesTaxRate?: number | null;
-  exciseTaxRates?: string | null;
-  wealthTaxRate?: number | null;
-  taxEfficiency?: number | null;
-}
-
-interface EconomicProfileData {
-  exportsGDPPercent?: number | null;
-  importsGDPPercent?: number | null;
-}
-
-interface SectorItem {
-  name?: string;
-  percentage?: number;
-  gdpContribution?: number;
-}
-
-interface EconomyConfigurationPayload {
-  fiscalSystem?: FiscalSystemData | null;
-  economicProfile?: EconomicProfileData | null;
-  sectors?: SectorItem[] | null;
-}
-
+/**
+ * Fiscal Policy tab — national tax rate sliders.
+ *
+ * Saved rates come from the country record (`getByIdWithEconomicData` includes `fiscalSystem`).
+ * A tax with no saved rate shows "Not set" and no yield; its slider starts at the channel default
+ * so the player has somewhere to begin. Each commit saves only the changed tax.
+ */
 export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   const notify = useNotify();
+  const utils = api.useUtils();
   const { country } = useCountryData();
 
-  // Fetch economy config (includes fiscalSystem, economicProfile, etc.)
-  const { data: rawEconConfig } = api.economics.getEconomyConfiguration.useQuery(
-    { countryId },
-    { enabled: !!countryId, staleTime: 30_000 }
-  );
-
-  const econConfig = rawEconConfig as EconomyConfigurationPayload | undefined;
-  const fiscal = econConfig?.fiscalSystem;
-  const profile = econConfig?.economicProfile;
-  const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
-  const taxEfficiency = fiscal?.taxEfficiency ?? 0.85;
+  const { economicProfile: profile, fiscalSystem: fiscal } = economicRelationsOf(country);
+  const gdp = finiteOrNull(country?.currentTotalGdp);
+  const taxEfficiency = finiteOrNull(fiscal?.taxEfficiency);
 
   // ---------------------------------------------------------------------------
-  // Slider state — initialized from DB, persisted on commit
+  // Rates — the saved fiscal system, overridden by this session's edits
   // ---------------------------------------------------------------------------
 
-  const [rates, setRates] = useState<Record<string, number>>(() => {
-    const init: Record<string, number> = {};
-    for (const ch of TAX_CHANNELS) init[ch.key] = ch.defaultRate;
-    return init;
-  });
+  const saved = useMemo(() => readSavedRates(fiscal), [fiscal]);
+  const [edits, setEdits] = useState<Record<string, number>>({});
 
-  // Sync from DB data once it arrives
-  const hasInitialized = useRef(false);
-  useEffect(() => {
-    if (!fiscal || hasInitialized.current) return;
-    hasInitialized.current = true;
-
-    setRates({
-      corporate: parseRateFromJson(fiscal.corporateTaxRates, 21),
-      income: parseRateFromJson(fiscal.personalIncomeTaxRates, 24),
-      vat: fiscal.salesTaxRate ?? 15,
-      tariff: parseRateFromJson(fiscal.exciseTaxRates, 4.5),
-      wealth: fiscal.wealthTaxRate ?? 1.5,
-      capGains: parseRateFromJson(fiscal.exciseTaxRates, 15),
-    });
-  }, [fiscal]);
+  // The effective rate per channel: this session's edit, else the saved rate, else not set.
+  const rates = useMemo(() => {
+    const result: Record<string, number | null> = {};
+    for (const ch of TAX_CHANNELS) result[ch.key] = edits[ch.key] ?? saved[ch.key]?.rate ?? null;
+    return result;
+  }, [edits, saved]);
 
   // ---------------------------------------------------------------------------
-  // Sector-derived revenue weights
+  // Sector-derived revenue weights and projected yields
   // ---------------------------------------------------------------------------
 
   const sectorWeights = useMemo(
     () =>
       deriveSectorWeights(
-        econConfig?.sectors ?? undefined,
+        parseSectorBreakdown(profile?.sectorBreakdown).map((s) => ({
+          name: s.name,
+          percentage: s.share,
+        })),
         profile?.exportsGDPPercent,
         profile?.importsGDPPercent
       ),
-    [econConfig?.sectors, profile?.exportsGDPPercent, profile?.importsGDPPercent]
+    [profile?.sectorBreakdown, profile?.exportsGDPPercent, profile?.importsGDPPercent]
+  );
+
+  const yields = useMemo(
+    () => computeTaxYields(rates, gdp, taxEfficiency, sectorWeights),
+    [rates, gdp, taxEfficiency, sectorWeights]
   );
 
   // ---------------------------------------------------------------------------
-  // Revenue yield calculations
-  // ---------------------------------------------------------------------------
-
-  const yields = useMemo(() => {
-    const result: Record<string, number> = {};
-    let total = 0;
-    for (const ch of TAX_CHANNELS) {
-      const rate = rates[ch.key] ?? ch.defaultRate;
-      const weight = sectorWeights[ch.key] ?? ch.fallbackWeight;
-      const yieldVal = gdpBase * (rate / 100) * weight * taxEfficiency;
-      result[ch.key] = yieldVal;
-      total += yieldVal;
-    }
-    result._total = total;
-    return result;
-  }, [rates, gdpBase, taxEfficiency, sectorWeights]);
-
-  // ---------------------------------------------------------------------------
-  // Backend persistence (debounced)
+  // Backend persistence (debounced, only the changed taxes)
   // ---------------------------------------------------------------------------
 
   const updateMutation = api.economics.updateFiscalSystem.useMutation({
+    onSuccess: () => {
+      // Other Economy tabs read the saved tariff and rates from the country record.
+      void utils.countries.getByIdWithEconomicData.invalidate();
+    },
     onError: (err: { message?: string }) => {
       notify.error(`Failed to save tax rates: ${err?.message ?? "Unknown error"}`);
     },
   });
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<FiscalRateUpdate>({});
+  // Latest exciseTaxRates we know of, so tariff and capital gains saves merge into each other.
+  const exciseRef = useRef<string | null | undefined>(fiscal?.exciseTaxRates);
+  useEffect(() => {
+    if (pendingRef.current.exciseTaxRates === undefined) exciseRef.current = fiscal?.exciseTaxRates;
+  }, [fiscal?.exciseTaxRates]);
 
-  const persistRates = useCallback(
-    (newRates: Record<string, number>) => {
+  const persistRate = useCallback(
+    (key: string, value: number) => {
+      const update = fiscalUpdateForRate(key, value, exciseRef.current);
+      if (update.exciseTaxRates !== undefined) exciseRef.current = update.exciseTaxRates;
+      pendingRef.current = { ...pendingRef.current, ...update };
+
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
-        updateMutation.mutate({
-          countryId,
-          corporateTaxRates: JSON.stringify({ corporateRate: newRates.corporate ?? 21 }),
-          personalIncomeTaxRates: JSON.stringify({ incomeRate: newRates.income ?? 24 }),
-          salesTaxRate: newRates.vat ?? 15,
-          exciseTaxRates: JSON.stringify({
-            tariffRate: newRates.tariff ?? 4.5,
-            capitalGainsRate: newRates.capGains ?? 15,
-          }),
-          wealthTaxRate: newRates.wealth ?? 1.5,
-          taxEfficiency: fiscal?.taxEfficiency ?? 0.85,
-        });
+        const pending = pendingRef.current;
+        pendingRef.current = {};
+        updateMutation.mutate({ countryId, ...pending });
       }, 800);
     },
-    [countryId, updateMutation, fiscal]
+    [countryId, updateMutation]
   );
 
   // Slider change handler
   const handleRateChange = useCallback((key: string, value: number) => {
-    setRates((prev) => ({ ...prev, [key]: value }));
+    setEdits((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  // Slider commit handler (fires on drag end)
+  // Slider commit handler (fires on drag end or when the card is re-locked)
   const handleRateCommit = useCallback(
     (key: string, value: number) => {
-      const newRates = { ...rates, [key]: value };
-      setRates(newRates);
-      persistRates(newRates);
+      setEdits((prev) => ({ ...prev, [key]: value }));
+      persistRate(key, value);
     },
-    [rates, persistRates]
+    [persistRate]
   );
 
   return (
@@ -182,23 +143,36 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
               Total Revenue:
             </span>
             <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-bold tracking-tight text-emerald-600 tabular-nums shadow-md shadow-emerald-500/10 sm:text-base dark:text-emerald-400">
-              <CurrencyFlow
-                value={yields._total ?? 0}
-                className="font-bold text-emerald-600 dark:text-emerald-400"
-              />
-              <span className="ml-1 text-xs font-semibold text-emerald-400/70">/ yr</span>
+              {yields.total != null ? (
+                <>
+                  <CurrencyFlow
+                    value={yields.total}
+                    className="font-bold text-emerald-600 dark:text-emerald-400"
+                  />
+                  <span className="ml-1 text-xs font-semibold text-emerald-400/70">/ yr</span>
+                </>
+              ) : (
+                "—"
+              )}
             </span>
           </div>
         </div>
+
+        {taxEfficiency == null && yields.total != null && (
+          <p className="text-muted-foreground text-xs">
+            No collection efficiency is recorded, so revenue is shown before collection losses.
+          </p>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {TAX_CHANNELS.map((ch) => (
             <TaxRateCard
               key={ch.key}
               channel={ch}
-              rate={rates[ch.key] ?? ch.defaultRate}
-              yieldValue={yields[ch.key] ?? 0}
-              totalYield={yields._total ?? 1}
+              rate={rates[ch.key]}
+              bracketed={saved[ch.key]?.bracketed ?? false}
+              yieldValue={yields.byChannel[ch.key] ?? null}
+              totalYield={yields.total}
               onChange={(v) => handleRateChange(ch.key, v)}
               onCommit={(v) => handleRateCommit(ch.key, v)}
             />

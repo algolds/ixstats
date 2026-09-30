@@ -1,13 +1,5 @@
 export type AccentColor =
-  | "emerald"
-  | "cyan"
-  | "amber"
-  | "indigo"
-  | "red"
-  | "blue"
-  | "purple"
-  | "rose"
-  | "teal";
+  "emerald" | "cyan" | "amber" | "indigo" | "red" | "blue" | "purple" | "rose" | "teal";
 
 export interface CustomSector {
   id: string;
@@ -21,59 +13,6 @@ export interface CustomSector {
   accent: AccentColor;
   defaultShare: number;
 }
-
-export const CORE_SECTORS: CustomSector[] = [
-  {
-    id: "sec-tech",
-    key: "technology",
-    label: "High-Tech & Advanced Electronics",
-    shortLabel: "Tech & Semi",
-    defaultTariff: 2.0,
-    min: 0,
-    max: 50,
-    step: 0.5,
-    accent: "cyan",
-    defaultShare: 32.5,
-  },
-  {
-    id: "sec-heavy",
-    key: "heavy-machinery",
-    label: "Industrial Machinery & Automotive",
-    shortLabel: "Machinery",
-    defaultTariff: 4.0,
-    min: 0,
-    max: 50,
-    step: 0.5,
-    accent: "emerald",
-    defaultShare: 31.1,
-  },
-  {
-    id: "sec-raw",
-    key: "raw-materials",
-    label: "Raw Materials & Natural Resources",
-    shortLabel: "Raw Mining",
-    defaultTariff: 1.5,
-    min: 0,
-    max: 50,
-    step: 0.5,
-    accent: "amber",
-    defaultShare: 21.8,
-  },
-  {
-    id: "sec-agri",
-    key: "agriculture",
-    label: "Agricultural & Food Goods",
-    shortLabel: "Agri-Food",
-    defaultTariff: 6.5,
-    min: 0,
-    max: 50,
-    step: 0.5,
-    accent: "indigo",
-    defaultShare: 14.6,
-  },
-];
-
-export const DEFAULT_SECTORS = CORE_SECTORS;
 
 export const ACCENT_BORDER: Record<AccentColor, string> = {
   emerald: "border-emerald-500/30",
@@ -112,53 +51,34 @@ export const ACCENT_TEXT: Record<AccentColor, string> = {
 };
 
 import { formatCompact } from "~/lib/format/compact";
+import type { RecordedSector } from "~/lib/economy/sector-breakdown";
 
 export { formatCompact };
 
-interface RawSectorItem {
-  id?: string;
-  key?: string;
-  name?: string;
-  label?: string;
-  shortName?: string;
-  shortLabel?: string;
-  percentage?: number;
-  gdpContribution?: number;
-  defaultShare?: number;
-  tariffRate?: number;
-  defaultTariff?: number;
-  accent?: AccentColor;
-}
+const SECTOR_ACCENTS: AccentColor[] = ["emerald", "cyan", "amber", "indigo", "red", "blue"];
 
-export function parseSectorBreakdownJson(raw: string | null | undefined): CustomSector[] | null {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      const accents: AccentColor[] = ["emerald", "cyan", "amber", "indigo", "red", "blue"];
-      return (parsed as RawSectorItem[]).map((item, idx) => {
-        const label = item.name ?? item.label ?? `Sector ${idx + 1}`;
-        const shortLabel = item.shortName ?? item.shortLabel ?? label.slice(0, 12);
-        const defaultShare = item.percentage ?? item.gdpContribution ?? item.defaultShare ?? 25;
-        const defaultTariff = item.tariffRate ?? item.defaultTariff ?? 4.0;
-        const accent = item.accent ?? accents[idx % accents.length];
-
-        return {
-          id: item.id ?? `custom-sec-${idx}-${Date.now()}`,
-          key: item.key ?? label.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-          label,
-          shortLabel,
-          defaultTariff: Number(defaultTariff) || 4.0,
-          min: 0,
-          max: 50,
-          step: 0.5,
-          accent,
-          defaultShare: Number(defaultShare) || 10,
-        };
-      });
-    }
-  } catch {
-    // not valid JSON
-  }
-  return null;
+/**
+ * Seed the tariff planner from the nation's recorded sectors (`parseSectorBreakdown`), weighting
+ * each by its recorded share of GDP. Every sector starts at `baseTariff` — the saved Fiscal Policy
+ * tariff rate, or 0 when none is saved.
+ */
+export function sectorsFromRecorded(
+  recorded: RecordedSector[],
+  baseTariff: number
+): CustomSector[] {
+  return recorded.map((sector, idx) => {
+    const key = sector.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    return {
+      id: `recorded-${idx}-${key}`,
+      key,
+      label: sector.name,
+      shortLabel: sector.name.slice(0, 12),
+      defaultTariff: baseTariff,
+      min: 0,
+      max: 50,
+      step: 0.5,
+      accent: SECTOR_ACCENTS[idx % SECTOR_ACCENTS.length]!,
+      defaultShare: sector.share,
+    };
+  });
 }
