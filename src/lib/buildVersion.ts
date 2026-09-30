@@ -61,7 +61,7 @@ export const VERSIONS = {
 
   // Design system.
   design: {
-    facet: 2, // glass/refraction/depth design language; v2: core UI design system convergence & tactile feedback physics
+    facet: 3, // v3: HIG roles, per-app tints, text styles, layered CSS, glass for chrome only (docs/reference/facet-design-system.md)
   },
 
   // WikiOS sub-systems (nested, not top-level).

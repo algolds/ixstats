@@ -1,6 +1,6 @@
 # Facet 3 — Unified Design System Specification
 
-**Status:** 📐 Specification, decided 2026-09-30 · **Replaces:** [Facet v2](../reference/facet-design-system.md) once
+**Status:** 📐 Specification, decided 2026-09-30; Phases 1–2 shipped · **Replaces:** [Facet v2](../reference/facet-design-system.md) once
 Phase 2 lands · **Evidence:** [Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
 
 Facet 3 is IxStates' single design system: Apple's Human Interface Guidelines as the foundation (semantic colour roles,
@@ -131,7 +131,7 @@ inline hex.
 
 ## 3. Typography
 
-**Face:** the Swiss stack (DINPro / Akzidenz-Grotesk with metric-matched fallbacks) for all UI; National/Neutraface
+**Face:** the Swiss stack (Schibsted Grotesk / Akzidenz-Grotesk with metric-matched fallbacks) for all UI; National/Neutraface
 only through `text-display`. Presets and `data-typography` are removed. Letter-spacing lives in the text styles, never
 in `.font-*` classes.
 
@@ -341,9 +341,19 @@ values on hover or tap.
    Carried into Phase 2: honour the in-app reduce-motion setting in `MotionConfig` (it follows the OS only) and mute
    Cuelume under `data-motion="reduced"`; squircle corners for prefixed radius utilities; decide whether `tokens.css`
    or `typography.css` owns the font stacks; give `FacetMaterial` its own `relative` so the `:where()` default can go.
-2. **Primitives and doc.** `FacetList`/`FacetRow`, `Stat`, `EmptyState`, `FacetMaterial` (new API), `Button` styles
-   and sizes, `SegmentedControl`, `ToggleGroup`, `Stepper`, `MenuButton`, Sheet detents, ARIA fixes, Cuelume policy,
-   accessibility settings UI. This spec replaces the v2 reference doc.
+2. **Primitives and doc — ✅ done 2026-09-30.** Controls (Button styles/sizes, Badge, SegmentedControl, ToggleGroup,
+   Stepper, MenuButton, SearchField, full ARIA for Tabs/Switch/Toggle/Checkbox/Slider, shared field style); surfaces
+   (opaque `FacetCard`, `FacetContainer` as a deprecated wrapper, `FacetMaterial` thin/regular/thick,
+   `FacetList`/`FacetRow`, `Stat`, `EmptyState`, Skeleton/Progress/HealthRing/Eyebrow); presentation (opaque dialogs,
+   `material-thick` popovers/menus, responsive `Sheet` with detents, instant `CommandDialog`, overlay animations);
+   `FacetMotionConfig`; Cuelume restricted to §9 moments; Settings → Appearance & accessibility. The
+   [reference doc](../reference/facet-design-system.md) now documents Facet 3 and `FACET_VERSION` is 3.
+   **Deviations from this spec, as shipped:** (a) the Swiss UI stack leads with Schibsted Grotesk (the shipped Swiss
+   preset), not DINPro; (b) sheets are opaque `surface-elevated`, not `material-thick`, because callers nest blurred
+   content inside them; (c) `FacetCard`/`FacetContainer` still accept `depth`, `theme`, `variant` and
+   `enableRefraction` as ignored props because callers pass them; (d) IxMaps and the map editor keep glass on their
+   floating panels via `material="regular"|"thick"`; (e) `appearance.ts` still writes `data-typography` (the picker is
+   gone); (f) hero surfaces may carry identity imagery (MyCountry's `FlagBackdrop`: faded flag, tint glow, hairline).
 3. **Navigation shell** behind a flag: `AppSidebar`, `TabBar`, `PageHeader`, Halo as island; flip the flag once every
    app has a section map.
 4. **Apps, worst-first:** dashboard, achievements, passport/settings, ThinkPages, WikiOS, labs chrome, Halo views,

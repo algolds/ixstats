@@ -41,7 +41,7 @@ src/
 5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
 6. **`<Navigation />`** (`src/app/_components/navigation.tsx`): Global navigation bar, which hosts the Halo `CommandPalette` (`src/components/halo/`).
 
-> See **[Facet Design System & Interaction Bible](../reference/facet-design-system.md)** for complete specifications on volumetric Z-depth, compounding blur hierarchy, physical materials, 100% Radix primitive standards, Cuelume audio matrices, and Apple/Emil Kowalski motion physics.
+> See the **[Facet 3 reference](../reference/facet-design-system.md)** for colour roles and app tints, text styles, radii, materials, z-index, motion, the primitives (FacetCard, FacetList, controls, Sheet, dialogs), sound, appearance and accessibility preferences, and the guard tests.
 
 ---
 

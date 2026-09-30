@@ -459,7 +459,7 @@ Cross-platform identity linking service — unifies Forum, Wiki, and Discord ide
 
 ### 6.1 Facet (Design System)
 
-The platform's design system — a glass / refraction / depth visual language used throughout all UI (independently versioned; `FACET_VERSION` in the registry). Files: `src/styles/facet.css` plus `src/styles/facet/{core,components,physics}.css` (~2,200 lines). _(Formerly "Glass Physics". The CSS tokens/classes `--glass-*` / `glass-*` keep their names pending a separate mechanical rename.)_
+The platform's design system (independently versioned; `FACET_VERSION` = 3 in the registry): HIG colour roles and per-app tints, named text styles, glass for floating chrome only, concentric radii and springs. Tokens live in `src/styles/facet/tokens.css`; see the [Facet 3 reference](facet-design-system.md). _(Formerly "Glass Physics"; the legacy `glass-*` classes were removed in Facet 3.)_
 
 **Glass CSS Variables:**
 

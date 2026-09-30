@@ -14,6 +14,22 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-22 
 2026-08-21 → 2026-09-22 work follows it. The version registry (`src/lib/buildVersion.ts`) still reads 1.4.0 until the
 RC2 cut.
 
+### 🎨 Facet 3 Design System, Phases 1–2 (2026-09-30)
+
+- **Foundations:** one token source (`src/styles/facet/tokens.css`) with Apple-HIG colour roles, per-app tints
+  (MyCountry gold, Maps sky, ThinkPages emerald, Vault copper, Forum orange, Wiki ink, Intel crimson, Sports teal),
+  named text styles, concentric radii, glass materials for chrome only, one z-index scale and motion springs. All
+  Facet/theme CSS is layered so Tailwind utilities win; the style layer shrank from ~19.8k to ~12.6k lines.
+- **Appearance:** the theme is applied before first paint (no light flash; follows the system by default), and
+  Settings → Appearance & accessibility adds density, text size, Increase Contrast, Reduce Transparency, Reduce Motion
+  and sound.
+- **Primitives:** Button styles and sizes on the app tint, Badge variants, SegmentedControl, ToggleGroup, Stepper,
+  MenuButton, SearchField; opaque FacetCard, FacetList/FacetRow, Stat, EmptyState; opaque dialogs, glass popovers and
+  menus, a responsive Sheet (bottom sheet with detents on phones); full ARIA for tabs, switches and toggles.
+- **Sound:** Cuelume plays only for meaningful moments and is muted by Reduce Motion or the sound setting.
+- Docs: [Facet 3 reference](docs/reference/facet-design-system.md) · [spec](docs/specs/2026-09-30-facet-3-design-system.md)
+  · [audit](docs/audits/FACET_STYLE_AUDIT_2026-09-30.md). Facet version 2 → 3.
+
 ### 📚 Admin Reference Catalogs Reach Players (2026-09-30)
 
 - **Economic archetypes**: the builder's archetype picker reads the admin catalog. An empty table is seeded from the

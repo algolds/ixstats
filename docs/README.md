@@ -21,7 +21,7 @@ comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versionin
 - **Production deployment** — start with the [release guide](operations/release-guide.md) (pre-deploy checklist, build and deploy from `master`, verify, rollback) · reference: [operations/deployment.md](operations/deployment.md) · September runbook: [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md)
 - **API catalog (77 routers, ~960 procedures)** — [reference/api-complete.md](reference/api-complete.md)
 - **Database (18 schema files, 332 models)** — [reference/database.md](reference/database.md)
-- **Facet design system** — [Facet 3 spec](specs/2026-09-30-facet-3-design-system.md) (decided 2026-09-30) · [style audit](audits/FACET_STYLE_AUDIT_2026-09-30.md) · v2: [reference/facet-design-system.md](reference/facet-design-system.md) · [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
+- **Facet design system** — [Facet 3 reference](reference/facet-design-system.md) · [spec & decisions](specs/2026-09-30-facet-3-design-system.md) · [style audit](audits/FACET_STYLE_AUDIT_2026-09-30.md) · [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
 
 Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 📐 Design / spec · 🗄️ Historical
 
@@ -109,7 +109,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 ### 🎨 Design, overlay & admin
 | System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Facet** | [reference/facet-design-system.md](reference/facet-design-system.md) | Materials, depth, Radix primitives, Cuelume, motion | ✅ Live |
+| **Facet** | [reference/facet-design-system.md](reference/facet-design-system.md) | Facet 3: colour roles, tints, text styles, materials, primitives, presentation, sound, accessibility | ✅ Live (Phases 1–2) |
 | **Halo** | [systems/halo.md](systems/halo.md) | Contextual overlay, plugins, `Cmd+K` palette | ✅ Live |
 | **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) · [app README](../src/app/admin/README.md) | 39 admin sections, reference catalogs, RBAC; the audit log currently persists nothing (PL-1) | 🟡 Partial |
 | **Help center** | [systems/help.md](systems/help.md) · [app README](../src/app/help/README.md) | Markdown help in `src/content/help/` | 🟡 Partial |
@@ -132,7 +132,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [superpowers/specs/2026-09-12-route-travel-time-design.md](superpowers/specs/2026-09-12-route-travel-time-design.md) | Route travel time | ✅ Implemented |
 | [superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md](superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md) | Map editor inspector and history | 🟡 Partial |
 | [superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md](superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) | Builder companion guide | 🟡 Mostly implemented |
-| [specs/2026-09-30-facet-3-design-system.md](specs/2026-09-30-facet-3-design-system.md) | Facet 3 unified design system (HIG foundations, roles, type, shape, materials, components, rollout) | 📐 Decided; Phase 1 next |
+| [specs/2026-09-30-facet-3-design-system.md](specs/2026-09-30-facet-3-design-system.md) | Facet 3 unified design system (HIG foundations, roles, type, shape, materials, components, rollout) | 🟡 Phases 1–2 shipped; navigation and app migration pending |
 | [specs/2026-08-13-ixcards-lore-first-rebuild.md](specs/2026-08-13-ixcards-lore-first-rebuild.md) | IxCards lore-first rebuild | 🟡 Phases 1–5 done; 6–7 pending |
 | [specs/2026-08-10-achievements-ribbons-design.md](specs/2026-08-10-achievements-ribbons-design.md) | Achievements ribbons | 🟡 Ribbons pending |
 | [specs/vexel-prd.md](specs/vexel-prd.md) | Vexel heraldry studio | 🟡 P0 mostly built |
@@ -172,7 +172,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [reference/events.md](reference/events.md) | WebSocket channels, SSE, cron jobs, notification registry |
 | [reference/edge-cases.md](reference/edge-cases.md) | Edge-case handling (some sections describe intended design; marked) |
 | [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, typography, tokens |
-| [reference/facet-design-system.md](reference/facet-design-system.md) | Facet design system & interaction bible (v2) |
+| [reference/facet-design-system.md](reference/facet-design-system.md) | Facet 3 design system reference |
 | [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md) | Frontend recipes and anti-pitfall guide |
 | [reference/admin-endpoint-security-map.md](reference/admin-endpoint-security-map.md) | Admin procedures, middleware chain, RBAC |
 | [reference/oceanography-report.md](reference/oceanography-report.md) | Ocean basins, currents, shipping routes |

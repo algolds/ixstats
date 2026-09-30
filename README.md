@@ -197,7 +197,7 @@ IxStates follows an OS-inspired release model where all components read from a c
 | | Repository | v2 | Commons Media Explorer |
 | | Halo | v5 | Contextual Overlay System |
 | | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v2 | Refraction / Depth Design System |
+| **Design** | Facet | v3 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ---

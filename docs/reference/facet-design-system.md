@@ -1,383 +1,237 @@
-# Facet Design System & Interaction Bible (v2)
+# Facet 3 — Design System Reference
 
-> **Being replaced.** Facet 3 was decided on 2026-09-30 — see the [Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md).
-> This v2 document disagrees with the code in many places; the [Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
-> lists where. Until Phase 2 of Facet 3 lands, prefer the spec's rules for new work.
+**Version:** Facet 3.0 (`FACET_VERSION`, `src/lib/buildVersion.ts`) · **Decisions & rationale:**
+[Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md) · **Evidence for the rewrite:**
+[Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
 
-Welcome to the canonical **Facet Design System & Interaction Bible**. 
+Facet is IxStates' design system: Apple's Human Interface Guidelines as the foundation — semantic colour roles, named
+text styles, glass only for floating chrome, concentric shape, springs, accessibility preferences — with the IxStates
+identity on top: the Swiss typeface, per-app tints, Cuelume sound and Halo. This page documents **what ships**. The spec
+records why; where the two differ, this page is right and the spec notes the deviation.
 
-**Facet** is the physics-driven, tactile design language powering every interface across the IxStates platform. It unifies volumetric glass materials, dynamic Z-axis depth scaling, edge glare refraction, physical textures, spring-based animations, the **Halo** wayfinding system, and the **Cuelume** audio-tactile engine into a coherent, Apple-inspired human interface experience.
-
----
-
-## 1. Executive Philosophy & System Absorption
-
-Facet treats the screen as a physical workspace inhabited by layered surfaces with authentic physical properties (optical refraction, thickness, friction, blur compounding, and auditory resonance).
-
-```mermaid
-graph TD
-    subgraph Facet Layer ["1. Facet Glass & Materials"]
-        M["Physical Materials (Satin, Paper, Rubber, Metal)"]
-        H["4-Tier Compounding Blur Hierarchy (8px → 16px → 24px → 32px)"]
-        R["Edge Refraction & Dark Mode Overrides"]
-    end
-    
-    subgraph Primitive Layer ["2. Headless Radix Primitives (src/components/ui/)"]
-        P["30+ Primitives (Button, Dialog, Sheet, Popover, Select, etc.)"]
-        S["Slot & asChild Polymorphism"]
-        D["data-slot Selectors & Tailwind v4 @theme Tokens"]
-        I["Iconoir-React Exclusivity"]
-    end
-
-    subgraph AudioTactile Layer ["3. Cuelume Audio-Tactile Engine"]
-        E["17 Synthesized Sound Cues (bloom, whisper, droplet, tick, toggle, press)"]
-        B["Root Delegated Event Listeners"]
-        V["Master Gain & Restraint Calibration (0.12 - 0.25)"]
-    end
-
-    subgraph Motion Layer ["4. Apple & Emil Kowalski Motion Physics"]
-        T["Tactile Press Compression (active:scale-0.98)"]
-        SP["Spring Dynamics & Interruptible Transitions"]
-        O["Origin-Aware Popovers & Centered Modals"]
-        U["Unslop Motion Rules (0ms on shortcuts, fast exits)"]
-    end
-
-    Facet Layer --> Primitive Layer
-    Primitive Layer --> AudioTactile Layer
-    Primitive Layer --> Motion Layer
-```
-
-### The Architectural Absorption
-Historically, fragments of the design system were referred to by legacy names:
-- **"Glass Physics" → Facet**: The design system name is **Facet** (`FACET_VERSION` in the version registry). All styles, tokens, and React primitives use the `.facet-*` namespace. Legacy `glass-*` classes remain strictly as backward-compatible aliases.
-- **"Dynamic Island" → Halo**: The contextual floating notification and wayfinding hub is **Halo** (represented by `.facet-halo-*` and `<Halo />`).
-- **"Directives" vs "Statecraft"**: **Directives** is the universal user-facing executive brand across all UI triggers (`"Declare Directive"`, `"Tune Custom Directive"`). **Statecraft** is the backend simulation engine powering goal classification and CivCap throughput.
+**Status:** Phases 1 (foundations) and 2 (primitives, settings) are live. Phase 3 (sidebar + tab bar navigation) and
+Phase 4 (per-app migration) are pending, so many screens still use legacy classes that now alias onto the tokens below.
 
 ---
 
-## 2. Volumetric Z-Axis Depth Scale
+## 1. Rules of the road
 
-Facet organizes all UI elements along a physical Z-axis. Instead of arbitrary ad-hoc z-index values, components must strictly adhere to the volumetric depth scale. The canonical `--z-*` values are defined in `src/styles/themes.css`; `src/styles/facet/core.css` exposes them as the `--z-depth-*` aliases below (plus `--z-depth-overlay` and `--z-depth-command`):
+1. **Content is opaque, chrome is glass.** Pages, cards, rows and dialogs are opaque. Glass (`material-*`) is only for
+   floating chrome: map panels and toolbars, Halo, popovers and menus, the future sidebar/tab bar. Glass never nests.
+2. **Use roles, not colours.** `text-label`, `bg-surface`, `border-separator`, `bg-tint`… switch with the theme and
+   the Increase Contrast preference. No `dark:` overrides, no hex in class names, no raw palette for UI chrome.
+3. **Use primitives, not hand-rolled markup.** Every card, row, button, badge, tab, switch, overlay and list on this
+   page exists in `src/components/ui`; feature code never imports `@radix-ui/*` or `lucide-react`.
+4. **Utilities always win.** All Facet CSS is layered (`@layer base/components` or `@utility`), so a class on an
+   element is never silently overridden. `!important` exists only for user-preference switches over inline animation
+   styles (`styles/facet/overrides.css`) and for MediaWiki HTML (`styles/wiki-os/mediawiki.css`).
+5. **The guards are the rules.** `src/tests/architecture/{facet-guards,css-layering,token-contrast}.test.ts` fail the
+   build on regressions (see §11).
 
-| CSS Variable | Depth Value | Z-Index | UI Category & Elements |
+## 2. Tokens
+
+All tokens live in **`src/styles/facet/tokens.css`** (`@theme`, mirrored for tests in `src/lib/design/tokens.ts`).
+Every token is also a Tailwind utility.
+
+### 2.1 Colour roles
+
+| Role | Utility | Use |
+|---|---|---|
+| `label` · `label-secondary` · `label-tertiary` · `label-quaternary` | `text-label…` | Primary text · secondary text and captions · placeholders/disabled · decorative |
+| `background` · `background-grouped` | `bg-background` · `bg-grouped` | Plain pages · pages made of grouped sections (default body) |
+| `surface` · `surface-secondary` · `surface-elevated` | `bg-surface…` | Cards and list groups · inset areas inside a card · dialogs, sheets, menus, tooltips |
+| `fill` · `fill-2` · `fill-3` · `fill-4` | `bg-fill…` | Control backgrounds (strong → faint), tracks, hover washes |
+| `separator` · `separator-opaque` | `border-separator…` | Hairlines · separators over glass |
+| `tint` · `tint-hover` · `on-tint` · `tint-fill` | `bg-tint`, `text-tint`, `text-on-tint`, `bg-tint-fill` | Primary actions, links, selection, focus |
+| System colours `red orange yellow green teal blue indigo purple pink` (+ `on-*`) | `text-red`, `bg-green`… | Status and data |
+| Status aliases `destructive warning caution success info` | `text-destructive`… | Semantic status |
+| `chart-1 … chart-8` | `fill-chart-1`… | Categorical data series (order: blue, orange, green, purple, pink, teal, yellow, red) |
+
+Legacy shadcn names are aliases: `foreground`→label, `muted-foreground`→label-secondary, `card`→surface,
+`popover`→surface-elevated, `muted`/`secondary`/`accent`→fill-3, `border`/`input`→separator, `primary`/`ring`→tint,
+`primary-foreground`→on-tint. New code uses the role names.
+
+**Contrast:** every label and tint pair meets WCAG AA in both themes (`token-contrast.test.ts`). Increase Contrast
+(`prefers-contrast: more` or `html[data-contrast=more]`) strengthens separators, secondary labels and tints.
+
+### 2.2 App tints
+
+Each app root sets `data-app`, which sets `--tint`, `--tint-hover`, `--on-tint` and `--tint-fill` for its subtree;
+`<PortalTintSync />` mirrors the deepest scope onto `<body>` so dialogs, popovers and menus keep it.
+
+| `data-app` | Tint | Where |
+|---|---|---|
+| *(none)* / `admin` | Indigo | Shell, dashboard, settings, admin |
+| `mycountry` | Gold | `/mycountry/**` |
+| `intel` | Crimson | `/mycountry/intelligence`, `/mycountry/defense` |
+| `maps` | Sky | `/maps` |
+| `thinkpages` | Emerald | `/thinkpages`, `/thinktanks` |
+| `vault` | Copper | `/vault` |
+| `forum` | Orange | `/forum` |
+| `wiki` | Ink indigo | WikiOS routes |
+| `sports` | Teal | `/myleague`, `/myclub` |
+
+Use the tint for interaction and identity only: one filled tint button per view, selection, links, focus. For a new
+app scope, wrap its layout in `<div data-app="…" className="contents"><PortalTintSync />…</div>` and add its palette
+in `tokens.css`.
+
+### 2.3 Typography
+
+**Face:** the Swiss stack (Schibsted Grotesk → Akzidenz-Grotesk → system fallbacks, metric-matched) for all UI;
+National for `text-display`; Azeret Mono (`font-mono`) only for code, IDs, coordinates and hashes. Font stacks are
+owned by `tokens.css`. Numbers use `tabular-nums` in the UI face.
+
+| Utility | Size/line | Weight | Use |
 |---|---|---|---|
-| `--z-depth-background` | `-1` | `-1` | Canvas grids, background map terrain, ambient backlights |
-| `--z-depth-surface` | `0` | `0` | Default page layout, data tables, main content feeds |
-| `--z-depth-floating` | `100` | `100` | Sidebars, dock panels, floating action buttons |
-| `--z-depth-navigation` | `5000` | `5000` | Top headers, primary navigation bars, wayfinding docks |
-| `--z-depth-backdrop` | `100000` | `100000` | Modal backdrops, drawer overlays (`AlertDialogBackdrop`) |
-| `--z-depth-modal` | `100001` | `100001` | Dialogs, sheets, metric detail modals (`DialogContent`, `SheetContent`) |
-| `--z-depth-popover` | `100010` | `100010` | Dropdown menus, selects, command palettes (`SelectContent`, `CommandDialog`) |
-| `--z-depth-tooltip` | `100020` | `100020` | Information tooltips, rich hover cards (`TooltipContent`, `HoverCardContent`) |
-| `--z-depth-toast` | `100050` | `100050` | Halo dynamic island notifications, live alert push banners (`DynamicIsland`) |
-
-### Positioning glass containers
-The `.facet-depth-1…4` classes in `src/styles/facet/core.css` sit outside Tailwind's cascade layers and set `position: relative` plus a depth `z-index` (depth 2 → 100, depth 3 → 1000, depth 4 → 100001). Because unlayered CSS beats Tailwind utilities, `absolute`, `fixed`, `sticky` or `z-*` classes on a glass `FacetContainer`/`FacetCard` are silently ignored. To float Facet chrome, put the positioning on a plain wrapper and the Facet surface inside it:
-
-```tsx
-<div className="absolute right-4 bottom-4 z-(--z-depth-floating)">
-  <FacetContainer depth={2}>…</FacetContainer>
-</div>
-```
-
-`surface="solid"` containers don't get the depth classes, so utilities apply to them normally. Nested cards should be solid anyway (no stacked blur), which also keeps depth-3 rows from all taking `z-index: 1000`.
-
-### Volumetric Stacking Hierarchy
-```mermaid
-graph TD
-    subgraph Top Overlay Layer
-        TO[Toast / Halo Alert: z-index 100050]
-        TT[Tooltip / HoverCard: z-index 100020]
-        PO[Popover / Dropdown / Select: z-index 100010]
-    end
-    subgraph Modal Layer
-        MD[Dialog / Sheet / Modal: z-index 100001]
-        BD[Backdrop Overlay: z-index 100000]
-    end
-    subgraph Navigation & Dock Layer
-        NV[Global Header / Nav Dock: z-index 5000]
-        FL[Floating Sidebars / Actions: z-index 100]
-    end
-    subgraph Base Surface Layer
-        SF[Base Content Surface: z-index 0]
-        BG[Canvas / Map Grid: z-index -1]
-    end
-
-    TO --> TT
-    TT --> PO
-    PO --> MD
-    MD --> BD
-    BD --> NV
-    NV --> FL
-    FL --> SF
-    SF --> BG
-```
-
----
-
-## 3. Blur & Saturation Compounding Hierarchies
-
-Facet uses **nested blur compounding** to maintain visual legibility against complex background maps, charts, and feeds. As elements nest inside each other, they inherit progressive blur and saturation increments:
-
-| Hierarchy Class | Depth Level | Blur Radius | Color Saturation | Dark Background | Light Background |
-|---|---|---|---|---|---|
-| `.facet-hierarchy-parent` | Level 1 (Shell) | `8px` | `120%` | `rgba(255, 255, 255, 0.08)` | `rgba(255, 255, 255, 0.90)` |
-| `.facet-hierarchy-child` | Level 2 (Card) | `16px` | `150%` | `rgba(255, 255, 255, 0.10)` | `rgba(255, 255, 255, 0.95)` |
-| `.facet-hierarchy-interactive` | Level 3 (Input/Row) | `24px` (`32px` on hover) | `180%` (`200%` on hover) | `rgba(255, 255, 255, 0.15)` | `rgba(255, 255, 255, 0.98)` |
-| `.facet-modal` (depth-4 `FacetContainer`; no `.facet-hierarchy-modal` class) | Level 4 (Modal) | `32px` | `200%` | `rgba(18, 20, 24, 0.85)` | `rgba(255, 255, 255, 0.98)` |
-
----
-
-## 4. Physical Materials & Adaptive Textures
-
-Facet defines four tactile surfaces in `src/styles/facet/physics.css` that react dynamically to pointer coordinates (`--pointer-x`, `--pointer-y`, `--pointer-offset-x`, `--pointer-offset-y`):
-
-### 1. Satin (`.facet-material-satin`)
-- **Visual**: Volumetric translucent glass backing with a smooth pointer-following sheen highlight.
-- **Light Mode**: Translucent warm white with `20px` blur and `190%` saturation.
-- **Dark Mode**: Translucent deep slate (`rgba(30, 41, 59, 0.45)`).
-- **Interaction**: Fades in a radial pointer sheen following the mouse across the card surface.
-
-### 2. Paper (`.facet-material-paper`)
-- **Visual**: Warm, opaque tactile surface mimicking physical parchment.
-- **Light Mode**: `#fafaf9` (warm off-white). **Dark Mode**: `#1c1917` (warm off-black).
-- **Interaction**: Casts an ambient shadow offset opposite to cursor coordinates (`var(--pointer-offset-x)`), producing an authentic 3D lift illusion.
-
-### 3. Rubber (`.facet-material-rubber`)
-- **Visual**: High-friction matte background with chamfered borders and deep ambient absorption.
-- **Light / Dark Mode**: Matte zinc-800 (`#27272a`) / zinc-900 (`#18181b`).
-- **Interaction**: Subtle cursor diffusion highlight.
-
-### 4. Metal (`.facet-material-metal`)
-- **Visual**: Brushed anisotropic reflection bands simulating milled aluminum.
-- **Light / Dark Mode**: Linear slate-200 / slate-950 metallic gradients.
-- **Interaction**: Projects an anisotropic reflection band that tracks the cursor horizontally.
-
-### Adaptive Textures
-Background texture overlays give surfaces tactile grain while dynamically scaling contrast via `--facet-texture-color`:
-- `.facet-texture-dots`: Radial circle matrix (User profiles, modal headers).
-- `.facet-texture-grid`: 12×12px square mesh (Interactive map sidebars, canvas grids).
-- `.facet-texture-noise`: Micro-dot grain (System status widgets, feed blurbs).
-- `.facet-texture-crosshatch`: Angled double lines (Disabled tabs, inactive states).
-- `.facet-texture-paper-grain`: Interwoven grain lines (Wiki reader, article summaries).
-
----
-
-## 5. Edge Refraction & Dark Mode Governance
-
-The signature Facet finish is a 1px chamfered edge glare that catches ambient light.
-
-### Refraction Sheens (`.facet-refraction` / `.glass-refraction`)
-- **Chamfered border**: Dual-gradient pad sheen on a `::before` pseudo-element with `mask-composite: xor`.
-- **Top glare**: Horizontal line glare on an `::after` pseudo-element simulating top-down light.
-
-### Dark Mode Low-Opacity Governance (Critical Rule)
-High-opacity white edge glares appear distracting in dark mode. Facet enforces calibrated opacities:
-- **Light Mode**: `0.20` base opacity (fades to `0.40` on hover).
-- **Dark Mode**: `0.08` base opacity (fades to `0.15` on hover).
-- **Dark Surfaces**: Smooth slate gradient backgrounds (`rgba(30, 32, 40, 0.75)` to `rgba(18, 20, 24, 0.85)`) with subtle `rgba(255, 255, 255, 0.08)` borders to maximize reading ergonomics.
-
-### Performance Boundary: Refraction-Free Inputs
-> [!IMPORTANT]
-> Pseudo-element blurs and double-layer masks on editable text fields cause severe input latency and typing lag.
-- All `input`, `textarea`, and `[contenteditable]` elements must use `.facet-refraction-none` (`display: none !important` on `::before`/`::after`).
-- Backdrop blur on editable inputs is capped at `--blur-subtle` (`8px`) with saturation reset to `100%`.
-
----
+| `text-display` | 40/44 | 700 (National) | Hero titles only |
+| `text-large-title` | 28/34 | 700 | One per page: the page title |
+| `text-title-1` | 22/28 | 700 | Dialog/sheet titles, major sections |
+| `text-title-2` | 20/26 | 600 | Card titles on overview pages |
+| `text-title-3` | 17/22 | 600 | Group titles, stat values |
+| `text-headline` | 14/20 | 600 | Row titles, emphasis |
+| `text-body` | 14/20 | 400 | Default text |
+| `text-callout` | 13/18 | 400 | Helper text, secondary blocks |
+| `text-subhead` | 13/18 | 500 | List section headers (sentence case) |
+| `text-footnote` | 12/16 | 400 | Metadata, timestamps |
+| `text-caption` | 12/16 | 500 | Chips, badges, axis labels |
+| `text-eyebrow` / `<Eyebrow>` | 12/16 | 500, uppercase | Short **data** labels above a value — nothing else |
+
+Sizes scale with `--text-scale` (Settings → Text size, 90–130%). Nothing is set below 12px. `cn()` understands these
+utilities, so `cn("text-body text-label")` keeps both.
+
+### 2.4 Shape, space, layout
+
+- **Radius (concentric):** `rounded-sheet` 20 · `rounded-card` 16 · `rounded-row` 12 · `rounded-control-lg` 12 ·
+  `rounded-control` 10 · `rounded-control-sm` 8 · `rounded-full` for chips and avatars. A nested radius is the outer
+  radius minus the padding. Continuous (squircle) corners apply where the browser supports `corner-shape`.
+- **Spacing:** Tailwind's 4px scale on an 8px rhythm; avoid x.5 steps except hairline tweaks.
+- **Density:** `html[data-density=compact]` (Settings) shrinks control heights (`--control-height-sm|md|lg`,
+  28/36/44 → 28/32/40) and component spacing; type is unchanged. Use the `compact:` variant for density tweaks.
+
+### 2.5 Materials, elevation, z-index
+
+| Utility | Use |
+|---|---|
+| `material-thin` | Toolbars, sub-headers, small floating buttons |
+| `material-regular` | Map panels, Halo, (future) sidebar and tab bar |
+| `material-thick` | Popovers, menus, map context menus and floating dialogs over the map |
+
+Materials switch to opaque under Reduce Transparency and step down one blur level on small screens. Anything inside a
+material uses opaque roles. **Elevation:** `shadow-card` (cards), `shadow-floating` (popovers, menus, map panels),
+`shadow-sheet` (dialogs, sheets); shadows halve in dark mode, where `surface-elevated` carries the lift.
+
+**Z-index** (utilities `z-base` … `z-command`): base 0 · raised 10 · sticky 100 · chrome 500 · nav 5000 · backdrop
+100000 · sheet/dialog 100001 · popover/select/menu/hover card 100010 · tooltip 100020 · toast 100050 · command 110000.
+Custom full-screen overlays that must host popovers use 100002–100009. No arbitrary `z-[…]` in `src/components/ui`.
+
+### 2.6 Motion
+
+`src/lib/design/motion.ts` exports three springs — `springSnappy` (controls, thumbs, segmented selection),
+`springSmooth` (sheets, navigation, layout), `springGentle` (emphasis) — plus `--duration-fast` 150ms,
+`--duration-exit` 120ms and `ease-out-facet`. Rules: animate transform and opacity; enter from scale .96 + fade;
+exits are faster than entrances; keyboard-invoked UI appears instantly; nothing loops except live indicators.
+Overlay animations are the `animate-facet-in/out` and `animate-sheet-in/out` utilities. `<FacetMotionConfig>` (root
+layout) makes motion/react honour both the OS and the in-app Reduce Motion setting.
+
+## 3. Surfaces & content
+
+| Component | Use |
+|---|---|
+| `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` or `interactive` makes it pressable (keyboard, focus ring). `depth`/`theme`/`variant` are accepted and ignored. |
+| `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list — the default for settings, details, rails and most stat grids. Section `header` (sentence case) and `footer`; rows with `leading`, `title`, `subtitle`, `trailing`, `accessory` (`chevron`/`check`/node), `href` or `onClick`, `selected`, `disabled`, `destructive`, `swipeActions`. `variant="plain"` inside a card. |
+| `Stat` | Eyebrow label + tabular value + optional `delta` (icon and text, never colour alone) + `hint`. |
+| `EmptyState` | Icon, title, message and one action; `compact` inside cards. |
+| `FacetMaterial` | Glass: `material="thin|regular|thick"`. Old `satin|paper|rubber|metal` still work (deprecated). |
+| `FacetContainer` | **Deprecated.** Content depths render as `FacetCard`; `material=…` renders glass. New code uses `FacetCard` or `FacetMaterial`. |
+| `Skeleton` | Loading placeholders shaped like the final layout (no blur; stops under reduced motion). Never inside `<p>`. |
+| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work). |
+| `Progress`, `HealthRing` | Meters; `tone` for status colours. |
+| `Eyebrow` | Uppercase data label (`text-eyebrow`). |
+| `TextureOverlay` | Decorative only; sanctioned textures are `dots`, `grid`, `paperGrain` (`SANCTIONED_TEXTURES`). |
+
+Hero identity (e.g. MyCountry's `FlagBackdrop`) may add a faded image, a tint glow and a tint hairline behind a card's
+content; it must be `aria-hidden`, not printed, and sit behind the content.
+
+## 4. Controls
+
+| Component | Notes |
+|---|---|
+| `Button` | Styles `filled` (tint), `tinted`, `gray`, `plain`, `bordered`, `destructive`, `link`; old `default`→filled, `secondary`→gray, `outline`→bordered, `ghost`→neutral plain. Sizes `sm` 28 · `md` 36 · `lg` 44 · `icon`/`icon-sm`/`icon-lg`; 44px hit area on touch; tint focus outline. One `filled` button per view. |
+| `SegmentedControl` | 2–5 peer choices (views, periods, filters). Radiogroup, or tablist with `asTabs`. |
+| `ToggleGroup` | Multi- or single-select filter chips. |
+| `Tabs` / `FacetTabs` | Page-level section switching only; full tablist ARIA and arrow keys. |
+| `Switch`, `Checkbox`, `Slider`, `Stepper` | Settings and numeric input; roles, tint when on, 44px touch targets. |
+| `Input`, `Textarea`, `Select`, `SearchField`, `MenuButton` | Shared field style (`fieldStyles`): fill background, `rounded-control`, red `aria-invalid`, 16px text on phones. `MenuButton` opens a `DropdownMenu`. |
+
+Ordinary controls make no sound.
+
+## 5. Presentation
+
+| Need | Use |
+|---|---|
+| Task, detail view, multi-step flow | `Sheet` — `side="auto"` (default): right side sheet ≥768px, bottom sheet below with `detents` (`medium`/`large`), grabber and drag-to-dismiss. Explicit `side` values still work. |
+| Confirm a destructive or irreversible decision | `AlertDialog` (`AlertDialogAction variant="destructive"`) |
+| Small contextual edit or info | `Popover` |
+| Short focused form | `Dialog` |
+| Keyboard-invoked palette | `CommandDialog` (instant presentation) |
+| Transient feedback | `useNotify()` → toast / Halo |
+
+Dialogs, alert dialogs and sheets are opaque `surface-elevated` over a light scrim (no blur). Popovers and menus are
+`material-thick`; tooltips, hover cards and command lists are `surface-elevated`. Feature code must not build
+`fixed inset-0` overlays or portals.
+
+## 6. Sound (Cuelume)
+
+`soundCues` (`src/lib/sound/cuelume.ts`) covers the only moments that make sound: `present`, `dismiss`, `success`,
+`error`, `destructive`, `arrival`, `reveal`, `notify`. Sound is on by default at a restrained volume and is muted by
+Settings → Sound, `html[data-sound=off]`, or Reduce Motion. Legacy `soundEffects` remains for code not yet migrated;
+new code uses `soundCues` or the primitives (dialogs and sheets already play present/dismiss).
 
-## 6. Headless Primitive Standards (`src/components/ui/`)
+## 7. Appearance & accessibility
 
-All UI primitives in IxStates are built upon a strict headless architecture:
+A blocking, nonce'd script in `src/app/layout.tsx` (`src/lib/design/appearance.ts`) applies the stored preferences to
+`<html>` before first paint: `data-theme` (System default), `data-density`, `data-contrast`, `data-transparency`,
+`data-motion`, `data-sound` and `--text-scale`. Users change them in **Settings → Appearance & accessibility**; code
+reads them through `useTheme()` (`src/context/theme-context.tsx`). Variants: `motion-reduce:`, `contrast-more:`,
+`transparency-reduced:`, `compact:`.
 
-1. **Radix UI Single Standard**: `@radix-ui/react-*` is the sole headless primitive foundation.
-2. **Strict Encapsulation**: All primitives live in `src/components/ui/`. Feature components must **never** import `@radix-ui/*` directly.
-3. **Polymorphic Triggers (`asChild`)**: Always use `@radix-ui/react-slot` (`asChild`) for custom triggers to maintain valid HTML markup and prevent nested interactive button errors.
-4. **`data-slot` Architecture**: Primitives expose explicit `data-slot="..."` attributes (`data-slot="dialog-content"`, `data-slot="select-trigger"`), enabling clean Tailwind CSS v4 styling without brittle class cascading.
-5. **Icon Standard**: `iconoir-react` is the sole standard icon library. `lucide-react` is strictly prohibited.
-6. **Semantic Tokens**: Core styling must use Tailwind v4 CSS variables (`bg-background`, `text-foreground`, `border-border`, `bg-card`, `bg-popover`, `ring-ring`) rather than arbitrary hardcoded hex values or manual `dark:` overrides.
+Requirements: WCAG 2.2 AA contrast; visible focus (2px tint, 2px offset); 44px targets on coarse pointers; full ARIA
+patterns for custom controls; colour never carries meaning alone; layouts reflow at 130% text size.
 
----
+## 8. Iconography & content
 
-## 7. Cuelume Audio-Tactile Engine
+Iconoir only, `currentColor`. Size follows the text style: 14px with footnote/caption, 16px with body/headline, 18px
+with title-3, 20px with titles 1–2, 24px with the large title. Icon-only buttons need an `aria-label` and a tooltip. No
+emoji as icons. Sentence case for titles, buttons and headers; buttons are verbs; `Eyebrow` uppercase only for data
+labels; no exclamation marks in UI chrome.
 
-IxStates integrates **Cuelume** ([`src/lib/sound/cuelume.ts`](../../src/lib/sound/cuelume.ts)), providing Web Audio synthesized interaction sounds adhering to the four core interaction principles: *causality, harmony, utility, restraint*.
+## 9. CSS architecture
 
-### Root Event Delegation
-[`CuelumeSoundProvider`](../../src/components/providers/CuelumeSoundProvider.tsx) in [`src/app/layout.tsx`](../../src/app/layout.tsx) automatically initializes the sound engine on application boot and delegates event listeners to the entire `document`. Route transitions fire a subtle `soundEffects.arrival()` cue.
+- `src/styles/globals.css` imports, in order: Tailwind, `facet/tokens.css`, then the layered sheets (typography,
+  utilities, animations, themes aliases, theming, components, domains, `wiki-os/tokens.css`, facet, integrations,
+  layout, clerk). Route sheets: `wiki-os.css` (WikiOS), `forum.css` (Forum), `facet/lab.css` (materials lab only).
+- Material and surface classes never set position, z-index, radius, margin or letter-spacing.
+- Third-party overrides (Clerk, sonner, MapLibre) live unlayered in `integrations.css`/`clerk.css` with a comment.
 
-### Standardized Primitive Audio Matrix
+## 10. Legacy and migration
 
-| Primitive | Target Element | Audio Binding | Trigger Event |
-|---|---|---|---|
-| **Button** | `<Button>` | `data-cuelume-press` + `data-cuelume-release` | Pointer Down / Up |
-| **Dialog** | `<DialogContent>` / `<DialogClose>` | `soundEffects.bloom()` / `data-cuelume-press="droplet"` | Mount / Pointer Down |
-| **Sheet** | `<SheetContent>` / `<SheetClose>` | `soundEffects.bloom()` / `data-cuelume-press="droplet"` | Mount / Pointer Down |
-| **AlertDialog** | `<AlertDialogContent>` / `<AlertDialogClose>` | `soundEffects.bloom()` / `data-cuelume-press="droplet"` | Mount / Pointer Down |
-| **Popover** | `<PopoverContent>` / `<PopoverClose>` | `soundEffects.whisper()` / `data-cuelume-press="droplet"` | Mount / Pointer Down |
-| **HoverCard** | `<HoverCardContent>` / `<HoverCardTrigger>` | `soundEffects.whisper()` / `data-cuelume-hover="tick"` | Mount / Pointer Enter |
-| **Tooltip** | `<TooltipTrigger>` | `data-cuelume-hover="tick"` | Pointer Enter |
-| **Tabs** | `<TabsTrigger>` | `data-cuelume-press="page"` + `data-cuelume-hover="tick"` | Pointer Down / Enter |
-| **Checkbox** | `<Checkbox>` | `data-cuelume-toggle` | Click |
-| **Switch** | `<AppleSwitch>` / `<Switch>` | `data-cuelume-toggle` | Click / Drag Toggle |
-| **Toggle** | `<Toggle>` | `data-cuelume-toggle` | Click |
-| **ToggleGroup** | `<ToggleGroupItem>` | `data-cuelume-press="tick"` + `data-cuelume-hover="tick"` | Pointer Down / Enter |
-| **Accordion** | `<AccordionTrigger>` | `data-cuelume-press="toggle"` + `data-cuelume-hover="tick"` | Pointer Down / Enter |
-| **Select** | `<SelectTrigger>` / `<SelectItem>` | `data-cuelume-press="press"` / `data-cuelume-press="tick"` + `data-cuelume-hover="tick"` | Pointer Down / Enter |
-| **DropdownMenu** | `<DropdownMenuItem>`, `<RadioItem>`, `<CheckboxItem>` | `data-cuelume-press="tick"` + `data-cuelume-hover="tick"` | Pointer Down / Enter |
-| **Command** | `<CommandItem>` | `data-cuelume-press="press"` + `data-cuelume-hover="tick"` | Pointer Down / Enter |
-| **Slider** | `<SliderThumb>` | `data-cuelume-press="tick"` + `data-cuelume-hover="tick"` | Pointer Down / Enter |
-
-### Calibrated Restraint
-- Master volume default is pegged to **`0.25`** with localStorage persistence.
-- Individual synthesized cue gains are calibrated between **`0.12`** and **`0.20`** so interactions remain comfortable and non-fatiguing even at 100% system speaker volume.
-
----
-
-## 8. Apple Design & Emil Kowalski Motion Physics
-
-Facet follows the design engineering motion principles defined by Apple Human Interface Guidelines and Emil Kowalski:
-
-### 1. Tactile Pointer-Down Compression
-Pressable elements must provide instant mechanical confirmation on `:active`:
-```css
-/* Tactile Button Feedback */
-.btn-tactile {
-  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-.btn-tactile:active {
-  transform: scale(0.98);
-}
-```
-
-### 2. Origin-Aware Popovers vs Centered Modals
-- **Popovers, Selects, Dropdowns**: Must animate in from their trigger anchor using `transform-origin: var(--radix-popover-content-transform-origin)`.
-- **Modals & Dialogs**: Must stay centered (`transform-origin: center`) as they are viewport-anchored rather than trigger-anchored.
-
-### 3. Unslop Motion Discipline
-- **Zero Animation on Keyboard Actions**: Command palettes, search toggles, and shortcut-initiated dialogs have **0ms animation** for instant response.
-- **Duration Ceiling**: Standard UI transitions must stay strictly under **250ms**.
-- **Asymmetric Timing**: Pressing/triggering can be deliberate, but release/exit must always be instantaneous (100–180ms `ease-out`).
-- **Never Animate from `scale(0)`**: Entrances start from `scale(0.95)` with `opacity: 0`—nothing in the real world appears from zero.
-- **Hardware-Accelerated GPU Transforms**: Animate only `transform` and `opacity`. Never animate `width`, `height`, `margin`, or `padding`.
-
----
-
-## 9. 3-Mode Navigation Architecture & Dynamic Repulsion Physics
-
-All pages in IxStates conform to one of three universal navigation modes:
-
-1. **Mode 1: DEFAULT (Global Scroll-Hide & Morph)**: Standard pages (Home, MyCountry, Dashboard, Vault, ThinkPages, Forum, Countries, Admin, Sports, Settings) sit in the top anchor zone (<50px). Morphs tabs inwards (40px → 100px), scroll down hides with cubic-bezier/spring transitions, and scroll up reveals instantly.
-2. **Mode 2: HIDDEN (Immersion & Canvas Focus)**: Surfaces requiring distraction-free focus (`/messages`, `/builder`, `/mycountry/editor`, `/wiki/*`, `/blurbs/*`) start with navbar translated `-100%`, revealing smoothly on upward scroll (>10px) or top-edge hover (<=16px) while the dedicated `WikiHalo` or `Halo` pill remains interactive.
-3. **Mode 3: MAPS (Chromeless Standalone)**: Standalone spatial surfaces (`/maps`) cleanly bypass global navigation chrome, handing off navigation and wayfinding entirely to `MapDynamicIsland`.
-
-### Dynamic Repulsion Physics Formula
-When any sub-header, toolbar, or filter strip sits below the sticky Halo:
-$$\text{repulsionProgress} = \text{clamp}\left(\frac{\text{scrollY}}{56}, 0, 1\right)$$
-
-- **Center Branding Glide**: Translates `y: -repulsionProgress * 40px`, scales `scale(1 - repulsionProgress * 0.1)`, and fades `opacity: 1 - repulsionProgress`.
-- **Seamless Action Tuck**: Action buttons slide inward directly beneath the floating Halo pill.
-- **Ambient Refraction Glow**: Subtle blue/purple radial glow appears during transition (`0 0 (1 - repulsionProgress) * 12px`).
-- **Desktop Sticky Rails Clearance**: All page sidebars and rails must use `lg:sticky lg:top-20` (80px) to guarantee a clean 16px buffer beneath the 64px floating/sticky header. Never use `top-6` or `top-0` on page-level sidebars.
-
----
-
-## 10. Zero-Hex Color System & Semantic Tokens
-
-IxStates strictly bans raw, arbitrary hex codes (`[#...]` or `style={{ color: "#..." }}`) across all components and stylesheets:
-
-- **100% Semantic Token Rule**: All colors must use Tailwind v4 semantic utility classes (`text-foreground`, `bg-card`, `border-border/40`, `text-muted-foreground`, `text-primary`, `bg-popover`, `text-destructive`).
-- **Domain Accents**: Domain-specific accents use semantic CSS variables (`var(--color-amber-500)`, `var(--wikios-accent)`, `var(--onoma-primary)`).
-- **Light/Dark Contrast**: Every color pair must meet WCAG AA contrast standards across both light and dark themes without manual `dark:` overrides.
-
----
-
-## 11. Domain Themes & Semantic Palette
-
-IxStates applies distinctive ambient color accents across its major platform pillars:
-
-| Domain | Accent Color | Semantic Variable | System Pillars |
-|---|---|---|---|
-| **MyCountry** | Gold / Amber | `--color-amber-500` | Executive command suite, Directives, statecraft loop |
-| **Global / Maps** | Sky / Blue | `--color-blue-500` | World map viewer, Factbook profiles, atlas |
-| **ThinkPages** | Emerald / Jade | `--color-emerald-500` | ThinkPages feed, ThinkTanks, ThinkShare messaging |
-| **Vault** | Amber / Copper | `--color-amber-600` | Cards, packs, credit market, collectibles |
-| **Forum** | Orange | `--color-orange-500` | Community discourse, town hall debates, bulletins |
-| **Intelligence & Defense** | Crimson / Indigo | `--color-rose-500` / `--color-indigo-500` | Security monitors, defense readiness, alerts |
-
----
-
-## 12. Developer Cookbook & Component Recipes
-
-### 1. Standard Interactive Facet Card
-```tsx
-import { FacetCard } from "@/components/ui/facet-container";
-import { soundEffects } from "~/lib/sound/cuelume";
-
-export function DirectiveCard({ title, description }: { title: string; description: string }) {
-  return (
-    <FacetCard
-      depth={2}
-      className="p-5 cursor-pointer active:scale-[0.98] transition-transform duration-140"
-      data-cuelume-press="press"
-      data-cuelume-hover="tick"
-      onClick={() => soundEffects.bloom()}
-    >
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      <p className="text-xs text-muted-foreground mt-1">{description}</p>
-    </FacetCard>
-  );
-}
-```
-
-### 2. Dialog Modal with Cuelume & Apple Tactile Physics
-```tsx
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from "~/components/ui/dialog";
-import { Button } from "~/components/ui/button";
-
-export function ConfirmDirectiveDialog() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="default">Declare Directive</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Confirm National Directive</DialogTitle>
-        </DialogHeader>
-        <p className="text-xs text-muted-foreground">
-          Commit CivCap allocation to initiate legislative review.
-        </p>
-        <div className="flex justify-end gap-2 mt-4">
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          <Button variant="default">Confirm</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-### 3. Dynamic Island / Halo Push Notification
-```tsx
-import { useNotify } from "~/hooks/useNotify";
-
-export function useDirectiveNotification() {
-  const notify = useNotify();
-
-  const notifySuccess = (title: string, message: string) => {
-    // Automatically plays soundEffects.success() and renders in Halo
-    notify.success(title, message);
-  };
-
-  return { notifySuccess };
-}
-```
+Still supported while apps migrate (Phase 4): shadcn colour names, `FacetContainer`, `FacetMaterial` old materials,
+old Button/Badge variant names, `soundEffects`, the `.facet-hierarchy-*` / `.facet-refraction` / `.facet-surface`
+classes. Removed: `glass-*` classes, `*-hsl` tokens, per-domain `.facet-{domain}` production styles (lab only),
+typography presets in the UI, blur on skeletons, hover/press sound ticks. See the spec's §13 migration map.
+
+## 11. Guards
+
+| Test | Enforces |
+|---|---|
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
+| `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
+
+## Changelog
+
+- **3.0 (2026-09-30)** — Facet 3: HIG colour roles and per-app tints, text styles, concentric radii, glass materials
+  for chrome only, one z scale, springs; layered CSS (~19.8k → ~12.6k lines); pre-paint appearance with Increase
+  Contrast, Reduce Transparency, Reduce Motion, density and text size; new primitives (FacetList/Row, Stat,
+  EmptyState, SegmentedControl, ToggleGroup, Stepper, MenuButton, SearchField, responsive Sheet); restrained Cuelume.
+- **2.x** — glass depth hierarchy, physical materials, Cuelume matrix (superseded; see the audit).
