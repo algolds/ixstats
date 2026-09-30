@@ -11,6 +11,7 @@ import {
   calculateTotalConsumedStaff,
 } from "~/lib/government/atomic-utils";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 const RECON_CAPACITY_COST = 20;
@@ -45,7 +46,7 @@ async function loadPolicyReconContext(db: any, countryId: string) {
     db.budgetAllocation.findMany({
       where: {
         governmentStructure: { countryId },
-        budgetYear: new Date().getFullYear(),
+        budgetYear: currentBudgetYear(),
       },
       include: { department: { select: { category: true } } },
     }),

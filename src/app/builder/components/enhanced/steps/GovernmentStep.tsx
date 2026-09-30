@@ -25,6 +25,7 @@ import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { BuilderTabCard, type TabDefinition } from "../../../primitives/BuilderTabCard";
 import { AtomicGovernmentComponents } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import { useBuilderGuide } from "../../builder-guide-context";
 import { computeGovernmentWarnings } from "../government-preview/governmentWarnings";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
@@ -247,12 +248,13 @@ export function GovernmentStep({
         },
       ];
 
+      const budgetYear = currentBudgetYear();
       const defaultAllocations = [
-        { departmentId: "0", budgetYear: 2026, allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
-        { departmentId: "1", budgetYear: 2026, allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
-        { departmentId: "2", budgetYear: 2026, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
-        { departmentId: "3", budgetYear: 2026, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
-        { departmentId: "4", budgetYear: 2026, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "0", budgetYear, allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
+        { departmentId: "1", budgetYear, allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
+        { departmentId: "2", budgetYear, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "3", budgetYear, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "4", budgetYear, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
       ];
 
       onGovernmentStructureChange({
@@ -469,7 +471,7 @@ export function GovernmentStep({
                     const fixedAllocations = governmentStructure.departments.map(
                       (_dept, idx) => ({
                         departmentId: idx.toString(),
-                        budgetYear: new Date().getFullYear(),
+                        budgetYear: currentBudgetYear(),
                         allocatedPercent: evenPercent,
                         allocatedAmount: Math.round((totalBudgetVal * evenPercent) / 100),
                         notes: "Even redistribution",

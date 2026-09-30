@@ -23,6 +23,7 @@ import {
   calculateTotalConsumedStaff,
 } from "~/lib/government/atomic-utils";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 // Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
 const RECON_CAPACITY_COST = 20; // Capacity reserved per in-progress recon Meeting
@@ -65,7 +66,7 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
     db.budgetAllocation.findMany({
       where: {
         governmentStructure: { countryId },
-        budgetYear: new Date().getFullYear(),
+        budgetYear: currentBudgetYear(),
       },
       take: 50,
       include: { department: { select: { category: true } } },

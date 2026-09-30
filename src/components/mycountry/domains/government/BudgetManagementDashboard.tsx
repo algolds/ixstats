@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { formatNumber, safeFormatCurrency, toTitleCase } from "~/lib/utils";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import type {
   GovernmentStructure,
   GovernmentDepartment,
@@ -59,9 +59,7 @@ export function BudgetManagementDashboard({
   const [selectedView, setSelectedView] = useState<
     "overview" | "departments" | "revenue" | "analysis"
   >("overview");
-  const [selectedYear, setSelectedYear] = useState(
-    new Date(IxTime.getCurrentIxTime()).getFullYear()
-  );
+  const [selectedYear, setSelectedYear] = useState(currentBudgetYear);
   const [overviewChartMode, setOverviewChartMode] = useState<"allocation" | "trend">("allocation");
 
   // Calculate budget summary
@@ -215,10 +213,7 @@ export function BudgetManagementDashboard({
             onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
             className="border-border/40 bg-card/60 text-foreground hover:border-border/60 cursor-pointer rounded-xl border px-3 py-1.5 font-mono text-xs font-semibold backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-2 focus:ring-emerald-500/30"
           >
-            {Array.from({ length: 5 }, (_, i) => {
-              const currentIxYear = new Date(IxTime.getCurrentIxTime()).getFullYear();
-              return currentIxYear - i;
-            }).map((year) => (
+            {Array.from({ length: 5 }, (_, i) => currentBudgetYear() - i).map((year) => (
               <option
                 key={year}
                 value={year}

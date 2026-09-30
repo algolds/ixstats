@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 export const electionsBrokersRouter = createTRPCRouter({
   getPowerBrokers: publicProcedure
@@ -16,7 +17,7 @@ export const electionsBrokersRouter = createTRPCRouter({
       const allocations = await ctx.db.budgetAllocation.findMany({
         where: {
           governmentStructure: { countryId: input.countryId },
-          budgetYear: new Date().getFullYear(),
+          budgetYear: currentBudgetYear(),
         },
         include: {
           department: {

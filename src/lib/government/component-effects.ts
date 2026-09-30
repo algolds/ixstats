@@ -14,6 +14,7 @@ import { COMPONENT_CATEGORIES } from "./atomic-data";
 import { calculateGovernmentEffectiveness } from "./atomic-utils";
 import { IxTime } from "~/lib/ixtime";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
+import { currentBudgetYear } from "./budget-year";
 
 // Category → StorytellerEffect inputType + base effect value per component
 const CATEGORY_EFFECTS: Record<string, { inputType: string; base: number; desc: string }> = {
@@ -229,7 +230,7 @@ export async function applyGovernmentComponentEffects(
     (await db.budgetAllocation.findMany({
       where: {
         governmentStructure: { countryId },
-        budgetYear: new Date().getFullYear(),
+        budgetYear: currentBudgetYear(),
       },
       include: { department: { select: { category: true } } },
     }));

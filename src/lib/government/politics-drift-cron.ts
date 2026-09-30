@@ -16,6 +16,7 @@ import { applyGovernmentComponentEffects } from "./component-effects";
 import { isNewsworthySwing } from "./approval";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
+import { currentBudgetYear } from "./budget-year";
 
 export interface PoliticsDriftResult {
   countriesProcessed: number;
@@ -49,8 +50,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
         db.budgetAllocation.findMany({
           where: {
             governmentStructure: { countryId },
-            // budgetYear filtering uses the real-world calendar year due to database model constraints (validation maximum limits of 2030/2035)
-            budgetYear: new Date().getFullYear(),
+            budgetYear: currentBudgetYear(),
           },
           include: { department: { select: { category: true } } },
         }),
