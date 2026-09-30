@@ -16,8 +16,8 @@ interface FloatingRibbonRackProps {
 }
 
 export function FloatingRibbonRack({
-  pinnedIds = ["wiki-archivist", "community-veteran", "forum-pioneer"],
-  unlockedCount = 3,
+  pinnedIds = [],
+  unlockedCount,
   className,
   style,
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -25,7 +25,9 @@ export function FloatingRibbonRack({
 }: FloatingRibbonRackProps) {
   const ribbonsToDisplay = FORUM_RIBBONS.filter((r) => pinnedIds.includes(r.id)).slice(0, 3);
 
+  // Render nothing without real ribbon data (no hard-coded defaults).
   if (ribbonsToDisplay.length === 0) return null;
+  const unlocked = unlockedCount ?? ribbonsToDisplay.length;
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -37,7 +39,7 @@ export function FloatingRibbonRack({
         style={style}
       >
         {ribbonsToDisplay.map((ribbon, idx) => {
-          const isUnlocked = unlockedCount > idx;
+          const isUnlocked = unlocked > idx;
           return (
             <Tooltip key={ribbon.id}>
               <TooltipTrigger asChild>

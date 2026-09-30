@@ -422,11 +422,15 @@ export function SplashFold() {
               className={`facet-hierarchy-child mx-auto max-w-4xl rounded-xl border p-5 text-center md:p-6 ${splashGold.subtlePanel}`}
             >
               <p className="text-muted-foreground text-sm md:text-base">
-                Import collectible decks through{" "}
-                <Link href="/vault/import" className={splashGold.link}>
-                  MyVault import
+                Collect lore cards, earn IxCredits, and unlock achievements in the{" "}
+                <Link href="/vault" className={splashGold.link}>
+                  MyVault
                 </Link>
-                .
+                . Play NationStates? You can{" "}
+                <Link href="/vault/import" className={splashGold.link}>
+                  import your deck
+                </Link>{" "}
+                too.
               </p>
             </div>
           </div>

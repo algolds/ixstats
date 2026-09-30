@@ -25,7 +25,7 @@ ThinkShare Messages is the platform-wide messaging backbone. It unifies all comm
 > **Privacy and Security**
 >
 > - Only invited participants can view a conversation. Your private discussions stay private.
-> - Diplomatic channels support classification levels (Public, Restricted, Confidential, Secret, Top Secret) and encrypted messaging.
+> - Diplomatic channels can be tagged with classification levels (Public, Restricted, Confidential, Secret, Top Secret). These are in-world labels for roleplay — they do not encrypt anything, and messages are not end-to-end encrypted.
 
 ## Related Features
 
