@@ -20,6 +20,7 @@ import {
 import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
 import { canonicalizeTitle } from "./title";
+import { mwSha1Base36 } from "../xml/sha1";
 
 /** The columns a reader needs from a WikiArticle row. */
 const ARTICLE_SELECT = {
@@ -251,6 +252,7 @@ export class ArticleRepository {
           authorId: resolvedDbUserId,
           byteSize,
           byteDelta: byteSize - (previous?.byteSize ?? 0),
+          sha1: mwSha1Base36(wikitext),
         },
         select: {
           id: true,

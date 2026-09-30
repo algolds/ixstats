@@ -106,9 +106,11 @@ model WikiRevision {
   parentRevisionId String?
   byteSize         Int          @default(0)
   byteDelta        Int          @default(0)
+  sha1             String?      // MediaWiki rev_sha1: base-36 SHA-1 of wikitext, 31 chars (null on rows that predate it)
   createdAt        DateTime     @default(now())
 
   @@index([articleId, createdAt])
+  @@index([articleId, sha1])
   @@unique([source, mwRevId])
   @@index([author])
   @@index([authorId])
