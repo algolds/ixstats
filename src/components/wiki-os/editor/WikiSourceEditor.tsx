@@ -36,7 +36,6 @@ import { wikitextHighlightPlugin, wrapSelectionCM } from "./utils/codemirror-wik
 import { findSectionLine } from "~/lib/wiki-os/wikitext/section-locator";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { EditorModalProvider } from "./context/EditorModalContext";
-import { getDraft } from "~/lib/wiki-os/editor/draft-store";
 import { WikiSourceToolbar } from "./components/WikiSourceToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
@@ -55,6 +54,11 @@ export interface WikiSourceEditorProps {
   ) => Promise<void> | void;
   onCancel: () => void;
   onSwitchToVisual?: (dirty: boolean, currentWikitext: string) => void;
+  /**
+   * Hands the host a function that reads the document right now, and null when the editor goes away.
+   * Local drafts are the host's business: it decides whether to restore one and passes the text as `initialWikitext`.
+   */
+  registerContentReader?: (read: (() => string | null) | null) => void;
 }
 
 export function WikiSourceEditor({
@@ -64,6 +68,7 @@ export function WikiSourceEditor({
   onSave,
   onCancel,
   onSwitchToVisual,
+  registerContentReader,
 }: WikiSourceEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -325,28 +330,11 @@ export function WikiSourceEditor({
     state.executeSaveDraft(() => viewRef.current?.state.doc.toString() ?? "", "source");
   }, [state]);
 
-  // Local draft restore on mount
+  // Hands the host a reader for the document as it is now (the edit bridge reads it for "Save anyway").
   useEffect(() => {
-    const existingDraft = getDraft(title, "ixwiki");
-    const draftContent = existingDraft?.wikitext;
-    if (draftContent && draftContent !== initialWikitext) {
-      const timer = setTimeout(() => {
-        const restore = window.confirm(
-          `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
-        );
-        if (restore && viewRef.current) {
-          const docLength = viewRef.current.state.doc.length;
-          viewRef.current.dispatch({
-            changes: { from: 0, to: docLength, insert: draftContent },
-          });
-          // oxlint-disable-next-line
-          state.setIsDirty(true);
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [title, initialWikitext, state.setIsDirty]);
+    registerContentReader?.(() => viewRef.current?.state.doc.toString() ?? null);
+    return () => registerContentReader?.(null);
+  }, [registerContentReader]);
 
   // Formatting helpers
   const wrapSelection = useCallback((before: string, after: string) => {

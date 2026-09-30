@@ -90,18 +90,31 @@ export function WikiEditBridge({
   const [draftResolved, setDraftResolved] = useState(false);
   /** Changes when the editors must start over from new text (Load current version). */
   const [editorKey, setEditorKey] = useState(0);
+  /** The author's text when they chose "Load current version": kept here, not in the draft store. */
+  const [setAsideText, setSetAsideText] = useState<string | null>(null);
   const pendingSave = useRef<PendingSave | null>(null);
+  /** Reads the mounted editor's content as it is now (see the editors' `registerContentReader`). */
+  const readContentRef = useRef<(() => string | null) | null>(null);
+  const registerContentReader = useCallback((read: (() => string | null) | null) => {
+    readContentRef.current = read;
+  }, []);
 
   // Single Authoritative Fetch via getWikitext (read-through Postgres + MediaWiki fallback)
+  // An editor starts from the page as it is now, never from a cached copy: the text it opens and the
+  // revision its save is checked against must be as fresh as the open itself.
   const {
     data: wikitextData,
     isLoading: wtLoading,
+    isFetchedAfterMount,
     refetch: refetchWikitext,
-  } = api.wikios.getWikitext.useQuery({ title }, { staleTime: 5 * 60 * 1000 });
+  } = api.wikios.getWikitext.useQuery(
+    { title },
+    { staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: false }
+  );
 
   const saveWikitext = api.wikios.saveWikitext.useMutation();
 
-  if (loaded === null && !wtLoading) {
+  if (loaded === null && !wtLoading && isFetchedAfterMount) {
     setLoaded({
       wikitext: wikitextData?.wikitext ?? "",
       ...revisionOf(wikitextData?.revisionRef ?? null, wikitextData?.revisionRefs),
@@ -203,6 +216,7 @@ export function WikiEditBridge({
         }
 
         pendingSave.current = null;
+        setSetAsideText(null);
         clearDraft(title);
 
         if (save.keepEditing) {
@@ -233,7 +247,8 @@ export function WikiEditBridge({
   const handleVisualSave = useCallback(
     (content: string, summary: string, minor: boolean, keepEditing?: boolean) =>
       performSave(
-        { wikitext: lastSerializedRef.current?.wikitext || content, summary, minor, keepEditing },
+        // The serialized wikitext is the content, empty or not; `content` is only the editor's own report.
+        { wikitext: lastSerializedRef.current ? lastSerializedRef.current.wikitext : content, summary, minor, keepEditing },
         loaded?.revisionRef ?? null
       ),
     [performSave, loaded]
@@ -245,25 +260,48 @@ export function WikiEditBridge({
     [performSave, loaded]
   );
 
-  // "Load current version": the author's text is kept as a draft, the editor starts over on the page as it is now.
+  // "Load current version": the editor starts over on the page as it is now. Any local draft of the
+  // page is cleared first (an editor starts from a draft it finds), and the author's text is kept
+  // here, in this component, for "Restore my text" / "Copy my version".
   const handleLoadCurrent = useCallback(() => {
     if (!conflict) return;
-    if (pendingSave.current) {
-      saveDraft({ title, source: "ixwiki", mode, wikitext: pendingSave.current.wikitext });
-    }
+    const mine = readContentRef.current?.() ?? pendingSave.current?.wikitext ?? null;
+    clearDraft(title);
+    setSetAsideText(mine);
     pendingSave.current = null;
     setActiveWikitext(conflict.currentWikitext);
     setLoaded({ wikitext: conflict.currentWikitext, ...revisionOf(conflict.currentRevisionRef) });
     setConflict(null);
     setEditorKey((key) => key + 1);
-  }, [conflict, mode, title]);
+  }, [conflict, title]);
 
-  // "Save anyway": the same save, on top of the version that is there now.
+  const handleRestoreMyText = useCallback(() => {
+    if (setAsideText === null) return;
+    setActiveWikitext(setAsideText);
+    setSetAsideText(null);
+    setEditorKey((key) => key + 1);
+  }, [setAsideText]);
+
+  const handleCopyMyText = useCallback(() => {
+    if (setAsideText === null) return;
+    navigator.clipboard.writeText(setAsideText).then(
+      () => notify.success("Copied", "Your version is on the clipboard."),
+      () => notify.error("Copy Failed", "Could not copy your version; restore it into the editor instead.")
+    );
+  }, [setAsideText, notify]);
+
+  // "Save anyway": what is in the editor NOW, on top of the version that is there now. The editor may
+  // have changed since the save that conflicted, and its content is what the author means to publish.
   const handleSaveAnyway = useCallback(async () => {
     const pending = pendingSave.current;
     if (!conflict || !pending) return;
+    const current = readContentRef.current ? readContentRef.current() : pending.wikitext;
+    if (current === null) {
+      notify.error("Save Blocked", "Some content could not be converted to wikitext; switch to source mode to fix it.");
+      return;
+    }
     try {
-      await performSave(pending, conflict.currentRevisionRef);
+      await performSave({ ...pending, wikitext: current }, conflict.currentRevisionRef);
       notify.success("Article Published", "Your changes have been published over the newer version.");
     } catch {
       notify.error("Save Failed", "Could not save article changes.");
@@ -324,6 +362,26 @@ export function WikiEditBridge({
         </div>
       )}
 
+      {setAsideText !== null && !conflict && (
+        <div role="status" className="mb-4 rounded-xl border border-border bg-card/75 p-4 text-sm text-foreground">
+          <p>
+            <strong>Your version was set aside.</strong> The editor now shows the page as it is
+            published. Your unsaved text is kept until you save or close this editor.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleRestoreMyText}>
+              Restore my text
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleCopyMyText}>
+              Copy my version
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSetAsideText(null)}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
+
       {mode === "visual" ? (
         <WikiVisualEditor
           key={editorKey}
@@ -333,6 +391,8 @@ export function WikiEditBridge({
           onCancel={onClose}
           onSwitchToSource={(dirty, content) => handleModeSwitch("source", dirty, content)}
           onSerializedWikitext={setLastSerialized}
+          registerContentReader={registerContentReader}
+          restoreLocalDraft={false}
         />
       ) : (
         <WikiSourceEditor
@@ -343,6 +403,7 @@ export function WikiEditBridge({
           onSave={handleSourceSave}
           onCancel={onClose}
           onSwitchToVisual={(dirty, wt) => handleModeSwitch("visual", dirty, wt)}
+          registerContentReader={registerContentReader}
         />
       )}
     </div>

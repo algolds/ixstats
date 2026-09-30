@@ -153,4 +153,31 @@ describe("draft-store", () => {
       expect(isDraftStale({ ...base, baseRevisionRef: "4320" }, ["cuid-1", "4321"])).toBe(true);
     });
   });
+
+  describe("drafts written by older code", () => {
+    const store = (draft: Record<string, unknown>): void =>
+      window.localStorage.setItem("wikios_draft:ixwiki:Old_page", JSON.stringify({ title: "Old page", source: "ixwiki", savedAt: 1, ...draft }));
+
+    it("reads the wikitext the visual editor used to keep in the html field as wikitext", () => {
+      store({ mode: "visual", html: "== Heading ==\nSome [[text]]." });
+      const draft = getDraft("Old page");
+      expect(draft?.wikitext).toBe("== Heading ==\nSome [[text]].");
+      expect(draft?.html).toBeUndefined();
+      expect(listDrafts()[0]?.wikitext).toBe("== Heading ==\nSome [[text]].");
+    });
+
+    it("leaves rendered HTML, a source draft, and drafts of the current format alone", () => {
+      store({ mode: "visual", html: "<p>Rendered</p>" });
+      expect(getDraft("Old page")?.html).toBe("<p>Rendered</p>");
+      store({ mode: "source", wikitext: "x" });
+      expect(getDraft("Old page")?.wikitext).toBe("x");
+      store({ mode: "visual", html: "plain words", version: 2 });
+      expect(getDraft("Old page")?.html).toBe("plain words");
+    });
+
+    it("writes the current format", () => {
+      saveDraft({ title: "New page", source: "ixwiki", mode: "visual", wikitext: "x" });
+      expect(getDraft("New page")?.version).toBe(2);
+    });
+  });
 });
