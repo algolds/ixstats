@@ -1,0 +1,37 @@
+# Local test MediaWiki for WikiOS development (plan 417). DEV ONLY - never deploy this.
+#
+# A throwaway MediaWiki 1.45 on SQLite, bound to 127.0.0.1:8089, with the extensions WikiOS needs to
+# render fidelity-critical wikitext (templates, Lua modules, refs, ...). It is the stand-in for
+# https://ixwiki.com when testing the private render engine, the `wikios-mirror` bot account and the
+# sync webhook, so nothing in a WikiOS test ever has to touch the production wiki.
+#
+# Use ./setup.sh (it creates the credentials file and runs the installer); see README.md.
+name: wikios-test-mediawiki
+
+services:
+  mediawiki:
+    # If the 1.45 tag is unavailable, use `mediawiki:lts` (see README.md).
+    image: mediawiki:1.45
+    container_name: wikios-test-mediawiki
+    restart: "no"
+    ports:
+      - "127.0.0.1:8089:80"
+    environment:
+      # MediaWiki reads its config from here, so the installer (which refuses to run when
+      # $IP/LocalSettings.php exists) can be run first; see setup.sh.
+      MW_CONFIG_FILE: /config/LocalSettings.php
+      # Read by LocalSettings.php; the values come from .env.test-mediawiki via `--env-file`.
+      WIKIOS_TEST_MW_SECRET_KEY: ${WIKIOS_TEST_MW_SECRET_KEY:?run ./setup.sh first}
+      # Left empty on purpose: the sync-webhook hook in wikios-localsettings.php does nothing without
+      # a secret. Set it (same value as WIKI_SYNC_WEBHOOK_SECRET in the WikiOS env) to test the webhook.
+      WIKIOS_WEBHOOK_SECRET: ${WIKIOS_WEBHOOK_SECRET:-}
+    volumes:
+      - wikios-test-mw-data:/var/www/data
+      - wikios-test-mw-images:/var/www/html/images
+      - ./LocalSettings.php:/config/LocalSettings.php:ro
+      # The production snippet (plan 417, deliverable D), loaded by LocalSettings.php.
+      - ../mediawiki/wikios-localsettings.php:/config/wikios-localsettings.php:ro
+
+volumes:
+  wikios-test-mw-data:
+  wikios-test-mw-images:

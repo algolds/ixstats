@@ -178,6 +178,10 @@ export const env = createEnv({
     NEXT_PUBLIC_WS_PORT: z.string().optional(),
     // "true" for the IxWorld standalone build (maps.ixwiki.com): empty base path
     NEXT_PUBLIC_IXWORLD_STANDALONE: z.string().optional(),
+    // "true" for the WikiOS standalone build (ixwiki.com/wiki/*): empty base path, other paths go to IxStates
+    NEXT_PUBLIC_WIKIOS_STANDALONE: z.enum(["true", "false"]).optional(),
+    // IxStates base URL that the WikiOS standalone build redirects non-wiki paths to; required there, no default
+    NEXT_PUBLIC_IXSTATES_URL: z.string().url().optional(),
     // Map glyph (font PBF) URL template that overrides the default
     NEXT_PUBLIC_MAP_GLYPHS_URL: z.string().optional(),
     // "true" grants MyCountry Premium features to every user (test builds; keep off in production)
@@ -284,6 +288,8 @@ export const env = createEnv({
     NEXT_PUBLIC_ENABLE_WEBSOCKET: process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET,
     NEXT_PUBLIC_WS_PORT: process.env.NEXT_PUBLIC_WS_PORT,
     NEXT_PUBLIC_IXWORLD_STANDALONE: process.env.NEXT_PUBLIC_IXWORLD_STANDALONE,
+    NEXT_PUBLIC_WIKIOS_STANDALONE: process.env.NEXT_PUBLIC_WIKIOS_STANDALONE,
+    NEXT_PUBLIC_IXSTATES_URL: process.env.NEXT_PUBLIC_IXSTATES_URL,
     NEXT_PUBLIC_MAP_GLYPHS_URL: process.env.NEXT_PUBLIC_MAP_GLYPHS_URL,
     NEXT_PUBLIC_PREMIUM_FOR_ALL: process.env.NEXT_PUBLIC_PREMIUM_FOR_ALL,
   },
