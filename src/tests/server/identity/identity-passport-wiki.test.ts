@@ -7,6 +7,7 @@ jest.mock("~/server/db", () => {
   const db = {
     user: { update: jest.fn().mockResolvedValue({}) },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    passportPreference: { findUnique: jest.fn().mockResolvedValue(null) },
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
 });
@@ -18,6 +19,10 @@ jest.mock("~/server/modules/identity/identity.resolve", () => ({
 
 jest.mock("~/server/modules/identity/identity.vault", () => ({
   resolvePassportVault: jest.fn().mockResolvedValue({ credits: 0 }),
+}));
+
+jest.mock("~/server/modules/identity/identity.showcase", () => ({
+  loadAchievementsShowcase: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock("~/server/modules/identity/identity.loaders", () => ({

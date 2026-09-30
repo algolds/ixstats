@@ -1,11 +1,24 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
+import {
+  getCountryRibbons,
   getHistory,
+  getOwnPassportSettings,
   getPassport,
   getRealms,
+  getRibbons,
   getWork,
+  updateOwnPassportSettings,
 } from "~/server/modules/identity/identity.service";
+import {
+  MAX_PINNED_RIBBONS,
+  MAX_SIGNATURE_LENGTH,
+} from "~/server/modules/identity/identity.privacy";
 import type {
   IdentityForumGateway,
   IdentityForumMember,
@@ -25,9 +38,27 @@ const forumGateway: IdentityForumGateway = {
 
 const handleInput = z.object({ handle: z.string().min(1).max(200) });
 
+const visibilityInput = z
+  .object({
+    accolades: z.boolean(),
+    impact: z.boolean(),
+    forumStats: z.boolean(),
+    vaultCards: z.boolean(),
+    historyStream: z.boolean(),
+    achievements: z.boolean(),
+  })
+  .partial();
+
+const settingsInput = z.object({
+  visibility: visibilityInput.optional(),
+  signature: z.string().max(MAX_SIGNATURE_LENGTH).nullable().optional(),
+  pinnedRibbonKeys: z.array(z.string().min(1).max(100)).max(MAX_PINNED_RIBBONS).optional(),
+});
+
 /**
- * Public passport (plan 188). A passport is public by design: every procedure is readable
+ * Public passport (plan 188). A passport is public by design: every read procedure is readable
  * signed-out, and the viewer id only decides ownership (owner-only drafts, the edit control).
+ * Sections the owner hides in their passport settings are stripped server-side from every read.
  */
 export const ixnayidPassportRouter = createTRPCRouter({
   getPassport: publicProcedure.input(handleInput).query(({ ctx, input }) =>
@@ -50,4 +81,22 @@ export const ixnayidPassportRouter = createTRPCRouter({
       })
     )
     .query(({ ctx, input }) => getHistory({ ...input, viewerClerkId: ctx.auth?.userId ?? null })),
+
+  /** A passport holder's ribbons (one per unlocked achievement), pinned first. */
+  getRibbons: publicProcedure
+    .input(handleInput)
+    .query(({ ctx, input }) => getRibbons({ ...input, viewerClerkId: ctx.auth?.userId ?? null })),
+
+  /** The country page's ribbon rack: the owning user's top ribbons, empty when there are none. */
+  getCountryRibbons: publicProcedure
+    .input(z.object({ countrySlug: z.string().min(1).max(200) }))
+    .query(({ input }) => getCountryRibbons(input.countrySlug)),
+
+  /** The signed-in user's own passport settings and the ribbons they can pin. */
+  getPassportSettings: protectedProcedure.query(({ ctx }) => getOwnPassportSettings(ctx.user)),
+
+  /** Save the signed-in user's passport visibility, signature and pinned ribbons. */
+  updatePassportSettings: lightMutationProcedure
+    .input(settingsInput)
+    .mutation(({ ctx, input }) => updateOwnPassportSettings(ctx.user, input)),
 });

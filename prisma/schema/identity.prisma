@@ -1,0 +1,28 @@
+// IxStates — IxnayID identity models
+
+/// Owner-controlled display settings for the public IxnayID passport. One row per user; a user
+/// without a row gets the defaults below. Hidden sections are stripped server-side from the public
+/// passport queries (src/server/modules/identity/identity.privacy.ts), not merely hidden in the UI.
+model PassportPreference {
+  id               String   @id @default(cuid())
+  /// User.id (database id). Plain column, no relation, so core.prisma stays untouched.
+  userId           String   @unique
+  /// Lorewards score, rank, laurels and award history.
+  showLorewards    Boolean  @default(true)
+  /// Collection category breadth ("Focus").
+  showFocus        Boolean  @default(true)
+  /// Forum message, reaction and trophy counters.
+  showForumStats   Boolean  @default(true)
+  /// IxCredits balance and the Vault collection.
+  showVault        Boolean  @default(true)
+  /// Cross-platform activity History stream.
+  showHistory      Boolean  @default(true)
+  /// Unlocked achievements and the ribbons derived from them (passport and country-page rack).
+  showAchievements Boolean  @default(true)
+  /// Signature inscription shown on the passport front; null falls back to the display name.
+  signature        String?  @db.VarChar(60)
+  /// Up to 3 achievement keys the owner pinned to the signature ribbon shelf, in display order.
+  pinnedRibbonKeys String[] @default([])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
