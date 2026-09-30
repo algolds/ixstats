@@ -3,13 +3,33 @@
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `ELECT` | **Domain Accent:** Imperial Purple / Amber Gold  
-**Route:** `/mycountry/politics` (Politics Domain) | **Status:** 🟡 Partial: parties and legislature setup work; no election is ever started, so bills cannot pass (see [SYSTEM_STATUS.md](SYSTEM_STATUS.md))  
+**Route:** `/mycountry/politics` (Politics Domain) | **Status:** 🟡 Partial: the full loop works (setup → first election → seated parties → bills), but elections resolve only when the `elections` cron is enabled or the owner counts a due election (see [SYSTEM_STATUS.md](SYSTEM_STATUS.md))  
 
 Elections, political parties, and legislature management form the parliamentary governance simulation layer of MyCountry. Sovereign states configure unicameral/bicameral (or custom multi-chamber) legislatures, manage political parties, table Bills, and have elections resolved on the IxTime clock with D'Hondt, FPTP, or mixed seat allocation.
 
-> **Current gap:** elections are resolved only by the scheduled cron (`processDueElections`). The manual `simulateElection`, `scheduleElection`, and `registerCandidate` procedures were deleted in plan 312 as zero-caller procedures. An election needs at least 2 registered candidates to resolve, and no current API or UI registers candidates. The follow-up election the cron auto-schedules therefore stays `upcoming` until candidates exist.
->
-> The gap is wider than follow-ups: `election.create` is called only from that follow-up branch of `election-cron.ts` (and the demo seed), so no first election or candidate is ever created for a real nation. Seats are created without a party (`legislature.ts`), so `legislation.holdVote` finds no voting blocs and throws "No seated legislature": bills cannot pass. The 11-step algorithm below describes code that a real nation cannot currently reach.
+## Election lifecycle (MC-2)
+
+`src/lib/government/election-lifecycle.ts` connects setup to a seated chamber:
+
+1. **Scheduling** (`ensureUpcomingElection`). Once a country has a legislature and at least `MIN_ELECTION_PARTIES` (2) active parties, it gets an upcoming election. The first one is held `FIRST_ELECTION_DELAY_IX_DAYS` (30) IxTime days after setup. This is called by:
+   - `configureLegislature`. The chamber's seats are recreated vacant, so this call is a *snap* one: any upcoming election further out than the 30-day window is pulled forward and renamed "Snap Election".
+   - `createParty`, and `updateParty` when a party is re-activated.
+   - The `elections` cron sweep, for every legislature with no election queued. This covers nations set up before MC-2 and any follow-up that is missing.
+2. **Candidates** (`syncElectionCandidates`). When the polls close, every active party of the country is put on the ballot as one list candidate: its leader's name, or "<party> list" if it has no leader. Charisma is left at the neutral default. Candidates of parties that have gone inactive are dropped.
+3. **Resolution** (`resolveElection`). The election is claimed (`upcoming` → `voting`) so the cron and the owner's button cannot count it twice. It is then counted with the shared `simulateElectionCore`, which seats `LegislativeSeat.partyId` by vote share. Finally the next general election is queued one term later, never in the past. If the election cannot resolve (fewer than 2 parties) or throws, the claim is released back to `upcoming` and a later pass retries.
+4. **Bills.** With seats carrying parties, `legislation.holdVote` / `previewBillVote` tally real voting blocs through `lib/statecraft/{legislative-vote,whip}.ts`.
+
+Elections resolve in two ways:
+- The `elections` cron (`processDueElections`, every 10 minutes), which does nothing unless `elections` is listed in `CRON_ENABLED_JOBS`.
+- `elections.resolveDueElection` (the **Count votes** button). It is owner-only and counts only an election that is already due on the IxTime clock, so there is no early vote and no re-roll.
+
+The politics surface (`ElectionStatusCard`, fed by `elections.getElectionStatus`) shows the lifecycle state:
+- the setup that is missing;
+- "First election scheduled for <IxTime date>", or "polls have closed";
+- the last result;
+- seats held versus vacant.
+
+Chambers with a non-elected selection method (appointed, sortition, …) are still seated by the vote count; the simulation does not yet treat them differently.
 
 ---
 
@@ -30,9 +50,10 @@ Elections, political parties, and legislature management form the parliamentary 
 ## Key Files & Routers
 
 ### Router
-- `src/server/api/routers/elections/` (`index.ts`, `elections.ts`, `parties.ts`, `legislature.ts`, `brokers.ts`) – 9 procedures: `getElections`, `getCurrentParliament`, `getLegislature`, `configureLegislature`, `getParties`, `createParty`, `updateParty`, `deleteParty`, `getPowerBrokers`
+- `src/server/api/routers/elections/` (`index.ts`, `elections.ts`, `parties.ts`, `legislature.ts`, `brokers.ts`) – 11 procedures: `getElections`, `getElectionStatus`, `resolveDueElection`, `getCurrentParliament`, `getLegislature`, `configureLegislature`, `getParties`, `createParty`, `updateParty`, `deleteParty`, `getPowerBrokers`
 - `src/server/api/routers/legislation.ts` – Bills (`getBills`, `proposeBill`, `previewBillVote`, `holdVote`)
-- `src/lib/government/election-cron.ts` / `election-simulation.ts` – Scheduled resolution and the shared simulation core
+- `src/lib/government/election-lifecycle.ts` – Scheduling, candidates and claim-then-resolve (shared by the cron and `resolveDueElection`)
+- `src/lib/government/election-cron.ts` / `election-simulation.ts` – Cron driver (resolve due elections, then sweep for unscheduled legislatures) and the shared simulation core
 
 ### UI Components
 - `src/components/mycountry/shell/PoliticsDrillDown.tsx` & `rails/PoliticsRail.tsx` – Politics domain surface and context rail
@@ -41,6 +62,7 @@ Elections, political parties, and legislature management form the parliamentary 
 - `src/components/executive/politics/BillsPanel.tsx` / `PowerBrokersPanel.tsx` – Bills with fogged vote projection; power broker standings
 - `src/components/executive/politics/ParliamentHemicycle.tsx` – Hemicycle seat visualization with party colors and tooltip breakdowns
 - `src/components/executive/politics/LegislaturePanel.tsx` – Seat distribution tables and coalition indicators
+- `src/components/executive/politics/ElectionStatusCard.tsx` – Election lifecycle state above the politics tabs (next/first election date, Count votes, last result, seats held)
 - `src/components/executive/politics/CabinetPanel.tsx` – Ministerial appointments and department allocations
 
 ### Pages
@@ -53,7 +75,7 @@ Elections, political parties, and legislature management form the parliamentary 
 
 ```mermaid
 graph TD
-    A[Cron: Election Due on IxTime] --> B[1. Calculate Economic Modifier]
+    A[Cron or Count votes: Election Due on IxTime] --> B[1. Calculate Economic Modifier]
     B --> C[2. Compute Vote Share per Party]
     C --> D[3. Allocate Seats via D'Hondt / FPTP / Mixed]
     D --> E[4. Persist ElectionResult Records]
@@ -66,7 +88,7 @@ graph TD
     K --> L[11. Broadcast Results to ThinkPages]
 ```
 
-1. **Economic Modifier**: GDP growth boosts the first-listed (incumbent) party (up to $+10\%$), recession penalizes it (up to $-15\%$); other parties move by half the modifier in the opposite direction.
+1. **Economic Modifier**: GDP growth boosts the incumbent (the party holding the most seats going in) by up to $+10\%$, and recession penalizes it by up to $-15\%$. Other parties move by half the modifier in the opposite direction. A first election has no incumbent, so the economy moves nobody.
 2. **Per-Party Vote Share**: Base support $\pm$ economic modifier $\pm$ charisma swing ($\pm 5\%$) $\pm$ random variance ($\pm 7.5\%$).
 3. **Seat Allocation**: D'Hondt (proportional), FPTP (plurality), or Mixed (50/50).
 4. **Result Persistence**: Writes per-candidate vote tallies and seats won to `ElectionResult`.

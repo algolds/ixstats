@@ -124,7 +124,7 @@ export async function simulateElectionCore(
     where: { id: electionId },
     include: {
       candidates: { include: { party: true } },
-      legislature: true,
+      legislature: { include: { seats: { select: { partyId: true } } } },
       country: true,
     },
   });
@@ -135,7 +135,14 @@ export async function simulateElectionCore(
   const country = election.country;
   const legislature = election.legislature;
 
-  // Step 1: Economic performance modifier (good economy → incumbent benefits)
+  // Step 1: Economic performance modifier (good economy → incumbent benefits).
+  // The incumbent is the party holding the most seats going in; a first election (no seated
+  // party) has no incumbent, so the economy moves nobody.
+  const seatsHeld = new Map<string, number>();
+  for (const seat of legislature.seats) {
+    if (seat.partyId) seatsHeld.set(seat.partyId, (seatsHeld.get(seat.partyId) ?? 0) + 1);
+  }
+  const incumbentPartyId = [...seatsHeld.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   const gdpGrowth = country.adjustedGdpGrowth;
   const economicModifier =
     gdpGrowth > 0 ? Math.min(gdpGrowth * 100, 10) : Math.max(gdpGrowth * 150, -15);
@@ -145,9 +152,10 @@ export async function simulateElectionCore(
   for (const candidate of election.candidates) {
     const party = candidate.party;
     let support = party.currentSupport;
-    const isFirstParty = election.candidates.indexOf(candidate) === 0;
-    if (isFirstParty) support += economicModifier;
-    else support -= economicModifier * 0.5;
+    if (incumbentPartyId) {
+      if (party.id === incumbentPartyId) support += economicModifier;
+      else support -= economicModifier * 0.5;
+    }
     const charismaSwing = (candidate.charisma - 50) / 10;
     support += charismaSwing;
     const randomSwing = (Math.random() - 0.5) * 15;
