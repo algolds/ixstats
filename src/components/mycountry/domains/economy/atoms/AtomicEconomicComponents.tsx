@@ -9,7 +9,8 @@
  */
 
 import React, { useState, useMemo, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -33,10 +34,7 @@ import {
 } from "~/lib/economy/atomic-data";
 
 // Shared Atomic Primitives
-import {
-  InstitutionalFoundationRibbon,
-  AtomicFilterBar,
-} from "~/components/shared/atomic-picker";
+import { InstitutionalFoundationRibbon, AtomicFilterBar } from "~/components/shared/atomic-picker";
 
 // Usage tracking
 import { api } from "~/trpc/react";
@@ -155,13 +153,15 @@ export function AtomicEconomicComponentSelector({
   const workspaceContent = (
     <div className="space-y-6">
       {/* Filter, Search and Template Selector Row */}
-      <div className="border-b border-border/40 pb-6">
+      <div className="border-border/40 border-b pb-6">
         <AtomicFilterBar
           searchQuery={builder.search.query}
           onSearchChange={builder.search.setQuery}
           categories={categories}
           selectedCategory={builder.categoryFilter.category}
-          onCategoryChange={(cat) => builder.categoryFilter.setCategory(cat as EconomicCategory | null)}
+          onCategoryChange={(cat) =>
+            builder.categoryFilter.setCategory(cat as EconomicCategory | null)
+          }
           categoryCounts={categoryCounts}
           templates={ECONOMIC_TEMPLATES}
           onTemplateSelect={builder.templates.load}
@@ -175,10 +175,8 @@ export function AtomicEconomicComponentSelector({
         <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                Available Components
-              </h3>
-              <Badge variant="outline" className="font-mono text-xs text-muted-foreground">
+              <Eyebrow className="block">Available components</Eyebrow>
+              <Badge variant="secondary" className="font-mono tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} selected
               </Badge>
             </div>
@@ -194,7 +192,7 @@ export function AtomicEconomicComponentSelector({
 
         {/* Selected Components Sidebar List (1/3 width) */}
         {!hideSelectedList && (
-          <div className="border-t border-border/40 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+          <div className="border-border/40 border-t pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
             <SelectedComponentsList
               selectedComponents={builder.selectedComponents}
               onDeselect={builder.handleDeselect}
@@ -219,7 +217,7 @@ export function AtomicEconomicComponentSelector({
 
         {/* Validation Errors */}
         {!builder.validation.valid && builder.validation.errors.length > 0 && (
-          <Alert variant="destructive" className="border-red-500/30 bg-red-500/10 text-red-400">
+          <Alert variant="destructive">
             <AlertDescription>
               <ul className="list-inside list-disc space-y-1 text-xs font-semibold">
                 {builder.validation.errors.map((error, index) => (
@@ -268,9 +266,9 @@ export function AtomicEconomicComponentSelector({
         {standalone ? (
           workspaceContent
         ) : (
-          <Card className="border-border/40 bg-card/40 shadow-xl backdrop-blur-xl">
-            <div className="space-y-6 p-6">{workspaceContent}</div>
-          </Card>
+          <FacetCard className="rounded-3xl">
+            <FacetCardContent className="space-y-6 p-6">{workspaceContent}</FacetCardContent>
+          </FacetCard>
         )}
       </div>
     </TooltipProvider>
@@ -337,46 +335,44 @@ export function AtomicEconomicBuilder({
   return (
     <div className="atomic-economic-builder space-y-6">
       {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <DollarSign className="h-6 w-6" />
-              Atomic Economic System Builder
-            </span>
-            <div className="flex items-center gap-2">
-              {!isReadOnly && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReset}
-                    disabled={builder.selectedComponents.length === 0}
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Reset
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={!builder.validation.valid}
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Configuration
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+      <FacetCard className="rounded-3xl">
+        <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-3 pb-3">
+          <h2 className="text-foreground flex items-center gap-2 text-base font-semibold">
+            <DollarSign aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+            Atomic economic system builder
+          </h2>
+          <div className="flex items-center gap-2">
+            {!isReadOnly && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  disabled={builder.selectedComponents.length === 0}
+                >
+                  <RotateCcw aria-hidden="true" />
+                  Reset
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={!builder.validation.valid}
+                >
+                  <Save aria-hidden="true" />
+                  Save Configuration
+                </Button>
+              </>
+            )}
+          </div>
+        </FacetCardHeader>
+        <FacetCardContent className="px-6 pb-6">
+          <p className="text-muted-foreground text-sm">
             Build your economy by selecting complementary components. Discover synergies and avoid
             conflicts to maximize effectiveness.
           </p>
-        </CardContent>
-      </Card>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Validation Alerts */}
       {!builder.validation.valid && (
@@ -416,21 +412,23 @@ export function AtomicEconomicBuilder({
       )}
 
       {/* Filter and Search */}
-      <Card>
-        <CardContent className="space-y-4 pt-6">
+      <FacetCard className="rounded-3xl">
+        <FacetCardContent className="space-y-4 p-6">
           <AtomicFilterBar
             searchQuery={builder.search.query}
             onSearchChange={builder.search.setQuery}
             categories={categories}
             selectedCategory={builder.categoryFilter.category}
-            onCategoryChange={(cat) => builder.categoryFilter.setCategory(cat as EconomicCategory | null)}
+            onCategoryChange={(cat) =>
+              builder.categoryFilter.setCategory(cat as EconomicCategory | null)
+            }
             categoryCounts={categoryCounts}
             templates={ECONOMIC_TEMPLATES}
             onTemplateSelect={builder.templates.load}
             searchPlaceholder="Search economic components..."
           />
-        </CardContent>
-      </Card>
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -465,10 +463,10 @@ export function AtomicEconomicBuilder({
 
       {/* Action Buttons (Bottom) */}
       {!isReadOnly && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+        <FacetCard className="rounded-3xl">
+          <FacetCardContent className="p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-muted-foreground text-sm tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} components selected
               </div>
               <div className="flex items-center gap-2">
@@ -478,13 +476,13 @@ export function AtomicEconomicBuilder({
                   </Button>
                 )}
                 <Button variant="default" onClick={handleSave} disabled={!builder.validation.valid}>
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save aria-hidden="true" />
                   Save Economic Configuration
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
   Heart,
@@ -14,7 +15,7 @@ import {
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -89,27 +90,23 @@ export function DemographicsHealthModal({
     const currentDeathRate = demographics?.deathRate || 8;
     const currentMedianAge = demographics?.medianAge || countryData?.medianAge || 30;
 
-    return filterAndSortHistory(
-      historicalData,
-      timeRange,
-      (point, formattedDate, timestamp) => ({
-        date: formattedDate,
-        timestamp,
-        population: (point.population || 0) / 1e6,
-        lifeExpectancy: currentLifeExpectancy,
-        birthRate: currentBirthRate,
-        deathRate: currentDeathRate,
-        medianAge: currentMedianAge,
-      })
-    );
+    return filterAndSortHistory(historicalData, timeRange, (point, formattedDate, timestamp) => ({
+      date: formattedDate,
+      timestamp,
+      population: (point.population || 0) / 1e6,
+      lifeExpectancy: currentLifeExpectancy,
+      birthRate: currentBirthRate,
+      deathRate: currentDeathRate,
+      medianAge: currentMedianAge,
+    }));
   };
 
   const chartConfig = {
-    lifeExpectancy: { label: "Life Expectancy", color: "#06b6d4" },
-    birthRate: { label: "Birth Rate", color: "#3b82f6" },
-    deathRate: { label: "Death Rate", color: "#ef4444" },
-    medianAge: { label: "Median Age", color: "#8b5cf6" },
-    population: { label: "Population (M)", color: "#fbbf24" },
+    lifeExpectancy: { label: "Life Expectancy", color: "var(--chart-2)" },
+    birthRate: { label: "Birth Rate", color: "var(--color-blue-500)" },
+    deathRate: { label: "Death Rate", color: "var(--destructive)" },
+    medianAge: { label: "Median Age", color: "var(--chart-1)" },
+    population: { label: "Population (M)", color: "var(--color-amber-500)" },
   };
 
   const getHealthLevel = (
@@ -124,32 +121,32 @@ export function DemographicsHealthModal({
     if (lifeExpectancy >= 78)
       return {
         label: "Excellent",
-        color: "text-green-400",
-        bg: "bg-green-500/10",
-        border: "border-green-500/20",
+        color: "text-emerald-500",
+        bg: "bg-muted/50",
+        border: "border-border",
         variant: "default",
       };
     if (lifeExpectancy >= 72)
       return {
         label: "Good",
-        color: "text-cyan-400",
-        bg: "bg-cyan-500/10",
-        border: "border-cyan-500/20",
+        color: "text-foreground",
+        bg: "bg-muted/50",
+        border: "border-border",
         variant: "default",
       };
     if (lifeExpectancy >= 65)
       return {
         label: "Average",
-        color: "text-amber-400",
-        bg: "bg-amber-500/10",
-        border: "border-amber-500/20",
+        color: "text-amber-500",
+        bg: "bg-muted/50",
+        border: "border-border",
         variant: "secondary",
       };
     return {
       label: "Below Average",
-      color: "text-red-400",
-      bg: "bg-red-500/10",
-      border: "border-red-500/20",
+      color: "text-destructive",
+      bg: "bg-muted/50",
+      border: "border-border",
       variant: "destructive",
     };
   };
@@ -212,63 +209,58 @@ export function DemographicsHealthModal({
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-cyan-500" />
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-6"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Activity className="text-muted-foreground h-5 w-5" />
                 Health & Vitality
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Population health indicators and quality of life metrics.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-center p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-red-400 tabular-nums">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-destructive text-lg font-bold tabular-nums">
                     {(demographics?.deathRate || 0).toFixed(1)}/1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Death Rate
-                  </div>
+                  <Eyebrow className="mt-1 block">Death Rate</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-emerald-400 tabular-nums">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-lg font-semibold text-emerald-500 tabular-nums">
                     {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}
                     /1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Natural Growth
-                  </div>
+                  <Eyebrow className="mt-1 block">Natural Growth</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-cyan-400 tabular-nums">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold tabular-nums">
                     {(demographics?.migrationRate || 0).toFixed(1)}/1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Migration Rate
-                  </div>
+                  <Eyebrow className="mt-1 block">Migration Rate</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-indigo-400 tabular-nums">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold tabular-nums">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Dependency Ratio
-                  </div>
+                  <Eyebrow className="mt-1 block">Dependency Ratio</Eyebrow>
                 </div>
               </div>
 
-              <div className="text-muted-foreground mt-6 flex items-start gap-3 rounded-lg border border-cyan-500/10 bg-cyan-500/5 p-4 text-xs">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-500" />
+              <div className="text-muted-foreground bg-muted/50 mt-6 flex items-start gap-3 rounded-xl p-4 text-xs">
+                <Info className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                 <p className="leading-relaxed">
                   Health and Demographics track the biological vitality of your citizens. Balanced
                   median age supports stable labor pipelines, while natural population growth
                   sustains resource-consumption curves and tax bases.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -301,9 +293,7 @@ export function DemographicsHealthModal({
             className={`facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border p-4 ${healthLevel.bg} ${healthLevel.border}`}
           >
             <div>
-              <span className="text-muted-foreground block text-xs font-medium tracking-wider uppercase">
-                Health Status
-              </span>
+              <Eyebrow className="block">Health Status</Eyebrow>
               <div className="mt-2">
                 <span className={`text-lg font-bold tracking-tight ${healthLevel.color}`}>
                   {healthLevel.label}
@@ -338,12 +328,12 @@ export function DemographicsHealthModal({
 
     if (processedData.length === 0) {
       return (
-        <Card className="facet-refraction border-white/5">
-          <CardContent className="py-12 text-center">
+        <FacetCard surface="solid" className="rounded-xl">
+          <FacetCardContent className="py-12 text-center">
             <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-muted-foreground">No historical data available</p>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       );
     }
 
@@ -353,38 +343,36 @@ export function DemographicsHealthModal({
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Demographics Trends</CardTitle>
-              <CardDescription>Historical population and vital statistics</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+          <FacetCard surface="solid" className="rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base font-semibold">Demographics Trends</h3>
+              <p className="text-muted-foreground text-sm">
+                Historical population and vital statistics
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ChartComponent data={processedData}>
                     <defs>
                       <linearGradient id="popGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--color-amber-500)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--color-amber-500)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="lifeGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" stroke="var(--muted-foreground)" tickLine={false} />
+                    <YAxis stroke="var(--muted-foreground)" tickLine={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     {chartType === "area" ? (
                       <Area
                         type="monotone"
                         dataKey="population"
-                        stroke="#fbbf24"
+                        stroke="var(--color-amber-500)"
                         fillOpacity={1}
                         fill="url(#popGrad)"
                         strokeWidth={2}
@@ -393,7 +381,7 @@ export function DemographicsHealthModal({
                     ) : chartType === "bar" ? (
                       <Bar
                         dataKey="population"
-                        fill="#fbbf24"
+                        fill="var(--color-amber-500)"
                         name="Population (M)"
                         radius={[4, 4, 0, 0]}
                       />
@@ -402,7 +390,7 @@ export function DemographicsHealthModal({
                         <Line
                           type="monotone"
                           dataKey="population"
-                          stroke="#fbbf24"
+                          stroke="var(--color-amber-500)"
                           strokeWidth={2}
                           dot={false}
                           name="Population (M)"
@@ -410,7 +398,7 @@ export function DemographicsHealthModal({
                         <Line
                           type="monotone"
                           dataKey="lifeExpectancy"
-                          stroke="#06b6d4"
+                          stroke="var(--chart-2)"
                           strokeWidth={2}
                           dot={false}
                           name="Life Expectancy"
@@ -420,35 +408,29 @@ export function DemographicsHealthModal({
                   </ChartComponent>
                 </ResponsiveContainer>
               </ChartContainer>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Peak Population
-              </span>
-              <span className="text-xl font-bold text-amber-500">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Peak Population</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {trendStats?.maxPopulation ? `${trendStats.maxPopulation.toFixed(2)} M` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Avg Life Expectancy
-              </span>
-              <span className="text-xl font-bold text-cyan-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Avg Life Expectancy</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {trendStats?.avgLifeExpectancy
                   ? `${trendStats.avgLifeExpectancy.toFixed(1)} yrs`
                   : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Data Points
-              </span>
-              <span className="text-xl font-bold text-blue-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Data Points</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {trendStats?.dataPoints || 0}
               </span>
             </div>
@@ -497,62 +479,58 @@ export function DemographicsHealthModal({
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex-1 border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-cyan-500" />
+          <FacetCard surface="solid" className="flex-1 rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Globe className="text-muted-foreground h-5 w-5" />
                 Global Health Benchmark
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Compare demographic vitality indicators against standard global indexes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={compData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" tickLine={false} />
+                    <YAxis stroke="var(--muted-foreground)" tickLine={false} />
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(18, 20, 24, 0.8)",
-                        backdropFilter: "blur(8px)",
-                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        background: "var(--popover)",
+                        color: "var(--popover-foreground)",
+                        borderColor: "var(--border)",
                         borderRadius: "8px",
                       }}
                     />
-                    <Bar dataKey="Your Country" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Your Country" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
                     <Bar
                       dataKey="Global Avg"
-                      fill="rgba(255, 255, 255, 0.15)"
+                      fill="var(--muted-foreground)"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                vs Global Avg Life
-              </span>
-              <span className="text-xl font-bold text-cyan-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">vs Global Avg Life</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {lifeExpectancy >= globalAvgLife ? "Above Average" : "Below Average"}
               </span>
               <span className="text-muted-foreground mt-1 text-xs">
                 Life: {lifeExpectancy.toFixed(1)} yrs vs {globalAvgLife} yrs Avg
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Natural Growth
-              </span>
-              <span className="text-xl font-bold text-green-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Natural Growth</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {(demographics?.birthRate || 0) > (demographics?.deathRate || 0)
                   ? "Positive"
                   : "Negative"}
@@ -562,11 +540,9 @@ export function DemographicsHealthModal({
                 {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}/1k
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Age Structure
-              </span>
-              <span className="text-xl font-bold text-blue-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Age Structure</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {(demographics?.medianAge || 0) < 25
                   ? "Young"
                   : (demographics?.medianAge || 0) < 35
@@ -601,44 +577,54 @@ export function DemographicsHealthModal({
     const demographics = economyData?.demographics;
     const ageDistribution = demographics?.ageDistribution;
     const youthPct = Array.isArray(ageDistribution)
-      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) => a.group?.includes("0-14"))?.percent || 25
+      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) =>
+          a.group?.includes("0-14")
+        )?.percent || 25
       : 25;
     const workingPct = Array.isArray(ageDistribution)
-      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) => a.group?.includes("15-64") || a.group?.includes("15-"))
-          ?.percent || 60
+      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find(
+          (a) => a.group?.includes("15-64") || a.group?.includes("15-")
+        )?.percent || 60
       : 60;
     const elderlyPct = Array.isArray(ageDistribution)
-      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) => a.group?.includes("65"))?.percent || 15
+      ? (ageDistribution as Array<{ group?: string; percent?: number }>).find((a) =>
+          a.group?.includes("65")
+        )?.percent || 15
       : 15;
 
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Age Distribution</CardTitle>
-              <CardDescription>Population breakdown by age group</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 p-0">
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-6"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base font-semibold">Age Distribution</h3>
+              <p className="text-muted-foreground text-sm">Population breakdown by age group</p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex-1 p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-blue-400">{youthPct.toFixed(0)}%</div>
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
+                    {youthPct.toFixed(0)}%
+                  </div>
                   <div className="text-muted-foreground mt-1 text-xs">0-14 Years</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-green-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-lg font-semibold text-emerald-500">
                     {workingPct.toFixed(0)}%
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">15-64 Years</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-indigo-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     {elderlyPct.toFixed(0)}%
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">65+ Years</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-amber-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">Dependency Ratio</div>
@@ -649,70 +635,74 @@ export function DemographicsHealthModal({
                 Array.isArray(demographics.educationLevels) &&
                 demographics.educationLevels.length > 0 && (
                   <div className="mt-8">
-                    <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+                    <h4 className="text-foreground mb-3 text-sm font-semibold">
                       Education Attainment
                     </h4>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      {(demographics.educationLevels as Array<{ level?: string; percentage?: number; percent?: number; color?: string }>).slice(0, 8).map((level, i) => (
-                        <div
-                          key={level.level || i}
-                          className="rounded-xl border border-white/5 bg-white/5 p-3 text-center"
-                        >
+                      {(
+                        demographics.educationLevels as Array<{
+                          level?: string;
+                          percentage?: number;
+                          percent?: number;
+                          color?: string;
+                        }>
+                      )
+                        .slice(0, 8)
+                        .map((level, i) => (
                           <div
-                            className="text-base font-semibold"
-                            style={{ color: level.color || "var(--color-chart-2)" }}
+                            key={level.level || i}
+                            className="bg-muted/50 rounded-xl p-3 text-center"
                           >
-                            {(level.percentage || level.percent || 0).toFixed(0)}%
+                            <div
+                              className="text-base font-semibold"
+                              style={{ color: level.color || "var(--color-chart-2)" }}
+                            >
+                              {(level.percentage || level.percent || 0).toFixed(0)}%
+                            </div>
+                            <div className="text-muted-foreground mt-1 text-xs">{level.level}</div>
                           </div>
-                          <div className="text-muted-foreground mt-1 text-xs">
-                            {level.level}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="text-sm font-semibold">Societal Structure</CardTitle>
-              <CardDescription className="text-xs">
-                Education & Urbanization benchmarks
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 p-0">
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Literacy Rate
-                </span>
-                <div className="mt-1 text-lg font-bold text-green-400">
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-4"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base text-sm font-semibold">
+                Societal Structure
+              </h3>
+              <p className="text-muted-foreground text-xs">Education & Urbanization benchmarks</p>
+            </FacetCardHeader>
+            <FacetCardContent className="space-y-4 p-0">
+              <div className="bg-muted/50 rounded-xl p-3">
+                <Eyebrow>Literacy Rate</Eyebrow>
+                <div className="mt-1 text-lg font-semibold text-emerald-500">
                   {(demographics?.literacyRate || 95).toFixed(1)}%
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Urban Population
-                </span>
-                <div className="mt-1 text-lg font-bold text-cyan-400">
+              <div className="bg-muted/50 rounded-xl p-3">
+                <Eyebrow>Urban Population</Eyebrow>
+                <div className="text-foreground mt-1 text-lg font-semibold">
                   {(demographics?.urbanRuralSplit?.urban || 60).toFixed(1)}%
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Rural Population
-                </span>
-                <div className="mt-1 text-lg font-bold text-emerald-400">
+              <div className="bg-muted/50 rounded-xl p-3">
+                <Eyebrow>Rural Population</Eyebrow>
+                <div className="mt-1 text-lg font-semibold text-emerald-500">
                   {(demographics?.urbanRuralSplit?.rural || 40).toFixed(1)}%
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );
@@ -727,7 +717,7 @@ export function DemographicsHealthModal({
       title="Demographics & Health"
       description="Population health and quality of life metrics"
       icon={Heart}
-      iconColor="text-green-500"
+      iconColor="text-emerald-500"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}

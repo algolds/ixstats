@@ -6,7 +6,6 @@ import {
   ThumbsDown,
   MinusCircle,
   Plus,
-  SystemRestart as Loader2,
   CheckCircle as CheckCircle2,
   XmarkCircle as XCircle,
   Clock,
@@ -40,17 +39,14 @@ interface CollectiveActionsPanelProps {
 }
 
 const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
-  proposed: { icon: Clock, color: "text-yellow-500" },
-  approved: { icon: CheckCircle2, color: "text-blue-500" },
-  active: { icon: CheckCircle2, color: "text-green-500" },
-  rejected: { icon: XCircle, color: "text-red-500" },
-  expired: { icon: MinusCircle, color: "text-gray-500" },
+  proposed: { icon: Clock, color: "text-amber-500" },
+  approved: { icon: CheckCircle2, color: "text-foreground" },
+  active: { icon: CheckCircle2, color: "text-emerald-500" },
+  rejected: { icon: XCircle, color: "text-destructive" },
+  expired: { icon: MinusCircle, color: "text-muted-foreground" },
 };
 
-export function CollectiveActionsPanel({
-  allianceId,
-  myRole,
-}: CollectiveActionsPanelProps) {
+export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActionsPanelProps) {
   const [proposeOpen, setProposeOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [actionType, setActionType] = useState<string>("joint_statement");
@@ -80,12 +76,12 @@ export function CollectiveActionsPanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold">Alliance Actions</h4>
+        <h4 className="text-foreground text-sm font-semibold">Alliance Actions</h4>
         {canPropose && (
           <Dialog open={proposeOpen} onOpenChange={setProposeOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
-                <Plus className="mr-1 h-3 w-3" />
+                <Plus className="h-3.5 w-3.5" />
                 Propose
               </Button>
             </DialogTrigger>
@@ -141,10 +137,7 @@ export function CollectiveActionsPanel({
                   disabled={!title || proposeMutation.isPending}
                   className="w-full"
                 >
-                  {proposeMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Submit Proposal
+                  {proposeMutation.isPending ? "Submitting…" : "Submit Proposal"}
                 </Button>
               </div>
             </DialogContent>
@@ -164,15 +157,15 @@ export function CollectiveActionsPanel({
             const isPending = action.status === "proposed";
 
             return (
-              <div key={action.id} className="rounded-lg border p-3 text-sm">
+              <div key={action.id} className="border-border bg-card rounded-xl border p-3 text-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
                       <StatusIcon className={`h-3 w-3 ${statusCfg.color}`} />
-                      <span className="font-medium">{action.title}</span>
+                      <span className="text-foreground font-medium">{action.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="capitalize">
                         {action.actionType.replace("_", " ")}
                       </Badge>
                       <span className="text-muted-foreground text-xs">
@@ -187,33 +180,36 @@ export function CollectiveActionsPanel({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-green-500 hover:text-green-600"
+                        className="h-8 w-8 text-emerald-500 hover:text-emerald-500"
+                        aria-label="Vote for"
                         onClick={() => voteMutation.mutate({ actionId: action.id, vote: "for" })}
                         disabled={voteMutation.isPending}
                       >
-                        <ThumbsUp className="h-3 w-3" />
+                        <ThumbsUp className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-red-500 hover:text-red-600"
+                        className="text-destructive hover:text-destructive h-8 w-8"
+                        aria-label="Vote against"
                         onClick={() =>
                           voteMutation.mutate({ actionId: action.id, vote: "against" })
                         }
                         disabled={voteMutation.isPending}
                       >
-                        <ThumbsDown className="h-3 w-3" />
+                        <ThumbsDown className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-gray-500 hover:text-gray-600"
+                        className="text-muted-foreground h-8 w-8"
+                        aria-label="Abstain"
                         onClick={() =>
                           voteMutation.mutate({ actionId: action.id, vote: "abstain" })
                         }
                         disabled={voteMutation.isPending}
                       >
-                        <MinusCircle className="h-3 w-3" />
+                        <MinusCircle className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   )}

@@ -113,20 +113,20 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
   };
 
   return (
-    <FacetCard
-      depth={1}
-      interactive="none"
-      className="bg-card/30 overflow-hidden rounded-xl border border-white/10 p-6 backdrop-blur-md"
-    >
-      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+    <FacetCard depth={1} interactive="none" className="overflow-hidden rounded-2xl p-6">
+      <div className="border-border flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
-          <Upload className="h-4 w-4 text-blue-400" />
-          <h3 className="text-foreground text-sm font-extrabold tracking-wider uppercase">
-            Import Document to Dossier
-          </h3>
+          <Upload className="text-muted-foreground h-4 w-4" />
+          <h3 className="text-foreground text-sm font-semibold">Import Document to Dossier</h3>
         </div>
         {onCancel && (
-          <Button variant="ghost" size="sm" onClick={onCancel} className="h-7 w-7 p-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCancel}
+            className="h-8 w-8"
+            aria-label="Cancel import"
+          >
             <X className="h-4 w-4" />
           </Button>
         )}
@@ -141,16 +141,14 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+            "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-[background-color,border-color,transform] duration-150",
             isDragging
-              ? "scale-[0.99] border-blue-500 bg-blue-500/10"
-              : "border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]"
+              ? "border-ring bg-accent scale-[0.99]"
+              : "border-border bg-muted/50 hover:border-ring/40 hover:bg-accent/50"
           )}
         >
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
-            <FileText className="h-6 w-6" />
-          </div>
-          <p className="text-foreground mb-1 text-sm font-bold">
+          <FileText className="text-muted-foreground mb-3 h-6 w-6" />
+          <p className="text-foreground mb-1 text-sm font-semibold">
             Drag & drop Markdown or Text file
           </p>
           <p className="text-muted-foreground mb-4 text-xs">
@@ -161,18 +159,18 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
               type="file"
               accept=".md,.txt,.json,.markdown"
               onChange={handleFileChange}
-              className="hidden"
+              className="peer sr-only"
             />
             <Button
               size="sm"
               variant="outline"
-              className="pointer-events-none border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+              className="peer-focus-visible:ring-ring pointer-events-none peer-focus-visible:ring-2"
             >
               Browse Files
             </Button>
           </label>
           {error && (
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-red-400">
+            <div className="text-destructive mt-4 flex items-center gap-1.5 text-xs">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -183,7 +181,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
           <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>
               Parsed <strong className="text-foreground">{parsedSections.length} section(s)</strong>{" "}
-              from <code className="text-blue-400">{fileName}</code>
+              from <code className="text-foreground">{fileName}</code>
             </span>
             <Button
               variant="ghost"
@@ -200,11 +198,8 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
 
           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
             {parsedSections.map((sec, idx) => (
-              <div
-                key={idx}
-                className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs"
-              >
-                <div className="text-foreground mb-1 flex items-center justify-between font-bold">
+              <div key={idx} className="border-border bg-card rounded-lg border p-3 text-xs">
+                <div className="text-foreground mb-1 flex items-center justify-between font-semibold">
                   <span>{sec.title}</span>
                   <select
                     value={sec.classification}
@@ -214,7 +209,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
                         prev.map((s, i) => (i === idx ? { ...s, classification: val } : s))
                       );
                     }}
-                    className="text-muted-foreground rounded border border-white/10 bg-black/40 px-2 py-0.5 text-xs"
+                    className="text-muted-foreground bg-muted rounded px-2 py-0.5 text-xs"
                   >
                     <option value="PUBLIC">PUBLIC</option>
                     <option value="ALLIANCE">ALLIANCE</option>
@@ -240,7 +235,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
             <Button
               size="sm"
               onClick={() => onImportSections(parsedSections)}
-              className="gap-1.5 bg-blue-600 text-xs font-bold text-white hover:bg-blue-500"
+              className="gap-1.5 text-xs"
             >
               <Check className="h-3.5 w-3.5" />
               Import {parsedSections.length} Section(s)

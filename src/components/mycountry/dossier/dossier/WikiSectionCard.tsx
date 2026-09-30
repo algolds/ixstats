@@ -8,6 +8,8 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   NavArrowDown as ChevronDown,
   ArrowRight,
@@ -21,12 +23,13 @@ import type { WikiSection } from "~/lib/builder";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { type WikiSource } from "~/lib/wiki-os/config";
 
+/** Classification is a sensitivity scale, so it keeps a status colour (text only). */
 const CLASSIFICATION_STYLES = {
-  PUBLIC: { color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  RESTRICTED: { color: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
-  CONFIDENTIAL: { color: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-  SECRET: { color: "bg-amber-600/15 text-amber-500 border-amber-600/30" },
-  TOP_SECRET: { color: "bg-red-500/15 text-red-400 border-red-500/30" },
+  PUBLIC: { color: "text-muted-foreground" },
+  RESTRICTED: { color: "text-foreground" },
+  CONFIDENTIAL: { color: "text-amber-500" },
+  SECRET: { color: "text-amber-500" },
+  TOP_SECRET: { color: "text-destructive" },
 } as const;
 
 interface WikiSectionCardProps {
@@ -55,10 +58,10 @@ export function WikiSectionCard({
 
   const getImportanceBadgeClass = (importance: string): string => {
     const importanceStyles = {
-      critical: "bg-red-500/15 text-red-400 border-red-500/30",
-      high: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-      medium: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-      low: "bg-gray-500/15 text-gray-400 border-gray-500/30",
+      critical: "text-destructive",
+      high: "text-amber-500",
+      medium: "text-foreground",
+      low: "text-muted-foreground",
     } as const;
 
     return importanceStyles[importance as keyof typeof importanceStyles] || importanceStyles.low;
@@ -68,53 +71,51 @@ export function WikiSectionCard({
 
   return (
     <Collapsible open={isOpen} onOpenChange={onToggle} id={section.id}>
-      <FacetCard
-        depth={1}
-        interactive="none"
-        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/20"
-      >
+      <FacetCard depth={1} interactive="none" className="overflow-hidden rounded-2xl">
         {/* Section Header Accordion Trigger */}
         <CollapsibleTrigger asChild>
-          <div className="flex cursor-pointer items-center justify-between border-b border-white/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.03] active:scale-[0.995] sm:p-5">
+          <button
+            type="button"
+            className="border-border hover:bg-accent/50 focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between border-b p-4 text-left transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-inset sm:p-5"
+          >
             <div className="flex min-w-0 items-center gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-500/25 bg-blue-500/15 text-blue-400 shadow-sm">
-                <SectionIcon className="h-5 w-5" />
-              </div>
+              <SectionIcon className="text-muted-foreground h-5 w-5 shrink-0" />
 
               <div className="min-w-0">
-                <h3 className="text-foreground flex items-center gap-2 truncate text-base font-extrabold tracking-tight">
+                <span className="text-foreground block truncate text-base font-semibold">
                   {section.title}
-                </h3>
-                <p className="text-muted-foreground truncate text-xs">
+                </span>
+                <span className="text-muted-foreground block truncate text-xs">
                   {section.wordCount} words • {section.images?.length || 0} media assets
-                </p>
+                </span>
               </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
               {/* Classification Badge */}
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase",
+              <Badge
+                variant="outline"
+                className={
                   CLASSIFICATION_STYLES[
                     section.classification as keyof typeof CLASSIFICATION_STYLES
                   ]?.color || CLASSIFICATION_STYLES.PUBLIC.color
-                )}
+                }
               >
                 {section.classification}
-              </span>
+              </Badge>
 
               {/* Importance Badge */}
-              <span
+              <Badge
+                variant="outline"
                 className={cn(
-                  "hidden items-center rounded-full border px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase sm:inline-flex",
+                  "hidden capitalize sm:inline-flex",
                   section.importance ? getImportanceBadgeClass(section.importance) : ""
                 )}
               >
-                {section.importance?.toUpperCase() ?? "MEDIUM"}
-              </span>
+                {section.importance ?? "medium"}
+              </Badge>
 
-              <div className="text-muted-foreground flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] transition-transform">
+              <div className="text-muted-foreground flex h-8 w-8 items-center justify-center">
                 <ChevronDown
                   className={cn(
                     "h-4 w-4 transition-transform duration-200",
@@ -123,7 +124,7 @@ export function WikiSectionCard({
                 />
               </div>
             </div>
-          </div>
+          </button>
         </CollapsibleTrigger>
 
         {/* Section Content */}
@@ -138,7 +139,7 @@ export function WikiSectionCard({
             {isTruncated && (
               <div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() =>
                     section.id &&
@@ -148,7 +149,7 @@ export function WikiSectionCard({
                       id: section.id,
                     })
                   }
-                  className="gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs font-bold text-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/20 hover:text-blue-300 active:scale-[0.98]"
+                  className="gap-1.5 text-xs"
                 >
                   Read Full Section <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
@@ -157,13 +158,11 @@ export function WikiSectionCard({
 
             {/* Immersive Apple Media Gallery */}
             {section.images && section.images.length > 0 && (
-              <div className="space-y-2 border-t border-white/5 pt-2">
-                <div className="text-muted-foreground flex items-center justify-between text-xs font-extrabold tracking-wider uppercase">
-                  <span className="flex items-center gap-1.5">
-                    <ImageIcon className="h-3.5 w-3.5 text-blue-400" />
-                    Section Media ({section.images.length})
-                  </span>
-                </div>
+              <div className="border-border space-y-2 border-t pt-2">
+                <Eyebrow className="flex items-center gap-1.5">
+                  <ImageIcon className="h-3.5 w-3.5" />
+                  Section media ({section.images.length})
+                </Eyebrow>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   {section.images.map((imageLink: string, index: number) => {
@@ -186,12 +185,12 @@ export function WikiSectionCard({
                             window.open(`${imgBaseUrl}File:${fileName}`, "_blank");
                           }
                         }}
-                        className="group relative aspect-video cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/30 hover:shadow-lg"
+                        className="group border-border bg-muted hover:border-ring/40 relative aspect-video cursor-pointer overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,transform] duration-150"
                       >
                         <img
                           src={resolvedSrc}
                           alt={`Media asset from ${section.title}`}
-                          className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover object-center"
                           onError={(e: React.SyntheticEvent<HTMLImageElement>) =>
                             (e.currentTarget.style.display = "none")
                           }
@@ -210,14 +209,14 @@ export function WikiSectionCard({
             )}
 
             {/* Apple Action Toolbar & External Links */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-3">
+            <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-3">
               <div className="flex items-center gap-2">
                 {wikiSource === "ixwiki" ? (
                   <Button
                     variant="outline"
                     size="sm"
                     asChild
-                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.06] active:scale-[0.98]"
+                    className="text-muted-foreground hover:text-foreground border-border bg-muted/50 hover:bg-accent/50 h-8 gap-1.5 rounded-xl border text-xs font-bold transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]"
                   >
                     <Link href={titleToWikiOSPath(section.sourcePage || section.title)}>
                       <ExternalLink className="h-3.5 w-3.5" /> View WikiOS Source
@@ -228,7 +227,7 @@ export function WikiSectionCard({
                     variant="outline"
                     size="sm"
                     asChild
-                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/[0.06] active:scale-[0.98]"
+                    className="text-muted-foreground hover:text-foreground border-border bg-muted/50 hover:bg-accent/50 h-8 gap-1.5 rounded-xl border text-xs font-bold transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]"
                   >
                     <a
                       href={`${wikiSource === "iiwiki" ? "https://iiwiki.com/wiki/" : "https://althistory.fandom.com/wiki/"}${encodeURIComponent(section.sourcePage || section.title)}`}
@@ -248,7 +247,7 @@ export function WikiSectionCard({
                   <span>Updated {new Date(section.lastModified).toLocaleDateString()}</span>
                 )}
                 {section.content.includes("[") && (
-                  <span className="font-bold text-blue-400">
+                  <span className="text-primary font-semibold">
                     {section.content.match(/\[\[[^\]]*\]\]/g)?.length || 0} wiki links
                   </span>
                 )}

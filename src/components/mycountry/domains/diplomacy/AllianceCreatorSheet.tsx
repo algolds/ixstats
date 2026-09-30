@@ -119,20 +119,10 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          padding: 0,
-          maxHeight: "85vh",
-          overflow: "hidden",
-        }}
-      >
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 shrink-0 text-cyan-500" />
+            <Users className="text-muted-foreground h-5 w-5 shrink-0" />
             Create New Alliance
           </DialogTitle>
           <p className="text-muted-foreground text-sm">
@@ -239,7 +229,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
           </div>
         </div>
 
-        <DialogFooter className="border-border/50 border-t px-6 py-4">
+        <DialogFooter className="border-border border-t px-6 py-4">
           <Button
             variant="outline"
             size="sm"

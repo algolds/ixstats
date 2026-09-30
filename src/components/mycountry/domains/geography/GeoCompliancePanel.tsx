@@ -12,6 +12,11 @@ import {
   Shield,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import type { ComplianceIssue, ComplianceSeverity } from "~/lib/country-geo";
 
 interface GeoCompliancePanelProps {
@@ -38,91 +43,96 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
   const summary = query.data?.summary ?? { errors: 0, warnings: 0, info: 0 };
 
   return (
-    <div className={`border-border bg-card/30 overflow-hidden rounded-lg border`}>
-      <button
-        type="button"
-        onClick={() => {
-          setOpen((v) => !v);
-          if (!query.data && !query.isLoading) query.refetch();
+    <FacetCard className="overflow-hidden rounded-2xl">
+      <Collapsible
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next && !query.data && !query.isLoading) query.refetch();
         }}
-        className="hover:bg-accent/30 flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors"
-        aria-expanded={open}
       >
-        <span className="flex items-center gap-1.5 text-xs font-semibold">
-          {open ? (
-            <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
-          ) : (
-            <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
-          )}
-          <Shield className="text-muted-foreground h-3.5 w-3.5" />
-          Geographic Data Compliance
-        </span>
-        <span className="flex items-center gap-1.5">
-          <ComplianceBadge count={summary.errors} tone="red" label="errors" />
-          <ComplianceBadge count={summary.warnings} tone="amber" label="warnings" />
-          <ComplianceBadge count={summary.info} tone="slate" label="info" />
-        </span>
-      </button>
+        <CollapsibleTrigger
+          data-cuelume-press="toggle"
+          className="hover:bg-accent/30 focus-visible:ring-ring flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 px-4 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset"
+        >
+          <span className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
+            {open ? (
+              <ChevronDown aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+            )}
+            <Shield aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+            Geographic Data Compliance
+          </span>
+          <span className="flex items-center gap-1.5">
+            <ComplianceBadge count={summary.errors} tone="critical" label="errors" />
+            <ComplianceBadge count={summary.warnings} tone="warning" label="warnings" />
+            <ComplianceBadge count={summary.info} tone="neutral" label="info" />
+          </span>
+        </CollapsibleTrigger>
 
-      {open && (
-        <div className="space-y-2 px-3 pb-3">
-          <div className="text-muted-foreground flex items-center justify-between text-xs">
-            <span>
-              {issues.length === 0
-                ? "All checks passed. The geographic data is internally consistent."
-                : `${issues.length} issue${issues.length === 1 ? "" : "s"} found.`}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                query.refetch();
-                onRefresh?.();
-              }}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-              disabled={query.isRefetching}
-            >
-              {query.isRefetching ? (
+        <CollapsibleContent>
+          <div className="space-y-2 px-4 pb-4">
+            <div className="text-muted-foreground flex items-center justify-between text-xs">
+              <span>
+                {issues.length === 0
+                  ? "All checks passed. The geographic data is internally consistent."
+                  : `${issues.length} issue${issues.length === 1 ? "" : "s"} found.`}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={() => {
+                  query.refetch();
+                  onRefresh?.();
+                }}
+                className="h-11 shrink-0 sm:h-7"
+                disabled={query.isRefetching}
+              >
+                {query.isRefetching ? (
+                  <Loader2 aria-hidden="true" className="animate-spin" />
+                ) : (
+                  <RefreshCw aria-hidden="true" />
+                )}
+                Re-run
+              </Button>
+            </div>
+
+            {query.isLoading && (
+              <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
                 <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3 w-3" />
-              )}
-              Re-run
-            </button>
+                Running compliance checks…
+              </div>
+            )}
+
+            {!query.isLoading && query.error && (
+              <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
+                <AlertTriangle className="h-3 w-3" />
+                {query.error.message}
+              </div>
+            )}
+
+            {!query.isLoading && !query.error && issues.length > 0 && (
+              <ul className="space-y-1.5">
+                {issues.map((issue) => (
+                  <li key={issue.id}>
+                    <ComplianceIssueRow issue={issue} />
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {!query.isLoading && !query.error && issues.length === 0 && (
+              <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
+                <CheckCircle2 aria-hidden="true" className="h-3 w-3 text-emerald-600" />
+                No issues. Population, GDP, capitals, and coordinates all check out.
+              </div>
+            )}
           </div>
-
-          {query.isLoading && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Running compliance checks…
-            </div>
-          )}
-
-          {!query.isLoading && query.error && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
-              <AlertTriangle className="h-3 w-3" />
-              {query.error.message}
-            </div>
-          )}
-
-          {!query.isLoading && !query.error && issues.length > 0 && (
-            <ul className="space-y-1.5">
-              {issues.map((issue) => (
-                <li key={issue.id}>
-                  <ComplianceIssueRow issue={issue} />
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {!query.isLoading && !query.error && issues.length === 0 && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
-              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-              No issues. Population, GDP, capitals, and coordinates all check out.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </FacetCard>
   );
 }
 
@@ -132,38 +142,41 @@ function ComplianceBadge({
   label,
 }: {
   count: number;
-  tone: "red" | "amber" | "slate" | "emerald";
+  tone: "critical" | "warning" | "neutral";
   label: string;
 }) {
   const cls = {
-    red: "bg-red-600/20 text-red-500",
-    amber: "bg-amber-600/20 text-amber-500",
-    slate: "bg-slate-600/20 text-slate-400",
-    emerald: "bg-emerald-600/20 text-emerald-500",
+    critical: count > 0 ? "text-destructive" : "text-muted-foreground",
+    warning: count > 0 ? "text-orange-600" : "text-muted-foreground",
+    neutral: "text-muted-foreground",
   }[tone];
   return (
-    <span
-      className={`rounded-full px-1.5 py-0.5 font-mono text-xs font-medium ${cls}`}
+    <Badge
+      variant="outline"
+      className={cn("font-mono tabular-nums", cls)}
       title={`${count} ${label}`}
+      aria-label={`${count} ${label}`}
     >
       {count}
-    </span>
+    </Badge>
   );
 }
 
 function ComplianceIssueRow({ issue }: { issue: ComplianceIssue }) {
   const Icon = iconFor(issue.severity);
-  const color = colorFor(issue.severity);
   return (
-    <div className={`flex items-start gap-2 rounded-md border px-2 py-1.5 text-xs ${color}`}>
-      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+    <FacetCard surface="solid" className="flex items-start gap-2 rounded-xl px-2.5 py-2 text-xs">
+      <Icon
+        aria-hidden="true"
+        className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", colorFor(issue.severity))}
+      />
       <div className="flex-1">
-        <div className="leading-snug">{issue.message}</div>
-        <div className="text-muted-foreground/70 mt-0.5 flex flex-wrap items-center gap-1.5 text-xs uppercase">
-          <span>{issue.category}</span>
+        <div className="text-foreground leading-snug">{issue.message}</div>
+        <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="capitalize">{issue.category}</span>
           {issue.entityRef && (
             <>
-              <span>·</span>
+              <span aria-hidden="true">·</span>
               <span>
                 {issue.entityRef.kind}: {issue.entityRef.name}
               </span>
@@ -171,7 +184,7 @@ function ComplianceIssueRow({ issue }: { issue: ComplianceIssue }) {
           )}
         </div>
       </div>
-    </div>
+    </FacetCard>
   );
 }
 
@@ -187,14 +200,15 @@ function iconFor(severity: ComplianceSeverity) {
   }
 }
 
+/** Severity → icon colour (semantic status only). */
 function colorFor(severity: ComplianceSeverity) {
   switch (severity) {
     case "error":
-      return "border-red-500/30 bg-red-500/10 text-red-400";
+      return "text-destructive";
     case "warning":
-      return "border-amber-500/30 bg-amber-500/10 text-amber-400";
+      return "text-orange-600";
     case "info":
     default:
-      return "border-slate-500/30 bg-slate-500/10 text-slate-400";
+      return "text-muted-foreground";
   }
 }

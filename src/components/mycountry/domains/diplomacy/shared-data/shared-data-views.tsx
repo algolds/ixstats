@@ -12,7 +12,7 @@ import {
   CheckCircle,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import type {
   SharedCulturalData,
@@ -27,37 +27,37 @@ export const DATA_TYPE_CONFIG = {
   economic: {
     icon: TrendingUp,
     label: "Economic",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
-    borderColor: "border-green-500/20",
+    color: "text-muted-foreground",
+    bgColor: "bg-muted/50",
+    borderColor: "border-border",
   },
   intelligence: {
     icon: Eye,
     label: "Intelligence",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20",
+    color: "text-muted-foreground",
+    bgColor: "bg-muted/50",
+    borderColor: "border-border",
   },
   research: {
     icon: Beaker,
     label: "Research",
-    color: "text-indigo-500",
-    bgColor: "bg-indigo-500/10",
-    borderColor: "border-indigo-500/20",
+    color: "text-muted-foreground",
+    bgColor: "bg-muted/50",
+    borderColor: "border-border",
   },
   cultural: {
     icon: Palette,
     label: "Cultural",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20",
+    color: "text-muted-foreground",
+    bgColor: "bg-muted/50",
+    borderColor: "border-border",
   },
   policy: {
     icon: FileText,
     label: "Policy",
-    color: "text-amber-500",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/20",
+    color: "text-muted-foreground",
+    bgColor: "bg-muted/50",
+    borderColor: "border-border",
   },
 } as const;
 
@@ -73,17 +73,17 @@ export function MetricCard({
   positive?: boolean;
 }) {
   return (
-    <div className="bg-background/50 border-border/50 space-y-1 rounded-lg border p-3">
+    <div className="bg-muted/50 space-y-1 rounded-lg p-3">
       <div className="text-muted-foreground text-xs">{label}</div>
       <div className="flex items-baseline gap-2">
-        <div className="text-xl font-bold">{value}</div>
+        <div className="text-foreground text-xl font-semibold tabular-nums">{value}</div>
         {trend !== undefined && (
-          <span className={cn("text-xs", trend > 0 ? "text-green-500" : "text-red-500")}>
+          <span className={cn("text-xs", trend > 0 ? "text-emerald-500" : "text-destructive")}>
             {trend > 0 ? "+" : ""}
             {trend}%
           </span>
         )}
-        {positive && <CheckCircle className="h-4 w-4 text-green-500" />}
+        {positive && <CheckCircle className="h-4 w-4 text-emerald-500" />}
       </div>
     </div>
   );
@@ -95,7 +95,7 @@ export function EmptyState({ type }: { type: string }) {
 
   return (
     <div className="text-muted-foreground py-8 text-center">
-      <Icon className="mx-auto mb-4 h-12 w-12 opacity-50" />
+      <Icon className="mx-auto mb-3 h-6 w-6" />
       <p>No {config?.label || type} data shared yet</p>
     </div>
   );
@@ -105,15 +105,17 @@ export function EconomicDataTab({ data }: { data: SharedEconomicData | undefined
   if (!data) return <EmptyState type="economic" />;
 
   return (
-    <Card className="facet-hierarchy-child border-green-500/20 bg-green-500/5">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-green-500" />
+    <FacetCard surface="solid" className="rounded-xl">
+      <FacetCardHeader>
+        <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+          <TrendingUp className="text-muted-foreground h-5 w-5" />
           Economic Cooperation
-        </CardTitle>
-        <CardDescription>Trade volume, joint ventures, and economic benefits</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </h3>
+        <p className="text-muted-foreground text-sm">
+          Trade volume, joint ventures, and economic benefits
+        </p>
+      </FacetCardHeader>
+      <FacetCardContent className="space-y-4 p-6 pt-0">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <MetricCard
             label="Trade Volume"
@@ -132,8 +134,8 @@ export function EconomicDataTab({ data }: { data: SharedEconomicData | undefined
             positive
           />
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 }
 
@@ -149,28 +151,28 @@ export function IntelligenceDataTab({
   return (
     <div className="space-y-4">
       {data.map((report, idx) => (
-        <Card key={idx} className="facet-hierarchy-child border-blue-500/20 bg-blue-500/5">
-          <CardHeader>
+        <FacetCard surface="solid" key={idx} className="rounded-xl">
+          <FacetCardHeader>
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-blue-500" />
+                <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                  <Eye className="text-muted-foreground h-5 w-5" />
                   Intelligence Report - {report.reportType}
-                </CardTitle>
-                <CardDescription>{report.summary}</CardDescription>
+                </h3>
+                <p className="text-muted-foreground text-sm">{report.summary}</p>
               </div>
               <Badge variant={report.classification === "PUBLIC" ? "default" : "secondary"}>
                 {report.classification}
               </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          </FacetCardHeader>
+          <FacetCardContent className="space-y-4 p-6 pt-0">
             <div className="space-y-2">
               <div className="text-sm font-semibold">Key Findings:</div>
               <ul className="space-y-1">
                 {report.keyFindings?.map((finding: string, i: number) => (
                   <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
-                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                     <span>{finding}</span>
                   </li>
                 ))}
@@ -182,8 +184,8 @@ export function IntelligenceDataTab({
                 Updated: {new Date(report.lastUpdated).toLocaleDateString()}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       ))}
     </div>
   );
@@ -195,15 +197,17 @@ export function ResearchDataTab({ data }: { data: SharedResearchData[] | undefin
   return (
     <div className="space-y-4">
       {data.map((project, idx) => (
-        <Card key={idx} className="facet-hierarchy-child border-indigo-500/20 bg-indigo-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-indigo-500" />
+        <FacetCard surface="solid" key={idx} className="rounded-xl">
+          <FacetCardHeader>
+            <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+              <Beaker className="text-muted-foreground h-5 w-5" />
               {project.researchArea}
-            </CardTitle>
-            <CardDescription>{project.collaborators?.length || 0} collaborator(s)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              {project.collaborators?.length || 0} collaborator(s)
+            </p>
+          </FacetCardHeader>
+          <FacetCardContent className="space-y-4 p-6 pt-0">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Progress</span>
@@ -216,8 +220,8 @@ export function ResearchDataTab({ data }: { data: SharedResearchData[] | undefin
               <MetricCard label="Publications" value={project.publications || 0} />
               <MetricCard label="Patents" value={project.patents || 0} />
             </div>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       ))}
     </div>
   );
@@ -227,15 +231,15 @@ export function CulturalDataTab({ data }: { data: SharedCulturalData | undefined
   if (!data) return <EmptyState type="cultural" />;
 
   return (
-    <Card className="facet-hierarchy-child border-blue-500/20 bg-blue-500/5">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="h-5 w-5 text-blue-500" />
+    <FacetCard surface="solid" className="rounded-xl">
+      <FacetCardHeader>
+        <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+          <Palette className="text-muted-foreground h-5 w-5" />
           Cultural Exchange
-        </CardTitle>
-        <CardDescription>Programs, events, and cultural impact</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </h3>
+        <p className="text-muted-foreground text-sm">Programs, events, and cultural impact</p>
+      </FacetCardHeader>
+      <FacetCardContent className="space-y-4 p-6 pt-0">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <MetricCard label="Exchange Programs" value={data.exchangePrograms || 0} />
           <MetricCard label="Cultural Events" value={data.culturalEvents || 0} />
@@ -256,8 +260,8 @@ export function CulturalDataTab({ data }: { data: SharedCulturalData | undefined
           </div>
           <Progress value={data.diplomaticGoodwill || 0} className="h-2" />
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 }
 
@@ -267,29 +271,29 @@ export function PolicyDataTab({ data }: { data: SharedPolicyData[] | undefined }
   return (
     <div className="space-y-4">
       {data.map((policy, idx) => (
-        <Card key={idx} className="facet-hierarchy-child border-amber-500/20 bg-amber-500/5">
-          <CardHeader>
+        <FacetCard surface="solid" key={idx} className="rounded-xl">
+          <FacetCardHeader>
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-amber-500" />
+                <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                  <FileText className="text-muted-foreground h-5 w-5" />
                   {policy.policyFramework}
-                </CardTitle>
-                <CardDescription>{policy.agreementType} agreement</CardDescription>
+                </h3>
+                <p className="text-muted-foreground text-sm">{policy.agreementType} agreement</p>
               </div>
               <Badge variant={policy.status === "ratified" ? "default" : "secondary"}>
                 {policy.status}
               </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          </FacetCardHeader>
+          <FacetCardContent className="space-y-4 p-6 pt-0">
             {policy.keyProvisions && (policy.keyProvisions as string[]).length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-semibold">Key Provisions:</div>
                 <ul className="space-y-1">
                   {(policy.keyProvisions as string[]).map((provision: string, i: number) => (
                     <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
-                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                       <span>{provision}</span>
                     </li>
                   ))}
@@ -304,8 +308,8 @@ export function PolicyDataTab({ data }: { data: SharedPolicyData[] | undefined }
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       ))}
     </div>
   );

@@ -4,6 +4,11 @@ import { EditPencil, FloppyDisk, WarningTriangle } from "iconoir-react";
 
 import React from "react";
 import { useNotify } from "~/hooks/useNotify";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Label } from "~/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -58,8 +63,8 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <EditPencil className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+            <DialogTitle className="flex items-center gap-2">
+              <EditPencil className="text-muted-foreground h-5 w-5" />
               Edit Cultural Exchange
             </DialogTitle>
             <DialogDescription>
@@ -68,79 +73,55 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Warning Message */}
-            <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-              <WarningTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400" />
-              <div className="text-sm text-muted-foreground">
-                <p className="mb-1 font-medium text-amber-600 dark:text-amber-400">Limited Editing</p>
-                <p>
-                  You can only modify the title and description. Other program details cannot be
-                  changed once the exchange is created.
-                </p>
-              </div>
-            </div>
+            <Alert>
+              <WarningTriangle className="text-amber-500" />
+              <AlertTitle>Limited editing</AlertTitle>
+              <AlertDescription>
+                You can only modify the title and description. Other program details cannot be
+                changed once the exchange is created.
+              </AlertDescription>
+            </Alert>
 
-            {/* Edit Form */}
             <div className="space-y-4">
-              <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">
-                  Exchange Title
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="edit-exchange-title">Exchange Title</Label>
+                <Input
+                  id="edit-exchange-title"
                   type="text"
                   value={formData.title}
                   onChange={handleTitleChange}
-                  className="text-foreground w-full rounded-lg border border-border bg-card/40 px-4 py-3 placeholder:text-muted-foreground focus:ring-2 focus:ring-cyan-500/50 focus:outline-none"
                   placeholder="Enter exchange title"
                   maxLength={100}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs tabular-nums">
                   {formData.title.length}/100 characters
                 </p>
               </div>
 
-              <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">
-                  Description
-                </label>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="edit-exchange-description">Description</Label>
+                <Textarea
+                  id="edit-exchange-description"
                   value={formData.description}
                   onChange={handleDescriptionChange}
-                  className="text-foreground min-h-[120px] w-full resize-none rounded-lg border border-border bg-card/40 px-4 py-3 placeholder:text-muted-foreground focus:ring-2 focus:ring-cyan-500/50 focus:outline-none"
+                  className="min-h-[120px] resize-none"
                   placeholder="Enter exchange description"
                   maxLength={500}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs tabular-nums">
                   {formData.description.length}/500 characters
                 </p>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={() => onOpenChange(false)}
-                className="flex-1 rounded-lg bg-muted/50 px-4 py-3 font-medium text-muted-foreground transition-colors hover:bg-muted"
-              >
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                 Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isPending}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-500/20 px-4 py-3 font-medium text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/30 disabled:opacity-50"
-              >
-                {isPending ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-500/20 border-t-cyan-500" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <FloppyDisk className="h-4 w-4" />
-                    Save Changes
-                  </>
-                )}
-              </button>
+              </Button>
+              <Button className="flex-1" onClick={handleSave} disabled={isPending}>
+                <FloppyDisk className="h-4 w-4" />
+                {isPending ? "Saving…" : "Save Changes"}
+              </Button>
             </div>
           </div>
         </DialogContent>

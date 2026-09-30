@@ -2,7 +2,10 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
-import { Plus, InfoCircle } from "iconoir-react";
+import { Plus, InfoCircle, Globe } from "iconoir-react";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -19,6 +22,7 @@ import { TariffSectorSliderCard } from "./trade-commerce/TariffSectorSliderCard"
 import { TradePartnersManager } from "./trade-commerce/TradePartnersManager";
 import { TradeImpactSummary } from "./trade-commerce/TradeImpactSummary";
 import { CustomSectorDialog } from "./trade-commerce/CustomSectorDialog";
+import { RailCard, RailCount, RailRow } from "./rails/shared";
 
 export { type CustomSector, type AccentColor } from "./trade-commerce/trade-commerce-types";
 
@@ -139,14 +143,14 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       />
 
       {/* Sector Tariff Planner (not saved) */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
+      <FacetCard surface="solid" className="rounded-2xl">
+        <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-3 p-4 pb-3">
+          <div className="min-w-0 space-y-0.5">
+            <h3 className="text-foreground flex flex-wrap items-center gap-2 text-sm font-semibold">
               Sector Tariff Planner
-              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+              <Badge variant="outline" className="text-orange-600">
                 Not saved
-              </span>
+              </Badge>
             </h3>
             <p className="text-muted-foreground text-xs">
               Try out tariffs by sector. Changes here reset when you leave the page and don&apos;t
@@ -158,44 +162,46 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
             variant="outline"
             size="sm"
             onClick={() => setIsAddSectorOpen(true)}
-            className="shrink-0 gap-1.5 text-xs"
+            className="h-11 shrink-0 sm:h-8"
           >
-            <Plus className="h-3.5 w-3.5" />
-            Add Sector
+            <Plus aria-hidden="true" />
+            Add sector
           </Button>
-        </div>
+        </FacetCardHeader>
 
-        <div className="border-border/40 bg-muted/20 text-muted-foreground flex items-start gap-2 rounded-lg border p-3 text-xs">
-          <InfoCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>
-            Your saved tariff is the <strong className="text-foreground">Tariff rate</strong> in the
-            Fiscal Policy tab
-            {baseTariff != null ? ` (currently ${baseTariff}%)` : " (none saved yet)"}. Sectors
-            start at that rate and are weighted by their recorded share of GDP.
-          </span>
-        </div>
+        <FacetCardContent className="space-y-4 px-4 pb-4">
+          <p className="text-muted-foreground flex items-start gap-2 text-xs">
+            <InfoCircle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+              Your saved tariff is the <strong className="text-foreground">Tariff rate</strong> in
+              the Fiscal Policy tab
+              {baseTariff != null ? ` (currently ${baseTariff}%)` : " (none saved yet)"}. Sectors
+              start at that rate and are weighted by their recorded share of GDP.
+            </span>
+          </p>
 
-        {sectors.length === 0 ? (
-          <div className="border-border/50 text-muted-foreground rounded-xl border border-dashed py-8 text-center text-xs">
-            No economic sectors recorded. Record them in the Country Editor, or add one here to
-            sketch a tariff schedule.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {sectors.map((sec) => (
-              <TariffSectorSliderCard
-                key={sec.id}
-                sector={sec}
-                currentTariff={tariffs[sec.id] ?? sec.defaultTariff}
-                isLocked={!!lockedSectors[sec.id]}
-                onTariffChange={(val) => handleTariffChange(sec.id, val)}
-                onToggleLock={() => toggleLock(sec.id)}
-                onReset={() => resetTariff(sec)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {sectors.length === 0 ? (
+            <p className="text-muted-foreground border-border rounded-xl border border-dashed py-8 text-center text-xs">
+              No economic sectors recorded. Record them in the Country Editor, or add one here to
+              sketch a tariff schedule.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {sectors.map((sec) => (
+                <TariffSectorSliderCard
+                  key={sec.id}
+                  sector={sec}
+                  currentTariff={tariffs[sec.id] ?? sec.defaultTariff}
+                  isLocked={!!lockedSectors[sec.id]}
+                  onTariffChange={(val) => handleTariffChange(sec.id, val)}
+                  onToggleLock={() => toggleLock(sec.id)}
+                  onReset={() => resetTariff(sec)}
+                />
+              ))}
+            </div>
+          )}
+        </FacetCardContent>
+      </FacetCard>
 
       {/* Bilateral Trade Partners Section */}
       <TradePartnersManager partners={tradePartners} currencySymbol={currencySymbol} />
@@ -229,23 +235,23 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
       ?.length ?? 0;
 
   return (
-    <div className="border-border/40 bg-card/60 space-y-2 rounded-xl border p-3 backdrop-blur-sm">
-      <div className="text-foreground flex items-center justify-between text-xs font-semibold">
-        <span>Trade & Commerce</span>
-        <span className="text-muted-foreground font-mono text-xs">{partnerCount} Partners</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="bg-background/50 border-border/30 rounded-lg border p-2">
-          <span className="text-muted-foreground block text-xs">Free Trade Pacts</span>
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">{ftaCount}</span>
-        </div>
-        <div className="bg-background/50 border-border/30 rounded-lg border p-2">
-          <span className="text-muted-foreground block text-xs">Recorded Sectors</span>
-          <span className="text-foreground font-bold">
+    <RailCard
+      title="Trade & Commerce"
+      icon={Globe}
+      accessory={<RailCount>{partnerCount} partners</RailCount>}
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <RailRow className="p-2.5">
+          <Eyebrow className="block">Free trade pacts</Eyebrow>
+          <p className="text-foreground mt-0.5 text-base font-semibold tabular-nums">{ftaCount}</p>
+        </RailRow>
+        <RailRow className="p-2.5">
+          <Eyebrow className="block">Recorded sectors</Eyebrow>
+          <p className="text-foreground mt-0.5 text-base font-semibold tabular-nums">
             {recordedSectorCount > 0 ? recordedSectorCount : "—"}
-          </span>
-        </div>
+          </p>
+        </RailRow>
       </div>
-    </div>
+    </RailCard>
   );
 }

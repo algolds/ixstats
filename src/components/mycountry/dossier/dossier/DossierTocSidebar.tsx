@@ -15,8 +15,7 @@ import {
   Globe,
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
-import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { FacetCard } from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import type { CountryInfobox } from "~/types/dossier";
 import type { WikiSource } from "~/lib/wiki-os/config";
@@ -241,23 +240,16 @@ export function DossierTocSidebar({
   const totalEntries = Object.values(groupedFolders).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
-    <div className="sticky top-20 space-y-4">
+    <div className="space-y-4 lg:sticky lg:top-20">
       {/* Searchable Dynamic Dossier Table of Contents */}
-      <FacetCard
-        depth={1}
-        interactive="none"
-        className="bg-card/30 overflow-hidden rounded-xl border border-white/10 shadow-sm backdrop-blur-md"
-      >
-        <CardHeader className="border-b border-white/10 px-4 py-3 pb-2">
+      <FacetCard depth={1} interactive="none" className="overflow-hidden rounded-2xl">
+        <FacetCardHeader className="border-border gap-0 border-b px-4 py-3 pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground flex items-center gap-2 text-xs font-extrabold tracking-wider uppercase">
-              <Layers className="h-4 w-4 text-blue-400" />
+            <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
+              <Layers className="text-muted-foreground h-4 w-4" />
               Dossier
-            </CardTitle>
-            <Badge
-              variant="outline"
-              className="text-muted-foreground border-white/10 font-mono text-xs"
-            >
+            </h3>
+            <Badge variant="outline" className="text-muted-foreground font-mono">
               {totalEntries} Entries
             </Badge>
           </div>
@@ -270,19 +262,27 @@ export function DossierTocSidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search pages & subfolders..."
-              className="text-foreground placeholder:text-muted-foreground/60 w-full rounded-lg border border-white/10 bg-white/[0.04] py-1.5 pr-3 pl-8 text-xs focus:border-blue-500 focus:outline-none"
+              aria-label="Search dossier"
+              className="text-foreground placeholder:text-muted-foreground border-input bg-background focus-visible:ring-ring w-full rounded-lg border py-1.5 pr-3 pl-8 text-xs outline-none focus-visible:ring-2"
             />
           </div>
 
           {/* Source Filter Pills */}
-          <div className="flex gap-1 pt-2">
+          <div
+            className="bg-muted/50 mt-2 flex gap-1 rounded-lg p-0.5"
+            role="group"
+            aria-label="Source"
+          >
             {(["all", "wiki", "native"] as const).map((mode) => (
               <button
                 key={mode}
+                type="button"
                 onClick={() => setSourceFilter(mode)}
-                className={`rounded px-2 py-0.5 text-xs font-bold uppercase transition-colors ${
+                aria-pressed={sourceFilter === mode}
+                data-cuelume-press="tick"
+                className={`focus-visible:ring-ring flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 ${
                   sourceFilter === mode
-                    ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
+                    ? "bg-background text-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -290,9 +290,9 @@ export function DossierTocSidebar({
               </button>
             ))}
           </div>
-        </CardHeader>
+        </FacetCardHeader>
 
-        <CardContent className="max-h-96 space-y-2 overflow-y-auto p-2">
+        <FacetCardContent className="max-h-96 space-y-2 overflow-y-auto p-2">
           {Object.keys(groupedFolders).length === 0 ? (
             <div className="text-muted-foreground p-4 text-center text-xs">
               No dossier folders or pages found.
@@ -302,23 +302,25 @@ export function DossierTocSidebar({
               const isOpen = searchQuery.trim().length > 0 || openFolders[folderName] !== false;
 
               return (
-                <div key={folderName} className="rounded-lg border border-white/5 bg-white/[0.02]">
+                <div key={folderName} className="border-border rounded-lg border">
                   {/* Folder Header Button */}
                   <button
+                    type="button"
                     onClick={() => toggleFolder(folderName)}
-                    className="text-foreground flex w-full items-center justify-between px-2.5 py-1.5 text-left text-xs font-bold transition-colors hover:bg-white/[0.04]"
+                    aria-expanded={isOpen}
+                    className="text-foreground hover:bg-accent/50 flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-colors"
                   >
                     <div className="flex min-w-0 items-center gap-2">
                       {isOpen ? (
-                        <FolderOpen className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                        <FolderOpen className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       ) : (
-                        <Folder className="h-3.5 w-3.5 shrink-0 text-amber-400/70" />
+                        <Folder className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       )}
                       <span className="truncate">{folderName}</span>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <span className="text-muted-foreground rounded border border-white/5 bg-black/40 px-1.5 py-0.5 font-mono text-xs">
+                      <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
                         {items.length}
                       </span>
                       {isOpen ? (
@@ -331,34 +333,36 @@ export function DossierTocSidebar({
 
                   {/* Subfolder Item List (Pages & Sections) */}
                   {isOpen && (
-                    <div className="space-y-0.5 border-t border-white/5 pt-1 pr-1 pb-1 pl-4">
+                    <div className="border-border space-y-0.5 border-t pt-1 pr-1 pb-1 pl-4">
                       {items.map((item) => {
                         const isSelected = activeSectionId === item.id;
                         return (
                           <button
                             key={item.id}
+                            type="button"
+                            aria-current={isSelected ? "true" : undefined}
                             onClick={() => handleItemClick(item)}
-                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-[background-color,border-color,transform] duration-150 ${
                               isSelected
-                                ? "bg-blue-500/20 font-bold text-blue-400"
+                                ? "bg-accent text-foreground font-semibold"
                                 : item.isPage
-                                  ? "text-foreground font-medium hover:bg-blue-500/10 hover:text-blue-300"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
+                                  ? "text-foreground hover:bg-accent/50 font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                             }`}
                           >
                             <div className="flex min-w-0 items-center gap-2">
                               {item.isPage ? (
-                                <Globe className="h-3 w-3 shrink-0 text-blue-400" />
+                                <Globe className="text-muted-foreground h-3 w-3 shrink-0" />
                               ) : item.source === "wiki" ? (
-                                <BookOpen className="h-3 w-3 shrink-0 text-blue-400/80" />
+                                <BookOpen className="text-muted-foreground h-3 w-3 shrink-0" />
                               ) : (
-                                <FileText className="h-3 w-3 shrink-0 text-amber-400/80" />
+                                <FileText className="text-muted-foreground h-3 w-3 shrink-0" />
                               )}
                               <span className="truncate text-xs font-medium">{item.title}</span>
                             </div>
 
                             {item.isPage ? (
-                              <ExternalLink className="h-3 w-3 shrink-0 text-blue-400 opacity-70" />
+                              <ExternalLink className="text-muted-foreground h-3 w-3 shrink-0" />
                             ) : (
                               <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
                             )}
@@ -371,7 +375,7 @@ export function DossierTocSidebar({
               );
             })
           )}
-        </CardContent>
+        </FacetCardContent>
       </FacetCard>
     </div>
   );

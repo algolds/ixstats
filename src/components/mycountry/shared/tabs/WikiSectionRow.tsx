@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   NavArrowDown as ChevronDown,
   NavArrowRight as ChevronRight,
-  SystemRestart as Loader2,
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import {
   classifyWikiSection,
@@ -49,16 +50,16 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
   const cleanContent = cleanWikiSectionContent(rawContent);
 
   return (
-    <div className="rounded-lg bg-white/30 transition-colors hover:bg-white/50 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]">
+    <div className="hover:bg-accent/50 rounded-lg transition-colors">
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-2.5 px-3 py-2 text-left"
+        aria-expanded={expanded}
+        className="focus-visible:ring-ring flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left outline-none focus-visible:ring-2"
       >
         <Icon className={cn("h-3.5 w-3.5 shrink-0", color)} />
         <span className="text-foreground flex-1 text-xs font-medium">{title}</span>
-        <span className={cn("text-xs font-medium tracking-wider uppercase", color)}>
-          {label}
-        </span>
+        <Eyebrow className={color}>{label}</Eyebrow>
         {expanded ? (
           <ChevronDown className="text-muted-foreground h-3 w-3" />
         ) : (
@@ -76,9 +77,9 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
           >
             <div className="px-3 pb-2.5">
               {contentLoading && (
-                <div className="flex items-center gap-2 py-2">
-                  <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
-                  <span className="text-muted-foreground text-xs">Loading...</span>
+                <div className="space-y-1.5 py-2" role="status" aria-label="Loading section">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
                 </div>
               )}
               {cleanContent && (
@@ -88,15 +89,13 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
                 </p>
               )}
               {!contentLoading && !cleanContent && (
-                <p className="text-muted-foreground py-1 text-xs italic">
-                  No content available.
-                </p>
+                <p className="text-muted-foreground py-1 text-xs italic">No content available.</p>
               )}
               <a
                 href={getWikiSectionUrl(wikiUrl, title)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-xs text-wiki hover:text-wiki-hover hover:underline"
+                className="text-wiki hover:text-wiki-hover mt-1 inline-flex items-center gap-1 text-xs hover:underline"
               >
                 Read more <ExternalLink className="h-2.5 w-2.5" />
               </a>

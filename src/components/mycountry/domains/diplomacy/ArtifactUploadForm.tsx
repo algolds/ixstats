@@ -4,7 +4,10 @@ import { Camera, Cutlery, Page as FileText, MusicNote, Palette, Xmark } from "ic
 
 import React, { useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
-import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Label } from "~/components/ui/label";
 
 type ArtifactType = "photo" | "video" | "document" | "artwork" | "recipe" | "music";
 
@@ -68,85 +71,91 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
 
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-xl font-bold text-cyan-600 dark:text-cyan-400">
-            <Camera className="h-6 w-6" />
+        <div className="flex items-center justify-between gap-3 pr-8">
+          <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
+            <Camera className="text-muted-foreground h-5 w-5" />
             Upload Cultural Artifact
           </h3>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onCancel}
-            className="hover:text-foreground rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10"
+            aria-label="Cancel upload"
           >
             <Xmark className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
-        <div className="facet-hierarchy-child rounded-lg border border-cyan-500/30 p-4">
-          <div className="mb-1 text-sm text-muted-foreground">Contributing to:</div>
+        <div className="bg-muted/50 rounded-xl p-4">
+          <div className="text-muted-foreground mb-1 text-sm">Contributing to:</div>
           <div className="text-foreground font-medium">{exchangeTitle}</div>
         </div>
 
-        <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Artifact Title *</label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="artifact-title">Artifact Title *</Label>
+          <Input
+            id="artifact-title"
             type="text"
             value={formData.title}
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
             placeholder="Traditional Festival Dance, Historic Monument..."
-            className="text-foreground w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 placeholder:text-muted-foreground focus:border-cyan-500/50 focus:outline-none dark:bg-black/20"
             required
           />
         </div>
 
-        <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Artifact Type</label>
-          <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-2">
+          <Label id="artifact-type-label">Artifact Type</Label>
+          <div
+            className="grid grid-cols-3 gap-2"
+            role="group"
+            aria-labelledby="artifact-type-label"
+          >
             {artifactTypes.map(({ value, label, icon: Icon }) => (
-              <button
+              <Button
                 key={value}
                 type="button"
+                variant={formData.type === value ? "secondary" : "outline"}
+                aria-pressed={formData.type === value}
                 onClick={() => setFormData((prev) => ({ ...prev, type: value }))}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors",
-                  formData.type === value
-                    ? "border-cyan-500/50 bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
-                    : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
-                )}
+                className="justify-start"
               >
                 <Icon className="h-4 w-4" />
                 <span className="text-xs">{label}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
-        <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Description</label>
-          <textarea
+        <div className="space-y-2">
+          <Label htmlFor="artifact-description">Description</Label>
+          <Textarea
+            id="artifact-description"
             value={formData.description}
             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
             placeholder="Describe the cultural significance of this artifact..."
             rows={4}
-            className="text-foreground w-full resize-none rounded-lg border border-white/20 bg-white/10 px-4 py-3 placeholder:text-muted-foreground focus:border-cyan-500/50 focus:outline-none dark:bg-black/20"
+            className="resize-none"
           />
         </div>
 
-        <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Upload File *</label>
-          <label className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-white/5 transition-colors hover:border-cyan-500/50 hover:bg-white/10">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Camera className="mb-2 h-8 w-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {formData.file ? formData.file.name : "Click to upload file"}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                PNG, JPG, GIF, WEBP or SVG image, up to 5MB
-              </p>
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="artifact-file">Upload File *</Label>
+          <label
+            htmlFor="artifact-file"
+            className="border-border bg-muted/40 hover:border-ring hover:bg-muted/60 flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors"
+          >
+            <Camera className="text-muted-foreground mb-2 h-6 w-6" />
+            <p className="text-muted-foreground text-sm">
+              {formData.file ? formData.file.name : "Click to upload file"}
+            </p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              PNG, JPG, GIF, WEBP or SVG image, up to 5MB
+            </p>
             <input
+              id="artifact-file"
               type="file"
-              className="hidden"
+              className="sr-only"
               onChange={handleFileChange}
               accept={ACCEPTED_IMAGE_TYPES}
               required
@@ -154,25 +163,17 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
           </label>
         </div>
 
-        <div className="flex items-center justify-between border-t border-white/10 pt-4">
-          <div className="text-sm text-muted-foreground">Share your culture with the world</div>
+        <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-muted-foreground text-sm">Share your culture with the world</p>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="hover:text-foreground rounded-lg px-4 py-2 text-muted-foreground transition-colors hover:bg-white/10"
-            >
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" onClick={onCancel}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 rounded-lg bg-cyan-500/20 px-6 py-2 font-medium text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
               <Camera className="h-4 w-4" />
-              {isSubmitting ? "Uploading..." : "Upload Artifact"}
-            </button>
+              {isSubmitting ? "Uploading…" : "Upload Artifact"}
+            </Button>
           </div>
         </div>
       </form>

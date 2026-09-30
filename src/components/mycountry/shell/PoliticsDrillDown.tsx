@@ -11,6 +11,8 @@ import {
 } from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
 
 const CabinetPanel = dynamic(
   () =>
@@ -87,33 +89,28 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
 
   return (
     <div className="space-y-4">
-      {/* Player Fiat Banner */}
-      <div className="flex items-center justify-between rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs">
-        <div className="flex items-center gap-2">
-          <Crown className="h-4 w-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
-          <div>
-            <span className="text-foreground font-extrabold">Executive Fiat Mode</span>
-            <p className="text-muted-foreground text-xs">
+      {/* Player fiat notice */}
+      <FacetCard surface="solid" className="flex items-start justify-between gap-3 rounded-2xl p-3">
+        <div className="flex min-w-0 items-start gap-2.5">
+          <Crown aria-hidden="true" className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-foreground text-sm font-semibold">Executive fiat mode</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
               Political structure, parties, cabinet posts, and legislative rules are player
               configurable. Legislative seats are won at elections.
             </p>
           </div>
         </div>
-        <span className="shrink-0 rounded-full border border-indigo-500/40 bg-indigo-500/20 px-2 py-0.5 text-xs font-bold text-indigo-800 dark:text-indigo-300">
-          Player Fiat Enabled
-        </span>
-      </div>
+        <Badge variant="secondary" className="shrink-0">
+          Player fiat
+        </Badge>
+      </FacetCard>
 
       {/* Election lifecycle: first election date, results, seated chamber (MC-2) */}
       <ElectionStatusCard countryId={countryId} />
 
       {/* Sub-tab switcher (shared with the other domain sections) */}
-      <SectionTabBar
-        tabs={tabs}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        activeClassName="border-indigo-500/40 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300"
-      />
+      <SectionTabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === "cabinet" && <CabinetPanel countryId={countryId} />}
       {activeTab === "parties" && <PartyManager countryId={countryId} />}

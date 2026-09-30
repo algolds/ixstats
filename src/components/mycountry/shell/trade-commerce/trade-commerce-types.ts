@@ -14,18 +14,6 @@ export interface CustomSector {
   defaultShare: number;
 }
 
-export const ACCENT_BORDER: Record<AccentColor, string> = {
-  emerald: "border-emerald-500/30",
-  cyan: "border-cyan-500/30",
-  amber: "border-amber-500/30",
-  indigo: "border-indigo-500/30",
-  red: "border-red-500/30",
-  blue: "border-blue-500/30",
-  purple: "border-indigo-500/30",
-  rose: "border-red-500/30",
-  teal: "border-cyan-500/30",
-};
-
 export const ACCENT_BG: Record<AccentColor, string> = {
   emerald: "bg-emerald-500",
   cyan: "bg-cyan-500",
@@ -36,18 +24,6 @@ export const ACCENT_BG: Record<AccentColor, string> = {
   purple: "bg-indigo-500",
   rose: "bg-red-500",
   teal: "bg-cyan-500",
-};
-
-export const ACCENT_TEXT: Record<AccentColor, string> = {
-  emerald: "text-emerald-400",
-  cyan: "text-cyan-400",
-  amber: "text-amber-400",
-  indigo: "text-indigo-400",
-  red: "text-red-400",
-  blue: "text-blue-400",
-  purple: "text-indigo-400",
-  rose: "text-red-400",
-  teal: "text-cyan-400",
 };
 
 import { formatCompact } from "~/lib/format/compact";

@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
   Group as Users,
@@ -15,7 +16,7 @@ import {
   Calculator,
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -89,36 +90,32 @@ export function LaborDetailsModal({
     const currentEmploymentRate = labor?.employmentRate || 94;
     const currentUnemploymentRate = labor?.unemploymentRate || 6;
 
-    return filterAndSortHistory(
-      historicalData,
-      timeRange,
-      (point, formattedDate, timestamp) => {
-        const gdpGrowth = point.gdpGrowthRate || 0;
-        const workingAgeFraction = 0.65;
-        const laborForce = Math.round(
-          (point.population || 0) * workingAgeFraction * (currentParticipation / 100)
-        );
-        const empAdj = Math.min(2, Math.max(-2, gdpGrowth * 50));
-        const employmentRate = Math.max(80, Math.min(99, currentEmploymentRate + empAdj));
-        const unemploymentRate = Math.max(1, Math.min(20, currentUnemploymentRate - empAdj));
+    return filterAndSortHistory(historicalData, timeRange, (point, formattedDate, timestamp) => {
+      const gdpGrowth = point.gdpGrowthRate || 0;
+      const workingAgeFraction = 0.65;
+      const laborForce = Math.round(
+        (point.population || 0) * workingAgeFraction * (currentParticipation / 100)
+      );
+      const empAdj = Math.min(2, Math.max(-2, gdpGrowth * 50));
+      const employmentRate = Math.max(80, Math.min(99, currentEmploymentRate + empAdj));
+      const unemploymentRate = Math.max(1, Math.min(20, currentUnemploymentRate - empAdj));
 
-        return {
-          date: formattedDate,
-          timestamp,
-          laborForce,
-          employmentRate: parseFloat(employmentRate.toFixed(1)),
-          unemploymentRate: parseFloat(unemploymentRate.toFixed(1)),
-          participationRate: currentParticipation,
-        };
-      }
-    );
+      return {
+        date: formattedDate,
+        timestamp,
+        laborForce,
+        employmentRate: parseFloat(employmentRate.toFixed(1)),
+        unemploymentRate: parseFloat(unemploymentRate.toFixed(1)),
+        participationRate: currentParticipation,
+      };
+    });
   };
 
   const chartConfig = {
-    laborForce: { label: "Labor Force", color: "#3b82f6" },
-    employmentRate: { label: "Employment Rate %", color: "#10b981" },
-    unemploymentRate: { label: "Unemployment Rate %", color: "#ef4444" },
-    participationRate: { label: "Participation Rate %", color: "#8b5cf6" },
+    laborForce: { label: "Labor Force", color: "var(--color-blue-500)" },
+    employmentRate: { label: "Employment Rate %", color: "var(--chart-3)" },
+    unemploymentRate: { label: "Unemployment Rate %", color: "var(--destructive)" },
+    participationRate: { label: "Participation Rate %", color: "var(--chart-1)" },
   };
 
   // Derive labor stats
@@ -179,64 +176,59 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-blue-500" />
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-6"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Briefcase className="text-muted-foreground h-5 w-5" />
                 Labor Force Composition
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Workforce composition and national employment statistics.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-center p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-blue-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     {(
                       ((labor?.totalWorkforce || 0) / (countryData?.currentPopulation || 1)) *
                       100
                     ).toFixed(1)}
                     %
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Of Population
-                  </div>
+                  <Eyebrow className="mt-1 block">Of Population</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-green-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-lg font-semibold text-emerald-500">
                     {(
                       ((labor?.employmentRate || 0) * (labor?.totalWorkforce || 0)) /
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Employed
-                  </div>
+                  <Eyebrow className="mt-1 block">Employed</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-red-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-destructive text-lg font-bold">
                     {(
                       ((labor?.unemploymentRate || 0) * (labor?.totalWorkforce || 0)) /
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Unemployed
-                  </div>
+                  <Eyebrow className="mt-1 block">Unemployed</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-emerald-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-lg font-semibold text-emerald-500">
                     ${(labor?.averageAnnualIncome || 0).toLocaleString()}
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-                    Avg. Income
-                  </div>
+                  <Eyebrow className="mt-1 block">Avg. Income</Eyebrow>
                 </div>
               </div>
 
-              <div className="text-muted-foreground mt-6 flex items-start gap-3 rounded-lg border border-blue-500/10 bg-blue-500/5 p-4 text-xs">
-                <Info className="text-blue-450 mt-0.5 h-4 w-4 shrink-0" />
+              <div className="text-muted-foreground bg-muted/50 mt-6 flex items-start gap-3 rounded-xl p-4 text-xs">
+                <Info className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                 <p className="leading-relaxed">
                   Workforce dynamics play a critical role in determining overall production
                   efficiency and industrial stability. High employment rates support higher consumer
@@ -244,8 +236,8 @@ export function LaborDetailsModal({
                   velocity.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -303,12 +295,12 @@ export function LaborDetailsModal({
 
     if (processedData.length === 0) {
       return (
-        <Card className="facet-refraction border-white/5">
-          <CardContent className="py-12 text-center">
+        <FacetCard surface="solid" className="rounded-xl">
+          <FacetCardContent className="py-12 text-center">
             <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-muted-foreground">No historical data available</p>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       );
     }
 
@@ -318,39 +310,37 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Labor Force Trends</CardTitle>
-              <CardDescription>Historical employment and participation metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+          <FacetCard surface="solid" className="rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base font-semibold">Labor Force Trends</h3>
+              <p className="text-muted-foreground text-sm">
+                Historical employment and participation metrics
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ChartComponent data={processedData}>
                     <defs>
                       <linearGradient id="empGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--chart-3)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--chart-3)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="partGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" stroke="var(--muted-foreground)" tickLine={false} />
+                    <YAxis stroke="var(--muted-foreground)" tickLine={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     {chartType === "area" ? (
                       <>
                         <Area
                           type="monotone"
                           dataKey="employmentRate"
-                          stroke="#10b981"
+                          stroke="var(--chart-3)"
                           fillOpacity={1}
                           fill="url(#empGrad)"
                           strokeWidth={2}
@@ -359,7 +349,7 @@ export function LaborDetailsModal({
                         <Area
                           type="monotone"
                           dataKey="participationRate"
-                          stroke="#8b5cf6"
+                          stroke="var(--chart-1)"
                           fillOpacity={1}
                           fill="url(#partGrad)"
                           strokeWidth={2}
@@ -370,13 +360,13 @@ export function LaborDetailsModal({
                       <>
                         <Bar
                           dataKey="employmentRate"
-                          fill="#10b981"
+                          fill="var(--chart-3)"
                           name="Employment Rate"
                           radius={[4, 4, 0, 0]}
                         />
                         <Bar
                           dataKey="unemploymentRate"
-                          fill="#ef4444"
+                          fill="var(--destructive)"
                           name="Unemployment Rate"
                           radius={[4, 4, 0, 0]}
                         />
@@ -386,7 +376,7 @@ export function LaborDetailsModal({
                         <Line
                           type="monotone"
                           dataKey="employmentRate"
-                          stroke="#10b981"
+                          stroke="var(--chart-3)"
                           strokeWidth={2}
                           dot={false}
                           name="Employment Rate"
@@ -394,7 +384,7 @@ export function LaborDetailsModal({
                         <Line
                           type="monotone"
                           dataKey="unemploymentRate"
-                          stroke="#ef4444"
+                          stroke="var(--destructive)"
                           strokeWidth={2}
                           dot={false}
                           name="Unemployment Rate"
@@ -402,7 +392,7 @@ export function LaborDetailsModal({
                         <Line
                           type="monotone"
                           dataKey="participationRate"
-                          stroke="#8b5cf6"
+                          stroke="var(--chart-1)"
                           strokeWidth={2}
                           dot={false}
                           name="Participation Rate"
@@ -412,43 +402,37 @@ export function LaborDetailsModal({
                   </ChartComponent>
                 </ResponsiveContainer>
               </ChartContainer>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Max Employment Rate
-              </span>
-              <span className="text-xl font-bold text-green-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Max Employment Rate</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {laborStats?.maxEmployment ? `${laborStats.maxEmployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Min Unemployment Rate
-              </span>
-              <span className="text-xl font-bold text-red-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Min Unemployment Rate</Eyebrow>
+              <span className="text-destructive text-xl font-bold">
                 {laborStats?.minUnemployment ? `${laborStats.minUnemployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Avg Participation
-              </span>
-              <span className="text-xl font-bold text-blue-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Avg Participation</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {laborStats?.avgParticipation
                   ? `${laborStats.avgParticipation.toFixed(1)}%`
                   : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Data Points Analyzed
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Data Points Analyzed</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
+                {laborStats?.dataPoints || 0}
               </span>
-              <span className="text-xl font-bold text-blue-400">{laborStats?.dataPoints || 0}</span>
             </div>
           </div>
         </MetricModalLayout.Sidebar>
@@ -495,73 +479,71 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex-1 border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-blue-500" />
+          <FacetCard surface="solid" className="flex-1 rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Globe className="text-muted-foreground h-5 w-5" />
                 Benchmark Analysis
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Comparison of national labor indicators against global benchmark rates.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} unit="%" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" tickLine={false} />
+                    <YAxis stroke="var(--muted-foreground)" tickLine={false} unit="%" />
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(18, 20, 24, 0.8)",
-                        backdropFilter: "blur(8px)",
-                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        background: "var(--popover)",
+                        color: "var(--popover-foreground)",
+                        borderColor: "var(--border)",
                         borderRadius: "8px",
                       }}
                     />
-                    <Bar dataKey="Your Country" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="Your Country"
+                      fill="var(--color-blue-500)"
+                      radius={[4, 4, 0, 0]}
+                    />
                     <Bar
                       dataKey="Global Avg"
-                      fill="rgba(255, 255, 255, 0.15)"
+                      fill="var(--muted-foreground)"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Global Comparison
-              </span>
-              <span className="text-xl font-bold text-blue-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Global Comparison</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {employmentRate >= globalAvgEmployment ? "Above Average" : "Below Average"}
               </span>
               <span className="text-muted-foreground mt-1 text-xs">
                 Employment: {employmentRate.toFixed(1)}% vs {globalAvgEmployment}% Avg
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Workforce Activity
-              </span>
-              <span className="text-xl font-bold text-green-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Workforce Activity</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {(labor?.laborForceParticipationRate || 0) >= 60 ? "Strong" : "Low"}
               </span>
               <span className="text-muted-foreground mt-1 text-xs">
                 Active Participation Rate: {(labor?.laborForceParticipationRate || 0).toFixed(1)}%
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Job Market Health
-              </span>
-              <span className="text-xl font-bold text-emerald-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Job Market Health</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {(labor?.unemploymentRate || 0) < 5
                   ? "Healthy"
                   : (labor?.unemploymentRate || 0) < 10
@@ -606,39 +588,42 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Employment by Sector</CardTitle>
-              <CardDescription>
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-6"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base font-semibold">Employment by Sector</h3>
+              <p className="text-muted-foreground text-sm">
                 Workforce distribution across key industrial sectors
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex-1 p-0">
               {sectorData.length > 0 ? (
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={sectorData} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                      <XAxis type="number" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis type="number" stroke="var(--muted-foreground)" tickLine={false} />
                       <YAxis
                         dataKey="name"
                         type="category"
-                        stroke="rgba(255, 255, 255, 0.3)"
+                        stroke="var(--muted-foreground)"
                         tickLine={false}
                         width={100}
                         tick={{ fontSize: 9 }}
                       />
                       <Tooltip
                         contentStyle={{
-                          background: "rgba(18, 20, 24, 0.8)",
-                          backdropFilter: "blur(8px)",
-                          borderColor: "rgba(255, 255, 255, 0.1)",
+                          background: "var(--popover)",
+                          color: "var(--popover-foreground)",
+                          borderColor: "var(--border)",
                           borderRadius: "8px",
                         }}
                       />
                       <Bar
                         dataKey="value"
-                        fill="#3b82f6"
+                        fill="var(--color-blue-500)"
                         radius={[0, 4, 4, 0]}
                         name="Percentage %"
                       />
@@ -651,24 +636,25 @@ export function LaborDetailsModal({
                   <p className="text-muted-foreground text-sm">No sector data available</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="text-sm font-semibold">Productivity Metrics</CardTitle>
-              <CardDescription className="text-xs">
-                Workforce efficiency and output
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 p-0">
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  GDP per Worker
-                </span>
-                <div className="mt-1 text-lg font-bold text-blue-400">
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-4"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base text-sm font-semibold">
+                Productivity Metrics
+              </h3>
+              <p className="text-muted-foreground text-xs">Workforce efficiency and output</p>
+            </FacetCardHeader>
+            <FacetCardContent className="space-y-4 p-0">
+              <div className="bg-muted/50 rounded-xl p-3">
+                <Eyebrow>GDP per Worker</Eyebrow>
+                <div className="text-foreground mt-1 text-lg font-semibold">
                   $
                   {(
                     (countryData?.currentTotalGdp || 0) / (labor?.totalWorkforce || 1)
@@ -676,25 +662,21 @@ export function LaborDetailsModal({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Productivity Index
-                </span>
-                <div className="mt-1 text-lg font-bold text-emerald-400">
+              <div className="bg-muted/50 rounded-xl p-3">
+                <Eyebrow>Productivity Index</Eyebrow>
+                <div className="mt-1 text-lg font-semibold text-emerald-500">
                   {labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) || "1.00"}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Avg. Education
-                </span>
-                <div className="mt-1 text-lg font-bold text-indigo-400">
+              <div className="bg-muted/50 rounded-xl p-3">
+                <Eyebrow>Avg. Education</Eyebrow>
+                <div className="text-foreground mt-1 text-lg font-semibold">
                   {labor?.skillsAndProductivity?.averageEducationYears?.toFixed(1) || "12.0"} Years
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );
@@ -709,7 +691,7 @@ export function LaborDetailsModal({
       title="Labor Force Analysis"
       description="Detailed workforce and employment metrics"
       icon={Users}
-      iconColor="text-blue-500"
+      iconColor="text-muted-foreground"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}

@@ -3,6 +3,10 @@
 import { Flash } from "iconoir-react";
 
 import React from "react";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
 import {
   Dialog,
   DialogContent,
@@ -49,8 +53,8 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Flash className="h-6 w-6 text-cyan-400" />
+            <DialogTitle className="flex items-center gap-2">
+              <Flash className="text-muted-foreground h-5 w-5" />
               Cultural Exchange Scenario
             </DialogTitle>
             <DialogDescription>
@@ -59,81 +63,66 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Scenario Details */}
-            <div className="facet-hierarchy-child rounded-lg p-6">
-              <h4 className="text-foreground mb-4 text-lg font-bold">{scenario.title}</h4>
-              <div className="prose prose-invert max-w-none">
-                <p className="whitespace-pre-line text-muted-foreground">{scenario.narrative}</p>
-              </div>
-            </div>
+            <FacetCard surface="solid" className="rounded-xl p-5">
+              <h4 className="text-foreground mb-3 text-base font-semibold">{scenario.title}</h4>
+              <p className="text-muted-foreground text-sm whitespace-pre-line">
+                {scenario.narrative}
+              </p>
+            </FacetCard>
 
-            {/* Response Options */}
             {scenario.responseOptions && scenario.responseOptions.length > 0 && (
-              <div className="space-y-4">
-                <h5 className="text-foreground font-semibold">How will you respond?</h5>
-                {scenario.responseOptions.map((option: ResponseOption, index: number) => (
-                  <div
-                    key={option.id || index}
-                    className="facet-hierarchy-child cursor-pointer rounded-lg border border-white/10 p-4 transition-colors hover:border-cyan-500/30"
-                  >
-                    <div className="mb-3 flex items-start justify-between">
-                      <div>
-                        <h6 className="text-foreground font-medium">{option.label}</h6>
-                        <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
+              <div className="space-y-3">
+                <h5 className="text-foreground text-sm font-semibold">How will you respond?</h5>
+                {scenario.responseOptions.map((option: ResponseOption, index: number) => {
+                  const outcome = option.predictedOutcomes?.immediate;
+                  const signed = (n: number) => `${n > 0 ? "+" : ""}${n}`;
+                  return (
+                    <FacetCard key={option.id || index} surface="solid" className="rounded-xl p-4">
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div>
+                          <h6 className="text-foreground text-sm font-medium">{option.label}</h6>
+                          <p className="text-muted-foreground mt-1 text-sm">{option.description}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => onSelectResponse?.(option)}
+                        >
+                          Select
+                        </Button>
                       </div>
-                      <button
-                        onClick={() => onSelectResponse?.(option)}
-                        className="flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-1.5 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-500/30"
-                      >
-                        Select
-                      </button>
-                    </div>
 
-                    {/* Skill Requirements */}
-                    {option.requirements && option.requirements.length > 0 && (
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {option.requirements.map((req, reqIdx: number) => (
-                          <span
-                            key={reqIdx}
-                            className="rounded bg-indigo-500/20 px-2 py-1 text-xs text-indigo-400"
-                          >
-                            {req.skill} {req.level}+
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                      {option.requirements && option.requirements.length > 0 && (
+                        <div className="mb-3 flex flex-wrap gap-1.5">
+                          {option.requirements.map((req, reqIdx: number) => (
+                            <Badge key={reqIdx} variant="outline">
+                              {req.skill} {req.level}+
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
 
-                    {/* Predicted Outcomes */}
-                    {option.predictedOutcomes?.immediate && (
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="rounded bg-white/5 p-2">
-                          <div className="text-lg font-bold text-amber-500 dark:text-amber-400">
-                            {(option.predictedOutcomes.immediate.culturalImpact ?? 0) > 0
-                              ? "+"
-                              : ""}
-                            {option.predictedOutcomes.immediate.culturalImpact ?? 0}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Cultural</div>
-                        </div>
-                        <div className="rounded bg-white/5 p-2">
-                          <div className="text-lg font-bold text-cyan-500 dark:text-cyan-400">
-                            {(option.predictedOutcomes.immediate.diplomaticChange ?? 0) > 0
-                              ? "+"
-                              : ""}
-                            {option.predictedOutcomes.immediate.diplomaticChange ?? 0}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Diplomatic</div>
-                        </div>
-                        <div className="rounded bg-white/5 p-2">
-                          <div className="text-lg font-bold text-amber-500 dark:text-amber-400">
-                            {option.predictedOutcomes.immediate.economicCost ?? 0}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Cost</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {outcome && (
+                        <dl className="grid grid-cols-3 gap-3 text-center">
+                          {[
+                            { label: "Cultural", value: signed(outcome.culturalImpact ?? 0) },
+                            { label: "Diplomatic", value: signed(outcome.diplomaticChange ?? 0) },
+                            { label: "Cost", value: String(outcome.economicCost ?? 0) },
+                          ].map((m) => (
+                            <div key={m.label} className="bg-muted/50 rounded-lg p-2">
+                              <dd className="text-foreground text-lg font-semibold tabular-nums">
+                                {m.value}
+                              </dd>
+                              <dt>
+                                <Eyebrow>{m.label}</Eyebrow>
+                              </dt>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                    </FacetCard>
+                  );
+                })}
               </div>
             )}
           </div>

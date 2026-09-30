@@ -12,11 +12,13 @@ import {
   Airplane as Plane,
   ArrowUpRight,
   Shield,
-  SystemRestart as Loader2,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface TransitMobilityCardProps {
   countryId: string;
@@ -38,35 +40,55 @@ const MODAL_ICONS: Record<string, typeof Train> = {
   air_corridor: Plane,
 };
 
+/** TAMI rating → semantic status colour (only the dot and score carry it). */
 const RATING_THEMES = {
-  world_class: {
-    text: "text-emerald-400",
-    dot: "bg-emerald-400",
-    badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-  },
-  advanced: {
-    text: "text-cyan-400",
-    dot: "bg-cyan-400",
-    badge: "border-cyan-500/30 bg-cyan-500/10 text-cyan-400",
-  },
-  developing: {
-    text: "text-amber-400",
-    dot: "bg-amber-400",
-    badge: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-  },
-  underdeveloped: {
-    text: "text-red-400",
-    dot: "bg-red-400",
-    badge: "border-red-500/30 bg-red-500/10 text-red-400",
-  },
+  world_class: { text: "text-emerald-600", dot: "bg-emerald-500" },
+  advanced: { text: "text-foreground", dot: "bg-foreground/60" },
+  developing: { text: "text-orange-600", dot: "bg-orange-500" },
+  underdeveloped: { text: "text-destructive", dot: "bg-destructive" },
 } as const;
 
 const CONDITION_TEXT_THEMES = {
-  optimal: "text-emerald-400",
-  adequate: "text-cyan-400",
-  deteriorating: "text-amber-400",
-  failing: "text-red-400",
+  optimal: "text-emerald-600",
+  adequate: "text-foreground",
+  deteriorating: "text-orange-600",
+  failing: "text-destructive",
 } as const;
+
+function MapEditorLink({ label }: { label: string }) {
+  return (
+    <Button asChild variant="ghost" size="sm" className="h-11 shrink-0 sm:h-8">
+      <Link href="/mycountry/editor">
+        {label}
+        <ArrowUpRight aria-hidden="true" />
+      </Link>
+    </Button>
+  );
+}
+
+/** A headline figure inside the transit card (opaque: nested in a Facet card). */
+function TransitStat({
+  label,
+  icon: Icon,
+  children,
+  footer,
+}: {
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  footer: React.ReactNode;
+}) {
+  return (
+    <FacetCard surface="solid" className="flex flex-col justify-between rounded-xl p-3.5">
+      <div className="flex items-center gap-1.5">
+        {Icon && <Icon aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />}
+        <Eyebrow>{label}</Eyebrow>
+      </div>
+      <div className="my-2 flex items-baseline gap-1.5">{children}</div>
+      <div className="flex items-center justify-between gap-2 text-xs">{footer}</div>
+    </FacetCard>
+  );
+}
 
 export const TransitMobilityCard = memo(function TransitMobilityCard({
   countryId,
@@ -78,207 +100,185 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
   );
 
   if (isLoading) {
-    return (
-      <div className="bg-card/40 border-border/40 flex h-48 items-center justify-center rounded-2xl border p-6 backdrop-blur-md">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    );
+    return <Skeleton className="h-48 rounded-2xl" aria-label="Loading transit profile" />;
   }
 
   if (!profile || profile.totalOperationalKm === 0) {
     return (
-      <div className="bg-card/40 border-border/40 relative overflow-hidden rounded-2xl border p-5 backdrop-blur-md">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <RouteIcon className="text-primary h-4 w-4" />
-            <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
-              National Transit & Mobility
-            </h3>
+      <FacetCard className="rounded-2xl">
+        <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <RouteIcon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+            <h3 className="text-foreground text-sm font-semibold">National transit and mobility</h3>
           </div>
-          <Link
-            href="/mycountry/editor"
-            onClick={() => soundEffects.press()}
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-xs font-semibold transition active:scale-[0.98]"
-          >
-            <span>Open Map Editor</span>
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </div>
-        <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
-          No operational transport routes mapped. Build highways, railways, or shipping lanes in
-          the Map Editor to establish national transit connectivity and unlock GDP dividends.
-        </p>
-      </div>
+          <MapEditorLink label="Open Map Editor" />
+        </FacetCardHeader>
+        <FacetCardContent className="px-4 pb-4">
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            No operational transport routes mapped. Build highways, railways, or shipping lanes in
+            the Map Editor to establish national transit connectivity and unlock GDP dividends.
+          </p>
+        </FacetCardContent>
+      </FacetCard>
     );
   }
 
   const { tami, degradation, modalSummary, topCorridors, totalOperationalKm } = profile;
   const ratingTheme = RATING_THEMES[tami.rating] ?? RATING_THEMES.underdeveloped;
-  const conditionTextClass = CONDITION_TEXT_THEMES[degradation.condition] ?? CONDITION_TEXT_THEMES.adequate;
+  const conditionTextClass =
+    CONDITION_TEXT_THEMES[degradation.condition] ?? CONDITION_TEXT_THEMES.adequate;
 
   return (
-    <div className="bg-card/30 border-border/40 relative overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20">
+    <FacetCard className="rounded-2xl">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/20 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20">
-            <RouteIcon className="h-4 w-4" />
-          </div>
-          <div>
-            <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
-              Transit Accessibility & Mobility (TAMI)
+      <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <RouteIcon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+          <div className="min-w-0">
+            <h3 className="text-foreground text-sm font-semibold">
+              Transit accessibility and mobility (TAMI)
             </h3>
-            <span className="text-muted-foreground text-xs">
+            <p className="text-muted-foreground text-xs">
               Spatial velocity and intercity transit efficiency
-            </span>
+            </p>
           </div>
         </div>
+        <MapEditorLink label="Map Editor transit" />
+      </FacetCardHeader>
 
-        <Link
-          href="/mycountry/editor"
-          onClick={() => soundEffects.press()}
-          className="group text-foreground/80 hover:text-foreground flex items-center gap-1 text-xs font-medium transition active:scale-[0.98]"
-        >
-          <span>Map Editor Transit</span>
-          <ArrowUpRight className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-        </Link>
-      </div>
-
-      {/* Main Grid: TAMI Score + Core Metrics */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* TAMI Circular Index Dial */}
-        <div className="bg-background/40 border-border/30 flex flex-col justify-between rounded-xl border p-3.5">
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Mobility Score
-          </span>
-          <div className="my-2 flex items-baseline gap-2">
+      <FacetCardContent className="space-y-4 px-4 pb-4">
+        {/* TAMI score + core metrics */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <TransitStat
+            label="Mobility score"
+            footer={
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden="true" className={cn("h-2 w-2 rounded-full", ratingTheme.dot)} />
+                <span className="text-foreground font-medium">{tami.ratingLabel}</span>
+              </span>
+            }
+          >
             <span
               className={cn(
-                "font-mono text-3xl font-extrabold tabular-nums tracking-tight",
+                "font-mono text-3xl font-semibold tracking-tight tabular-nums",
                 ratingTheme.text
               )}
             >
               {tami.tamiScore}
             </span>
-            <span className="text-muted-foreground text-xs font-medium">/ 100</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className={cn("h-2 w-2 rounded-full", ratingTheme.dot)} />
-            <span className="text-xs font-semibold text-foreground">
-              {tami.ratingLabel}
-            </span>
-          </div>
-        </div>
+            <span className="text-muted-foreground text-xs">/ 100</span>
+          </TransitStat>
 
-        {/* Network Weighted Velocity */}
-        <div className="bg-background/40 border-border/30 flex flex-col justify-between rounded-xl border p-3.5">
-          <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
-            <Gauge className="h-3 w-3" /> Average Network Speed
-          </span>
-          <div className="my-2 flex items-baseline gap-1.5">
-            <span className="text-foreground font-mono text-3xl font-extrabold tabular-nums tracking-tight">
+          <TransitStat
+            label="Average network speed"
+            icon={Gauge}
+            footer={
+              <>
+                <span className="text-muted-foreground">Total network</span>
+                <span className="text-foreground font-mono font-medium tabular-nums">
+                  {totalOperationalKm.toLocaleString()} km
+                </span>
+              </>
+            }
+          >
+            <span className="text-foreground font-mono text-3xl font-semibold tracking-tight tabular-nums">
               {modalSummary.overallWeightedSpeedKmh}
             </span>
-            <span className="text-muted-foreground text-xs font-medium">km/h</span>
-          </div>
-          <div className="text-muted-foreground flex items-center justify-between text-xs">
-            <span>Total Network</span>
-            <span className="font-mono font-medium text-foreground tabular-nums">
-              {totalOperationalKm.toLocaleString()} km
-            </span>
-          </div>
-        </div>
+            <span className="text-muted-foreground text-xs">km/h</span>
+          </TransitStat>
 
-        {/* Infrastructure Condition & Factor */}
-        <div className="bg-background/40 border-border/30 flex flex-col justify-between rounded-xl border p-3.5">
-          <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
-            <Shield className="h-3 w-3" /> Maintenance Health
-          </span>
-          <div className="my-2 flex items-baseline gap-1.5">
+          <TransitStat
+            label="Maintenance health"
+            icon={Shield}
+            footer={
+              <>
+                <span className="text-muted-foreground">Condition</span>
+                <span className={cn("font-medium capitalize", conditionTextClass)}>
+                  {degradation.conditionLabel}
+                </span>
+              </>
+            }
+          >
             <span
               className={cn(
-                "font-mono text-3xl font-extrabold tabular-nums tracking-tight",
+                "font-mono text-3xl font-semibold tracking-tight tabular-nums",
                 conditionTextClass
               )}
             >
               {(degradation.speedDegradationFactor * 100).toFixed(0)}%
             </span>
-            <span className="text-muted-foreground text-xs font-medium">speed retention</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Condition</span>
-            <span className={cn("font-semibold capitalize", conditionTextClass)}>
-              {degradation.conditionLabel}
-            </span>
-          </div>
+            <span className="text-muted-foreground text-xs">speed retention</span>
+          </TransitStat>
         </div>
-      </div>
 
-      {/* Modal Velocities Spectrum */}
-      {Object.keys(modalSummary.modalGroups).length > 0 && (
-        <div className="mt-4 space-y-2">
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Modal Velocities & Network Extent
-          </span>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {Object.entries(modalSummary.modalGroups).map(([key, group]) => {
-              const Icon = MODAL_ICONS[key] ?? RouteIcon;
-              return (
-                <div
-                  key={key}
-                  className="bg-background/30 border-border/30 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: group.color }}
-                    />
-                    <Icon className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate text-xs font-medium text-foreground">
-                      {group.label}
+        {/* Modal velocities */}
+        {Object.keys(modalSummary.modalGroups).length > 0 && (
+          <div className="space-y-2">
+            <Eyebrow className="block">Modal velocities and network extent</Eyebrow>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {Object.entries(modalSummary.modalGroups).map(([key, group]) => {
+                const Icon = MODAL_ICONS[key] ?? RouteIcon;
+                return (
+                  <FacetCard
+                    key={key}
+                    surface="solid"
+                    className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      {/* Route-type colour from the map legend (data, not decoration) */}
+                      <span
+                        aria-hidden="true"
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <Icon
+                        aria-hidden="true"
+                        className="text-muted-foreground h-3.5 w-3.5 shrink-0"
+                      />
+                      <span className="text-foreground truncate font-medium">{group.label}</span>
+                    </div>
+                    <span className="text-foreground shrink-0 font-mono font-medium tabular-nums">
+                      {group.avgSpeedKmh} <span className="text-muted-foreground">km/h</span>
                     </span>
-                  </div>
-                  <span className="font-mono text-xs font-semibold tabular-nums text-foreground">
-                    {group.avgSpeedKmh} <span className="text-muted-foreground text-xs">km/h</span>
-                  </span>
-                </div>
-              );
-            })}
+                  </FacetCard>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Top Travel Corridors */}
-      {topCorridors.length > 0 && (
-        <div className="mt-4 space-y-2">
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Primary Intercity Travel Corridors
-          </span>
-          <div className="border-border/30 max-h-48 space-y-1.5 overflow-y-auto rounded-xl border bg-background/20 p-2">
-            {topCorridors.map((c) => (
-              <div
-                key={c.id}
-                className="bg-card/40 border-border/20 flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition hover:bg-card/60"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold text-foreground">{c.name}</div>
-                  <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                    <span className="capitalize">{c.routeType.replace("_", " ")}</span>
-                    <span className="font-mono tabular-nums">• {c.lengthKm} km</span>
-                    <span className="font-mono tabular-nums">• {c.effectiveSpeedKmh} km/h</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 pl-3">
-                  <Clock className="text-primary h-3.5 w-3.5 shrink-0" />
-                  <span className="font-mono text-xs font-bold tabular-nums text-primary">
-                    {c.formattedTravelTime}
-                  </span>
-                </div>
-              </div>
-            ))}
+        {/* Top travel corridors */}
+        {topCorridors.length > 0 && (
+          <div className="space-y-2">
+            <Eyebrow className="block">Primary intercity travel corridors</Eyebrow>
+            <FacetCard surface="solid" className="max-h-48 overflow-y-auto rounded-xl">
+              <ul className="divide-border/60 divide-y">
+                {topCorridors.map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-foreground truncate font-medium">{c.name}</div>
+                      <div className="text-muted-foreground flex items-center gap-2">
+                        <span className="capitalize">{c.routeType.replace("_", " ")}</span>
+                        <span className="font-mono tabular-nums">· {c.lengthKm} km</span>
+                        <span className="font-mono tabular-nums">· {c.effectiveSpeedKmh} km/h</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <Clock aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                      <span className="text-foreground font-mono font-semibold tabular-nums">
+                        {c.formattedTravelTime}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </FacetCard>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </FacetCardContent>
+    </FacetCard>
   );
 });

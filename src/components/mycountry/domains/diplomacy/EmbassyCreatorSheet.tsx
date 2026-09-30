@@ -14,12 +14,20 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   City as Building2,
   MapPin,
   User,
   Dollar as DollarSign,
-  SystemRestart as Loader2,
   NavArrowDown as ChevronDown,
 } from "iconoir-react";
 
@@ -50,21 +58,24 @@ function CountrySelector({
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <select
-      value={selectedCountryId}
-      onChange={(e) => {
-        const country = countries.find((c) => c.id === e.target.value);
+    <Select
+      value={selectedCountryId || undefined}
+      onValueChange={(id) => {
+        const country = countries.find((c) => c.id === id);
         if (country) onSelect(country.id, country.name);
       }}
-      className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
     >
-      <option value="">Select a country...</option>
-      {countries.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className="w-full" aria-label="Host country">
+        <SelectValue placeholder="Select a country…" />
+      </SelectTrigger>
+      <SelectContent className="max-h-72">
+        {countries.map((c) => (
+          <SelectItem key={c.id} value={c.id}>
+            {c.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -140,20 +151,10 @@ export function EmbassyCreatorSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          padding: 0,
-          maxHeight: "85vh",
-          overflow: "hidden",
-        }}
-      >
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 shrink-0 text-cyan-500" />
+            <Building2 className="text-muted-foreground h-5 w-5 shrink-0" />
             Establish New Embassy
           </DialogTitle>
           <p className="text-muted-foreground text-sm">
@@ -171,12 +172,9 @@ export function EmbassyCreatorSheet({
               selectedCountryId={hostCountryId}
             />
             {hostCountryId && (
-              <div className="mt-2 rounded-md border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-sm">
-                Selected:{" "}
-                <span className="font-semibold text-cyan-600 dark:text-cyan-400">
-                  {hostCountryName}
-                </span>
-              </div>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Selected: <span className="text-foreground font-semibold">{hostCountryName}</span>
+              </p>
             )}
           </div>
 
@@ -229,25 +227,24 @@ export function EmbassyCreatorSheet({
             <>
               <Separator />
               <div>
-                <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
-                  <DollarSign className="h-3.5 w-3.5 text-cyan-500" />
-                  Establishment Cost
-                </h4>
+                <Eyebrow className="mb-2 flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  Establishment cost
+                </Eyebrow>
                 {costLoading ? (
-                  <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Calculating...
-                  </div>
+                  <Skeleton className="h-16 rounded-lg" aria-label="Calculating cost" />
                 ) : costData ? (
-                  <div className="border-border bg-muted/30 rounded-md border p-3">
+                  <div className="border-border bg-card rounded-lg border p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Total</span>
-                      <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                      <span className="text-foreground text-lg font-semibold tabular-nums">
                         ${costData.totalCost.toLocaleString()}
                       </span>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setShowCostBreakdown(!showCostBreakdown)}
+                      aria-expanded={showCostBreakdown}
                       className="text-muted-foreground hover:text-foreground mt-1 flex items-center gap-1 text-xs"
                     >
                       <ChevronDown
@@ -291,13 +288,13 @@ export function EmbassyCreatorSheet({
           )}
 
           {/* Info notice */}
-          <div className="text-muted-foreground rounded-md border border-blue-500/20 bg-blue-500/5 p-2.5 text-xs">
+          <div className="text-muted-foreground bg-muted/50 rounded-lg p-2.5 text-xs">
             Both countries will be notified of the embassy establishment. The host country can view
             your embassy details.
           </div>
         </div>
 
-        <DialogFooter className="border-border/50 border-t px-6 py-4">
+        <DialogFooter className="border-border border-t px-6 py-4">
           <Button
             variant="outline"
             size="sm"

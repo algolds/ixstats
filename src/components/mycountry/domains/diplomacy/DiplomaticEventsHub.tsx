@@ -14,7 +14,9 @@
  */
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -45,7 +47,8 @@ import {
   ClockRotateRight as History,
   Filter,
   Eye,
-  Sparks as Sparkles,
+  Community,
+  Cpu,
 } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -72,64 +75,52 @@ interface DiplomaticEventsHubProps {
 }
 
 // Event type configuration
-const EVENT_TYPE_CONFIG: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
+const EVENT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string }> = {
   border_dispute: {
-    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Border Dispute",
   },
   trade_renegotiation: {
-    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20",
     icon: <TrendingUp className="h-4 w-4" />,
     label: "Trade Negotiation",
   },
   cultural_misunderstanding: {
-    color: "bg-blue-500/15 text-blue-700 dark:text-blue-400 dark:bg-blue-500/20",
     icon: <MessageSquare className="h-4 w-4" />,
     label: "Cultural Issue",
   },
   intelligence_breach: {
-    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     icon: <Eye className="h-4 w-4" />,
     label: "Intelligence Breach",
   },
   humanitarian_crisis: {
-    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Humanitarian Crisis",
   },
   alliance_pressure: {
-    color: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 dark:bg-indigo-500/20",
-    icon: <Sparkles className="h-4 w-4" />,
+    icon: <Community className="h-4 w-4" />,
     label: "Alliance Pressure",
   },
   economic_sanctions_debate: {
-    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
     icon: <TrendingDown className="h-4 w-4" />,
     label: "Sanctions Debate",
   },
   technology_transfer_request: {
-    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/20",
-    icon: <Sparkles className="h-4 w-4" />,
+    icon: <Cpu className="h-4 w-4" />,
     label: "Tech Transfer",
   },
   diplomatic_incident: {
-    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Diplomatic Incident",
   },
   mediation_opportunity: {
-    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20",
     icon: <CheckCircle className="h-4 w-4" />,
     label: "Mediation Opportunity",
   },
   embassy_security_threat: {
-    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
     icon: <AlertCircle className="h-4 w-4" />,
     label: "Security Threat",
   },
   treaty_renewal: {
-    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/20",
     icon: <FileText className="h-4 w-4" />,
     label: "Treaty Renewal",
   },
@@ -177,9 +168,9 @@ function EventCountdown({ expiresAt }: { expiresAt: string | Date }) {
       variant="outline"
       className={cn(
         "flex items-center gap-1",
-        urgency === "critical" && "border-red-500 text-red-700 dark:text-red-400",
-        urgency === "warning" && "border-yellow-500 text-yellow-700 dark:text-yellow-400",
-        urgency === "normal" && "border-blue-500 text-blue-700 dark:text-blue-400"
+        urgency === "critical" && "text-destructive",
+        urgency === "warning" && "text-amber-500",
+        urgency === "normal" && "text-muted-foreground"
       )}
     >
       <Clock className="h-3 w-3" />
@@ -194,66 +185,36 @@ function ImpactPreview({
 }: {
   impact: { relationship?: number; economic?: number; cultural?: number };
 }) {
+  const items = [
+    { label: "Relationship", value: impact.relationship, suffix: "" },
+    { label: "Economic", value: impact.economic, suffix: "%" },
+    { label: "Cultural", value: impact.cultural, suffix: "%" },
+  ].filter((i): i is { label: string; value: number; suffix: string } => i.value !== undefined);
   return (
-    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {impact.relationship !== undefined && (
-        <div className="bg-muted/50 rounded-lg p-3 text-center">
-          <div className="mb-1 flex items-center justify-center gap-1">
-            {impact.relationship > 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            )}
-            <span
+    <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      {items.map((item) => {
+        const up = item.value > 0;
+        const Trend = up ? TrendingUp : TrendingDown;
+        return (
+          <div key={item.label} className="bg-muted/50 rounded-lg p-3 text-center">
+            <dd
               className={cn(
-                "font-bold",
-                impact.relationship > 0 ? "text-green-600" : "text-red-600"
+                "mb-1 flex items-center justify-center gap-1 font-semibold tabular-nums",
+                up ? "text-emerald-500" : "text-destructive"
               )}
             >
-              {impact.relationship > 0 ? "+" : ""}
-              {impact.relationship}
-            </span>
+              <Trend className="h-4 w-4" />
+              {up ? "+" : ""}
+              {item.value}
+              {item.suffix}
+            </dd>
+            <dt>
+              <Eyebrow>{item.label}</Eyebrow>
+            </dt>
           </div>
-          <p className="text-muted-foreground text-xs">Relationship</p>
-        </div>
-      )}
-      {impact.economic !== undefined && (
-        <div className="bg-muted/50 rounded-lg p-3 text-center">
-          <div className="mb-1 flex items-center justify-center gap-1">
-            {impact.economic > 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            )}
-            <span
-              className={cn("font-bold", impact.economic > 0 ? "text-green-600" : "text-red-600")}
-            >
-              {impact.economic > 0 ? "+" : ""}
-              {impact.economic}%
-            </span>
-          </div>
-          <p className="text-muted-foreground text-xs">Economic</p>
-        </div>
-      )}
-      {impact.cultural !== undefined && (
-        <div className="bg-muted/50 rounded-lg p-3 text-center">
-          <div className="mb-1 flex items-center justify-center gap-1">
-            {impact.cultural > 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            )}
-            <span
-              className={cn("font-bold", impact.cultural > 0 ? "text-green-600" : "text-red-600")}
-            >
-              {impact.cultural > 0 ? "+" : ""}
-              {impact.cultural}%
-            </span>
-          </div>
-          <p className="text-muted-foreground text-xs">Cultural</p>
-        </div>
-      )}
-    </div>
+        );
+      })}
+    </dl>
   );
 }
 
@@ -350,10 +311,11 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
 
   if (activeLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="space-y-4 text-center">
-          <FileText className="mx-auto h-12 w-12 animate-pulse text-blue-600" />
-          <p className="text-muted-foreground">Loading diplomatic events...</p>
+      <div className="space-y-4" role="status" aria-label="Loading diplomatic events">
+        <Skeleton className="h-24 rounded-2xl" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Skeleton className="h-56 rounded-2xl" />
+          <Skeleton className="h-56 rounded-2xl" />
         </div>
       </div>
     );
@@ -362,52 +324,37 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
   return (
     <div className="space-y-6">
       {/* Header Stats */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="facet-hierarchy-child">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Active Events</p>
-                <p className="text-3xl font-bold">{activeScenarios?.length || 0}</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-600" />
+      <FacetCard depth={1} className="rounded-2xl p-4">
+        <dl className="grid grid-cols-3 gap-4">
+          {[
+            { label: "Active events", value: activeScenarios?.length || 0, icon: FileText },
+            {
+              label: "Urgent (<24h)",
+              value:
+                activeScenarios?.filter((s) => {
+                  const hours = (new Date(s.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60);
+                  return hours < 24;
+                }).length || 0,
+              icon: Clock,
+            },
+            { label: "Total resolved", value: scenarioHistory?.length || 0, icon: History },
+          ].map((stat) => (
+            <div key={stat.label} className="space-y-1">
+              <dt>
+                <Eyebrow className="flex items-center gap-1.5">
+                  <stat.icon className="h-3.5 w-3.5" />
+                  {stat.label}
+                </Eyebrow>
+              </dt>
+              <dd className="text-foreground text-2xl font-semibold tabular-nums">{stat.value}</dd>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="facet-hierarchy-child">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Urgent Events</p>
-                <p className="text-3xl font-bold">
-                  {activeScenarios?.filter((s) => {
-                    const hours = (new Date(s.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60);
-                    return hours < 24;
-                  }).length || 0}
-                </p>
-              </div>
-              <Clock className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="facet-hierarchy-child">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Total Resolved</p>
-                <p className="text-3xl font-bold">{scenarioHistory?.length || 0}</p>
-              </div>
-              <History className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          ))}
+        </dl>
+      </FacetCard>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="bg-muted/50 inline-flex flex-wrap gap-1 rounded-full p-1">
           <TabsTrigger value="active" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Active Events ({activeScenarios?.length || 0})
@@ -424,27 +371,23 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {activeScenarios.map((event) => {
                 const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
-                  color: "bg-gray-100 text-gray-800",
                   icon: <FileText className="h-4 w-4" />,
                   label: event.type,
                 };
 
                 return (
-                  <Card
-                    key={event.id}
-                    className="facet-hierarchy-child transition-shadow hover:shadow-lg"
-                  >
-                    <CardHeader>
+                  <FacetCard key={event.id} depth={2} className="rounded-2xl">
+                    <FacetCardHeader className="p-5 pb-3">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="mb-2 flex items-center gap-2">
-                            <Badge className={eventConfig.color}>
+                            <Badge variant="outline">
                               {eventConfig.icon}
-                              <span className="ml-1">{eventConfig.label}</span>
+                              {eventConfig.label}
                             </Badge>
                             <EventCountdown expiresAt={event.expiresAt} />
                           </div>
-                          <CardTitle className="text-lg">{event.title}</CardTitle>
+                          <h3 className="text-foreground text-base font-semibold">{event.title}</h3>
                           {event.country2Name && (
                             <p className="text-muted-foreground mt-1 text-sm">
                               with {event.country2Name}
@@ -452,8 +395,8 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                           )}
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
+                    </FacetCardHeader>
+                    <FacetCardContent className="px-5 pb-5">
                       <p className="text-muted-foreground mb-4 line-clamp-3 text-sm">
                         {event.narrative}
                       </p>
@@ -461,7 +404,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                       {/* Quick Impact Preview */}
                       {event.responseOptions && event.responseOptions.length > 0 && (
                         <div className="mb-4">
-                          <p className="mb-2 text-xs font-semibold">Potential Impacts:</p>
+                          <Eyebrow>Potential impacts</Eyebrow>
                           <ImpactPreview
                             impact={{
                               relationship: event.responseOptions[0]?.relationshipEffect || 0,
@@ -480,29 +423,30 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                           className="flex-1"
                           onClick={() => openResponseDialog(event)}
                         >
-                          <Eye className="mr-2 h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                           View & Respond
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </FacetCardContent>
+                  </FacetCard>
                 );
               })}
             </div>
           ) : (
-            <Card className="facet-hierarchy-child">
-              <CardContent className="flex min-h-[300px] items-center justify-center">
-                <div className="space-y-4 text-center">
-                  <CheckCircle className="mx-auto h-16 w-16 text-green-600 opacity-50" />
-                  <div>
-                    <h3 className="text-lg font-semibold">No Active Events</h3>
-                    <p className="text-muted-foreground mt-2 text-sm">
-                      You're all caught up! New diplomatic events will appear here.
-                    </p>
-                  </div>
+            <FacetCard
+              depth={1}
+              className="flex min-h-[240px] items-center justify-center rounded-2xl p-6"
+            >
+              <div className="space-y-3 text-center">
+                <CheckCircle className="text-muted-foreground mx-auto h-6 w-6" />
+                <div>
+                  <h3 className="text-foreground text-base font-semibold">No active events</h3>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    You&apos;re all caught up. New diplomatic events will appear here.
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </FacetCard>
           )}
         </TabsContent>
 
@@ -529,57 +473,54 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
 
           {/* History List */}
           {historyLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <History className="text-muted-foreground h-8 w-8 animate-pulse" />
+            <div className="space-y-3" role="status" aria-label="Loading event history">
+              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-20 rounded-2xl" />
             </div>
           ) : filteredHistory.length > 0 ? (
             <div className="space-y-3">
               {filteredHistory.map((event) => {
                 const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
-                  color: "bg-gray-100 text-gray-800",
                   icon: <FileText className="h-4 w-4" />,
                   label: event.type,
                 };
 
                 return (
-                  <Card key={event.id} className="facet-hierarchy-child">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="flex-1">
-                          <div className="mb-2 flex items-center gap-2">
-                            <Badge variant="outline" className={eventConfig.color}>
-                              {eventConfig.icon}
-                              <span className="ml-1 text-xs">{eventConfig.label}</span>
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {event.status}
-                            </Badge>
-                          </div>
-                          <h4 className="text-sm font-semibold">{event.title}</h4>
-                          {event.country2Name && (
-                            <p className="text-muted-foreground text-xs">
-                              with {event.country2Name}
-                            </p>
-                          )}
+                  <FacetCard key={event.id} depth={2} className="rounded-2xl p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1">
+                        <div className="mb-2 flex items-center gap-2">
+                          <Badge variant="outline">
+                            {eventConfig.icon}
+                            {eventConfig.label}
+                          </Badge>
+                          <Badge variant="secondary" className="capitalize">
+                            {event.status}
+                          </Badge>
                         </div>
-                        <div className="text-muted-foreground text-right text-xs">
-                          {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
-                        </div>
+                        <h4 className="text-foreground text-sm font-semibold">{event.title}</h4>
+                        {event.country2Name && (
+                          <p className="text-muted-foreground text-xs">with {event.country2Name}</p>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div className="text-muted-foreground text-right text-xs">
+                        {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </FacetCard>
                 );
               })}
             </div>
           ) : (
-            <Card className="facet-hierarchy-child">
-              <CardContent className="flex min-h-[200px] items-center justify-center">
-                <div className="space-y-2 text-center">
-                  <History className="text-muted-foreground mx-auto h-12 w-12 opacity-50" />
-                  <p className="text-muted-foreground text-sm">No event history found</p>
-                </div>
-              </CardContent>
-            </Card>
+            <FacetCard
+              depth={1}
+              className="flex min-h-[200px] items-center justify-center rounded-2xl p-6"
+            >
+              <div className="space-y-2 text-center">
+                <History className="text-muted-foreground mx-auto h-6 w-6" />
+                <p className="text-muted-foreground text-sm">No event history found</p>
+              </div>
+            </FacetCard>
           )}
         </TabsContent>
       </Tabs>
@@ -601,20 +542,22 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             <div className="space-y-6">
               {/* Event Details */}
               <div>
-                <h4 className="mb-2 font-semibold">Situation</h4>
+                <h4 className="text-foreground mb-2 text-sm font-semibold">Situation</h4>
                 <p className="text-muted-foreground text-sm">{selectedEvent.narrative}</p>
               </div>
 
               {/* Response Options */}
               {selectedEvent.responseOptions && selectedEvent.responseOptions.length > 0 && (
                 <div>
-                  <h4 className="mb-3 font-semibold">Response Options</h4>
+                  <h4 className="text-foreground mb-3 text-sm font-semibold">Response Options</h4>
                   <div className="space-y-3">
                     {selectedEvent.responseOptions.map((option, idx) => (
-                      <div key={idx} className="bg-muted/30 rounded-lg border p-4">
+                      <FacetCard key={idx} surface="solid" className="rounded-xl p-4">
                         <div className="mb-2 flex items-start justify-between">
-                          <h5 className="font-medium">{option.label || `Option ${idx + 1}`}</h5>
-                          <Badge variant="outline" className="text-xs">
+                          <h5 className="text-foreground text-sm font-medium">
+                            {option.label || `Option ${idx + 1}`}
+                          </h5>
+                          <Badge variant="outline" className="capitalize">
                             {option.difficulty || "moderate"}
                           </Badge>
                         </div>
@@ -628,7 +571,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                             cultural: option.culturalImpact,
                           }}
                         />
-                      </div>
+                      </FacetCard>
                     ))}
                   </div>
                 </div>
@@ -636,7 +579,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             </div>
           )}
 
-          <DialogFooter className="flex gap-2">
+          <DialogFooter className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               onClick={() => setIsResponseDialogOpen(false)}
@@ -649,7 +592,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               onClick={() => handleResponse("reject")}
               disabled={respondMutation.isPending}
             >
-              <XCircle className="mr-2 h-4 w-4" />
+              <XCircle className="h-4 w-4" />
               Reject
             </Button>
             <Button
@@ -657,7 +600,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               onClick={() => handleResponse("negotiate")}
               disabled={respondMutation.isPending}
             >
-              <MessageSquare className="mr-2 h-4 w-4" />
+              <MessageSquare className="h-4 w-4" />
               Negotiate
             </Button>
             <Button
@@ -665,7 +608,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               onClick={() => handleResponse("accept")}
               disabled={respondMutation.isPending}
             >
-              <CheckCircle className="mr-2 h-4 w-4" />
+              <CheckCircle className="h-4 w-4" />
               Accept
             </Button>
           </DialogFooter>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import {
@@ -13,7 +14,7 @@ import {
   InfoCircle as Info,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 // oxlint-disable-next-line eslint/no-unused-vars
@@ -89,7 +90,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
       historicalData,
       timeRange,
       (point, _, rawTimestamp) => {
-        const tsNum = typeof rawTimestamp === "number" ? rawTimestamp : new Date(rawTimestamp).getTime();
+        const tsNum =
+          typeof rawTimestamp === "number" ? rawTimestamp : new Date(rawTimestamp).getTime();
         return {
           period: 1,
           date: format(new Date(tsNum), "MMM yyyy"),
@@ -174,13 +176,13 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     if (!countryData) return null;
 
     const tiers = [
-      { name: "Impoverished", min: 0, max: 9999, color: "text-red-600" },
-      { name: "Developing", min: 10000, max: 24999, color: "text-orange-600" },
-      { name: "Developed", min: 25000, max: 34999, color: "text-yellow-600" },
-      { name: "Healthy", min: 35000, max: 44999, color: "text-green-600" },
-      { name: "Strong", min: 45000, max: 54999, color: "text-blue-600" },
-      { name: "Very Strong", min: 55000, max: 64999, color: "text-indigo-600" },
-      { name: "Extravagant", min: 65000, max: Infinity, color: "text-indigo-600" },
+      { name: "Impoverished", min: 0, max: 9999, color: "text-destructive" },
+      { name: "Developing", min: 10000, max: 24999, color: "text-amber-500" },
+      { name: "Developed", min: 25000, max: 34999, color: "text-amber-500" },
+      { name: "Healthy", min: 35000, max: 44999, color: "text-emerald-500" },
+      { name: "Strong", min: 45000, max: 54999, color: "text-foreground" },
+      { name: "Very Strong", min: 55000, max: 64999, color: "text-foreground" },
+      { name: "Extravagant", min: 65000, max: Infinity, color: "text-foreground" },
     ];
 
     const currentTier = tiers.find(
@@ -192,21 +194,21 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
   }, [countryData]);
 
   const chartConfig = {
-    totalGdp: { label: "Total GDP (Trillions)", color: "#2563eb" },
-    gdpPerCapita: { label: "GDP per Capita", color: "#dc2626" },
-    gdpGrowth: { label: "GDP Growth %", color: "#16a34a" },
-    realGdp: { label: "Real GDP (Trillions)", color: "#7c3aed" },
-    nominalGdp: { label: "Nominal GDP (Trillions)", color: "#ea580c" },
+    totalGdp: { label: "Total GDP (Trillions)", color: "var(--color-blue-500)" },
+    gdpPerCapita: { label: "GDP per Capita", color: "var(--destructive)" },
+    gdpGrowth: { label: "GDP Growth %", color: "var(--chart-3)" },
+    realGdp: { label: "Real GDP (Trillions)", color: "var(--chart-1)" },
+    nominalGdp: { label: "Nominal GDP (Trillions)", color: "var(--chart-4)" },
   };
 
   // oxlint-disable-next-line eslint/no-unused-vars
   const getTrendIcon = (value: number) => {
     return value > 0 ? (
-      <TrendingUp className="h-4 w-4 text-green-500" />
+      <TrendingUp className="h-4 w-4 text-emerald-500" />
     ) : value < 0 ? (
-      <TrendingDown className="h-4 w-4 text-red-500" />
+      <TrendingDown className="text-destructive h-4 w-4" />
     ) : (
-      <BarChart3 className="h-4 w-4 text-gray-500" />
+      <BarChart3 className="text-muted-foreground h-4 w-4" />
     );
   };
 
@@ -247,58 +249,63 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-amber-500" />
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-6"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <BarChart3 className="text-muted-foreground h-5 w-5" />
                 GDP Performance Summary
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Key performance indicators and historical volatility metrics. Volatility /
                 Peak-Trough / Total Growth merged from former Details tab.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-center p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-amber-500">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     {gdpStats?.avgGrowth ? `${gdpStats.avgGrowth.toFixed(2)}%` : "N/A"}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">Avg Annual Growth</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-amber-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     {gdpStats?.volatility ? `${gdpStats.volatility.toFixed(2)}%` : "N/A"}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">GDP Volatility</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-emerald-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-lg font-semibold text-emerald-500">
                     {formatCurrency((gdpStats?.maxGdp || 0) * 1e12)}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">Peak GDP</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-emerald-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-lg font-semibold text-emerald-500">
                     {gdpStats?.totalGrowth ? `${gdpStats.totalGrowth.toFixed(1)}%` : "N/A"}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">Total Growth</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-indigo-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     {gdpStats
                       ? `${(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%`
                       : "N/A"}
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">Peak-to-Trough</div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-blue-400">{gdpStats?.dataPoints || 0}</div>
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
+                    {gdpStats?.dataPoints || 0}
+                  </div>
                   <div className="text-muted-foreground mt-1 text-xs">Data Points</div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -329,11 +336,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
             variant="economy"
           />
 
-          <div className="facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+          <div className="bg-muted/50 relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl p-4">
             <div>
-              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                Economic Tier
-              </span>
+              <Eyebrow>Economic Tier</Eyebrow>
               <div className="mt-2">
                 <Badge className={`text-sm font-semibold ${tierInfo?.currentTier?.color}`}>
                   {countryData?.economicTier || "Unknown"}
@@ -367,44 +372,40 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
     if (processedData.length === 0) {
       return (
-        <Card className="facet-refraction border-white/5">
-          <CardContent className="py-12 text-center">
+        <FacetCard surface="solid" className="rounded-xl">
+          <FacetCardContent className="py-12 text-center">
             <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-muted-foreground">No historical data available</p>
             <p className="text-muted-foreground text-sm">
               Data points will appear as the economic system generates history
             </p>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       );
     }
 
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>GDP Historical Trends</CardTitle>
-              <CardDescription>
+          <FacetCard surface="solid" className="rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base font-semibold">GDP Historical Trends</h3>
+              <p className="text-muted-foreground text-sm">
                 GDP development over time with {processedData.length} data points
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[350px] w-full">
                 {chartType === "line" && (
                   <RechartsLineChart data={processedData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" stroke="var(--muted-foreground)" />
+                    <YAxis stroke="var(--muted-foreground)" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     <Line
                       type="monotone"
                       dataKey="totalGdp"
-                      stroke="#fbbf24"
+                      stroke="var(--color-amber-500)"
                       strokeWidth={3}
                       dot={false}
                       activeDot={{ r: 6 }}
@@ -416,22 +417,18 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   <AreaChart data={processedData}>
                     <defs>
                       <linearGradient id="gdpColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--color-amber-500)" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="var(--color-amber-500)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" stroke="var(--muted-foreground)" />
+                    <YAxis stroke="var(--muted-foreground)" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     <Area
                       type="monotone"
                       dataKey="totalGdp"
-                      stroke="#fbbf24"
+                      stroke="var(--color-amber-500)"
                       strokeWidth={2.5}
                       fillOpacity={1}
                       fill="url(#gdpColor)"
@@ -441,17 +438,13 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 )}
                 {chartType === "bar" && (
                   <BarChart data={processedData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" stroke="var(--muted-foreground)" />
+                    <YAxis stroke="var(--muted-foreground)" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     <Bar
                       dataKey="totalGdp"
-                      fill="#fbbf24"
+                      fill="var(--color-amber-500)"
                       name="Total GDP (T)"
                       radius={[4, 4, 0, 0]}
                     />
@@ -461,25 +454,21 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   <ComposedChart data={processedData}>
                     <defs>
                       <linearGradient id="realGdpGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" />
-                    <YAxis yAxisId="left" stroke="rgba(255, 255, 255, 0.3)" />
-                    <YAxis yAxisId="right" orientation="right" stroke="rgba(255, 255, 255, 0.3)" />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" stroke="var(--muted-foreground)" />
+                    <YAxis yAxisId="left" stroke="var(--muted-foreground)" />
+                    <YAxis yAxisId="right" orientation="right" stroke="var(--muted-foreground)" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
                     <Area
                       yAxisId="left"
                       type="monotone"
                       dataKey="realGdp"
-                      stroke="#7c3aed"
+                      stroke="var(--chart-1)"
                       fillOpacity={1}
                       fill="url(#realGdpGrad)"
                       name="Real GDP (T)"
@@ -488,7 +477,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                       yAxisId="left"
                       type="monotone"
                       dataKey="nominalGdp"
-                      stroke="#ea580c"
+                      stroke="var(--chart-4)"
                       strokeWidth={2}
                       dot={false}
                       name="Nominal GDP (T)"
@@ -496,40 +485,34 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     <Bar
                       yAxisId="right"
                       dataKey="gdpGrowth"
-                      fill="#fbbf24"
+                      fill="var(--color-amber-500)"
                       name="Growth Rate %"
                       radius={[2, 2, 0, 0]}
                     />
                   </ComposedChart>
                 )}
               </ChartContainer>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Avg Growth
-              </span>
-              <span className="text-xl font-bold text-amber-500">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Avg Growth</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {gdpStats?.avgGrowth ? `${gdpStats.avgGrowth.toFixed(2)}%` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Peak GDP
-              </span>
-              <span className="text-xl font-bold text-emerald-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Peak GDP</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {formatCurrency((gdpStats?.maxGdp || 0) * 1e12)}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Volatility Factor
-              </span>
-              <span className="text-xl font-bold text-amber-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Volatility Factor</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {gdpStats?.volatility ? `${gdpStats.volatility.toFixed(2)}%` : "N/A"}
               </span>
             </div>
@@ -556,21 +539,21 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-amber-500" />
+          <FacetCard surface="solid" className="rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Info className="text-muted-foreground h-5 w-5" />
                 Economic Tier Analysis
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Understanding your economic classification and growth potential
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold">Current Economic Tier</h4>
-                  <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+                  <div className="bg-muted/50 rounded-xl p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-base font-semibold">{countryData?.economicTier}</span>
                       <Badge className={tierInfo?.currentTier?.color}>
@@ -594,7 +577,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 </div>
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold">Next Tier Target</h4>
-                  <div className="flex min-h-[106px] flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+                  <div className="bg-muted/50 flex min-h-[106px] flex-col justify-center rounded-xl p-4">
                     {tierInfo?.currentTier && tierInfo.allTiers
                       ? (() => {
                           const currentIndex = tierInfo.allTiers.findIndex(
@@ -608,10 +591,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                               <>
                                 <div className="mb-2 flex items-center justify-between">
                                   <span className="text-base font-semibold">{nextTier.name}</span>
-                                  <Badge
-                                    variant="outline"
-                                    className="border-yellow-500/30 bg-yellow-500/5 text-yellow-500"
-                                  >
+                                  <Badge variant="outline" className="text-amber-500">
                                     Next Level
                                   </Badge>
                                 </div>
@@ -628,7 +608,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                             );
                           } else {
                             return (
-                              <div className="text-center text-green-500">
+                              <div className="text-center text-emerald-500">
                                 <p className="font-semibold">Maximum Tier Achieved!</p>
                                 <p className="text-muted-foreground mt-1 text-xs">
                                   Your economy has reached the highest classification
@@ -641,18 +621,16 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           {globalStats && (
             <div className="flex h-full flex-col justify-between gap-4">
-              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-                <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                  vs Global Avg GDP/Capita
-                </span>
-                <span className="text-xl font-bold text-cyan-400">
+              <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+                <Eyebrow className="mb-1 block">vs Global Avg GDP/Capita</Eyebrow>
+                <span className="text-foreground text-xl font-semibold">
                   {countryData?.currentGdpPerCapita && globalStats.avgGdpPerCapita > 0
                     ? `${((countryData.currentGdpPerCapita / globalStats.avgGdpPerCapita - 1) * 100).toFixed(1)}%`
                     : "N/A"}
@@ -661,11 +639,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   Avg: {formatCurrency(globalStats.avgGdpPerCapita)}
                 </span>
               </div>
-              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-                <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                  Economic Tier Rank
-                </span>
-                <span className="text-xl font-bold text-amber-500">
+              <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+                <Eyebrow className="mb-1 block">Economic Tier Rank</Eyebrow>
+                <span className="text-foreground text-xl font-semibold">
                   {tierInfo?.allTiers
                     ? tierInfo.allTiers.findIndex((t) => t.name === countryData?.economicTier) +
                         1 || 0
@@ -673,11 +649,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   /7
                 </span>
               </div>
-              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-                <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                  Global GDP Share
-                </span>
-                <span className="text-xl font-bold text-indigo-400">
+              <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+                <Eyebrow className="mb-1 block">Global GDP Share</Eyebrow>
+                <span className="text-foreground text-xl font-semibold">
                   {countryData?.currentTotalGdp && globalStats.totalGdp > 0
                     ? `${((countryData.currentTotalGdp / globalStats.totalGdp) * 100).toFixed(3)}%`
                     : "N/A"}
@@ -702,7 +676,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
       title="GDP Analysis"
       description="Comprehensive GDP analysis with historical trends, projections, and economic insights"
       icon={DollarSign}
-      iconColor="text-green-500"
+      iconColor="text-emerald-500"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}

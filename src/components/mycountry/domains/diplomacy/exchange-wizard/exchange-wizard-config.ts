@@ -23,7 +23,7 @@ import type { RouterOutputs } from "~/trpc/react";
 export const WIZARD_EXCHANGE_TYPES = {
   festival: {
     icon: Star,
-    color: "text-indigo-400",
+    color: "text-muted-foreground",
     bgColor: "bg-indigo-500/20",
     borderColor: "border-indigo-500/40",
     label: "Cultural Festival",
@@ -32,7 +32,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   exhibition: {
     icon: Building,
-    color: "text-blue-400",
+    color: "text-muted-foreground",
     bgColor: "bg-blue-500/20",
     borderColor: "border-blue-500/40",
     label: "Cultural Exhibition",
@@ -41,7 +41,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   education: {
     icon: Book,
-    color: "text-emerald-400",
+    color: "text-muted-foreground",
     bgColor: "bg-emerald-500/20",
     borderColor: "border-emerald-500/40",
     label: "Educational Exchange",
@@ -50,7 +50,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   cuisine: {
     icon: Cutlery,
-    color: "text-amber-400",
+    color: "text-muted-foreground",
     bgColor: "bg-amber-500/20",
     borderColor: "border-amber-500/40",
     label: "Culinary Exchange",
@@ -59,7 +59,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   arts: {
     icon: Palette,
-    color: "text-blue-400",
+    color: "text-muted-foreground",
     bgColor: "bg-blue-500/20",
     borderColor: "border-blue-500/40",
     label: "Arts Exchange",
@@ -68,7 +68,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   sports: {
     icon: Trophy,
-    color: "text-red-400",
+    color: "text-muted-foreground",
     bgColor: "bg-red-500/20",
     borderColor: "border-red-500/40",
     label: "Sports Exchange",
@@ -77,7 +77,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   technology: {
     icon: Gamepad,
-    color: "text-cyan-400",
+    color: "text-muted-foreground",
     bgColor: "bg-cyan-500/20",
     borderColor: "border-cyan-500/40",
     label: "Tech Exchange",
@@ -86,7 +86,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   diplomacy: {
     icon: Globe,
-    color: "text-amber-400",
+    color: "text-muted-foreground",
     bgColor: "bg-amber-500/20",
     borderColor: "border-amber-500/40",
     label: "Diplomatic Summit",
@@ -96,7 +96,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   // More options (hidden by default)
   music: {
     icon: MusicNote,
-    color: "text-indigo-400",
+    color: "text-muted-foreground",
     bgColor: "bg-indigo-500/20",
     borderColor: "border-indigo-500/40",
     label: "Music Exchange",
@@ -105,7 +105,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   film: {
     icon: MediaVideo,
-    color: "text-indigo-400",
+    color: "text-muted-foreground",
     bgColor: "bg-indigo-500/20",
     borderColor: "border-indigo-500/40",
     label: "Film & Media",
@@ -114,7 +114,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   environmental: {
     icon: Leaf,
-    color: "text-emerald-400",
+    color: "text-muted-foreground",
     bgColor: "bg-emerald-500/20",
     borderColor: "border-emerald-500/40",
     label: "Environmental",
@@ -123,7 +123,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   science: {
     icon: Flask,
-    color: "text-cyan-400",
+    color: "text-muted-foreground",
     bgColor: "bg-cyan-500/20",
     borderColor: "border-cyan-500/40",
     label: "Scientific Research",
@@ -132,7 +132,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   trade: {
     icon: DeliveryTruck,
-    color: "text-emerald-400",
+    color: "text-muted-foreground",
     bgColor: "bg-emerald-500/20",
     borderColor: "border-emerald-500/40",
     label: "Trade Mission",
@@ -141,7 +141,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   humanitarian: {
     icon: Heart,
-    color: "text-red-400",
+    color: "text-muted-foreground",
     bgColor: "bg-red-500/20",
     borderColor: "border-red-500/40",
     label: "Humanitarian Aid",
@@ -150,7 +150,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   agriculture: {
     icon: Leaf,
-    color: "text-emerald-400",
+    color: "text-muted-foreground",
     bgColor: "bg-emerald-500/20",
     borderColor: "border-emerald-500/40",
     label: "Agricultural",
@@ -159,7 +159,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   heritage: {
     icon: Building,
-    color: "text-amber-400",
+    color: "text-muted-foreground",
     bgColor: "bg-amber-500/20",
     borderColor: "border-amber-500/40",
     label: "Heritage Preservation",
@@ -168,7 +168,7 @@ export const WIZARD_EXCHANGE_TYPES = {
   },
   youth: {
     icon: Medal,
-    color: "text-yellow-400",
+    color: "text-muted-foreground",
     bgColor: "bg-yellow-500/20",
     borderColor: "border-yellow-500/40",
     label: "Youth Program",

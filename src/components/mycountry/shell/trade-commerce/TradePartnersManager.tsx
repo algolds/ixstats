@@ -2,7 +2,9 @@ import React from "react";
 import Link from "next/link";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Community as Handshake } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { formatCompact } from "./trade-commerce-types";
 
 interface TradePartnerItem {
@@ -27,31 +29,41 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
 }: TradePartnersManagerProps) {
   if (partners.length === 0) {
     return (
-      <div className="border-border/50 text-muted-foreground rounded-xl border border-dashed py-8 text-center text-xs">
-        No active bilateral trade partners found. Establish diplomatic embassies to negotiate trade
-        pacts.
-      </div>
+      <FacetCard surface="solid" className="rounded-2xl border-dashed px-4 py-8 text-center">
+        <p className="text-muted-foreground text-xs">
+          No active bilateral trade partners found. Establish diplomatic embassies to negotiate
+          trade pacts.
+        </p>
+      </FacetCard>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Bilateral Trade Agreements & Partners
-        </h4>
-        <span className="text-muted-foreground text-xs">{partners.length} Connected</span>
-      </div>
-      <p className="text-muted-foreground text-xs">
-        Agreement status comes from your recorded treaties. To sign a free trade agreement, propose
-        one from the partner&apos;s country page (Country Actions).
-      </p>
+    <FacetCard surface="solid" className="rounded-2xl">
+      <FacetCardHeader className="gap-1 p-4 pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Handshake aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+            <h3 className="text-foreground text-sm font-semibold">
+              Bilateral Trade Agreements & Partners
+            </h3>
+          </div>
+          <Badge variant="secondary" className="shrink-0 tabular-nums">
+            {partners.length} connected
+          </Badge>
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Agreement status comes from your recorded treaties. To sign a free trade agreement,
+          propose one from the partner&apos;s country page (Country Actions).
+        </p>
+      </FacetCardHeader>
 
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+      <FacetCardContent className="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
         {partners.map((partner) => (
-          <div
+          <FacetCard
             key={partner.countryId}
-            className="border-border/40 bg-card/60 flex items-center justify-between gap-2 rounded-lg border p-2.5 backdrop-blur-sm"
+            surface="solid"
+            className="flex items-center justify-between gap-2 rounded-xl p-2.5"
           >
             <div className="flex min-w-0 items-center gap-2">
               <UnifiedCountryFlag
@@ -73,28 +85,24 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
             </div>
 
             {partner.tradeAgreement ? (
-              <span
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium",
-                  "border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                )}
-              >
-                <Handshake className="h-3 w-3" />
+              <Badge variant="outline" className="shrink-0 text-emerald-600">
+                <Handshake aria-hidden="true" />
                 Trade treaty
-              </span>
+              </Badge>
             ) : (
-              <Link
-                href={`/countries/${partner.countryId}`}
-                title={`Open ${partner.countryName} to propose a free trade agreement`}
-                className="bg-muted text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors"
-              >
-                <Handshake className="h-3 w-3" />
-                Propose FTA
-              </Link>
+              <Button asChild variant="outline" size="xs" className="h-11 shrink-0 sm:h-7">
+                <Link
+                  href={`/countries/${partner.countryId}`}
+                  title={`Open ${partner.countryName} to propose a free trade agreement`}
+                >
+                  <Handshake aria-hidden="true" />
+                  Propose FTA
+                </Link>
+              </Button>
             )}
-          </div>
+          </FacetCard>
         ))}
-      </div>
-    </div>
+      </FacetCardContent>
+    </FacetCard>
   );
 });

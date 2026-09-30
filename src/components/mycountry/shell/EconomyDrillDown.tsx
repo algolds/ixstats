@@ -7,15 +7,17 @@ import {
   Bank as Landmark,
   Coins,
   Globe as Globe2,
-  SystemRestart as Loader2,
   Suitcase as Briefcase,
   Reports as PieChart,
   ScaleFrameEnlarge as Scale,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Skeleton } from "~/components/ui/skeleton";
+import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import {
@@ -31,11 +33,7 @@ const BudgetManagementDashboard = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: () => <Skeleton className="h-64 rounded-2xl" />,
   }
 );
 
@@ -46,11 +44,7 @@ const FiscalPolicyConsole = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: () => <Skeleton className="h-64 rounded-2xl" />,
   }
 );
 
@@ -61,11 +55,7 @@ const TradeCommerceConsole = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: () => <Skeleton className="h-64 rounded-2xl" />,
   }
 );
 
@@ -78,22 +68,61 @@ const InfrastructureMaintenanceCard = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: () => <Skeleton className="h-64 rounded-2xl" />,
   }
 );
 
-const SECTOR_BAR_COLORS = [
-  { text: "text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500" },
-  { text: "text-cyan-600 dark:text-cyan-400", bar: "bg-cyan-500" },
-  { text: "text-amber-600 dark:text-amber-400", bar: "bg-amber-500" },
-  { text: "text-indigo-600 dark:text-indigo-400", bar: "bg-indigo-500" },
-  { text: "text-rose-600 dark:text-rose-400", bar: "bg-rose-500" },
-  { text: "text-teal-600 dark:text-teal-400", bar: "bg-teal-500" },
-];
+/**
+ * A section panel inside the Economy drill-down. It renders both inside the drill sheet and on
+ * the full page, so it is always opaque (`surface="solid"`): blur never stacks inside the sheet.
+ */
+function EconomySection({
+  title,
+  icon: Icon,
+  accessory,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  accessory?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <FacetCard surface="solid" className="rounded-2xl">
+      <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+          <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+        </div>
+        {accessory}
+      </FacetCardHeader>
+      <FacetCardContent className="px-4 pb-4">{children}</FacetCardContent>
+    </FacetCard>
+  );
+}
+
+/** A captioned figure: eyebrow label, value, optional footnote. */
+function StatTile({
+  label,
+  value,
+  note,
+  className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  note?: string;
+  className?: string;
+}) {
+  return (
+    <FacetCard surface="solid" className={cn("rounded-xl p-2.5", className)}>
+      <Eyebrow className="block">{label}</Eyebrow>
+      <p className="text-foreground mt-0.5 font-mono text-base font-semibold tabular-nums">
+        {value}
+      </p>
+      {note && <p className="text-muted-foreground mt-0.5 text-xs">{note}</p>}
+    </FacetCard>
+  );
+}
 
 /** Missing data renders as "—", never a stand-in figure. */
 function pct(value: number | null, digits = 1): string {
@@ -175,7 +204,6 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
         label: "GDP (Total)",
         value: country?.currentTotalGdp ? `$${(country.currentTotalGdp / 1e9).toFixed(2)}B` : "—",
         sub: "Gross Domestic Product",
-        accent: "text-emerald-600 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
       },
       {
         label: "GDP Growth",
@@ -184,13 +212,11 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             ? `${(country.realGdpGrowthRate * 100).toFixed(2)}%`
             : "—",
         sub: "Annual real rate",
-        accent: "text-cyan-600 dark:text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
       },
       {
         label: "Economic Vitality",
         value: dashboard?.economicVitality != null ? `${dashboard.economicVitality}/100` : "—",
         sub: "National vitality band",
-        accent: "text-amber-600 dark:text-amber-400 border-amber-500/20 bg-amber-500/5",
       },
       {
         label: "Government Efficiency",
@@ -199,7 +225,6 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             ? `${dashboard.governmentalEfficiency}/100`
             : "—",
         sub: "Administrative capacity",
-        accent: "text-indigo-600 dark:text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
       },
     ],
     [
@@ -213,244 +238,147 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
   return (
     <div className="space-y-4">
       {/* Sub-tab switcher (shared with the other domain sections) */}
-      <SectionTabBar
-        tabs={tabs}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        activeClassName="border-emerald-500/40 bg-emerald-500/20 text-emerald-950 dark:text-emerald-300"
-      />
+      <SectionTabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === "macro" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {metrics.map(({ label, value, sub, accent }) => (
-              <div
-                key={label}
-                className={cn(
-                  "rounded-2xl border p-3.5 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]",
-                  accent
-                )}
-              >
-                <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
-                  {label}
-                </p>
-                <p className="text-foreground mt-1 font-mono text-lg font-bold tracking-tight tabular-nums">
+            {metrics.map(({ label, value, sub }) => (
+              <FacetCard key={label} surface="solid" className="rounded-2xl p-3.5">
+                <Eyebrow className="block">{label}</Eyebrow>
+                <p className="text-foreground mt-1 font-mono text-lg font-semibold tracking-tight tabular-nums">
                   {value}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-xs font-medium">{sub}</p>
-              </div>
+                <p className="text-muted-foreground mt-0.5 text-xs">{sub}</p>
+              </FacetCard>
             ))}
           </div>
 
-          {/* Sector Output Distribution Matrix */}
-          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-            <div className="border-border/20 flex items-center justify-between border-b pb-2">
-              <div className="flex items-center gap-2">
-                <PieChart className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <h4 className="text-foreground text-xs font-semibold">
-                  Sector Output & Complexity Matrix
-                </h4>
-              </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                Complexity Index: {complexity != null ? complexity.toFixed(1) : "—"}
-              </span>
-            </div>
-
+          {/* Sector output distribution */}
+          <EconomySection
+            title="Sector output and complexity"
+            icon={PieChart}
+            accessory={
+              <Badge variant="secondary" className="font-mono">
+                Complexity {complexity != null ? complexity.toFixed(1) : "—"}
+              </Badge>
+            }
+          >
             {sectors.length === 0 ? (
               <p className="text-muted-foreground py-2 text-center text-xs">
                 No sector breakdown recorded. Add one in the Country Editor (Economics step).
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-                {sectors.map((sector, idx) => {
-                  const color = SECTOR_BAR_COLORS[idx % SECTOR_BAR_COLORS.length]!;
-                  return (
-                    <div
-                      key={`${sector.name}-${idx}`}
-                      className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5"
-                    >
-                      <div className="flex justify-between gap-2 text-xs">
-                        <span className="text-muted-foreground truncate font-semibold capitalize">
-                          {sector.name}
-                        </span>
-                        <span className={cn("font-mono font-bold tabular-nums", color.text)}>
-                          {sector.share.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="bg-muted/30 h-1.5 w-full overflow-hidden rounded-full">
-                        <div
-                          className={cn("h-full", color.bar)}
-                          style={{ width: `${Math.min(sector.share, 100)}%` }}
-                        />
-                      </div>
+                {sectors.map((sector, idx) => (
+                  <FacetCard
+                    key={`${sector.name}-${idx}`}
+                    surface="solid"
+                    className="space-y-1.5 rounded-xl p-2.5"
+                  >
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="text-muted-foreground truncate font-medium capitalize">
+                        {sector.name}
+                      </span>
+                      <span className="text-foreground font-mono font-semibold tabular-nums">
+                        {sector.share.toFixed(1)}%
+                      </span>
                     </div>
-                  );
-                })}
+                    <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                      <div
+                        className="bg-primary/70 h-full rounded-full"
+                        style={{ width: `${Math.min(sector.share, 100)}%` }}
+                      />
+                    </div>
+                  </FacetCard>
+                ))}
               </div>
             )}
-          </FacetCard>
+          </EconomySection>
 
-          {/* Labor Force & Employment Matrix */}
-          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-            <div className="border-border/20 flex items-center justify-between border-b pb-2">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                <h4 className="text-foreground text-xs font-semibold">
-                  Labor Market & Employment Dynamics
-                </h4>
-              </div>
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-cyan-600 dark:text-cyan-400">
-                Female participation: {pct(femaleParticipation)}
-              </span>
+          {/* Labor force and employment */}
+          <EconomySection
+            title="Labor market and employment"
+            icon={Briefcase}
+            accessory={
+              <Badge variant="secondary" className="font-mono">
+                Female participation {pct(femaleParticipation)}
+              </Badge>
+            }
+          >
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatTile label="Unemployment" value={pct(unemployment)} note="Nominal rate" />
+              <StatTile
+                label="Youth unemployment"
+                value={pct(youthUnemployment)}
+                note="Ages 18-24"
+              />
+              <StatTile
+                label="Median annual wage"
+                value={medianWage != null ? `$${Math.round(medianWage).toLocaleString()}` : "—"}
+                note="Annual full-time"
+              />
+              <StatTile
+                label="Informal labor"
+                value={pct(informalEmployment)}
+                note="Unregulated employment"
+              />
             </div>
+          </EconomySection>
 
-            <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-              <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Unemployment
-                </p>
-                <p className="mt-0.5 font-mono text-base font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
-                  {pct(unemployment)}
-                </p>
-                <p className="text-muted-foreground mt-0.5 text-xs">Nominal Rate</p>
-              </div>
-
-              <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Youth Unemployment
-                </p>
-                <p className="mt-0.5 font-mono text-base font-bold text-amber-600 tabular-nums dark:text-amber-400">
-                  {pct(youthUnemployment)}
-                </p>
-                <p className="text-muted-foreground mt-0.5 text-xs">Ages 18-24</p>
-              </div>
-
-              <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Median Annual Wage
-                </p>
-                <p className="mt-0.5 font-mono text-base font-bold text-cyan-600 tabular-nums dark:text-cyan-400">
-                  {medianWage != null ? `$${Math.round(medianWage).toLocaleString()}` : "—"}
-                </p>
-                <p className="text-muted-foreground mt-0.5 text-xs">Annual Full-Time</p>
-              </div>
-
-              <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Informal Labor
-                </p>
-                <p className="text-foreground mt-0.5 font-mono text-base font-bold tabular-nums">
-                  {pct(informalEmployment)}
-                </p>
-                <p className="text-muted-foreground mt-0.5 text-xs">Unregulated Employment</p>
-              </div>
+          {/* Income inequality and wealth distribution */}
+          <EconomySection
+            title="Income and wealth equality"
+            icon={Scale}
+            accessory={
+              <Badge variant="secondary" className="font-mono">
+                Gini {giniLabel(gini)}
+              </Badge>
+            }
+          >
+            <div className="grid grid-cols-3 gap-3">
+              <StatTile label="Top 10% wealth share" value={pct(top10Wealth)} />
+              <StatTile label="Middle class share" value={pct(middleClass)} />
+              <StatTile
+                label="Social mobility"
+                value={mobility != null ? `${Math.round(mobility)}/100` : "—"}
+              />
             </div>
-          </FacetCard>
-
-          {/* Income Inequality & Wealth Distribution */}
-          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-            <div className="border-border/20 flex items-center justify-between border-b pb-2">
-              <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-indigo-500" />
-                <h4 className="text-foreground text-xs font-semibold">
-                  Income & Wealth Equality Console
-                </h4>
-              </div>
-              <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-500 dark:text-indigo-400">
-                Gini Index: {giniLabel(gini)}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 text-xs">
-              <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Top 10% Wealth Share
-                </p>
-                <p className="font-mono text-base font-bold text-amber-600 tabular-nums dark:text-amber-400">
-                  {pct(top10Wealth)}
-                </p>
-              </div>
-
-              <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Middle Class Share
-                </p>
-                <p className="font-mono text-base font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
-                  {pct(middleClass)}
-                </p>
-              </div>
-
-              <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Social Mobility Score
-                </p>
-                <p className="font-mono text-base font-bold text-cyan-600 tabular-nums dark:text-cyan-400">
-                  {mobility != null ? `${Math.round(mobility)}/100` : "—"}
-                </p>
-              </div>
-            </div>
-          </FacetCard>
+          </EconomySection>
         </div>
       )}
 
       {activeTab === "fiscal" && (
         <div className="space-y-4">
-          {/* Revenue Integration Banner */}
-          <FacetCard
-            depth={1}
-            surface="solid"
-            className="border-border/30 space-y-3 border p-4 shadow-lg"
+          {/* Revenue integration */}
+          <EconomySection
+            title="Revenue integration and budget balance"
+            icon={Landmark}
+            accessory={<Badge variant="secondary">Integrated treasury</Badge>}
           >
-            <div className="border-border/20 flex items-center justify-between border-b pb-2">
-              <div className="flex items-center gap-2">
-                <Landmark className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <h4 className="text-foreground text-xs font-semibold">
-                  Revenue Integration & Budget Balance
-                </h4>
-              </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                Integrated Treasury Stream
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-              <div className="border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Fiscal Tax Revenue Yield
-                </p>
-                <p className="font-mono text-base font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
-                  {country?.governmentRevenueTotal
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <StatTile
+                label="Tax revenue yield"
+                value={
+                  country?.governmentRevenueTotal
                     ? `$${(country.governmentRevenueTotal / 1e9).toFixed(2)}B / yr`
-                    : "—"}
-                </p>
-                <p className="text-muted-foreground text-xs font-medium">
-                  Sourced from Fiscal Policy tab
-                </p>
-              </div>
-
-              <div className="border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Trade Tariff Revenue
-                </p>
-                <p className="font-mono text-base font-bold text-cyan-600 tabular-nums dark:text-cyan-400">
-                  {tariffRevenue != null ? `$${(tariffRevenue / 1e9).toFixed(2)}B / yr` : "—"}
-                </p>
-                <p className="text-muted-foreground text-xs font-medium">
-                  Fiscal Policy tariff rate on recorded imports
-                </p>
-              </div>
-
-              <div className="border-border/20 bg-muted/15 col-span-2 space-y-1 rounded-xl border p-2.5 sm:col-span-1">
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Tax System Efficiency
-                </p>
-                <p className="font-mono text-base font-bold text-amber-600 tabular-nums dark:text-amber-400">
-                  {taxEfficiency != null ? `${Math.round(taxEfficiency * 100)}%` : "—"}
-                </p>
-                <p className="text-muted-foreground text-xs font-medium">Collection Efficiency</p>
-              </div>
+                    : "—"
+                }
+                note="Sourced from the Fiscal Policy tab"
+              />
+              <StatTile
+                label="Trade tariff revenue"
+                value={tariffRevenue != null ? `$${(tariffRevenue / 1e9).toFixed(2)}B / yr` : "—"}
+                note="Fiscal Policy tariff rate on recorded imports"
+              />
+              <StatTile
+                label="Tax system efficiency"
+                value={taxEfficiency != null ? `${Math.round(taxEfficiency * 100)}%` : "—"}
+                note="Collection efficiency"
+                className="col-span-2 sm:col-span-1"
+              />
             </div>
-          </FacetCard>
+          </EconomySection>
 
           <BudgetManagementDashboard countryId={countryId} />
 

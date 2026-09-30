@@ -9,6 +9,7 @@
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { COMPONENT_CATEGORIES, type EconomicCategory } from "~/lib/economy/atomic-data";
 
 export interface CategoryFilterProps {
@@ -29,7 +30,7 @@ function CategoryFilterComponent({
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-semibold text-gray-700">Filter by Category</h4>
+      <Eyebrow className="block">Filter by category</Eyebrow>
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"

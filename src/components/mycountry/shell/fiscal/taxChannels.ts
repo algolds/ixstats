@@ -96,18 +96,6 @@ export const TAX_CHANNELS: TaxChannel[] = [
   },
 ];
 
-export const ACCENT_BORDER: Record<string, string> = {
-  emerald: "border-emerald-500/30",
-  cyan: "border-cyan-500/30",
-  amber: "border-amber-500/30",
-  indigo: "border-indigo-500/30",
-  blue: "border-blue-500/30",
-  red: "border-red-500/30",
-  purple: "border-indigo-500/30",
-  teal: "border-cyan-500/30",
-  rose: "border-red-500/30",
-};
-
 export const ACCENT_BG: Record<string, string> = {
   emerald: "bg-emerald-500",
   cyan: "bg-cyan-500",
@@ -118,30 +106,6 @@ export const ACCENT_BG: Record<string, string> = {
   purple: "bg-indigo-500",
   teal: "bg-cyan-500",
   rose: "bg-red-500",
-};
-
-export const SLIDER_RANGE_COLOR: Record<string, string> = {
-  emerald: "[&_[data-slot=slider-range]]:bg-emerald-500",
-  cyan: "[&_[data-slot=slider-range]]:bg-cyan-500",
-  amber: "[&_[data-slot=slider-range]]:bg-amber-500",
-  indigo: "[&_[data-slot=slider-range]]:bg-indigo-500",
-  blue: "[&_[data-slot=slider-range]]:bg-blue-500",
-  red: "[&_[data-slot=slider-range]]:bg-red-500",
-  purple: "[&_[data-slot=slider-range]]:bg-indigo-500",
-  teal: "[&_[data-slot=slider-range]]:bg-cyan-500",
-  rose: "[&_[data-slot=slider-range]]:bg-red-500",
-};
-
-export const SLIDER_THUMB_COLOR: Record<string, string> = {
-  emerald: "[&_[data-slot=slider-thumb]]:border-emerald-500",
-  cyan: "[&_[data-slot=slider-thumb]]:border-cyan-500",
-  amber: "[&_[data-slot=slider-thumb]]:border-amber-500",
-  indigo: "[&_[data-slot=slider-thumb]]:border-indigo-500",
-  blue: "[&_[data-slot=slider-thumb]]:border-blue-500",
-  red: "[&_[data-slot=slider-thumb]]:border-red-500",
-  purple: "[&_[data-slot=slider-thumb]]:border-indigo-500",
-  teal: "[&_[data-slot=slider-thumb]]:border-cyan-500",
-  rose: "[&_[data-slot=slider-thumb]]:border-red-500",
 };
 
 export interface FiscalRatesRow {

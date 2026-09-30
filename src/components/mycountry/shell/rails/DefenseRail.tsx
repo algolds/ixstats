@@ -7,14 +7,26 @@ import {
   ShieldAlert,
   Shield,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { ReadinessOverviewCard } from "~/components/mycountry/domains/defense/command/ReadinessOverviewCard";
 import {
   DomainActivityCard,
+  RailBar,
+  RailCard,
+  RailCount,
+  RailEmpty,
+  RailRow,
+  STATUS_FILL,
+  STATUS_TEXT,
   type ActivityEntry,
+  type StatusTone,
 } from "./shared";
+
+function readinessTone(readiness: number): StatusTone {
+  return readiness >= 70 ? "success" : readiness >= 40 ? "warning" : "critical";
+}
 
 interface ThreatItem {
   id: string;
@@ -69,9 +81,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
       averageTechnology: Math.round(
         branches!.reduce((s, b) => s + (b.technologyLevel ?? 0), 0) / count
       ),
-      averageMorale: Math.round(
-        branches!.reduce((s, b) => s + (b.morale ?? 0), 0) / count
-      ),
+      averageMorale: Math.round(branches!.reduce((s, b) => s + (b.morale ?? 0), 0) / count),
     };
   }, [branches]);
 
@@ -83,7 +93,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `branch-${b.id}`,
         icon: Sword,
-        iconColor: readiness >= 70 ? "text-green-500" : "text-red-500",
+        iconColor: STATUS_TEXT[readinessTone(readiness)],
         text: `${b.name ?? "Military branch"} — ${Math.round(readiness)}% ready`,
         time: new Date(b.updatedAt ?? b.createdAt ?? Date.now()),
       });
@@ -94,7 +104,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `threat-${t.id}`,
         icon: critical ? AlertTriangle : ShieldAlert,
-        iconColor: critical ? "text-red-500" : "text-amber-500",
+        iconColor: critical ? STATUS_TEXT.critical : STATUS_TEXT.warning,
         text: `${t.threatName ?? "Threat"} — ${t.severity ?? "monitoring"}`,
         time: new Date(t.lastUpdated ?? t.detectedAt ?? t.createdAt ?? Date.now()),
       });
@@ -113,116 +123,84 @@ export function DefenseRail({ countryId }: { countryId: string }) {
         branches={branches}
       />
 
-      {/* Military Branches & Readiness Snapshot Card */}
-      <FacetCard depth={1} className="space-y-2.5 rounded-3xl p-4">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2">
-          <div className="flex items-center gap-2">
-            <Sword className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
-            <h4 className="text-foreground text-sm font-semibold">Military branches</h4>
-          </div>
-          <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-extrabold text-red-600 dark:text-red-400">
-            {branches?.length ?? 0} Active
-          </span>
-        </div>
+      {/* Military branches and readiness */}
+      <RailCard
+        title="Military branches"
+        icon={Sword}
+        accessory={<RailCount>{branches?.length ?? 0} active</RailCount>}
+      >
+        {!branches || branches.length === 0 ? (
+          <RailEmpty>No active military branches configured.</RailEmpty>
+        ) : (
+          branches.slice(0, 4).map((b) => {
+            const readiness = b.readinessLevel ?? b.readiness ?? 50;
+            const personnel = b.personnelCount ?? b.personnel ?? 0;
+            const tone = readinessTone(readiness);
 
-        <div className="space-y-1.5">
-          {!branches || branches.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-xs">
-              No active military branches configured.
-            </p>
-          ) : (
-            branches.slice(0, 4).map((b) => {
-              const readiness = b.readinessLevel ?? b.readiness ?? 50;
-              const personnel = b.personnelCount ?? b.personnel ?? 0;
-
-              return (
-                <div
-                  key={b.id}
-                  className="space-y-1 rounded-lg border border-border/60 bg-muted/40 p-2 text-xs"
-                >
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-foreground min-w-0 truncate font-semibold">
-                      {b.name ?? b.branchType ?? "Military Branch"}
-                    </span>
-                    <span
-                      className="shrink-0 text-xs font-bold text-red-600 dark:text-red-400"
-                      title={`${(personnel / 1000).toFixed(1)}k personnel`}
-                    >
-                      {Math.round(readiness)}% · {(personnel / 1000).toFixed(1)}k
-                    </span>
-                  </div>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full bg-gradient-to-r from-red-500 to-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-                      style={{ width: `${Math.min(100, Math.max(0, readiness))}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </FacetCard>
-
-      {/* Threat Vectors Snapshot Card */}
-      <FacetCard depth={1} className="space-y-2.5 rounded-3xl p-4">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-            <h4 className="text-foreground text-sm font-semibold">Threat assessments</h4>
-          </div>
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-extrabold text-amber-600 dark:text-amber-400">
-            {assessment?.activeThreats?.length ?? 0} Threats
-          </span>
-        </div>
-
-        <div className="space-y-1.5">
-          {!assessment?.activeThreats || assessment.activeThreats.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-xs">
-              All threat vectors clear. Defensive alert level nominal.
-            </p>
-          ) : (
-            assessment.activeThreats.slice(0, 3).map((threat) => {
-              const critical = threat.severity === "critical" || threat.severity === "existential";
-
-              return (
-                <div
-                  key={threat.id}
-                  className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 p-2 text-xs"
-                >
-                  <div className="flex min-w-0 items-center gap-2 pr-2">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10">
-                      {critical ? (
-                        <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
-                      ) : (
-                        <ShieldAlert className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                      )}
-                    </span>
-                    <span className="text-foreground truncate text-xs font-semibold">
-                      {threat.threatName ?? threat.name ?? "Threat Vector"}
-                    </span>
-                  </div>
+            return (
+              <RailRow key={b.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-foreground min-w-0 truncate font-medium">
+                    {b.name ?? b.branchType ?? "Military branch"}
+                  </span>
                   <span
-                    className={cn(
-                      "shrink-0 rounded-md border px-1.5 py-0.5 text-xs font-bold uppercase",
-                      critical
-                        ? "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
-                        : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    )}
+                    className="text-foreground shrink-0 tabular-nums"
+                    title={`${(personnel / 1000).toFixed(1)}k personnel`}
                   >
-                    {threat.severity ?? "Alert"}
+                    <span className={STATUS_TEXT[tone]}>{Math.round(readiness)}%</span> ·{" "}
+                    {(personnel / 1000).toFixed(1)}k
                   </span>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </FacetCard>
+                <RailBar value={readiness} fill={STATUS_FILL[tone]} />
+              </RailRow>
+            );
+          })
+        )}
+      </RailCard>
+
+      {/* Threat vectors */}
+      <RailCard
+        title="Threat assessments"
+        icon={AlertTriangle}
+        accessory={<RailCount>{assessment?.activeThreats?.length ?? 0}</RailCount>}
+      >
+        {!assessment?.activeThreats || assessment.activeThreats.length === 0 ? (
+          <RailEmpty>All threat vectors clear. Defensive alert level nominal.</RailEmpty>
+        ) : (
+          assessment.activeThreats.slice(0, 3).map((threat) => {
+            const critical = threat.severity === "critical" || threat.severity === "existential";
+            const ThreatIcon = critical ? AlertTriangle : ShieldAlert;
+
+            return (
+              <RailRow key={threat.id} className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <ThreatIcon
+                    aria-hidden="true"
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0",
+                      critical ? STATUS_TEXT.critical : STATUS_TEXT.warning
+                    )}
+                  />
+                  <span className="text-foreground truncate font-medium">
+                    {threat.threatName ?? threat.name ?? "Threat vector"}
+                  </span>
+                </div>
+                <Badge
+                  variant={critical ? "destructive" : "outline"}
+                  className={cn("shrink-0 capitalize", !critical && STATUS_TEXT.warning)}
+                >
+                  {threat.severity ?? "alert"}
+                </Badge>
+              </RailRow>
+            );
+          })
+        )}
+      </RailCard>
 
       {/* Defense Log Activity Feed */}
       <DomainActivityCard
         domain="defense"
-        title="Defense Log"
+        title="Defense log"
         icon={Shield}
         entries={activity}
         emptyMessage="No defense activity yet"

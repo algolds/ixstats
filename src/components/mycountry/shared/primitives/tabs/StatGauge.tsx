@@ -38,59 +38,59 @@ export interface StatGaugeProps {
 // Color configurations
 const colorConfig = {
   emerald: {
-    iconBg: "bg-emerald-500",
-    text: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-emerald-500",
   },
   green: {
-    iconBg: "bg-emerald-500",
-    text: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-emerald-500",
   },
   blue: {
-    iconBg: "bg-blue-500",
-    text: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-blue-500",
   },
   indigo: {
-    iconBg: "bg-indigo-500",
-    text: "text-indigo-600 dark:text-indigo-400",
-    bg: "bg-indigo-500/10",
-    border: "border-indigo-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-indigo-500",
   },
   purple: {
-    iconBg: "bg-indigo-500",
-    text: "text-indigo-600 dark:text-indigo-400",
-    bg: "bg-indigo-500/10",
-    border: "border-indigo-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-indigo-500",
   },
   red: {
-    iconBg: "bg-red-500",
-    text: "text-red-600 dark:text-red-400",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-red-500",
   },
   amber: {
-    iconBg: "bg-amber-500",
-    text: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-amber-500",
   },
   cyan: {
-    iconBg: "bg-cyan-500",
-    text: "text-cyan-600 dark:text-cyan-400",
-    bg: "bg-cyan-500/10",
-    border: "border-cyan-500/20",
+    iconBg: "",
+    text: "text-foreground",
+    bg: "bg-muted/50",
+    border: "border-border",
     progress: "bg-cyan-500",
   },
 };
@@ -197,11 +197,7 @@ export function StatGauge({
     >
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
-          {Icon && (
-            <div className={cn("rounded-lg p-1.5", colors.iconBg)}>
-              <Icon className={cn(sizes.icon, "text-white")} />
-            </div>
-          )}
+          {Icon && <Icon className={cn(sizes.icon, "text-muted-foreground")} />}
           <div>
             <div className="flex items-center gap-1">
               <span className={cn(sizes.label, "text-muted-foreground font-medium")}>{label}</span>
@@ -226,7 +222,7 @@ export function StatGauge({
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
           >
             {value.toFixed(1)}
             {unit}
@@ -244,7 +240,7 @@ export function StatGauge({
           className={cn("h-full rounded-full", getStatusColor())}
           initial={animate ? { width: 0 } : undefined}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
+          transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
         />
       </div>
 
@@ -287,7 +283,7 @@ export function StatGaugeGrid({
           key={gauge.label}
           initial={animate ? { opacity: 0, y: 20 } : undefined}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: index * 0.1 }}
+          transition={{ duration: 0.25, delay: index * 0.1 }}
         >
           <StatGauge {...gauge} animate={animate} />
         </motion.div>
@@ -363,8 +359,8 @@ export function DistributionBar({
                   initial={animate ? { width: 0 } : undefined}
                   animate={{ width: `${percentage}%` }}
                   transition={{
-                    duration: 0.6,
-                    delay: index * 0.1,
+                    duration: 0.25,
+                    delay: index * 0.03,
                     ease: [0.25, 0.1, 0.25, 1],
                   }}
                 >

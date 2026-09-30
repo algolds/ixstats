@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
   Group as Users,
@@ -15,7 +16,7 @@ import {
   InfoCircle as Info,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -116,11 +117,13 @@ export function PopulationDetailsModal({
       }
     );
 
-  const { data: globalStats, isLoading: isGlobalLoading } =
-    api.countries.getGlobalStats.useQuery(undefined, {
+  const { data: globalStats, isLoading: isGlobalLoading } = api.countries.getGlobalStats.useQuery(
+    undefined,
+    {
       enabled: isOpen,
       staleTime: 5 * 60 * 1000,
-    });
+    }
+  );
 
   const { data: topCountriesByPopulation, isLoading: isTopCountriesLoading } =
     api.countries.getTopCountriesByPopulation.useQuery(
@@ -205,56 +208,56 @@ export function PopulationDetailsModal({
         name: "Tier 1",
         min: 0,
         max: 9_999_999,
-        color: "bg-red-100 text-red-800",
+        color: "text-foreground",
         description: "0-9.99M",
       },
       {
         name: "Tier 2",
         min: 10_000_000,
         max: 29_999_999,
-        color: "bg-orange-100 text-orange-800",
+        color: "text-foreground",
         description: "10-29.99M",
       },
       {
         name: "Tier 3",
         min: 30_000_000,
         max: 49_999_999,
-        color: "bg-yellow-100 text-yellow-800",
+        color: "text-foreground",
         description: "30-49.99M",
       },
       {
         name: "Tier 4",
         min: 50_000_000,
         max: 79_999_999,
-        color: "bg-green-100 text-green-800",
+        color: "text-foreground",
         description: "50-79.99M",
       },
       {
         name: "Tier 5",
         min: 80_000_000,
         max: 119_999_999,
-        color: "bg-blue-100 text-blue-800",
+        color: "text-foreground",
         description: "80-119.99M",
       },
       {
         name: "Tier 6",
         min: 120_000_000,
         max: 349_999_999,
-        color: "bg-indigo-100 text-indigo-800",
+        color: "text-foreground",
         description: "120-349.99M",
       },
       {
         name: "Tier 7",
         min: 350_000_000,
         max: 499_999_999,
-        color: "bg-blue-100 text-blue-800",
+        color: "text-foreground",
         description: "350-499.99M",
       },
       {
         name: "Tier X",
         min: 500_000_000,
         max: Infinity,
-        color: "bg-indigo-100 text-indigo-800",
+        color: "text-foreground",
         description: "500M+",
       },
     ];
@@ -297,13 +300,13 @@ export function PopulationDetailsModal({
       {
         name: "Urban Population",
         value: urbanPop,
-        color: "#3b82f6",
+        color: "var(--color-blue-500)",
         percentage: urbanizationRate * 100,
       },
       {
         name: "Rural Population",
         value: ruralPop,
-        color: "#10b981",
+        color: "var(--chart-3)",
         percentage: (1 - urbanizationRate) * 100,
       },
     ];
@@ -333,7 +336,8 @@ export function PopulationDetailsModal({
 
     if (globalStats && globalStats.count > 0) {
       globalAverage = globalStats.totalPopulation / globalStats.count;
-      globalComparison = globalAverage > 0 ? ((currentPop - globalAverage) / globalAverage) * 100 : 0;
+      globalComparison =
+        globalAverage > 0 ? ((currentPop - globalAverage) / globalAverage) * 100 : 0;
     }
 
     if (comparisonData.length > 0) {
@@ -389,34 +393,39 @@ export function PopulationDetailsModal({
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
           {performanceMetrics && globalStats && (
-            <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-              <CardHeader className="mb-4 p-0">
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-cyan-500" />
+            <FacetCard
+              surface="solid"
+              className="flex flex-1 flex-col justify-between rounded-xl p-6"
+            >
+              <FacetCardHeader className="mb-4 p-0">
+                <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                  <BarChart3 className="text-muted-foreground h-5 w-5" />
                   Demographics Performance Summary
-                </CardTitle>
-                <CardDescription>Key growth metrics and global ranking statistics.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col justify-center p-0">
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Key growth metrics and global ranking statistics.
+                </p>
+              </FacetCardHeader>
+              <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div className="flex flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                    <div className="text-muted-foreground mb-1 flex items-center justify-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
+                  <div className="bg-muted/50 flex flex-col justify-center rounded-xl p-4 text-center">
+                    <div className="text-muted-foreground mb-1 flex items-center justify-center gap-1.5 text-xs font-medium tracking-wide uppercase">
                       {performanceMetrics.growth > 0 ? (
-                        <ArrowUp className="h-4 w-4 text-green-500" />
+                        <ArrowUp className="h-4 w-4 text-emerald-500" />
                       ) : performanceMetrics.growth < 0 ? (
-                        <ArrowDown className="h-4 w-4 text-red-500" />
+                        <ArrowDown className="text-destructive h-4 w-4" />
                       ) : (
-                        <Equal className="h-4 w-4 text-gray-500" />
+                        <Equal className="text-muted-foreground h-4 w-4" />
                       )}
                       Recent Growth
                     </div>
                     <span
                       className={`text-xl font-bold ${
                         performanceMetrics.growth > 0
-                          ? "text-green-400"
+                          ? "text-emerald-500"
                           : performanceMetrics.growth < 0
-                            ? "text-red-400"
-                            : "text-gray-400"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
                       }`}
                     >
                       {performanceMetrics.growth > 0 ? "+" : ""}
@@ -424,13 +433,13 @@ export function PopulationDetailsModal({
                     </span>
                   </div>
 
-                  <div className="flex flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                    <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
-                      vs Global Average
-                    </div>
+                  <div className="bg-muted/50 flex flex-col justify-center rounded-xl p-4 text-center">
+                    <Eyebrow className="mb-1 block">vs Global Average</Eyebrow>
                     <span
                       className={`text-xl font-bold ${
-                        performanceMetrics.globalComparison > 0 ? "text-green-400" : "text-red-400"
+                        performanceMetrics.globalComparison > 0
+                          ? "text-emerald-500"
+                          : "text-destructive"
                       }`}
                     >
                       {performanceMetrics.globalComparison > 0 ? "+" : ""}
@@ -441,11 +450,9 @@ export function PopulationDetailsModal({
                     </span>
                   </div>
 
-                  <div className="flex flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                    <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
-                      World Ranking
-                    </div>
-                    <span className="text-xl font-bold text-amber-400">
+                  <div className="bg-muted/50 flex flex-col justify-center rounded-xl p-4 text-center">
+                    <Eyebrow className="mb-1 block">World Ranking</Eyebrow>
+                    <span className="text-foreground text-xl font-semibold">
                       #{performanceMetrics.rank}
                     </span>
                     <span className="text-muted-foreground mt-0.5 text-xs">
@@ -453,8 +460,8 @@ export function PopulationDetailsModal({
                     </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </FacetCardContent>
+            </FacetCard>
           )}
         </MetricModalLayout.MainArea>
 
@@ -485,21 +492,19 @@ export function PopulationDetailsModal({
             variant="social"
           />
 
-          <div className="facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+          <div className="bg-muted/50 relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl p-4">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Demographics Classification
-                </span>
+                <Eyebrow>Demographics Classification</Eyebrow>
                 {populationTierInfo && (
                   <HoverCard>
                     <HoverCardTrigger asChild>
-                      <button className="text-muted-foreground hover:text-foreground inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors">
+                      <button className="text-muted-foreground hover:text-foreground bg-muted inline-flex h-5 w-5 items-center justify-center rounded-full transition-colors">
                         <Info className="h-3 w-3" />
                       </button>
                     </HoverCardTrigger>
                     <HoverCardContent side="top" align="end" className="w-72 p-3">
-                      <h4 className="mb-2 text-xs font-semibold tracking-wider uppercase">
+                      <h4 className="text-foreground mb-2 text-sm font-semibold">
                         Population Tier System
                       </h4>
                       <div className="space-y-1.5">
@@ -509,16 +514,16 @@ export function PopulationDetailsModal({
                             className={cn(
                               "flex items-center justify-between rounded-md border px-2 py-1 text-xs",
                               idx === populationTierInfo.currentIndex
-                                ? "border-cyan-500/40 bg-cyan-500/10"
-                                : "border-white/5 bg-black/5"
+                                ? "border-ring bg-accent"
+                                : "border-border"
                             )}
                           >
                             <span
                               className={cn(
                                 "text-xs font-semibold",
                                 idx === populationTierInfo.currentIndex
-                                  ? "text-cyan-400"
-                                  : "text-white/70"
+                                  ? "text-foreground"
+                                  : "text-muted-foreground"
                               )}
                             >
                               {tier.name}
@@ -527,7 +532,7 @@ export function PopulationDetailsModal({
                               {tier.description}
                             </span>
                             {idx === populationTierInfo.currentIndex && (
-                              <Badge className="ml-1 border-none bg-cyan-500/20 px-1 py-0 text-xs text-cyan-400">
+                              <Badge variant="secondary" className="ml-1">
                                 Current
                               </Badge>
                             )}
@@ -539,7 +544,7 @@ export function PopulationDetailsModal({
                 )}
               </div>
               <div className="mt-2">
-                <Badge className="border-none bg-cyan-500/20 text-sm font-semibold text-cyan-400">
+                <Badge variant="secondary" className="text-sm font-semibold">
                   {populationTierInfo?.currentTier?.name || "Unknown"}
                 </Badge>
               </div>
@@ -572,12 +577,12 @@ export function PopulationDetailsModal({
 
     if (chartData.length === 0) {
       return (
-        <Card className="facet-refraction border-white/5">
-          <CardContent className="py-12 text-center">
+        <FacetCard surface="solid" className="rounded-xl">
+          <FacetCardContent className="py-12 text-center">
             <Activity className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-muted-foreground">No historical data available</p>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       );
     }
 
@@ -585,7 +590,7 @@ export function PopulationDetailsModal({
       if (chartType === "line") {
         return (
           <RechartsLineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis
               dataKey="timestamp"
               domain={["dataMin", "dataMax"]}
@@ -594,19 +599,19 @@ export function PopulationDetailsModal({
               name="Time"
               tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
               tickCount={6}
-              stroke="rgba(255, 255, 255, 0.3)"
+              stroke="var(--muted-foreground)"
             />
             <YAxis
               yAxisId="population"
               orientation="left"
               tickFormatter={(value) => formatPopulation(value)}
-              stroke="rgba(255, 255, 255, 0.3)"
+              stroke="var(--muted-foreground)"
             />
             <Tooltip
               contentStyle={{
-                background: "rgba(18, 20, 24, 0.8)",
-                backdropFilter: "blur(8px)",
-                borderColor: "rgba(255, 255, 255, 0.1)",
+                background: "var(--popover)",
+                color: "var(--popover-foreground)",
+                borderColor: "var(--border)",
                 borderRadius: "8px",
               }}
               formatter={(value, name) => [
@@ -620,7 +625,7 @@ export function PopulationDetailsModal({
               yAxisId="population"
               type="monotone"
               dataKey="population"
-              stroke="#06b6d4"
+              stroke="var(--chart-2)"
               strokeWidth={3}
               dot={false}
               name="Population"
@@ -634,11 +639,11 @@ export function PopulationDetailsModal({
           <RechartsAreaChart data={chartData}>
             <defs>
               <linearGradient id="popColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis
               dataKey="timestamp"
               domain={["dataMin", "dataMax"]}
@@ -647,19 +652,19 @@ export function PopulationDetailsModal({
               name="Time"
               tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
               tickCount={6}
-              stroke="rgba(255, 255, 255, 0.3)"
+              stroke="var(--muted-foreground)"
             />
             <YAxis
               yAxisId="population"
               orientation="left"
               tickFormatter={(value) => formatPopulation(value)}
-              stroke="rgba(255, 255, 255, 0.3)"
+              stroke="var(--muted-foreground)"
             />
             <Tooltip
               contentStyle={{
-                background: "rgba(18, 20, 24, 0.8)",
-                backdropFilter: "blur(8px)",
-                borderColor: "rgba(255, 255, 255, 0.1)",
+                background: "var(--popover)",
+                color: "var(--popover-foreground)",
+                borderColor: "var(--border)",
                 borderRadius: "8px",
               }}
               formatter={(value, name) => [
@@ -673,7 +678,7 @@ export function PopulationDetailsModal({
               yAxisId="population"
               type="monotone"
               dataKey="population"
-              stroke="#06b6d4"
+              stroke="var(--chart-2)"
               fillOpacity={1}
               fill="url(#popColor)"
               strokeWidth={3}
@@ -686,7 +691,7 @@ export function PopulationDetailsModal({
       if (chartType === "bar") {
         return (
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis
               dataKey="timestamp"
               domain={["dataMin", "dataMax"]}
@@ -695,19 +700,19 @@ export function PopulationDetailsModal({
               name="Time"
               tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
               tickCount={6}
-              stroke="rgba(255, 255, 255, 0.3)"
+              stroke="var(--muted-foreground)"
             />
             <YAxis
               yAxisId="population"
               orientation="left"
               tickFormatter={(value) => formatPopulation(value)}
-              stroke="rgba(255, 255, 255, 0.3)"
+              stroke="var(--muted-foreground)"
             />
             <Tooltip
               contentStyle={{
-                background: "rgba(18, 20, 24, 0.8)",
-                backdropFilter: "blur(8px)",
-                borderColor: "rgba(255, 255, 255, 0.1)",
+                background: "var(--popover)",
+                color: "var(--popover-foreground)",
+                borderColor: "var(--border)",
                 borderRadius: "8px",
               }}
               formatter={(value, name) => [
@@ -720,7 +725,7 @@ export function PopulationDetailsModal({
             <Bar
               yAxisId="population"
               dataKey="population"
-              fill="#06b6d4"
+              fill="var(--chart-2)"
               radius={[4, 4, 0, 0]}
               name="Population"
             />
@@ -733,11 +738,11 @@ export function PopulationDetailsModal({
         <ComposedChart data={chartData}>
           <defs>
             <linearGradient id="popColor" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+              <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis
             dataKey="timestamp"
             domain={["dataMin", "dataMax"]}
@@ -746,25 +751,25 @@ export function PopulationDetailsModal({
             name="Time"
             tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
             tickCount={6}
-            stroke="rgba(255, 255, 255, 0.3)"
+            stroke="var(--muted-foreground)"
           />
           <YAxis
             yAxisId="population"
             orientation="left"
             tickFormatter={(value) => formatPopulation(value)}
-            stroke="rgba(255, 255, 255, 0.3)"
+            stroke="var(--muted-foreground)"
           />
           <YAxis
             yAxisId="growth"
             orientation="right"
-            stroke="rgba(255, 255, 255, 0.3)"
+            stroke="var(--muted-foreground)"
             tickFormatter={(value) => `${value.toFixed(2)}%`}
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(18, 20, 24, 0.8)",
-              backdropFilter: "blur(8px)",
-              borderColor: "rgba(255, 255, 255, 0.1)",
+              background: "var(--popover)",
+              color: "var(--popover-foreground)",
+              borderColor: "var(--border)",
               borderRadius: "8px",
             }}
             formatter={(value, name) => {
@@ -776,16 +781,14 @@ export function PopulationDetailsModal({
               }
               return [String(value ?? ""), String(name ?? "")];
             }}
-            labelFormatter={(label) =>
-              `Year ${IxTime.getCurrentGameYear(label as number)}`
-            }
+            labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
           />
           <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
           <Area
             yAxisId="population"
             type="monotone"
             dataKey="population"
-            stroke="#06b6d4"
+            stroke="var(--chart-2)"
             fillOpacity={1}
             fill="url(#popColor)"
             strokeWidth={3}
@@ -794,7 +797,7 @@ export function PopulationDetailsModal({
           <Bar
             yAxisId="growth"
             dataKey="populationGrowthRate"
-            fill="#10b981"
+            fill="var(--chart-3)"
             opacity={0.4}
             name="Growth Rate"
             radius={[2, 2, 0, 0]}
@@ -806,53 +809,46 @@ export function PopulationDetailsModal({
     return (
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-cyan-500" />
+          <FacetCard surface="solid" className="rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Activity className="text-muted-foreground h-5 w-5" />
                 Population Growth Trends
                 {economicData && (
-                  <Badge
-                    variant="outline"
-                    className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-xs text-cyan-400"
-                  >
+                  <Badge variant="outline" className="ml-2">
                     Live: {(economicData.populationGrowthRate * 100).toFixed(3)}% · Trailing:{" "}
                     {performanceMetrics?.growth.toFixed(3)}%
                   </Badge>
                 )}
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Population development over time with {chartData.length} data points · Live rate
                 from sim · Trailing from last interval delta
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   {renderChartByFormat()}
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Peak Population
-              </span>
-              <span className="text-xl font-bold text-cyan-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Peak Population</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {chartData.length > 0
                   ? formatPopulation(Math.max(...chartData.map((d) => d.population)))
                   : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Recent Growth
-              </span>
-              <span className="text-xl font-bold text-emerald-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Recent Growth</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {performanceMetrics?.growth ? `${performanceMetrics.growth.toFixed(3)}%` : "N/A"}
               </span>
             </div>
@@ -866,37 +862,37 @@ export function PopulationDetailsModal({
     return (
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-cyan-500" />
+          <FacetCard surface="solid" className="flex flex-1 flex-col rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Globe className="text-muted-foreground h-5 w-5" />
                 Global Population Rankings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-center p-0">
+              </h3>
+            </FacetCardHeader>
+            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
               {isTopCountriesLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : comparisonData.length > 0 ? (
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={comparisonData.slice(0, 10)} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis
                         type="number"
                         tickFormatter={(value) => formatPopulation(value)}
-                        stroke="rgba(255, 255, 255, 0.3)"
+                        stroke="var(--muted-foreground)"
                       />
                       <YAxis
                         dataKey="name"
                         type="category"
                         width={80}
-                        stroke="rgba(255, 255, 255, 0.3)"
+                        stroke="var(--muted-foreground)"
                       />
                       <Tooltip
                         contentStyle={{
-                          background: "rgba(18, 20, 24, 0.8)",
-                          backdropFilter: "blur(8px)",
-                          borderColor: "rgba(255, 255, 255, 0.1)",
+                          background: "var(--popover)",
+                          color: "var(--popover-foreground)",
+                          borderColor: "var(--border)",
                           borderRadius: "8px",
                         }}
                         formatter={(value) => [formatPopulation(value as number), "Population"]}
@@ -905,7 +901,7 @@ export function PopulationDetailsModal({
                           return item?.fullName || String(label);
                         }}
                       />
-                      <Bar dataKey="population" fill="#06b6d4" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="population" fill="var(--chart-2)" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -914,16 +910,21 @@ export function PopulationDetailsModal({
                   No comparison data available
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
-            <CardHeader className="mb-3 p-0">
-              <CardTitle className="text-sm font-semibold">Demographics Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-0">
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-4"
+          >
+            <FacetCardHeader className="mb-3 p-0">
+              <h3 className="text-foreground text-base text-sm font-semibold">
+                Demographics Breakdown
+              </h3>
+            </FacetCardHeader>
+            <FacetCardContent className="space-y-3 p-0">
               <div className="flex h-44 w-full items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -932,7 +933,7 @@ export function PopulationDetailsModal({
                       cx="50%"
                       cy="50%"
                       outerRadius={60}
-                      fill="#8884d8"
+                      fill="var(--chart-5)"
                       dataKey="value"
                       label={(props: { name?: string }) => props.name ?? ""}
                       labelLine={false}
@@ -943,9 +944,9 @@ export function PopulationDetailsModal({
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(18, 20, 24, 0.8)",
-                        backdropFilter: "blur(8px)",
-                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        background: "var(--popover)",
+                        color: "var(--popover-foreground)",
+                        borderColor: "var(--border)",
                         borderRadius: "8px",
                       }}
                       formatter={(value) => formatPopulation(value as number)}
@@ -958,20 +959,22 @@ export function PopulationDetailsModal({
                 {demographicBreakdown.map((segment) => (
                   <div
                     key={segment.name}
-                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-2 text-xs"
+                    className="bg-muted/50 flex items-center justify-between rounded-xl p-2 text-xs"
                   >
                     <span className="text-muted-foreground font-medium">{segment.name}</span>
                     <div className="text-right">
-                      <div className="font-bold text-white">{formatPopulation(segment.value)}</div>
-                      <div className="text-xs text-cyan-400">
+                      <div className="text-foreground font-semibold tabular-nums">
+                        {formatPopulation(segment.value)}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
                         {segment.percentage.toFixed(1)}%
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );
@@ -986,7 +989,7 @@ export function PopulationDetailsModal({
       title="Population Analysis"
       description="Comprehensive population demographics, growth trends, and comparative analysis"
       icon={Users}
-      iconColor="text-blue-500"
+      iconColor="text-muted-foreground"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}

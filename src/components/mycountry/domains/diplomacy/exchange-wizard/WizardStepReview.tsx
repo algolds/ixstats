@@ -1,7 +1,7 @@
 "use client";
 
+import { Badge } from "~/components/ui/badge";
 import React from "react";
-import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import {
   WIZARD_EXCHANGE_TYPES,
@@ -73,21 +73,21 @@ export const WizardStepReview = React.memo(function WizardStepReview({
 
       <div className="space-y-5">
         {/* Type & Title */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
+        <div className="border-border bg-card rounded-xl border p-4">
           <div className="flex items-start gap-3">
             {React.createElement(typeConfig.icon, {
-              className: cn("h-6 w-6 mt-1", typeConfig.color),
+              className: "text-muted-foreground mt-1 h-5 w-5",
             })}
             <div className="flex-1">
               <h4 className="text-foreground text-lg font-bold">{data.title}</h4>
               <p className="text-muted-foreground text-sm">{typeConfig.label}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{data.description}</p>
+              <p className="text-muted-foreground mt-2 text-sm">{data.description}</p>
             </div>
           </div>
         </div>
 
         {/* Countries */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
+        <div className="border-border bg-card rounded-xl border p-4">
           <h5 className="text-muted-foreground mb-3 text-sm font-semibold">
             Participating Countries
           </h5>
@@ -108,28 +108,25 @@ export const WizardStepReview = React.memo(function WizardStepReview({
         </div>
 
         {/* Narrative */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
+        <div className="border-border bg-card rounded-xl border p-4">
           <h5 className="text-muted-foreground mb-2 text-sm font-semibold">Narrative</h5>
-          <p className="text-sm text-muted-foreground">{data.narrative}</p>
+          <p className="text-muted-foreground text-sm">{data.narrative}</p>
         </div>
 
         {/* Objectives */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
+        <div className="border-border bg-card rounded-xl border p-4">
           <h5 className="text-muted-foreground mb-3 text-sm font-semibold">Objectives</h5>
           <div className="flex flex-wrap gap-2">
             {data.objectives.map((obj) => (
-              <span
-                key={obj}
-                className="rounded-full border border-amber-500/30 bg-amber-500/20 px-3 py-1 text-xs text-amber-600 dark:text-amber-400"
-              >
+              <Badge key={obj} variant="secondary">
                 {obj}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
 
         {/* Details */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
+        <div className="border-border bg-card rounded-xl border p-4">
           <h5 className="text-muted-foreground mb-3 text-sm font-semibold">Details</h5>
           <div className="grid grid-cols-2 gap-4">
             <ReviewDetail

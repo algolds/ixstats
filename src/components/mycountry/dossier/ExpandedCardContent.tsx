@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { FadeIn } from "~/components/ui/text-reveal";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -22,6 +21,8 @@ import {
   Crown,
   Calendar,
 } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { type CountryCardData } from "./CountryFocusCard";
 
@@ -171,47 +172,36 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
     const buttonClass = (extra = "") =>
       cn(
-        "flex w-full items-center gap-2.5 rounded-xl border border-border/70 bg-muted/40 px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-muted/80 hover:border-border active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
+        "border-border bg-card text-foreground hover:bg-accent focus-visible:ring-ring flex min-h-10 w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
         extra
       );
 
     return (
-      <div className="relative min-h-[320px] w-full bg-card/95 p-4 text-card-foreground backdrop-blur-2xl dark:bg-slate-950/95 sm:p-5">
+      <div className="bg-card text-card-foreground relative min-h-[320px] w-full p-4 sm:p-5">
         <div className="relative z-10 space-y-4">
           {/* Header */}
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                Country Actions
-              </span>
-              {country.continent && (
-                <span className="rounded-full border border-border/80 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground">
-                  {country.continent}
-                </span>
-              )}
-              {country.region && (
-                <span className="rounded-full border border-border/80 bg-muted/30 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                  {country.region}
-                </span>
-              )}
+              <Eyebrow>Country Actions</Eyebrow>
+              {country.continent && <Badge variant="secondary">{country.continent}</Badge>}
+              {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
           </FadeIn>
 
           {/* Own Country Action */}
           {isOwnCountry && (
             <FadeIn direction="up" delay={0.15}>
-              <motion.button
+              <button
+                type="button"
                 onClick={handleGoToMyCountry}
                 data-cuelume-press="tick"
                 className={buttonClass(
-                  "border-transparent bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
+                  "border-transparent bg-amber-500 text-amber-950 hover:bg-amber-500/90"
                 )}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
               >
                 <Crown className="h-4 w-4" />
                 Go to MyCountry Dashboard
-              </motion.button>
+              </button>
             </FadeIn>
           )}
 
@@ -220,9 +210,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
             <div className="space-y-4">
               {/* Social */}
               <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Social
-                </p>
+                <Eyebrow className="block px-1">Social</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={handleFollowToggle}
@@ -231,15 +219,15 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     className={buttonClass(
                       followStatus?.isFollowing
                         ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
-                        : "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
+                        : ""
                     )}
                   >
                     {followMutation.isPending || unfollowMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : followStatus?.isFollowing ? (
-                      <UserMinus className="h-3.5 w-3.5 text-destructive" />
+                      <UserMinus className="text-destructive h-3.5 w-3.5" />
                     ) : (
-                      <UserPlus className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+                      <UserPlus className="text-muted-foreground h-3.5 w-3.5" />
                     )}
                     {followStatus?.isFollowing ? "Unfollow" : "Follow"}
                   </button>
@@ -250,7 +238,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     data-cuelume-press="tick"
                     className={buttonClass()}
                   >
-                    <MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    <MessageSquare className="text-muted-foreground h-3.5 w-3.5" />
                     Message
                   </button>
                 </div>
@@ -258,9 +246,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Diplomacy */}
               <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Diplomacy
-                </p>
+                <Eyebrow className="block px-1">Diplomacy</Eyebrow>
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={handleEstablishEmbassy}
@@ -269,9 +255,9 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     className={buttonClass()}
                   >
                     {establishEmbassyMutation.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600 dark:text-amber-400" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <Building2 className="text-muted-foreground h-3.5 w-3.5" />
                     )}
                     Construct Embassy
                   </button>
@@ -289,7 +275,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     data-cuelume-press="tick"
                     className={buttonClass()}
                   >
-                    <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <Calendar className="text-muted-foreground h-3.5 w-3.5" />
                     Request Meeting
                   </button>
 
@@ -300,7 +286,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       data-cuelume-press="tick"
                       className={buttonClass()}
                     >
-                      <Handshake className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <Handshake className="text-muted-foreground h-3.5 w-3.5" />
                       Free Trade
                     </button>
 
@@ -310,7 +296,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       data-cuelume-press="tick"
                       className={buttonClass()}
                     >
-                      <Shield className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                      <Shield className="text-muted-foreground h-3.5 w-3.5" />
                       Alliance
                     </button>
                   </div>
@@ -319,9 +305,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Foreign Policy (Sanctions & Embargo) */}
               <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Foreign Policy
-                </p>
+                <Eyebrow className="block px-1">Foreign Policy</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={(e) => handleForeignPolicy(e, "sanction")}
@@ -331,7 +315,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
                     )}
                   >
-                    <Scale className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    <Scale className="text-muted-foreground h-3.5 w-3.5" />
                     Sanctions
                   </button>
 
@@ -343,7 +327,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
                     )}
                   >
-                    <Swords className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                    <Swords className="text-muted-foreground h-3.5 w-3.5" />
                     Embargo
                   </button>
                 </div>
@@ -351,18 +335,16 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Quick Links */}
               <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Quick Links
-                </p>
+                <Eyebrow className="block px-1">Quick Links</Eyebrow>
                 <a
                   href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
                   onClick={(e) => e.stopPropagation()}
                   data-cuelume-press="tick"
                   className={buttonClass()}
                 >
-                  <Globe className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  <Globe className="text-muted-foreground h-3.5 w-3.5" />
                   View on IxWiki
-                  <ExternalLink className="ml-auto h-3 w-3 text-muted-foreground" />
+                  <ExternalLink className="text-muted-foreground ml-auto h-3 w-3" />
                 </a>
               </div>
             </div>
@@ -370,8 +352,8 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
           {/* Login warning */}
           {!viewerCountryId && !isOwnCountry && (
-            <div className="mt-3 border-t border-border/60 pt-3">
-              <p className="text-center text-xs font-medium text-muted-foreground">
+            <div className="border-border/60 mt-3 border-t pt-3">
+              <p className="text-muted-foreground text-center text-xs font-medium">
                 Login required to perform actions
               </p>
             </div>

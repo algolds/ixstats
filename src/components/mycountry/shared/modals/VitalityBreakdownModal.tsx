@@ -20,6 +20,7 @@ import {
   Building,
   CheckCircle as CheckCircle2,
 } from "iconoir-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import type { VitalityRing } from "~/components/mycountry/shared/primitives/tabs/VitalityRingsDisplay";
 
 interface VitalityBreakdownModalProps {
@@ -35,8 +36,6 @@ const DOMAIN_CONFIG: Record<
     title: string;
     description: string;
     drivers: string[];
-    bgClass: string;
-    borderClass: string;
     icon: React.ComponentType<{ className?: string }>;
   }
 > = {
@@ -45,8 +44,6 @@ const DOMAIN_CONFIG: Record<
     description:
       "Measures GDP growth rate, labor market health, fiscal balance, and inflation stability.",
     drivers: ["Real GDP Growth", "Employment & Wages", "Fiscal System & Tax Yield"],
-    bgClass: "bg-emerald-500/10 dark:bg-emerald-500/15",
-    borderClass: "border-emerald-500/20 dark:border-emerald-500/30",
     icon: DollarSign,
   },
   population: {
@@ -57,8 +54,6 @@ const DOMAIN_CONFIG: Record<
       "Demographic Replacement Rate",
       "Social Security Coverage",
     ],
-    bgClass: "bg-blue-500/10 dark:bg-blue-500/15",
-    borderClass: "border-blue-500/20 dark:border-blue-500/30",
     icon: Users,
   },
   diplomatic: {
@@ -70,8 +65,6 @@ const DOMAIN_CONFIG: Record<
       "Alliance Treaties & Pacts",
       "Global Prestige & Soft Power",
     ],
-    bgClass: "bg-cyan-500/10 dark:bg-cyan-500/15",
-    borderClass: "border-cyan-500/20 dark:border-cyan-500/30",
     icon: Globe,
   },
   government: {
@@ -83,8 +76,6 @@ const DOMAIN_CONFIG: Record<
       "Policy Implementation Speed",
       "Administrative Capacity",
     ],
-    bgClass: "bg-indigo-500/10 dark:bg-indigo-500/15",
-    borderClass: "border-indigo-500/20 dark:border-indigo-500/30",
     icon: Building,
   },
 };
@@ -99,40 +90,23 @@ export function VitalityBreakdownModal({
     rings.length > 0 ? Math.round(rings.reduce((sum, r) => sum + r.value, 0) / rings.length) : 0;
 
   const getOverallRating = (score: number) => {
-    if (score >= 85)
-      return {
-        label: "Optimal Standing",
-        cls: "bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 border-emerald-500/30",
-      };
-    if (score >= 70)
-      return {
-        label: "Strong Standing",
-        cls: "bg-cyan-500/20 text-cyan-500 dark:text-cyan-400 border-cyan-500/30",
-      };
-    if (score >= 50)
-      return {
-        label: "Moderate Standing",
-        cls: "bg-amber-500/20 text-amber-500 dark:text-amber-400 border-amber-500/30",
-      };
-    return {
-      label: "Strained Standing",
-      cls: "bg-red-500/20 text-red-500 dark:text-red-400 border-red-500/30",
-    };
+    if (score >= 85) return { label: "Optimal Standing", cls: "text-emerald-500" };
+    if (score >= 70) return { label: "Strong Standing", cls: "text-foreground" };
+    if (score >= 50) return { label: "Moderate Standing", cls: "text-amber-500" };
+    return { label: "Strained Standing", cls: "text-destructive" };
   };
 
   const rating = getOverallRating(avgScore);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border/60 bg-background/95 text-foreground max-w-2xl shadow-2xl backdrop-blur-2xl sm:rounded-2xl">
-        <DialogHeader className="border-border/40 border-b pb-4">
+      <DialogContent className="max-w-2xl">
+        <DialogHeader className="border-border border-b pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="border-primary/20 bg-primary/10 flex h-9 w-9 items-center justify-center rounded-xl border">
-                <Activity className="text-primary h-5 w-5" />
-              </div>
+              <Activity className="text-muted-foreground h-5 w-5" />
               <div>
-                <DialogTitle className="text-base font-bold tracking-tight">
+                <DialogTitle className="text-base font-semibold">
                   National Vitality Breakdown {countryName ? `— ${countryName}` : ""}
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground text-xs">
@@ -140,10 +114,7 @@ export function VitalityBreakdownModal({
                 </DialogDescription>
               </div>
             </div>
-            <Badge
-              variant="outline"
-              className={cn("px-2.5 py-1 text-xs font-bold uppercase", rating.cls)}
-            >
+            <Badge variant="outline" className={rating.cls}>
               {rating.label} ({avgScore}/100)
             </Badge>
           </div>
@@ -157,19 +128,15 @@ export function VitalityBreakdownModal({
                 title: ring.label,
                 description: ring.description ?? "",
                 drivers: [],
-                bgClass: "bg-muted/20",
-                borderClass: "border-border/40",
                 icon: Activity,
               };
               const Icon = meta.icon;
 
               const getPillarStatus = (val: number) => {
-                if (val >= 80)
-                  return { text: "Optimal", color: "text-emerald-500 dark:text-emerald-400" };
-                if (val >= 60) return { text: "Stable", color: "text-cyan-500 dark:text-cyan-400" };
-                if (val >= 40)
-                  return { text: "Moderate", color: "text-amber-500 dark:text-amber-400" };
-                return { text: "Attention Needed", color: "text-red-500 dark:text-red-400" };
+                if (val >= 80) return { text: "Optimal", color: "text-emerald-500" };
+                if (val >= 60) return { text: "Stable", color: "text-muted-foreground" };
+                if (val >= 40) return { text: "Moderate", color: "text-amber-500" };
+                return { text: "Attention Needed", color: "text-destructive" };
               };
 
               const pillarStatus = getPillarStatus(ring.value);
@@ -177,20 +144,14 @@ export function VitalityBreakdownModal({
               return (
                 <FacetCard
                   key={ring.id}
-                  depth={2}
-                  className={cn(
-                    "flex flex-col justify-between rounded-xl p-3.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    meta.bgClass,
-                    meta.borderClass
-                  )}
+                  surface="solid"
+                  className="flex flex-col justify-between rounded-xl p-3.5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <div className="border-border/40 bg-background/50 flex h-7 w-7 items-center justify-center rounded-lg border">
-                        <Icon className="text-foreground h-4 w-4" />
-                      </div>
+                      <Icon className="text-muted-foreground h-4 w-4 shrink-0" />
                       <div>
-                        <h4 className="text-foreground text-xs font-bold">{meta.title}</h4>
+                        <h4 className="text-foreground text-sm font-semibold">{meta.title}</h4>
                         <span className={cn("text-xs font-semibold", pillarStatus.color)}>
                           {pillarStatus.text}
                         </span>
@@ -204,21 +165,19 @@ export function VitalityBreakdownModal({
                     />
                   </div>
 
-                  <p className="text-muted-foreground mt-2.5 text-xs leading-relaxed font-medium">
+                  <p className="text-muted-foreground mt-2.5 text-xs leading-relaxed">
                     {meta.description}
                   </p>
 
-                  <div className="border-border/30 mt-3 border-t pt-2">
-                    <span className="text-muted-foreground/70 text-xs font-extrabold tracking-wider uppercase">
-                      Core Drivers
-                    </span>
+                  <div className="border-border mt-3 border-t pt-2">
+                    <Eyebrow>Core drivers</Eyebrow>
                     <ul className="mt-1 space-y-1">
                       {meta.drivers.map((driver) => (
                         <li
                           key={driver}
                           className="text-foreground/80 flex items-center gap-1.5 text-xs"
                         >
-                          <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500 dark:text-emerald-400" />
+                          <CheckCircle2 className="text-muted-foreground h-3 w-3 shrink-0" />
                           <span className="truncate">{driver}</span>
                         </li>
                       ))}

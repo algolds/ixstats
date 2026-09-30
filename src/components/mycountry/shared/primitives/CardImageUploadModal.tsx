@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { motion } from "motion/react";
 import {
   SystemRestart as Loader2,
   Check,
@@ -280,7 +279,7 @@ export function CardImageUploadModal({
               {/* Preset Images Grid */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {presetImages.map((imageUrl, idx) => (
-                  <motion.div
+                  <div
                     key={idx}
                     className={cn(
                       "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
@@ -288,7 +287,6 @@ export function CardImageUploadModal({
                         ? "border-primary ring-primary/50 ring-2"
                         : "hover:border-primary/50 border-transparent"
                     )}
-                    whileHover={{ scale: 1.02 }}
                     onClick={() => setSelectedImage(imageUrl)}
                   >
                     <img
@@ -301,7 +299,7 @@ export function CardImageUploadModal({
                         <Check className="text-primary h-8 w-8 drop-shadow-lg" />
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </TabsContent>

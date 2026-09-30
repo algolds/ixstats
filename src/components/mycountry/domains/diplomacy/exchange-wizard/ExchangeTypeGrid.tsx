@@ -29,21 +29,26 @@ export const ExchangeTypeGrid = React.memo(function ExchangeTypeGrid({
             <button
               key={key}
               type="button"
+              aria-pressed={isSelected}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onSelect(key as WizardExchangeType);
               }}
               className={cn(
-                "facet-hierarchy-child rounded-lg p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                "pointer-events-auto cursor-pointer border hover:border-amber-500/40",
+                "bg-card focus-visible:ring-ring pointer-events-auto cursor-pointer rounded-xl border p-2.5 transition-[color,background-color,border-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
                 isSelected
-                  ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/50"
-                  : "border-border/50"
+                  ? "border-ring bg-accent ring-ring ring-1"
+                  : "border-border hover:bg-accent/50"
               )}
             >
               <div className="pointer-events-none flex flex-col items-center gap-1 text-center">
-                <Icon className={cn("h-4 w-4", config.color)} />
+                <Icon
+                  className={cn(
+                    "h-4 w-4",
+                    isSelected ? "text-foreground" : "text-muted-foreground"
+                  )}
+                />
                 <span className="text-foreground text-xs leading-tight font-medium">
                   {config.label}
                 </span>

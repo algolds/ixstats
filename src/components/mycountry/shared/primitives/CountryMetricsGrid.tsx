@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 
 interface CountryMetric {
@@ -26,20 +26,14 @@ export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMet
   const labelSize = variant === "compact" ? "text-xs" : "text-sm";
 
   return (
-    <Card
-      className={
-        variant === "executive"
-          ? "border-blue-200 bg-gradient-to-r from-slate-50 to-blue-50 dark:border-blue-800 dark:from-slate-900 dark:to-blue-950/50"
-          : ""
-      }
-    >
-      <CardContent className={variant === "executive" ? "p-6" : "p-4"}>
+    <FacetCard depth={1} className="rounded-2xl">
+      <FacetCardContent className={variant === "executive" ? "p-6" : "p-4"}>
         <div className={`flex flex-wrap justify-center gap-4`}>
           {metrics.map((metric, index) => (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <div
-                  className={`text-center ${cardSize} rounded-lg border ${metric.colorClass} flex shrink-0 cursor-pointer flex-col justify-between transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105`}
+                  className={`text-center ${cardSize} rounded-lg border ${metric.colorClass} flex shrink-0 cursor-pointer flex-col justify-between transition-[background-color,transform] duration-150 active:scale-[0.98]`}
                 >
                   <div className={`${textSize} grow font-bold whitespace-nowrap`}>
                     {metric.value}
@@ -62,7 +56,7 @@ export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMet
             </Tooltip>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 }

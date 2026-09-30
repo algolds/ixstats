@@ -77,7 +77,7 @@ export const staggerItem: Variants = {
 
 // Tab indicator animation
 export const indicatorVariants: Variants = {
-  initial: { opacity: 0, scale: 0.8 },
+  initial: { opacity: 0, scale: 0.95 },
   animate: {
     opacity: 1,
     scale: 1,
@@ -89,9 +89,8 @@ export const indicatorVariants: Variants = {
   },
 };
 
-// Hover effects for interactive elements
+// Press feedback for interactive elements (Facet: tactile compression, no hover growth)
 export const hoverScale = {
-  whileHover: { scale: 1.02 },
   whileTap: { scale: 0.98 },
   transition: { type: "spring", stiffness: 400, damping: 28 },
 };
@@ -124,7 +123,7 @@ export const cardEntrance: Variants = {
 
 // Metric counter animation timing
 export const counterConfig = {
-  duration: 0.8,
+  duration: 0.25,
   delay: 0.2,
   ease: [0.25, 0.1, 0.25, 1] as const,
 };

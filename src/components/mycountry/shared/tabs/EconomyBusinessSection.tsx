@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { motion } from "motion/react";
 import { Suitcase as Briefcase, NavArrowRight as ChevronRight } from "iconoir-react";
@@ -21,14 +22,15 @@ export function EconomyBusinessSection({
         <button
           type="button"
           onClick={onToggle}
-          className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
+          aria-expanded={isExpanded}
+          className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
             isExpanded
-              ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
+              ? "text-foreground border-border bg-card"
               : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
           }`}
         >
           <Briefcase
-            className={`h-3.5 w-3.5 ${isExpanded ? "text-emerald-500" : "text-muted-foreground/60"}`}
+            className={`h-3.5 w-3.5 ${isExpanded ? "text-foreground" : "text-muted-foreground"}`}
           />
           <span>Business & Innovation Climate</span>
           <motion.div
@@ -43,9 +45,9 @@ export function EconomyBusinessSection({
       <motion.div
         initial={false}
         animate={{ height: isExpanded ? "auto" : 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-        className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-          isExpanded ? "border border-white/10" : "border border-transparent"
+        transition={{ type: "spring", bounce: 0, duration: 0.25 }}
+        className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
+          isExpanded ? "border-border border" : "border border-transparent"
         }`}
       >
         <TextureOverlay
@@ -54,32 +56,24 @@ export function EconomyBusinessSection({
           className="pointer-events-none absolute inset-0 z-0"
         />
         <div className="relative z-10 space-y-4 p-4">
-          <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
+          <div className="bg-muted/50 grid grid-cols-2 gap-4 rounded-xl p-3 md:grid-cols-4">
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Doing Business
-              </p>
+              <Eyebrow className="block">Doing Business</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">Rank #45</p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">Out of 190 countries</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Startup Formation
-              </p>
+              <Eyebrow className="block">Startup Formation</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">12.5</p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">Per 1,000 citizens</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                R&D Investment
-              </p>
+              <Eyebrow className="block">R&D Investment</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">2.8%</p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">Share of GDP</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                FDI Inflow
-              </p>
+              <Eyebrow className="block">FDI Inflow</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">2.5%</p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">Of nominal GDP</p>
             </div>

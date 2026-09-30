@@ -42,7 +42,7 @@ export const WizardStepNarrative = React.memo(function WizardStepNarrative({
           placeholder={narrativePlaceholder}
           value={narrative}
           onChange={(e) => onNarrativeChange(e.target.value)}
-          className="bg-input min-h-32 border-border focus:border-amber-500/50"
+          className="min-h-32"
         />
         <p className="text-muted-foreground text-xs">
           Describe the purpose, activities, and expected outcomes of this exchange.
@@ -56,20 +56,23 @@ export const WizardStepNarrative = React.memo(function WizardStepNarrative({
           {COMMON_OBJECTIVES.map((objective) => {
             const isSelected = objectives.includes(objective);
             return (
-              <div
+              <button
+                type="button"
                 key={objective}
                 onClick={() => onToggleObjective(objective)}
+                aria-pressed={isSelected}
                 className={cn(
-                  "facet-hierarchy-child rounded-lg p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                  "cursor-pointer border text-left hover:border-amber-500/40",
-                  isSelected ? "border-amber-500/50 ring-2 ring-amber-500/50" : "border-border/50"
+                  "bg-card focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.99]",
+                  isSelected
+                    ? "border-ring bg-accent ring-ring ring-1"
+                    : "border-border hover:bg-accent/50"
                 )}
               >
                 <div className="flex items-center gap-3">
                   <Checkbox checked={isSelected} className="pointer-events-none" />
                   <span className="text-foreground text-sm">{objective}</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

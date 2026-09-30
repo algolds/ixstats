@@ -65,13 +65,6 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName:
-        "bg-[var(--tab-executive-bg)] border-[var(--tab-executive-primary)]/30 text-[var(--tab-executive-primary)]",
-      activeTextClassName:
-        "text-[var(--tab-executive-primary)] dark:text-[var(--tab-executive-accent)]",
-      activeIconClassName:
-        "text-[var(--tab-executive-icon)] dark:text-[var(--tab-executive-accent)]",
-      glowClassName: "bg-[var(--tab-executive-primary)]/20",
     },
     {
       id: "economy",
@@ -83,12 +76,6 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName:
-        "bg-[var(--tab-economy-bg)] border-[var(--tab-economy-primary)]/30 text-[var(--tab-economy-primary)]",
-      activeTextClassName:
-        "text-[var(--tab-economy-primary)] dark:text-[var(--tab-economy-accent)]",
-      activeIconClassName: "text-[var(--tab-economy-icon)] dark:text-[var(--tab-economy-accent)]",
-      glowClassName: "bg-[var(--tab-economy-primary)]/20",
     },
     {
       id: "labor",
@@ -100,11 +87,6 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName:
-        "bg-[var(--tab-labor-bg)] border-[var(--tab-labor-primary)]/30 text-[var(--tab-labor-primary)]",
-      activeTextClassName: "text-[var(--tab-labor-primary)] dark:text-[var(--tab-labor-accent)]",
-      activeIconClassName: "text-[var(--tab-labor-icon)] dark:text-[var(--tab-labor-accent)]",
-      glowClassName: "bg-[var(--tab-labor-primary)]/20",
     },
     {
       id: "government",
@@ -116,13 +98,6 @@ export function MyCountryTabsList({
         </>
       ),
       badge: govBadge,
-      activeIndicatorClassName:
-        "bg-[var(--tab-government-bg)] border-[var(--tab-government-primary)]/30 text-[var(--tab-government-primary)]",
-      activeTextClassName:
-        "text-[var(--tab-government-primary)] dark:text-[var(--tab-government-accent)]",
-      activeIconClassName:
-        "text-[var(--tab-government-icon)] dark:text-[var(--tab-government-accent)]",
-      glowClassName: "bg-[var(--tab-government-primary)]/20",
     },
     {
       id: "geography",
@@ -134,10 +109,6 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName: "bg-emerald-500/10 border-emerald-500/30 text-emerald-500",
-      activeTextClassName: "text-emerald-600 dark:text-emerald-400",
-      activeIconClassName: "text-emerald-500 dark:text-emerald-400",
-      glowClassName: "bg-emerald-500/20",
     },
   ];
 
@@ -168,35 +139,37 @@ export function MyCountryTabsList({
 
   if (variant === "underline") {
     return (
-      <div className="relative flex [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-white/10 pb-0.5 select-none [-ms-overflow-style:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
+      <div className="border-border relative flex [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden border-b pb-0.5 select-none [-ms-overflow-style:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
         {resolvedTabs.map((tab) => {
           const isActive = resolvedActiveTab === tab.id;
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
+              type="button"
+              aria-current={isActive ? "page" : undefined}
+              data-cuelume-press="page"
+              data-cuelume-hover="tick"
               onClick={() => handleChange(tab.id)}
               className={cn(
-                "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] sm:text-sm",
+                "focus-visible:ring-ring relative flex min-h-9 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98] sm:text-sm",
                 isActive
-                  ? tab.activeTextClassName || "text-foreground font-bold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+                  ? "text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               )}
             >
               <Icon
                 className={cn(
-                  "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
-                  isActive ? tab.activeIconClassName || "text-foreground" : "text-muted-foreground"
+                  "h-4 w-4 shrink-0",
+                  isActive ? "text-amber-500" : "text-muted-foreground"
                 )}
               />
               <span>{tab.label}</span>
               {tab.badge !== undefined && tab.badge > 0 && (
                 <span
                   className={cn(
-                    "ml-1 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-xs leading-none font-bold",
-                    isActive
-                      ? "bg-foreground text-background"
-                      : "bg-muted text-muted-foreground"
+                    "ml-1 flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs leading-none font-semibold tabular-nums",
+                    isActive ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
                   )}
                 >
                   {tab.badge}
@@ -205,15 +178,8 @@ export function MyCountryTabsList({
               {isActive && (
                 <motion.div
                   layoutId="factbookUnderline"
-                  className={cn(
-                    "absolute inset-x-2 bottom-0 h-0.5 rounded-full",
-                    tab.id === "overview" && "bg-amber-500",
-                    tab.id === "economy" && "bg-emerald-500",
-                    tab.id === "labor" && "bg-blue-500",
-                    tab.id === "government" && "bg-indigo-500",
-                    tab.id === "geography" && "bg-emerald-500"
-                  )}
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+                  className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-amber-500"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.25 }}
                 />
               )}
             </button>
@@ -232,10 +198,10 @@ export function MyCountryTabsList({
         tone="mycountry"
         size="sm"
         className={cn(
-          "w-full min-w-fit rounded-xl p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+          "w-full min-w-fit rounded-xl p-1",
           variant === "rail"
-            ? "border-0 bg-black/10 shadow-none backdrop-blur-md dark:bg-white/[0.03]"
-            : "facet-surface facet-refraction border border-white/5"
+            ? "bg-muted/50 border-0 shadow-none"
+            : "bg-muted/50 border-border border"
         )}
       />
     </div>

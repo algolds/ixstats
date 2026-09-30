@@ -97,18 +97,18 @@ export function CulturalExchangeWizard({
   };
 
   return (
-    <div className="bg-background flex h-full flex-col overflow-hidden rounded-lg">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-border bg-muted/30 flex shrink-0 items-center justify-between border-b p-4">
+      <div className="border-border flex shrink-0 items-center justify-between border-b p-4 pr-12">
         <div>
-          <h2 className="text-foreground text-xl font-bold">Create Cultural Exchange</h2>
+          <h2 className="text-foreground text-lg font-semibold">Create Cultural Exchange</h2>
           <p className="text-muted-foreground mt-1 text-xs">
             Step {currentStep} of {WIZARD_STEP_COUNT}
           </p>
         </div>
-        <button onClick={onCancel} className="hover:bg-accent rounded-lg p-2 transition-colors">
-          <Xmark className="text-foreground h-5 w-5" />
-        </button>
+        <Button variant="ghost" size="icon" onClick={onCancel} aria-label="Close wizard">
+          <Xmark className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Progress Bar */}
@@ -118,7 +118,7 @@ export function CulturalExchangeWizard({
             <div
               key={step}
               className={cn(
-                "h-2 flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+                "h-1.5 flex-1 rounded-full transition-colors duration-200",
                 step <= currentStep ? "bg-primary" : "bg-muted"
               )}
             />
@@ -132,7 +132,7 @@ export function CulturalExchangeWizard({
       </div>
 
       {/* Footer */}
-      <div className="border-border bg-muted/30 flex shrink-0 justify-between gap-4 border-t p-4">
+      <div className="border-border flex shrink-0 justify-between gap-4 border-t p-4">
         <Button variant="outline" onClick={currentStep === 1 ? onCancel : form.handlePrevious}>
           <ArrowLeft className="mr-2" />
           {currentStep === 1 ? "Cancel" : "Previous"}

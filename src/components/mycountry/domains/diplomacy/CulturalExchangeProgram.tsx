@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { motion } from "motion/react";
+import { Globe, Plus } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { CulturalExchangeWizard } from "./CulturalExchangeWizard";
@@ -578,27 +580,21 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
 
       {/* Empty State */}
       {filteredExchanges.length === 0 && !exchangesLoading && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="facet-hierarchy-child rounded-lg p-12 text-center"
-        >
-          <div className="mb-4 text-5xl">🌍</div>
-          <h4 className="text-foreground mb-2 text-lg font-semibold">
-            No Cultural Exchanges Found
+        <FacetCard depth={1} className="rounded-2xl px-6 py-12 text-center">
+          <Globe className="text-muted-foreground mx-auto mb-3 h-6 w-6" />
+          <h4 className="text-foreground mb-1 text-base font-semibold">
+            No cultural exchanges found
           </h4>
-          <p className="mb-6 text-muted-foreground">
+          <p className="text-muted-foreground mb-5 text-sm">
             {filterType !== "all" || filterStatus !== "all"
               ? "Try adjusting your filters or create a new exchange to get started."
-              : "Be the first to create a cultural exchange and connect nations!"}
+              : "Be the first to create a cultural exchange and connect nations."}
           </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="rounded-lg bg-cyan-500/20 px-6 py-3 font-medium text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/30"
-          >
+          <Button variant="outline" onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4" />
             Create Your First Exchange
-          </button>
-        </motion.div>
+          </Button>
+        </FacetCard>
       )}
 
       {/* Create Exchange Modal (Wizard) */}

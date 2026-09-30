@@ -1,12 +1,14 @@
 "use client";
 
-import { ArrowRight, Calendar, EditPencil, Globe, Star, ThumbsUp, User } from "iconoir-react";
+import { ArrowRight, Calendar, EditPencil, Globe, Star, User } from "iconoir-react";
 
 import React from "react";
-import { motion, easeInOut } from "motion/react";
 import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import type { CulturalExchange } from "./cultural-exchange-types";
-import { EXCHANGE_TYPES, STATUS_STYLES, getIconAnimation } from "./cultural-exchange-types";
+import { EXCHANGE_TYPES, STATUS_STYLES } from "./cultural-exchange-types";
 
 interface ExchangeCardProps {
   exchange: CulturalExchange;
@@ -19,389 +21,167 @@ interface ExchangeCardProps {
   onVote: (voteType: "up" | "down") => void;
 }
 
+/** A small flag tile; falls back to the country's initial on a muted surface. */
+function FlagTile({
+  name,
+  flagUrl,
+  className,
+}: {
+  name: string;
+  flagUrl?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("border-border bg-muted overflow-hidden rounded-md border", className)}
+      title={name}
+    >
+      {flagUrl ? (
+        <img src={flagUrl} alt={`${name} flag`} className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-muted-foreground flex h-full w-full items-center justify-center text-sm font-semibold">
+          {name.charAt(0)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
-  ({ exchange, index, isSelected, primaryCountryId, votedExchanges, onClick, onEdit, onVote }) => {
+  ({ exchange, isSelected, primaryCountryId, onClick, onEdit }) => {
     const typeConfig = EXCHANGE_TYPES[exchange.type];
     const statusConfig = STATUS_STYLES[exchange.status];
     const Icon = typeConfig.icon;
-
-    // Animation configuration based on exchange type
-    const getAnimationConfig = (type: string) => {
-      switch (type) {
-        case "festival":
-          return { particles: 8, pattern: "confetti", motion: "float" };
-        case "exhibition":
-          return { particles: 3, pattern: "spotlight", motion: "sweep" };
-        case "education":
-          return { particles: 5, pattern: "pages", motion: "flip" };
-        case "cuisine":
-          return { particles: 6, pattern: "steam", motion: "rise" };
-        case "arts":
-          return { particles: 7, pattern: "splatter", motion: "splash" };
-        case "sports":
-          return { particles: 4, pattern: "energy", motion: "pulse" };
-        case "technology":
-          return { particles: 10, pattern: "circuit", motion: "flow" };
-        case "diplomacy":
-          return { particles: 4, pattern: "waves", motion: "ripple" };
-        case "music":
-          return { particles: 6, pattern: "notes", motion: "bounce" };
-        case "film":
-          return { particles: 5, pattern: "frames", motion: "reel" };
-        case "environmental":
-          return { particles: 8, pattern: "leaves", motion: "drift" };
-        case "science":
-          return { particles: 6, pattern: "molecules", motion: "orbit" };
-        case "trade":
-          return { particles: 5, pattern: "arrows", motion: "traverse" };
-        case "humanitarian":
-          return { particles: 4, pattern: "hearts", motion: "pulse" };
-        case "agriculture":
-          return { particles: 7, pattern: "seeds", motion: "grow" };
-        case "heritage":
-          return { particles: 5, pattern: "symbols", motion: "glow" };
-        case "youth":
-          return { particles: 8, pattern: "stars", motion: "twinkle" };
-        default:
-          return { particles: 5, pattern: "default", motion: "float" };
-      }
-    };
-
-    const animConfig = getAnimationConfig(exchange.type);
+    const firstParticipant = exchange.participatingCountries[0];
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
+      <FacetCard
+        depth={2}
         onClick={onClick}
-        className={cn(
-          "group cursor-pointer overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-          "border-border/60 bg-card/60 hover:border-cyan-500/30 hover:bg-muted/40",
-          isSelected && "border-cyan-500/50 bg-cyan-500/10"
-        )}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        aria-label={`${exchange.title}, ${typeConfig.label}, ${statusConfig.label}`}
+        aria-pressed={isSelected}
+        className={cn("overflow-hidden rounded-2xl", isSelected && "ring-ring ring-2")}
       >
-        {/* Exchange Type Banner */}
-        <div
-          className={cn(
-            "relative flex h-32 items-center justify-between overflow-hidden px-4",
-            typeConfig.bgColor,
-            "border-b-2",
-            typeConfig.borderColor
-          )}
-        >
-          {/* Animated Background Particles */}
-          {Array.from({ length: animConfig.particles }).map((_, i) => (
-            <motion.div
-              key={i}
-              className={cn("absolute rounded-full opacity-15", typeConfig.color)}
-              style={{
-                width: `${3 + Math.random() * 4}px`,
-                height: `${3 + Math.random() * 4}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -15, 0],
-                x:
-                  animConfig.motion === "drift"
-                    ? [0, 8, -4]
-                    : animConfig.motion === "flow"
-                      ? [0, 15, 0]
-                      : 0,
-                opacity: [0.1, 0.2, 0.1],
-                scale: [1, 1.2, 1],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: i * 0.15,
-                ease: easeInOut,
-              }}
+        {/* Host → exchange type → participants */}
+        <div className="border-border bg-muted/40 flex items-center justify-between gap-3 border-b px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <FlagTile
+              name={exchange.hostCountry.name}
+              flagUrl={exchange.hostCountry.flagUrl}
+              className="h-8 w-12 shrink-0"
             />
-          ))}
-
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-transparent to-black/20" />
-
-          {/* Left Side - Host Country */}
-          <motion.div
-            className="relative z-10 flex items-center gap-3"
-            initial={{ x: -30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-          >
-            <div className="relative">
-              {/* Flag Glow */}
-              <motion.div
-                className="absolute -inset-2 rounded-xl blur-lg"
-                animate={{
-                  opacity: [0.4, 0.7, 0.4],
-                  scale: [0.95, 1.05, 0.95],
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: easeInOut }}
-                style={{
-                  background: `radial-gradient(circle, ${typeConfig.color.replace("text-", "")} 30%, transparent 70%)`,
-                }}
-              />
-
-              {/* Flag */}
-              <motion.div
-                className="relative h-14 w-20 overflow-hidden rounded-lg border-2 border-white/40 shadow-2xl"
-                whileHover={{ scale: 1.05, rotate: -2 }}
-              >
-                {exchange.hostCountry.flagUrl ? (
-                  <img
-                    src={exchange.hostCountry.flagUrl}
-                    alt={exchange.hostCountry.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-white/20 to-white/5">
-                    <span className="text-lg font-bold text-white">
-                      {exchange.hostCountry.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Host Label */}
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="rounded-full border border-white/20 bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
-                  HOST
-                </span>
-              </div>
-            </div>
-
-            <div className="text-left">
-              <p
-                className={cn(
-                  "text-sm leading-tight font-bold drop-shadow-lg",
-                  typeConfig.textColor
-                )}
-              >
+            <div className="min-w-0">
+              <p className="text-foreground truncate text-xs font-semibold">
                 {exchange.hostCountry.name}
               </p>
-              <p className={cn("text-xs font-medium opacity-80", typeConfig.textColor)}>
-                {typeConfig.label}
-              </p>
+              <p className="text-muted-foreground text-xs">Host</p>
             </div>
-          </motion.div>
-
-          {/* Center - Exchange Icon with Connecting Line */}
-          <div className="relative z-10 flex items-center gap-2">
-            {/* Left Arrow */}
-            <motion.div
-              animate={{
-                x: [-3, 3, -3],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: easeInOut }}
-            >
-              <ArrowRight className={cn("h-4 w-4", typeConfig.color)} />
-            </motion.div>
-
-            {/* Icon with Emoji */}
-            <div
-              className={cn(
-                "flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-xl",
-                "border-2 bg-black/40 backdrop-blur-sm",
-                typeConfig.borderColor,
-                "shadow-xl"
-              )}
-            >
-              <motion.span className="text-xl leading-none" {...getIconAnimation(exchange.type)}>
-                {typeConfig.emoji}
-              </motion.span>
-              <Icon className={cn("h-4 w-4", typeConfig.color)} />
-            </div>
-
-            {/* Right Arrow */}
-            <motion.div
-              animate={{
-                x: [-3, 3, -3],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: easeInOut, delay: 1 }}
-            >
-              <ArrowRight className={cn("h-4 w-4", typeConfig.color)} />
-            </motion.div>
           </div>
 
-          {/* Right Side - Participant Countries */}
-          <motion.div
-            className="relative z-10 flex items-center gap-3"
-            initial={{ x: 30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.15, duration: 0.5 }}
-          >
-            <div className="text-right">
-              <p
-                className={cn(
-                  "text-sm leading-tight font-bold drop-shadow-lg",
-                  typeConfig.textColor
-                )}
-              >
-                {exchange.participatingCountries.length > 0
-                  ? exchange.participatingCountries[0].name
-                  : "Open to All"}
+          <div className="text-muted-foreground flex shrink-0 items-center gap-1" aria-hidden>
+            <ArrowRight className="h-3.5 w-3.5" />
+            <Icon className="text-foreground h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
+          </div>
+
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            <div className="min-w-0 text-right">
+              <p className="text-foreground truncate text-xs font-semibold">
+                {firstParticipant ? firstParticipant.name : "Open to all"}
               </p>
-              <p className={cn("text-xs font-medium opacity-80", typeConfig.textColor)}>
+              <p className="text-muted-foreground text-xs">
                 {exchange.participatingCountries.length > 1
                   ? `+${exchange.participatingCountries.length - 1} more`
                   : "Participant"}
               </p>
             </div>
-
-            {exchange.participatingCountries.length > 0 && (
-              <div className="relative flex -space-x-3">
-                {exchange.participatingCountries.slice(0, 2).map((country, idx) => (
-                  <motion.div
-                    key={country.id}
-                    className="relative"
-                    initial={{ x: 20 * (idx + 1), opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 + idx * 0.1 }}
-                  >
-                    {/* Flag Glow */}
-                    <motion.div
-                      className="absolute -inset-2 rounded-xl blur-lg"
-                      animate={{
-                        opacity: [0.3, 0.6, 0.3],
-                        scale: [0.9, 1.1, 0.9],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: easeInOut,
-                        delay: idx * 0.5,
-                      }}
-                      style={{
-                        background: `radial-gradient(circle, ${typeConfig.color.replace("text-", "")} 30%, transparent 70%)`,
-                      }}
-                    />
-
-                    <motion.div
-                      className="relative h-14 w-20 overflow-hidden rounded-lg border-2 border-white/40 bg-black/20 shadow-2xl"
-                      whileHover={{ scale: 1.05, rotate: 2, zIndex: 10 }}
-                    >
-                      {country.flagUrl ? (
-                        <img
-                          src={country.flagUrl}
-                          alt={country.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-white/20 to-white/5">
-                          <span className="text-lg font-bold text-white">
-                            {country.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                    </motion.div>
-                  </motion.div>
-                ))}
-              </div>
+            {firstParticipant && (
+              <FlagTile
+                name={firstParticipant.name}
+                flagUrl={firstParticipant.flagUrl}
+                className="h-8 w-12 shrink-0"
+              />
             )}
-          </motion.div>
-
-          {/* Status Badge */}
-          <motion.div
-            className="absolute top-2 right-2 z-20"
-            initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-          >
-            <div
-              className={cn(
-                "rounded-full border bg-black/40 px-2 py-0.5 text-xs font-bold backdrop-blur-md",
-                statusConfig.bg,
-                statusConfig.color,
-                "border-white/40 shadow-xl"
-              )}
-            >
-              <span className="mr-1 text-xs">{statusConfig.icon}</span>
-              <span className="text-xs">{statusConfig.label}</span>
-            </div>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Exchange Content */}
         <div className="p-4">
-          {/* Exchange Header */}
           <div className="mb-3 flex items-start justify-between gap-2">
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <h4 className="text-foreground mb-1 text-sm font-semibold">{exchange.title}</h4>
-              <p className="text-xs text-muted-foreground">{typeConfig.label}</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge variant="outline" className={statusConfig.color}>
+                  {statusConfig.label}
+                </Badge>
+                <span className="text-muted-foreground text-xs">{typeConfig.label}</span>
+              </div>
             </div>
 
-            {/* Edit Button - Only show if user owns this exchange */}
             {exchange.hostCountry.id === primaryCountryId && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-1.5 text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/20"
-                title="Edit Exchange"
+                aria-label="Edit exchange"
+                title="Edit exchange"
               >
                 <EditPencil className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             )}
           </div>
 
-          {/* Exchange Info */}
           <div className="space-y-2">
-            <p className="line-clamp-2 text-sm text-muted-foreground">{exchange.description}</p>
+            <p className="text-muted-foreground line-clamp-2 text-sm">{exchange.description}</p>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  <span>{exchange.metrics.participants}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Star className="h-3 w-3" />
-                  <span>{exchange.metrics.culturalImpact}% impact</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>{new Date(exchange.startDate).getFullYear()}</span>
-                </div>
-              </div>
+            <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-xs">
+              <span className="flex items-center gap-1">
+                <User className="h-3 w-3" />
+                <span className="tabular-nums">{exchange.metrics.participants}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Star className="h-3 w-3" />
+                <span className="tabular-nums">{exchange.metrics.culturalImpact}% impact</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>{new Date(exchange.startDate).getFullYear()}</span>
+              </span>
             </div>
 
-            {/* Participating Countries */}
-            <div className="mt-2 flex items-center gap-2">
-              <Globe className="h-3 w-3 text-muted-foreground" />
-              <div className="flex items-center gap-1">
-                {exchange.participatingCountries.slice(0, 3).map((country) => (
-                  <div
-                    key={country.id}
-                    className="flex h-3 w-4 items-center justify-center rounded border border-white/20 bg-white/20"
-                    title={country.name}
-                  >
-                    {country.flagUrl ? (
-                      <img
-                        src={country.flagUrl}
-                        alt={`${country.name} flag`}
-                        className="h-full w-full rounded object-cover"
-                      />
-                    ) : (
-                      <span className="text-foreground text-xs">{country.name.charAt(0)}</span>
-                    )}
-                  </div>
-                ))}
-                {exchange.participatingCountries.length > 3 && (
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    +{exchange.participatingCountries.length - 3}
-                  </span>
-                )}
+            {exchange.participatingCountries.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Globe className="text-muted-foreground h-3 w-3" />
+                <div className="flex items-center gap-1">
+                  {exchange.participatingCountries.slice(0, 3).map((country) => (
+                    <FlagTile
+                      key={country.id}
+                      name={country.name}
+                      flagUrl={country.flagUrl}
+                      className="h-3 w-4 rounded-sm"
+                    />
+                  ))}
+                  {exchange.participatingCountries.length > 3 && (
+                    <span className="text-muted-foreground ml-1 text-xs">
+                      +{exchange.participatingCountries.length - 3}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
-      </motion.div>
+      </FacetCard>
     );
   }
 );

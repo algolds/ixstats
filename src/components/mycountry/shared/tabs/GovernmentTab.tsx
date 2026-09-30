@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { toTitleCase } from "~/lib/utils";
@@ -7,7 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Building, Crown } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -60,7 +61,7 @@ export function GovernmentTab({
   };
 
   return (
-    <Card className="facet-surface facet-refraction bg-gradient-government border-border relative overflow-hidden">
+    <FacetCard depth={1} className="relative overflow-hidden rounded-2xl">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -78,14 +79,12 @@ export function GovernmentTab({
         className="pointer-events-none absolute inset-0 z-0"
       />
 
-      <CardContent className="relative z-10 space-y-4 pt-4 pb-4">
+      <FacetCardContent className="relative z-10 space-y-4 pt-4 pb-4">
         {/* ── Compact Header ── */}
         <div className="border-border/10 flex items-center justify-between border-b pb-3">
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="text-foreground text-sm font-bold tracking-wide uppercase">
-                Government & Fiscal
-              </h3>
+              <h3 className="text-foreground text-sm font-semibold">Government & Fiscal</h3>
               <InlineHelpIcon
                 title="Government & Fiscal"
                 content="View your nation's leadership, official capital and currency metadata, and public budget allocation details. Click values to analyze spending or debt."
@@ -97,11 +96,7 @@ export function GovernmentTab({
           </div>
           {!isPublicReadOnly && (
             <Link href={createUrl("/mycountry/editor")}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 cursor-pointer gap-1.5 border-indigo-500/20 bg-indigo-500/5 text-xs text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
-              >
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
                 <Building className="h-3.5 w-3.5" />
                 <span>Open Editor</span>
               </Button>
@@ -121,11 +116,11 @@ export function GovernmentTab({
                     structure: v.structure === "government" ? "state" : "government",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex h-24 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
+                <Eyebrow className="block">
                   {metricView.structure === "government" ? "Head of Government" : "Head of State"}
-                </p>
+                </Eyebrow>
                 <div className="flex items-center gap-1.5">
                   <AnimatePresence mode="wait">
                     <motion.p
@@ -157,11 +152,11 @@ export function GovernmentTab({
                     budget: v.budget === "percentage" ? "spending" : "percentage",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex h-24 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
+                <Eyebrow className="block">
                   {metricView.budget === "percentage" ? "Spending % of GDP" : "Total Spending"}
-                </p>
+                </Eyebrow>
                 <div
                   className="flex items-center gap-1.5"
                   onClick={(e) => {
@@ -203,11 +198,11 @@ export function GovernmentTab({
                     debt: v.debt === "ratio" ? "total" : "ratio",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex h-24 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
+                <Eyebrow className="block">
                   {metricView.debt === "ratio" ? "Debt to GDP Ratio" : "Total Public Debt"}
-                </p>
+                </Eyebrow>
                 <div
                   className="mt-0.5 flex items-center gap-1.5"
                   onClick={(e) => {
@@ -257,14 +252,15 @@ export function GovernmentTab({
             <div className="flex">
               <button
                 onClick={() => toggleSection("structure")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
+                aria-expanded={expandedSection === "structure"}
+                className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
                   expandedSection === "structure"
-                    ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
+                    ? "text-foreground border-border bg-card"
                     : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
                 }`}
               >
                 <Crown
-                  className={`h-3.5 w-3.5 ${expandedSection === "structure" ? "text-indigo-500" : "text-muted-foreground/60"}`}
+                  className={`h-3.5 w-3.5 ${expandedSection === "structure" ? "text-foreground" : "text-muted-foreground"}`}
                 />
                 <span>State Structure</span>
                 <motion.div
@@ -279,10 +275,10 @@ export function GovernmentTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "structure" ? "auto" : 0 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-              className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
+              transition={{ type: "spring", bounce: 0, duration: 0.25 }}
+              className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
                 expandedSection === "structure"
-                  ? "border border-white/10"
+                  ? "border-border border"
                   : "border border-transparent"
               }`}
             >
@@ -292,11 +288,9 @@ export function GovernmentTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
+                <div className="bg-muted/50 grid grid-cols-2 gap-4 rounded-xl p-3 md:grid-cols-4">
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                      Government Type
-                    </p>
+                    <Eyebrow className="block">Government Type</Eyebrow>
                     <p className="text-foreground mt-0.5 truncate text-xs font-semibold">
                       {toTitleCase(
                         governmentStructure?.governmentType ||
@@ -307,33 +301,25 @@ export function GovernmentTab({
                     <p className="text-muted-foreground/80 mt-0.5 text-xs">Constitution base</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                      Capital City
-                    </p>
+                    <Eyebrow className="block">Capital City</Eyebrow>
                     <p className="text-foreground mt-0.5 truncate text-xs font-semibold">
                       {country.nationalIdentity?.capitalCity || "N/A"}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-xs">Seat of power</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                      Official Currency
-                    </p>
+                    <Eyebrow className="block">Official Currency</Eyebrow>
                     <p className="text-foreground mt-0.5 truncate text-xs font-semibold">
                       {country.nationalIdentity?.currency || "N/A"}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-xs">Legal tender</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                      Branches
-                    </p>
+                    <Eyebrow className="block">Branches</Eyebrow>
                     <p className="text-foreground mt-0.5 text-xs font-semibold">
                       {governmentStructure?.branches?.length || 3} Branches
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">
-                      Separation of powers
-                    </p>
+                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Separation of powers</p>
                   </div>
                 </div>
 
@@ -409,13 +395,15 @@ export function GovernmentTab({
                 </div>
 
                 {/* Cabinet staffing panel (collapsible) */}
-                <div className="border-border/10 rounded-xl border bg-white/10 dark:bg-white/[0.02]">
+                <div className="bg-muted/50 rounded-xl">
                   <button
+                    type="button"
                     onClick={() => setCabinetOpen((v) => !v)}
-                    className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 px-3 py-2 text-xs font-bold tracking-wider uppercase transition-colors"
+                    aria-expanded={cabinetOpen}
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex min-h-9 w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors outline-none focus-visible:ring-2"
                   >
                     <Crown
-                      className={`h-3.5 w-3.5 ${cabinetOpen ? "text-indigo-500" : "text-muted-foreground/60"}`}
+                      className={`h-3.5 w-3.5 ${cabinetOpen ? "text-foreground" : "text-muted-foreground"}`}
                     />
                     <span>Cabinet</span>
                     <motion.div
@@ -432,7 +420,7 @@ export function GovernmentTab({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: "spring", bounce: 0, duration: 0.35 }}
+                        transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                         className="overflow-hidden"
                       >
                         <div className="p-3 pt-0">
@@ -462,7 +450,7 @@ export function GovernmentTab({
             currency={currency}
           />
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 }

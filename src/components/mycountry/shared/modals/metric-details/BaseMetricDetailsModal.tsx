@@ -229,15 +229,14 @@ export function BaseMetricDetailsModal({
           className="mt-4 flex w-full flex-1 flex-col"
         >
           {/* Tab List with Controls */}
-          <div className="mb-4 flex flex-col gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className="facet-refraction flex w-full gap-1 rounded-xl border border-white/5 bg-black/20 p-1 sm:w-auto">
+          <div className="border-border mb-4 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList className="bg-muted/50 flex w-full gap-1 rounded-xl p-1 sm:w-auto">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
                   className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-none sm:text-sm",
-                    "data-[state=active]:text-foreground text-muted-foreground hover:text-foreground data-[state=active]:bg-white/10 data-[state=active]:shadow-inner"
+                    "flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:flex-none sm:text-sm"
                   )}
                 >
                   <tab.icon className="h-3.5 w-3.5" />
@@ -286,6 +285,7 @@ export function BaseMetricDetailsModal({
                     onClick={onRefresh}
                     disabled={isLoading}
                     className="h-8"
+                    aria-label="Refresh data"
                   >
                     <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
                   </Button>

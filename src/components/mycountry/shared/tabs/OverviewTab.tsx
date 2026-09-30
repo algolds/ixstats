@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import {
   StatUp as TrendingUp,
@@ -10,8 +11,9 @@ import {
 } from "iconoir-react";
 import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
+import { Skeleton } from "~/components/ui/skeleton";
 import { assetUrl } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
@@ -50,8 +52,8 @@ export function OverviewTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   return (
-    <Card className="facet-surface facet-refraction bg-gradient-overview border-border overflow-hidden">
-      <CardContent className="space-y-4 pt-4 pb-4">
+    <FacetCard depth={1} className="overflow-hidden rounded-2xl">
+      <FacetCardContent className="space-y-4 pt-4 pb-4">
         {/* ── Metrics Grid (GDP / Population / Land Area) ── */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -65,11 +67,11 @@ export function OverviewTab({
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] backdrop-blur-md"
+                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
+                <Eyebrow className="block">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
-                </p>
+                </Eyebrow>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <p className="text-foreground text-lg font-bold tracking-tight">
                     $
@@ -86,14 +88,12 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
                           <TrendingUp className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">
-                            +{gdpGrowth.toFixed(1)}%
-                          </span>
+                          <span className="text-xs font-semibold">+{gdpGrowth.toFixed(1)}%</span>
                         </span>
                       );
                     if (gdpGrowth < 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-red-500">
+                        <span className="text-destructive flex items-center gap-0.5">
                           <TrendingDown className="inline-flex h-3.5 w-3.5" />
                           <span className="text-xs font-semibold">{gdpGrowth.toFixed(1)}%</span>
                         </span>
@@ -116,11 +116,11 @@ export function OverviewTab({
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
-                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] backdrop-blur-md"
+                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
+                <Eyebrow className="block">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
-                </p>
+                </Eyebrow>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <p className="text-foreground text-lg font-bold tracking-tight">
                     {metricView.population === "total"
@@ -135,14 +135,12 @@ export function OverviewTab({
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
                           <TrendingUp className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">
-                            +{popGrowth.toFixed(1)}%
-                          </span>
+                          <span className="text-xs font-semibold">+{popGrowth.toFixed(1)}%</span>
                         </span>
                       );
                     if (popGrowth < 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-red-500">
+                        <span className="text-destructive flex items-center gap-0.5">
                           <TrendingDown className="inline-flex h-3.5 w-3.5" />
                           <span className="text-xs font-semibold">{popGrowth.toFixed(1)}%</span>
                         </span>
@@ -169,15 +167,13 @@ export function OverviewTab({
                     : undefined
                 }
                 className={cn(
-                  "border-border/30 bg-card/40 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 backdrop-blur-md",
+                  "border-border bg-card rounded-xl border p-3 text-left transition-[background-color,transform] duration-150",
                   country.areaSqMi &&
                     country.landArea &&
-                    "hover:bg-card/70 cursor-pointer active:scale-[0.98]"
+                    "hover:bg-accent/50 cursor-pointer active:scale-[0.98]"
                 )}
               >
-                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
-                  Land Area
-                </p>
+                <Eyebrow className="block">Land Area</Eyebrow>
                 <p className="text-foreground mt-0.5 text-lg font-bold tracking-tight">
                   {metricView.area === "km"
                     ? country.landArea
@@ -207,7 +203,7 @@ export function OverviewTab({
         {/* Growth footer */}
         <div className="border-border/40 text-muted-foreground flex items-center gap-4 border-t pt-2.5 text-xs">
           <span>
-            <TrendingUp className="mr-1 inline h-3 w-3 text-muted-foreground" />
+            <TrendingUp className="text-muted-foreground mr-1 inline h-3 w-3" />
             Max GDP Growth{" "}
             <span className="text-foreground font-semibold">
               {((country.maxGdpGrowthRate ?? 0) * 100).toFixed(1)}%
@@ -215,7 +211,7 @@ export function OverviewTab({
             <span className="ml-1 opacity-60">({country.economicTier || "N/A"} cap)</span>
           </span>
           <span>
-            <Activity className="mr-1 inline h-3 w-3 text-muted-foreground" />
+            <Activity className="text-muted-foreground mr-1 inline h-3 w-3" />
             Local Factor{" "}
             <span
               className={cn(
@@ -223,7 +219,7 @@ export function OverviewTab({
                 (country.localGrowthFactor ?? 1) > 1
                   ? "text-emerald-500"
                   : (country.localGrowthFactor ?? 1) < 1
-                    ? "text-red-500"
+                    ? "text-destructive"
                     : "text-foreground"
               )}
             >
@@ -260,20 +256,20 @@ export function OverviewTab({
                   <img
                     src={coatOfArmsUrl}
                     alt={`Coat of arms of ${country.name}`}
-                    className="border-border/30 h-20 w-auto shrink-0 rounded-lg border bg-white/50 object-contain p-1.5 dark:bg-white/10"
+                    className="border-border bg-muted h-20 w-auto shrink-0 rounded-lg border object-contain p-1.5"
                   />
                 )}
                 <div className="min-w-0 flex-1">
                   {introHtml ? (
                     <div className="space-y-2">
                       <div
-                        className="text-foreground/80 line-clamp-4 text-[13px] leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-500 dark:[&_a]:text-blue-400"
+                        className="text-foreground/80 [&_a]:text-primary line-clamp-4 text-sm leading-relaxed [&_a]:underline"
                         dangerouslySetInnerHTML={{ __html: introHtml }}
                       />
                       <div className="flex items-center pt-0.5">
                         <Link
                           href={titleToWikiOSRoute(country.wikiPageTitle || country.name)}
-                          className="group/wikilink inline-flex items-center gap-1.5 text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400"
+                          className="group/wikilink text-primary inline-flex items-center gap-1.5 text-xs font-semibold transition-colors hover:underline"
                         >
                           <BookOpen className="h-3.5 w-3.5" />
                           <span>Read full page</span>
@@ -282,10 +278,10 @@ export function OverviewTab({
                       </div>
                     </div>
                   ) : showLoadingSkeleton ? (
-                    <div className="space-y-1.5">
-                      <div className="bg-muted/50 h-3 w-full animate-pulse rounded" />
-                      <div className="bg-muted/50 h-3 w-4/5 animate-pulse rounded" />
-                      <div className="bg-muted/50 h-3 w-3/5 animate-pulse rounded" />
+                    <div className="space-y-1.5" role="status" aria-label="Loading summary">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-4/5" />
+                      <Skeleton className="h-3 w-3/5" />
                     </div>
                   ) : null}
                 </div>
@@ -306,13 +302,11 @@ export function OverviewTab({
                     return (
                       <div
                         key={f.key}
-                        className="border-border-secondary/20 bg-bg-accent/5 flex items-center gap-2 rounded-lg border px-3 py-2 dark:bg-white/[0.02]"
+                        className="border-border bg-card flex items-center gap-2 rounded-lg border px-3 py-2"
                       >
                         <FieldIcon className={cn("h-3.5 w-3.5 shrink-0", f.color)} />
                         <div className="min-w-0">
-                          <p className="text-muted-foreground/70 text-xs tracking-wide uppercase">
-                            {f.label}
-                          </p>
+                          <Eyebrow className="block">{f.label}</Eyebrow>
                           <p className="text-foreground truncate text-xs font-semibold">
                             {f.getValue(ni)}
                           </p>
@@ -324,7 +318,7 @@ export function OverviewTab({
               );
             })()}
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 }

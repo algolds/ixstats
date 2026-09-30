@@ -8,7 +8,7 @@
 
 import React from "react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Page as FileText } from "iconoir-react";
 import type { EconomicTemplate } from "~/lib/economy/atomic-data";
 
@@ -27,14 +27,12 @@ function TemplateSelectorComponent({
   disabled = false,
 }: TemplateSelectorProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-sm font-medium">
-          <FileText className="h-4 w-4" />
-          Quick Start Templates
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <FacetCard className="rounded-2xl">
+      <FacetCardHeader className="flex-row items-center gap-2 p-4 pb-3">
+        <FileText aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+        <h3 className="text-foreground text-sm font-semibold">Quick start templates</h3>
+      </FacetCardHeader>
+      <FacetCardContent className="px-4 pb-4">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
           {templates.map((template) => {
             const Icon = template.icon;
@@ -48,10 +46,10 @@ function TemplateSelectorComponent({
                 disabled={disabled}
                 className="flex h-auto flex-col items-center gap-2 py-3"
               >
-                <Icon className="h-5 w-5" />
+                <Icon aria-hidden="true" className="text-muted-foreground h-5 w-5" />
                 <div className="text-center">
                   <div className="text-xs font-medium">{template.name}</div>
-                  <div className="mt-1 text-xs text-gray-500">
+                  <div className="text-muted-foreground mt-1 text-xs">
                     {template.components.length} components
                   </div>
                 </div>
@@ -59,8 +57,8 @@ function TemplateSelectorComponent({
             );
           })}
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 }
 

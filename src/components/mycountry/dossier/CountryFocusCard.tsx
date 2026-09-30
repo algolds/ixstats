@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -117,7 +118,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     return (
       <motion.div
         className={cn(
-          "country-focus-card relative cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+          "country-focus-card relative cursor-pointer",
           isHovered ? "z-20" : isExpanded ? "z-30" : "z-10"
         )}
         onMouseEnter={() => {
@@ -136,23 +137,17 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
         }}
         onClick={handleCardClick}
         animate={{
-          scale: isExpanded ? 1.02 : isHovered ? 1.015 : isOtherHovered ? 0.98 : 1,
           opacity: isOtherExpanded ? 0.6 : isOtherHovered ? 0.85 : 1,
-          y: isExpanded ? -4 : isHovered ? -6 : 0,
         }}
-        transition={{
-          type: "spring",
-          stiffness: 380,
-          damping: 28,
-        }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
       >
         <div
           className={cn(
-            "facet-floating facet-refraction relative overflow-hidden rounded-2xl border border-white/15 bg-background/60 shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+            "border-border bg-card relative overflow-hidden rounded-2xl border shadow-sm transition-[border-color,box-shadow] duration-200",
             isExpanded
-              ? "flex h-auto flex-col border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
+              ? "flex h-auto flex-col shadow-lg"
               : isHovered
-                ? "h-60 border-white/30 shadow-2xl md:h-96"
+                ? "border-ring/40 h-60 shadow-md md:h-96"
                 : "h-60 md:h-96"
           )}
         >
@@ -169,21 +164,20 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
               }
               alt={`${country.name} flag`}
               className={cn(
-                "absolute inset-0 h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500",
-                isExpanded ? "scale-110 blur-md" : isHovered ? "scale-105" : "scale-100"
+                "absolute inset-0 h-full w-full object-cover transition-transform duration-200",
+                isHovered && !isExpanded ? "scale-105" : "scale-100"
               )}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-slate-900/60" />
+            <div className="bg-muted absolute inset-0" />
           )}
 
           {/* Permanent Ambient Contrast Scrim */}
           <div
             className={cn(
-              "pointer-events-none absolute inset-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-              isExpanded
-                ? "bg-card/95 backdrop-blur-xl dark:bg-slate-950/95"
-                : "bg-gradient-to-t from-black/95 via-black/50 to-transparent",
+              "pointer-events-none absolute inset-0 transition-opacity duration-200",
+              // Legibility scrim for the white type over the flag photo; opaque card when expanded.
+              isExpanded ? "bg-card" : "bg-gradient-to-t from-black/95 via-black/50 to-transparent",
               isHovered && !isExpanded ? "opacity-100" : "opacity-90"
             )}
           />
@@ -191,19 +185,19 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
           {/* Content Overlay — always legible; stats and actions reveal on hover */}
           <div
             className={cn(
-              "absolute inset-0 flex flex-col justify-end p-5 md:p-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+              "absolute inset-0 flex flex-col justify-end p-5 transition-opacity duration-200 md:p-6",
               isExpanded && "pointer-events-none opacity-0"
             )}
           >
             {/* Basic Info (Always Visible) */}
             <div className="space-y-2">
               <div>
-                <h3 className="text-lg font-bold tracking-tight text-white drop-shadow-md sm:text-xl md:text-2xl">
+                <h3 className="text-lg font-semibold tracking-tight text-white sm:text-xl md:text-2xl">
                   {country.name}
                 </h3>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-semibold text-white/90 drop-shadow-sm sm:text-sm">
+              <div className="flex items-center gap-2 text-xs font-medium text-white/90 sm:text-sm">
                 <Globe className="h-3.5 w-3.5 shrink-0 opacity-80" />
                 <span>{country.economicTier}</span>
                 <span className="opacity-60">•</span>
@@ -217,12 +211,12 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 15 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="mt-3 space-y-2.5 rounded-xl border border-white/15 bg-black/40 p-3.5 backdrop-blur-md"
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="mt-3 space-y-2.5 rounded-xl bg-black/60 p-3.5"
                   >
                     <div className="flex items-center justify-between text-xs font-medium text-white/90">
                       <div className="flex items-center gap-2">
-                        <UsersIcon className="h-3.5 w-3.5 text-blue-400" />
+                        <UsersIcon className="h-3.5 w-3.5 text-white/70" />
                         <span>Population</span>
                       </div>
                       <NumberFlowDisplay
@@ -234,7 +228,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
 
                     <div className="flex items-center justify-between text-xs font-medium text-white/90">
                       <div className="flex items-center gap-2">
-                        <Coins className="h-3.5 w-3.5 text-emerald-400" />
+                        <Coins className="h-3.5 w-3.5 text-white/70" />
                         <span>GDP per Capita</span>
                       </div>
                       <NumberFlowDisplay
@@ -246,7 +240,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
 
                     <div className="flex items-center justify-between text-xs font-medium text-white/90">
                       <div className="flex items-center gap-2">
-                        <Globe className="h-3.5 w-3.5 text-indigo-400" />
+                        <Globe className="h-3.5 w-3.5 text-white/70" />
                         <span>Total GDP</span>
                       </div>
                       <NumberFlowDisplay
@@ -260,7 +254,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                     {country.adjustedGdpGrowth && (
                       <div className="flex items-center justify-between text-xs font-medium text-white/90">
                         <div className="flex items-center gap-2">
-                          <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                          <TrendingUp className="h-3.5 w-3.5 text-white/70" />
                           <span>Growth Rate</span>
                         </div>
                         <NumberFlowDisplay
@@ -286,21 +280,13 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                     transition={{ duration: 0.2 }}
                     className="mt-3 flex gap-2"
                   >
-                    <button
-                      onClick={handleCountryVisit}
-                      data-cuelume-press="tick"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/20 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/30 active:scale-95"
-                    >
+                    <Button size="sm" className="flex-1" onClick={handleCountryVisit}>
                       <Eye className="h-3.5 w-3.5" />
-                      <span>View</span>
-                    </button>
-                    <button
-                      onClick={handleCardClick}
-                      data-cuelume-press="tick"
-                      className="flex items-center justify-center rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20 active:scale-95"
-                    >
-                      <span>Dossier</span>
-                    </button>
+                      View
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={handleCardClick}>
+                      Dossier
+                    </Button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -314,14 +300,14 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="relative flex w-full flex-col"
               >
                 {/* Expanded Header with Flag, Name, and Close Action */}
-                <div className="relative flex min-h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/80 px-4 py-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/60 sm:px-5">
+                <div className="border-border bg-card relative flex min-h-16 shrink-0 items-center justify-between border-b px-4 py-3 sm:px-5">
                   <div className="flex items-center gap-3">
                     {country.flagUrl && (
-                      <div className="relative h-7 w-10 shrink-0 overflow-hidden rounded-md border border-border/60 shadow-xs sm:h-8 sm:w-11">
+                      <div className="border-border relative h-7 w-10 shrink-0 overflow-hidden rounded-md border sm:h-8 sm:w-11">
                         <img
                           src={
                             country.flagUrl.startsWith("http://") ||
@@ -337,21 +323,17 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       </div>
                     )}
                     <div>
-                      <h3 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+                      <h3 className="text-foreground text-base font-semibold sm:text-lg">
                         {country.name}
                       </h3>
-                      <p className="text-xs font-medium text-muted-foreground">
+                      <p className="text-muted-foreground text-xs font-medium">
                         {country.economicTier} • {country.continent || country.region || "Global"}
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={handleCardClick}
-                    data-cuelume-press="tick"
-                    className="rounded-lg border border-border/80 bg-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-muted active:scale-95"
-                  >
+                  <Button size="sm" variant="outline" onClick={handleCardClick}>
                     Close
-                  </button>
+                  </Button>
                 </div>
                 <ExpandedCardContent
                   country={country}

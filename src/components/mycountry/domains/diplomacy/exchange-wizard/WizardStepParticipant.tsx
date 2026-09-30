@@ -3,6 +3,7 @@
 import React from "react";
 import { Check, Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -27,10 +28,7 @@ function CountryList({
     return (
       <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="facet-hierarchy-child bg-muted/50 h-16 animate-pulse rounded-lg p-3"
-          />
+          <Skeleton key={i} className="h-16 rounded-xl" />
         ))}
       </div>
     );
@@ -38,7 +36,7 @@ function CountryList({
 
   if (countries.length === 0) {
     return (
-      <div className="facet-hierarchy-child rounded-lg p-6 text-center">
+      <div className="border-border bg-card rounded-xl border p-6 text-center">
         <p className="text-muted-foreground text-sm">No countries found</p>
       </div>
     );
@@ -49,13 +47,16 @@ function CountryList({
       {countries.map((country) => {
         const isSelected = participantCountryId === country.id;
         return (
-          <div
+          <button
+            type="button"
             key={country.id}
             onClick={() => onSelect(country.id)}
+            aria-pressed={isSelected}
             className={cn(
-              "facet-hierarchy-child w-full rounded-lg p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-              "cursor-pointer border text-left hover:border-amber-500/40",
-              isSelected ? "border-amber-500/50 ring-2 ring-amber-500/50" : "border-border/50"
+              "bg-card focus-visible:ring-ring w-full cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.99]",
+              isSelected
+                ? "border-ring bg-accent ring-ring ring-1"
+                : "border-border hover:bg-accent/50"
             )}
           >
             <div className="flex items-center gap-2.5">
@@ -70,9 +71,9 @@ function CountryList({
                 <p className="text-foreground truncate text-sm font-medium">{country.name}</p>
                 <p className="text-muted-foreground text-xs">{country.economicTier} Economy</p>
               </div>
-              {isSelected && <Check className="h-4 w-4 shrink-0 text-amber-500" />}
+              {isSelected && <Check className="text-foreground h-4 w-4 shrink-0" />}
             </div>
-          </div>
+          </button>
         );
       })}
     </>
@@ -102,7 +103,7 @@ export const WizardStepParticipant = React.memo(function WizardStepParticipant({
           placeholder="Search countries..."
           value={countrySearch}
           onChange={(e) => onCountrySearchChange(e.target.value)}
-          className="bg-input border-border pl-10 focus:border-amber-500/50"
+          className="pl-10"
         />
       </div>
 

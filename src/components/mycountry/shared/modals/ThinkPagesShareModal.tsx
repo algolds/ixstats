@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
@@ -71,7 +72,9 @@ export function ThinkPagesShareModal({
           const parsed = JSON.parse(changesJson);
           if (Array.isArray(parsed) && parsed.length > 0) {
             changesSummary = parsed
-              .filter((c): c is { label: string } => typeof c === "object" && c !== null && "label" in c)
+              .filter(
+                (c): c is { label: string } => typeof c === "object" && c !== null && "label" in c
+              )
               .map((c) => c.label)
               .join(", ");
           }
@@ -102,11 +105,11 @@ export function ThinkPagesShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-card/95 max-w-xl border-blue-500/30 backdrop-blur-xl">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <Badge className="border-blue-500/40 bg-blue-500/20 text-blue-300">
-              <ShieldCheck className="mr-1 h-3 w-3" />
+            <Badge variant="secondary">
+              <ShieldCheck />
               Official Government Account
             </Badge>
           </div>
@@ -120,7 +123,7 @@ export function ThinkPagesShareModal({
 
         {publishStatus !== "idle" ? (
           <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 animate-bounce text-emerald-400" />
+            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
             <h3 className="text-foreground text-base font-semibold">
               {publishStatus === "published"
                 ? "Published Live to ThinkPages!"
@@ -132,15 +135,11 @@ export function ThinkPagesShareModal({
                 : "Your directive summation has been saved as an editable draft in ThinkPages."}
             </p>
             <div className="flex items-center gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={onClose} className="cursor-pointer">
+              <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
-              <Button
-                size="sm"
-                className="cursor-pointer bg-blue-600 font-bold text-white hover:bg-blue-500"
-                onClick={() => window.open("/thinkpages", "_blank")}
-              >
-                <Globe className="mr-1.5 h-3.5 w-3.5" />
+              <Button size="sm" onClick={() => window.open("/thinkpages", "_blank")}>
+                <Globe className="h-3.5 w-3.5" />
                 View ThinkPages Feed
               </Button>
             </div>
@@ -148,19 +147,18 @@ export function ThinkPagesShareModal({
         ) : (
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                Post Prose Draft (Editable)
-              </label>
+              <Label htmlFor="thinkpages-share-draft">Post draft (editable)</Label>
               <Textarea
+                id="thinkpages-share-draft"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={7}
-                className="border-white/10 bg-black/40 font-mono text-xs focus:border-blue-500/50"
+                className="font-mono text-xs"
               />
             </div>
 
-            <DialogFooter className="border-border/30 flex items-center justify-between gap-2 border-t pt-3">
-              <Button variant="ghost" size="sm" onClick={onClose} className="cursor-pointer">
+            <DialogFooter className="border-border flex items-center justify-between gap-2 border-t pt-3">
+              <Button variant="ghost" size="sm" onClick={onClose}>
                 Cancel
               </Button>
               <div className="flex items-center gap-2">
@@ -169,18 +167,16 @@ export function ThinkPagesShareModal({
                   size="sm"
                   disabled={generateM.isPending}
                   onClick={() => handlePublish("draft")}
-                  className="cursor-pointer border-blue-500/30 text-blue-700 hover:bg-blue-500/10 dark:text-blue-300"
                 >
-                  <FileText className="mr-1.5 h-3.5 w-3.5" />
+                  <FileText className="h-3.5 w-3.5" />
                   Save as Draft
                 </Button>
                 <Button
                   size="sm"
                   disabled={generateM.isPending}
                   onClick={() => handlePublish("public")}
-                  className="cursor-pointer bg-blue-600 font-bold text-white shadow-md hover:bg-blue-500"
                 >
-                  <Send className="mr-1.5 h-3.5 w-3.5" />
+                  <Send className="h-3.5 w-3.5" />
                   Publish Now Live
                 </Button>
               </div>

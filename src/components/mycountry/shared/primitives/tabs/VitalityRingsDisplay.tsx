@@ -3,14 +3,8 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import {
-  Activity,
-  Dollar as DollarSign,
-  Group as Users,
-  Globe,
-  Building,
-} from "iconoir-react";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Activity, Dollar as DollarSign, Group as Users, Globe, Building } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 
@@ -115,10 +109,10 @@ export function VitalityRingsDisplay({
 
   // Get overall status color based on score
   const getOverallStatusColor = (score: number) => {
-    if (score >= 80) return "text-green-600 dark:text-green-400";
-    if (score >= 60) return "text-blue-600 dark:text-blue-400";
-    if (score >= 40) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
+    if (score >= 80) return "text-emerald-500";
+    if (score >= 60) return "text-foreground";
+    if (score >= 40) return "text-amber-500";
+    return "text-destructive";
   };
 
   // Get overall status label
@@ -143,19 +137,19 @@ export function VitalityRingsDisplay({
   const itemProps = animate ? { variants: staggerItem } : {};
 
   return (
-    <Card className={cn("facet-hierarchy-child", className)}>
+    <FacetCard depth={2} className={cn("rounded-2xl", className)}>
       {(title || subtitle) && (
-        <CardHeader className="pb-2">
+        <FacetCardHeader className="p-5 pb-2">
           {title && (
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Activity className="text-primary h-5 w-5" />
+            <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+              <Activity className="text-muted-foreground h-4 w-4" />
               {title}
-            </CardTitle>
+            </h3>
           )}
-          {subtitle && <CardDescription>{subtitle}</CardDescription>}
-        </CardHeader>
+          {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
+        </FacetCardHeader>
       )}
-      <CardContent className="pt-2">
+      <FacetCardContent className="px-5 pt-2 pb-5">
         <Wrapper className={cn(layoutClass, gap, "justify-center")} {...wrapperProps}>
           {rings.map((ring) => {
             const IconComponent = ring.icon;
@@ -207,18 +201,23 @@ export function VitalityRingsDisplay({
         {/* Overall Score Section */}
         {showOverallScore && (
           <motion.div
-            className="border-border/50 mt-4 border-t pt-4"
+            className="border-border mt-4 border-t pt-4"
             initial={animate ? { opacity: 0, y: 10 } : undefined}
             animate={animate ? { opacity: 1, y: 0 } : undefined}
-            transition={{ delay: 0.3, duration: 0.4 }}
+            transition={{ delay: 0.1, duration: 0.2 }}
           >
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-semibold">Overall National Health</h4>
+                <h4 className="text-foreground text-sm font-semibold">Overall National Health</h4>
                 <p className="text-muted-foreground text-xs">Average of all vitality indicators</p>
               </div>
               <div className="text-right">
-                <span className={cn("text-2xl font-bold", getOverallStatusColor(overallScore))}>
+                <span
+                  className={cn(
+                    "text-2xl font-semibold tabular-nums",
+                    getOverallStatusColor(overallScore)
+                  )}
+                >
                   {overallScore.toFixed(1)}%
                 </span>
                 <p className={cn("text-xs font-medium", getOverallStatusColor(overallScore))}>
@@ -228,8 +227,8 @@ export function VitalityRingsDisplay({
             </div>
           </motion.div>
         )}
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 }
 
@@ -256,10 +255,11 @@ export function QuickVitalityRings({
         type="button"
         onClick={() => setIsOpen(true)}
         className={cn(
-          "group flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.03] hover:bg-white/[0.06] active:scale-[0.98]",
+          "hover:bg-accent/50 focus-visible:ring-ring flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
           className
         )}
         title="Click for Vitality Index Breakdown"
+        aria-label="Open vitality index breakdown"
       >
         {rings.map((ring) => (
           <HealthRing

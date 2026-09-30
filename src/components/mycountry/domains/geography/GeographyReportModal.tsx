@@ -18,6 +18,11 @@ import {
   Trophy,
 } from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 
 // Derived from the tRPC output so the type can't drift from the actual data shape.
 type GeoProfileData = RouterOutputs["geoCore"]["getCountryGeoProfile"];
@@ -26,6 +31,15 @@ type SuperlativeItem = NonNullable<
   | GeoProfileData["superlatives"]["longestRiver"]
   | GeoProfileData["superlatives"]["largestLake"]
 >;
+
+type ReportTab = "overview" | "climate-elevation" | "hydro-borders" | "superlatives";
+
+const REPORT_TABS: FacetTabItem[] = [
+  { id: "overview", label: "Overview", icon: Compass },
+  { id: "climate-elevation", label: "Climate & Elevation", icon: CloudSun },
+  { id: "hydro-borders", label: "Hydro & Borders", icon: Waves },
+  { id: "superlatives", label: "Superlatives", icon: Trophy },
+];
 
 interface GeographyReportModalProps {
   countryName: string;
@@ -39,34 +53,22 @@ export function GeographyReportModal({
   trigger,
 }: GeographyReportModalProps) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "climate-elevation" | "hydro-borders" | "superlatives"
-  >("overview");
-
-  const tabs = [
-    { id: "overview", label: "Overview", icon: Compass },
-    { id: "climate-elevation", label: "Climate & Elevation", icon: CloudSun },
-    { id: "hydro-borders", label: "Hydro & Borders", icon: Waves },
-    { id: "superlatives", label: "Superlatives", icon: Trophy },
-  ] as const;
+  const [activeTab, setActiveTab] = useState<ReportTab>("overview");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <button
-            type="button"
-            className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
-          >
-            <Compass className="h-3.5 w-3.5" />
-            <span>Full Geographic Report</span>
-          </button>
+          <Button type="button" variant="outline" size="sm" className="h-11 sm:h-8">
+            <Compass aria-hidden="true" />
+            Full geographic report
+          </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-card border-border text-card-foreground overflow-hidden rounded-xl border shadow-2xl sm:max-w-2xl">
+      <DialogContent className="overflow-hidden sm:max-w-2xl">
         <DialogHeader className="border-border/60 border-b pb-3">
           <DialogTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
-            <Compass className="text-primary h-5 w-5" />
+            <Compass aria-hidden="true" className="text-muted-foreground h-5 w-5" />
             Geographic Profile Analysis &mdash; {countryName}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-xs">
@@ -75,39 +77,22 @@ export function GeographyReportModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Custom Glass Tab Controls */}
-        <div className="border-border/40 bg-muted/40 flex border-b p-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                  isActive
-                    ? "bg-background text-foreground ring-border shadow-sm ring-1"
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/20"
-                }`}
-              >
-                <Icon
-                  className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <FacetTabs
+          tabs={REPORT_TABS}
+          activeTab={activeTab}
+          onChange={(id) => setActiveTab(id as ReportTab)}
+          size="sm"
+          tone="neutral"
+          className="w-full"
+        />
 
         {/* Tab Body Container */}
         <div className="mt-4 max-h-[480px] min-h-[320px] space-y-4 overflow-y-auto px-1">
           {activeTab === "overview" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Spatial Metrics
-                  </div>
+                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                  <Eyebrow className="block">Spatial Metrics</Eyebrow>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <span className="text-muted-foreground text-xs">Total Area</span>
@@ -134,12 +119,10 @@ export function GeographyReportModal({
                       </div>
                     </div>
                   </div>
-                </div>
+                </FacetCard>
 
-                <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Biogeographic Overview
-                  </div>
+                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                  <Eyebrow className="block">Biogeographic Overview</Eyebrow>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <span className="text-muted-foreground text-xs">Dominant Climate</span>
@@ -169,39 +152,33 @@ export function GeographyReportModal({
                       </div>
                     </div>
                   </div>
-                </div>
+                </FacetCard>
               </div>
 
-              <div className="border-border/60 bg-muted/10 space-y-2 rounded-xl border p-3">
-                <div className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
-                  <Globe2 className="text-primary h-3.5 w-3.5" />
-                  Geographic Classification
+              <FacetCard surface="solid" className="space-y-2 rounded-xl p-3">
+                <div className="flex items-center gap-1.5">
+                  <Globe2 aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                  <Eyebrow>Geographic classification</Eyebrow>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs">
                   {geoProfile.derived.isLandlocked && (
-                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 font-medium text-amber-500">
-                      Landlocked State
-                    </span>
+                    <Badge variant="outline">Landlocked State</Badge>
                   )}
-                  {geoProfile.derived.isIsland && (
-                    <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-medium text-cyan-500">
-                      Island Nation
-                    </span>
-                  )}
+                  {geoProfile.derived.isIsland && <Badge variant="outline">Island Nation</Badge>}
                   {geoProfile.derived.coastlineKm > 0 && (
-                    <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 font-medium text-blue-500">
+                    <Badge variant="outline">
                       Coastline: {Math.round(geoProfile.derived.coastlineKm).toLocaleString()} km
-                    </span>
+                    </Badge>
                   )}
-                  <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-medium text-cyan-500">
+                  <Badge variant="outline">
                     Borders: {geoProfile.derived.neighborCount} Neighboring Countries
-                  </span>
-                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-500">
+                  </Badge>
+                  <Badge variant="outline">
                     Hydrology: {geoProfile.hydro.riverCount} Rivers / {geoProfile.hydro.lakeCount}{" "}
                     Lakes
-                  </span>
+                  </Badge>
                 </div>
-              </div>
+              </FacetCard>
             </div>
           )}
 
@@ -209,14 +186,14 @@ export function GeographyReportModal({
             <div className="space-y-4">
               {/* Climate Zones Table */}
               <div className="space-y-1.5">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
-                  <CloudSun className="h-3.5 w-3.5 text-cyan-500" />
-                  Climate Zone Distribution
+                <div className="flex items-center gap-1.5">
+                  <CloudSun aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                  <Eyebrow>Climate Zone Distribution</Eyebrow>
                 </div>
                 <div className="border-border overflow-hidden rounded-lg border">
                   <table className="w-full border-collapse text-left text-xs">
                     <thead>
-                      <tr className="bg-muted border-border text-muted-foreground border-b font-semibold">
+                      <tr className="bg-muted/60 border-border text-muted-foreground border-b font-medium">
                         <th className="px-3 py-2">Climate Category</th>
                         <th className="px-3 py-2 text-right">Coverage %</th>
                         <th className="px-3 py-2 text-right">Area (km²)</th>
@@ -233,7 +210,7 @@ export function GeographyReportModal({
                           <td className="px-3 py-1.5 text-right font-mono">
                             {Math.round(zone.areaSqKm).toLocaleString()}
                           </td>
-                          <td className="px-3 py-1.5 text-right font-mono text-emerald-500">
+                          <td className="px-3 py-1.5 text-right font-mono">
                             x{zone.agricultureFactor.toFixed(1)}
                           </td>
                         </tr>
@@ -255,14 +232,14 @@ export function GeographyReportModal({
 
               {/* Elevation Zones Table */}
               <div className="space-y-1.5">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
-                  <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
-                  Altitude Profile Breakdown
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                  <Eyebrow>Altitude Profile Breakdown</Eyebrow>
                 </div>
                 <div className="border-border overflow-hidden rounded-lg border">
                   <table className="w-full border-collapse text-left text-xs">
                     <thead>
-                      <tr className="bg-muted border-border text-muted-foreground border-b font-semibold">
+                      <tr className="bg-muted/60 border-border text-muted-foreground border-b font-medium">
                         <th className="px-3 py-2">Elevation Tier</th>
                         <th className="px-3 py-2 text-right">Coverage %</th>
                         <th className="px-3 py-2 text-right">Area (km²)</th>
@@ -301,10 +278,8 @@ export function GeographyReportModal({
             <div className="space-y-4">
               {/* Hydrography Summary Card */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    River Networks
-                  </div>
+                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                  <Eyebrow className="block">River Networks</Eyebrow>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Unique Rivers</span>
@@ -319,12 +294,10 @@ export function GeographyReportModal({
                       </span>
                     </div>
                   </div>
-                </div>
+                </FacetCard>
 
-                <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Lakes & Reservoirs
-                  </div>
+                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                  <Eyebrow className="block">Lakes & Reservoirs</Eyebrow>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Unique Lakes</span>
@@ -339,19 +312,19 @@ export function GeographyReportModal({
                       </span>
                     </div>
                   </div>
-                </div>
+                </FacetCard>
               </div>
 
               {/* Neighbors border table */}
               <div className="space-y-1.5">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
-                  <Globe2 className="text-primary h-3.5 w-3.5" />
-                  International Border Adjacency
+                <div className="flex items-center gap-1.5">
+                  <Globe2 aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                  <Eyebrow>International Border Adjacency</Eyebrow>
                 </div>
                 <div className="border-border overflow-hidden rounded-lg border">
                   <table className="w-full border-collapse text-left text-xs">
                     <thead>
-                      <tr className="bg-muted border-border text-muted-foreground border-b font-semibold">
+                      <tr className="bg-muted/60 border-border text-muted-foreground border-b font-medium">
                         <th className="px-3 py-2">Bordering Country</th>
                         <th className="px-3 py-2 text-right">Shared Frontier (km)</th>
                       </tr>
@@ -461,11 +434,9 @@ function SuperlativeCard({
   fallbackMsg,
 }: SuperlativeCardProps) {
   return (
-    <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
+    <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          {title}
-        </span>
+        <Eyebrow>{title}</Eyebrow>
       </div>
       {item ? (
         <div className="flex items-end justify-between">
@@ -478,13 +449,13 @@ function SuperlativeCard({
             </div>
           </div>
           <div className="text-right">
-            <span className="text-muted-foreground block text-xs uppercase">{metricLabel}</span>
+            <Eyebrow className="block">{metricLabel}</Eyebrow>
             <span className="text-foreground font-mono text-sm font-bold">{metricVal}</span>
           </div>
         </div>
       ) : (
         <div className="text-muted-foreground py-1 text-xs italic">{fallbackMsg}</div>
       )}
-    </div>
+    </FacetCard>
   );
 }

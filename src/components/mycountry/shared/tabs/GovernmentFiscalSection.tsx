@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { motion } from "motion/react";
 import { City as Building, NavArrowRight as ChevronRight } from "iconoir-react";
@@ -27,14 +28,15 @@ export function GovernmentFiscalSection({
         <button
           type="button"
           onClick={onToggle}
-          className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
+          aria-expanded={isExpanded}
+          className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
             isExpanded
-              ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
+              ? "text-foreground border-border bg-card"
               : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
           }`}
         >
           <Building
-            className={`h-3.5 w-3.5 ${isExpanded ? "text-indigo-500" : "text-muted-foreground/60"}`}
+            className={`h-3.5 w-3.5 ${isExpanded ? "text-foreground" : "text-muted-foreground"}`}
           />
           <span>Fiscal Policy</span>
           <motion.div
@@ -49,9 +51,9 @@ export function GovernmentFiscalSection({
       <motion.div
         initial={false}
         animate={{ height: isExpanded ? "auto" : 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-        className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-          isExpanded ? "border border-white/10" : "border border-transparent"
+        transition={{ type: "spring", bounce: 0, duration: 0.25 }}
+        className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
+          isExpanded ? "border-border border" : "border border-transparent"
         }`}
       >
         <TextureOverlay
@@ -60,20 +62,16 @@ export function GovernmentFiscalSection({
           className="pointer-events-none absolute inset-0 z-0"
         />
         <div className="relative z-10 space-y-4 p-4">
-          <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
+          <div className="bg-muted/50 grid grid-cols-2 gap-4 rounded-xl p-3 md:grid-cols-4">
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Tax Revenue % GDP
-              </p>
+              <Eyebrow className="block">Tax Revenue % GDP</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">
                 {`${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
               </p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">Tax burden ratio</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Total Debt
-              </p>
+              <Eyebrow className="block">Total Debt</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">
                 {formatCompactCurrency(
                   (economyData?.core.nominalGDP ?? 0) *
@@ -82,29 +80,19 @@ export function GovernmentFiscalSection({
                   currency
                 )}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-xs">
-                Outstanding national debt
-              </p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Outstanding national debt</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Debt to GDP Ratio
-              </p>
+              <Eyebrow className="block">Debt to GDP Ratio</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">
                 {`${(economyData?.fiscal?.totalDebtGDPRatio ?? 0).toFixed(1)}%`}
               </p>
-              <p className="text-muted-foreground/80 mt-0.5 text-xs">
-                Relative to economic size
-              </p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Relative to economic size</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Sovereign Rating
-              </p>
+              <Eyebrow className="block">Sovereign Rating</Eyebrow>
               <p className="mt-0.5 text-sm font-bold text-emerald-500">AAA</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-xs">
-                Credit worthiness rating
-              </p>
+              <p className="text-muted-foreground/80 mt-0.5 text-xs">Credit worthiness rating</p>
             </div>
           </div>
 
@@ -120,7 +108,10 @@ export function GovernmentFiscalSection({
                 id: "tax-compliance",
                 name: "Tax Compliance Rate",
                 value: 0,
-                percentage: economyData?.fiscal?.taxEfficiency != null ? Math.round(economyData.fiscal.taxEfficiency * 100) : 88,
+                percentage:
+                  economyData?.fiscal?.taxEfficiency != null
+                    ? Math.round(economyData.fiscal.taxEfficiency * 100)
+                    : 88,
                 color: "emerald",
               },
               {

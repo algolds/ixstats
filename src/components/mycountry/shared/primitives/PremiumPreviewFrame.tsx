@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Crown, ArrowRight } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { MyCountryEditModeProvider } from "~/context/MyCountryEditModeContext";
 import { GlassPanel } from "~/components/mycountry/cards";
@@ -63,28 +62,22 @@ export function PremiumPreviewFrame({
         <GlassPanel
           accent={meta.accent}
           texture="none"
-          className={cn("sticky top-2 z-30 px-3 py-2.5 sm:px-4")}
+          className="sticky top-20 z-30 px-3 py-2.5 sm:px-4"
         >
           <div className="flex items-center gap-3">
-            <div className="shrink-0 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-600 p-2 shadow-sm">
-              <Crown className="h-4 w-4 text-white" />
-            </div>
+            <Crown className="h-4 w-4 shrink-0 text-amber-500" />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Crown className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-sm font-semibold">{meta.label} preview</span>
-              </div>
+              <span className="text-foreground text-sm font-semibold">{meta.label} preview</span>
               <p className="text-muted-foreground truncate text-xs">{meta.blurb}</p>
             </div>
             <Button
               variant="default"
               size="sm"
-              className="group shrink-0 bg-amber-500 font-semibold text-white shadow-xs hover:bg-amber-600"
+              className="shrink-0 bg-amber-500 text-amber-950 hover:bg-amber-500/90"
               onClick={handleUpgrade}
             >
-              <Crown className="mr-1.5 h-3.5 w-3.5" />
               Upgrade
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </GlassPanel>

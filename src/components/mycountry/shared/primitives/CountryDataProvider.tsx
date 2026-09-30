@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
 import { api } from "~/trpc/react";
@@ -133,23 +134,23 @@ export function CountryDataProvider({
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8" role="status" aria-label="Loading country">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <div className="bg-muted h-12 w-12 animate-pulse rounded-full"></div>
+            <Skeleton className="h-12 w-12 rounded-full" />
             <div className="space-y-2">
-              <div className="bg-muted h-8 w-64 animate-pulse rounded"></div>
-              <div className="bg-muted h-4 w-48 animate-pulse rounded"></div>
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-48" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-muted h-24 animate-pulse rounded"></div>
+              <Skeleton key={i} className="h-24 rounded-2xl" />
             ))}
           </div>
 
-          <div className="bg-muted h-96 animate-pulse rounded"></div>
+          <Skeleton className="h-96 rounded-2xl" />
         </div>
       </div>
     );

@@ -27,7 +27,10 @@ function ComponentSearchComponent({
 }: ComponentSearchProps) {
   return (
     <div className="relative">
-      <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+      <Search
+        className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+        aria-hidden="true"
+      />
       <Input
         type="text"
         placeholder={placeholder}
@@ -40,7 +43,8 @@ function ComponentSearchComponent({
           size="sm"
           variant="ghost"
           onClick={() => setQuery("")}
-          className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 transform p-0"
+          aria-label="Clear search"
+          className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 p-0"
         >
           <X className="h-4 w-4" />
         </Button>

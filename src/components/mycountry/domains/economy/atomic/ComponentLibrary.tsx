@@ -28,17 +28,18 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({
 }: ComponentLibraryProps) {
   if (components.length === 0) {
     return (
-      <Alert className="border-border/50 bg-muted/20 text-muted-foreground">
-        <Info className="h-4 w-4 text-muted-foreground" />
+      <Alert>
+        <Info className="text-muted-foreground h-4 w-4" />
         <AlertDescription className="text-xs">
-          No economic components match your search criteria. Try adjusting your filters or search query.
+          No economic components match your search criteria. Try adjusting your filters or search
+          query.
         </AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <div className="max-h-[640px] xl:max-h-[720px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 scrollbar-track-transparent">
+    <div className="scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 max-h-[640px] scrollbar-thin scrollbar-track-transparent overflow-y-auto pr-1.5 xl:max-h-[720px]">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {components.map((componentType) => {
           const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];

@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Percentage as Percent } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { CurrencyFlow } from "~/components/ui/number-flow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
@@ -131,53 +132,50 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
 
   return (
     <div className="space-y-4">
-      {/* ── Section 1: Tax Rate Control Grid ── */}
-      <FacetCard depth={1} className="bg-card/30 space-y-4 p-4 backdrop-blur-md">
-        <div className="border-border/20 flex items-center justify-between border-b pb-2">
+      {/* ── Section 1: Tax rate controls (opaque: it also renders inside the drill sheet) ── */}
+      <FacetCard surface="solid" className="rounded-2xl">
+        <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-2">
-            <Percent className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <h4 className="text-foreground text-sm font-bold">National Tax Rate Controls</h4>
+            <Percent aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+            <h3 className="text-foreground text-sm font-semibold">National Tax Rate Controls</h3>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Total Revenue:
-            </span>
-            <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-bold tracking-tight text-emerald-600 tabular-nums shadow-md shadow-emerald-500/10 sm:text-base dark:text-emerald-400">
+          <div className="text-right">
+            <Eyebrow className="block">Total revenue</Eyebrow>
+            <p className="text-foreground font-mono text-base font-semibold tabular-nums">
               {yields.total != null ? (
                 <>
-                  <CurrencyFlow
-                    value={yields.total}
-                    className="font-bold text-emerald-600 dark:text-emerald-400"
-                  />
-                  <span className="ml-1 text-xs font-semibold text-emerald-400/70">/ yr</span>
+                  <CurrencyFlow value={yields.total} />
+                  <span className="text-muted-foreground ml-1 text-xs font-medium">/ yr</span>
                 </>
               ) : (
                 "—"
               )}
-            </span>
+            </p>
           </div>
-        </div>
+        </FacetCardHeader>
 
-        {taxEfficiency == null && yields.total != null && (
-          <p className="text-muted-foreground text-xs">
-            No collection efficiency is recorded, so revenue is shown before collection losses.
-          </p>
-        )}
+        <FacetCardContent className="space-y-3 px-4 pb-4">
+          {taxEfficiency == null && yields.total != null && (
+            <p className="text-muted-foreground text-xs">
+              No collection efficiency is recorded, so revenue is shown before collection losses.
+            </p>
+          )}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {TAX_CHANNELS.map((ch) => (
-            <TaxRateCard
-              key={ch.key}
-              channel={ch}
-              rate={rates[ch.key]}
-              bracketed={saved[ch.key]?.bracketed ?? false}
-              yieldValue={yields.byChannel[ch.key] ?? null}
-              totalYield={yields.total}
-              onChange={(v) => handleRateChange(ch.key, v)}
-              onCommit={(v) => handleRateCommit(ch.key, v)}
-            />
-          ))}
-        </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {TAX_CHANNELS.map((ch) => (
+              <TaxRateCard
+                key={ch.key}
+                channel={ch}
+                rate={rates[ch.key]}
+                bracketed={saved[ch.key]?.bracketed ?? false}
+                yieldValue={yields.byChannel[ch.key] ?? null}
+                totalYield={yields.total}
+                onChange={(v) => handleRateChange(ch.key, v)}
+                onCommit={(v) => handleRateCommit(ch.key, v)}
+              />
+            ))}
+          </div>
+        </FacetCardContent>
       </FacetCard>
 
       {/* ── Section 2: Revenue Yield Matrix ── */}

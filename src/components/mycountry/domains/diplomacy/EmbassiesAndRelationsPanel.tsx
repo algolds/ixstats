@@ -8,10 +8,11 @@ import {
   Page as FileText,
   Palette,
   Plus,
-  SystemRestart as Loader2,
   MailIn,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -137,8 +138,12 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
   if (embassiesLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+      <div className="space-y-5" aria-busy="true" aria-label="Loading diplomacy">
+        <Skeleton className="h-11 w-full rounded-xl" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Skeleton className="h-40 rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl" />
+        </div>
       </div>
     );
   }
@@ -155,8 +160,6 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
                   label: "Inbox",
                   icon: MailIn,
                   badge: inbox.count > 0 ? inbox.count : undefined,
-                  activeClassName:
-                    "border-cyan-500/40 bg-cyan-500/20 text-cyan-700 dark:text-cyan-400",
                 },
               ]
             : []),
@@ -165,37 +168,33 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             label: "Embassy Network",
             icon: Building2,
             badge: stats.activeEmbassies,
-            activeClassName:
-              "border-amber-500/40 bg-amber-500/20 text-amber-700 dark:text-amber-400",
           },
           {
             id: "relations",
             label: "Bilateral Relations",
             icon: Handshake,
             badge: stats.totalRelations,
-            activeClassName: "border-blue-500/40 bg-blue-500/20 text-blue-700 dark:text-blue-400",
           },
           {
             id: "alliances",
             label: "Alliances & Blocs",
             icon: Users,
             badge: stats.allianceCount,
-            activeClassName: "border-cyan-500/40 bg-cyan-500/20 text-cyan-700 dark:text-cyan-400",
           },
           { id: "exchanges", label: "Cultural Exchanges", icon: Palette },
           { id: "events", label: "Diplomatic Events", icon: FileText },
         ]}
         activeTab={activeTab}
         onChange={setActiveTab}
-        activeClassName="border-blue-500/40 bg-blue-500/20 text-blue-700 dark:text-blue-400"
+        activeClassName="text-cyan-500"
       />
 
       {/* ─── Tab Content Views ─── */}
       {activeTab === "inbox" && isOwner && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <MailIn className="h-4 w-4 text-cyan-500" />
-            <h3 className="text-sm font-semibold">Diplomatic Inbox</h3>
+            <MailIn className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-foreground text-sm font-semibold">Diplomatic Inbox</h3>
             <SectionHelpIcon
               title="Diplomatic Inbox"
               content="Free trade and military alliance proposals and alliance invitations need the other nation's consent. Answer incoming ones here, or withdraw your own while they are pending. Unanswered items expire after 14 days."
@@ -209,8 +208,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-cyan-500" />
-              <h3 className="text-sm font-semibold">Embassy Network</h3>
+              <Building2 className="text-muted-foreground h-4 w-4" />
+              <h3 className="text-foreground text-sm font-semibold">Embassy Network</h3>
               <SectionHelpIcon
                 title="Embassy Network"
                 content="Manage your diplomatic embassies. Embassies provide synergy bonuses based on shared government components and improve bilateral relations with host nations."
@@ -245,8 +244,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {activeTab === "relations" && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Handshake className="h-4 w-4 text-blue-500" />
-            <h3 className="text-sm font-semibold">Diplomatic Relations</h3>
+            <Handshake className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-foreground text-sm font-semibold">Diplomatic Relations</h3>
           </div>
           <DiplomaticRelationsList countryId={countryId} />
         </section>
@@ -256,8 +255,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-cyan-500" />
-              <h3 className="text-sm font-semibold">Alliances & Blocs</h3>
+              <Users className="text-muted-foreground h-4 w-4" />
+              <h3 className="text-foreground text-sm font-semibold">Alliances & Blocs</h3>
               <SectionHelpIcon
                 title="Alliances & Blocs"
                 content="Form and manage alliances with other nations. Alliances provide mutual defense benefits, trade advantages, and diplomatic leverage."
@@ -275,12 +274,12 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           </div>
 
           {!alliances || alliances.length === 0 ? (
-            <div className="border-border rounded-lg border border-dashed p-6 text-center">
-              <Users className="text-muted-foreground/40 mx-auto mb-3 h-8 w-8" />
+            <FacetCard depth={1} className="rounded-2xl p-6 text-center">
+              <Users className="text-muted-foreground mx-auto mb-3 h-6 w-6" />
               <p className="text-muted-foreground text-sm">
                 Not a member of any alliances. Create one or wait for an invitation.
               </p>
-            </div>
+            </FacetCard>
           ) : (
             <div className="space-y-3">
               {alliances.map((alliance) => (
@@ -300,8 +299,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {activeTab === "exchanges" && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Palette className="h-4 w-4 text-blue-500" />
-            <h3 className="text-sm font-semibold">Cultural Exchanges</h3>
+            <Palette className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-foreground text-sm font-semibold">Cultural Exchanges</h3>
           </div>
           <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />
         </section>
@@ -310,8 +309,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {activeTab === "events" && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-amber-500" />
-            <h3 className="text-sm font-semibold">Diplomatic Events</h3>
+            <FileText className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-foreground text-sm font-semibold">Diplomatic Events</h3>
           </div>
           <DiplomaticEventsHub countryId={countryId} countryName={countryName} />
         </section>

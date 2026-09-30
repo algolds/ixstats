@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { formatCompactCurrency, formatPopulation } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Badge } from "~/components/ui/badge";
@@ -62,52 +62,52 @@ function formatCurrency(
 function getColorClasses(color: string) {
   const colorMap: Record<string, { bg: string; text: string; progress: string; border: string }> = {
     emerald: {
-      bg: "bg-emerald-500/10",
-      text: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-emerald-500",
-      border: "border-emerald-500/20",
+      border: "border-transparent",
     },
     green: {
-      bg: "bg-emerald-500/10",
-      text: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-emerald-500",
-      border: "border-emerald-500/20",
+      border: "border-transparent",
     },
     cyan: {
-      bg: "bg-cyan-500/10",
-      text: "text-cyan-600 dark:text-cyan-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-cyan-500",
-      border: "border-cyan-500/20",
+      border: "border-transparent",
     },
     indigo: {
-      bg: "bg-indigo-500/10",
-      text: "text-indigo-600 dark:text-indigo-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-indigo-500",
-      border: "border-indigo-500/20",
+      border: "border-transparent",
     },
     purple: {
-      bg: "bg-indigo-500/10",
-      text: "text-indigo-600 dark:text-indigo-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-indigo-500",
-      border: "border-indigo-500/20",
+      border: "border-transparent",
     },
     amber: {
-      bg: "bg-amber-500/10",
-      text: "text-amber-600 dark:text-amber-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-amber-500",
-      border: "border-amber-500/20",
+      border: "border-transparent",
     },
     red: {
-      bg: "bg-red-500/10",
-      text: "text-red-600 dark:text-red-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-red-500",
-      border: "border-red-500/20",
+      border: "border-transparent",
     },
     blue: {
-      bg: "bg-blue-500/10",
-      text: "text-blue-600 dark:text-blue-400",
+      bg: "bg-muted/50",
+      text: "text-foreground",
       progress: "bg-blue-500",
-      border: "border-blue-500/20",
+      border: "border-transparent",
     },
   };
 
@@ -143,7 +143,7 @@ const SectorGridItemImage = React.memo(function SectorGridItemImage({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.2 }}
       >
         <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/40" />
@@ -195,7 +195,7 @@ export function SectorBreakdownCard({
     };
     const colors = {
       up: "text-emerald-500",
-      down: "text-red-500",
+      down: "text-destructive",
       stable: "text-muted-foreground",
     };
 
@@ -215,11 +215,11 @@ export function SectorBreakdownCard({
 
   const cardInner = (
     <>
-      <CardHeader className="pb-1">
-        <CardTitle className="text-sm">{title}</CardTitle>
-        {subtitle && <CardDescription>{subtitle}</CardDescription>}
-      </CardHeader>
-      <CardContent>
+      <FacetCardHeader className="p-4 pb-2">
+        <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+        {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
+      </FacetCardHeader>
+      <FacetCardContent className="px-4 pb-4">
         <Wrapper
           className={cn(
             layout === "grid" ? "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" : "space-y-2"
@@ -236,7 +236,7 @@ export function SectorBreakdownCard({
                 <ItemWrapper key={sector.id} {...itemProps}>
                   <div
                     className={cn(
-                      "relative rounded-xl p-3 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02]",
+                      "relative rounded-xl p-3 text-center",
                       hasImage ? "overflow-hidden" : "",
                       hasImage ? "" : colors.bg,
                       colors.border,
@@ -249,7 +249,7 @@ export function SectorBreakdownCard({
                         <IconComponent
                           className={cn(
                             "mx-auto mb-2 h-6 w-6",
-                            hasImage ? "text-white" : colors.text
+                            hasImage ? "text-white" : "text-muted-foreground"
                           )}
                         />
                       )}
@@ -305,8 +305,8 @@ export function SectorBreakdownCard({
                 <div className="group">
                   <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {IconComponent && <IconComponent className={cn("h-4 w-4", colors.text)} />}
-                      <span className="text-sm font-medium">{sector.name}</span>
+                      {IconComponent && <IconComponent className="text-muted-foreground h-4 w-4" />}
+                      <span className="text-foreground text-sm font-medium">{sector.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm">
@@ -329,11 +329,12 @@ export function SectorBreakdownCard({
                   </div>
                   {showProgressBars && (
                     <div className="bg-muted h-2 overflow-hidden rounded-full">
+                      {/* Categorical series colour: the bar is the chart. Animates transform only. */}
                       <motion.div
-                        className={cn("h-full rounded-full", colors.progress)}
-                        initial={animate ? { width: 0 } : undefined}
-                        animate={{ width: `${sector.percentage}%` }}
-                        transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1], delay: 0.2 }}
+                        className={cn("h-full w-full origin-left rounded-full", colors.progress)}
+                        initial={animate ? { scaleX: 0 } : undefined}
+                        animate={{ scaleX: Math.min(100, Math.max(0, sector.percentage)) / 100 }}
+                        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
                       />
                     </div>
                   )}
@@ -344,16 +345,16 @@ export function SectorBreakdownCard({
         </Wrapper>
 
         {totalValue !== undefined && (
-          <div className="border-border/50 mt-3 flex items-center justify-between border-t pt-3">
+          <div className="border-border mt-3 flex items-center justify-between border-t pt-3">
             <span className="text-muted-foreground text-sm font-medium">Total</span>
-            <span className="text-lg font-bold">
+            <span className="text-foreground text-lg font-semibold tabular-nums">
               {valueAsPeople
                 ? formatPopulation(totalValue, "0")
                 : formatCurrency(totalValue, "compact", _currency)}
             </span>
           </div>
         )}
-      </CardContent>
+      </FacetCardContent>
     </>
   );
 
@@ -367,18 +368,17 @@ export function SectorBreakdownCard({
 
   if (cardWrapper === "panel") {
     return (
-      <PanelCard
-        accent={accent}
-        tinted
-        texture="dots"
-        className={cn("relative overflow-hidden", className)}
-      >
+      <PanelCard accent={accent} className={cn("relative overflow-hidden", className)}>
         {cardInner}
       </PanelCard>
     );
   }
 
-  return <Card className={cn("facet-hierarchy-child", className)}>{cardInner}</Card>;
+  return (
+    <FacetCard depth={2} className={cn("rounded-2xl", className)}>
+      {cardInner}
+    </FacetCard>
+  );
 }
 
 /**
@@ -396,15 +396,12 @@ export function QuickSectorGrid({
       {sectors.map((sector) => {
         const colors = getColorClasses(sector.color);
         return (
-          <div
-            key={sector.id}
-            className={cn("rounded-lg p-3 text-center", colors.bg, colors.border, "border")}
-          >
-            <div className={cn("text-xl font-bold", colors.text)}>
+          <div key={sector.id} className="bg-muted/50 rounded-xl p-3 text-center">
+            <div className="text-foreground text-xl font-semibold tabular-nums">
               {formatCurrency(sector.value)}
             </div>
             <div className="text-muted-foreground mt-1 text-xs">{sector.name}</div>
-            <Badge variant="outline" className={cn("mt-1 text-xs", colors.text)}>
+            <Badge variant="outline" className="mt-1">
               {sector.percentage.toFixed(1)}%
             </Badge>
           </div>

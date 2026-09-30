@@ -1,12 +1,10 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Skeleton } from "~/components/ui/skeleton";
 import React from "react";
 import Link from "next/link";
-import {
-  OpenBook as BookOpen,
-  OpenNewWindow as ExternalLink,
-  SystemRestart as Loader2,
-} from "iconoir-react";
+import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useWikiSectionMap } from "~/hooks/useWikiSectionMap";
@@ -57,18 +55,16 @@ function InlineWikiExcerpt({
   if (!isLoading && !excerpt) return null;
 
   return (
-    <PanelCard accent={accent} tinted texture="dots" textureOpacity={0.025} className="p-4">
+    <PanelCard accent={accent} className="p-4">
       <div className="mb-1.5 flex items-center gap-2">
         <BookOpen className={cn("h-3.5 w-3.5", a.text)} />
-        <span className="text-xs font-semibold">{title}</span>
-        <span className="text-muted-foreground ml-auto text-xs tracking-wider uppercase">
-          From the wiki
-        </span>
+        <span className="text-foreground text-xs font-semibold">{title}</span>
+        <Eyebrow className="ml-auto">From the wiki</Eyebrow>
       </div>
       {isLoading ? (
-        <div className="flex items-center gap-2 py-2">
-          <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
-          <span className="text-muted-foreground text-xs">Loading lore…</span>
+        <div className="space-y-1.5 py-2" role="status" aria-label="Loading lore">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-2/3" />
         </div>
       ) : (
         <p className="text-foreground/75 text-xs leading-relaxed">{excerpt}</p>
@@ -77,10 +73,7 @@ function InlineWikiExcerpt({
         (wikiUrl.startsWith("/") || wikiUrl.includes("/wiki/") ? (
           <Link
             href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
-            className={cn(
-              "mt-2 inline-flex items-center gap-1 text-xs hover:underline",
-              a.text
-            )}
+            className={cn("mt-2 inline-flex items-center gap-1 text-xs hover:underline", a.text)}
           >
             Read more
           </Link>
@@ -89,10 +82,7 @@ function InlineWikiExcerpt({
             href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              "mt-2 inline-flex items-center gap-1 text-xs hover:underline",
-              a.text
-            )}
+            className={cn("mt-2 inline-flex items-center gap-1 text-xs hover:underline", a.text)}
           >
             Read more <ExternalLink className="h-2.5 w-2.5" />
           </a>

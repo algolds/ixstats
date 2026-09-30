@@ -99,7 +99,7 @@ export function VitalityRings({
       return (
         <div
           key={ring.key ?? index}
-          className="facet-hierarchy-child group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-102"
+          className="hover:bg-accent/50 focus-visible:ring-ring flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
           onClick={ring.onClick}
           role={isClickable ? "button" : undefined}
           tabIndex={isClickable ? 0 : undefined}
@@ -116,7 +116,7 @@ export function VitalityRings({
             size={48}
             color={ring.color}
             target={ring.target}
-            className="shrink-0 transition-transform duration-300 group-hover:scale-110"
+            className="shrink-0"
             label={ring.label}
             tooltip={tooltipText}
           />

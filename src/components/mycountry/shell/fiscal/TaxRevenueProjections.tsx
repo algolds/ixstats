@@ -2,10 +2,10 @@
 
 import React from "react";
 import { Bank as Landmark } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
-import { TAX_CHANNELS, ACCENT_BORDER, type TaxYields } from "./taxChannels";
+import { TAX_CHANNELS, ACCENT_BG, type TaxYields } from "./taxChannels";
 import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface TaxRevenueProjectionsProps {
@@ -16,30 +16,25 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
   const totalYield = yields.total;
 
   return (
-    <FacetCard
-      depth={1}
-      className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-    >
-      <div className="border-border/20 flex items-center justify-between border-b pb-2">
-        <div className="flex items-center gap-2">
-          <Landmark className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <h4 className="text-foreground text-xs font-semibold">Tax Revenue Projections</h4>
-        </div>
-      </div>
+    <FacetCard surface="solid" className="rounded-2xl">
+      <FacetCardHeader className="flex-row items-center gap-2 p-4 pb-3">
+        <Landmark aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+        <h3 className="text-foreground text-sm font-semibold">Tax Revenue Projections</h3>
+      </FacetCardHeader>
 
-      <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 md:grid-cols-6">
+      <FacetCardContent className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 md:grid-cols-6">
         {TAX_CHANNELS.map((ch) => {
           const value = yields.byChannel[ch.key] ?? null;
           return (
-            <div
-              key={ch.key}
-              className={cn(
-                "border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5 backdrop-blur-md",
-                ACCENT_BORDER[ch.accent] ?? "border-border/20"
-              )}
-            >
-              <Eyebrow className="block">{ch.shortLabel} Yield</Eyebrow>
-              <p className={cn("font-mono text-base font-bold tabular-nums", ch.accentClass)}>
+            <FacetCard key={ch.key} surface="solid" className="space-y-1 rounded-xl p-2.5">
+              <div className="flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[ch.accent])}
+                />
+                <Eyebrow className="truncate">{ch.shortLabel}</Eyebrow>
+              </div>
+              <p className="text-foreground font-mono text-base font-semibold tabular-nums">
                 {value != null ? <CurrencyFlow value={value} decimalPlaces={2} /> : "—"}
               </p>
               <p className="text-muted-foreground font-mono text-xs">
@@ -56,10 +51,10 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
                   "No projection"
                 )}
               </p>
-            </div>
+            </FacetCard>
           );
         })}
-      </div>
+      </FacetCardContent>
     </FacetCard>
   );
 }

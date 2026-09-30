@@ -9,11 +9,24 @@ import {
   Globe as Globe2,
   Group as Users,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { DomainKpiGrid, DomainActivityCard, type Kpi, type ActivityEntry } from "./shared";
+import {
+  DomainKpiGrid,
+  DomainActivityCard,
+  RailBar,
+  RailCard,
+  RailCount,
+  RailEmpty,
+  RailRow,
+  STATUS_TEXT,
+  type Kpi,
+  type ActivityEntry,
+} from "./shared";
 
 interface EmbassyItem {
   id: string;
@@ -166,7 +179,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `embassy-${e.id}`,
         icon: Building2,
-        iconColor: "text-cyan-600 dark:text-cyan-400",
+        iconColor: STATUS_TEXT.neutral,
         text: `Embassy with ${resolvedName}`,
         time: new Date(e.establishedAt ?? e.createdAt ?? Date.now()),
       });
@@ -177,7 +190,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `relation-${r.id}`,
         icon: strength >= 70 ? TrendingUp : Handshake,
-        iconColor: strength >= 70 ? "text-cyan-600 dark:text-cyan-400" : "text-cyan-500/70",
+        iconColor: strength >= 70 ? STATUS_TEXT.success : STATUS_TEXT.neutral,
         text: `${r.targetName} — ${r.stance}`,
         time: new Date(),
       });
@@ -187,7 +200,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `alliance-${a.id}`,
         icon: Users,
-        iconColor: "text-amber-600 dark:text-amber-400",
+        iconColor: STATUS_TEXT.neutral,
         text: `Alliance: ${a.name ?? "Diplomatic Pact"} (${a.memberCount ?? a.members?.length ?? 1} members)`,
         time: new Date(a.createdAt ?? Date.now()),
       });
@@ -200,8 +213,8 @@ export function RelationsRail({ countryId }: { countryId: string }) {
           icon: Scale,
           iconColor:
             fp.actionType === "free_trade" || fp.actionType === "military_alliance"
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-red-600 dark:text-red-400",
+              ? STATUS_TEXT.success
+              : STATUS_TEXT.critical,
           text: `${fp.actionType?.replace(/_/g, " ")} → ${fp.target?.name ?? "Partner"}`,
           time: new Date(fp.createdAt ?? Date.now()),
         });
@@ -213,44 +226,23 @@ export function RelationsRail({ countryId }: { countryId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Diplomatic Snapshot Header KPIs */}
-      <FacetCard depth={1} className="rounded-3xl p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe2 className="h-3.5 w-3.5 text-cyan-500" />
-            <h4 className="text-foreground text-sm font-semibold">Diplomatic Snapshot</h4>
-          </div>
-        </div>
+      {/* Diplomatic snapshot KPIs */}
+      <RailCard title="Diplomatic snapshot" icon={Globe2}>
         <DomainKpiGrid items={kpis} />
-      </FacetCard>
+      </RailCard>
 
-      {/* Unified Embassy & Bilateral Network Snapshot Card */}
-      <FacetCard depth={1} className="space-y-3 rounded-3xl p-4">
-        <div className="border-border/60 flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-            <h4 className="text-foreground text-sm font-semibold">Embassies and bilateral ties</h4>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-600 dark:text-cyan-400">
-              {activeEmbassies.length} Embassies
-            </span>
-            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs font-extrabold text-blue-600 dark:text-blue-400">
-              {liveRelations.length} Relations
-            </span>
-          </div>
-        </div>
-
-        {/* 1. Embassy Network Section */}
+      {/* Embassy and bilateral network */}
+      <RailCard title="Embassies and bilateral ties" icon={Building2} contentClassName="space-y-3">
+        {/* 1. Embassy network */}
         <div className="space-y-1.5">
-          <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-            <span>Active Embassies</span>
-            <span className="text-xs">{activeEmbassies.length} total</span>
+          <div className="flex items-center justify-between">
+            <Eyebrow>Active embassies</Eyebrow>
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {activeEmbassies.length} total
+            </span>
           </div>
           {activeEmbassies.length === 0 ? (
-            <p className="text-muted-foreground py-1.5 text-center text-xs">
-              No active embassies established.
-            </p>
+            <RailEmpty>No active embassies established.</RailEmpty>
           ) : (
             activeEmbassies.slice(0, 3).map((emb) => {
               const partnerCountryObj =
@@ -267,124 +259,94 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                 (emb.guestCountryId === countryId ? emb.hostCountryFlag : emb.guestCountryFlag);
 
               return (
-                <div
-                  key={emb.id}
-                  className="border-border/60 bg-muted/40 flex items-center justify-between rounded-lg border p-2 text-xs"
-                >
+                <RailRow key={emb.id} className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-                      <UnifiedCountryFlag
-                        countryName={partnerName}
-                        flagUrl={partnerFlag}
-                        size="xs"
-                      />
-                    </div>
+                    <UnifiedCountryFlag
+                      countryName={partnerName}
+                      flagUrl={partnerFlag}
+                      size="xs"
+                      className="shrink-0"
+                    />
                     <div className="min-w-0">
-                      <p className="text-foreground truncate text-xs font-semibold">
-                        {partnerName}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {emb.guestCountryId === countryId ? "Host Embassy" : "Guest Embassy"}
+                      <p className="text-foreground truncate font-medium">{partnerName}</p>
+                      <p className="text-muted-foreground">
+                        {emb.guestCountryId === countryId ? "Host embassy" : "Guest embassy"}
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <Badge variant="outline" className={cn("shrink-0", STATUS_TEXT.success)}>
                     Active
-                  </span>
-                </div>
+                  </Badge>
+                </RailRow>
               );
             })
           )}
         </div>
 
-        {/* 2. Bilateral Relations Section */}
-        <div className="border-border/60 space-y-1.5 border-t pt-1">
-          <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-            <span>Bilateral Relationships</span>
-            <span className="text-xs">{liveRelations.length} partners</span>
+        {/* 2. Bilateral relations */}
+        <div className="border-border/60 space-y-1.5 border-t pt-3">
+          <div className="flex items-center justify-between">
+            <Eyebrow>Bilateral relationships</Eyebrow>
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {liveRelations.length} partners
+            </span>
           </div>
           {liveRelations.length === 0 ? (
-            <p className="text-muted-foreground py-1.5 text-center text-xs">
-              No diplomatic relationships recorded.
-            </p>
+            <RailEmpty>No diplomatic relationships recorded.</RailEmpty>
           ) : (
             liveRelations.slice(0, 4).map((rel) => (
-              <div
-                key={rel.id}
-                className="border-border/60 bg-muted/40 flex items-center gap-2 rounded-lg border p-2 text-xs"
-              >
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <UnifiedCountryFlag
-                    countryName={rel.targetName}
-                    flagUrl={rel.targetFlag}
-                    size="xs"
-                  />
-                </div>
+              <RailRow key={rel.id} className="flex items-center gap-2">
+                <UnifiedCountryFlag
+                  countryName={rel.targetName}
+                  flagUrl={rel.targetFlag}
+                  size="xs"
+                  className="shrink-0"
+                />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-foreground truncate font-semibold">{rel.targetName}</span>
-                    <span className="text-xs font-bold text-cyan-500">{rel.strength}%</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-foreground truncate font-medium">{rel.targetName}</span>
+                    <span className="text-foreground shrink-0 tabular-nums">{rel.strength}%</span>
                   </div>
-                  <div className="bg-muted mt-1 h-1 w-full overflow-hidden rounded-full">
-                    <div
-                      className="h-full bg-cyan-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-                      style={{ width: `${Math.min(100, Math.max(0, rel.strength))}%` }}
-                    />
-                  </div>
+                  <RailBar value={rel.strength} />
                 </div>
-                <span className="text-muted-foreground shrink-0 text-xs font-medium">
-                  {rel.stance}
-                </span>
-              </div>
+                <span className="text-muted-foreground shrink-0">{rel.stance}</span>
+              </RailRow>
             ))
           )}
         </div>
-      </FacetCard>
+      </RailCard>
 
-      {/* Alliances & Blocs Snapshot Card */}
-      <FacetCard depth={1} className="space-y-2.5 rounded-3xl p-4">
-        <div className="border-border/60 flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-            <h4 className="text-foreground text-sm font-semibold">Alliances and blocs</h4>
-          </div>
-          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-600 dark:text-cyan-400">
-            {alliances.length} Active
-          </span>
-        </div>
-
-        <div className="space-y-1.5">
-          {alliances.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-xs">
-              Not a member of any diplomatic alliance.
-            </p>
-          ) : (
-            alliances.slice(0, 3).map((ally) => (
-              <div
-                key={ally.id}
-                className="border-border/60 bg-muted/40 flex items-center justify-between rounded-lg border p-2 text-xs"
-              >
-                <div>
-                  <p className="text-foreground text-xs font-semibold">
-                    {ally.name ?? "Defense Pact"}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {ally.memberCount ?? ally.members?.length ?? 1} Nations
-                  </p>
-                </div>
-                <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-xs font-bold text-cyan-700 dark:text-cyan-300">
-                  {ally.myRole ?? "Member"}
-                </span>
+      {/* Alliances and blocs */}
+      <RailCard
+        title="Alliances and blocs"
+        icon={Users}
+        accessory={<RailCount>{alliances.length}</RailCount>}
+      >
+        {alliances.length === 0 ? (
+          <RailEmpty>Not a member of any diplomatic alliance.</RailEmpty>
+        ) : (
+          alliances.slice(0, 3).map((ally) => (
+            <RailRow key={ally.id} className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-foreground truncate font-medium">
+                  {ally.name ?? "Defense Pact"}
+                </p>
+                <p className="text-muted-foreground">
+                  {ally.memberCount ?? ally.members?.length ?? 1} nations
+                </p>
               </div>
-            ))
-          )}
-        </div>
-      </FacetCard>
+              <Badge variant="secondary" className="shrink-0 capitalize">
+                {ally.myRole ?? "Member"}
+              </Badge>
+            </RailRow>
+          ))
+        )}
+      </RailCard>
 
-      {/* Diplomatic Activity Log */}
+      {/* Diplomatic activity log */}
       <DomainActivityCard
         domain="relations"
-        title="Diplomatic Activity Log"
+        title="Diplomatic activity"
         icon={Globe2}
         entries={activity}
         emptyMessage="No recent diplomatic activity"

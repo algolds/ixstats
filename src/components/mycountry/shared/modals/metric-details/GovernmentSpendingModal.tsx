@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
   Building,
@@ -16,7 +17,7 @@ import {
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -57,12 +58,12 @@ const TABS: MetricModalTab[] = [
 ];
 
 const SPENDING_COLORS = [
-  "#3b82f6", // blue - education
-  "#ef4444", // red - healthcare
-  "#10b981", // green - defense
-  "#fbbf24", // amber - social
-  "#6366f1", // indigo - infrastructure
-  "#06b6d4", // cyan - other
+  "var(--color-blue-500)", // blue - education
+  "var(--destructive)", // red - healthcare
+  "var(--chart-3)", // green - defense
+  "var(--color-amber-500)", // amber - social
+  "var(--chart-5)", // indigo - infrastructure
+  "var(--chart-2)", // cyan - other
 ];
 
 export function GovernmentSpendingModal({
@@ -123,9 +124,9 @@ export function GovernmentSpendingModal({
   };
 
   const chartConfig = {
-    totalSpending: { label: "Total Spending (B)", color: "#fbbf24" },
-    spendingGdpPercent: { label: "% of GDP", color: "#3b82f6" },
-    budgetBalance: { label: "Budget Balance (B)", color: "#10b981" },
+    totalSpending: { label: "Total Spending (B)", color: "var(--color-amber-500)" },
+    spendingGdpPercent: { label: "% of GDP", color: "var(--color-blue-500)" },
+    budgetBalance: { label: "Budget Balance (B)", color: "var(--chart-3)" },
   };
 
   // Derive stats for Sidebar
@@ -189,34 +190,35 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Landmark className="h-5 w-5 text-amber-500" />
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-6"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Landmark className="text-muted-foreground h-5 w-5" />
                 Budget Summary
-              </CardTitle>
-              <CardDescription>Government fiscal allocation and spending summary.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-center p-0">
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Government fiscal allocation and spending summary.
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-blue-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Tax Revenue
-                  </div>
+                  <Eyebrow className="mt-1 block">Tax Revenue</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-green-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-lg font-semibold text-emerald-500">
                     {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Revenue % GDP
-                  </div>
+                  <Eyebrow className="mt-1 block">Revenue % GDP</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-amber-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-foreground text-lg font-semibold">
                     $
                     {(
                       (((fiscal?.totalDebtGDPRatio || 0) / 100) *
@@ -225,30 +227,26 @@ export function GovernmentSpendingModal({
                     ).toFixed(1)}
                     B
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Public Debt
-                  </div>
+                  <Eyebrow className="mt-1 block">Public Debt</Eyebrow>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-red-400">
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <div className="text-destructive text-lg font-bold">
                     {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                   </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Debt to GDP
-                  </div>
+                  <Eyebrow className="mt-1 block">Debt to GDP</Eyebrow>
                 </div>
               </div>
 
-              <div className="text-muted-foreground mt-6 flex items-start gap-3 rounded-lg border border-amber-500/10 bg-amber-500/5 p-4 text-xs">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <div className="text-muted-foreground bg-muted/50 mt-6 flex items-start gap-3 rounded-xl p-4 text-xs">
+                <Info className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                 <p className="leading-relaxed">
                   Budget dynamics balance societal infrastructure investments with revenue
                   collections. Stable surpluses build cash reserves, while persistent deficits
                   expand public debt limits and require careful interest rate servicing.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -309,12 +307,12 @@ export function GovernmentSpendingModal({
 
     if (processedData.length === 0) {
       return (
-        <Card className="facet-refraction border-white/5">
-          <CardContent className="py-12 text-center">
+        <FacetCard surface="solid" className="rounded-xl">
+          <FacetCardContent className="py-12 text-center">
             <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-muted-foreground">No historical data available</p>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       );
     }
 
@@ -324,34 +322,34 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Government Spending Trends</CardTitle>
-              <CardDescription>Historical budget and spending metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+          <FacetCard surface="solid" className="rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base font-semibold">
+                Government Spending Trends
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Historical budget and spending metrics
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ChartComponent data={processedData}>
                     <defs>
                       <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--color-amber-500)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--color-amber-500)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" stroke="var(--muted-foreground)" tickLine={false} />
+                    <YAxis stroke="var(--muted-foreground)" tickLine={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     {chartType === "area" ? (
                       <Area
                         type="monotone"
                         dataKey="totalSpending"
-                        stroke="#fbbf24"
+                        stroke="var(--color-amber-500)"
                         fillOpacity={1}
                         fill="url(#spendGrad)"
                         strokeWidth={2}
@@ -360,7 +358,7 @@ export function GovernmentSpendingModal({
                     ) : chartType === "bar" ? (
                       <Bar
                         dataKey="totalSpending"
-                        fill="#fbbf24"
+                        fill="var(--color-amber-500)"
                         name="Total Spending (B)"
                         radius={[4, 4, 0, 0]}
                       />
@@ -369,7 +367,7 @@ export function GovernmentSpendingModal({
                         <Line
                           type="monotone"
                           dataKey="totalSpending"
-                          stroke="#fbbf24"
+                          stroke="var(--color-amber-500)"
                           strokeWidth={2}
                           dot={false}
                           name="Total Spending (B)"
@@ -377,7 +375,7 @@ export function GovernmentSpendingModal({
                         <Line
                           type="monotone"
                           dataKey="spendingGdpPercent"
-                          stroke="#3b82f6"
+                          stroke="var(--color-blue-500)"
                           strokeWidth={2}
                           dot={false}
                           name="% of GDP"
@@ -387,33 +385,29 @@ export function GovernmentSpendingModal({
                   </ChartComponent>
                 </ResponsiveContainer>
               </ChartContainer>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Peak Spending (B)
-              </span>
-              <span className="text-xl font-bold text-amber-500">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Peak Spending (B)</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {spendStats?.maxSpending ? `$${spendStats.maxSpending.toFixed(1)}B` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Avg Budget Balance
-              </span>
-              <span className="text-xl font-bold text-emerald-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Avg Budget Balance</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {spendStats?.avgBalance ? `$${spendStats.avgBalance.toFixed(1)}B` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Data Points
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Data Points</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
+                {spendStats?.dataPoints || 0}
               </span>
-              <span className="text-xl font-bold text-blue-400">{spendStats?.dataPoints || 0}</span>
             </div>
           </div>
         </MetricModalLayout.Sidebar>
@@ -462,74 +456,74 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex-1 border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-amber-500" />
+          <FacetCard surface="solid" className="flex-1 rounded-xl p-6">
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+                <Globe className="text-muted-foreground h-5 w-5" />
                 Fiscal Health Benchmarks
-              </CardTitle>
-              <CardDescription>Compare spending ratios against global baselines.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Compare spending ratios against global baselines.
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-0">
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={compData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} unit="%" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" tickLine={false} />
+                    <YAxis stroke="var(--muted-foreground)" tickLine={false} unit="%" />
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(18, 20, 24, 0.8)",
-                        backdropFilter: "blur(8px)",
-                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        background: "var(--popover)",
+                        color: "var(--popover-foreground)",
+                        borderColor: "var(--border)",
                         borderRadius: "8px",
                       }}
                     />
-                    <Bar dataKey="Your Country" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="Your Country"
+                      fill="var(--color-amber-500)"
+                      radius={[4, 4, 0, 0]}
+                    />
                     <Bar
                       dataKey="Global Avg"
-                      fill="rgba(255, 255, 255, 0.15)"
+                      fill="var(--muted-foreground)"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Global Allocation
-              </span>
-              <span className="text-xl font-bold text-amber-500">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Global Allocation</Eyebrow>
+              <span className="text-foreground text-xl font-semibold">
                 {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
               </span>
               <span className="text-muted-foreground mt-1 text-xs">
                 Spending: {spendingGdpPercent.toFixed(1)}% vs {globalAvgSpending}% global avg
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Fiscal Stability
-              </span>
-              <span className="text-xl font-bold text-green-400">
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Fiscal Stability</Eyebrow>
+              <span className="text-xl font-semibold text-emerald-500">
                 {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
               </span>
               <span className="text-muted-foreground mt-1 text-xs">
                 Public Debt: {debtToGdp.toFixed(1)}% of GDP
               </span>
             </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Budget Status
-              </span>
+            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+              <Eyebrow className="mb-1 block">Budget Status</Eyebrow>
               <span
                 className={cn(
                   "text-xl font-bold",
-                  budgetBalance >= 0 ? "text-emerald-400" : "text-red-400"
+                  budgetBalance >= 0 ? "text-emerald-500" : "text-destructive"
                 )}
               >
                 {budgetBalance >= 0 ? "Surplus" : "Deficit"}
@@ -567,7 +561,7 @@ export function GovernmentSpendingModal({
             .map((cat, i) => ({
               name: cat.category,
               value: cat.percent || cat.gdpPercent || 0,
-              color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? "#3b82f6",
+              color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? "var(--color-blue-500)",
             }))
         : [
             {
@@ -575,33 +569,38 @@ export function GovernmentSpendingModal({
               value: spending?.education
                 ? (spending.education / (spending?.totalSpending || 1)) * 100
                 : 15,
-              color: SPENDING_COLORS[0] ?? "#3b82f6",
+              color: SPENDING_COLORS[0] ?? "var(--color-blue-500)",
             },
             {
               name: "Healthcare",
               value: spending?.healthcare
                 ? (spending.healthcare / (spending?.totalSpending || 1)) * 100
                 : 12,
-              color: SPENDING_COLORS[1] ?? "#10b981",
+              color: SPENDING_COLORS[1] ?? "var(--chart-3)",
             },
             {
               name: "Social Safety",
               value: spending?.socialSafety
                 ? (spending.socialSafety / (spending?.totalSpending || 1)) * 100
                 : 20,
-              color: SPENDING_COLORS[3] ?? "#f59e0b",
+              color: SPENDING_COLORS[3] ?? "var(--color-amber-500)",
             },
           ];
 
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Spending by Category</CardTitle>
-              <CardDescription>Budget allocation across government sectors</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col items-center gap-6 p-0 md:flex-row">
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-6"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base font-semibold">Spending by Category</h3>
+              <p className="text-muted-foreground text-sm">
+                Budget allocation across government sectors
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex flex-1 flex-col items-center gap-6 p-0 md:flex-row">
               {/* Pie Chart */}
               <div className="flex h-44 w-44 shrink-0 items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
@@ -621,9 +620,9 @@ export function GovernmentSpendingModal({
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(18, 20, 24, 0.8)",
-                        backdropFilter: "blur(8px)",
-                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        background: "var(--popover)",
+                        color: "var(--popover-foreground)",
+                        borderColor: "var(--border)",
                         borderRadius: "8px",
                       }}
                     />
@@ -636,7 +635,7 @@ export function GovernmentSpendingModal({
                 {categories.map((category) => (
                   <div
                     key={category.name}
-                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-2 text-xs"
+                    className="bg-muted/50 flex items-center justify-between rounded-xl p-2 text-xs"
                   >
                     <div className="flex items-center gap-2">
                       <div
@@ -645,31 +644,34 @@ export function GovernmentSpendingModal({
                       />
                       <span className="text-muted-foreground font-medium">{category.name}</span>
                     </div>
-                    <span className="font-semibold text-white">{category.value.toFixed(1)}%</span>
+                    <span className="text-foreground font-semibold tabular-nums">
+                      {category.value.toFixed(1)}%
+                    </span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="text-sm font-semibold">Priority Spending</CardTitle>
-              <CardDescription className="text-xs">
-                Key budget policies and priorities
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 p-0">
+          <FacetCard
+            surface="solid"
+            className="flex flex-1 flex-col justify-between rounded-xl p-4"
+          >
+            <FacetCardHeader className="mb-4 p-0">
+              <h3 className="text-foreground text-base text-sm font-semibold">Priority Spending</h3>
+              <p className="text-muted-foreground text-xs">Key budget policies and priorities</p>
+            </FacetCardHeader>
+            <FacetCardContent className="flex-1 p-0">
               <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
                 {/* The government API has no priority-policy field, so this card only has an empty state. */}
                 <div className="py-8 text-center">
                   <p className="text-muted-foreground text-xs">No priority policies defined</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </FacetCardContent>
+          </FacetCard>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );

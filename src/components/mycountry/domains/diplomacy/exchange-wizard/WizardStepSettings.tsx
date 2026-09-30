@@ -52,7 +52,6 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
             value={startDate}
             min={currentIxTimeDate}
             onChange={(e) => onStartDateChange(e.target.value)}
-            className="bg-input border-border focus:border-amber-500/50"
           />
           <p className="text-muted-foreground text-xs">
             Today in IxTime:{" "}
@@ -75,7 +74,6 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
             value={endDate}
             min={startDate || currentIxTimeDate}
             onChange={(e) => onEndDateChange(e.target.value)}
-            className="bg-input border-border focus:border-amber-500/50"
           />
           <p className="text-muted-foreground text-xs">Must be after start date</p>
         </div>
@@ -93,7 +91,6 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
           min="1"
           value={maxParticipants}
           onChange={(e) => onMaxParticipantsChange(Math.max(1, parseInt(e.target.value) || 1))}
-          className="bg-input border-border focus:border-amber-500/50"
         />
         <p className="text-muted-foreground text-xs">
           Number of people who can participate in this exchange.
@@ -101,7 +98,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
       </div>
 
       {/* Public/Private */}
-      <div className="facet-hierarchy-child rounded-lg p-4">
+      <div className="border-border bg-card rounded-xl border p-4">
         <div
           onClick={() => onIsPublicChange(!isPublic)}
           className="flex w-full cursor-pointer items-center justify-between"

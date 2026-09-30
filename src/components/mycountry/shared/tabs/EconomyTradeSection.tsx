@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { motion } from "motion/react";
 import { Globe, NavArrowRight as ChevronRight } from "iconoir-react";
@@ -27,14 +28,15 @@ export function EconomyTradeSection({
         <button
           type="button"
           onClick={onToggle}
-          className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
+          aria-expanded={isExpanded}
+          className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
             isExpanded
-              ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
+              ? "text-foreground border-border bg-card"
               : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
           }`}
         >
           <Globe
-            className={`h-3.5 w-3.5 ${isExpanded ? "text-emerald-500" : "text-muted-foreground/60"}`}
+            className={`h-3.5 w-3.5 ${isExpanded ? "text-foreground" : "text-muted-foreground"}`}
           />
           <span>Trade Flows & Balance</span>
           <motion.div
@@ -49,9 +51,9 @@ export function EconomyTradeSection({
       <motion.div
         initial={false}
         animate={{ height: isExpanded ? "auto" : 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-        className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-          isExpanded ? "border border-white/10" : "border border-transparent"
+        transition={{ type: "spring", bounce: 0, duration: 0.25 }}
+        className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
+          isExpanded ? "border-border border" : "border border-transparent"
         }`}
       >
         <TextureOverlay
@@ -60,43 +62,25 @@ export function EconomyTradeSection({
           className="pointer-events-none absolute inset-0 z-0"
         />
         <div className="relative z-10 space-y-4 p-4">
-          <div className="border-border/10 grid grid-cols-3 gap-4 rounded-xl border bg-white/10 p-3 dark:bg-white/[0.02]">
+          <div className="bg-muted/50 grid grid-cols-3 gap-4 rounded-xl p-3">
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Total Exports
-              </p>
+              <Eyebrow className="block">Total Exports</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">
-                {formatCompactCurrency(
-                  (economyData?.core.nominalGDP ?? 0) * 0.35,
-                  "N/A",
-                  currency
-                )}
+                {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.35, "N/A", currency)}
               </p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">35.0% of GDP</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Total Imports
-              </p>
+              <Eyebrow className="block">Total Imports</Eyebrow>
               <p className="text-foreground mt-0.5 text-sm font-bold">
-                {formatCompactCurrency(
-                  (economyData?.core.nominalGDP ?? 0) * 0.32,
-                  "N/A",
-                  currency
-                )}
+                {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.32, "N/A", currency)}
               </p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">32.0% of GDP</p>
             </div>
             <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-xs font-semibold tracking-wider uppercase">
-                Trade Balance
-              </p>
+              <Eyebrow className="block">Trade Balance</Eyebrow>
               <p className="mt-0.5 text-sm font-bold text-emerald-500">
-                {formatCompactCurrency(
-                  (economyData?.core.nominalGDP ?? 0) * 0.03,
-                  "N/A",
-                  currency
-                )}
+                {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.03, "N/A", currency)}
               </p>
               <p className="text-muted-foreground/80 mt-0.5 text-xs">Surplus (+3.0%)</p>
             </div>

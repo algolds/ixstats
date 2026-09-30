@@ -16,7 +16,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { cn } from "~/lib/utils";
 import { FP_PROPOSAL_LABELS, INBOX_QUERY_OPTIONS, formatExpiry } from "./useDiplomacyInbox";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -254,8 +253,8 @@ function InboxSection({
   return (
     <section className="space-y-2.5" aria-label={title}>
       <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-cyan-500" />
-        <h4 className="text-sm font-semibold">{title}</h4>
+        <Icon className="text-muted-foreground h-4 w-4" />
+        <h4 className="text-foreground text-sm font-semibold">{title}</h4>
         {!loading && !error && (
           <span className="text-muted-foreground font-mono text-xs">{count}</span>
         )}
@@ -263,15 +262,15 @@ function InboxSection({
       <p className="text-muted-foreground text-xs">{description}</p>
       {loading ? (
         <div className="space-y-2" role="status" aria-label={`Loading ${title.toLowerCase()}`}>
-          <Skeleton className="bg-muted/40 h-16 rounded-lg" />
-          <Skeleton className="bg-muted/40 h-16 rounded-lg" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
         </div>
       ) : error ? (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm"
+          className="border-destructive/30 bg-destructive/5 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 text-sm"
         >
-          <span className="flex items-center gap-2 text-red-600 dark:text-red-400">
+          <span className="text-destructive flex items-center gap-2">
             <WarningTriangle className="h-4 w-4 shrink-0" />
             Could not load {title.toLowerCase()} items: {error}
           </span>
@@ -281,7 +280,7 @@ function InboxSection({
           </Button>
         </div>
       ) : count === 0 ? (
-        <div className="border-border text-muted-foreground rounded-lg border border-dashed p-5 text-center text-sm">
+        <div className="border-border text-muted-foreground rounded-xl border border-dashed p-5 text-center text-sm">
           {emptyText}
         </div>
       ) : (
@@ -302,20 +301,11 @@ function InboxItem({
 }) {
   const KindIcon = row.kind === "invite" ? Users : Handshake;
   return (
-    <li className="border-border bg-card/40 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+    <li className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
       <div className="flex min-w-0 items-start gap-3">
-        <div
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-            row.kind === "invite"
-              ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          )}
-        >
-          <KindIcon className="h-4 w-4" />
-        </div>
+        <KindIcon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{row.title}</p>
+          <p className="text-foreground truncate text-sm font-semibold">{row.title}</p>
           <p className="text-muted-foreground truncate text-xs">{row.subtitle}</p>
           <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
             <Clock className="h-3 w-3" />

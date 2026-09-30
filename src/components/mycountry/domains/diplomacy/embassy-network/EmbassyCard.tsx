@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
@@ -68,7 +69,7 @@ interface EmbassyCardProps {
  * and benefit breakdown across economic, diplomatic, and cultural dimensions.
  *
  * Features:
- * - Blended flag header with visual divider
+ * - Paired flag header with a centre marker
  * - Embassy details (name, countries, status, strength)
  * - Synergy badge and progress bar
  * - Benefits grid with color-coded bonuses
@@ -103,153 +104,124 @@ export const EmbassyCard = React.memo(function EmbassyCard({
     );
   }, [embassy]);
 
+  const synergy = getSynergyBand(embassy.totalSynergyScore);
+  const benefits = [
+    { label: "Economic", high: embassy.economicBonus > 0 },
+    { label: "Diplomatic", high: embassy.diplomaticBonus > 0 },
+    { label: "Cultural", high: embassy.culturalBonus > 0 },
+  ];
+
   return (
-    <Card
-      className={cn(
-        "overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-        isOwner && "hover:ring-primary/50 cursor-pointer hover:shadow-lg hover:ring-2"
-      )}
-      onClick={onClick}
+    <FacetCard
+      depth={2}
+      className="overflow-hidden rounded-2xl"
+      onClick={isOwner ? onClick : undefined}
+      onKeyDown={
+        isOwner
+          ? (e) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      aria-label={isOwner ? `Open ${embassy.name}` : undefined}
     >
-      {/* Blended Flag Header */}
-      <div className="relative h-24 overflow-hidden">
-        {/* Flag blend effect */}
-        <div className="absolute inset-0 flex">
-          {/* Host country flag (left half) */}
-          <div className="relative w-1/2 overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center opacity-70">
-              <UnifiedCountryFlag
-                countryName={embassy.hostCountry}
-                flagUrl={embassy.hostCountryFlag}
-                size="xl"
-                className="h-full w-full object-cover"
-                showPlaceholder={true}
-                rounded={false}
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/20" />
+      {/* Paired flag header: host left, guest right */}
+      <div className="border-border relative flex h-20 overflow-hidden border-b">
+        {[
+          { name: embassy.hostCountry, flag: embassy.hostCountryFlag },
+          { name: embassy.guestCountry, flag: embassy.guestCountryFlag },
+        ].map((side) => (
+          <div key={side.name} className="relative w-1/2 overflow-hidden opacity-80">
+            <UnifiedCountryFlag
+              countryName={side.name}
+              flagUrl={side.flag}
+              size="xl"
+              className="h-full w-full object-cover"
+              showPlaceholder={true}
+              rounded={false}
+            />
           </div>
-
-          {/* Guest country flag (right half) */}
-          <div className="relative w-1/2 overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center opacity-70">
-              <UnifiedCountryFlag
-                countryName={embassy.guestCountry}
-                flagUrl={embassy.guestCountryFlag}
-                size="xl"
-                className="h-full w-full object-cover"
-                showPlaceholder={true}
-                rounded={false}
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent to-black/20" />
-          </div>
-        </div>
-
-        {/* Center divider with icon */}
+        ))}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-background/90 border-primary/50 rounded-full border-2 p-2 shadow-lg backdrop-blur-sm">
-            <Building2 className="text-primary h-5 w-5" />
+          <div className="bg-background border-border rounded-full border p-2 shadow-sm">
+            <Building2 className="text-foreground h-4 w-4" />
           </div>
         </div>
-
-        {/* Gradient overlay */}
-        <div className="to-background/80 absolute inset-0 bg-gradient-to-b from-transparent via-transparent" />
       </div>
 
-      {/* Embassy Details */}
-      <CardHeader className="pt-2 pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="flex items-center gap-2 text-base">{embassy.name}</CardTitle>
-            <CardDescription className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-muted-foreground/60">
+      <FacetCardHeader className="p-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-foreground truncate text-base font-semibold">{embassy.name}</h3>
+            <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+              <span>
                 {embassy.guestCountry} ⟷ {embassy.hostCountry}
               </span>
-              <span>•</span>
+              <span aria-hidden>·</span>
               <span className="capitalize">{embassy.status}</span>
-              <span>•</span>
+              <span aria-hidden>·</span>
               <span>Standing: {getStandingBand(embassy.strength).label}</span>
-            </CardDescription>
+            </p>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <Badge
-              className={cn(
-                "border font-bold shadow-sm",
-                getSynergyBand(embassy.totalSynergyScore).badgeClass
-              )}
-            >
-              <ShieldCheck className="mr-1 h-3 w-3" />
-              {getSynergyBand(embassy.totalSynergyScore).label} Synergy
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant="outline" className={synergy.textClass}>
+              <ShieldCheck />
+              {synergy.label} Synergy
             </Badge>
-            <Badge
-              className={cn(
-                "border text-xs font-semibold tracking-wider uppercase shadow-xs",
-                asymmetry.badgeColor
-              )}
-            >
+            <Badge variant="outline" className="text-muted-foreground">
               {asymmetry.label}
             </Badge>
           </div>
         </div>
-      </CardHeader>
+      </FacetCardHeader>
 
-      <CardContent className="space-y-3">
-        {/* Synergy Progress */}
+      <FacetCardContent className="space-y-3 px-4 pb-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Standing Tier</span>
-            <span className={cn("font-bold", getSynergyBand(embassy.totalSynergyScore).textClass)}>
-              {getSynergyBand(embassy.totalSynergyScore).label}
-            </span>
+            <Eyebrow>Standing tier</Eyebrow>
+            <span className={cn("font-semibold", synergy.textClass)}>{synergy.label}</span>
           </div>
           <Progress value={embassy.totalSynergyScore} className="h-2" />
         </div>
 
-        {/* Benefits Grid */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="rounded-lg bg-emerald-500/10 p-2 text-center">
-            <div className="font-bold text-emerald-600 dark:text-emerald-400">
-              {embassy.economicBonus > 0 ? "High" : "Standard"}
+        <dl className="grid grid-cols-3 gap-2 text-xs">
+          {benefits.map((b) => (
+            <div key={b.label} className="bg-muted/50 rounded-lg p-2 text-center">
+              <dd
+                className={cn(
+                  "font-semibold",
+                  b.high ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
+                {b.high ? "High" : "Standard"}
+              </dd>
+              <dt className="text-muted-foreground">{b.label}</dt>
             </div>
-            <div className="text-muted-foreground">Economic</div>
-          </div>
-          <div className="rounded-lg bg-cyan-500/10 p-2 text-center">
-            <div className="font-bold text-cyan-600 dark:text-cyan-400">
-              {embassy.diplomaticBonus > 0 ? "High" : "Standard"}
-            </div>
-            <div className="text-muted-foreground">Diplomatic</div>
-          </div>
-          <div className="rounded-lg bg-blue-500/10 p-2 text-center">
-            <div className="font-bold text-blue-600 dark:text-blue-400">
-              {embassy.culturalBonus > 0 ? "High" : "Standard"}
-            </div>
-            <div className="text-muted-foreground">Cultural</div>
-          </div>
-        </div>
+          ))}
+        </dl>
 
-        {/* Quick Actions (owners only) */}
         {isOwner && (
-          <div className="space-y-2 border-t pt-3">
-            <Link
-              href={`/vault/market?nation=${encodeURIComponent(partnerCountry)}`}
-              onClick={(e) => e.stopPropagation()}
-              className="block"
-            >
-              <Button variant="outline" size="sm" className="w-full">
-                <CreditCard className="mr-2 h-3.5 w-3.5" />
+          <div className="border-border space-y-2 border-t pt-3">
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <Link
+                href={`/vault/market?nation=${encodeURIComponent(partnerCountry)}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <CreditCard className="h-3.5 w-3.5" />
                 Trade Cards with {partnerCountry}
-              </Button>
-            </Link>
-            <div className="text-muted-foreground text-center text-xs">
-              <span className="flex items-center justify-center gap-1">
-                Click card for embassy details
-                <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
+              </Link>
+            </Button>
+            <p className="text-muted-foreground flex items-center justify-center gap-1 text-xs">
+              Open for embassy details
+              <ChevronRight className="h-3 w-3" />
+            </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 });

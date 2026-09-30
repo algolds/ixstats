@@ -33,14 +33,12 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[85vh] max-w-4xl flex-col overflow-hidden rounded-2xl border-white/10 bg-zinc-950/95 p-0 shadow-2xl backdrop-blur-xl">
-        <DialogHeader className="flex flex-row items-center justify-between border-b border-white/10 px-6 py-4">
+      <DialogContent className="flex max-h-[85vh] max-w-4xl flex-col overflow-hidden p-0">
+        <DialogHeader className="border-border flex flex-row items-center justify-between border-b px-6 py-4 pr-12">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-blue-500/25 bg-blue-500/15 p-2 text-blue-400">
-              <BookOpen className="h-5 w-5" />
-            </div>
+            <BookOpen className="text-muted-foreground h-5 w-5 shrink-0" />
             <div>
-              <DialogTitle className="text-foreground text-base font-extrabold tracking-tight">
+              <DialogTitle className="text-foreground text-base font-semibold">
                 {section?.title}
               </DialogTitle>
               <p className="text-muted-foreground text-xs">
@@ -51,12 +49,7 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
 
           <div className="flex items-center gap-2">
             {section && (
-              <Button
-                size="sm"
-                variant="outline"
-                asChild
-                className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold hover:bg-white/[0.06]"
-              >
+              <Button size="sm" variant="outline" asChild className="h-8 gap-1.5 text-xs">
                 <Link href={titleToWikiOSPath(section.title)}>
                   <ExternalLink className="h-3.5 w-3.5" />
                   WikiOS Source

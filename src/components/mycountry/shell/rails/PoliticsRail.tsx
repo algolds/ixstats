@@ -9,13 +9,18 @@ import {
   StatsReport as BarChart3,
   CheckSquare as Vote,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { computeApproval } from "~/lib/government/approval";
 import { ParliamentHemicycle } from "~/components/executive/politics/ParliamentHemicycle";
 import {
   DomainKpiGrid,
   DomainActivityCard,
+  RailBar,
+  RailCard,
+  RailCount,
+  RailEmpty,
+  RailRow,
+  STATUS_TEXT,
   type Kpi,
   type ActivityEntry,
 } from "./shared";
@@ -118,11 +123,9 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: "legislature",
         icon: Landmark,
-        iconColor: "text-indigo-500",
+        iconColor: STATUS_TEXT.neutral,
         text: `Legislature: ${legislature.totalSeats} seats configured`,
-        time: new Date(
-          legislature.updatedAt ?? legislature.createdAt ?? Date.now()
-        ),
+        time: new Date(legislature.updatedAt ?? legislature.createdAt ?? Date.now()),
       });
     }
 
@@ -130,7 +133,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `party-${p.id}`,
         icon: Users,
-        iconColor: "text-indigo-500",
+        iconColor: STATUS_TEXT.neutral,
         text: `Party: ${p.name} (${p.ideology?.replace(/_/g, " ") ?? "Independent"})`,
         time: new Date(p.createdAt ?? Date.now()),
       });
@@ -141,7 +144,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `election-${e.id}`,
         icon: isCompleted ? CheckCircle : BarChart3,
-        iconColor: isCompleted ? "text-emerald-500" : "text-indigo-500",
+        iconColor: isCompleted ? STATUS_TEXT.success : STATUS_TEXT.neutral,
         text: isCompleted
           ? `Completed: ${e.name ?? "Election"}`
           : `Scheduled: ${e.name ?? "Election"}`,
@@ -162,35 +165,25 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Political Snapshot Header KPIs */}
-      <FacetCard depth={1} className="rounded-3xl p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Landmark className="h-3.5 w-3.5 text-indigo-500" />
-            <h4 className="text-foreground text-sm font-semibold">
-              Political snapshot
-            </h4>
-          </div>
-        </div>
+      {/* Political snapshot KPIs */}
+      <RailCard title="Political snapshot" icon={Landmark}>
         <DomainKpiGrid items={kpis} />
-      </FacetCard>
+      </RailCard>
 
-      {/* Parliament Seat Allocation Card (Hemicycle Arc & Seat Breakdown) */}
-      <FacetCard depth={1} className="space-y-3 rounded-3xl p-4">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-            <h4 className="text-foreground truncate text-sm font-semibold">
-              {parliament?.legislature?.name
-                ? `${parliament.legislature.name} Seat Allocation`
-                : "Legislature Seat Allocation"}
-            </h4>
-          </div>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-indigo-500">
-            {parliament?.legislature?.totalSeats ?? legislature?.totalSeats ?? 0} Seats
-          </span>
-        </div>
-
+      {/* Parliament seat allocation (hemicycle arc and seat breakdown) */}
+      <RailCard
+        title={
+          parliament?.legislature?.name
+            ? `${parliament.legislature.name} seat allocation`
+            : "Legislature seat allocation"
+        }
+        icon={Building2}
+        accessory={
+          <RailCount>
+            {parliament?.legislature?.totalSeats ?? legislature?.totalSeats ?? 0} seats
+          </RailCount>
+        }
+      >
         {hasParliamentSeats && parliament?.legislature ? (
           <div className="flex flex-col items-center overflow-hidden">
             <ParliamentHemicycle
@@ -202,8 +195,8 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-muted-foreground py-1 text-center font-mono text-xs">
-              Chamber Hemicycle ({legislature?.totalSeats ?? 100} Total Seats)
+            <p className="text-muted-foreground py-1 text-center text-xs">
+              Chamber hemicycle ({legislature?.totalSeats ?? 100} total seats)
             </p>
             {parties && parties.length > 0 ? (
               <div className="space-y-1.5">
@@ -212,11 +205,9 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                   const total = legislature?.totalSeats ?? 100;
                   const pct = total > 0 ? (seats / total) * 100 : 0;
                   return (
-                    <div key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="text-foreground truncate text-xs font-semibold">
-                        {p.name}
-                      </span>
-                      <span className="font-mono text-xs font-bold text-indigo-500">
+                    <div key={p.id} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="text-foreground truncate font-medium">{p.name}</span>
+                      <span className="text-muted-foreground shrink-0 tabular-nums">
                         {seats} seats ({pct.toFixed(0)}%)
                       </span>
                     </div>
@@ -224,69 +215,49 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground py-2 text-center text-xs">
-                No legislature seats allocated yet.
-              </p>
+              <RailEmpty>No legislature seats allocated yet.</RailEmpty>
             )}
           </div>
         )}
-      </FacetCard>
+      </RailCard>
 
-      {/* Political Parties & Factions Snapshot Card */}
-      <FacetCard depth={1} className="space-y-2.5 rounded-3xl p-4">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2">
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-indigo-500" />
-            <h4 className="text-foreground text-sm font-semibold">Political parties</h4>
-          </div>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-xs font-extrabold text-indigo-500">
-            {parties?.length ?? 0} Parties
-          </span>
-        </div>
+      {/* Political parties snapshot */}
+      <RailCard
+        title="Political parties"
+        icon={Users}
+        accessory={<RailCount>{parties?.length ?? 0}</RailCount>}
+      >
+        {!parties || parties.length === 0 ? (
+          <RailEmpty>No registered political parties.</RailEmpty>
+        ) : (
+          parties.slice(0, 4).map((party) => {
+            const support = party.currentSupport ?? party.popularSupport ?? 0;
+            const seats = seatsByParty.get(party.id) ?? 0;
 
-        <div className="space-y-1.5">
-          {!parties || parties.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-xs">
-              No registered political parties.
-            </p>
-          ) : (
-            parties.slice(0, 4).map((party) => {
-              const support = party.currentSupport ?? party.popularSupport ?? 0;
-              const seats = seatsByParty.get(party.id) ?? 0;
-
-              return (
-                <div
-                  key={party.id}
-                  className="space-y-1 rounded-lg border border-border/60 bg-muted/40 p-2 text-xs"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex min-w-0 items-center gap-1.5 pr-2">
-                      <span className="text-foreground truncate font-semibold">{party.name}</span>
-                      <span className="text-muted-foreground font-mono text-xs uppercase">
-                        ({party.ideology?.replace(/_/g, " ") ?? "Centrist"})
-                      </span>
-                    </div>
-                    <span className="shrink-0 text-xs font-bold text-indigo-500">
-                      {support}% support · {seats} seats
+            return (
+              <RailRow key={party.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-baseline gap-1.5">
+                    <span className="text-foreground truncate font-medium">{party.name}</span>
+                    <span className="text-muted-foreground shrink-0 truncate capitalize">
+                      {party.ideology?.replace(/_/g, " ") ?? "centrist"}
                     </span>
                   </div>
-                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full bg-indigo-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-                      style={{ width: `${Math.min(100, Math.max(0, support))}%` }}
-                    />
-                  </div>
+                  <span className="text-foreground shrink-0 tabular-nums">
+                    {support}% · {seats} seats
+                  </span>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </FacetCard>
+                <RailBar value={support} />
+              </RailRow>
+            );
+          })
+        )}
+      </RailCard>
 
-      {/* Political Activity Feed */}
+      {/* Political activity feed */}
       <DomainActivityCard
         domain="politics"
-        title="Political Log"
+        title="Political log"
         icon={Vote}
         entries={activity}
         emptyMessage="No political activity yet"

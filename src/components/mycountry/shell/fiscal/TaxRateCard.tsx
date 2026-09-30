@@ -5,13 +5,11 @@ import { Lock, LockSlash as Unlock } from "iconoir-react";
 import { Slider } from "~/components/ui/slider";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
-import {
-  type TaxChannel,
-  ACCENT_BORDER,
-  ACCENT_BG,
-  SLIDER_RANGE_COLOR,
-  SLIDER_THUMB_COLOR,
-} from "./taxChannels";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { type TaxChannel, ACCENT_BG } from "./taxChannels";
 
 interface TaxRateCardProps {
   channel: TaxChannel;
@@ -53,21 +51,27 @@ function TaxRateCardComponent({
   };
 
   return (
-    <div
-      className={cn(
-        "bg-muted/10 relative space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-        isLocked
-          ? (ACCENT_BORDER[channel.accent] ?? "border-border/30")
-          : "border-amber-500/50 bg-amber-500/[0.03] ring-1 ring-amber-500/30"
-      )}
+    <FacetCard
+      surface="solid"
+      className={cn("space-y-2.5 rounded-xl p-3", !isLocked && "ring-1 ring-amber-500/50")}
     >
       {/* Header: lock toggle + label + rate */}
-      <div className="flex items-center justify-between pt-0.5">
-        <div className="flex items-center gap-2">
-          <button
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={handleToggleLock}
             disabled={bracketed}
+            aria-pressed={!isLocked}
+            aria-label={
+              bracketed
+                ? `${channel.label} is set by tax brackets`
+                : isLocked
+                  ? `Edit ${channel.label} rate`
+                  : `Save and lock ${channel.label} rate`
+            }
             title={
               bracketed
                 ? "Set by tax brackets in the Country Editor"
@@ -76,43 +80,36 @@ function TaxRateCardComponent({
                   : "Editing — click to save & lock rate"
             }
             className={cn(
-              "flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-              isLocked
-                ? "border-border/40 bg-muted/30 text-muted-foreground/70 hover:border-border/70 hover:text-foreground"
-                : "border-amber-500/50 bg-amber-500/20 text-amber-600 shadow-xs shadow-amber-500/30 dark:text-amber-400"
+              "h-11 w-11 shrink-0 sm:h-7 sm:w-7",
+              isLocked ? "text-muted-foreground" : "text-(--facet-mycountry)"
             )}
           >
-            {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-          </button>
-          <span className="text-muted-foreground text-xs font-semibold">{channel.label}</span>
+            {isLocked ? <Lock aria-hidden="true" /> : <Unlock aria-hidden="true" />}
+          </Button>
+          <span
+            aria-hidden="true"
+            className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[channel.accent])}
+          />
+          <span className="text-foreground truncate text-xs font-medium">{channel.label}</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {!isLocked && (
-            <span className="text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
-              Editing
-            </span>
-          )}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {!isLocked && <Eyebrow className="text-(--facet-mycountry)">Editing</Eyebrow>}
           {rate != null ? (
-            <span className={cn("font-mono text-base font-bold tabular-nums", channel.accentClass)}>
+            <span className="text-foreground font-mono text-base font-semibold tabular-nums">
               {bracketed && <span className="text-muted-foreground mr-1 text-xs">Top</span>}
               <PercentageFlow value={rate} decimalPlaces={1} />
             </span>
           ) : (
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+            <Badge variant="outline" className="text-orange-600">
               Not set
-            </span>
+            </Badge>
           )}
         </div>
       </div>
 
-      {/* Radix Slider */}
-      <div
-        className={cn(
-          "relative transition-opacity duration-200",
-          isLocked && "pointer-events-none opacity-50"
-        )}
-      >
+      {/* Rate slider */}
+      <div className={cn("transition-opacity duration-200", isLocked && "opacity-50")}>
         <Slider
           min={channel.min}
           max={channel.max}
@@ -121,39 +118,29 @@ function TaxRateCardComponent({
           disabled={isLocked}
           onValueChange={([v]) => v !== undefined && onChange(v)}
           onValueCommit={([v]) => v !== undefined && onCommit(v)}
-          className={cn(
-            "w-full",
-            SLIDER_RANGE_COLOR[channel.accent],
-            SLIDER_THUMB_COLOR[channel.accent]
-          )}
+          aria-label={`${channel.label} rate`}
+          className="w-full"
         />
       </div>
 
-      {/* Internal Weight Progress Bar */}
-      <div className="bg-muted/20 h-1 w-full overflow-hidden rounded-full">
+      {/* Share of total revenue (keyed to the revenue composition chart colour) */}
+      <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
         <div
-          className={cn(
-            "h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out",
-            ACCENT_BG[channel.accent]
-          )}
+          className={cn("h-full rounded-full", ACCENT_BG[channel.accent])}
           style={{ width: `${Math.min(contributionPct, 100)}%` }}
         />
       </div>
 
       {/* Yield preview */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground font-medium">
-          {bracketed ? "Set by brackets in the Country Editor" : "Yield Contribution"}
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="text-muted-foreground">
+          {bracketed ? "Set by brackets in the Country Editor" : "Yield contribution"}
         </span>
-        <span className={cn("font-mono font-bold", channel.accentClass)}>
-          {yieldValue != null ? (
-            <CurrencyFlow value={yieldValue} decimalPlaces={1} className={channel.accentClass} />
-          ) : (
-            "—"
-          )}
+        <span className="text-foreground font-mono font-semibold tabular-nums">
+          {yieldValue != null ? <CurrencyFlow value={yieldValue} decimalPlaces={1} /> : "—"}
         </span>
       </div>
-    </div>
+    </FacetCard>
   );
 }
 

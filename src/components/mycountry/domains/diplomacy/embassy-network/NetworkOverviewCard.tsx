@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { Globe } from "iconoir-react";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
@@ -47,87 +48,54 @@ interface NetworkOverviewCardProps {
 export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
   networkMetrics,
 }: NetworkOverviewCardProps) {
+  const kpis = [
+    { label: "Embassies", value: String(networkMetrics.totalEmbassies) },
+    { label: "Power", value: String(networkMetrics.networkPower) },
+    { label: "Synergy", value: `${networkMetrics.avgSynergyScore.toFixed(0)}%` },
+    { label: "Econ bonus", value: `+${networkMetrics.totalEconomicBonus.toFixed(1)}%` },
+  ];
+  const bonuses = [
+    { label: "Economic", value: networkMetrics.totalEconomicBonus },
+    { label: "Diplomatic", value: networkMetrics.totalDiplomaticBonus },
+    { label: "Cultural", value: networkMetrics.totalCulturalBonus },
+  ];
+
   return (
-    <Card className="border-cyan-500/20 bg-cyan-500/5">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm">
+    <FacetCard depth={1} className="rounded-2xl">
+      <FacetCardHeader className="p-4 pb-2">
+        <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
           <Globe className="h-4 w-4 text-cyan-500" />
           Embassy Network Power
           <InlineHelpIcon
             title="Embassy Network"
             content="Your total diplomatic influence calculated from active embassies and atomic government synergies. Shared atomic components between nations amplify economic, diplomatic, and cultural benefits."
           />
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 pt-0">
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-4 gap-3">
-          <div className="space-y-0.5">
-            <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
-              {networkMetrics.totalEmbassies}
+        </h3>
+      </FacetCardHeader>
+      <FacetCardContent className="space-y-3 px-4 pb-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {kpis.map((k) => (
+            <div key={k.label} className="space-y-0.5">
+              <div className="text-foreground text-lg font-semibold tabular-nums">{k.value}</div>
+              <Eyebrow>{k.label}</Eyebrow>
             </div>
-            <div className="text-muted-foreground text-xs">Embassies</div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-              {networkMetrics.networkPower}
-            </div>
-            <div className="text-muted-foreground text-xs">Power</div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-              {networkMetrics.avgSynergyScore.toFixed(0)}%
-            </div>
-            <div className="text-muted-foreground text-xs">Synergy</div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
-              +{networkMetrics.totalEconomicBonus.toFixed(1)}%
-            </div>
-            <div className="text-muted-foreground text-xs">Econ Bonus</div>
-          </div>
+          ))}
         </div>
 
-        {/* Bonus Breakdown with Progress Bars */}
-        <div className="grid grid-cols-3 gap-2 border-t pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Economic</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                +{networkMetrics.totalEconomicBonus.toFixed(1)}%
-              </span>
+        <div className="border-border grid grid-cols-3 gap-2 border-t pt-3">
+          {bonuses.map((b) => (
+            <div key={b.label} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">{b.label}</span>
+                <span className="text-foreground font-semibold tabular-nums">
+                  +{b.value.toFixed(1)}%
+                </span>
+              </div>
+              <Progress value={Math.min(100, b.value * 5)} className="h-1.5" />
             </div>
-            <Progress
-              value={Math.min(100, networkMetrics.totalEconomicBonus * 5)}
-              className="h-1.5"
-            />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Diplomatic</span>
-              <span className="font-semibold text-cyan-600 dark:text-cyan-400">
-                +{networkMetrics.totalDiplomaticBonus.toFixed(1)}%
-              </span>
-            </div>
-            <Progress
-              value={Math.min(100, networkMetrics.totalDiplomaticBonus * 5)}
-              className="h-1.5"
-            />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Cultural</span>
-              <span className="font-semibold text-blue-600 dark:text-blue-400">
-                +{networkMetrics.totalCulturalBonus.toFixed(1)}%
-              </span>
-            </div>
-            <Progress
-              value={Math.min(100, networkMetrics.totalCulturalBonus * 5)}
-              className="h-1.5"
-            />
-          </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 });

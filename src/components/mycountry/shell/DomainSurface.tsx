@@ -4,6 +4,7 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { KeyCommand as Command } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
@@ -13,7 +14,7 @@ import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
-import { IconTile, SECONDARY_BUTTON, type Tone } from "./surface-kit";
+import { STATUS_TEXT } from "./status-tone";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -42,13 +43,6 @@ const SECTION_TO_DOMAIN: Record<string, V2Domain> = {
   executive: "economy",
 };
 
-const DOMAIN_TONE: Record<V2Domain, Tone> = {
-  relations: "diplomacy",
-  defense: "defense",
-  politics: "politics",
-  economy: "economy",
-};
-
 /**
  * V2DomainSurface — the full-page v2 surface for the four domain routes
  * (/mycountry/diplomacy, /defense, /politics, /executive). Renders the v2 chrome
@@ -75,11 +69,11 @@ function DomainSurfaceComponent({
 
   return (
     <div className="space-y-6">
-      {/* Domain header: glyph tile, title, one-line purpose and a domain-scoped directive */}
+      {/* Domain header: domain glyph, title, one-line purpose and a domain-scoped directive */}
       <FacetCard depth={1} interactive="none" className="rounded-3xl p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3.5">
-            <IconTile icon={meta.icon} tone={DOMAIN_TONE[domain]} size="lg" />
+          <div className="flex min-w-0 items-start gap-3">
+            <meta.icon aria-hidden="true" className="text-muted-foreground mt-1 h-6 w-6 shrink-0" />
             <div className="min-w-0">
               <h2 className="text-foreground text-xl font-semibold tracking-tight sm:text-2xl">
                 {meta.title}
@@ -90,18 +84,19 @@ function DomainSurfaceComponent({
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => {
               soundEffects.bloom();
               onDeclare?.(meta.prefilledGoal);
             }}
-            className={cn(SECONDARY_BUTTON, "shrink-0")}
+            className="h-11 shrink-0 sm:h-9"
             title={`Start a directive with a suggested ${meta.title.toLowerCase()} goal`}
           >
-            <Command aria-hidden="true" className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <Command aria-hidden="true" className={STATUS_TEXT.accent} />
             <span>{meta.title} directive</span>
-          </button>
+          </Button>
         </div>
       </FacetCard>
 

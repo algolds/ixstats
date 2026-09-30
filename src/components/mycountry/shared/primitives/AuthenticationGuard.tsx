@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { useUser } from "~/context/auth-context";
 import { useEffect } from "react";
 import { Crown, Globe, Activity } from "iconoir-react";
@@ -66,8 +67,9 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
   if (!isLoaded) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-blue-600"></div>
+        <div className="space-y-4" role="status" aria-label="Checking your session">
+          <Skeleton className="h-12 w-72" />
+          <Skeleton className="h-64 rounded-2xl" />
         </div>
       </div>
     );

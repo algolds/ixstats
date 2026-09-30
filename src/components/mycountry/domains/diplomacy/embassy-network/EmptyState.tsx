@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { City as Building2 } from "iconoir-react";
 
@@ -43,25 +43,23 @@ export const EmptyState = React.memo(function EmptyState({
   onEstablishEmbassy,
 }: EmptyStateProps) {
   return (
-    <Card>
-      <CardContent className="py-12">
-        <div className="space-y-4 text-center">
-          <Building2 className="text-muted-foreground mx-auto h-16 w-16" />
-          <div>
-            <h3 className="mb-2 text-lg font-semibold">No Embassies Yet</h3>
-            <p className="text-muted-foreground mx-auto max-w-md text-sm">
-              Establish embassies with other countries to unlock atomic synergies and diplomatic
-              bonuses.
-            </p>
-          </div>
-          {isOwner && (
-            <Button onClick={onEstablishEmbassy}>
-              <Building2 className="mr-2 h-4 w-4" />
-              Establish First Embassy
-            </Button>
-          )}
+    <FacetCard depth={1} className="rounded-2xl px-6 py-12">
+      <div className="space-y-4 text-center">
+        <Building2 className="text-muted-foreground mx-auto h-8 w-8" />
+        <div>
+          <h3 className="text-foreground mb-1 text-base font-semibold">No embassies yet</h3>
+          <p className="text-muted-foreground mx-auto max-w-md text-sm">
+            Establish embassies with other countries to unlock atomic synergies and diplomatic
+            bonuses.
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        {isOwner && (
+          <Button onClick={onEstablishEmbassy}>
+            <Building2 className="h-4 w-4" />
+            Establish First Embassy
+          </Button>
+        )}
+      </div>
+    </FacetCard>
   );
 });

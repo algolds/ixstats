@@ -2,15 +2,17 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface SectionTab<Id extends string> {
   id: Id;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Optional count pill shown after the label. */
+  /** Optional count shown after the label. */
   badge?: React.ReactNode;
-  /** Active-state colours for this tab; falls back to the bar's `activeClassName`. */
+  /**
+   * Active-state accent for this tab's icon; falls back to the bar's `activeClassName`.
+   * Only the text colour is used — the active pill itself is the neutral Facet segment.
+   */
   activeClassName?: string;
 }
 
@@ -18,15 +20,26 @@ export interface SectionTabBarProps<Id extends string> {
   tabs: ReadonlyArray<SectionTab<Id>>;
   activeTab: Id;
   onChange: (id: Id) => void;
-  /** Active-state colours (border / background / text) for the section's accent. */
-  activeClassName: string;
+  /**
+   * Accent for the active tab's icon. Only `text-*` utilities are kept: the active segment is
+   * the neutral Facet surface (`bg-background text-foreground`) so every domain reads the same.
+   */
+  activeClassName?: string;
   className?: string;
+}
+
+/** Keep only the text-colour utilities (incl. `dark:text-*`) from a legacy active class string. */
+function iconAccent(classes: string | undefined): string {
+  if (!classes) return "text-foreground";
+  const kept = classes.split(/\s+/).filter((c) => /^(dark:)?text-[a-z]+-\d{2,3}$/.test(c));
+  return kept.length > 0 ? kept.join(" ") : "text-foreground";
 }
 
 /**
  * The sub-tab bar shared by the MyCountry domain sections (Economy, Politics, Diplomacy,
- * Defense). Tabs wrap onto a second row instead of scrolling or spilling out of the main
- * column, and long labels truncate inside their pill.
+ * Defense). A Facet segmented control: a muted track with the active tab lifted onto the
+ * background surface. Tabs wrap onto a second row instead of scrolling or spilling out of the
+ * main column, and long labels truncate inside their segment.
  */
 export function SectionTabBar<Id extends string>({
   tabs,
@@ -38,10 +51,7 @@ export function SectionTabBar<Id extends string>({
   return (
     <div
       role="tablist"
-      className={cn(
-        "border-border/30 flex flex-wrap items-center gap-1.5 border-b pb-2",
-        className
-      )}
+      className={cn("bg-muted/50 flex flex-wrap items-center gap-1 rounded-xl p-1", className)}
     >
       {tabs.map(({ id, label, icon: Icon, badge, activeClassName: tabActive }) => {
         const isActive = activeTab === id;
@@ -51,23 +61,33 @@ export function SectionTabBar<Id extends string>({
             type="button"
             role="tab"
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             title={label}
-            data-cuelume-press="soft"
-            onClick={() => {
-              soundEffects.press();
-              onChange(id);
-            }}
+            data-state={isActive ? "active" : "inactive"}
+            data-cuelume-press="page"
+            data-cuelume-hover="tick"
+            onClick={() => onChange(id)}
             className={cn(
-              "flex max-w-full min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
+              "focus-visible:ring-ring flex min-h-9 max-w-full min-w-0 cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
               isActive
-                ? cn("shadow-sm", tabActive ?? activeClassName)
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30"
+                ? "bg-background text-foreground font-semibold shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <Icon
+              className={cn(
+                "h-4 w-4 shrink-0",
+                isActive ? iconAccent(tabActive ?? activeClassName) : "text-muted-foreground"
+              )}
+            />
             <span className="truncate">{label}</span>
             {badge !== undefined && badge !== null && (
-              <span className="shrink-0 rounded-full bg-current/15 px-2 py-0.5 font-mono text-xs">
+              <span
+                className={cn(
+                  "shrink-0 rounded-md px-1.5 text-xs tabular-nums",
+                  isActive ? "bg-muted text-foreground" : "bg-muted/60 text-muted-foreground"
+                )}
+              >
                 {badge}
               </span>
             )}

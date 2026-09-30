@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "~/components/ui/badge";
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
@@ -11,7 +12,7 @@ import { WikiSectionCard } from "./dossier/WikiSectionCard";
 import { DossierTocSidebar, type TocItem } from "./dossier/DossierTocSidebar";
 import WikiContentModal from "./dossier/WikiContentModal";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import {
   WarningTriangle as AlertTriangle,
@@ -172,8 +173,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Card className="facet-hierarchy-child">
-          <CardContent className="p-8">
+        <FacetCard depth={1} className="rounded-2xl">
+          <FacetCardContent className="p-8">
             <div className="space-y-4">
               <Skeleton className="h-12 w-12 rounded-lg" />
               <Skeleton className="h-5 w-48" />
@@ -182,8 +183,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
             </div>
-          </CardContent>
-        </Card>
+          </FacetCardContent>
+        </FacetCard>
       </div>
     );
   }
@@ -191,17 +192,19 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   // Error state
   if (wikiData.error) {
     return (
-      <Card className="facet-hierarchy-child">
-        <CardContent className="p-8 text-center">
-          <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
-          <h3 className="mb-2 text-lg font-semibold">Wiki Intelligence Unavailable</h3>
+      <FacetCard depth={1} className="rounded-2xl">
+        <FacetCardContent className="p-8 text-center">
+          <AlertTriangle className="text-destructive mx-auto mb-3 h-6 w-6" />
+          <h3 className="text-foreground mb-2 text-base font-semibold">
+            Wiki Intelligence Unavailable
+          </h3>
           <p className="text-muted-foreground mb-4">{wikiData.error}</p>
           <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
-        </CardContent>
-      </Card>
+        </FacetCardContent>
+      </FacetCard>
     );
   }
 
@@ -255,10 +258,10 @@ export const DossierTab: React.FC<DossierTabProps> = ({
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             {/* Sections View (Wiki Synced Dossier) */}
             {activeView === "sections" && (
@@ -267,19 +270,18 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 <div className="space-y-6 lg:col-span-8">
                   {/* Empty state: No sections returned from wiki */}
                   {wikiData.sections.length === 0 && (
-                    <Card className="facet-hierarchy-child border-dashed">
-                      <CardContent className="p-8 text-center">
-                        <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                        <h3 className="mb-2 text-lg font-semibold">No Wiki Sections Found</h3>
+                    <FacetCard depth={1} className="rounded-2xl">
+                      <FacetCardContent className="p-8 text-center">
+                        <BookOpen className="text-muted-foreground mx-auto mb-3 h-6 w-6" />
+                        <h3 className="text-foreground mb-2 text-base font-semibold">
+                          No Wiki Sections Found
+                        </h3>
                         <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
                           There is no active WikiOS database entry for{" "}
                           <strong>{countryName}</strong>.
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-3">
-                          <Button
-                            asChild
-                            className="bg-blue-600 font-bold text-white hover:bg-blue-700"
-                          >
+                          <Button asChild>
                             <Link
                               href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}/edit`}
                             >
@@ -300,8 +302,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                             Create Native Lore Document
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </FacetCardContent>
+                    </FacetCard>
                   )}
 
                   {/* Section Cards */}
@@ -345,7 +347,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 {/* Action Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-foreground text-sm font-bold">Native Lore Documents</h3>
+                    <h3 className="text-foreground text-sm font-semibold">Native Lore Documents</h3>
                     <p className="text-muted-foreground text-xs">
                       Custom dossier documents created via the WikiOS Canvas Editor or file import.
                     </p>
@@ -366,7 +368,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                         setEditingLoreDoc(null);
                         setIsCanvasModalOpen(true);
                       }}
-                      className="gap-1.5 bg-blue-600 text-xs font-bold text-white hover:bg-blue-700"
+                      className="gap-1.5 text-xs"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       New Document
@@ -384,10 +386,12 @@ export const DossierTab: React.FC<DossierTabProps> = ({
 
                 {/* Document Grid / Empty State */}
                 {nativeDocs.length === 0 ? (
-                  <Card className="facet-hierarchy-child border-dashed">
-                    <CardContent className="p-8 text-center">
-                      <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                      <h3 className="mb-2 text-lg font-semibold">No Native Lore Documents</h3>
+                  <FacetCard depth={1} className="rounded-2xl">
+                    <FacetCardContent className="p-8 text-center">
+                      <BookOpen className="text-muted-foreground mx-auto mb-3 h-6 w-6" />
+                      <h3 className="text-foreground mb-2 text-base font-semibold">
+                        No Native Lore Documents
+                      </h3>
                       <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
                         Create custom dossier documents directly using the WikiOS Canvas Editor or
                         import existing markdown/text files.
@@ -397,36 +401,24 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                           setEditingLoreDoc(null);
                           setIsCanvasModalOpen(true);
                         }}
-                        className="bg-blue-600 font-bold text-white hover:bg-blue-700"
                       >
                         Create First Document
                       </Button>
-                    </CardContent>
-                  </Card>
+                    </FacetCardContent>
+                  </FacetCard>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {nativeDocs.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="rounded-2xl border border-white/10 bg-black/20 p-5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/20 hover:bg-black/30"
-                      >
+                      <FacetCard key={doc.id} depth={2} className="rounded-2xl p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="text-foreground truncate text-sm font-bold">
+                              <h4 className="text-foreground truncate text-sm font-semibold">
                                 {doc.title}
                               </h4>
-                              <span
-                                className={`rounded-md border px-1.5 py-0.5 text-xs font-bold ${
-                                  doc.clearance === "PUBLIC"
-                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                                    : doc.clearance === "ALLIANCE"
-                                      ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                                      : "border-red-500/30 bg-red-500/10 text-red-400"
-                                }`}
-                              >
-                                {doc.clearance}
-                              </span>
+                              <Badge variant="outline" className="capitalize">
+                                {doc.clearance.toLowerCase()}
+                              </Badge>
                             </div>
                             <p className="text-muted-foreground mt-1 line-clamp-3 text-xs">
                               {doc.content.replace(/<[^>]*>/g, "").slice(0, 150)}...
@@ -434,33 +426,37 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                           </div>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                        <div className="border-border mt-4 flex items-center justify-between border-t pt-3">
                           <span className="text-muted-foreground text-xs">
                             Updated {new Date(doc.updatedAt).toLocaleDateString()}
                           </span>
                           <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => {
                                 setEditingLoreDoc(doc);
                                 setIsCanvasModalOpen(true);
                               }}
-                              className="text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-lg hover:bg-white/5"
                               title="Edit Document"
+                              aria-label={`Edit ${doc.title}`}
                             >
                               <Edit3 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="hover:text-destructive h-8 w-8"
                               onClick={() => handleDeleteNativeDoc(doc.id)}
-                              className="text-muted-foreground flex h-7 w-7 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-400"
                               title="Delete Document"
+                              aria-label={`Delete ${doc.title}`}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </div>
-                      </div>
+                      </FacetCard>
                     ))}
                   </div>
                 )}

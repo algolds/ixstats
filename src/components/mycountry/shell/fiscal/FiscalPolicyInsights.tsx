@@ -2,14 +2,12 @@
 
 import React, { useMemo } from "react";
 import {
-  Bank as Landmark,
   StatUp as TrendingUp,
   StatDown as TrendingDown,
   ShieldCheck,
   StatsReport as BarChart3,
   Activity,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { PercentageFlow } from "~/components/ui/number-flow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { cn } from "~/lib/utils";
@@ -23,6 +21,7 @@ import {
   deriveSectorWeights,
 } from "./taxChannels";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { RailCard, RailRow, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
 
 /** Fiscal Policy sidebar — reads the saved rates from the country record; "—" where unknown. */
 export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: string }) {
@@ -85,167 +84,124 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
     });
   }, [yields]);
 
+  const burdenTone =
+    lafferPosition === "optimal"
+      ? STATUS_FILL.success
+      : lafferPosition === "below-optimal"
+        ? STATUS_FILL.warning
+        : STATUS_FILL.critical;
+  const burdenText =
+    lafferPosition === "optimal"
+      ? STATUS_TEXT.success
+      : lafferPosition === "below-optimal"
+        ? STATUS_TEXT.warning
+        : STATUS_TEXT.critical;
+
   return (
-    <div className="space-y-4">
-      {/* Tax Burden Analysis */}
-      <FacetCard
-        depth={1}
-        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
-              Tax Burden Analysis
-            </h4>
-          </div>
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-600 dark:text-amber-400">
-            Macro Index
+    <div className="space-y-6">
+      {/* Tax burden analysis */}
+      <RailCard title="Tax burden" icon={BarChart3} contentClassName="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-muted-foreground text-xs">Effective GDP tax burden</span>
+          <span className="text-foreground font-mono text-base font-semibold tabular-nums">
+            {effectiveTaxBurden != null ? (
+              <PercentageFlow value={effectiveTaxBurden} decimalPlaces={1} />
+            ) : (
+              "—"
+            )}
           </span>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-xs font-semibold">
-              Effective GDP Tax Burden
-            </span>
-            <span className="font-mono text-base font-bold text-amber-600 tabular-nums dark:text-amber-400">
-              {effectiveTaxBurden != null ? (
-                <PercentageFlow value={effectiveTaxBurden} decimalPlaces={1} />
-              ) : (
-                "—"
-              )}
-            </span>
-          </div>
-
-          <div className="bg-muted/30 border-border/20 relative h-2.5 overflow-hidden rounded-full border">
-            <div
-              className={cn(
-                "absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out",
-                lafferPosition === "optimal"
-                  ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                  : lafferPosition === "below-optimal"
-                    ? "bg-gradient-to-r from-amber-500 to-amber-400"
-                    : "bg-gradient-to-r from-red-500 to-red-400"
-              )}
-              style={{
-                width: `${Math.min(((effectiveTaxBurden ?? 0) / 50) * 100, 100)}%`,
-              }}
-            />
-            <div
-              className="absolute inset-y-0 border-r border-l border-emerald-400/40 bg-emerald-400/10"
-              style={{ left: "30%", width: "20%" }}
-            />
-          </div>
-          <div className="text-muted-foreground/70 flex justify-between font-mono text-xs">
-            <span>0%</span>
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-              Optimal Zone (15-35%)
-            </span>
-            <span>50%+</span>
-          </div>
+        <div className="bg-muted relative h-2.5 overflow-hidden rounded-full">
+          {/* Optimal zone band (15–35% on a 0–50% scale) */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-y-0 border-x border-emerald-500/40 bg-emerald-500/10"
+            style={{ left: "30%", width: "40%" }}
+          />
+          <div
+            className={cn("absolute inset-y-0 left-0 rounded-full", burdenTone)}
+            style={{
+              width: `${Math.min(((effectiveTaxBurden ?? 0) / 50) * 100, 100)}%`,
+            }}
+          />
         </div>
-      </FacetCard>
-
-      {/* Revenue Composition */}
-      <FacetCard
-        depth={1}
-        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
-            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
-              Revenue Stream Composition
-            </h4>
-          </div>
+        <div className="text-muted-foreground flex justify-between font-mono text-xs">
+          <span>0%</span>
+          <span>Optimal zone 15–35%</span>
+          <span>50%+</span>
         </div>
+      </RailCard>
 
+      {/* Revenue composition */}
+      <RailCard title="Revenue composition" icon={Activity} contentClassName="space-y-3">
         {revenueComposition.length === 0 ? (
           <p className="text-muted-foreground text-xs">
             No revenue projection yet — set your tax rates in National Tax Rate Controls.
           </p>
         ) : (
           <>
-            <div className="bg-muted/20 border-border/20 flex h-3.5 overflow-hidden rounded-full border">
+            <div
+              className="bg-muted flex h-3 overflow-hidden rounded-full"
+              role="img"
+              aria-label="Share of revenue by tax"
+            >
               {revenueComposition.map((seg) => (
                 <div
                   key={seg.key}
-                  className={cn(
-                    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out first:rounded-l-full last:rounded-r-full",
-                    ACCENT_BG[seg.accent]
-                  )}
+                  className={ACCENT_BG[seg.accent]}
                   style={{ width: `${seg.pct ?? 0}%` }}
                   title={`${seg.key}: ${seg.pct != null ? `${seg.pct.toFixed(1)}%` : "not set"}`}
                 />
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
               {revenueComposition.map((seg) => {
                 const ch = TAX_CHANNELS.find((c) => c.key === seg.key)!;
                 return (
-                  <div
-                    key={seg.key}
-                    className="border-border/20 bg-muted/15 flex items-center justify-between rounded-lg border px-2 py-1"
-                  >
+                  <li key={seg.key} className="flex items-center justify-between gap-2 text-xs">
                     <div className="flex min-w-0 items-center gap-1.5">
-                      <div className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[seg.accent])} />
-                      <span className="text-muted-foreground truncate text-xs font-medium">
-                        {ch.shortLabel}
-                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[seg.accent])}
+                      />
+                      <span className="text-muted-foreground truncate">{ch.shortLabel}</span>
                     </div>
-                    <span
-                      className={cn(
-                        "shrink-0 font-mono text-xs font-semibold tabular-nums",
-                        ch.accentClass
-                      )}
-                    >
+                    <span className="text-foreground shrink-0 font-mono font-medium tabular-nums">
                       {seg.pct != null ? <PercentageFlow value={seg.pct} decimalPlaces={1} /> : "—"}
                     </span>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </>
         )}
-      </FacetCard>
+      </RailCard>
 
-      {/* Fiscal Health */}
-      <FacetCard
-        depth={1}
-        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
-              Fiscal Health & Telemetry
-            </h4>
-          </div>
-        </div>
-
+      {/* Fiscal health */}
+      <RailCard title="Fiscal health" icon={ShieldCheck}>
         <div className="grid grid-cols-3 gap-2">
-          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+          <RailRow className="p-2.5">
             <Eyebrow className="block">Efficiency</Eyebrow>
-            <p className="mt-0.5 font-mono text-base font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
+            <p className="text-foreground mt-0.5 font-mono text-base font-semibold tabular-nums">
               {collectionEfficiency != null ? (
                 <PercentageFlow value={collectionEfficiency} decimalPlaces={0} />
               ) : (
                 "—"
               )}
             </p>
-          </div>
-          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+          </RailRow>
+          <RailRow className="p-2.5">
             <Eyebrow className="block">Budget Δ</Eyebrow>
             <p
               className={cn(
-                "mt-0.5 font-mono text-base font-bold tabular-nums",
+                "mt-0.5 font-mono text-base font-semibold tabular-nums",
                 budgetImpact == null
                   ? "text-foreground"
                   : budgetImpact >= 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-red-600 dark:text-red-400"
+                    ? STATUS_TEXT.success
+                    : STATUS_TEXT.critical
               )}
             >
               {budgetImpact == null ? (
@@ -253,25 +209,21 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
               ) : (
                 <>
                   {budgetImpact >= 0 ? (
-                    <TrendingUp className="-mt-0.5 mr-0.5 inline h-3 w-3" />
+                    <TrendingUp aria-hidden="true" className="-mt-0.5 mr-0.5 inline h-3 w-3" />
                   ) : (
-                    <TrendingDown className="-mt-0.5 mr-0.5 inline h-3 w-3" />
+                    <TrendingDown aria-hidden="true" className="-mt-0.5 mr-0.5 inline h-3 w-3" />
                   )}
                   <PercentageFlow value={Math.abs(budgetImpact)} decimalPlaces={1} />
                 </>
               )}
             </p>
-          </div>
-          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+          </RailRow>
+          <RailRow className="p-2.5">
             <Eyebrow className="block">Burden</Eyebrow>
             <p
               className={cn(
-                "mt-1 font-mono text-xs font-semibold tabular-nums",
-                lafferPosition === "optimal"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : lafferPosition === "below-optimal"
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-red-600 dark:text-red-400"
+                "mt-0.5 text-sm font-semibold",
+                lafferPosition == null ? "text-foreground" : burdenText
               )}
             >
               {lafferPosition == null
@@ -282,9 +234,9 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
                     ? "Low"
                     : "Severe"}
             </p>
-          </div>
+          </RailRow>
         </div>
-      </FacetCard>
+      </RailCard>
     </div>
   );
 }

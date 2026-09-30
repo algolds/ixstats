@@ -16,6 +16,11 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Progress } from "~/components/ui/progress";
+import { cn } from "~/lib/utils";
 
 export interface GeoRollups {
   cityPopulationSum: number;
@@ -59,10 +64,10 @@ export function RollupSettingsModal({
   const worst = Math.min(popPct, gdpPct);
   const coverageTone =
     worst >= 100
-      ? "bg-emerald-600/20 text-emerald-500"
+      ? "bg-muted text-emerald-500"
       : worst >= 50
-        ? "bg-amber-600/20 text-amber-500"
-        : "bg-red-600/20 text-red-500";
+        ? "bg-muted text-amber-500"
+        : "bg-muted text-destructive";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -70,13 +75,11 @@ export function RollupSettingsModal({
         {trigger ?? (
           <button
             type="button"
-            className="border-border bg-card/40 hover:bg-card/70 flex w-full items-center justify-between gap-2 rounded-lg border p-3 text-left transition-colors"
+            className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-left transition-colors outline-none focus-visible:ring-2"
             aria-label="Open rollup settings"
           >
             <div className="flex items-center gap-2">
-              <div className="bg-accent/60 rounded-md p-1.5">
-                <BarChart3 className="h-3.5 w-3.5" />
-              </div>
+              <BarChart3 className="text-muted-foreground h-4 w-4" />
               <div>
                 <div className="text-foreground text-xs font-semibold">Geographic Rollups</div>
                 <div className="text-muted-foreground text-xs">
@@ -86,7 +89,7 @@ export function RollupSettingsModal({
             </div>
             <div className="flex items-center gap-1.5">
               <span
-                className={`rounded-full px-1.5 py-0.5 font-mono text-xs font-medium ${coverageTone}`}
+                className={`rounded-md px-1.5 py-0.5 font-mono text-xs font-medium ${coverageTone}`}
               >
                 {worst}%
               </span>
@@ -192,20 +195,28 @@ function RollupBody({
 
       {/* Rollup mode selector */}
       <div className="space-y-1.5">
-        <label className="text-muted-foreground text-xs font-medium uppercase">
-          Rollup Mode
-        </label>
-        <div className="bg-accent/50 flex rounded-lg p-0.5">
+        <Eyebrow id="rollup-mode-label" className="block">
+          Rollup mode
+        </Eyebrow>
+        <div
+          className="bg-muted/50 flex rounded-lg p-0.5"
+          role="group"
+          aria-labelledby="rollup-mode-label"
+        >
           {(["hybrid", "top-down", "bottom-up"] as const).map((m) => (
             <button
               key={m}
+              type="button"
               onClick={() => handleModeChange(m)}
               disabled={updateMode.isPending}
-              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+              aria-pressed={mode === m}
+              data-cuelume-press="tick"
+              className={cn(
+                "focus-visible:ring-ring min-h-8 flex-1 rounded-md px-2 py-1.5 text-xs font-medium capitalize transition-[color,background-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
                 mode === m
-                  ? "bg-background text-foreground ring-border shadow-sm ring-1"
+                  ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+              )}
               title={
                 m === "hybrid"
                   ? "Sim values authoritative; geography shown as-is"
@@ -228,10 +239,12 @@ function RollupBody({
       </div>
 
       {/* Rebase action */}
-      <button
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
         onClick={handleRebase}
         disabled={rebase.isPending}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-600/20 px-3 py-2 text-xs font-medium text-amber-500 hover:bg-amber-600/30 disabled:opacity-50"
       >
         {rebase.isPending ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -239,10 +252,10 @@ function RollupBody({
           <RefreshCw className="h-3.5 w-3.5" />
         )}
         {rebase.isPending ? "Rebasing…" : "Rebase National from Geography"}
-      </button>
+      </Button>
 
       {/* Demographic Redistribution */}
-      <div className="border-border/60 my-2 space-y-3 border-t pt-3">
+      <div className="border-border my-2 space-y-3 border-t pt-3">
         <div className="text-foreground flex items-center gap-1 text-xs font-semibold">
           <Settings className="h-3.5 w-3.5" />
           Demographic Redistribution
@@ -253,12 +266,10 @@ function RollupBody({
         </p>
 
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="scaleExisting"
             checked={scaleExisting}
-            onChange={(e) => setScaleExisting(e.target.checked)}
-            className="border-border bg-background/50 text-primary h-3.5 w-3.5 cursor-pointer rounded focus:ring-0"
+            onCheckedChange={(checked) => setScaleExisting(checked === true)}
           />
           <label
             htmlFor="scaleExisting"
@@ -268,11 +279,13 @@ function RollupBody({
           </label>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
           onClick={handleDistribute}
           disabled={distribute.isPending}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600/20 px-3 py-2 text-xs font-medium text-emerald-500 transition-colors hover:bg-emerald-600/30 disabled:opacity-50"
         >
           {distribute.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -280,7 +293,7 @@ function RollupBody({
             <RefreshCw className="h-3.5 w-3.5" />
           )}
           {distribute.isPending ? "Distributing…" : "Distribute Populations to Cities"}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -288,16 +301,15 @@ function RollupBody({
 
 function CoverageMeter({ label, percent }: { label: string; percent: number }) {
   const clamped = Math.max(0, Math.min(100, percent));
-  const color = clamped >= 100 ? "bg-emerald-500" : clamped >= 50 ? "bg-amber-500" : "bg-red-500";
+  const color =
+    clamped >= 100 ? "bg-emerald-500" : clamped >= 50 ? "bg-amber-500" : "bg-destructive";
   return (
     <div>
       <div className="text-muted-foreground flex items-center justify-between text-xs">
         <span>{label}</span>
         <span className="text-foreground/80 font-mono">{clamped}%</span>
       </div>
-      <div className="bg-muted/30 mt-0.5 h-1.5 overflow-hidden rounded-full">
-        <div className={`${color} h-full transition-[color,background-color,border-color,box-shadow,opacity,transform]`} style={{ width: `${clamped}%` }} />
-      </div>
+      <Progress value={clamped} className="mt-0.5 h-1.5" indicatorClassName={color} />
     </div>
   );
 }

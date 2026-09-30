@@ -9,10 +9,11 @@ import {
   Eye,
   UserPlus,
   LogOut,
-  SystemRestart as Loader2,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
 import {
   Dialog,
   DialogContent,
@@ -39,12 +40,13 @@ interface AllianceDashboardProps {
   onLeave?: () => void;
 }
 
-const ROLE_BADGES: Record<string, { color: string; label: string }> = {
-  founder: { color: "bg-yellow-500/20 text-yellow-500", label: "Founder" },
-  leader: { color: "bg-blue-500/20 text-blue-500", label: "Leader" },
-  member: { color: "bg-green-500/20 text-green-500", label: "Member" },
-  observer: { color: "bg-gray-500/20 text-gray-500", label: "Observer" },
-};
+const ROLE_BADGES: Record<string, { variant: "default" | "secondary" | "outline"; label: string }> =
+  {
+    founder: { variant: "default", label: "Founder" },
+    leader: { variant: "secondary", label: "Leader" },
+    member: { variant: "outline", label: "Member" },
+    observer: { variant: "outline", label: "Observer" },
+  };
 
 export function AllianceDashboard({
   allianceId,
@@ -98,25 +100,22 @@ export function AllianceDashboard({
     : [];
 
   return (
-    <div className="space-y-4 rounded-lg border border-cyan-500/20 p-4">
+    <FacetCard depth={2} className="space-y-4 rounded-2xl p-4">
       {/* Alliance header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold text-white"
+            // The alliance's own chosen colour (user data), so it is applied inline.
             style={{ backgroundColor: alliance.color }}
           >
             {alliance.shortName ?? alliance.name.slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold">{alliance.name}</h3>
+            <h3 className="text-foreground truncate text-base font-semibold">{alliance.name}</h3>
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="text-xs">
-                {alliance.type}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {alliance.visibility}
-              </Badge>
+              <Badge variant="outline">{alliance.type}</Badge>
+              <Badge variant="outline">{alliance.visibility}</Badge>
               <span>{alliance.memberCount} members</span>
             </div>
           </div>
@@ -127,7 +126,7 @@ export function AllianceDashboard({
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <UserPlus className="mr-1 h-3 w-3" />
+                  <UserPlus className="h-3.5 w-3.5" />
                   Invite
                 </Button>
               </DialogTrigger>
@@ -156,10 +155,7 @@ export function AllianceDashboard({
                     disabled={!inviteTarget || inviteMutation.isPending}
                     className="w-full"
                   >
-                    {inviteMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Send Invitation
+                    {inviteMutation.isPending ? "Sending…" : "Send Invitation"}
                   </Button>
                 </div>
               </DialogContent>
@@ -169,11 +165,11 @@ export function AllianceDashboard({
           <Button
             variant="ghost"
             size="sm"
-            className="text-red-500 hover:text-red-600"
+            className="text-destructive hover:text-destructive"
             onClick={() => leaveMutation.mutate({ allianceId })}
             disabled={leaveMutation.isPending}
           >
-            <LogOut className="mr-1 h-3 w-3" />
+            <LogOut className="h-3.5 w-3.5" />
             Leave
           </Button>
         </div>
@@ -184,25 +180,25 @@ export function AllianceDashboard({
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{alliance.memberCount}</p>
-          <p className="text-muted-foreground text-xs">Members</p>
-        </div>
-        <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatCurrency(alliance.calculatedTotalGdp)}</p>
-          <p className="text-muted-foreground text-xs">Combined GDP</p>
-        </div>
-        <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalPopulation)}</p>
-          <p className="text-muted-foreground text-xs">Total Pop.</p>
-        </div>
-      </div>
+      <dl className="grid grid-cols-3 gap-3 text-center">
+        {[
+          { label: "Members", value: String(alliance.memberCount) },
+          { label: "Combined GDP", value: formatCurrency(alliance.calculatedTotalGdp) },
+          { label: "Total pop.", value: formatNumber(alliance.calculatedTotalPopulation) },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-muted/50 rounded-xl p-2">
+            <dd className="text-foreground text-lg font-semibold tabular-nums">{stat.value}</dd>
+            <dt>
+              <Eyebrow>{stat.label}</Eyebrow>
+            </dt>
+          </div>
+        ))}
+      </dl>
 
       {/* Members list */}
       <div>
-        <h4 className="mb-2 flex items-center gap-1 text-sm font-semibold">
-          <Users className="h-4 w-4" />
+        <h4 className="text-foreground mb-2 flex items-center gap-1.5 text-sm font-semibold">
+          <Users className="text-muted-foreground h-4 w-4" />
           Members
         </h4>
         <div className="space-y-1">
@@ -211,13 +207,13 @@ export function AllianceDashboard({
             return (
               <div key={m.id} className="flex items-center justify-between py-1 text-sm">
                 <div className="flex items-center gap-2">
-                  {m.role === "founder" && <Crown className="h-3 w-3 text-yellow-500" />}
-                  {m.role === "observer" && <Eye className="h-3 w-3 text-gray-400" />}
+                  {m.role === "founder" && <Crown className="h-3 w-3 text-amber-500" />}
+                  {m.role === "observer" && <Eye className="text-muted-foreground h-3 w-3" />}
                   <span className={m.countryId === countryId ? "font-medium" : ""}>
                     {m.country.name}
                   </span>
                 </div>
-                <Badge className={`text-xs ${roleBadge.color}`}>{roleBadge.label}</Badge>
+                <Badge variant={roleBadge.variant}>{roleBadge.label}</Badge>
               </div>
             );
           })}
@@ -238,6 +234,6 @@ export function AllianceDashboard({
           {alliance.documents.length} documents
         </span>
       </div>
-    </div>
+    </FacetCard>
   );
 }

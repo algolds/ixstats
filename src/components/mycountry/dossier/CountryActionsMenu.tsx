@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useState, useCallback } from "react";
 import {
   UserPlus,
   UserXmark as UserMinus,
   ChatBubble as MessageSquare,
   City as Building2,
   Heart,
-  Xmark as X,
-  SystemRestart as Loader2,
-  Sparks as Sparkles,
   Community as Handshake,
   Shield,
   ScaleFrameEnlarge as Scale,
@@ -36,6 +31,22 @@ import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { createUrl } from "~/lib/utils";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
@@ -60,13 +71,7 @@ export function CountryActionsMenu({
   const router = useRouter();
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
   const [copiedLink, setCopiedLink] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [schedulerOpen, setSchedulerOpen] = useState(false);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
 
   const { data: followStatus, refetch: refetchFollowStatus } =
     api.diplomaticCore.getFollowStatus.useQuery(
@@ -221,407 +226,233 @@ export function CountryActionsMenu({
     congratulateMutation.isPending ||
     foreignPolicyMutation.isPending;
 
-  const actionButtonClass = (colors: string) =>
-    `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 disabled:opacity-50 ${colors}`;
-
-  if (!mounted) return null;
-
   return (
     <>
-      {createPortal(
-        <AnimatePresence>
-          {isOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="fixed inset-0 z-[100010] bg-black/60 backdrop-blur-xl"
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{isOwnCountry ? "Country Management" : "Country Actions"}</DialogTitle>
+            <DialogDescription>{targetCountryName}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            {/* Own Country Actions */}
+            {isOwnCountry && (
+              <ActionGroup label="Management">
+                <ActionRow
+                  icon={Building2}
+                  label="MyCountry Dashboard"
+                  onClick={() => {
+                    router.push(createUrl("/mycountry"));
+                    onClose();
+                  }}
+                />
+                <ActionRow
+                  icon={ScrollText}
+                  label="Executive Actions"
+                  onClick={() => {
+                    router.push(createUrl("/mycountry/executive"));
+                    onClose();
+                  }}
+                />
+                <ActionRow
+                  icon={Handshake}
+                  label="Manage Diplomacy"
+                  onClick={() => {
+                    router.push(createUrl("/mycountry/diplomacy"));
+                    onClose();
+                  }}
+                />
+                <ActionRow
+                  icon={Map}
+                  label="Map & Territory Editor"
+                  onClick={() => {
+                    router.push(createUrl("/mycountry/editor"));
+                    onClose();
+                  }}
+                />
+                <ActionRow
+                  icon={Wallet}
+                  label="IxVault Cards & Market"
+                  onClick={() => {
+                    router.push(createUrl("/vault"));
+                    onClose();
+                  }}
+                />
+                <ActionRow
+                  icon={Scale}
+                  label="Politics & Elections"
+                  onClick={() => {
+                    router.push(createUrl("/mycountry/politics"));
+                    onClose();
+                  }}
+                />
+              </ActionGroup>
+            )}
+
+            {/* Other Country: Social Actions */}
+            {!isOwnCountry && (
+              <>
+                <ActionGroup label="Social">
+                  <ActionRow
+                    icon={followStatus?.isFollowing ? UserMinus : UserPlus}
+                    label={
+                      followMutation.isPending || unfollowMutation.isPending
+                        ? followStatus?.isFollowing
+                          ? "Unfollowing…"
+                          : "Following…"
+                        : followStatus?.isFollowing
+                          ? "Unfollow Nation"
+                          : "Follow Nation"
+                    }
+                    onClick={handleFollowToggle}
+                    disabled={!viewerCountryId || isLoading}
+                  />
+                  <ActionRow
+                    icon={MessageSquare}
+                    label="Secure Message"
+                    onClick={handleDiplomaticMessage}
+                    disabled={!viewerCountryId}
+                  />
+
+                  {recentAchievements && recentAchievements.length > 0 && (
+                    <div className="border-border bg-card flex flex-wrap items-center gap-2 rounded-xl border p-2 pl-4">
+                      <Heart className="text-muted-foreground h-4 w-4 shrink-0" />
+                      <Select value={selectedAchievement} onValueChange={setSelectedAchievement}>
+                        <SelectTrigger
+                          size="sm"
+                          className="min-w-[140px] flex-1 text-xs"
+                          aria-label="Achievement to congratulate"
+                        >
+                          <SelectValue placeholder="Select achievement…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {recentAchievements.map(
+                            (achievement: { id: string; icon?: string | null; title: string }) => (
+                              <SelectItem key={achievement.id} value={achievement.id}>
+                                {achievement.title}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleCongratulate}
+                        disabled={!viewerCountryId || isLoading || !selectedAchievement}
+                      >
+                        {congratulateMutation.isPending ? "Sending…" : "Congratulate"}
+                      </Button>
+                    </div>
+                  )}
+                </ActionGroup>
+
+                <ActionGroup label="Diplomacy">
+                  <ActionRow
+                    icon={Building2}
+                    label={
+                      establishEmbassyMutation.isPending ? "Constructing…" : "Construct Embassy"
+                    }
+                    onClick={handleEstablishEmbassy}
+                    disabled={!viewerCountryId || isLoading}
+                  />
+                  <ActionRow
+                    icon={Calendar}
+                    label="Request Meeting"
+                    onClick={() => {
+                      if (!viewerCountryId) {
+                        notify.error("You must be logged in to request a meeting");
+                        return;
+                      }
+                      setSchedulerOpen(true);
+                    }}
+                    disabled={!viewerCountryId || isLoading}
+                  />
+                  <ActionRow
+                    icon={Handshake}
+                    label="Propose Free Trade"
+                    onClick={() => handleForeignPolicy("free_trade")}
+                    disabled={!viewerCountryId || isLoading}
+                  />
+                  <ActionRow
+                    icon={Shield}
+                    label="Propose Military Alliance"
+                    onClick={() => handleForeignPolicy("military_alliance")}
+                    disabled={!viewerCountryId || isLoading}
+                  />
+                </ActionGroup>
+
+                <ActionGroup label="Foreign Policy">
+                  <ActionRow
+                    icon={Scale}
+                    label="Impose Sanctions"
+                    onClick={() => handleForeignPolicy("sanction")}
+                    disabled={!viewerCountryId || isLoading}
+                    destructive
+                  />
+                  <ActionRow
+                    icon={Swords}
+                    label="Declare Embargo"
+                    onClick={() => handleForeignPolicy("embargo")}
+                    disabled={!viewerCountryId || isLoading}
+                    destructive
+                  />
+                </ActionGroup>
+              </>
+            )}
+
+            {/* Quick Links (always shown) */}
+            <ActionGroup label="Quick Links">
+              <ActionRow
+                icon={Trophy}
+                label="Global Leaderboard"
+                onClick={() => {
+                  router.push(createUrl("/leaderboards"));
+                  onClose();
+                }}
               />
+              <WikiLinkPreview title={targetCountryName}>
+                <Link
+                  href={titleToWikiOSPath(targetCountryName)}
+                  className={ACTION_ROW_CLASS}
+                  onClick={onClose}
+                >
+                  <Globe className="text-muted-foreground h-4 w-4" />
+                  View on IxWiki
+                  <ExternalLink className="text-muted-foreground ml-auto h-3.5 w-3.5" />
+                </Link>
+              </WikiLinkPreview>
+              <ActionRow
+                icon={copiedLink ? Check : Copy}
+                label={copiedLink ? "Link Copied" : "Copy Profile Link"}
+                onClick={handleCopyLink}
+              />
+              <ActionRow
+                icon={Share2}
+                label="Share Profile"
+                onClick={() => {
+                  const slug = targetCountryName.replace(/\s/g, "_");
+                  const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
+                  if (navigator.share) {
+                    void navigator.share({ title: targetCountryName, url });
+                  } else {
+                    void navigator.clipboard.writeText(url);
+                    notify.success("Link copied");
+                  }
+                  onClose();
+                }}
+              />
+            </ActionGroup>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed top-1/2 left-1/2 z-[100011] mx-4 w-full max-w-md -translate-x-1/2 -translate-y-1/2"
-              >
-                <div className="relative max-h-[85vh] [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent] overflow-y-auto rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-2xl backdrop-blur-2xl dark:from-black/40 dark:via-black/20 dark:to-transparent [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 hover:[&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent">
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent dark:from-white/5 dark:to-transparent" />
-
-                  <div className="relative z-10">
-                    {/* Header */}
-                    <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
-                      <div>
-                        <h3 className="flex items-center gap-2 text-base font-bold text-white">
-                          <Sparkles className="h-5 w-5 text-blue-400" />
-                          {isOwnCountry ? "Country Management" : "Country Actions"}
-                        </h3>
-                        <p className="mt-1 text-sm text-white/60">{targetCountryName}</p>
-                      </div>
-                      <button
-                        onClick={onClose}
-                        className="group rounded-xl p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10"
-                        aria-label="Close"
-                      >
-                        <X className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" />
-                      </button>
-                    </div>
-
-                    {/* Own Country Actions */}
-                    {isOwnCountry && (
-                      <div className="space-y-2.5">
-                        <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                          Management
-                        </p>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                          )}
-                        >
-                          <Building2 className="h-4 w-4" />
-                          MyCountry Dashboard
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/executive"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                          )}
-                        >
-                          <ScrollText className="h-4 w-4" />
-                          Executive Actions
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/diplomacy"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/20"
-                          )}
-                        >
-                          <Handshake className="h-4 w-4" />
-                          Manage Diplomacy
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/editor"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
-                          )}
-                        >
-                          <Map className="h-4 w-4" />
-                          Map & Territory Editor
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/vault"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                          )}
-                        >
-                          <Wallet className="h-4 w-4" />
-                          IxVault Cards & Market
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/politics"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20"
-                          )}
-                        >
-                          <Scale className="h-4 w-4" />
-                          Politics & Elections
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Other Country: Social Actions */}
-                    {!isOwnCountry && (
-                      <>
-                        <div className="space-y-2.5">
-                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                            Social
-                          </p>
-
-                          <button
-                            onClick={handleFollowToggle}
-                            disabled={!viewerCountryId || isLoading}
-                            className={cn(
-                              actionButtonClass(""),
-                              followStatus?.isFollowing
-                                ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20"
-                                : "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
-                            )}
-                          >
-                            {followMutation.isPending || unfollowMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : followStatus?.isFollowing ? (
-                              <UserMinus className="h-4 w-4" />
-                            ) : (
-                              <UserPlus className="h-4 w-4" />
-                            )}
-                            {followStatus?.isFollowing ? "Unfollow Nation" : "Follow Nation"}
-                          </button>
-
-                          <button
-                            onClick={handleDiplomaticMessage}
-                            disabled={!viewerCountryId}
-                            className={actionButtonClass(
-                              "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
-                            )}
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                            Secure Message
-                          </button>
-
-                          {recentAchievements && recentAchievements.length > 0 && (
-                            <div className="group relative">
-                              <button
-                                onClick={handleCongratulate}
-                                disabled={!viewerCountryId || isLoading || !selectedAchievement}
-                                className={actionButtonClass(
-                                  "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
-                                )}
-                              >
-                                <div className="flex items-center gap-3">
-                                  {congratulateMutation.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Heart className="h-4 w-4" />
-                                  )}
-                                  <span>Congratulate</span>
-                                </div>
-                                <select
-                                  value={selectedAchievement}
-                                  onChange={(e) => setSelectedAchievement(e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="border-border/60 bg-card/80 text-foreground hover:bg-card hover:border-border min-w-[140px] cursor-pointer rounded-lg border px-3 py-1.5 text-xs backdrop-blur-md transition-colors focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
-                                >
-                                  <option value="" className="bg-popover text-popover-foreground">
-                                    Select achievement...
-                                  </option>
-                                  {recentAchievements.map(
-                                    (achievement: {
-                                      id: string;
-                                      icon?: string | null;
-                                      title: string;
-                                    }) => (
-                                      <option
-                                        key={achievement.id}
-                                        value={achievement.id}
-                                        className="bg-popover text-popover-foreground"
-                                      >
-                                        {achievement.icon} {achievement.title}
-                                      </option>
-                                    )
-                                  )}
-                                </select>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Diplomatic Actions */}
-                        <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                            Diplomacy
-                          </p>
-
-                          <button
-                            onClick={handleEstablishEmbassy}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                            )}
-                          >
-                            {establishEmbassyMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Building2 className="h-4 w-4" />
-                            )}
-                            Construct Embassy
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              if (!viewerCountryId) {
-                                notify.error("You must be logged in to request a meeting");
-                                return;
-                              }
-                              setSchedulerOpen(true);
-                            }}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20"
-                            )}
-                          >
-                            <Calendar className="h-4 w-4" />
-                            Request Meeting
-                          </button>
-
-                          <button
-                            onClick={() => handleForeignPolicy("free_trade")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
-                            )}
-                          >
-                            {foreignPolicyMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Handshake className="h-4 w-4" />
-                            )}
-                            Propose Free Trade
-                          </button>
-
-                          <button
-                            onClick={() => handleForeignPolicy("military_alliance")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/20"
-                            )}
-                          >
-                            <Shield className="h-4 w-4" />
-                            Propose Military Alliance
-                          </button>
-                        </div>
-
-                        {/* Foreign Policy (Adversarial) */}
-                        <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                            Foreign Policy
-                          </p>
-
-                          <button
-                            onClick={() => handleForeignPolicy("sanction")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                            )}
-                          >
-                            <Scale className="h-4 w-4" />
-                            Impose Sanctions
-                          </button>
-
-                          <button
-                            onClick={() => handleForeignPolicy("embargo")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20"
-                            )}
-                          >
-                            <Swords className="h-4 w-4" />
-                            Declare Embargo
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Quick Links (always shown) */}
-                    <div className="mt-4 space-y-2.5">
-                      <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                        Quick Links
-                      </p>
-
-                      <button
-                        onClick={() => {
-                          router.push(createUrl("/leaderboards"));
-                          onClose();
-                        }}
-                        className={actionButtonClass(
-                          "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                        )}
-                      >
-                        <Trophy className="h-4 w-4" />
-                        Global Leaderboard
-                      </button>
-
-                      <WikiLinkPreview title={targetCountryName}>
-                        <Link
-                          href={titleToWikiOSPath(targetCountryName)}
-                          className={actionButtonClass(
-                            "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-                          )}
-                          onClick={onClose}
-                        >
-                          <Globe className="h-4 w-4" />
-                          View on IxWiki
-                          <ExternalLink className="ml-auto h-3.5 w-3.5 text-white/40" />
-                        </Link>
-                      </WikiLinkPreview>
-
-                      <button
-                        onClick={handleCopyLink}
-                        className={actionButtonClass(
-                          "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-                        )}
-                      >
-                        {copiedLink ? (
-                          <Check className="h-4 w-4 text-emerald-400" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                        {copiedLink ? "Link Copied!" : "Copy Profile Link"}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          const slug = targetCountryName.replace(/\s/g, "_");
-                          const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
-                          if (navigator.share) {
-                            void navigator.share({ title: targetCountryName, url });
-                          } else {
-                            void navigator.clipboard.writeText(url);
-                            notify.success("Link copied");
-                          }
-                          onClose();
-                        }}
-                        className={actionButtonClass(
-                          "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-                        )}
-                      >
-                        <Share2 className="h-4 w-4" />
-                        Share Profile
-                      </button>
-                    </div>
-
-                    {/* Footer */}
-                    {!viewerCountryId && !isOwnCountry && (
-                      <div className="mt-4 border-t border-white/10 pt-4">
-                        <p className="text-center text-xs text-white/50">
-                          Login required to perform diplomatic actions
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+            {!viewerCountryId && !isOwnCountry && (
+              <p className="border-border text-muted-foreground border-t pt-4 text-center text-xs">
+                Login required to perform diplomatic actions
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       {viewerCountryId && (
         <MeetingScheduler
           countryId={viewerCountryId}
@@ -631,5 +462,46 @@ export function CountryActionsMenu({
         />
       )}
     </>
+  );
+}
+
+const ACTION_ROW_CLASS =
+  "border-border bg-card text-foreground hover:bg-accent focus-visible:ring-ring flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-2.5 text-sm font-medium transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50";
+
+/** A titled group of action rows. */
+function ActionGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2" aria-label={label}>
+      <Eyebrow className="block px-1">{label}</Eyebrow>
+      {children}
+    </section>
+  );
+}
+
+/** One full-width action: a plain icon and label on an opaque row (the dialog already blurs). */
+function ActionRow({
+  icon: Icon,
+  label,
+  onClick,
+  disabled,
+  destructive,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      data-cuelume-press=""
+      className={cn(ACTION_ROW_CLASS, destructive && "text-destructive")}
+    >
+      <Icon className={cn("h-4 w-4", destructive ? "text-destructive" : "text-muted-foreground")} />
+      {label}
+    </button>
   );
 }

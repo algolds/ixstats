@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 
 import { MetricCard } from "./MetricCard";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Button } from "~/components/ui/button";
@@ -16,11 +16,7 @@ import {
 } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
-import {
-  getCardImagePreset,
-  getFallbackGradient,
-  type CardImageType,
-} from "~/lib/cards/image-presets";
+import { getCardImagePreset, type CardImageType } from "~/lib/cards/image-presets";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";
@@ -182,9 +178,6 @@ export function MetricCardGrid({
   // Get image URL: DB custom image takes priority, then auto-fallback
   const imageUrl = cardImage?.imageUrl || null;
   const hasImage = !!imageUrl && !imageError;
-  const fallbackGradient = backgroundImage?.cardType
-    ? getFallbackGradient(backgroundImage.cardType)
-    : `bg-gradient-to-br from-${theme}-50/80 to-${theme}-100/80 dark:from-${theme}-900/20 dark:to-${theme}-800/20`;
   const preset = backgroundImage?.cardType ? getCardImagePreset(backgroundImage.cardType) : null;
 
   // Render the metrics grid
@@ -221,7 +214,7 @@ export function MetricCardGrid({
   // Return wrapped in a card with optional background image
   const cardContent = (
     <>
-      {/* Blueprint background: desaturated flag wash + radial dot mesh */}
+      {/* Optional background: the custom card image or a desaturated flag wash */}
       {backgroundImage && (
         <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
           {hasImage ? (
@@ -240,13 +233,7 @@ export function MetricCardGrid({
             />
           ) : null}
 
-          {/* Blueprint dot-matrix grid */}
-          <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground)/0.15)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_60%,transparent_100%)] [background-size:16px_16px] opacity-60" />
-
-          {/* Subtle diagonal technical line */}
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/[0.015] to-transparent dark:via-white/[0.005]" />
-
-          {/* Gradient overlay to ensure text is fully readable */}
+          {/* Readability scrim over the (user-chosen) background image */}
           <div className="from-background/98 via-background/90 to-background/70 absolute inset-0 bg-gradient-to-t" />
         </div>
       )}
@@ -282,18 +269,14 @@ export function MetricCardGrid({
 
       {/* Content */}
       <div className="relative z-[5]">
-        <CardHeader className={cn(hasImage && "text-foreground")}>
-          <CardTitle className="text-sm">{title}</CardTitle>
-          {subtitle && (
-            <CardDescription className={cn(hasImage && "text-muted-foreground")}>
-              {subtitle}
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
+        <FacetCardHeader className="p-4 pb-2">
+          <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+          {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
+        </FacetCardHeader>
+        <FacetCardContent className="px-4 pb-4">
           {metricsGrid}
           {cardFooter}
-        </CardContent>
+        </FacetCardContent>
       </div>
     </>
   );
@@ -308,27 +291,16 @@ export function MetricCardGrid({
 
   if (cardWrapper === "panel") {
     return (
-      <PanelCard
-        accent={accent}
-        tinted
-        texture="dots"
-        className={cn("relative overflow-hidden", className)}
-      >
+      <PanelCard accent={accent} className={cn("relative overflow-hidden", className)}>
         {cardContent}
       </PanelCard>
     );
   }
 
   return (
-    <Card
-      className={cn(
-        "border-border relative overflow-hidden",
-        !hasImage && fallbackGradient,
-        className
-      )}
-    >
+    <FacetCard depth={1} className={cn("relative overflow-hidden rounded-2xl", className)}>
       {cardContent}
-    </Card>
+    </FacetCard>
   );
 }
 

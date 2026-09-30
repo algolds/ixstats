@@ -50,7 +50,6 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
           placeholder="e.g., Annual Cultural Festival 2025"
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
-          className="bg-input border-border focus:border-amber-500/50"
         />
       </div>
 
@@ -112,7 +111,7 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
           placeholder="Provide a brief overview of this cultural exchange..."
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          className="bg-input min-h-24 border-border focus:border-amber-500/50"
+          className="min-h-24"
         />
       </div>
     </div>

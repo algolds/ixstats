@@ -14,36 +14,30 @@ interface CountryHeaderProps {
   variant?: "unified" | "standard" | "premium";
 }
 
-export function CountryHeader({
-  countryName,
-  countryId,
-  countrySlug,
-}: CountryHeaderProps) {
+export function CountryHeader({ countryName, countryId, countrySlug }: CountryHeaderProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-4">
-        <div className="rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 p-2">
-          <Crown className="h-8 w-8 text-white" />
-        </div>
+        <Crown className="h-6 w-6 shrink-0 text-amber-500" />
         <div>
-          <h1 className="text-3xl font-bold">{countryName}</h1>
+          <h1 className="text-foreground text-2xl font-semibold">{countryName}</h1>
           <p className="text-muted-foreground">National Overview & Vitality Dashboard</p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link href={createUrl(`/countries/${countrySlug || countryId}`)}>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
+        <Button variant="outline" size="sm" asChild>
+          <Link href={createUrl(`/countries/${countrySlug || countryId}`)}>
             <BarChart3 className="h-4 w-4" />
             Public View
-          </Button>
-        </Link>
-        <Link href={createUrl("/mycountry/editor")}>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={createUrl("/mycountry/editor")}>
             <Edit className="h-4 w-4" />
             Edit Data
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     </div>
   );

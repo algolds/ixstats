@@ -41,8 +41,8 @@ export interface SearchableListProps<T> {
 }
 
 const DEFAULT_ACCENT = {
-  badge: "bg-blue-600/20 text-blue-500",
-  ring: "ring-blue-500/30",
+  badge: "bg-muted text-muted-foreground",
+  ring: "ring-ring/30",
 };
 
 /**
@@ -122,7 +122,7 @@ export function SearchableList<T>({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="border-border bg-background/60 w-full rounded border py-1 pr-2 pl-7 text-xs focus:border-blue-500 focus:outline-none"
+                className="border-input bg-background focus-visible:ring-ring w-full rounded-md border py-1 pr-2 pl-7 text-xs outline-none focus-visible:ring-2"
               />
             </div>
           )}
