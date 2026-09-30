@@ -26,6 +26,7 @@ import {
   validateEquipmentImagesJob,
   getValidationStats,
 } from "~/server/cron/validate-equipment-images";
+import { bearerMatches } from "~/lib/security/safe-equal";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Require valid Bearer token if CRON_SECRET is set
     if (cronSecret) {
-      if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+      if (!bearerMatches(authHeader, cronSecret)) {
         console.warn(
           `[SECURITY] Unauthorized cron access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
         );
