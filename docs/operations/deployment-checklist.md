@@ -75,12 +75,12 @@ Complete checklist for deploying IxStates to production. Follow these steps to e
 - [ ] **On correct branch**
   ```bash
   git branch
-  # Should show: * rose-garden (the current integration branch)
+  # Should show: * master (production; see docs/processes/contributing.md#branches)
   ```
 
 - [ ] **Latest changes pulled**
   ```bash
-git pull origin rose-garden
+git pull origin master
 # Should show: "Already up to date"
   ```
 
@@ -471,10 +471,11 @@ Choose your deployment method:
   cd /ixwiki/public/projects/ixstats
   ```
 
-- [ ] **Check out the release branch** (the deploy script deploys the checkout's current branch; the remote is named `master`)
+- [ ] **Check out `master`** (the deploy script deploys the checkout's current branch and refuses any branch but
+  `master` unless `ALLOW_NON_MASTER_DEPLOY=1`; the git remote on the VPS is also named `master`)
   ```bash
-  git fetch master rose-garden
-  git checkout -B rose-garden master/rose-garden
+  git fetch master master
+  git checkout -B master master/master
   ```
 
 - [ ] **Run the deploy script**

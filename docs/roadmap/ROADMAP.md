@@ -46,7 +46,7 @@ P2 when capacity allows.
 | Milestone | Goal | Items | Rough size | Exit criteria |
 |---|---|---|---|---|
 | **M0** Integrity | Close every exploit and data-loss risk | 19 | ~10–14 days | No known way to mint IxC, act as another user, or edit without authorization; backups restore |
-| **M1** 1.4 stable | Release rose-garden and run it safely | 18 | ~12–16 days | CI fully blocking and green; jobs enabled with alerts; nightly backups; CSP enforced |
+| **M1** 1.4 stable | Promote rose-garden to production (via development and master) and run it safely | 18 | ~12–16 days | CI fully blocking and green; jobs enabled with alerts; nightly backups; CSP enforced |
 | **M2** 1.5 | Every visible feature works; no fake data | ~45 | ~30–40 days | The "nothing lies" rule holds in every system; broken loops restored |
 | **M3** 1.6 | Realms Phase 2: founders run their own worlds | 15 | ~20–25 days | A founder runs a realm end to end without a site admin |
 | **M4** 1.7 | Statecraft depth: the living nation | ~20 | ~35–50 days | IN → SEE → OUT → RIPPLE is closed for issues, politics, diplomacy and crises |
@@ -91,12 +91,12 @@ code-health track runs throughout.
 
 ## M1 — Ship 1.4 stable: release & operations baseline
 
-**Goal:** release rose-garden to production and make it safe to run: jobs on, CI trustworthy, security headers enforced.
+**Goal:** promote rose-garden through `development` to `master` (production) and make it safe to run: jobs on, CI trustworthy, security headers enforced.
 
 **Repository & CI**
 | Item | Refs | Size |
 |---|---|---|
-| Make `rose-garden` the default branch (or merge it into `master`); retarget dependabot; close obsolete #29 | PL-14, PL-15 | S |
+| Branch model (D13, decided): promote `rose-garden` → `development` → `master`; `master` stays production and the default branch; Dependabot targets `rose-garden` (done); obsolete Dependabot PRs closed (done) | PL-14, PL-15 | S |
 | Fix or delete the failing scheduled workflows (security scan → `bun audit`; image validation; Gemini triage and review need `GEMINI_API_KEY` or removal) | PL-14 | S |
 | Fix the 5 rules-of-hooks errors, set `--max-warnings` to ~160, make `lint:strict` blocking | PL-17 | S |
 | Typecheck tests, `proxy.ts`, `instrumentation.ts`, `content` and `scripts/` in CI; add `typecheck:db` | PL-16 | S |
@@ -343,7 +343,7 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | Retire until M4 needs it | WK-12 |
 | D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | Delete unless M4 needs delays | MC-6 |
 | D12 | Forum moderation | In-app, or XenForo only | XenForo only; fix the help copy | WK-20 |
-| D13 | Default branch | Make `rose-garden` the default, or merge it into `master` and keep `master` | Merge to `master` at 1.4 stable, then work on short-lived branches | PL-14 |
+| D13 | Branch model | **Decided (2026-09-30):** `rose-garden` is the maintainer's nightly branch, `development` the junior devs' stable-but-experimental branch, `master` production; work is promoted up by merge PRs ([contributing.md](../processes/contributing.md#branches)) | — | PL-14 |
 | D14 | Vercel | Keep the `vercel.json` disable, or disconnect the integration | Disconnect | — |
 | D15 | Gemini workflows | Add `GEMINI_API_KEY`, or delete the workflows | Delete (Codex review already runs) | PL-14 |
 
