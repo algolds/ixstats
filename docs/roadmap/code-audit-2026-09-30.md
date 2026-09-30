@@ -56,8 +56,8 @@ and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups). Th
 
 **After fixing VT-1, VT-2 and VT-6:** audit `vault_transactions` for `SPEND_COSMETIC` / `SPEND_BOOST` rows whose amount doesn't
 match the item price, and for repeated `bonus:ns_deck_import` rows.
-[#36](https://github.com/algolds/ixstats/pull/36) adds the report for this: `bun run audit:vault-exploits` (read-only). Balances are not corrected yet; that needs an
-admin decision on each finding (the report gives the rows and amounts).
+[#36](https://github.com/algolds/ixstats/pull/36) adds the report for this: `bun run audit:vault-exploits` (read-only). [#40](https://github.com/algolds/ixstats/pull/40) adds the corrections: `bun run
+audit:vault-exploits` shows them (dry run) and `bun run audit:vault-exploits:apply` writes them.
 
 ---
 

@@ -81,7 +81,7 @@ code-health track runs throughout.
 | 14 | Budget year: one IxTime-based year for writers, readers and the zod bound (it breaks on 2027-01-01) | MC-1 | S | P0 | Merged ([#37](https://github.com/algolds/ixstats/pull/37)) |
 | 15 | Backups: a working `db:backup` / `db:restore` for Postgres, a `pg_dump` in `deploy-production.sh` before `db push`, and a tested restore | PL-11 | M | P0 | Merged ([#37](https://github.com/algolds/ixstats/pull/37)); restore not yet tested on a scratch DB (ops) |
 | 16 | Rotate the `ixstats_readonly` password (it's in git history) | pending-features §1 | S | P0 (ops) | Open (ops) |
-| 17 | After 1–4: audit `vault_transactions` for exploit rows and correct balances | — | S | P0 | Report merged ([#36](https://github.com/algolds/ixstats/pull/36)); balance corrections await an admin decision |
+| 17 | After 1–4: audit `vault_transactions` for exploit rows and correct balances | — | S | P0 | Report ([#36](https://github.com/algolds/ixstats/pull/36)) and `audit:vault-exploits:apply` ([#40](https://github.com/algolds/ixstats/pull/40)); run on production (ops) |
 | 18 | Small hardening: take the audit IP from `cf-connecting-ip`, drop the `X-RateLimit-Identifier` echo, compare secrets in constant time | PL-20 | S | P1 | Done ([#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)) |
 | 19 | Move the 228 unlimited protected mutations onto `lightMutationProcedure` | PL-3, pending-features §3 | M | P1 | Open |
 

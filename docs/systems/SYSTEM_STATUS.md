@@ -135,7 +135,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 - **M0 follow-ups (code audit 2026-09-30).** The exploit and authorization fixes are merged ([#36](https://github.com/algolds/ixstats/pull/36), [#37](https://github.com/algolds/ixstats/pull/37), [#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)).
   Still open: the CSP nonce (PL-2), per-click match revenue (SL-14), rate limits on the remaining protected mutations, and
   these ops steps (besides the password rotation below): run `db:backup` and test a restore; run `db:remap-budget-years`;
-  review `audit:vault-exploits` and `audit:forum-links` and decide on balance corrections; enable `db-backup` and
+  review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup` and
   `budget-year-rollover` in `CRON_ENABLED_JOBS`; set `DISCORD_GUILD_ID`. Plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
 - **`audit:arch` (non-blocking in CI) reports 15 source files over their line ceiling** (largest:
   `routers/wikios/templates.ts`, 1,298 lines). Split them or add them to `RELAXED_FILES`.
