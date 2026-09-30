@@ -186,6 +186,79 @@ function toArticleRecord(article: ArticleRow): ArticleRecord {
 }
 
 /**
+ * What a save derives from its text alone: the excerpt (search snippets, link previews; from the
+ * text, never the edit summary), the redirect target, the word count and the reading time.
+ */
+function deriveSaveFields(input: SaveArticleInput, wikitext: string, providedHtml?: string) {
+  const excerpt =
+    input.excerpt?.slice(0, MAX_EXCERPT_LENGTH) ??
+    (cleanWikitextExcerpt(wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
+      0,
+      MAX_EXCERPT_LENGTH
+    ) || null);
+  const redirect = parseRedirect(wikitext);
+  const words = (wikitext || providedHtml || "").split(/\s+/).filter(Boolean).length;
+  return {
+    excerpt,
+    redirectTargetSlug: redirect?.title ?? null,
+    redirectTargetFragment: redirect?.fragment ?? null,
+    words,
+    readingTime: Math.max(1, Math.ceil(words / 200)),
+  };
+}
+
+type SaveFields = ReturnType<typeof deriveSaveFields>;
+
+interface SavedRow {
+  id: string;
+  title: string;
+  source: string;
+  wikitext: string;
+  namespace: number;
+  namespacePrefix: string | null;
+  protectionLevel: string;
+  protectionExpiry: Date | null;
+  syncedAt: Date;
+  updatedAt: Date;
+}
+
+/** The entity `saveArticle` answers with: the saved row plus what the save derived. */
+function toSavedEntity(
+  row: SavedRow,
+  fields: SaveFields,
+  providedHtml: string | undefined,
+  authorId: string | undefined
+): WikiArticleEntity {
+  return {
+    id: toArticleId(row.id),
+    slug: toArticleSlug(row.title),
+    title: row.title,
+    source: row.source,
+    status: "PUBLISHED",
+    format: "STRUCTURED_JSON",
+    contentHtml: providedHtml ?? "",
+    contentJson: null,
+    wikitext: row.wikitext,
+    summary: fields.excerpt,
+    namespace: row.namespace,
+    namespacePrefix: row.namespacePrefix,
+    protectionLevel: row.protectionLevel,
+    protectionExpiry: row.protectionExpiry,
+    infoboxData: null,
+    readingTime: fields.readingTime,
+    wordCount: fields.words,
+    viewCount: 0,
+    leadImageUrl: null,
+    redirectTargetSlug: fields.redirectTargetSlug,
+    redirectTargetFragment: fields.redirectTargetFragment,
+    authorId: authorId ?? null,
+    lastEditorId: authorId ?? null,
+    createdAt: row.syncedAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/**
  * Resolve `slug` to one row: (a) the canonical title, (b) the one row whose lower-case slug matches
  * (a case variant of the title), then (c) the legacy case-insensitive match. Each step is the
  * finders' own query, so the caller's `select` decides what is read.
@@ -272,20 +345,8 @@ export class ArticleRepository {
     const wikitext = input.wikitext || "";
     // Rendered HTML is the render service's to write; a save only stores HTML a caller hands it.
     const providedHtml = input.contentHtml || undefined;
-    // The excerpt (search snippets, link previews) comes from the text, never the edit summary.
-    const excerpt =
-      input.excerpt?.slice(0, MAX_EXCERPT_LENGTH) ??
-      (cleanWikitextExcerpt(wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
-        0,
-        MAX_EXCERPT_LENGTH
-      ) || null);
-    const redirect = parseRedirect(wikitext);
-    const redirectTargetSlug = redirect?.title ?? null;
-    const redirectTargetFragment = redirect?.fragment ?? null;
-
-    // Compute basic word count and reading time
-    const words = (wikitext || providedHtml || "").split(/\s+/).filter(Boolean).length;
-    const readingTime = Math.max(1, Math.ceil(words / 200));
+    const fields = deriveSaveFields(input, wikitext, providedHtml);
+    const { excerpt, redirectTargetSlug, redirectTargetFragment, words, readingTime } = fields;
 
     // Save article and create revision in a single atomic transaction
     const result = await db.$transaction(async (tx) => {
@@ -409,33 +470,7 @@ export class ArticleRepository {
     });
 
     return {
-      article: {
-        id: toArticleId(result.article.id),
-        slug: toArticleSlug(result.article.title),
-        title: result.article.title,
-        source: result.article.source,
-        status: "PUBLISHED",
-        format: "STRUCTURED_JSON",
-        contentHtml: providedHtml ?? "",
-        contentJson: null,
-        wikitext: result.article.wikitext,
-        summary: excerpt,
-        namespace: result.article.namespace ?? 0,
-        namespacePrefix: result.article.namespacePrefix ?? null,
-        protectionLevel: result.article.protectionLevel ?? "ALL",
-        protectionExpiry: result.article.protectionExpiry ?? null,
-        infoboxData: null,
-        readingTime,
-        wordCount: words,
-        viewCount: 0,
-        leadImageUrl: null,
-        redirectTargetSlug,
-        redirectTargetFragment,
-        authorId: authorId ?? null,
-        lastEditorId: authorId ?? null,
-        createdAt: result.article.syncedAt || new Date(),
-        updatedAt: result.article.updatedAt || new Date(),
-      },
+      article: toSavedEntity(result.article, fields, providedHtml, authorId),
       revisionId: toRevisionId(result.revision.id),
       extractedLinksCount: linksCount,
     };
