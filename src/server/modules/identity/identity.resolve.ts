@@ -53,7 +53,7 @@ function findUserByHandle(handle: string, stripped: string, viewerClerkId: strin
 /** A user without a linked country may still own one through their active ThinkPages account. */
 async function findThinkpagesCountry(clerkUserId: string): Promise<IdentityCountry | null> {
   const account = await db.thinkpagesAccount.findFirst({
-    where: { clerkUserId, isActive: true },
+    where: { clerkUserId, isActive: true, countryId: { not: null } },
     select: { countryId: true },
   });
   if (!account?.countryId) return null;

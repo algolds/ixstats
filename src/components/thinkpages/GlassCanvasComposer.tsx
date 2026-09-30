@@ -22,6 +22,7 @@ import { ComposerAccountSwitcher } from "./composer/ComposerAccountSwitcher";
 import { ComposerLiveDataDrawer } from "./composer/ComposerLiveDataDrawer";
 import { ComposerActionBar } from "./composer/ComposerActionBar";
 import { ComposerPollModal } from "./composer/ComposerPollModal";
+import { usePostAsYourself, isPersonalAccount } from "./composer/usePostAsYourself";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -143,6 +144,9 @@ export function GlassCanvasComposer({
     );
   };
 
+  const { postAsYourself, isPending: isPostAsYourselfPending } = usePostAsYourself(onAccountSelect);
+  const hasPersonalAccount = accounts.some(isPersonalAccount);
+
   const characterLimit = 280;
   const remainingChars = characterLimit - plainText.length;
 
@@ -157,27 +161,41 @@ export function GlassCanvasComposer({
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-foreground text-xs font-semibold">
-                Create a ThinkPages Account to post
+                Post as yourself, or create a ThinkPages Account
               </h4>
               <p className="text-muted-foreground mt-0.5 text-xs leading-normal">
-                Set up a ThinkPages Account to publish articles and participate in global community
-                discussions.
+                Post under your own name, or set up an in-character account for your nation to
+                publish articles and join global community discussions.
               </p>
             </div>
           </div>
-          <Button
-            size="sm"
-            onClick={onCreateAccount}
-            className="bg-poll hover:bg-poll/90 h-8 shrink-0 cursor-pointer border-0 text-xs text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-          >
-            Create Account
-          </Button>
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <Button
+              size="sm"
+              onClick={postAsYourself}
+              disabled={isPostAsYourselfPending}
+              className="bg-poll hover:bg-poll/90 h-8 cursor-pointer border-0 text-xs text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+            >
+              {isPostAsYourselfPending ? "Setting up..." : "Post as yourself"}
+            </Button>
+            {hasCountry && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onCreateAccount}
+                className="h-8 cursor-pointer text-xs"
+              >
+                Create Account
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
     );
   }
 
-  if (!hasCountry || !account) {
+  // A personal persona needs no country, so only a missing selection blocks the composer.
+  if (!account) {
     return (
       <Card className="facet-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
@@ -228,6 +246,8 @@ export function GlassCanvasComposer({
           onCreateAccount={onCreateAccount}
           isOwner={isOwner}
           getAccountAvatar={getAccountAvatar}
+          onPostAsYourself={hasPersonalAccount ? undefined : postAsYourself}
+          isPostAsYourselfPending={isPostAsYourselfPending}
         />
 
         {/* Right column: Editor + Previews + Actions */}

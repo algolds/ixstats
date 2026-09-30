@@ -153,9 +153,10 @@ export function UnifiedDashboardSection({
     userProfile.countryId?.trim() &&
     countryData.newStats?.name?.trim();
 
+  // Anyone signed in can follow ThinkPages accounts, so Following no longer needs a country.
   const TABS = useMemo(
-    () => (hasCountry ? BASE_TABS : BASE_TABS.filter((t) => t.id !== "following")),
-    [hasCountry]
+    () => (isSignedIn ? BASE_TABS : BASE_TABS.filter((t) => t.id !== "following")),
+    [isSignedIn]
   );
 
   // ── ThinkPages Action Handlers ──
@@ -262,9 +263,7 @@ export function UnifiedDashboardSection({
                   onPost={() => {
                     // The composer shows the success toast.
                     utils.activities.getGlobalFeed.refetch();
-                    if (hasCountry) {
-                      utils.activities.getFollowingFeed.refetch();
-                    }
+                    utils.activities.getFollowingFeed.refetch();
                   }}
                   placeholder="What's happening?"
                   countryId={userProfile?.countryId ?? ""}

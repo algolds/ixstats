@@ -9,6 +9,7 @@ import {
   Crown,
   Journal as Newspaper,
   Group as Users,
+  User as UserIcon,
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { useRelativeTime } from "~/hooks/useRelativeTime";
@@ -17,12 +18,14 @@ export const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
   government: Crown,
   media: Newspaper,
   citizen: Users,
+  personal: UserIcon,
 };
 
 export const ACCOUNT_TYPE_COLORS: Record<string, string> = {
   government: "text-amber-500 bg-amber-500/20",
   media: "text-blue-500 bg-blue-500/20",
   citizen: "text-green-500 bg-green-500/20",
+  personal: "text-slate-500 bg-slate-500/20",
 };
 
 export const REACTION_ICONS: Record<string, React.ElementType> = {

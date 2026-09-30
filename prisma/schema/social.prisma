@@ -3,7 +3,8 @@
 model ThinkpagesAccount {
   id               String           @id @default(cuid())
   clerkUserId      String
-  countryId        String
+  /// Null for a user's personal persona (accountType "personal"), which belongs to no country.
+  countryId        String?
   accountType      String
   username         String           @unique
   displayName      String
@@ -23,7 +24,7 @@ model ThinkpagesAccount {
   updatedAt        DateTime         @updatedAt
   mentions         PostMention[]
   reactions        PostReaction[]
-  country          Country          @relation("ThinkpagesAccounts", fields: [countryId], references: [id], onDelete: Cascade)
+  country          Country?         @relation("ThinkpagesAccounts", fields: [countryId], references: [id], onDelete: Cascade)
   posts            ThinkpagesPost[]
 
   @@index([clerkUserId])

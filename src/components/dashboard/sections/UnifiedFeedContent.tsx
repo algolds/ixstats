@@ -370,7 +370,7 @@ export function FollowingFeedContent({
         <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
         <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
         <p className="text-muted-foreground text-xs">
-          Follow countries to see their activity here.
+          Follow countries or ThinkPages accounts to see their activity here.
         </p>
         <Link href={"/countries"}>
           <Button size="sm" variant="outline" className="mt-3 text-xs">
@@ -386,7 +386,9 @@ export function FollowingFeedContent({
       <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
         <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
         <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
-        <p className="text-muted-foreground text-xs">Countries you follow haven't posted yet.</p>
+        <p className="text-muted-foreground text-xs">
+          Countries and accounts you follow haven't posted yet.
+        </p>
       </div>
     );
   }

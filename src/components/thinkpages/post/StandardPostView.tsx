@@ -37,6 +37,7 @@ import { RepostCard } from "./RepostCard";
 import { ReactionPills } from "./ReactionPills";
 import { ThreadReplies } from "./ThreadReplies";
 import { LiveDataCard } from "../LiveDataCard";
+import { PersonaAuthorCard } from "../PersonaAuthorCard";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
@@ -282,12 +283,14 @@ export function StandardPostView({
 
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <button
-              onClick={() => onAccountClick?.(post.account?.id)}
-              className="font-semibold hover:underline"
-            >
-              {post.account?.displayName}
-            </button>
+            <PersonaAuthorCard username={post.account?.username ?? ""}>
+              <button
+                onClick={() => onAccountClick?.(post.account?.id)}
+                className="font-semibold hover:underline"
+              >
+                {post.account?.displayName}
+              </button>
+            </PersonaAuthorCard>
 
             {post.account?.verified && (
               <span
