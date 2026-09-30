@@ -132,6 +132,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary: input.summary,
         minor: input.minor,
         authorWikiUsername: authorName,
+        revisionId: saveResult.revisionId,
       });
 
       void CloudflareGuardian.purgeArticleEdgeCache(input.title);
@@ -188,6 +189,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary,
         minor: false,
         authorWikiUsername: authorName,
+        revisionId: saveResult.revisionId,
       });
 
       return {
@@ -242,6 +244,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary,
         minor: false,
         authorWikiUsername: authorName,
+        revisionId: saveResult.revisionId,
       });
 
       return {

@@ -191,7 +191,7 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     await caller.saveWikitext({ title: "User:Linked/Notes", wikitext: "x" });
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
     expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Caphiria" })
+      expect.objectContaining({ title: "Caphiria", revisionId: "rev-1" })
     );
   });
 
