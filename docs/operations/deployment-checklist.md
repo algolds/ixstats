@@ -5,7 +5,7 @@
 
 Complete checklist for deploying IxStates to production. Follow these steps to ensure a safe, successful deployment.
 
-> **Production today** is a single VPS (`ssh ixwiki`, checkout at `/ixwiki/public/projects/ixstats`, served at `https://ixwiki.com/projects/ixstates`). Postgres runs in the Docker container `ixstats-postgres` and Redis in `ixstats-redis-cache`. The web app runs outside PM2 via `start-production.sh`; PM2 runs `ixstats-cron`, `ixstats-ws` and `ixstats-ixtwitter` from the gitignored `ecosystem.config.cjs`. `scripts/deploy-production.sh` (`bun run deploy:prod`) performs the build/deploy steps below. For the current release, follow [`deploy-rose-garden-2026-09.md`](deploy-rose-garden-2026-09.md).
+> **Production today** is a single VPS (`ssh ixwiki`, checkout at `/ixwiki/public/projects/ixstats`, served at `https://ixwiki.com/projects/ixstates`). Postgres runs in the Docker container `ixstats-postgres` and Redis in `ixstats-redis-cache`. The web app runs outside PM2 via `start-production.sh`; PM2 runs `ixstats-cron`, `ixstats-ws` and `ixstats-ixtwitter` from the gitignored `ecosystem.config.cjs`. `scripts/deploy-production.sh` (`bun run deploy:prod`) performs the build/deploy steps below. For a release, start with the [release guide](release-guide.md); the September release details are in [`deploy-rose-garden-2026-09.md`](deploy-rose-garden-2026-09.md).
 
 ## Table of Contents
 - [Pre-Deployment](#pre-deployment)

@@ -31,7 +31,7 @@ masked in the admin config; sports season and simulation procedures require the 
 |---|---|---|
 | **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](ROADMAP.md#m0--integrity-security--economy-exploits) |
 | Rotate the read-only DB password | `ixstats_readonly` role (plan 325) | The old password is in git history since 2026-05-31; the script no longer contains it, but the credential itself must be changed on the server |
-| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | The nonce is set only on the response headers, so the page never receives it (PL-2); fix that, test in staging, then remove the nginx/Cloudflare override |
+| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | The nonce now reaches the page ([#46](https://github.com/algolds/ixstats/pull/46), PL-2). Left: remove the nginx/Cloudflare override on the server and check for CSP violations, then drop `'unsafe-inline'` from `script-src` |
 
 ## 2. Broken or regressed features
 

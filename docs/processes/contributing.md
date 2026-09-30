@@ -17,7 +17,7 @@ Work flows up through three long-lived branches, always by merge pull request (n
 
 - **Promote** `rose-garden` → `development` with a merge PR once CI is green on `rose-garden` and a quick smoke test
   passes; promote `development` → `master` for a release, then deploy (see
-  [deployment-checklist.md](../operations/deployment-checklist.md)).
+  the [release guide](../operations/release-guide.md)).
 - **Back-merge** `development` into `rose-garden` after junior work lands there, so the nightly branch doesn't drift.
 - **Hotfixes** for production branch from `master`, merge into `master`, then back-merge down to `development` and
   `rose-garden`.
