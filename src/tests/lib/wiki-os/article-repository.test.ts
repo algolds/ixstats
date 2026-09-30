@@ -3,6 +3,7 @@
  * Plan 403: ArticleRepository writes and reads one MediaWiki-canonical identity per title.
  */
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 
 const mockUpsert = jest.fn();
 const mockRevisionFindFirst = jest.fn();
@@ -36,6 +37,7 @@ jest.mock("~/server/db", () => {
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
 }));
@@ -223,6 +225,119 @@ describe("ArticleRepository.saveArticle", () => {
   });
 });
 
+describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () => {
+  const save = (wikitext: string, extra: { contentHtml?: string } = {}) => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+    return ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext, ...extra });
+  };
+
+  it("marks the view stale and never clears the HTML readers are still served", async () => {
+    await save("new text");
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    expect(args.update).toMatchObject({ wikitext: "new text", htmlSyncedAt: null });
+    expect(args.update).not.toHaveProperty("contentHtml");
+    expect(args.create).not.toHaveProperty("htmlSyncedAt");
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml", "");
+  });
+
+  it("stores HTML only when the caller hands it one", async () => {
+    await save("text", { contentHtml: "<p>given</p>" });
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    expect(args.create.contentHtml).toBe("<p>given</p>");
+    expect(args.update.contentHtml).toBe("<p>given</p>");
+  });
+
+  it("queues exactly one render, after the transaction committed", async () => {
+    const order: string[] = [];
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) => {
+      order.push("upsert");
+      return savedRow(args.create.title);
+    });
+    mockRevisionCreate.mockImplementation(async () => {
+      order.push("revision");
+      return { id: "r1" };
+    });
+    jest.mocked(enqueueRender).mockImplementation(() => void order.push("enqueue"));
+
+    await ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "text" });
+
+    expect(enqueueRender).toHaveBeenCalledTimes(1);
+    expect(enqueueRender).toHaveBeenCalledWith("a1");
+    expect(order).toEqual(["upsert", "revision", "enqueue"]);
+  });
+
+  it("queues no render when the transaction failed", async () => {
+    mockUpsert.mockRejectedValue(new Error("db down"));
+
+    await expect(
+      ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "text" })
+    ).rejects.toThrow("db down");
+    expect(enqueueRender).not.toHaveBeenCalled();
+  });
+});
+
+describe("ArticleRepository.findArticleForView (plan 404)", () => {
+  const viewRow = (title: string, overrides: Record<string, unknown> = {}) => ({
+    id: `id-${title}`,
+    title,
+    htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
+    revisions: [{ createdAt: new Date("2026-09-29T08:00:00Z") }],
+    categories: [{ category: { name: "Countries" } }, { category: { name: "Eurth" } }],
+    ...overrides,
+  });
+
+  it("reads one row with only what locating the rendered view takes", async () => {
+    mockFindUnique.mockResolvedValue(viewRow("Foo bar"));
+
+    const head = await ArticleRepository.findArticleForView("foo_bar");
+
+    expect(mockFindUnique).toHaveBeenCalledTimes(1);
+    expect(mockFindMany).not.toHaveBeenCalled();
+    const { where, select } = mockFindUnique.mock.calls[0]?.[0];
+    expect(where).toEqual({ source_title: { source: "ixwiki", title: "Foo bar" } });
+    expect(Object.keys(select).sort()).toEqual(["categories", "htmlSyncedAt", "id", "revisions", "title"]);
+    expect(select.revisions).toMatchObject({ take: 1, orderBy: { createdAt: "desc" } });
+    expect(select.categories.take).toBe(50);
+    expect(head).toEqual({
+      id: "id-Foo bar",
+      title: "Foo bar",
+      htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
+      lastModified: new Date("2026-09-29T08:00:00Z"),
+      categories: ["Countries", "Eurth"],
+    });
+  });
+
+  it("resolves a case variant by slug like findBySlug does", async () => {
+    mockFindMany.mockResolvedValue([viewRow("NATO")]);
+
+    const head = await ArticleRepository.findArticleForView("nato");
+
+    expect(head?.title).toBe("NATO");
+    expect(mockFindMany.mock.calls[0]?.[0].select).toHaveProperty("htmlSyncedAt");
+    expect(mockFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("reports a stale article and an article with no revision rows", async () => {
+    mockFindUnique.mockResolvedValue(viewRow("Foo", { htmlSyncedAt: null, revisions: [] }));
+
+    await expect(ArticleRepository.findArticleForView("Foo")).resolves.toMatchObject({
+      htmlSyncedAt: null,
+      lastModified: null,
+    });
+  });
+
+  it("is null for a missing article, and lets a database error through", async () => {
+    await expect(ArticleRepository.findArticleForView("Nowhere")).resolves.toBeNull();
+
+    mockFindUnique.mockRejectedValue(new Error("db down"));
+    await expect(ArticleRepository.findArticleForView("Foo")).rejects.toThrow("db down");
+  });
+});
+
 describe("ArticleRepository.findBySlug", () => {
   it("returns the exact canonical row even when a case-variant row also exists", async () => {
     const rows = new Map([
@@ -297,12 +412,24 @@ describe("ArticleRepository.findBySlug", () => {
     expect(article?.title).toBe("Project:foo");
   });
 
+  it("never reads the rendered HTML or the view bundle", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+
+    await ArticleRepository.findBySlug("Foo");
+
+    const select = mockFindUnique.mock.calls[0]?.[0].select;
+    expect(select).toMatchObject({ id: true, wikitext: true });
+    for (const heavy of ["contentHtml", "contentJson", "renderedView", "htmlContent"]) {
+      expect(select).not.toHaveProperty(heavy);
+    }
+  });
+
   it("returns null when nothing matches", async () => {
     await expect(ArticleRepository.findBySlug("Nowhere")).resolves.toBeNull();
   });
 
-  it("returns null for a stub row without wikitext or html", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Foo", { wikitext: "", contentHtml: "" }));
+  it("returns null for a stub row without wikitext", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo", { wikitext: "" }));
 
     await expect(ArticleRepository.findBySlug("Foo")).resolves.toBeNull();
     expect(mockFindMany).not.toHaveBeenCalled();

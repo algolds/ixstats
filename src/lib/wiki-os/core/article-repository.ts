@@ -2,7 +2,8 @@
  * article-repository.ts — WikiOS Authoritative PostgreSQL Article Repository
  *
  * Primary source of truth for WikiOS articles and revisions.
- * Guarantees sub-3ms reads from pre-compiled contentHtml and sub-10ms writes.
+ * Reads the article's rendered view in one sub-3ms query (`findArticleForView`) and writes in sub-10ms;
+ * the view itself is built once per revision by services/render-service.ts.
  */
 
 import { db } from "~/server/db";
@@ -22,21 +23,25 @@ import { MediaAssetService } from "./media-asset-service";
 import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
+import { enqueueRender } from "../services/render-service";
 
 /** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
 const MAX_EXCERPT_LENGTH = 480;
 /** The excerpt is the lead of the article: cleaning more than this is wasted work on a 2 MB page. */
 const EXCERPT_SOURCE_LENGTH = 20_000;
+/** Category names shown with an article view. */
+const MAX_VIEW_CATEGORIES = 50;
 
-/** The columns a reader needs from a WikiArticle row. */
+/**
+ * The columns a wikitext reader needs from a WikiArticle row. The rendered HTML is not one of them:
+ * the reader gets it through `findArticleForView` and the render service.
+ */
 const ARTICLE_SELECT = {
   id: true,
   title: true,
   source: true,
   status: true,
   format: true,
-  contentHtml: true,
-  contentJson: true,
   wikitext: true,
   summary: true,
   namespace: true,
@@ -55,51 +60,166 @@ const ARTICLE_SELECT = {
   updatedAt: true,
 } as const;
 
+/**
+ * What the article reader needs to find a page's rendered view: never the wikitext, the raw HTML or
+ * the view bundle itself (the bundle is read only on a view-cache miss, see `loadViewBundle`).
+ */
+const VIEW_SELECT = {
+  id: true,
+  title: true,
+  htmlSyncedAt: true,
+  revisions: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
+  categories: {
+    orderBy: { category: { name: "asc" } },
+    take: MAX_VIEW_CATEGORIES,
+    select: { category: { select: { name: true } } },
+  },
+} as const;
+
+/** `WikiArticleEntity` without the rendered HTML, which `findBySlug` does not read (see `ARTICLE_SELECT`). */
+export type ArticleRecord = Omit<WikiArticleEntity, "contentHtml" | "contentJson">;
+
+export interface ArticleViewHead {
+  id: string;
+  /** The canonical title as stored. */
+  title: string;
+  /** When the view bundle was last built from the current wikitext; null = stale or never rendered. */
+  htmlSyncedAt: Date | null;
+  /** The newest revision's time; null when the article has no revision rows. */
+  lastModified: Date | null;
+  /** Category names, alphabetical, at most `MAX_VIEW_CATEGORIES`. */
+  categories: string[];
+}
+
+/** One lookup per resolution step; `Row` is whatever the finders' own `select` returns. */
+interface RowFinders<Row> {
+  exact(source: string, title: string): PromiseLike<Row | null>;
+  bySlug(source: string, slug: string): PromiseLike<Row[]>;
+  loose(source: string, slug: string): PromiseLike<Row | null>;
+}
+
+/** The legacy case-insensitive match, for titles MediaWiki would refuse and rows that predate canonical titles. */
+function looseWhere(source: string, slug: string) {
+  const normalizedSlug = toArticleSlug(slug);
+  return {
+    source,
+    OR: [
+      { slug: { equals: normalizedSlug, mode: "insensitive" as const } },
+      { slug: { equals: slug, mode: "insensitive" as const } },
+      { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" as const } },
+      { title: { equals: slug, mode: "insensitive" as const } },
+      { title: { equals: normalizedSlug, mode: "insensitive" as const } },
+    ],
+  };
+}
+
+const articleFinders = {
+  exact: (source: string, title: string) =>
+    db.wikiArticle.findUnique({
+      where: { source_title: { source, title } },
+      select: ARTICLE_SELECT,
+    }),
+  bySlug: (source: string, slug: string) =>
+    db.wikiArticle.findMany({
+      where: { source, slug },
+      orderBy: { updatedAt: "desc" },
+      take: 2,
+      select: ARTICLE_SELECT,
+    }),
+  loose: (source: string, slug: string) =>
+    db.wikiArticle.findFirst({
+      where: looseWhere(source, slug),
+      orderBy: { updatedAt: "desc" },
+      select: ARTICLE_SELECT,
+    }),
+};
+
+const viewFinders = {
+  exact: (source: string, title: string) =>
+    db.wikiArticle.findUnique({
+      where: { source_title: { source, title } },
+      select: VIEW_SELECT,
+    }),
+  bySlug: (source: string, slug: string) =>
+    db.wikiArticle.findMany({
+      where: { source, slug },
+      orderBy: { updatedAt: "desc" },
+      take: 2,
+      select: VIEW_SELECT,
+    }),
+  loose: (source: string, slug: string) =>
+    db.wikiArticle.findFirst({
+      where: looseWhere(source, slug),
+      orderBy: { updatedAt: "desc" },
+      select: VIEW_SELECT,
+    }),
+};
+
+type ArticleRow = NonNullable<Awaited<ReturnType<typeof articleFinders.exact>>>;
+
+function toArticleRecord(article: ArticleRow): ArticleRecord {
+  return {
+    id: toArticleId(article.id),
+    slug: toArticleSlug(article.title),
+    title: article.title,
+    source: article.source,
+    status: (article.status || "PUBLISHED") as ArticleRecord["status"],
+    format: (article.format || "STRUCTURED_JSON") as ArticleRecord["format"],
+    wikitext: article.wikitext,
+    summary: article.summary ?? null,
+    namespace: article.namespace,
+    namespacePrefix: article.namespacePrefix ?? null,
+    protectionLevel: article.protectionLevel,
+    protectionExpiry: article.protectionExpiry ?? null,
+    infoboxData: null,
+    readingTime: article.readingTime,
+    wordCount: article.wordCount,
+    viewCount: article.viewCount,
+    leadImageUrl: article.leadImageUrl ?? null,
+    redirectTargetSlug: article.redirectTargetSlug ?? null,
+    redirectTargetFragment: article.redirectTargetFragment ?? null,
+    authorId: article.authorId ?? null,
+    lastEditorId: article.lastEditorId ?? null,
+    createdAt: article.syncedAt,
+    updatedAt: article.updatedAt,
+  };
+}
+
+/**
+ * Resolve `slug` to one row: (a) the canonical title, (b) the one row whose lower-case slug matches
+ * (a case variant of the title), then (c) the legacy case-insensitive match. Each step is the
+ * finders' own query, so the caller's `select` decides what is read.
+ */
+async function resolveRow<Row>(
+  finders: RowFinders<Row>,
+  slug: string,
+  source: string
+): Promise<Row | null> {
+  const canon = canonicalizeTitle(slug, { source });
+  if (canon) {
+    const exact = await finders.exact(source, canon.title);
+    if (exact) return exact;
+
+    const variants = await finders.bySlug(source, canon.slug);
+    if (variants.length === 1) return variants[0] ?? null;
+  }
+  return finders.loose(source, slug);
+}
+
 export class ArticleRepository {
-  static async getArticleBySlug(
-    slug: string,
-    source = "ixwiki"
-  ): Promise<WikiArticleEntity | null> {
+  static async getArticleBySlug(slug: string, source = "ixwiki"): Promise<ArticleRecord | null> {
     return this.findBySlug(slug, source);
   }
 
   /**
    * Find an authoritative article by slug or title (<2ms query). The title is canonicalized first,
-   * so `foo_bar` reads the row a save of "Foo bar" wrote.
+   * so `foo_bar` reads the row a save of "Foo bar" wrote. A row with no wikitext is a stub, not an
+   * article, and reads as missing.
    */
-  static async findBySlug(slug: string, source = "ixwiki"): Promise<WikiArticleEntity | null> {
+  static async findBySlug(slug: string, source = "ixwiki"): Promise<ArticleRecord | null> {
     try {
       const article = await this.lookupArticle(slug, source);
-
-      if (!article || (!article.wikitext && !article.contentHtml)) return null;
-
-      return {
-        id: toArticleId(article.id),
-        slug: toArticleSlug(article.title),
-        title: article.title,
-        source: article.source,
-        status: (article.status || "PUBLISHED") as WikiArticleEntity["status"],
-        format: (article.format || "STRUCTURED_JSON") as WikiArticleEntity["format"],
-        contentHtml: article.contentHtml ?? "",
-        contentJson: (article.contentJson as unknown as WikiArticleEntity["contentJson"]) ?? null,
-        wikitext: article.wikitext ?? "",
-        summary: article.summary ?? null,
-        namespace: article.namespace ?? 0,
-        namespacePrefix: article.namespacePrefix ?? null,
-        protectionLevel: article.protectionLevel ?? "ALL",
-        protectionExpiry: article.protectionExpiry ?? null,
-        infoboxData: null,
-        readingTime: article.readingTime ?? 1,
-        wordCount: article.wordCount ?? 0,
-        viewCount: article.viewCount ?? 0,
-        leadImageUrl: article.leadImageUrl ?? null,
-        redirectTargetSlug: article.redirectTargetSlug ?? null,
-        redirectTargetFragment: article.redirectTargetFragment ?? null,
-        authorId: article.authorId ?? null,
-        lastEditorId: article.lastEditorId ?? null,
-        createdAt: article.syncedAt ?? new Date(),
-        updatedAt: article.updatedAt ?? new Date(),
-      };
+      return article?.wikitext ? toArticleRecord(article) : null;
     } catch {
       return null;
     }
@@ -111,39 +231,26 @@ export class ArticleRepository {
    * (c) the legacy case-insensitive match, newest row first, for titles MediaWiki would refuse
    * and rows that predate canonical titles.
    */
-  private static async lookupArticle(slug: string, source: string) {
-    const canon = canonicalizeTitle(slug, { source });
-    if (canon) {
-      const exact = await db.wikiArticle.findUnique({
-        where: { source_title: { source, title: canon.title } },
-        select: ARTICLE_SELECT,
-      });
-      if (exact) return exact;
+  private static lookupArticle(slug: string, source: string) {
+    return resolveRow(articleFinders, slug, source);
+  }
 
-      const variants = await db.wikiArticle.findMany({
-        where: { source, slug: canon.slug },
-        orderBy: { updatedAt: "desc" },
-        take: 2,
-        select: ARTICLE_SELECT,
-      });
-      if (variants.length === 1) return variants[0] ?? null;
-    }
-
-    const normalizedSlug = toArticleSlug(slug);
-    return db.wikiArticle.findFirst({
-      where: {
-        source,
-        OR: [
-          { slug: { equals: normalizedSlug, mode: "insensitive" } },
-          { slug: { equals: slug, mode: "insensitive" } },
-          { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
-          { title: { equals: slug, mode: "insensitive" } },
-          { title: { equals: normalizedSlug, mode: "insensitive" } },
-        ],
-      },
-      orderBy: { updatedAt: "desc" },
-      select: ARTICLE_SELECT,
-    });
+  /**
+   * The article the reader shows for `slug`, resolved exactly as `findBySlug` resolves it but
+   * reading only what locating the rendered view takes (one query). Database errors propagate:
+   * a missing article and a failed lookup are not the same answer. Unlike `findBySlug` a row
+   * with no wikitext is returned: it may hold only rendered HTML, and the reader decides.
+   */
+  static async findArticleForView(slug: string, source = "ixwiki"): Promise<ArticleViewHead | null> {
+    const row = await resolveRow(viewFinders, slug, source);
+    if (!row) return null;
+    return {
+      id: row.id,
+      title: row.title,
+      htmlSyncedAt: row.htmlSyncedAt,
+      lastModified: row.revisions[0]?.createdAt ?? null,
+      categories: row.categories.map((member) => member.category.name),
+    };
   }
 
   /**
@@ -163,7 +270,8 @@ export class ArticleRepository {
     if (!canon) throw new Error("Invalid title");
     const { title, slug } = canon;
     const wikitext = input.wikitext || "";
-    const contentHtml = input.contentHtml || "";
+    // Rendered HTML is the render service's to write; a save only stores HTML a caller hands it.
+    const providedHtml = input.contentHtml || undefined;
     // The excerpt (search snippets, link previews) comes from the text, never the edit summary.
     const excerpt =
       input.excerpt?.slice(0, MAX_EXCERPT_LENGTH) ??
@@ -176,7 +284,7 @@ export class ArticleRepository {
     const redirectTargetFragment = redirect?.fragment ?? null;
 
     // Compute basic word count and reading time
-    const words = (wikitext || contentHtml).split(/\s+/).filter(Boolean).length;
+    const words = (wikitext || providedHtml || "").split(/\s+/).filter(Boolean).length;
     const readingTime = Math.max(1, Math.ceil(words / 200));
 
     // Save article and create revision in a single atomic transaction
@@ -205,7 +313,7 @@ export class ArticleRepository {
           namespacePrefix: canon.namespacePrefix,
           source,
           wikitext,
-          contentHtml,
+          contentHtml: providedHtml,
           summary: excerpt,
           redirectTargetSlug,
           redirectTargetFragment,
@@ -219,7 +327,10 @@ export class ArticleRepository {
           namespace: canon.namespaceId,
           namespacePrefix: canon.namespacePrefix,
           wikitext,
-          contentHtml,
+          // The previous HTML and view bundle stay in place (readers keep seeing them) until the
+          // render queued below replaces them; `htmlSyncedAt: null` is what marks them stale.
+          ...(providedHtml ? { contentHtml: providedHtml } : {}),
+          htmlSyncedAt: null,
           summary: excerpt,
           redirectTargetSlug,
           redirectTargetFragment,
@@ -254,7 +365,7 @@ export class ArticleRepository {
         data: {
           articleId: article.id,
           wikitext,
-          contentHtml,
+          contentHtml: providedHtml,
           summary: input.editSummary ?? null,
           minor: input.minor ?? false,
           source,
@@ -276,21 +387,24 @@ export class ArticleRepository {
       return { article, revision };
     });
 
-    // 3. Update the link graph outside transaction for performance
+    // 3. Render the new text off the read path (the commit above marked the old view stale)
+    enqueueRender(result.article.id);
+
+    // 4. Update the link graph outside transaction for performance
     let linksCount = 0;
     try {
       linksCount = await LinkGraphService.syncArticleLinks(
         result.article.id,
         wikitext,
-        contentHtml,
+        providedHtml ?? "",
         source
       );
     } catch (linkErr) {
       console.warn("[ArticleRepository] Best-effort link graph sync failed:", linkErr);
     }
 
-    // 4. Auto-register any new image references in PostgreSQL wiki_assets
-    void MediaAssetService.processContentImages(wikitext || contentHtml).catch((err) => {
+    // 5. Auto-register any new image references in PostgreSQL wiki_assets
+    void MediaAssetService.processContentImages(wikitext || providedHtml || "").catch((err) => {
       console.warn("[ArticleRepository] Media asset processing failed:", err);
     });
 
@@ -302,7 +416,7 @@ export class ArticleRepository {
         source: result.article.source,
         status: "PUBLISHED",
         format: "STRUCTURED_JSON",
-        contentHtml: contentHtml || "",
+        contentHtml: providedHtml ?? "",
         contentJson: null,
         wikitext: result.article.wikitext,
         summary: excerpt,
