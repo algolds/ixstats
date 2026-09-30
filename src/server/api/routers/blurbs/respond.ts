@@ -5,7 +5,7 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { requireWikiUserId } from "~/lib/wiki-os/auth";
+import { requireWikiAuthId, requireWikiUserId } from "~/lib/wiki-os/auth";
 import { findWikiUserByAuthId } from "~/lib/wiki-os/storage";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
@@ -24,8 +24,7 @@ export const blurbsRespondRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = requireWikiUserId(ctx);
-      const user = await findWikiUserByAuthId(userId);
+      const user = await findWikiUserByAuthId(requireWikiAuthId(ctx));
       if (!user) return { responses: [], nextCursor: undefined };
 
       const responses = await db.blurbResponse.findMany({
@@ -51,8 +50,7 @@ export const blurbsRespondRouter = createTRPCRouter({
   getMyResponse: protectedProcedure
     .input(z.object({ promptId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const userId = requireWikiUserId(ctx);
-      const user = await findWikiUserByAuthId(userId);
+      const user = await findWikiUserByAuthId(requireWikiAuthId(ctx));
       if (!user) return null;
 
       return db.blurbResponse.findUnique({
@@ -86,9 +84,10 @@ export const blurbsRespondRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = requireWikiUserId(ctx);
-      // Look up the user and their country
-      const user = await findWikiUserByAuthId(userId);
+      // Look up the user and their country by the Clerk id (findWikiUserByAuthId matches
+      // User.clerkUserId; requireWikiUserId returns the internal User id).
+      const authId = requireWikiAuthId(ctx);
+      const user = await findWikiUserByAuthId(authId);
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
       if (!user.countryId)
         throw new TRPCError({
@@ -123,7 +122,7 @@ export const blurbsRespondRouter = createTRPCRouter({
       let thinkpagesPostId: string | null = null;
       try {
         thinkpagesPostId = await crossPostToThinkPages(
-          userId,
+          authId,
           user.countryId,
           input.content,
           prompt.title,
