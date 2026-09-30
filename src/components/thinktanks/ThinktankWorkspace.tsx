@@ -261,6 +261,9 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
                     isMember={Boolean(activeGroup.isMember)}
                     canReadFeed={Boolean(activeGroup.isMember) || activeGroup.type === "public"}
                     allowPersonaPosting={Boolean(activeGroup.settings?.allowPersonaPosting)}
+                    canModerate={
+                      activeGroup.userRole === "owner" || activeGroup.userRole === "admin"
+                    }
                     currentUserId={currentUserId}
                     onJoin={handleJoin}
                   />
