@@ -95,11 +95,11 @@ export function useNavigationItems({
         requiresAuth: false,
       },
       {
-        name: "Cards",
+        name: "Vault",
         href: "/vault",
         icon: CardsIcon,
         requiresAuth: true,
-        description: "IxCards trading card system",
+        description: "IxCredits, lore cards, and achievements",
       },
       {
         name: "Labs",
@@ -157,7 +157,7 @@ export function useNavigationItems({
       // Check admin navigation settings
       if (navigationSettings) {
         if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
-        if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
+        if (item.name === "Vault" && !navigationSettings.showCardsTab) return false;
         // Admins/system owners (role level ≤ 10) and users explicitly granted
         // Labs access always see Labs, regardless of the global showLabsTab control.
         if (
