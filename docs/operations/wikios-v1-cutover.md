@@ -234,7 +234,9 @@ ixwiki.com they reach MediaWiki until they are prefixed with the IxStates URL in
 
 ## 8. Cut over
 
-One change in MediaWiki, then nginx. Keep a backup of the site file:
+Two watchers break on the first day if they are left as they are: do step 10a (PHP-FPM watchdog) first, and step 10b
+(bot defense and fail2ban) on the copied snippet, between the `cp` lines and `nginx -t` below. Then one change in
+MediaWiki, then nginx. Keep a backup of the site file:
 
 ```bash
 # 8a. MediaWiki: stop keeping /wiki/ as the article path. In /ixwiki/config/LocalSettings.php delete
@@ -246,6 +248,7 @@ sudo cp /etc/nginx/sites-enabled/ixwiki.com /ixwiki/private/backups/ixwiki.com.p
 sudo cp scripts/ops/nginx/wikios-upstream.conf     /etc/nginx/conf.d/wikios-upstream.conf
 sudo cp scripts/ops/nginx/wikios-proxy-params.conf /etc/nginx/snippets/wikios-proxy-params.conf
 sudo cp scripts/ops/nginx/wikios-takeover.conf     /etc/nginx/snippets/wikios-takeover.conf
+#   step 10b: keep static assets out of the access log (the sed on the copied snippet) before nginx -t
 sudoedit /etc/nginx/sites-enabled/ixwiki.com
 #   - add  `include snippets/wikios-takeover.conf;`  at the top of the ixwiki.com server block
 #   - delete what the header of wikios-takeover.conf lists as replaced:
@@ -290,11 +293,87 @@ WikiOS serves its own `api.php` subset. Also click through by hand: an article, 
 |-------|-----|
 | WikiOS process | `pm2 logs wikios`, `pm2 status wikios` (restarts column), `pm2 jlist` RSS |
 | nginx | `tail -f /var/log/nginx/error.log`; 5xx on `/wiki/`: `awk '$9>=500 && $7 ~ "^/wiki/"' /var/log/nginx/access.log \| tail` |
-| Bot defense | `/usr/local/bin/ixwiki-bot-defense.sh status`, `tail -f /var/log/ixwiki-bot-defense.log`. A WikiOS page load fetches many `/_next/` files: if real users are blocked by the per-IP limit (60 requests/min), raise `/etc/ixwiki-defense.conf` or stop logging that location |
-| PHP-FPM watchdog | it restarts PHP-FPM when the wiki answers HTTP 500. `grep -n 'curl' /ixwiki/private/scripts/php-fpm-watchdog.sh`: if it probes `/wiki/Main_Page`, point it at `/classic/Main_Page` so it watches MediaWiki, not WikiOS |
+| Bot defense, fail2ban | step 10b; afterwards `/usr/local/bin/ixwiki-bot-defense.sh status`, `tail -f /var/log/ixwiki-bot-defense.log`, `fail2ban-client status ixwiki-bots` |
+| PHP-FPM watchdog | step 10a; afterwards `tail -f /ixwiki/private/logs/php-fpm-watchdog.log` |
 | Webhook | `pm2 logs wikios \| grep sync-webhook`; 401 means the two secrets differ, 503 means WikiOS has none |
 | Discord DMs | disk alert, PHP-FPM watchdog and bot-defense alerts reach the admin through `ixwiki-notify.sh` |
 | Disk | `df -h /` (WikiOS logs go to `/var/log/pm2/`, rotated at 50M x 5) |
+
+### 10a. PHP-FPM watchdog: make it probe MediaWiki, not WikiOS (before step 8)
+
+The watchdog (`/ixwiki/private/scripts/php-fpm-watchdog.sh`, service `php-fpm-watchdog`) restarts PHP-FPM when the
+wiki answers HTTP 500. After the cutover `/wiki/*` is WikiOS, so a probe of `/wiki/Main_Page` would restart PHP-FPM
+(and DM the admin) for WikiOS errors PHP-FPM cannot fix, and would stop noticing real MediaWiki failures. Its other
+trigger, more than 50 `upstream prematurely closed` lines in 60 seconds of `/var/log/nginx/error.log`, stays valid.
+
+```bash
+grep -nE 'curl|https?://|Main_Page|/wiki/' /ixwiki/private/scripts/php-fpm-watchdog.sh     # find the probe URL
+sudo cp -a /ixwiki/private/scripts/php-fpm-watchdog.sh /ixwiki/private/scripts/php-fpm-watchdog.sh.pre-wikios
+sudoedit /ixwiki/private/scripts/php-fpm-watchdog.sh
+```
+
+Replace the probe URL the `grep` showed with the private render engine (up since step 4, always MediaWiki, not
+subject to Cloudflare or the public rate limits):
+
+```
+http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json
+```
+
+If the script also greps the response body for a string from the old page, use `sitename`. Acceptable alternative
+once step 8 is done: `https://ixwiki.com/classic/Main_Page`. Do **not** use the public `https://ixwiki.com/api.php`:
+it moves to WikiOS when WikiOS serves its own `api.php` subset.
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json'   # 200
+sudo bash -n /ixwiki/private/scripts/php-fpm-watchdog.sh
+sudo systemctl restart php-fpm-watchdog
+systemctl status php-fpm-watchdog --no-pager | head -5
+tail -n 20 /ixwiki/private/logs/php-fpm-watchdog.log        # no restart entry after the edit
+```
+
+**Rollback:** `sudo cp -a /ixwiki/private/scripts/php-fpm-watchdog.sh.pre-wikios /ixwiki/private/scripts/php-fpm-watchdog.sh && sudo systemctl restart php-fpm-watchdog`.
+
+### 10b. Bot defense and fail2ban: stop counting static assets (before step 8)
+
+The bot-defense daemon (`/usr/local/bin/ixwiki-bot-defense.sh`, 60 requests per minute per IP, set in
+`/etc/ixwiki-defense.conf`) and the fail2ban jail `ixwiki-bots` (more than 60 requests per minute, one-hour ban) both
+read the nginx access log. A cold WikiOS page load is one document plus dozens of `/_next/static/` chunks, fonts and
+flag files, so a real reader who opens two articles in a minute can be blocked at the Cloudflare edge. Fix it in one
+place, nginx, so every log consumer benefits: keep the static asset locations out of the access log.
+
+```bash
+sudo cp -a /etc/nginx/snippets/wikios-takeover.conf /ixwiki/private/backups/wikios-takeover.conf.pre-accesslog
+sudo sed -i -E '/^location \^~ \/(_next|fonts|flags|maplibre|images\/flags|images\/wikios|wikios-|favicon-wikios)[^ ]* \{$/a\    access_log off;' /etc/nginx/snippets/wikios-takeover.conf
+grep -c 'access_log off' /etc/nginx/snippets/wikios-takeover.conf        # must print 8 (run the sed once only)
+sudo nginx -t && sudo systemctl reload nginx                               # in step 8, `nginx -t` alone is enough here
+```
+
+Trade-off: nothing is logged for those paths, so a flood of requests to them is invisible to the daemon and fail2ban
+(Cloudflare still sees it at the edge). Dynamic paths (`/wiki/`, `/api/trpc/`, `/api/onoma/tts`) stay logged and counted.
+
+If you would rather keep the log lines and raise the limits instead:
+
+```bash
+grep -niE 'ip' /etc/ixwiki-defense.conf                   # the per-IP requests-per-minute value (default 60)
+sudoedit /etc/ixwiki-defense.conf                         # set it to 240
+sudo systemctl restart ixwiki-bot-defense
+sudoedit /etc/fail2ban/jail.d/ixwiki-bots.conf            # multiply the ixwiki-bots maxretry by 4 (same findtime)
+sudo fail2ban-client reload
+```
+
+Check after the cutover, from a browser with a cold cache: open `https://ixwiki.com/wiki/Main_Page` and two more
+articles within a minute, then
+
+```bash
+/usr/local/bin/ixwiki-bot-defense.sh status               # your IP must not be listed as blocked
+fail2ban-client status ixwiki-bots                        # your IP must not be banned
+```
+
+If a reader is blocked: `sudo fail2ban-client set ixwiki-bots unbanip <ip>`, and remove the IP under Cloudflare,
+Security, WAF, Tools (IP Access Rules).
+
+**Rollback:** restore `/ixwiki/private/backups/wikios-takeover.conf.pre-accesslog` over the snippet (or the `/etc`
+files you changed), `sudo nginx -t && sudo systemctl reload nginx`, restart `ixwiki-bot-defense`, `sudo fail2ban-client reload`.
 
 ## 11. Footprint measurement
 
