@@ -7,9 +7,21 @@
 
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
+import { canonicalizeTitle, decodeTitleParam, type CanonicalTitle } from "./title";
+
+/** Namespaces a link to which is not a link between articles: File, Category, Special, Media. */
+const NON_ARTICLE_NAMESPACES: ReadonlySet<number> = new Set([6, 14, -1, -2]);
+
+/** The canonical target of a link, or null when it does not point at an article. */
+function articleTarget(rawTarget: string): CanonicalTitle | null {
+  const canon = canonicalizeTitle(rawTarget);
+  return canon && !NON_ARTICLE_NAMESPACES.has(canon.namespaceId) ? canon : null;
+}
 
 export interface ExtractedLink {
   targetSlug: string;
+  /** Canonical title of the target: what `WikiArticle.title` holds when the page exists. */
+  targetTitle: string;
   anchorText?: string;
   sectionAnchor?: string;
   isExternal: boolean;
@@ -31,12 +43,13 @@ export class LinkGraphService {
       const section = match[2]?.trim();
       const label = match[3]?.trim() || rawTarget;
 
-      if (rawTarget && !rawTarget.startsWith("File:") && !rawTarget.startsWith("Category:")) {
-        const slug = toArticleSlug(rawTarget);
-        const key = `${slug}#${section || ""}`;
+      const target = rawTarget ? articleTarget(rawTarget) : null;
+      if (target) {
+        const key = `${target.slug}#${section || ""}`;
         if (!linkMap.has(key)) {
           linkMap.set(key, {
-            targetSlug: slug,
+            targetSlug: target.slug,
+            targetTitle: target.title,
             anchorText: label,
             sectionAnchor: section || undefined,
             isExternal: false,
@@ -54,13 +67,14 @@ export class LinkGraphService {
         const section = match[2]?.trim();
         const label = match[3]?.replace(/<[^>]*>/g, "").trim();
 
-        if (rawTarget) {
-          const slug = toArticleSlug(rawTarget);
-          const key = `${slug}#${section || ""}`;
+        const target = rawTarget ? articleTarget(decodeTitleParam(rawTarget)) : null;
+        if (target) {
+          const key = `${target.slug}#${section || ""}`;
           if (!linkMap.has(key)) {
             linkMap.set(key, {
-              targetSlug: slug,
-              anchorText: label || slug,
+              targetSlug: target.slug,
+              targetTitle: target.title,
+              anchorText: label || target.slug,
               sectionAnchor: section || undefined,
               isExternal: false,
             });
@@ -83,26 +97,18 @@ export class LinkGraphService {
   ): Promise<number> {
     const extracted = this.extractLinks(wikitext, html);
 
-    // Resolve which target articles currently exist in PostgreSQL
-    const targetSlugs = extracted.map((l) => l.targetSlug);
-    const targetTitles = extracted.map((l) => l.targetSlug.replace(/_/g, " "));
+    // Resolve which target articles currently exist in PostgreSQL, by canonical title
+    const targetTitles = [...new Set(extracted.map((l) => l.targetTitle))];
 
     const existingTargets: Array<{ id: string; title: string }> =
-      targetSlugs.length > 0
+      targetTitles.length > 0
         ? await db.wikiArticle.findMany({
-            where: {
-              source,
-              OR: [{ title: { in: targetTitles } }, { title: { in: targetSlugs } }],
-            },
+            where: { source, title: { in: targetTitles } },
             select: { id: true, title: true },
           })
         : [];
 
-    const targetMap = new Map<string, string>();
-    for (const t of existingTargets) {
-      targetMap.set(toArticleSlug(t.title), t.id);
-      targetMap.set(t.title.toLowerCase(), t.id);
-    }
+    const targetMap = new Map(existingTargets.map((t) => [t.title, t.id]));
 
     try {
       // Transactionally update the link graph for this article
@@ -118,7 +124,7 @@ export class LinkGraphService {
             data: extracted.map((link) => ({
               sourceArticleId: articleId,
               targetSlug: link.targetSlug,
-              targetArticleId: targetMap.get(link.targetSlug) ?? null,
+              targetArticleId: targetMap.get(link.targetTitle) ?? null,
               anchorText: link.anchorText ?? null,
               sectionAnchor: link.sectionAnchor ?? null,
               isExternal: link.isExternal,
