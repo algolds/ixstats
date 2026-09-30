@@ -7,6 +7,7 @@ import { DemoModeProvider, useDemoMode } from "~/context/DemoModeContext";
 import { DevCountryViewToolbar, ViewingAsBanner } from "~/components/dev";
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { MyCountryHalo } from "~/components/halo/plugins";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 interface MyCountryLayoutProps {
   children: ReactNode;
@@ -38,7 +39,8 @@ export default function MyCountryLayout({ children }: MyCountryLayoutProps) {
     <Suspense fallback={null}>
       <DemoModeProvider>
         <DevCountryViewProvider>
-          <div className="relative flex min-h-screen flex-1 flex-col">
+          <div data-app="mycountry" className="relative flex min-h-screen flex-1 flex-col">
+            <PortalTintSync />
             <MyCountryHalo />
             <DemoModeBanner />
             <ViewingAsBanner />

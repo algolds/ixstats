@@ -83,9 +83,8 @@ const SheetContent = React.forwardRef<
             const target = e.target as HTMLElement;
             if (
               target &&
-              (target.closest("[data-radix-select-content]") ||
-                target.closest("[data-radix-dropdown-menu-content]") ||
-                target.closest("[data-radix-popover-content]") ||
+              (target.closest("[data-radix-popper-content-wrapper]") ||
+                target.closest('[data-slot="dropdown-menu-content"]') ||
                 target.closest('[role="listbox"]') ||
                 target.closest('[data-slot="popover-content"]') ||
                 target.closest('[data-slot="popover-positioner"]') ||
@@ -100,9 +99,8 @@ const SheetContent = React.forwardRef<
             const target = e.target as HTMLElement;
             if (
               target &&
-              (target.closest("[data-radix-select-content]") ||
-                target.closest("[data-radix-dropdown-menu-content]") ||
-                target.closest("[data-radix-popover-content]") ||
+              (target.closest("[data-radix-popper-content-wrapper]") ||
+                target.closest('[data-slot="dropdown-menu-content"]') ||
                 target.closest('[role="listbox"]') ||
                 target.closest('[data-slot="popover-content"]') ||
                 target.closest('[data-slot="popover-positioner"]') ||

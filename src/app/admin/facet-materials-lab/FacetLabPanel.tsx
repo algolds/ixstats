@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+// Lab-only materials, textures and interaction profiles (never loaded by globals.css).
+import "~/styles/facet/lab.css";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import {

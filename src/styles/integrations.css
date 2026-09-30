@@ -1,5 +1,13 @@
 /* ==========================================================================
    INTEGRATIONS — MAPLIBRE GL, IXMAPS & SONNER TOASTER
+
+   Deliberately UNLAYERED and allowed `!important` (third-party overrides,
+   Facet 3 §1; exempt in src/tests/architecture/css-layering.test.ts):
+   MapLibre and Sonner ship their own stylesheets / inline styles
+   (maplibre-gl.css is imported by map components after globals.css, and
+   Sonner writes inline `top`/`--offset-*`), so these overrides must beat
+   both. Selectors target library classes/attributes only (`.maplibregl-*`,
+   `[data-sonner-*]`, the IxMap tooltip popup) plus the maps-page scroll lock.
    ========================================================================== */
 
 /* ─── 1. MapLibre GL & IxMaps Canvas Overrides ─────────────────────────── */

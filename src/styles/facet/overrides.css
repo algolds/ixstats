@@ -1,0 +1,106 @@
+/* ==========================================================================
+   FACET DESIGN SYSTEM — USER-PREFERENCE OVERRIDES
+
+   The one first-party file allowed to use `!important` (see
+   src/tests/architecture/css-layering.test.ts). Every rule here is a user
+   preference kill switch that must beat Tailwind utilities *and* inline styles
+   written by Framer Motion / pointer handlers. Important declarations in an
+   earlier layer beat later layers and unlayered/inline styles, which is exactly
+   the precedence a preference needs. Nothing decorative belongs in this file.
+   ========================================================================== */
+
+@layer components {
+  /* ─── Reduce animations (Settings → data-reduce-animations) ───────────── */
+
+  html[data-reduce-animations="true"] *,
+  html[data-reduce-animations="true"] *::before,
+  html[data-reduce-animations="true"] *::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  html[data-reduce-animations="true"] .facet-interactive:hover,
+  html[data-reduce-animations="true"] .facet-hierarchy-interactive:hover {
+    transform: none !important;
+  }
+
+  /* ─── Reduce Motion: stop looping card-cover layers ─────────────────────
+     PackHolographicCover / LoreCardHolographicCover set `animation` inline,
+     so only an important declaration can stop them. */
+
+  @media (prefers-reduced-motion: reduce) {
+    .pack-holo-drift,
+    .pack-foil-sweep,
+    .pack-geo-spin,
+    .lore-ink-flow {
+      animation: none !important;
+    }
+  }
+
+  html[data-motion="reduced"] .pack-holo-drift,
+  html[data-motion="reduced"] .pack-foil-sweep,
+  html[data-motion="reduced"] .pack-geo-spin,
+  html[data-motion="reduced"] .lore-ink-flow {
+    animation: none !important;
+  }
+
+  /* ─── Low fidelity (Settings → data-low-fidelity): no blur/shadow/filter ─ */
+
+  html[data-low-fidelity="true"] .facet-surface,
+  html[data-low-fidelity="true"] .facet-base,
+  html[data-low-fidelity="true"] .facet-floating,
+  html[data-low-fidelity="true"] .facet-overlay,
+  html[data-low-fidelity="true"] .facet-depth-1,
+  html[data-low-fidelity="true"] .facet-depth-2,
+  html[data-low-fidelity="true"] .facet-depth-3,
+  html[data-low-fidelity="true"] .facet-depth-4,
+  html[data-low-fidelity="true"] .facet-hierarchy-parent,
+  html[data-low-fidelity="true"] .facet-hierarchy-child,
+  html[data-low-fidelity="true"] .facet-hierarchy-interactive,
+  html[data-low-fidelity="true"] .facet-material,
+  html[data-low-fidelity="true"] .facet-refraction,
+  html[data-low-fidelity="true"] .facet-modal {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  html[data-low-fidelity="true"] .facet-refraction::before,
+  html[data-low-fidelity="true"] .facet-refraction::after {
+    display: none !important;
+  }
+
+  /* ─── Textures toggle (Settings → data-enable-textures) ───────────────── */
+
+  html[data-enable-textures="false"] .texture-overlay,
+  html[data-low-fidelity="true"] .texture-overlay {
+    display: none !important;
+  }
+
+  /* ─── Interactive hover depth (Settings → data-interactive-hover) ─────── */
+
+  html[data-interactive-hover="false"] .facet-interactive:hover {
+    transform: none !important;
+  }
+
+  /* ─── Print ───────────────────────────────────────────────────────────── */
+
+  @media print {
+    .aurora-bg,
+    .animate-spin,
+    .animate-pulse {
+      display: none !important;
+    }
+
+    body {
+      background: white !important;
+      color: black !important;
+    }
+  }
+}

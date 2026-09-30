@@ -5,6 +5,7 @@ import "~/styles/forum.css";
 import { type Metadata } from "next";
 import { ForumContextProvider } from "~/components/forum/shared/ForumContext";
 import { ForumHalo } from "~/components/halo/plugins";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export const metadata: Metadata = {
   title: {
@@ -22,7 +23,10 @@ export default function ForumRootLayout({ children }: { children: React.ReactNod
   return (
     <ForumContextProvider>
       <ForumHalo />
-      <div className="forum-root min-h-screen">{children}</div>
+      <div data-app="forum" className="forum-root min-h-screen">
+        <PortalTintSync />
+        {children}
+      </div>
     </ForumContextProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import type { Metadata } from "next";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export const metadata: Metadata = {
   title: "ThinkTanks - IxStats",
@@ -16,7 +17,8 @@ export default function ThinktanksLayout({ children }: { children: React.ReactNo
         </div>
       }
     >
-      <div className="relative min-h-screen">
+      <div data-app="thinkpages" className="relative min-h-screen">
+        <PortalTintSync />
         <DashboardSidebarLayout disableCollapse={true}>{children}</DashboardSidebarLayout>
       </div>
     </Suspense>

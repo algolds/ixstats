@@ -230,7 +230,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
             </div>
           </Card>
           {/* Aurora/animated background effect (optional, subtle) */}
-          <div className="aurora-bg pointer-events-none absolute inset-0 z-0 rounded-2xl" />
+          <div className="aurora-bg pointer-events-none absolute inset-0 -z-10 rounded-2xl" />
         </div>
 
         {/* Mobile-friendly time display */}

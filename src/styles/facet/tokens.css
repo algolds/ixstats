@@ -1,0 +1,753 @@
+/* ==========================================================================
+   FACET 3 — TOKENS
+   The single token source (docs/specs/2026-09-30-facet-3-design-system.md §1).
+
+   Every token is a CSS variable *and* a Tailwind utility. Values that switch
+   with appearance live in `@theme static` (light) and are overridden under
+   `:root[data-theme="dark"]`; aliases use `@theme inline` so they resolve at
+   the element (per-app tint scopes). No self-referential `@theme` entries.
+
+   Mirrored in TypeScript by src/lib/design/tokens.ts (checked by
+   src/tests/architecture/token-contrast.test.ts) and src/lib/design/motion.ts.
+
+   Theme selection: `html[data-theme="light"|"dark"]`, written pre-paint by the
+   inline script in src/app/layout.tsx. The legacy `.light` / `.dark` classes
+   are kept in sync for CSS that still targets them.
+   ========================================================================== */
+
+/* ─── Variants ───────────────────────────────────────────────────────────── */
+
+/* Tailwind `dark:` follows the theme attribute (and the legacy class). Feature code
+   should prefer roles, which already switch. */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* Accessibility variants honour both the OS media query and the in-app override on <html>. */
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @slot;
+  }
+  &:where([data-motion="reduced"], [data-motion="reduced"] *) {
+    @slot;
+  }
+}
+@custom-variant motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    &:not(:where([data-motion="reduced"], [data-motion="reduced"] *)) {
+      @slot;
+    }
+  }
+}
+@custom-variant contrast-more {
+  @media (prefers-contrast: more) {
+    @slot;
+  }
+  &:where([data-contrast="more"], [data-contrast="more"] *) {
+    @slot;
+  }
+}
+@custom-variant transparency-reduced {
+  @media (prefers-reduced-transparency: reduce) {
+    @slot;
+  }
+  &:where([data-transparency="reduced"], [data-transparency="reduced"] *) {
+    @slot;
+  }
+}
+@custom-variant compact (&:where([data-density="compact"], [data-density="compact"] *));
+
+/* ─── §2.1 Colour roles (light values; dark below) ───────────────────────── */
+
+@theme static {
+  /* Labels */
+  --color-label: #09090b;
+  --color-label-secondary: #52525b;
+  --color-label-tertiary: #a1a1aa;
+  --color-label-quaternary: #d4d4d8;
+
+  /* Backgrounds & surfaces */
+  --color-background: #ffffff;
+  --color-background-grouped: #f2f3f6;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f2f3f6;
+  --color-surface-elevated: #ffffff;
+
+  /* Fills (label @ 16/12/8/5%) */
+  --color-fill: rgba(9, 9, 11, 0.16);
+  --color-fill-2: rgba(9, 9, 11, 0.12);
+  --color-fill-3: rgba(9, 9, 11, 0.08);
+  --color-fill-4: rgba(9, 9, 11, 0.05);
+
+  /* Separators */
+  --color-separator: rgba(0, 0, 0, 0.1);
+  --color-separator-opaque: #e4e4e7;
+
+  /* System colours (status & data) */
+  --color-red: #dc2626;
+  --color-orange: #c2410c;
+  --color-yellow: #a16207;
+  --color-green: #15803d;
+  --color-teal: #0f766e;
+  --color-blue: #1d4ed8;
+  --color-indigo: #4338ca;
+  --color-purple: #7e22ce;
+  --color-pink: #be185d;
+  --color-on-system: #ffffff;
+}
+
+/* ─── Aliases (resolve at the element) ───────────────────────────────────── */
+
+@theme inline static {
+  --color-grouped: var(--color-background-grouped);
+
+  /* App tint (§2.2) — scoped per subtree by [data-app] */
+  --color-tint: var(--tint);
+  --color-tint-hover: var(--tint-hover);
+  --color-on-tint: var(--on-tint);
+  --color-tint-fill: var(--tint-fill);
+
+  /* on- pairs for system colours */
+  --color-on-red: var(--color-on-system);
+  --color-on-orange: var(--color-on-system);
+  --color-on-yellow: var(--color-on-system);
+  --color-on-green: var(--color-on-system);
+  --color-on-teal: var(--color-on-system);
+  --color-on-blue: var(--color-on-system);
+  --color-on-indigo: var(--color-on-system);
+  --color-on-purple: var(--color-on-system);
+  --color-on-pink: var(--color-on-system);
+
+  /* Status roles */
+  --color-destructive: var(--color-red);
+  --color-on-destructive: var(--color-on-red);
+  --color-warning: var(--color-orange);
+  --color-on-warning: var(--color-on-orange);
+  --color-caution: var(--color-yellow);
+  --color-on-caution: var(--color-on-yellow);
+  --color-success: var(--color-green);
+  --color-on-success: var(--color-on-green);
+  --color-info: var(--color-blue);
+  --color-on-info: var(--color-on-blue);
+  --color-error: var(--color-red); /* legacy name */
+
+  /* shadcn names → roles (kept until the migration finishes; §2.1) */
+  --color-foreground: var(--color-label);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-label);
+  --color-popover: var(--color-surface-elevated);
+  --color-popover-foreground: var(--color-label);
+  --color-primary: var(--tint);
+  --color-primary-foreground: var(--on-tint);
+  --color-secondary: var(--color-fill-3);
+  --color-secondary-foreground: var(--color-label);
+  --color-muted: var(--color-fill-3);
+  --color-muted-foreground: var(--color-label-secondary);
+  --color-accent: var(--color-fill-3);
+  --color-accent-foreground: var(--color-label);
+  --color-destructive-foreground: var(--color-on-red);
+  --color-border: var(--color-separator);
+  --color-input: var(--color-separator);
+  --color-ring: var(--tint);
+
+  /* §2.4 categorical series: blue, orange, green, purple, pink, teal, yellow, red */
+  --color-chart-1: var(--color-blue);
+  --color-chart-2: var(--color-orange);
+  --color-chart-3: var(--color-green);
+  --color-chart-4: var(--color-purple);
+  --color-chart-5: var(--color-pink);
+  --color-chart-6: var(--color-teal);
+  --color-chart-7: var(--color-yellow);
+  --color-chart-8: var(--color-red);
+}
+
+/* ─── §4 Shape · §5 Elevation & z · §8 Motion ────────────────────────────── */
+
+@theme static {
+  /* Concentric radius scale */
+  --radius-sheet: 1.25rem; /* 20 */
+  --radius-card: 1rem; /* 16 */
+  --radius-row: 0.75rem; /* 12 — grouped list, inset panel */
+  --radius-control-lg: 0.75rem; /* 12 — 44px controls */
+  --radius-control: 0.625rem; /* 10 — 36px controls */
+  --radius-control-sm: 0.5rem; /* 8 — 28px controls */
+
+  /* Elevation; alpha × --shadow-strength (dark mode: half strength) */
+  --shadow-card:
+    0 1px 2px 0 rgb(0 0 0 / calc(0.06 * var(--shadow-strength, 1))),
+    0 1px 3px 0 rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  --shadow-floating:
+    0 8px 24px -4px rgb(0 0 0 / calc(0.14 * var(--shadow-strength, 1))),
+    0 2px 6px -1px rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  --shadow-sheet:
+    0 24px 48px -12px rgb(0 0 0 / calc(0.24 * var(--shadow-strength, 1))),
+    0 8px 16px -8px rgb(0 0 0 / calc(0.12 * var(--shadow-strength, 1)));
+
+  /* One z-index scale (`z-base` … `z-command`) */
+  --z-index-base: 0;
+  --z-index-raised: 10;
+  --z-index-sticky: 100;
+  --z-index-chrome: 500; /* sidebar, tab bar, toolbars */
+  --z-index-nav: 5000;
+  --z-index-backdrop: 100000;
+  --z-index-sheet: 100001;
+  --z-index-popover: 100010;
+  --z-index-tooltip: 100020;
+  --z-index-toast: 100050;
+  --z-index-command: 110000;
+
+  /* Motion (§8). Springs are for motion/react — see src/lib/design/motion.ts. */
+  --duration-fast: 150ms; /* colour and opacity changes */
+  --duration-exit: 120ms; /* exits, always faster than entrances */
+  --ease-out-facet: cubic-bezier(0.23, 1, 0.32, 1);
+  --spring-snappy-stiffness: 520; /* controls */
+  --spring-snappy-damping: 38;
+  --spring-smooth-stiffness: 320; /* sheets, sidebar, navigation, layout */
+  --spring-smooth-damping: 32;
+  --spring-gentle-stiffness: 180; /* emphasis, reveals */
+  --spring-gentle-damping: 24;
+}
+
+@theme inline static {
+  /* `duration-fast` / `duration-exit` utilities */
+  --transition-duration-fast: var(--duration-fast);
+  --transition-duration-exit: var(--duration-exit);
+}
+
+/* ─── Legacy colour utilities (pre-Facet 3; migrate to roles) ─────────────── */
+
+@theme static {
+  --color-text-secondary: #d4d4d8;
+  --color-brand-primary: #6366f1;
+  --color-brand-secondary: #818cf8;
+
+  --color-poll: #ff8a65;
+  --color-discord: #5865f2;
+  --color-discord-hover: #4752c4;
+  --color-wiki: #1d4e89;
+  --color-wiki-hover: #184275;
+  --color-map-ocean: #0a1628;
+  --color-forum-accent: #f97316;
+  --color-forum-accent-hover: #fb923c;
+  --color-forum-accent-active: #ea580c;
+
+  --color-theme-gold: #b45309;
+  --color-theme-ocean: #0369a1;
+  --color-theme-emerald: #047857;
+  --color-theme-crimson: #b91c1c;
+  --color-theme-amethyst: #7e22ce;
+  --color-theme-slate: #334155;
+
+  --color-rarity-common: #60a5fa;
+  --color-rarity-uncommon: #34d399;
+  --color-rarity-rare: #a855f7;
+  --color-rarity-ultra-rare: #c084fc;
+  --color-rarity-epic: #fbbf24;
+  --color-rarity-legendary: #ffd700;
+
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #fbbf24;
+  --color-gold-600: #d97706;
+  --color-gold-700: #b45309;
+  --color-gold-800: #92400e;
+  --color-gold-900: #78350f;
+  --color-gold-950: #451a03;
+
+  /* Font families */
+  --font-eurostile: "Eurostile", sans-serif;
+  --font-eurostile-cond: "Eurostile Condensed", "Eurostile", sans-serif;
+  --font-eurostile-extd: "Eurostile Extended", "Eurostile", sans-serif;
+  --font-host-grotesk: "Host Grotesk", sans-serif;
+  --font-sangbleu-empire: "SangBleu Empire", Georgia, serif;
+  --font-sangbleu-kingdom: "SangBleu Kingdom", Georgia, serif;
+  --font-sangbleu-republic: "SangBleu Republic", Georgia, serif;
+  --font-sangbleu-sunrise: "SangBleu Sunrise", Georgia, serif;
+  --font-sangbleu-versailles: "SangBleu Versailles", Georgia, serif;
+  --font-sangbleu: "SangBleu", "SangBleu Empire", "SangBleu Kingdom", Georgia, serif;
+}
+
+/* WikiOS margin/highlighter suite — values live in styles/wiki-os/tokens.css. */
+@theme inline {
+  --color-margin-accent: var(--margin-accent);
+  --color-margin-accent-hover: var(--margin-accent-hover);
+  --color-margin-bg: var(--margin-accent-bg);
+  --color-margin-border: var(--margin-accent-border);
+  --color-margin-glow: var(--margin-accent-glow);
+}
+
+/* Onoma lab palette — registered for utilities only; the values (and light overrides) are
+   defined in styles/domains.css. */
+@theme reference {
+  --color-onoma-primary: #0091ff;
+  --color-onoma-primary-light: #33a7ff;
+  --color-onoma-primary-hover: #0080e6;
+  --color-onoma-primary-active: #006ec4;
+  --color-onoma-primary-muted: rgba(0, 145, 255, 0.6);
+  --color-onoma-accent: #fef036;
+  --color-onoma-accent-hover: #e5d82f;
+  --color-onoma-accent-muted: rgba(254, 240, 54, 0.6);
+  --color-onoma-surface: rgba(0, 145, 255, 0.06);
+  --color-onoma-surface-hover: rgba(0, 145, 255, 0.12);
+  --color-onoma-surface-active: rgba(0, 145, 255, 0.18);
+  --color-onoma-accent-surface: rgba(254, 240, 54, 0.08);
+  --color-onoma-border: rgba(0, 145, 255, 0.25);
+  --color-onoma-border-hover: rgba(0, 145, 255, 0.45);
+  --color-onoma-border-active: rgba(0, 145, 255, 0.65);
+  --color-onoma-accent-border: rgba(254, 240, 54, 0.3);
+  --color-onoma-glow: rgba(0, 145, 255, 0.35);
+  --color-onoma-accent-glow: rgba(254, 240, 54, 0.3);
+}
+
+/* ─── §3 Text styles (rem × --text-scale) ────────────────────────────────── */
+/* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set. */
+
+@utility text-display {
+  font-family: var(--font-facet-display);
+  font-size: calc(2.5rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(2.75rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.02em);
+}
+@utility text-large-title {
+  font-size: calc(1.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(2.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.02em);
+}
+@utility text-title-1 {
+  font-size: calc(1.375rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.75rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.015em);
+}
+@utility text-title-2 {
+  font-size: calc(1.25rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.625rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, -0.01em);
+}
+@utility text-title-3 {
+  font-size: calc(1.0625rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.375rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, -0.005em);
+}
+@utility text-headline {
+  font-size: calc(0.875rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.25rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-body {
+  font-size: calc(0.875rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.25rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-callout {
+  font-size: calc(0.8125rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-subhead {
+  font-size: calc(0.8125rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-footnote {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0.005em);
+}
+@utility text-caption {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0.01em);
+}
+/* Eyebrow: short uppercase data label above a value — used by the Eyebrow primitive only. */
+@utility text-eyebrow {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0.06em);
+  text-transform: uppercase;
+}
+
+/* ─── §5 Materials (floating chrome only; never nested) ──────────────────── */
+/* No position / z-index / radius / margin — those belong to the component. */
+
+@utility material-thin {
+  --material-blur: 12px;
+  --material-saturate: 150%;
+  background-color: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  border: 1px solid var(--color-separator-opaque);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @media (max-width: 768px) {
+    --material-blur: 8px;
+  }
+  @media (hover: hover) {
+    &:hover {
+      --material-highlight: var(--material-highlight-hover);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  &:where([data-transparency="reduced"] *) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@utility material-regular {
+  --material-blur: 20px;
+  --material-saturate: 170%;
+  background-color: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  border: 1px solid var(--color-separator-opaque);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @media (max-width: 768px) {
+    --material-blur: 12px;
+  }
+  @media (hover: hover) {
+    &:hover {
+      --material-highlight: var(--material-highlight-hover);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  &:where([data-transparency="reduced"] *) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@utility material-thick {
+  --material-blur: 28px;
+  --material-saturate: 180%;
+  background-color: color-mix(in srgb, var(--color-surface-elevated) 88%, transparent);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  border: 1px solid var(--color-separator-opaque);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @media (max-width: 768px) {
+    --material-blur: 20px;
+  }
+  @media (hover: hover) {
+    &:hover {
+      --material-highlight: var(--material-highlight-hover);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  &:where([data-transparency="reduced"] *) {
+    background-color: var(--color-surface-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ─── Runtime values: appearance, app tints, preferences ─────────────────── */
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --text-scale: 1;
+    --shadow-strength: 1;
+    --material-highlight: rgba(255, 255, 255, 0.2);
+    --material-highlight-hover: rgba(255, 255, 255, 0.4);
+    --font-facet-display: "National", "Neutraface 2", ui-sans-serif, system-ui, sans-serif;
+
+    /* Density (§4): component padding/gap multiplier and control heights 28/36/44 */
+    --density: 1;
+    --control-height-sm: 1.75rem;
+    --control-height: 2.25rem;
+    --control-height-lg: 2.75rem;
+
+    /* Legacy z-index names → the one scale (existing numeric values kept) */
+    --z-background: -1;
+    --z-surface: var(--z-index-base);
+    --z-floating: var(--z-index-sticky);
+    --z-overlay: 1000; /* no Facet 3 equivalent; migrate to z-chrome / z-sheet */
+    --z-navigation: var(--z-index-nav);
+    --z-backdrop: var(--z-index-backdrop);
+    --z-modal: var(--z-index-sheet);
+    --z-popover: var(--z-index-popover);
+    --z-tooltip: var(--z-index-tooltip);
+    --z-toast: var(--z-index-toast);
+    --z-command: var(--z-index-command);
+    --z-depth-background: var(--z-background);
+    --z-depth-surface: var(--z-surface);
+    --z-depth-floating: var(--z-floating);
+    --z-depth-overlay: var(--z-overlay);
+    --z-depth-navigation: var(--z-navigation);
+    --z-depth-popover: var(--z-popover);
+    --z-depth-tooltip: var(--z-tooltip);
+    --z-depth-toast: var(--z-toast);
+    --z-depth-backdrop: var(--z-backdrop);
+    --z-depth-modal: var(--z-modal);
+    --z-depth-command: var(--z-command);
+  }
+
+  /* §2.1 dark values */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --shadow-strength: 0.5;
+    --material-highlight: rgba(255, 255, 255, 0.08);
+    --material-highlight-hover: rgba(255, 255, 255, 0.15);
+
+    --color-label: #f4f4f5;
+    --color-label-secondary: #a1a1aa;
+    --color-label-tertiary: #71717a;
+    --color-label-quaternary: #52525b;
+
+    --color-background: #0b0c0f;
+    --color-background-grouped: #0b0c0f;
+    --color-surface: #16181d;
+    --color-surface-secondary: #1e2028;
+    --color-surface-elevated: #22252d;
+
+    --color-fill: rgba(244, 244, 245, 0.24);
+    --color-fill-2: rgba(244, 244, 245, 0.18);
+    --color-fill-3: rgba(244, 244, 245, 0.12);
+    --color-fill-4: rgba(244, 244, 245, 0.08);
+
+    --color-separator: rgba(255, 255, 255, 0.1);
+    --color-separator-opaque: #2a2d35;
+
+    --color-red: #f87171;
+    --color-orange: #fb923c;
+    --color-yellow: #facc15;
+    --color-green: #4ade80;
+    --color-teal: #2dd4bf;
+    --color-blue: #60a5fa;
+    --color-indigo: #818cf8;
+    --color-purple: #c084fc;
+    --color-pink: #f472b6;
+    --color-on-system: #0b0c0f;
+  }
+
+  /* Legacy colour utilities — light values */
+  :root[data-theme="light"] {
+    --color-text-secondary: #52525b;
+    --color-poll: #ea580c;
+    --color-forum-accent: #ea580c;
+    --color-forum-accent-hover: #c2410c;
+    --color-forum-accent-active: #9a3412;
+    --color-theme-gold: #92400e;
+    --color-theme-ocean: #0284c7;
+    --color-theme-emerald: #059669;
+    --color-theme-crimson: #dc2626;
+    --color-theme-amethyst: #9333ea;
+    --color-theme-slate: #475569;
+    --color-rarity-common: #3b82f6;
+    --color-rarity-uncommon: #10b981;
+    --color-rarity-rare: #8b5cf6;
+    --color-rarity-ultra-rare: #a855f7;
+    --color-rarity-epic: #d97706;
+    --color-rarity-legendary: #b45309;
+  }
+
+  /* §2.2 App tints. Each scope sets its palette; the generic rules below derive
+     --tint / --tint-hover / --on-tint / --tint-fill on the scope element itself so
+     nested scopes and appearance changes resolve correctly. */
+  :root,
+  [data-app="admin"] {
+    --tint-light: #4338ca;
+    --tint-light-strong: #3730a3;
+    --on-tint-light: #ffffff;
+    --tint-dark: #818cf8;
+    --tint-dark-strong: #a5b4fc;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="mycountry"] {
+    --tint-light: #b45309;
+    --tint-light-strong: #92400e;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fbbf24;
+    --tint-dark-strong: #fcd34d;
+    --on-tint-dark: #1c1917;
+  }
+  [data-app="maps"] {
+    --tint-light: #0369a1;
+    --tint-light-strong: #075985;
+    --on-tint-light: #ffffff;
+    --tint-dark: #38bdf8;
+    --tint-dark-strong: #7dd3fc;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="thinkpages"] {
+    --tint-light: #047857;
+    --tint-light-strong: #065f46;
+    --on-tint-light: #ffffff;
+    --tint-dark: #34d399;
+    --tint-dark-strong: #6ee7b7;
+    --on-tint-dark: #052e16;
+  }
+  [data-app="vault"] {
+    --tint-light: #9a3412;
+    --tint-light-strong: #7c2d12;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fdba74;
+    --tint-dark-strong: #fed7aa;
+    --on-tint-dark: #1c1917;
+  }
+  [data-app="forum"] {
+    --tint-light: #c2410c;
+    --tint-light-strong: #9a3412;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fb923c;
+    --tint-dark-strong: #fdba74;
+    --on-tint-dark: #1c1917;
+  }
+  [data-app="wiki"] {
+    --tint-light: #3730a3;
+    --tint-light-strong: #312e81;
+    --on-tint-light: #ffffff;
+    --tint-dark: #a5b4fc;
+    --tint-dark-strong: #c7d2fe;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="intel"] {
+    --tint-light: #be123c;
+    --tint-light-strong: #9f1239;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fb7185;
+    --tint-dark-strong: #fda4af;
+    --on-tint-dark: #1c0a0f;
+  }
+  [data-app="sports"] {
+    --tint-light: #0f766e;
+    --tint-light-strong: #115e59;
+    --on-tint-light: #ffffff;
+    --tint-dark: #2dd4bf;
+    --tint-dark-strong: #5eead4;
+    --on-tint-dark: #042f2e;
+  }
+
+  :root,
+  [data-app] {
+    --tint: var(--tint-light);
+    --tint-hover: var(--tint-light-strong);
+    --on-tint: var(--on-tint-light);
+    --tint-fill: color-mix(in srgb, var(--tint) 14%, transparent);
+  }
+  :root[data-theme="dark"],
+  :root[data-theme="dark"] [data-app] {
+    --tint: var(--tint-dark);
+    --tint-hover: var(--tint-dark-strong);
+    --on-tint: var(--on-tint-dark);
+    --tint-fill: color-mix(in srgb, var(--tint) 18%, transparent);
+  }
+
+  /* §2.3 Increase Contrast: separators .20/.24, labels and tints one step stronger */
+  :root[data-contrast="more"] {
+    --color-label-secondary: #3f3f46;
+    --color-label-tertiary: #71717a;
+    --color-separator: rgba(0, 0, 0, 0.2);
+    --color-separator-opaque: #a1a1aa;
+  }
+  :root[data-contrast="more"],
+  :root[data-contrast="more"] [data-app] {
+    --tint: var(--tint-light-strong);
+    --tint-hover: color-mix(in srgb, var(--tint-light-strong) 85%, black);
+  }
+  :root[data-theme="dark"][data-contrast="more"] {
+    --color-label-secondary: #d4d4d8;
+    --color-label-tertiary: #a1a1aa;
+    --color-separator: rgba(255, 255, 255, 0.24);
+    --color-separator-opaque: #52525b;
+  }
+  :root[data-theme="dark"][data-contrast="more"],
+  :root[data-theme="dark"][data-contrast="more"] [data-app] {
+    --tint: var(--tint-dark-strong);
+    --tint-hover: color-mix(in srgb, var(--tint-dark-strong) 85%, white);
+  }
+  @media (prefers-contrast: more) {
+    :root:not([data-theme="dark"]) {
+      --color-label-secondary: #3f3f46;
+      --color-label-tertiary: #71717a;
+      --color-separator: rgba(0, 0, 0, 0.2);
+      --color-separator-opaque: #a1a1aa;
+    }
+    :root:not([data-theme="dark"]),
+    :root:not([data-theme="dark"]) [data-app] {
+      --tint: var(--tint-light-strong);
+      --tint-hover: color-mix(in srgb, var(--tint-light-strong) 85%, black);
+    }
+    :root[data-theme="dark"] {
+      --color-label-secondary: #d4d4d8;
+      --color-label-tertiary: #a1a1aa;
+      --color-separator: rgba(255, 255, 255, 0.24);
+      --color-separator-opaque: #52525b;
+    }
+    :root[data-theme="dark"],
+    :root[data-theme="dark"] [data-app] {
+      --tint: var(--tint-dark-strong);
+      --tint-hover: color-mix(in srgb, var(--tint-dark-strong) 85%, white);
+    }
+  }
+
+  /* Density: Compact multiplies component padding/gaps by 0.75; controls 28/32/40 (§4) */
+  :root[data-density="compact"] {
+    --density: 0.75;
+    --control-height-sm: 1.75rem;
+    --control-height: 2rem;
+    --control-height-lg: 2.5rem;
+  }
+
+  /* Reduce Motion (§8): the page stops smooth-scrolling; motion/react and the
+     motion-reduce: variant handle the rest. */
+  :root[data-motion="reduced"] {
+    scroll-behavior: auto;
+  }
+
+  html,
+  body {
+    background-color: var(--color-background-grouped);
+    color: var(--color-label);
+  }
+}
+
+/* §4 Continuous corners where supported (card, sheet and control radii). */
+@supports (corner-shape: squircle) {
+  @layer utilities {
+    .rounded-sheet,
+    .rounded-card,
+    .rounded-row,
+    .rounded-control-lg,
+    .rounded-control,
+    .rounded-control-sm {
+      corner-shape: squircle;
+    }
+  }
+}

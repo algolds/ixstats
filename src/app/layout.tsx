@@ -31,6 +31,7 @@ import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationCo
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
+import { APPEARANCE_INIT_SCRIPT } from "~/lib/design/appearance";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -115,6 +116,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const dashboardPath = withBasePath("/dashboard");
   const signInPath = withBasePath("/sign-in");
   const signUpPath = withBasePath("/sign-up");
+  // Per-request CSP nonce (set by src/proxy.ts); inline scripts without it are blocked.
+  const nonce = headersList.get("x-csp-nonce") ?? undefined;
 
   if (!isClerkConfigured) {
     throw new Error(
@@ -125,15 +128,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
+      // Server default; the pre-paint script below rewrites theme + preference attributes
+      // (data-theme, data-density, data-contrast, data-transparency, data-motion, data-sound,
+      // --text-scale) from storage / the OS before first paint, hence suppressHydrationWarning.
       className={`dark ${geist.variable} ${playfair.variable}`}
+      data-theme="dark"
       suppressHydrationWarning
     >
+      <head>
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: APPEARANCE_INIT_SCRIPT }}
+        />
+      </head>
       <body className="min-h-screen transition-colors duration-200">
         <ChunkLoadErrorHandler />
         <ChunkLoadErrorBoundary>
           <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-            nonce={headersList.get("x-csp-nonce") ?? undefined}
+            nonce={nonce}
             signInUrl={signInPath}
             signUpUrl={signUpPath}
             signInFallbackRedirectUrl={dashboardPath}

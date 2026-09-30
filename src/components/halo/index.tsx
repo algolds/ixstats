@@ -461,7 +461,7 @@ function CommandPaletteWrapper({
 
       // Allow clicks inside Radix portals/popovers/dialogs/tooltips
       if (
-        target.closest("[data-radix-portal]") ||
+        target.closest("[data-radix-popper-content-wrapper]") ||
         target.closest("[role='dialog']") ||
         target.closest("[role='tooltip']")
       ) {

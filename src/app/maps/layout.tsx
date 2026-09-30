@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
 import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
@@ -13,5 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function MapsLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <div data-app="maps" className="contents">
+      <PortalTintSync />
+      {children}
+    </div>
+  );
 }

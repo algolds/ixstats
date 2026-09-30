@@ -2,6 +2,12 @@
    CLERK THEME COMPLIANCE & FACET DESIGN SYSTEM INTEGRATION
    Ensures all Clerk components seamlessly adapt to active theme CSS variables
    (Light Mode, Dark Mode, Accent Themes, and Facet Volumetric Glass)
+
+   Deliberately UNLAYERED and `!important` (third-party override, allowed by
+   Facet 3 §1 and exempt in src/tests/architecture/css-layering.test.ts):
+   Clerk injects its own CSS-in-JS at runtime with high-specificity selectors
+   and inline styles, so these rules must sit above every layer. Every selector
+   targets a `.cl-*` class Clerk emits; nothing here touches app markup.
    ========================================================================== */
 
 /* Universal Clerk Root & Containers */

@@ -9,7 +9,8 @@ IxStates identity on top (the Swiss typeface, per-app tints, Cuelume sound, Halo
 of truth — the v2 doc, `src/styles/**` and the primitives — with one: **tokens in `@theme`, primitives in
 `src/components/ui`, and this document.**
 
-Values marked *proposed* are the starting point for Phase 1 and must pass the automated contrast test before they ship.
+The §2 colour values shipped unchanged in Phase 1 (`src/styles/facet/tokens.css`, mirrored in
+`src/lib/design/tokens.ts`) and pass the automated contrast test (`src/tests/architecture/token-contrast.test.ts`).
 
 ---
 
@@ -61,7 +62,7 @@ Values marked *proposed* are the starting point for Phase 1 and must pass the au
 
 ## 2. Colour
 
-### 2.1 Roles (*proposed* values)
+### 2.1 Roles
 
 | Role | Utility | Light | Dark | Use |
 |---|---|---|---|---|
@@ -88,7 +89,7 @@ Existing names map onto roles: `foreground`→`label`, `muted-foreground`→`lab
 `blue` #1d4ed8/#60a5fa · `indigo` #4338ca/#818cf8 · `purple` #7e22ce/#c084fc · `pink` #be185d/#f472b6. Status roles alias
 them: `destructive`→red, `warning`→orange, `caution`→yellow, `success`→green, `info`→blue.
 
-### 2.2 App tints (*proposed*)
+### 2.2 App tints
 
 | App | `--tint` light / dark | `--on-tint` light / dark |
 |---|---|---|
@@ -112,9 +113,17 @@ where they mean "this app" or "selected". Everything else uses labels, fills and
 `label-secondary` steps one shade toward `label`, tints darken (light) / lighten (dark) one step. A unit test computes
 every pair from the token file and fails the build below threshold.
 
+Shipped values (Phase 1): the "one step" is one Tailwind shade — `label-secondary` #3f3f46 / #d4d4d8; each tint's
+`strong` shade (light one darker, dark one lighter, e.g. MyCountry #92400e / #fcd34d), which is also `--tint-hover`;
+Increase Contrast additionally lifts `label-tertiary` (#71717a / #a1a1aa) and `separator-opaque` (#a1a1aa / #52525b).
+`--tint-fill` is the tint at 14% (light) / 18% (dark). System colours use one `on-` colour per appearance
+(#ffffff / #0b0c0f). The test also requires tints ≥ 4.5:1 on `background-grouped` and system colours ≥ 4.5:1 on
+`background` and ≥ 3:1 on every surface; all current values pass without adjustment.
+
 ### 2.4 Data visualisation
 
-Categorical series use the system colours in the order blue, orange, green, purple, pink, teal, yellow, red (never the
+Categorical series use the system colours in the order blue, orange, green, purple, pink, teal, yellow, red
+(`chart-1` … `chart-8`; never the
 app tint for series 1 unless the chart is about the app itself); sequential scales ramp the app tint from `fill-4` to
 `tint`; diverging uses red ↔ blue through `fill-3`. Axes and gridlines use `label-secondary` and `separator`; tooltips
 are `surface-elevated`. Map paint colours are data and are exempt, but must come from a named palette module, not
@@ -320,11 +329,18 @@ values on hover or tap.
 
 ## 14. Rollout
 
-1. **Foundations.** `tokens.css` in `@theme` (roles, tints, type, radius, spacing, materials, elevation, z, motion);
-   layer all Facet CSS and strip position/z/radius/background from material classes; remove utility hijacks and
-   `!important` workarounds; pre-paint theme script and preference attributes; fix broken references (`*-hsl`,
-   undefined `glass-*`, reduced-motion guards, route-scoped wiki tokens); contrast test; delete dead CSS and move lab
-   CSS out. Aliases keep every current class working.
+1. **Foundations — ✅ done 2026-09-30.** `tokens.css` in `@theme` (roles, tints, type, radius, materials, elevation, z,
+   motion — spacing uses Tailwind's 4px base; density exposes `--density` and `--control-height-*`); pre-paint theme
+   script and preference attributes (default "system"); `data-app` scopes on app root layouts, mirrored onto `<body>`
+   by `PortalTintSync` so portalled overlays keep the app tint; contrast test; `cn()` knows the token utilities.
+   All Facet/theme CSS is layered (`css-layering` guard) and material classes no longer set position/z/radius;
+   utility hijacks and `!important` workarounds removed (kept only in `facet/overrides.css` for user-preference
+   switches over inline styles and `wiki-os/mediawiki.css` for MediaWiki/Parsoid HTML); broken references fixed
+   (`*-hsl`, undefined `glass-*`, reduced-motion guards, route-scoped wiki tokens now in `wiki-os/tokens.css`);
+   primitives use one z order; dead CSS deleted (~19.8k → ~12.6k lines) and lab-only CSS moved to `facet/lab.css`.
+   Carried into Phase 2: honour the in-app reduce-motion setting in `MotionConfig` (it follows the OS only) and mute
+   Cuelume under `data-motion="reduced"`; squircle corners for prefixed radius utilities; decide whether `tokens.css`
+   or `typography.css` owns the font stacks; give `FacetMaterial` its own `relative` so the `:where()` default can go.
 2. **Primitives and doc.** `FacetList`/`FacetRow`, `Stat`, `EmptyState`, `FacetMaterial` (new API), `Button` styles
    and sizes, `SegmentedControl`, `ToggleGroup`, `Stepper`, `MenuButton`, Sheet detents, ARIA fixes, Cuelume policy,
    accessibility settings UI. This spec replaces the v2 reference doc.

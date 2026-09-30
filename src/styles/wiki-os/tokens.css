@@ -1,0 +1,132 @@
+/* ===========================================================================
+   WIKIOS TOKENS — always loaded (imported by globals.css)
+
+   `--wikios-*` and the margin/highlighter `--margin-*` tokens are read by
+   components outside /wiki (navigation, stashes, blurbs, the margin drawer and
+   the `bg-margin-*` utilities registered in facet/tokens.css), so their
+   definitions cannot live in the route-scoped wiki-os.css bundle.
+
+   Facet 3 §12: tokens that duplicate a Facet colour role are aliases of that
+   role, with the pre-Facet-3 value as the fallback so they resolve the same
+   before and after facet/tokens.css defines the role. WikiOS's private motion
+   tokens (`--ease-out`, `--ease-in-out`, `--ease-drawer`, `--spring-*`,
+   `--duration-*`) are gone: they shadowed Tailwind's `--ease-*` and Facet's
+   `--duration-fast` on wiki routes, and their only reader
+   (`.wikios-card-interactive`) had no callers.
+
+   Single theme-selector model: dark is the default (`:root`), light is
+   `.light` / `[data-theme="light"]` (kept in sync by the pre-paint script).
+   =========================================================================== */
+
+@layer base {
+  :root {
+    /* WikiOS palette */
+    --wikios-bg: var(--color-background, var(--color-bg-primary));
+    --wikios-surface: var(--color-surface, var(--color-bg-secondary));
+    --wikios-surface-hover: var(--color-surface-secondary, var(--color-bg-tertiary));
+    --wikios-border: var(--color-separator, var(--color-border-primary));
+    --wikios-border-subtle: rgba(255, 255, 255, 0.05);
+    --wikios-border-strong: var(--color-separator-opaque, var(--color-border-accent));
+
+    --wikios-text: var(--color-label, var(--color-text-primary));
+    --wikios-text-muted: var(--color-label-secondary, var(--color-text-muted));
+    --wikios-text-dim: var(--color-label-tertiary, var(--color-text-disabled));
+
+    --wikios-accent: var(--color-info);
+    --wikios-accent-hover: var(--color-info-light);
+    --wikios-accent-subtle: rgba(59, 130, 246, 0.12);
+
+    /* Margin & highlighter suite (dark) */
+    --margin-accent: #fef036;
+    --margin-accent-hover: #fde047;
+    --margin-accent-text: #fef036;
+    --margin-accent-fg: #fef036;
+    --margin-accent-bg: rgba(254, 240, 54, 0.15);
+    --margin-accent-border: rgba(254, 240, 54, 0.4);
+    --margin-accent-glow: rgba(254, 240, 54, 0.35);
+    --margin-badge-bg: #fef036;
+    --margin-badge-text: #09090b;
+
+    --wikios-link: #6890f0;
+    --wikios-link-visited: #a37cf0;
+    --wikios-link-hover: #8ab4f8;
+    --wikios-red: var(--color-error);
+    --wikios-green: var(--color-success);
+    --wikios-amber: var(--color-warning);
+    --wikios-purple: var(--color-chart-1);
+
+    /* Traditional Wikipedia body link colours (dark, accessible) */
+    --wikios-body-link: #6890f0;
+    --wikios-body-link-visited: #a37cf0;
+    --wikios-body-link-hover: #8ab4f8;
+
+    /* Glass & elevation */
+    --wikios-card-bg: var(--color-glass, rgba(22, 24, 29, 0.72));
+    --wikios-card-border: var(--color-border-primary);
+    --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+    --wikios-popover-bg: var(--color-surface-blur);
+    --wikios-popover-border: var(--color-border-secondary);
+    --wikios-popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+    /* Layout dimensions */
+    --wikios-content-max-width: 960px;
+    --wikios-infobox-width: 320px;
+    --wikios-toc-width: 200px;
+
+    /* Typography (wiki reading style — the one sanctioned content style) */
+    --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    --wikios-font-ui: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
+    --wikios-font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  }
+
+  .light,
+  [data-theme="light"] {
+    --wikios-bg: var(--color-background, #fafafa);
+    --wikios-surface: var(--color-surface, #ffffff);
+    --wikios-surface-hover: var(--color-surface-secondary, #f4f4f5);
+    --wikios-border: var(--color-separator, rgba(0, 0, 0, 0.08));
+    --wikios-border-subtle: rgba(0, 0, 0, 0.04);
+    --wikios-border-strong: var(--color-separator-opaque, rgba(0, 0, 0, 0.16));
+
+    --wikios-text: var(--color-label, #18181b);
+    --wikios-text-muted: var(--color-label-secondary, #52525b);
+    --wikios-text-dim: var(--color-label-tertiary, #a1a1aa);
+
+    --wikios-accent: #2563eb;
+    --wikios-accent-hover: #3b82f6;
+    --wikios-accent-subtle: rgba(37, 99, 235, 0.08);
+
+    /* Margin & highlighter suite (light) */
+    --margin-accent: #fef036;
+    --margin-accent-hover: #fde047;
+    --margin-accent-text: #18181b;
+    --margin-accent-fg: #fef036;
+    --margin-accent-bg: rgba(254, 240, 54, 0.22);
+    --margin-accent-border: rgba(250, 204, 21, 0.6);
+    --margin-accent-glow: rgba(254, 240, 54, 0.45);
+    --margin-badge-bg: #fef036;
+    --margin-badge-text: #09090b;
+
+    --wikios-link: #36c;
+    --wikios-link-visited: #5a3696;
+    --wikios-link-hover: #447ff5;
+    --wikios-red: #dc2626;
+    --wikios-green: #16a34a;
+    --wikios-amber: #d97706;
+    --wikios-purple: #9333ea;
+
+    /* Traditional Wikipedia body link colours (light) */
+    --wikios-body-link: #36c;
+    --wikios-body-link-visited: #5a3696;
+    --wikios-body-link-hover: #447ff5;
+
+    /* Glass & elevation */
+    --wikios-card-bg: rgba(255, 255, 255, 0.72);
+    --wikios-card-border: rgba(0, 0, 0, 0.08);
+    --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    --wikios-popover-bg: rgba(255, 255, 255, 0.96);
+    --wikios-popover-border: rgba(0, 0, 0, 0.1);
+    --wikios-popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
+}

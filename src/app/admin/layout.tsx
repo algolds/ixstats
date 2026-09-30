@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePermissions } from "~/hooks/usePermissions";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -44,7 +45,7 @@ function AccessDeniedScreen() {
   );
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+function AdminLayoutContent({ children }: AdminLayoutProps) {
   const { user, isLoaded } = useUser();
   const { user: permissionUser, isLoading: permissionsLoading } = usePermissions();
   const pathname = usePathname();
@@ -89,5 +90,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <AdminSidebarLayout>{children}</AdminSidebarLayout>
       </AdminNavigationProvider>
     </AdminErrorBoundary>
+  );
+}
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
+  return (
+    <div data-app="admin" className="contents">
+      <PortalTintSync />
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </div>
   );
 }

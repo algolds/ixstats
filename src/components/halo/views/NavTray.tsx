@@ -111,7 +111,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
             transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.8 }}
           >
             <div
-              className="dynamic-island-shell overflow-hidden rounded-2xl shadow-2xl"
+              className="dynamic-island-shell overflow-hidden rounded-2xl"
               data-expanded="true"
             >
               {/* Refraction edges */}

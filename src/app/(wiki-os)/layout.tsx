@@ -6,6 +6,7 @@ import { WikiHalo } from "~/components/halo/plugins";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export const metadata: Metadata = {
   title: "WikiOS — Worldbuilding Encyclopedia",
@@ -26,12 +27,15 @@ export default async function WikiosLayout({ children }: { children: React.React
   const isStandalone = isStandaloneRequest(await headers());
 
   return (
-    <MediaContextProvider>
-      <MediaThemeProvider>
-        <WikiHalo />
-        {children}
-        {!isStandalone && <MiniPlayer />}
-      </MediaThemeProvider>
-    </MediaContextProvider>
+    <div data-app="wiki" className="contents">
+      <PortalTintSync />
+      <MediaContextProvider>
+        <MediaThemeProvider>
+          <WikiHalo />
+          {children}
+          {!isStandalone && <MiniPlayer />}
+        </MediaThemeProvider>
+      </MediaContextProvider>
+    </div>
   );
 }
