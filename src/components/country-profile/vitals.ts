@@ -16,8 +16,22 @@ function rateDelta(rate: number | null, label: string): StatDelta | undefined {
   return { value: formatRate(rate), direction, label };
 }
 
+/** The readings `headlineVitals` needs (the Factbook header passes just these). */
+export type HeadlineInputs = Pick<
+  ProfileVitals,
+  | "population"
+  | "populationGrowth"
+  | "populationTier"
+  | "gdpTotal"
+  | "gdpGrowth"
+  | "gdpPerCapita"
+  | "economicTier"
+  | "landArea"
+  | "density"
+>;
+
 /** Headline vitals (population, GDP, GDP per capita, area). Missing figures are left out. */
-export function headlineVitals(v: ProfileVitals): VitalStat[] {
+export function headlineVitals(v: HeadlineInputs): VitalStat[] {
   const stats: VitalStat[] = [];
   if (v.population != null)
     stats.push({

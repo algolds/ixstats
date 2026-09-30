@@ -1,18 +1,19 @@
 /**
- * Country profile layer — pure helpers shared by the Chronicle and Command prototypes.
+ * Country profile layer — pure helpers behind the country profile (`/countries/[slug]`).
  *
  * No React, no tRPC, no server imports: everything here turns router output into the one
- * cohesive model both prototypes render (`useCountryProfileLayer` wires the queries). The two
+ * cohesive model the profile renders (`useCountryProfileLayer` wires the queries). The two
  * rules that matter most live here so they can be unit tested:
  *
  * - **Public record only.** Visitors see enacted directives (`active`/`completed`) and resolved
- *   issues (`responded`/`auto_resolved`). Drafts, open issues, expired/dismissed issues, CivCap
- *   and budgets never reach the public model (`toPublicDirectives`, `toPublicIssueOutcomes`).
+ *   issues (`responded`/`auto_resolved`). The server enforces it (`countries.getPublicRecord`);
+ *   the filters are shared from `~/lib/country/public-record` and re-exported here.
  * - **One chronicle.** Wiki founding dates, map story pins, directives, decisions and diplomatic
  *   events merge into one timeline on the in-game calendar (`buildChronicle`).
  */
 
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
+import type { PublicDirective, PublicIssueOutcome } from "~/lib/country/public-record";
 
 // ─── Wiki lore ──────────────────────────────────────────────────────────────
 
@@ -164,7 +165,7 @@ export function wikiToParagraphs(
   return paragraphs;
 }
 
-/** The chapters both prototypes tell, in reading order. */
+/** The lore chapters the profile tells, in reading order. */
 export type LoreChapter = "land" | "people" | "economy" | "state" | "world" | "history";
 
 /** Wiki headings that feed each chapter, most specific first. */
@@ -219,113 +220,29 @@ export function redirectTarget(wikitext: string | null | undefined): string | nu
 
 // ─── Directives & issues (public record) ────────────────────────────────────
 
-export interface IntentLike {
-  id: string;
-  goal: string;
-  tier: string;
-  category: string;
-  status: string;
-  summary?: string | null;
-  progress?: number | null;
-  riskRating?: string | null;
-  createdIxTime: number;
-}
+// The public-record rules live in `~/lib/country/public-record` so the server
+// (`countries.getPublicRecord`, `intent.getTree` for visitors) and the profile share them.
+export {
+  PUBLIC_DIRECTIVE_STATUSES,
+  PUBLIC_ISSUE_STATUSES,
+  toPublicDirectives,
+  toPublicIssueOutcomes,
+  type IntentLike,
+  type IssueLike,
+  type PublicDirective,
+  type PublicDirectiveStatus,
+  type PublicIssueOutcome,
+} from "~/lib/country/public-record";
 
-export type PublicDirectiveStatus = "active" | "completed";
-
-export interface PublicDirective {
-  id: string;
-  goal: string;
-  summary: string | null;
-  tier: string;
-  category: string;
-  status: PublicDirectiveStatus;
-  progress: number;
-  createdIxTime: number;
-}
-
-/** Statuses a visitor may see: declared (in force) and completed. Drafts and withdrawn stay private. */
-export const PUBLIC_DIRECTIVE_STATUSES: readonly PublicDirectiveStatus[] = ["active", "completed"];
-
-/** Enacted directives only, newest first. `changesJson`, CivCap and cooldowns are never copied. */
-export function toPublicDirectives(
-  intents: readonly IntentLike[] | null | undefined
-): PublicDirective[] {
-  return (intents ?? [])
-    .filter((i): i is IntentLike & { status: PublicDirectiveStatus } =>
-      (PUBLIC_DIRECTIVE_STATUSES as readonly string[]).includes(i.status)
-    )
-    .map((i) => ({
-      id: i.id,
-      goal: i.goal,
-      summary: i.summary?.trim() || null,
-      tier: i.tier,
-      category: i.category,
-      status: i.status,
-      progress: Math.max(
-        0,
-        Math.min(100, Math.round(i.progress ?? (i.status === "completed" ? 100 : 0)))
-      ),
-      createdIxTime: i.createdIxTime,
-    }))
-    .sort((a, b) => b.createdIxTime - a.createdIxTime);
-}
-
-/** Owner-only counts from the same tree: drafts (`proposed`) and directives in force. */
-export function countOwnerDirectives(intents: readonly IntentLike[] | null | undefined) {
+/** Owner-only counts from the owner's own tree: drafts (`proposed`) and directives in force. */
+export function countOwnerDirectives(
+  intents: readonly { status: string }[] | null | undefined
+): { drafts: number; active: number } {
   const list = intents ?? [];
   return {
     drafts: list.filter((i) => i.status === "proposed").length,
     active: list.filter((i) => i.status === "active").length,
   };
-}
-
-export interface IssueLike {
-  id: string;
-  title: string;
-  domain: string;
-  status: string;
-  severity?: string | null;
-  chosenOptionLabel?: string | null;
-  autoResolveLabel?: string | null;
-  consequenceLog?: string | null;
-  respondedIxTime?: number | null;
-  createdIxTime?: number | null;
-}
-
-export interface PublicIssueOutcome {
-  id: string;
-  title: string;
-  domain: string;
-  /** The response the government chose (or the default that applied when it lapsed). */
-  decision: string | null;
-  /** The engine's plain-language summary of what happened. */
-  outcome: string | null;
-  resolvedBy: "government" | "default";
-  ixTime: number | null;
-}
-
-/** Issues that reached a public outcome. Open, expired and dismissed issues stay private. */
-export const PUBLIC_ISSUE_STATUSES = ["responded", "auto_resolved"] as const;
-
-export function toPublicIssueOutcomes(
-  issues: readonly IssueLike[] | null | undefined
-): PublicIssueOutcome[] {
-  return (issues ?? [])
-    .filter((i) => (PUBLIC_ISSUE_STATUSES as readonly string[]).includes(i.status))
-    .map((i) => ({
-      id: i.id,
-      title: i.title,
-      domain: i.domain,
-      decision:
-        (i.status === "responded" ? i.chosenOptionLabel : i.autoResolveLabel)?.trim() ||
-        i.chosenOptionLabel?.trim() ||
-        null,
-      outcome: i.consequenceLog?.trim() || null,
-      resolvedBy: i.status === "responded" ? ("government" as const) : ("default" as const),
-      ixTime: i.respondedIxTime ?? i.createdIxTime ?? null,
-    }))
-    .sort((a, b) => (b.ixTime ?? 0) - (a.ixTime ?? 0));
 }
 
 // ─── Chronicle ──────────────────────────────────────────────────────────────

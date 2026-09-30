@@ -6,6 +6,7 @@ import { managementProcedures } from "./management";
 import { wikiProcedures } from "./wiki";
 import { atomicProcedures } from "./atomic";
 import { flagsProcedures } from "./flags";
+import { publicRecordProcedures } from "./public-record";
 
 export const countriesRouter = createTRPCRouter({
   ...listProcedures,
@@ -14,5 +15,6 @@ export const countriesRouter = createTRPCRouter({
   ...managementProcedures,
   ...wikiProcedures,
   ...atomicProcedures,
+  ...publicRecordProcedures,
   flags: flagsProcedures,
 });

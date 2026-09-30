@@ -160,6 +160,26 @@ export async function assertCountryWriteAccess(
 }
 
 /**
+ * Non-throwing twin of `assertCountryWriteAccess` for read paths that serve two audiences:
+ * true for the nation's owner, the user acting as it and privileged roles; false for everyone
+ * else, signed-out callers included (no DB lookup without a session). Rethrows only
+ * unexpected (non-tRPC) errors.
+ */
+export async function hasCountryWriteAccess(
+  ctx: CountryAuthContext,
+  countryId: string
+): Promise<boolean> {
+  if (!ctx.auth?.userId) return false;
+  try {
+    await assertCountryWriteAccess(ctx, countryId);
+    return true;
+  } catch (error) {
+    if (error instanceof TRPCError) return false;
+    throw error;
+  }
+}
+
+/**
  * Assert write access for a row that belongs to a country.
  * `countryId` is the row's owning country as loaded from the DB;
  * null/undefined (row missing or orphaned) → NOT_FOUND for non-privileged callers.

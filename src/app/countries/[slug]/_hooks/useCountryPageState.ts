@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { unsplashService } from "~/lib/media";
-import type { BannerMode, ProfileTabType, BaseCountryData } from "../_types";
+import type { BannerMode, BaseCountryData } from "../_types";
 
-export type { BannerMode, ProfileTabType as TabType };
+export type { BannerMode };
 
 function getBannerPref(countryId?: string): { mode: BannerMode; customUrl?: string } {
   if (typeof window === "undefined" || !countryId) return { mode: "dynamic" };
@@ -27,44 +27,42 @@ function saveBannerPref(countryId: string, pref: { mode: BannerMode; customUrl?:
 }
 
 export interface UseCountryPageStateReturn {
-  activeTab: ProfileTabType;
-  setActiveTab: (tab: ProfileTabType) => void;
-  showGdpPerCapita: boolean;
-  showFullPopulation: boolean;
   showCountryActions: boolean;
   setShowCountryActions: React.Dispatch<React.SetStateAction<boolean>>;
-  toggleGdpDisplay: () => void;
-  togglePopulationDisplay: () => void;
+  /** The contextual landscape photo (Unsplash), once loaded. */
   unsplashImageUrl: string | undefined;
   bannerMode: BannerMode;
   customBannerUrl: string | undefined;
+  /** The image for the current banner mode, or null (no cover). */
+  resolvedBannerUrl: string | null;
   setBannerMode: (mode: BannerMode, customUrl?: string) => void;
 }
 
+/**
+ * Profile shell state: the Country Actions sheet and the cover banner (mode saved per country
+ * on this device; `dynamic` loads a contextual landscape photo).
+ */
 export function useCountryPageState(
   country:
     | (Partial<BaseCountryData> &
-        Pick<BaseCountryData, "id" | "name" | "economicTier" | "populationTier">)
-    | undefined
+        Pick<BaseCountryData, "id" | "name" | "economicTier" | "populationTier"> & {
+          flag?: string | null;
+        })
+    | null
+    | undefined,
+  flagUrl?: string | null
 ): UseCountryPageStateReturn {
-  // Tab management
-  const [activeTab, setActiveTab] = useState<ProfileTabType>("overview");
-
-  // Display toggles
-  const [showGdpPerCapita, setShowGdpPerCapita] = useState(true);
-  const [showFullPopulation, setShowFullPopulation] = useState(true);
   const [showCountryActions, setShowCountryActions] = useState(false);
-
-  // Image data
   const [unsplashImageUrl, setUnsplashImageUrl] = useState<string | undefined>();
 
-  // Banner mode with lazy init
-  const [bannerMode, setBannerModeState] = useState<BannerMode>(() => getBannerPref(country?.id).mode);
+  const [bannerMode, setBannerModeState] = useState<BannerMode>(
+    () => getBannerPref(country?.id).mode
+  );
   const [customBannerUrl, setCustomBannerUrl] = useState<string | undefined>(
     () => getBannerPref(country?.id).customUrl
   );
 
-  // Sync preference if country changes
+  // Sync the saved preference when the country changes.
   useEffect(() => {
     if (country?.id) {
       const pref = getBannerPref(country.id);
@@ -83,57 +81,46 @@ export function useCountryPageState(
     [country?.id]
   );
 
-  // Optional contextual header image loading with graceful fallback
+  // The contextual landscape photo, only when the dynamic cover is shown.
   useEffect(() => {
-    if (country && !unsplashImageUrl && typeof window !== "undefined") {
-      unsplashService
-        .getCountryHeaderImage(
-          country.economicTier,
-          country.populationTier,
-          country.name,
-          country.continent || undefined
-        )
-        .then((imageData) => {
-          if (imageData?.url) {
-            setUnsplashImageUrl(imageData.url);
-            if (imageData.downloadUrl) {
-              void unsplashService.trackDownload(imageData.downloadUrl);
-            }
-          }
-        })
-        .catch(() => {
-          setUnsplashImageUrl(undefined);
-        });
-    }
-  }, [country, unsplashImageUrl]);
+    if (bannerMode !== "dynamic" || !country || unsplashImageUrl) return;
+    let cancelled = false;
+    unsplashService
+      .getCountryHeaderImage(
+        country.economicTier,
+        country.populationTier,
+        country.name,
+        country.continent || undefined
+      )
+      .then((imageData) => {
+        if (cancelled || !imageData?.url) return;
+        setUnsplashImageUrl(imageData.url);
+        if (imageData.downloadUrl) void unsplashService.trackDownload(imageData.downloadUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setUnsplashImageUrl(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bannerMode, country, unsplashImageUrl]);
 
-  const toggleGdpDisplay = useCallback(() => {
-    setShowGdpPerCapita((prev) => !prev);
-  }, []);
-
-  const togglePopulationDisplay = useCallback(() => {
-    setShowFullPopulation((prev) => !prev);
-  }, []);
+  const resolvedBannerUrl =
+    bannerMode === "dynamic"
+      ? (unsplashImageUrl ?? null)
+      : bannerMode === "flag"
+        ? (flagUrl ?? null)
+        : bannerMode === "custom"
+          ? (customBannerUrl ?? null)
+          : null;
 
   return {
-    // Tab state
-    activeTab,
-    setActiveTab,
-
-    // Display toggles
-    showGdpPerCapita,
-    showFullPopulation,
     showCountryActions,
     setShowCountryActions,
-    toggleGdpDisplay,
-    togglePopulationDisplay,
-
-    // Image data
     unsplashImageUrl,
-
-    // Banner
     bannerMode,
     customBannerUrl,
+    resolvedBannerUrl,
     setBannerMode,
   };
 }

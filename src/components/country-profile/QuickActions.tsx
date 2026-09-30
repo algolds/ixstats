@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Map as MapIcon, OpenBook, Page, StatsReport } from "iconoir-react";
+import { Calculator, Map as MapIcon, OpenBook, Page, StatsReport } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/utils";
@@ -19,24 +19,24 @@ const CountryComparisonModal = dynamic(
 
 export interface QuickActionsProps {
   countryId: string;
+  /** The country's URL slug (`/countries/[slug]/…`). */
+  slug: string;
   wikiHref: string | null;
   hasGeometry: boolean;
-  /** Switch to the Factbook deep-dive (the layout owns the concept switch). */
-  onOpenFactbook: () => void;
   layout?: "stack" | "row";
   className?: string;
 }
 
 /**
- * QuickActions — Compare (the explore comparison modal, loaded on demand), Factbook deep-dive,
- * Open on map and the wiki article. Plain buttons: the one filled button on the page belongs
- * to the header's Country Actions.
+ * QuickActions — the Command dock's sovereign tools: Compare (the explore comparison modal,
+ * loaded on demand), the Factbook deep-dive, economic modeling, Open on map and the wiki
+ * article. Gray buttons: the one filled button on the page is the header's Country Actions.
  */
 export function QuickActions({
   countryId,
+  slug,
   wikiHref,
   hasGeometry,
-  onOpenFactbook,
   layout = "stack",
   className,
 }: QuickActionsProps) {
@@ -59,9 +59,17 @@ export function QuickActions({
           <StatsReport aria-hidden />
           Compare
         </Button>
-        <Button variant="gray" size="sm" className={item} onClick={onOpenFactbook}>
-          <Page aria-hidden />
-          Factbook deep-dive
+        <Button asChild variant="gray" size="sm" className={item}>
+          <Link href={createUrl(`/countries/${slug}/factbook`)}>
+            <Page aria-hidden />
+            Factbook deep-dive
+          </Link>
+        </Button>
+        <Button asChild variant="gray" size="sm" className={item}>
+          <Link href={createUrl(`/countries/${slug}/modeling`)}>
+            <Calculator aria-hidden />
+            Economic modeling
+          </Link>
         </Button>
         {hasGeometry && (
           <Button asChild variant="gray" size="sm" className={item}>

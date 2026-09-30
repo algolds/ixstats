@@ -60,6 +60,9 @@ const FACET_CONVERTED = [
   // Facet 3 navigation shell (spec §7.4, Phase 3).
   "components/shell/",
   "lib/navigation/",
+  // Country profile: the Command profile, its deep-dive chrome and shared pieces.
+  "app/countries/[slug]/",
+  "components/country-profile/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));
@@ -179,6 +182,16 @@ describe("Facet anti-slop guards", () => {
     it("keep the navigation shell on the z-* tokens (no arbitrary z-[…] at all)", () => {
       const shellDir = path.join("components", "shell") + path.sep;
       expect(hits(/\bz-\[[^\]]+\]/g).filter((hit) => hit.startsWith(shellDir))).toEqual([]);
+    });
+
+    it("read country lore in the wiki Reading face, not the unloaded serif (Baskerville)", () => {
+      const profileDirs = [
+        path.join("app", "countries", "[slug]") + path.sep,
+        path.join("components", "country-profile") + path.sep,
+      ];
+      expect(
+        hits(/\bfont-serif\b/g).filter((hit) => profileDirs.some((dir) => hit.startsWith(dir)))
+      ).toEqual([]);
     });
 
     it("do not bring back the retired MyCountry surface-kit", () => {

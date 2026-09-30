@@ -10,6 +10,7 @@ import {
   factbookSectionHref,
   hashToFactbookRoute,
   isFactbookSection,
+  legacyHashRoute,
   sectionFromPathname,
 } from "~/lib/country/factbook-routes";
 
@@ -86,6 +87,23 @@ describe("factbook-routes", () => {
       expect(hashToFactbookRoute("#")).toBe("/factbook");
       expect(hashToFactbookRoute("#nonsense")).toBe("/factbook");
       expect(hashToFactbookRoute("#Economy")).toBe("/factbook/economy");
+    });
+  });
+
+  describe("legacyHashRoute", () => {
+    it("redirects only known legacy tab hashes from the bare profile URL", () => {
+      expect(legacyHashRoute("#economy")).toBe("/factbook/economy");
+      expect(legacyHashRoute("#overview")).toBe("/factbook");
+      expect(legacyHashRoute("#dossier")).toBe("/dossier");
+      expect(legacyHashRoute("#Activity")).toBe("/activity");
+      expect(legacyHashRoute("#relations")).toBe("/factbook");
+    });
+
+    it("keeps the profile in place for an empty or unknown hash", () => {
+      expect(legacyHashRoute("")).toBeNull();
+      expect(legacyHashRoute("#")).toBeNull();
+      expect(legacyHashRoute("#command-economy")).toBeNull();
+      expect(legacyHashRoute("#constructor")).toBeNull();
     });
   });
 });

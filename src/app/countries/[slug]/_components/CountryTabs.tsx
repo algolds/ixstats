@@ -1,101 +1,76 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Eye, OpenBook as BookOpen, Activity } from "iconoir-react";
 import { motion } from "motion/react";
-import { cn } from "~/lib/utils";
+import { Activity, OpenBook, Page, Sparks } from "iconoir-react";
+import { springSnappy } from "~/lib/design/motion";
 import { createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import type { ProfileTabType } from "../_types";
 
-export type TabType = ProfileTabType;
+const TABS: { id: ProfileTabType; label: string; path: string; icon: typeof Page }[] = [
+  { id: "profile", label: "Profile", path: "", icon: Sparks },
+  { id: "factbook", label: "Factbook", path: "/factbook", icon: Page },
+  { id: "dossier", label: "Dossier", path: "/dossier", icon: OpenBook },
+  { id: "activity", label: "Activity", path: "/activity", icon: Activity },
+];
 
-interface CountryTabsProps {
-  activeTab: TabType;
-  onTabChange: (tab: TabType) => void;
-  countrySlug?: string;
-}
-
-interface NavItem {
-  id: TabType;
-  icon: typeof Eye;
-  label: string;
-  href: string;
+/** The tab a pathname under `/countries/[slug]` belongs to (the profile when none matches). */
+export function activeProfileTab(pathname: string | null, slug: string): ProfileTabType {
+  const base = `/countries/${slug}`;
+  const index = pathname?.indexOf(base) ?? -1;
+  const rest = index >= 0 ? pathname!.slice(index + base.length).replace(/^\/+/, "") : "";
+  const first = rest.split(/[/?#]/)[0];
+  return TABS.find((t) => t.path === `/${first}`)?.id ?? "profile";
 }
 
 /**
- * CountryTabs — prominent page-level top bar for the public country profile.
- * Tier 1 navigation: Factbook / Dossier / Activity.
- *
- * Employs Apple Design physical motion (active scale press, Framer Motion spring layout,
- * cuelume haptics, depth refraction) and strict type inference for tab items.
+ * CountryTabs — Tier 1 navigation for a country: the profile (Command) and its deep-dives,
+ * Factbook, Dossier and Activity. Real links styled as a Facet segmented control: a `fill-3`
+ * track and an opaque thumb that springs (`springSnappy`) to the current route.
  */
-export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabsProps) {
+export function CountryTabs({
+  countrySlug,
+  className,
+}: {
+  countrySlug: string;
+  className?: string;
+}) {
   const pathname = usePathname();
-
-  const base = countrySlug ? `/countries/${countrySlug}` : "";
-
-  const items: NavItem[] = [
-    { id: "overview", icon: Eye, label: "Factbook", href: `${base}/factbook` },
-    { id: "lore", icon: BookOpen, label: "Dossier", href: `${base}/dossier` },
-    { id: "activity", icon: Activity, label: "Activity", href: `${base}/activity` },
-  ];
-
-  // Derive the active tier from the pathname so deep links highlight correctly.
-  const resolvedActive = React.useMemo<TabType>(() => {
-    if (!base || !pathname) return activeTab;
-    const rest = pathname.replace(base, "").replace(/^\/+/, "");
-    if (rest === "" || rest.startsWith("factbook")) return "overview";
-    if (rest.startsWith("dossier")) return "lore";
-    if (rest.startsWith("activity")) return "activity";
-    return activeTab;
-  }, [base, pathname, activeTab]);
+  const active = activeProfileTab(pathname, countrySlug);
 
   return (
-    <nav
-      aria-label="Country profile sections"
-      className="facet-surface facet-refraction w-full rounded-2xl border border-white/10 p-1.5 shadow-sm saturate-180 backdrop-blur-xl"
-    >
-      <div className="grid w-full grid-cols-3 gap-1.5">
-        {items.map((item) => {
-          const isActive = resolvedActive === item.id;
-          const Icon = item.icon;
+    <nav aria-label="Country sections" className={cn("w-full min-w-0", className)}>
+      <ul className="bg-fill-3 rounded-control flex w-full gap-0.5 overflow-x-auto p-0.5">
+        {TABS.map((tab) => {
+          const isActive = tab.id === active;
+          const Icon = tab.icon;
           return (
-            <Link
-              key={item.id}
-              href={createUrl(item.href)}
-              onClick={() => onTabChange(item.id)}
-              aria-current={isActive ? "page" : undefined}
-              data-cuelume-press="soft"
-              className={cn(
-                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out active:scale-[0.98] sm:text-sm",
-                isActive
-                  ? "bg-[var(--flag-primary)]/12 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/30 backdrop-blur-md"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
-              )}
-              style={
-                isActive
-                  ? {
-                      color: "var(--flag-primary)",
-                    }
-                  : undefined
-              }
-            >
-              <Icon className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span>{item.label}</span>
-              {isActive && (
-                <motion.span
-                  layoutId="country-profile-active-tab"
-                  className="absolute inset-x-4 -bottom-[6px] h-0.5 rounded-full bg-[var(--flag-primary)] opacity-85 shadow-[0_0_8px_var(--flag-primary)]"
-                  transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-                  aria-hidden="true"
-                />
-              )}
-            </Link>
+            <li key={tab.id} className="min-w-fit flex-1">
+              <Link
+                href={createUrl(`/countries/${countrySlug}${tab.path}`)}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "text-body rounded-control-sm focus-visible:outline-tint duration-fast ease-out-facet relative flex h-(--control-height) items-center justify-center gap-2 px-3 font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2",
+                  isActive ? "text-label" : "text-label-secondary hover:text-label"
+                )}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="country-tab-thumb"
+                    aria-hidden
+                    transition={springSnappy}
+                    className="bg-surface rounded-control-sm shadow-card absolute inset-0"
+                  />
+                )}
+                <Icon aria-hidden className="relative size-4 shrink-0" />
+                <span className="relative">{tab.label}</span>
+              </Link>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </nav>
   );
 }

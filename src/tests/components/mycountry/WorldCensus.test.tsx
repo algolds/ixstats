@@ -37,10 +37,9 @@ import {
   formatCensusValue,
   sortCensusByRelevance,
 } from "~/components/mycountry/shell/WorldCensusCard";
-import {
-  GlobalPositionRankings,
-  toRankingItems,
-} from "~/app/countries/[slug]/_components/shared/GlobalPositionRankings";
+import { DnaLegend } from "~/components/country-profile/CountryDNA";
+import { toDnaAxes } from "~/components/country-profile/derive";
+import { FacetList } from "~/components/ui/facet-list";
 
 describe("formatCensusValue", () => {
   it("formats each category in its own units", () => {
@@ -66,13 +65,28 @@ describe("World Census UI", () => {
     expect(screen.getByText("No census data yet.")).toBeTruthy();
   });
 
-  it("country profile rankings come from the census, not sample figures", () => {
-    const { container } = render(<GlobalPositionRankings countryName="Testland" countryId="c1" />);
+  it("country profile DNA comes from the census, not sample figures", () => {
+    // The profile layer's shape (useCountryProfileLayer → world.rankings).
+    const axes = toDnaAxes(
+      mockRankings.map((r) => ({
+        category: r.category,
+        rank: r.global.position,
+        total: r.global.total,
+        value: formatCensusValue(r),
+        percentile: r.percentile,
+      }))
+    );
+    const { container } = render(
+      <FacetList variant="plain">
+        <DnaLegend axes={axes} />
+      </FacetList>
+    );
     expect(container.textContent).toContain("Public Approval");
-    expect(container.textContent).toContain("#2/14");
+    expect(container.textContent).toContain("#2 of 14");
+    expect(container.textContent).toContain("Percentile 93");
     // The old hard-coded sample ("$40.2 Trillion", rank 3 of 82) is gone.
     expect(container.textContent).not.toContain("40.2 Trillion");
-    expect(toRankingItems(mockRankings).map((i) => i.rank)).toEqual([2, 5]);
+    expect(axes.map((a) => a.rank)).toEqual([2, 5]);
   });
 });
 

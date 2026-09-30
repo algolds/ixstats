@@ -16,10 +16,6 @@ import {
   type IntentLike,
   type IssueLike,
 } from "~/app/countries/[slug]/_utils/profileLayer";
-import {
-  PROFILE_CONCEPTS,
-  isProfileConcept,
-} from "~/app/countries/[slug]/_components/switcher/CountryConceptSwitcher";
 
 const ixTime = (iso: string) => Date.parse(iso);
 
@@ -56,6 +52,10 @@ describe("public record filter", () => {
     ]);
     expect(result.map((d) => d.id)).toEqual(["new", "old"]);
     expect(result.find((d) => d.id === "old")?.progress).toBe(40);
+    // A draft tier never counts as enacted, whatever its status says.
+    expect(toPublicDirectives([intent({ id: "odd", status: "active", tier: "proposed" })])).toEqual(
+      []
+    );
     // Nothing private rides along.
     expect(Object.keys(result[0]!)).not.toContain("changesJson");
     expect(Object.keys(result[0]!)).not.toContain("civCapCost");
@@ -229,15 +229,5 @@ describe("economy series", () => {
       { year: 2041, gdp: 6, population: 2 },
     ]);
     expect(yearlySeries(undefined)).toEqual([]);
-  });
-});
-
-describe("profile layout switcher", () => {
-  it("offers exactly the two prototypes and the Factbook", () => {
-    expect(PROFILE_CONCEPTS).toEqual(["chronicle", "command", "standard"]);
-    expect(isProfileConcept("chronicle")).toBe(true);
-    expect(isProfileConcept("editorial")).toBe(false);
-    expect(isProfileConcept("atlas")).toBe(false);
-    expect(isProfileConcept(null)).toBe(false);
   });
 });

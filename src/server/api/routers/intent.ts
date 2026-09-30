@@ -25,7 +25,11 @@ import {
 import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { DRAFT_DIRECTIVE_TIER, PUBLIC_DIRECTIVE_STATUSES } from "~/lib/country/public-record";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 import { growthModifierToLevelShift, StorytellerEffectType } from "~/lib/economy/calculations";
 
@@ -455,14 +459,36 @@ export const intentRouter = createTRPCRouter({
       return { intent, changes: pkg.changes, applied, summary };
     }),
 
-  /** Return all intents for a country structured as a branching decision tree. */
+  /**
+   * Return a country's intents structured as a branching decision tree.
+   *
+   * The owner (and privileged roles) get every intent, drafts and abandoned ones included.
+   * Everyone else — other players and signed-out visitors — gets the public record only:
+   * enacted directives (`active`/`completed`, never the draft tier) with the package line items,
+   * CivCap and cooldown redacted (`~/lib/country/public-record`).
+   */
   getTree: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const intents = await ctx.db.intent.findMany({
-        where: { countryId: input.countryId },
+      const fullAccess = await hasCountryWriteAccess(ctx, input.countryId);
+      const found = await ctx.db.intent.findMany({
+        where: fullAccess
+          ? { countryId: input.countryId }
+          : {
+              countryId: input.countryId,
+              status: { in: [...PUBLIC_DIRECTIVE_STATUSES] },
+              tier: { not: DRAFT_DIRECTIVE_TIER },
+            },
         orderBy: { createdAt: "asc" },
       });
+      const intents = fullAccess
+        ? found
+        : found.map((intent) => ({
+            ...intent,
+            changesJson: "[]",
+            civCapCost: null,
+            cooldownUntil: null,
+          }));
 
       const intentMap = new Map(intents.map((i) => [i.id, { ...i, children: [] as any[] }]));
       const roots: any[] = [];

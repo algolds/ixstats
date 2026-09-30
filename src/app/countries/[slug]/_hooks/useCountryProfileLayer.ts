@@ -1,17 +1,17 @@
 "use client";
 
 /**
- * useCountryProfileLayer — the one data layer behind the country profile prototypes
- * (Prototype A "Chronicle" and Prototype B "Command"). It fans out the public read queries in
- * parallel and assembles a single model — identity, lore, vitals, land, state, world, chronicle
- * and a small owner layer — so both prototypes render the same facts differently.
+ * useCountryProfileLayer — the one data layer behind the country profile (`/countries/[slug]`,
+ * `CommandProfileView`). It fans out the public read queries in parallel and assembles a single
+ * model — identity, lore, vitals, land, state, world, chronicle and a small owner layer.
  *
- * Rules (docs: src/app/countries/README.md, "Profile prototypes"):
+ * Rules (docs: src/app/countries/README.md, "Country profile"):
  * - Real data only. A missing source yields `null`/`[]`; views show an EmptyState or omit the
  *   section. Nothing here invents a figure.
- * - Public record only. Directives are filtered to enacted ones and issues to resolved ones
- *   (`_utils/profileLayer.ts`); drafts and open-issue counts exist only in `owner`, which is
- *   `null` unless the signed-in viewer owns this country.
+ * - Public record only, enforced on the server. Directives and issue outcomes come from
+ *   `countries.getPublicRecord` (enacted directives, resolved issues, public fields), readable
+ *   signed out. Drafts and open-issue counts exist only in `owner`, which is `null` unless the
+ *   signed-in viewer owns this country (the owner's own `intent.getTree` is only fetched then).
  */
 
 import { useMemo } from "react";
@@ -31,8 +31,6 @@ import {
   redirectTarget,
   splitCanonFeed,
   splitWikiSections,
-  toPublicDirectives,
-  toPublicIssueOutcomes,
   wikiToParagraphs,
   yearlySeries,
   type ChronicleEntry,
@@ -72,7 +70,7 @@ export interface ProfileIdentity {
   leaders: { title: string; name: string }[];
   continent: string | null;
   region: string | null;
-  realm: string | null;
+  realm: { name: string; slug: string } | null;
   flagUrl: string | null;
   coatOfArmsUrl: string | null;
   sovereign: { username: string | null; roleName: string | null } | null;
@@ -165,8 +163,6 @@ export interface ProfileState {
   } | null;
   directives: PublicDirective[];
   issueOutcomes: PublicIssueOutcome[];
-  /** Resolved issues known only by title when the viewer cannot read outcomes (signed out). */
-  resolvedIssueTitles: { id: string; title: string; ixTime: number }[];
   election: {
     lastName: string | null;
     lastIxTime: number | null;
@@ -180,7 +176,14 @@ export interface ProfileState {
 }
 
 export interface ProfileWorld {
-  rankings: { category: string; rank: number; total: number; value: string }[];
+  /** World Census, ranked within the nation's realm; `percentile` as the census computes it. */
+  rankings: {
+    category: string;
+    rank: number;
+    total: number;
+    value: string;
+    percentile: number | null;
+  }[];
   relations: {
     id: string;
     countryId: string;
@@ -340,8 +343,6 @@ export interface UseCountryProfileLayerOptions {
   flagUrl: string | null;
   /** The signed-in viewer owns this country (reveals the owner layer). */
   isOwner: boolean;
-  /** Any signed-in viewer (resolved-issue outcomes need a session). */
-  isSignedIn: boolean;
   currentIxTime: number;
 }
 
@@ -349,7 +350,6 @@ export function useCountryProfileLayer({
   country,
   flagUrl,
   isOwner,
-  isSignedIn,
   currentIxTime,
 }: UseCountryProfileLayerOptions): CountryProfileLayer | null {
   // `getByIdWithEconomicData` returns `any`; narrow the fields this layer reads.
@@ -376,7 +376,8 @@ export function useCountryProfileLayer({
 
   // Land, state and world.
   const geo = api.countryGeo.getCountryGeoBundle.useQuery({ countryId }, { enabled, ...MAP });
-  const intents = api.intent.getTree.useQuery({ countryId }, { enabled, ...STATIC });
+  // The public record (server-filtered: enacted directives, resolved issues), signed out too.
+  const record = api.countries.getPublicRecord.useQuery({ countryId }, { enabled, ...STATIC });
   const canon = api.mycountry.getCanonFeed.useQuery(
     { countryId, limit: 40 },
     { enabled, ...STATIC }
@@ -396,10 +397,10 @@ export function useCountryProfileLayer({
     { enabled, ...STATIC }
   );
 
-  // Resolved-issue outcomes need a session (protected); the owner layer needs ownership.
-  const issueHistory = api.nationalIssues.getHistory.useQuery(
-    { countryId, limit: 30 },
-    { enabled: enabled && isSignedIn, ...STATIC }
+  // The owner layer: the owner's full directive tree and open-issue counts.
+  const intents = api.intent.getTree.useQuery(
+    { countryId },
+    { enabled: enabled && isOwner, ...STATIC }
   );
   const pending = api.nationalIssues.getPendingCount.useQuery(
     { countryId },
@@ -431,7 +432,10 @@ export function useCountryProfileLayer({
       leaders: infoboxLeaders(infobox),
       continent: str(c.continent),
       region: str(c.region),
-      realm: str(c.realm?.name),
+      realm:
+        str(c.realm?.name) && str(c.realm?.slug)
+          ? { name: String(c.realm.name), slug: String(c.realm.slug) }
+          : null,
       flagUrl,
       coatOfArmsUrl:
         str(c.coatOfArms) ??
@@ -505,11 +509,10 @@ export function useCountryProfileLayer({
     const land = toLand(geo.data, geo.isLoading);
 
     // ── State: public record only.
-    const directives = toPublicDirectives(intents.data?.allIntents as never);
-    const issueOutcomes = toPublicIssueOutcomes(issueHistory.data?.issues as never);
+    const directives: PublicDirective[] = record.data?.directives ?? [];
+    const issueOutcomes: PublicIssueOutcome[] = record.data?.issueOutcomes ?? [];
     const toIxTime = (ms: number) => IxTime.convertToIxTime(ms);
     const { decisions, diplomacy } = splitCanonFeed(canon.data, toIxTime);
-    const outcomeIds = new Set(issueOutcomes.map((o) => o.id));
     const gov = government.data;
     const status = election.data;
     const state: ProfileState = {
@@ -527,7 +530,6 @@ export function useCountryProfileLayer({
         : null,
       directives,
       issueOutcomes,
-      resolvedIssueTitles: decisions.filter((d) => !outcomeIds.has(d.id)),
       election:
         status && (status.lastElection || status.upcoming)
           ? {
@@ -545,7 +547,7 @@ export function useCountryProfileLayer({
               totalSeats: status.totalSeats,
             }
           : null,
-      isLoading: intents.isLoading || government.isLoading,
+      isLoading: record.isLoading || government.isLoading,
     };
 
     // ── World.
@@ -555,6 +557,7 @@ export function useCountryProfileLayer({
         rank: r.global.position,
         total: r.global.total,
         value: formatCensusValue(r),
+        percentile: realNumber(r.percentile, { allowZero: true }),
       })),
       relations: (relations.data ?? []).map((r) => ({
         id: r.id,
@@ -596,7 +599,7 @@ export function useCountryProfileLayer({
     });
 
     // ── Owner layer (never rendered for visitors).
-    const ownerCounts = countOwnerDirectives(intents.data?.allIntents as never);
+    const ownerCounts = countOwnerDirectives(isOwner ? intents.data?.allIntents : null);
     const owner: ProfileOwnerLayer | null = isOwner
       ? {
           activeIssues: pending.data?.total ?? null,
@@ -636,8 +639,9 @@ export function useCountryProfileLayer({
     redirected.isLoading,
     geo.data,
     geo.isLoading,
+    record.data,
+    record.isLoading,
     intents.data,
-    intents.isLoading,
     canon.data,
     government.data,
     government.isLoading,
@@ -647,7 +651,6 @@ export function useCountryProfileLayer({
     relations.data,
     relations.isLoading,
     embassies.data,
-    issueHistory.data,
     pending.data,
   ]);
 }

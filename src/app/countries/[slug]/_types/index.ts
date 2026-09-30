@@ -16,8 +16,8 @@ export const toCountryId = (id: string): CountryId => id as CountryId;
 /** Banner Mode options */
 export type BannerMode = "dynamic" | "flag" | "gradient" | "custom";
 
-/** Top-level navigation tab options */
-export type ProfileTabType = "overview" | "lore" | "activity";
+/** Top-level navigation: the profile itself and its three deep-dive routes. */
+export type ProfileTabType = "profile" | "factbook" | "dossier" | "activity";
 
 /** Activity feed filters */
 export type ActivityFilter = "all" | "posts" | "economic" | "diplomatic" | "social";
@@ -57,14 +57,6 @@ export interface MetricCardData {
     title: string;
     details: string[];
   };
-}
-
-/** Banner option configuration */
-export interface BannerOption {
-  mode: BannerMode;
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
 }
 
 /** Activity Feed Item shape */

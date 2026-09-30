@@ -21,6 +21,7 @@ import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
 import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
 import { loadCivCapState, RECON_CAPACITY_COST } from "~/lib/government/civcap";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
 const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT across gov quality (penalty = fog, not time)
@@ -488,7 +489,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Get issue history with consequences.
+   * Get issue history with consequences — the owner's (or a privileged role's) full record,
+   * expired and dismissed issues and applied consequences included. FORBIDDEN for anyone else:
+   * visitors read resolved outcomes through `countries.getPublicRecord`.
    */
   getHistory: protectedProcedure
     .input(
@@ -499,6 +502,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const where: any = {
         countryId: input.countryId,
         status: {
