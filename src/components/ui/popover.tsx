@@ -4,7 +4,7 @@ import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "~/lib/utils/cn";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { presentMotionClassName } from "~/components/ui/dialog";
 
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -46,10 +46,6 @@ function PopoverContent({
   children,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
-  React.useEffect(() => {
-    soundEffects.whisper();
-  }, []);
-
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -57,9 +53,12 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "pointer-events-auto z-(--z-popover) max-h-[var(--radix-popover-content-available-height)] w-72 max-w-[var(--radix-popover-content-available-width)] origin-[var(--radix-popover-content-transform-origin)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 transition-[transform,scale,opacity] duration-150 ease-out outline-none data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
-          // Floating chrome surface; callers override any of these via `className` (tailwind-merge).
-          "border-border bg-popover text-popover-foreground border shadow-lg",
+          "pointer-events-auto z-popover max-h-(--radix-popover-content-available-height) w-72 max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain rounded-card p-4 outline-none",
+          // Floating chrome (spec §5): thick material + floating shadow. Anything inside uses
+          // opaque roles — never another material.
+          "material-thick text-label shadow-floating",
+          // Origin-aware scale .96 + fade in, 120ms out.
+          presentMotionClassName,
           className
         )}
         {...props}
@@ -80,7 +79,7 @@ function PopoverTitle({ className, ...props }: React.ComponentProps<"h4">) {
   return (
     <h4
       data-slot="popover-title"
-      className={cn("text-base leading-none font-medium", className)}
+      className={cn("text-headline text-label", className)}
       {...props}
     />
   );
@@ -90,7 +89,7 @@ function PopoverDescription({ className, ...props }: React.ComponentProps<"p">) 
   return (
     <p
       data-slot="popover-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-callout text-label-secondary", className)}
       {...props}
     />
   );
@@ -98,7 +97,7 @@ function PopoverDescription({ className, ...props }: React.ComponentProps<"p">) 
 
 function PopoverClose({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Close>) {
   return (
-    <PopoverPrimitive.Close data-cuelume-press="droplet" data-slot="popover-close" {...props} />
+    <PopoverPrimitive.Close data-slot="popover-close" {...props} />
   );
 }
 

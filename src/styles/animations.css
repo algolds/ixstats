@@ -119,3 +119,103 @@
     background-position: 200%;
   }
 }
+
+/* ─── Facet 3 presentation (spec §7.3, §8) ────────────────────────────────
+   Entrances and exits for the overlay primitives (dialog, alert-dialog, sheet,
+   popover, dropdown-menu, hover-card, tooltip). Radix unmounts closed content
+   only after `animationend`, so exits are keyframes, not transitions.
+   Entrances: scale(.96) + fade, 200ms; exits: --duration-exit (120ms).
+   Only `scale`/`translate`/`opacity` are animated — `scale` honours the
+   element's transform-origin (origin-aware popovers) and composes with the
+   `translate-*` centring of dialogs. Reduce Motion (OS or
+   html[data-motion="reduced"]) swaps every one for a --duration-fast fade. */
+
+@keyframes facet-pop-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+@keyframes facet-pop-out {
+  to {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+@keyframes facet-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes facet-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes facet-sheet-in {
+  from {
+    translate: var(--sheet-offscreen, 100% 0);
+  }
+}
+@keyframes facet-sheet-out {
+  to {
+    translate: var(--sheet-offscreen, 100% 0);
+  }
+}
+
+@utility animate-facet-in {
+  animation: facet-pop-in 200ms var(--ease-out-facet) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
+  }
+  &:where([data-motion="reduced"] *) {
+    animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
+  }
+}
+@utility animate-facet-out {
+  animation: facet-pop-out var(--duration-exit) var(--ease-out-facet) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: facet-fade-out;
+  }
+  &:where([data-motion="reduced"] *) {
+    animation-name: facet-fade-out;
+  }
+}
+/* Scrims and anything that should only fade. */
+@utility animate-facet-fade-in {
+  animation: facet-fade-in 200ms var(--ease-out-facet) both;
+}
+@utility animate-facet-fade-out {
+  animation: facet-fade-out var(--duration-exit) var(--ease-out-facet) both;
+}
+/* Side / top sheets slide from their edge (`sheet-from-*` sets the edge). */
+@utility animate-sheet-in {
+  animation: facet-sheet-in 280ms var(--ease-out-facet) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
+  }
+  &:where([data-motion="reduced"] *) {
+    animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
+  }
+}
+@utility animate-sheet-out {
+  animation: facet-sheet-out 200ms var(--ease-out-facet) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: facet-fade-out var(--duration-exit) var(--ease-out-facet) both;
+  }
+  &:where([data-motion="reduced"] *) {
+    animation: facet-fade-out var(--duration-exit) var(--ease-out-facet) both;
+  }
+}
+@utility sheet-from-right {
+  --sheet-offscreen: 100% 0;
+}
+@utility sheet-from-left {
+  --sheet-offscreen: -100% 0;
+}
+@utility sheet-from-top {
+  --sheet-offscreen: 0 -100%;
+}
+@utility sheet-from-bottom {
+  --sheet-offscreen: 0 100%;
+}

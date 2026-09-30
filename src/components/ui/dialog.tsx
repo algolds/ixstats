@@ -5,7 +5,28 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Xmark as XIcon } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
+
+/**
+ * The one scrim for modal presentation (Dialog, AlertDialog, Sheet): black at 25% (light) /
+ * 40% (dark), no blur — the sheet or dialog above it carries the elevation (spec §5, §7.3).
+ */
+export const overlayScrimClassName = "fixed inset-0 z-backdrop bg-black/25 dark:bg-black/40";
+
+/** Scrim fade in/out (Radix waits for the exit animation before unmounting). */
+export const overlayScrimMotionClassName =
+  "data-[state=open]:animate-facet-fade-in data-[state=closed]:animate-facet-fade-out";
+
+/** Centred pop in (scale .96 + fade, 200ms) and out (`--duration-exit`). */
+export const presentMotionClassName =
+  "data-[state=open]:animate-facet-in data-[state=closed]:animate-facet-out";
+
+/**
+ * Dismiss button for dialogs and sheets: a 28px fill circle with a 44px hit area on touch. It
+ * keeps the `droplet` cue — dismissal is one of the §9 sound moments.
+ */
+export const dismissButtonClassName =
+  "absolute top-4 right-4 inline-flex size-7 items-center justify-center rounded-full bg-fill-3 text-label-secondary transition-colors duration-fast ease-out-facet before:absolute before:-inset-2 hover:bg-fill-2 hover:text-label outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4";
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -30,38 +51,48 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-(--z-backdrop) bg-black/60 backdrop-blur-sm dark:bg-black/80",
-        className
-      )}
+      className={cn(overlayScrimClassName, overlayScrimMotionClassName, className)}
       {...props}
     />
   );
+}
+
+interface DialogContentProps extends React.ComponentProps<typeof DialogPrimitive.Content> {
+  showCloseButton?: boolean;
+  /**
+   * `"animated"` (default): centred scale .96 + fade in 200ms, out in 120ms.
+   * `"instant"`: appears and leaves in 0ms with no present cue — for keyboard-invoked UI such as
+   * the command palette (spec §8).
+   */
+  presentation?: "animated" | "instant";
 }
 
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  presentation = "animated",
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  showCloseButton?: boolean;
-}) {
+}: DialogContentProps) {
+  const animated = presentation === "animated";
+
+  // Present cue (§9). Keyboard-invoked, instant presentations (the command palette) stay silent.
   React.useEffect(() => {
-    soundEffects.bloom();
-  }, []);
+    // Optional calls: many tests mock ~/lib/sound/cuelume with only `soundEffects`.
+    if (animated) soundCues?.present?.();
+  }, [animated]);
 
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay className={animated ? undefined : "animate-none"} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        data-presentation={presentation}
         className={cn(
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-(--z-modal) grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl border shadow-2xl duration-200",
+          "fixed top-1/2 left-1/2 z-sheet grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 outline-none",
           !className?.includes("max-w-") && "sm:max-w-lg",
-          "border-border p-6 shadow-2xl",
-          "bg-background",
-          "backdrop-blur-md",
+          "rounded-sheet border border-separator bg-surface-elevated text-label shadow-sheet",
+          animated && presentMotionClassName,
           className
         )}
         {...props}
@@ -75,7 +106,7 @@ function DialogContent({
           <DialogPrimitive.Close
             data-cuelume-press="droplet"
             data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground text-muted-foreground hover:text-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4"
+            className={dismissButtonClassName}
           >
             <XIcon />
             <span className="sr-only">Close</span>
@@ -110,7 +141,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-foreground text-lg leading-none font-semibold", className)}
+      className={cn("text-title-1 text-label", className)}
       {...props}
     />
   );
@@ -123,7 +154,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-callout text-label-secondary", className)}
       {...props}
     />
   );

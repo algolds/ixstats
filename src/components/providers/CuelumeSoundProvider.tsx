@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { initializeSoundEngine, soundEffects } from "~/lib/sound/cuelume";
+import { initializeSoundEngine, soundCues } from "~/lib/sound/cuelume";
 
 /**
- * Bootstraps Cuelume's delegated Web Audio listeners on the document and plays a
- * subtle arrival cue on client-side route changes. Renders nothing — mount it once
- * as a sibling in the root layout (it is an effect, not a context provider).
+ * Bootstraps Cuelume (persisted volume/enabled state and the delegated listeners) and plays the
+ * page-arrival cue on client-side route changes — one of the §9 moments. Muting (the sound
+ * toggle, `data-sound="off"`, `data-motion="reduced"`) is enforced at play time by
+ * `~/lib/sound/cuelume`. Renders nothing — mount it once in the root layout.
  */
 export function CuelumeSoundProvider() {
   const pathname = usePathname();
@@ -22,8 +23,7 @@ export function CuelumeSoundProvider() {
       initialMountRef.current = false;
       return;
     }
-    soundEffects.arrival();
-    // oxlint-disable-next-line
+    soundCues?.arrival?.();
   }, [pathname]);
 
   return null;

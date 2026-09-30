@@ -113,9 +113,11 @@ describe("Facet anti-slop guards", () => {
     expect(drillSheets?.content.match(/backdrop-blur/g) ?? []).toHaveLength(1);
   });
 
-  it("wraps the app in one reduced-motion MotionConfig and no route blur wrapper", () => {
+  it("wraps the app in one reduced-motion FacetMotionConfig and no route blur wrapper", () => {
     const layout = sources.find(({ file }) => file === path.join("app", "layout.tsx"));
-    expect(layout?.content.match(/<MotionConfig reducedMotion="user">/g) ?? []).toHaveLength(1);
+    // FacetMotionConfig follows the OS and the in-app Reduce Motion setting (data-motion).
+    expect(layout?.content.match(/<FacetMotionConfig>/g) ?? []).toHaveLength(1);
+    expect(layout?.content.match(/<MotionConfig\b/g) ?? []).toHaveLength(0);
     expect(hits(/RackFocusBlurWrapper/g)).toEqual([]);
   });
 

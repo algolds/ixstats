@@ -9,7 +9,6 @@ import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
-import { MotionConfig } from "motion/react";
 import { IconoirProvider } from "iconoir-react";
 import { Navigation, NavigationTransitionHandler } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
@@ -31,6 +30,7 @@ import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationCo
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
+import { FacetMotionConfig } from "~/components/providers/FacetMotionConfig";
 import { APPEARANCE_INIT_SCRIPT } from "~/lib/design/appearance";
 
 // Removed force-dynamic to enable static generation and ISR where possible
@@ -79,8 +79,9 @@ function AppContent({
           an explicit strokeWidth prop on an icon still wins.
         */}
         <IconoirProvider iconProps={ICON_DEFAULTS}>
-          {/* One switch honours prefers-reduced-motion for every `motion` element in the tree. */}
-          <MotionConfig reducedMotion="user">
+          {/* One switch honours Reduce Motion (the OS or the in-app setting) for every `motion`
+              element in the tree. */}
+          <FacetMotionConfig>
             <AbilityProvider>
               <IxTimeProvider>
                 <ExecutiveNotificationProvider>
@@ -103,7 +104,7 @@ function AppContent({
                 </ExecutiveNotificationProvider>
               </IxTimeProvider>
             </AbilityProvider>
-          </MotionConfig>
+          </FacetMotionConfig>
         </IconoirProvider>
       </ThemeProvider>
     </TRPCReactProvider>

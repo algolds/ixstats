@@ -60,7 +60,7 @@ function NavigationMenuItem({
 }
 
 const navigationMenuTriggerStyle = cva(
-  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=open]:hover:bg-accent data-[state=open]:text-accent-foreground data-[state=open]:focus:bg-accent data-[state=open]:bg-accent/50 focus-visible:ring-ring/50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1"
+  "group inline-flex h-(--control-height) w-max items-center justify-center rounded-control bg-transparent px-4 text-body font-medium text-label transition-colors duration-fast ease-out-facet hover:bg-fill-4 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-fill-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint"
 );
 
 function NavigationMenuTrigger({
@@ -91,7 +91,7 @@ function NavigationMenuContent({
     <NavigationMenuPrimitive.Content
       data-slot="navigation-menu-content"
       className={cn(
-        "data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 top-0 left-0 w-full p-4 md:absolute md:w-auto",
+        "data-[motion^=from-]:animate-facet-fade-in data-[motion^=to-]:animate-facet-fade-out top-0 left-0 w-full p-4 md:absolute md:w-auto",
         "**:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none",
         className
       )}
@@ -108,7 +108,7 @@ function NavigationMenuLink({
     <NavigationMenuPrimitive.Link
       data-slot="navigation-menu-link"
       className={cn(
-        "data-[active=true]:focus:bg-accent data-[active=true]:hover:bg-accent data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-ring/50 [&_svg:not([class*='text-'])]:text-muted-foreground flex flex-col gap-1 rounded-sm p-2 text-sm no-underline transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus-visible:ring-[3px] focus-visible:outline-1 [:where(&)_svg]:size-4",
+        "flex flex-col gap-1 rounded-control-sm p-2 text-body text-label no-underline transition-colors duration-fast ease-out-facet outline-none hover:bg-fill-4 focus:bg-fill-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint data-[active=true]:bg-fill-3 [&_svg:not([class*='text-'])]:text-label-secondary [:where(&)_svg]:size-4",
         className
       )}
       {...props}
@@ -125,7 +125,8 @@ function NavigationMenuViewport({
       <NavigationMenuPrimitive.Viewport
         data-slot="navigation-menu-viewport"
         className={cn(
-          "origin-top-center bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border shadow md:w-[var(--radix-navigation-menu-viewport-width)]",
+          "relative mt-1.5 h-(--radix-navigation-menu-viewport-height) w-full origin-top overflow-hidden rounded-card border border-separator bg-surface-elevated text-label shadow-floating md:w-(--radix-navigation-menu-viewport-width)",
+          "data-[state=open]:animate-facet-in data-[state=closed]:animate-facet-out",
           className
         )}
         {...props}
@@ -142,12 +143,12 @@ function NavigationMenuIndicator({
     <NavigationMenuPrimitive.Indicator
       data-slot="navigation-menu-indicator"
       className={cn(
-        "data-[state=visible]:animate-in data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:fade-in top-full z-1 flex h-1.5 items-end justify-center overflow-hidden",
+        "data-[state=visible]:animate-facet-fade-in data-[state=hidden]:animate-facet-fade-out top-full z-1 flex h-1.5 items-end justify-center overflow-hidden",
         className
       )}
       {...props}
     >
-      <div className="bg-border relative top-[60%] size-2 rotate-45 rounded-tl-sm shadow-md" />
+      <div className="relative top-[60%] size-2 rotate-45 rounded-tl-sm bg-separator-opaque" />
     </NavigationMenuPrimitive.Indicator>
   );
 }

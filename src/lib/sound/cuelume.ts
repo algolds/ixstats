@@ -1,19 +1,24 @@
 /**
- * Centralized Cuelume Sound Engine for IxStates
+ * Cuelume — IxStates' synthesized Web Audio cues (Facet 3 spec §9).
  *
- * Provides synthesized Web Audio interaction sounds with Apple Design & Emil Kowalski
- * interaction principles (causality, harmony, utility, restraint).
+ * Policy: on by default at master 0.25, but only **meaningful moments** make sound —
+ * success, error, destructive confirm, sheet/dialog present & dismiss, Vault reveals, Halo
+ * notifications and page arrival. No hover ticks, per-button presses, tab or select ticks.
+ * Use the semantic {@link soundCues}; `soundEffects` is the raw palette kept for callers that
+ * have not migrated yet.
  *
- * 17 Sound Palette:
- * - press, release, toggle, tick, chime, whisper, bloom, droplet,
- *   page, scan, loading, ready, arrival, pulse, sparkle, success, error.
+ * Muting (checked at play time, so it follows the live preference attributes on <html>):
+ *  - the one mute toggle — `ixstates:sound-enabled` in localStorage (`setSoundEnabled`), mirrored
+ *    onto `html[data-sound="off"]` by ThemeProvider; the Settings panel and Halo both use it via
+ *    `useSoundSettings`;
+ *  - `html[data-motion="reduced"]` (the in-app Reduce Motion setting).
  */
 
 import {
   play as cuelumePlay,
-  bind as cuelumeBind,
   setEnabled as cuelumeSetEnabled,
   setVolume as cuelumeSetVolume,
+  sounds as cuelumeSounds,
   type SoundName,
 } from "cuelume";
 
@@ -28,6 +33,9 @@ export const DEFAULT_SOUND_SETTINGS = {
   enabled: true,
   volume: 0.25,
 } as const;
+
+/** Window event fired whenever the enabled flag or volume changes. */
+export const SOUND_SETTINGS_EVENT = "ixstates-sound-settings-changed";
 
 let isSoundInitialized = false;
 
@@ -70,7 +78,53 @@ export function getStoredSoundSettings(): { enabled: boolean; volume: number } {
 }
 
 /**
- * Initializes the cuelume engine with persisted settings and binds declarative data attributes.
+ * True when cues must stay silent right now: sound is switched off (`data-sound="off"` or the
+ * stored toggle) or the in-app Reduce Motion setting is on (`data-motion="reduced"`).
+ */
+export function isSoundMuted(): boolean {
+  if (typeof document === "undefined") return true;
+  const root = document.documentElement;
+  if (root.getAttribute("data-sound") === "off") return true;
+  if (root.getAttribute("data-motion") === "reduced") return true;
+  return !getStoredSoundSettings().enabled;
+}
+
+const SOUND_NAMES: ReadonlySet<string> = new Set(cuelumeSounds);
+
+function isSoundName(value: string | null): value is SoundName {
+  return value !== null && SOUND_NAMES.has(value);
+}
+
+/**
+ * Delegated `data-cuelume-press` / `data-cuelume-release` / `data-cuelume-toggle` handling,
+ * routed through {@link playSound} so the mute rules apply. `data-cuelume-hover` is deliberately
+ * not bound — hover ticks are retired (§9). Primitives no longer set these attributes; the
+ * mechanism stays for the few meaningful feature-level cues that still use it.
+ */
+function bindDelegatedCues(root: Document): void {
+  const bindings: [keyof DocumentEventMap, string, SoundName][] = [
+    ["pointerdown", "data-cuelume-press", "press"],
+    ["pointerup", "data-cuelume-release", "release"],
+    ["click", "data-cuelume-toggle", "toggle"],
+  ];
+  for (const [eventName, attr, fallback] of bindings) {
+    root.addEventListener(
+      eventName,
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const element = target.closest(`[${attr}]`);
+        if (!element) return;
+        const requested = element.getAttribute(attr);
+        playSound(isSoundName(requested) ? requested : fallback);
+      },
+      true
+    );
+  }
+}
+
+/**
+ * Initializes the cuelume engine with persisted settings and binds the delegated listeners.
  */
 export function initializeSoundEngine(): void {
   if (typeof window === "undefined" || isSoundInitialized) return;
@@ -80,7 +134,7 @@ export function initializeSoundEngine(): void {
   cuelumeSetVolume(volume);
 
   try {
-    cuelumeBind(document);
+    bindDelegatedCues(document);
     isSoundInitialized = true;
   } catch (err) {
     console.warn("[SoundEngine] Failed to bind cuelume listeners:", err);
@@ -88,16 +142,15 @@ export function initializeSoundEngine(): void {
 }
 
 /**
- * Updates sound enabled state, persists to localStorage, and notifies listeners.
+ * The one mute toggle: updates the engine, persists to localStorage and notifies listeners
+ * (ThemeProvider mirrors it onto `html[data-sound]`; `useSoundSettings` re-reads it).
  */
 export function setSoundEnabled(enabled: boolean): void {
   cuelumeSetEnabled(enabled);
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(SOUND_STORAGE_KEYS.ENABLED, String(enabled));
-      window.dispatchEvent(
-        new CustomEvent("ixstates-sound-settings-changed", { detail: { enabled } })
-      );
+      window.dispatchEvent(new CustomEvent(SOUND_SETTINGS_EVENT, { detail: { enabled } }));
     } catch {
       /* ignore */
     }
@@ -113,9 +166,7 @@ export function setSoundVolume(volume: number): void {
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(SOUND_STORAGE_KEYS.VOLUME, String(clamped));
-      window.dispatchEvent(
-        new CustomEvent("ixstates-sound-settings-changed", { detail: { volume: clamped } })
-      );
+      window.dispatchEvent(new CustomEvent(SOUND_SETTINGS_EVENT, { detail: { volume: clamped } }));
     } catch {
       /* ignore */
     }
@@ -123,10 +174,10 @@ export function setSoundVolume(volume: number): void {
 }
 
 /**
- * Safely plays a sound with optional volume scaling.
+ * Plays a sound unless muted ({@link isSoundMuted}), with optional volume scaling.
  */
 export function playSound(name: SoundName, options?: { volume?: number }): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || isSoundMuted()) return;
   try {
     cuelumePlay(name, options);
   } catch {
@@ -135,8 +186,32 @@ export function playSound(name: SoundName, options?: { volume?: number }): void 
 }
 
 /**
- * Semantic high-level sound effect triggers mapped to IxStates interactions.
- * Calibrated with gentle gain for comfortable listening even at max system output.
+ * The §9 moments — the only cues new code should play.
+ */
+export const soundCues = {
+  /** A sheet or dialog is presented. */
+  present: () => playSound("bloom", { volume: 0.16 }),
+  /** A sheet or dialog is dismissed. */
+  dismiss: () => playSound("droplet", { volume: 0.18 }),
+  /** An operation succeeded. */
+  success: () => playSound("success", { volume: 0.2 }),
+  /** An operation failed. */
+  error: () => playSound("error", { volume: 0.2 }),
+  /** A destructive action was confirmed. */
+  destructive: () => playSound("pulse", { volume: 0.18 }),
+  /** Arrived on a new page (client navigation). */
+  arrival: () => playSound("arrival", { volume: 0.14 }),
+  /** A Vault reveal (pack opening, rare card). */
+  reveal: () => playSound("sparkle", { volume: 0.2 }),
+  /** A Halo notification arrived. */
+  notify: () => playSound("chime", { volume: 0.16 }),
+} as const;
+
+export type SoundMoment = keyof typeof soundCues;
+
+/**
+ * Raw palette (legacy). Prefer {@link soundCues}; hover/press/tick cues are retired by §9 and
+ * remain only until feature code migrates.
  */
 export const soundEffects = {
   // Tactile Chrome

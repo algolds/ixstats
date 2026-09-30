@@ -44,8 +44,9 @@ const CountryNationPanel = dynamic(
   () => import("./panels/CountryNationPanel").then((m) => m.CountryNationPanel),
   { loading: PanelSkeleton }
 );
-const AppearanceThemePanel = dynamic(
-  () => import("./panels/AppearanceThemePanel").then((m) => m.AppearanceThemePanel),
+const AppearanceAccessibilityPanel = dynamic(
+  () =>
+    import("./panels/AppearanceAccessibilityPanel").then((m) => m.AppearanceAccessibilityPanel),
   { loading: PanelSkeleton }
 );
 const WikiOSOptionsPanel = dynamic(
@@ -236,7 +237,7 @@ export function SettingsContent() {
                     </div>
                   ))}
 
-                {activeSection === "appearance" && <AppearanceThemePanel />}
+                {activeSection === "appearance" && <AppearanceAccessibilityPanel />}
 
                 {activeSection === "wikios" && <WikiOSOptionsPanel />}
 
