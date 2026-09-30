@@ -128,6 +128,19 @@ export function createTable(defaults: () => Record<string, unknown> = () => ({})
 
 export type Table = ReturnType<typeof createTable>;
 
+export interface FakeWikiDb {
+  user: Table;
+  wikiAccountLink: Table;
+  wikiUserGroup: Table;
+  wikiBlock: Table;
+  wikiRestriction: Table;
+  wikiArticle: Table;
+  wikiRevision: Table;
+  wikiLink: Table;
+  wikiLog: Table;
+  $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>): Promise<T>;
+}
+
 /** The WikiOS tables plus `$transaction` (which just runs the callback against the same tables). */
 export function createFakeWikiDb() {
   const tables = {
@@ -145,9 +158,9 @@ export function createFakeWikiDb() {
     wikiLink: createTable(),
     wikiLog: createTable(() => ({ comment: null, params: null, articleId: null })),
   };
-  const db = {
+  const db: FakeWikiDb = {
     ...tables,
-    $transaction: async <T>(work: (tx: typeof db) => Promise<T>): Promise<T> => work(db),
+    $transaction: async (work) => work(db),
   };
   return {
     db,

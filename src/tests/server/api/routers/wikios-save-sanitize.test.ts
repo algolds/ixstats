@@ -93,7 +93,9 @@ const mockRestrictions = (...rows: Array<{ action: string; level: string }>) =>
     db as unknown as { wikiRestriction: { findMany: jest.Mock } }
   ).wikiRestriction.findMany.mockResolvedValue(rows.map((row) => ({ ...row, expiresAt: null })));
 
-beforeEach(() => mockRestrictions());
+beforeEach(() => {
+  mockRestrictions();
+});
 
 describe("wikiosEditingRouter.saveWikitext", () => {
   beforeEach(() => {

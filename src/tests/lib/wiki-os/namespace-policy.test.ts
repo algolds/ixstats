@@ -1,5 +1,9 @@
 /** @jest-environment node */
-import { checkEditPolicy, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
+import {
+  checkEditPolicy,
+  parseWikiTitle,
+  type EditPolicyIdentity,
+} from "~/lib/wiki-os/namespace-policy";
 import type { Right } from "~/lib/wiki-os/rights";
 
 // Plan 409: the policy asks for rights, not for "is admin". These are the rights of the groups that matter.
@@ -30,7 +34,8 @@ const interfaceAdmin = {
 };
 const admin = { rights: adminRights, linkedWikiUsername: null };
 
-const allowed = (title: string, identity = user) => checkEditPolicy(title, identity).allowed;
+const allowed = (title: string, identity: EditPolicyIdentity = user) =>
+  checkEditPolicy(title, identity).allowed;
 
 describe("parseWikiTitle", () => {
   it("splits a namespace prefix the way MediaWiki does", () => {
