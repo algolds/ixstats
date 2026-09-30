@@ -183,6 +183,7 @@ export function useBuilderSubmit({
             governmentStructure: builderState.governmentStructure,
             economyBuilderState: builderState.economyBuilderState || undefined,
             archetypeId: builderState.selectedArchetypeId || undefined,
+            realmId: builderState.realmId || undefined,
           })
         );
       }

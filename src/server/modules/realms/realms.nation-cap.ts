@@ -60,7 +60,16 @@ export async function nationCapacity(
   const held = await client.country.count({
     where: { ownerUserId: input.userId, realmId: input.realmId },
   });
-  const realmCap = realmSettings(input.settings).maxNationsPerUser;
+  return capacityOf(held, input.settings, membershipTier);
+}
+
+/** The cap arithmetic, for callers that already know how many nations the user holds in the realm. */
+export function capacityOf(
+  held: number,
+  settings: Prisma.JsonValue | null | undefined,
+  membershipTier: string | null | undefined
+): NationCapacity {
+  const realmCap = realmSettings(settings).maxNationsPerUser;
   const tierCap = tierNationCap(membershipTier);
   const cap = Math.min(realmCap, tierCap);
   return { held, cap, realmCap, tierCap, canTakeAnother: held < cap };

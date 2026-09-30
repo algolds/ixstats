@@ -13,6 +13,8 @@ import {
   ClaimError,
   createClaimsService,
   getRealmHub,
+  listBuilderRealms,
+  listMyNations,
   realmSettings,
   withMaxNationsPerUser,
   type NationAssignedEvent,
@@ -103,6 +105,14 @@ export const realmsRouter = createTRPCRouter({
     }),
 
   myClaims: protectedProcedure.query(({ ctx }) => claims(ctx.db).myClaims(ctx.user)),
+
+  /** The player's nations in every realm, grouped by realm, for the nation switcher. */
+  myNations: protectedProcedure.query(({ ctx }) =>
+    listMyNations(ctx.db, { id: ctx.user.id, countryId: ctx.user.countryId ?? null })
+  ),
+
+  /** Realms the builder can create a nation in, with the player's standing against each realm's cap. */
+  builderRealms: protectedProcedure.query(({ ctx }) => listBuilderRealms(ctx.db, ctx.user)),
 
   listClaims: protectedProcedure
     .input(z.object({ status: z.enum(["pending", "approved", "rejected"]).default("pending") }))
