@@ -67,9 +67,9 @@ export function SportsShell({
 
         {/* Main Content Layout with optional docked Focus Rail */}
         <div className="flex flex-col gap-6 lg:flex-row items-start">
-          {/* Desktop Left Rail: lg:sticky lg:top-20 (80px) for 16px buffer beneath floating navbar */}
+          {/* Desktop Left Rail: sticky at --shell-top-offset (80px under the legacy navbar) */}
           <aside className="hidden lg:block w-60 shrink-0">
-            <div className="lg:sticky lg:top-20 space-y-4">
+            <div className="lg:sticky lg:top-(--shell-top-offset) space-y-4">
               <SportsSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}
@@ -94,7 +94,7 @@ export function SportsShell({
           {/* Desktop Right Rail: Contextual Focus Panel */}
           {focus && (
             <div className="hidden lg:block shrink-0">
-              <div className="lg:sticky lg:top-20">
+              <div className="lg:sticky lg:top-(--shell-top-offset)">
                 <SportsFocusPanel sportPreset={sportPreset} />
               </div>
             </div>

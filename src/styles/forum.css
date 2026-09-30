@@ -801,7 +801,8 @@
 
   .forum-composer {
     position: sticky;
-    bottom: 0;
+    /* Clear the new shell's TabBar (0 with the legacy nav). */
+    bottom: var(--shell-tabbar-height, 0px);
     z-index: 20;
     backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
     -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);

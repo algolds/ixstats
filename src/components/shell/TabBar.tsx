@@ -30,6 +30,7 @@ import {
   getActiveSectionId,
   getAppForPath,
   getTintForPath,
+  groupSections,
   splitTabBarApps,
   type AppDefinition,
   type NavIcon,
@@ -90,9 +91,7 @@ export function TabBar({ pathname, searchParams, apps, className }: TabBarProps)
           className
         )}
       >
-        <ul
-          className="material-regular shadow-floating rounded-sheet mx-auto flex h-14 max-w-lg items-stretch gap-1 px-1"
-        >
+        <ul className="material-regular shadow-floating rounded-sheet mx-auto flex h-14 max-w-lg items-stretch gap-1 px-1">
           {primary.map((app) => {
             const active = app.id === current?.id;
             return (
@@ -145,23 +144,27 @@ export function TabBar({ pathname, searchParams, apps, className }: TabBarProps)
           </SheetHeader>
           <div className="-mx-2 min-h-0 flex-1 overflow-y-auto pb-2">
             <FacetList>
-              {current && current.sections.length > 0 && (
-                <FacetListSection header={current.label}>
-                  {current.sections.map((section) => {
-                    const Icon = section.icon;
-                    return (
-                      <FacetRow
-                        key={section.id}
-                        href={section.href}
-                        leading={<Icon className="size-5" />}
-                        title={section.label}
-                        selected={section.id === activeSectionId}
-                        onClick={close}
-                      />
-                    );
-                  })}
-                </FacetListSection>
-              )}
+              {current &&
+                groupSections(current.sections).map(({ group, sections }, index) => (
+                  <FacetListSection
+                    key={group ?? `ungrouped-${index}`}
+                    header={group ? `${current.label} · ${group}` : current.label}
+                  >
+                    {sections.map((section) => {
+                      const Icon = section.icon;
+                      return (
+                        <FacetRow
+                          key={section.id}
+                          href={section.href}
+                          leading={<Icon className="size-5" />}
+                          title={section.label}
+                          selected={section.id === activeSectionId}
+                          onClick={close}
+                        />
+                      );
+                    })}
+                  </FacetListSection>
+                ))}
               {moreApps.length > 0 && (
                 <FacetListSection header="Apps">
                   {moreApps.map((app) => {

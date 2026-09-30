@@ -7,7 +7,8 @@
  * icons; the width is the `--shell-sidebar-width` variable from `src/styles/facet/shell.css`, so
  * the persisted collapsed state is right before first paint). Top: the app switcher. Middle: the
  * current app's sections from the section map, the current one tinted and `aria-current="page"`.
- * Bottom: the account, Settings and the collapse toggle.
+ * Sections with a `group` are listed under a sub-heading (`role="group"`). Bottom: the account,
+ * Settings and the collapse toggle.
  *
  * Presentational: the route, visible apps, account and collapsed state come in as props
  * (`FacetShell` wires them), so it renders the same on the server and in tests.
@@ -39,6 +40,7 @@ import {
   getActiveSectionId,
   getAppForPath,
   getTintForPath,
+  groupSections,
   type AppDefinition,
   type NavIcon,
   type SearchParamsLike,
@@ -234,19 +236,45 @@ export function AppSidebar({
               <h2 className="text-subhead text-label-secondary sidebar-collapsed:sr-only px-2.5 pt-2 pb-1">
                 {current.label}
               </h2>
-              <ul className="flex flex-col gap-0.5">
-                {sections.map((section) => (
-                  <SidebarLink
-                    key={section.id}
-                    href={section.href}
-                    label={section.label}
-                    icon={section.icon}
-                    active={section.id === activeSectionId}
-                    collapsed={collapsed}
-                    indicatorId="app-sidebar-section"
-                  />
-                ))}
-              </ul>
+              {groupSections(sections).map(({ group, sections: groupItems }, index) => {
+                const headingId = group
+                  ? `app-sidebar-group-${current.id}-${group.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+                  : undefined;
+                return (
+                  <div
+                    key={group ?? `ungrouped-${index}`}
+                    role={group ? "group" : undefined}
+                    aria-labelledby={headingId}
+                    data-slot="app-sidebar-group"
+                    className={cn(
+                      index > 0 &&
+                        "sidebar-collapsed:border-separator sidebar-collapsed:mt-1 sidebar-collapsed:border-t sidebar-collapsed:pt-1"
+                    )}
+                  >
+                    {group && (
+                      <h3
+                        id={headingId}
+                        className="text-caption text-label-secondary sidebar-collapsed:sr-only px-2.5 pt-3 pb-1"
+                      >
+                        {group}
+                      </h3>
+                    )}
+                    <ul className="flex flex-col gap-0.5">
+                      {groupItems.map((section) => (
+                        <SidebarLink
+                          key={section.id}
+                          href={section.href}
+                          label={section.label}
+                          icon={section.icon}
+                          active={section.id === activeSectionId}
+                          collapsed={collapsed}
+                          indicatorId="app-sidebar-section"
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </>
           )}
         </div>

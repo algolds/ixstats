@@ -57,7 +57,10 @@ export function SettingsSidebarNav({
   }, [filteredSections]);
 
   return (
-    <aside className="w-full space-y-4 lg:sticky lg:top-20" aria-label="Settings Navigation">
+    <aside
+      className="w-full space-y-4 lg:sticky lg:top-(--shell-top-offset)"
+      aria-label="Settings Navigation"
+    >
       {/* Profile Card Pill */}
       {user && (
         <div className="border-border/40 bg-card/40 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">

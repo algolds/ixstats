@@ -12,6 +12,7 @@ import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { withBasePath } from "~/lib/base-path";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { api } from "~/trpc/react";
 
 type ViewMode = "categories" | "trending" | "new";
@@ -69,6 +70,8 @@ export default function ForumIndexPage() {
 
   return (
     <ForumLayout>
+      {/* Phone title under the new navigation shell (nothing with the flag off). */}
+      <ShellPageHeader title="Forum" className="max-w-4xl px-0 sm:px-0" />
       {/* Header — only shown for trending/new feed views */}
       {viewMode !== "categories" && (
         <div className="mx-auto mb-6 max-w-4xl">

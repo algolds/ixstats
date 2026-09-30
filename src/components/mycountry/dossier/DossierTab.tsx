@@ -325,7 +325,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
 
                 {/* Right Sticky TOC Sidebar */}
                 <div className="lg:col-span-4">
-                  <div className="sticky top-20">
+                  <div className="sticky top-(--shell-top-offset)">
                     <DossierTocSidebar
                       countryName={countryName}
                       infobox={wikiData.infobox}

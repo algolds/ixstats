@@ -509,12 +509,15 @@ interface AdminSidebarNavWidgetProps {
   activeSection?: string;
   onNavigate?: (section: string) => void;
   className?: string;
+  /** Marks the rail as app-local sub-navigation (hidden under the new navigation shell). */
+  "data-app-subnav"?: string;
 }
 
 export function AdminSidebarNavWidget({
   activeSection,
   onNavigate,
   className = "",
+  "data-app-subnav": appSubnav,
 }: AdminSidebarNavWidgetProps) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
@@ -549,6 +552,7 @@ export function AdminSidebarNavWidget({
 
   return (
     <aside
+      data-app-subnav={appSubnav}
       className={`facet-sidebar w-full flex-col p-4 shadow-sm lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto ${className}`}
       aria-label="Admin Navigation"
     >

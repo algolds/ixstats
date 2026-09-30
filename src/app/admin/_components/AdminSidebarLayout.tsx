@@ -42,8 +42,12 @@ export function AdminSidebarLayout({
 
   return (
     <div className="bg-background text-foreground relative min-h-screen">
-      {/* Mobile Sub-Navigation Header — sits cleanly below global mobile nav */}
-      <div className="border-border/40 bg-background/80 sticky top-14 right-0 left-0 z-30 flex h-12 items-center border-b px-4 backdrop-blur-md lg:hidden">
+      {/* Mobile Sub-Navigation Header — sits cleanly below global mobile nav (hidden under the new
+          shell, where the TabBar's More sheet lists the console's sections) */}
+      <div
+        data-app-subnav=""
+        className="border-border/40 bg-background/80 sticky top-14 right-0 left-0 z-30 flex h-12 items-center border-b px-4 backdrop-blur-md lg:hidden"
+      >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button
@@ -87,9 +91,14 @@ export function AdminSidebarLayout({
         <div className="flex gap-6 lg:gap-8">
           {/* Desktop: Sticky rail (hidden in fullscreen mode) */}
           {!sidebarHidden && (
-            <div className="sticky top-20 z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
+            <div className="sticky top-(--shell-top-offset) z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
               <SystemStatusWidget />
-              <AdminSidebarNavWidget onNavigate={onNavigate} activeSection={activeSection} />
+              {/* The console's section rail; the AppSidebar lists it under the new shell. */}
+              <AdminSidebarNavWidget
+                onNavigate={onNavigate}
+                activeSection={activeSection}
+                data-app-subnav=""
+              />
             </div>
           )}
 

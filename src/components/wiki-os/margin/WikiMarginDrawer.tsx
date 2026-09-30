@@ -175,7 +175,7 @@ export function WikiMarginDrawer({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             onClick={onClose}
-            className="fixed inset-0 top-14 z-30 bg-black/35 backdrop-blur-xs lg:hidden"
+            className="fixed inset-x-0 top-14 bottom-(--shell-tabbar-height) z-30 bg-black/35 backdrop-blur-xs lg:hidden"
           />
         )}
         {isOpen && (
@@ -193,7 +193,7 @@ export function WikiMarginDrawer({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             className={cn(
-              "fixed top-14 right-0 bottom-0 z-35 flex flex-col border-l border-[var(--wikios-border)] shadow-2xl backdrop-blur-2xl transition-[width] duration-300",
+              "fixed top-14 right-0 bottom-(--shell-tabbar-height) z-35 flex flex-col border-l border-[var(--wikios-border)] shadow-2xl backdrop-blur-2xl transition-[width] duration-300",
               "bg-[var(--wikios-surface)]/80 text-[var(--wikios-text)]",
               isExpandedFull ? "w-full sm:w-[440px]" : "w-full sm:w-80"
             )}

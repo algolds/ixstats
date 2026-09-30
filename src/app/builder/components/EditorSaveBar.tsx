@@ -61,7 +61,7 @@ export function EditorSaveBar({
         aria-label="Editor changes"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } }}
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
+        className="pointer-events-none fixed right-0 bottom-[calc(var(--shell-tabbar-height)+1rem)] left-(--shell-sidebar-width) z-[100] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
       >
         <FacetContainer
           depth={3}

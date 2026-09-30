@@ -198,8 +198,9 @@ export function ForumLayout({ children }: ForumLayoutProps) {
         squaresClassName="fill-slate-200/15 dark:fill-slate-700/15 stroke-slate-300/20 dark:stroke-slate-600/20 [&:hover]:fill-orange-500/30 [&:hover]:stroke-orange-500/50 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
       />
 
-      {/* Mobile: horizontal pill bar */}
-      <nav className="forum-mobile-nav lg:hidden">
+      {/* Mobile: horizontal pill bar. This and the desktop rail are hidden under the new shell,
+          where the AppSidebar / TabBar list the same destinations (app-sections.ts). */}
+      <nav data-app-subnav="" className="forum-mobile-nav lg:hidden">
         <div className="flex gap-1 overflow-x-auto px-3 py-2">
           {NAV_GROUP_1.map((item) => (
             <MobilePill key={item.id} item={item} isActive={activeId === item.id} />
@@ -225,7 +226,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
 
       <div className="flex">
         {/* Desktop: icon rail */}
-        <aside className="forum-icon-rail hidden lg:flex">
+        <aside data-app-subnav="" className="forum-icon-rail hidden lg:flex">
           <nav className="flex flex-col gap-1">
             {/* Browse */}
             {NAV_GROUP_1.map((item) => (

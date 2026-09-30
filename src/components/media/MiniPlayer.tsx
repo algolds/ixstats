@@ -19,7 +19,7 @@ export function MiniPlayer() {
 
   return (
     <>
-      <div className="fixed right-4 bottom-4 left-4 z-40 md:right-4 md:left-auto md:w-96">
+      <div className="fixed right-4 bottom-[calc(var(--shell-tabbar-height)+1rem)] left-4 z-40 md:right-4 md:left-auto md:w-96">
         <FacetContainer
           variant="base"
           depth={3}

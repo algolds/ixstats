@@ -14,12 +14,14 @@ import {
   getAppForPath,
   getTintForPath,
   getVisibleApps,
+  groupSections,
   isChromelessPath,
   matchesPrefix,
   splitTabBarApps,
 } from "~/lib/navigation/app-sections";
 
 const appDir = path.resolve(__dirname, "../../../app");
+const srcDir = path.resolve(__dirname, "../../..");
 
 function listPages(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -94,6 +96,14 @@ describe("app section map routes", () => {
     expect(used.filter((tab) => !valid.has(tab))).toEqual([]);
   });
 
+  it("lists every settings tab", () => {
+    const source = fs.readFileSync(path.join(appDir, "settings/_lib/sections.ts"), "utf-8");
+    const union = source.match(/export type SettingSectionId =([^;]+);/)?.[1] ?? "";
+    const tabs = [...union.matchAll(/"([a-z-]+)"/g)].map((m) => m[1]);
+    const ids = getApp("settings").sections.map((section) => section.id);
+    expect(tabs.filter((tab) => !ids.includes(tab!))).toEqual([]);
+  });
+
   it("has unique app ids and unique section ids per app", () => {
     const ids = APPS.map((app) => app.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -115,6 +125,56 @@ describe("app section map routes", () => {
       "map-editor",
       "editor",
     ]);
+  });
+});
+
+/**
+ * Under the new shell the apps' own sub-navigation is hidden (`data-app-subnav`), so every
+ * destination it links to must be reachable from the map: an app, a section, or a path a section
+ * owns. Hrefs are read from the source (`href: "/…"`, `withBasePath("/…")`).
+ */
+const HIDDEN_SUBNAVS: { file: string; marker: string }[] = [
+  { file: "components/vault/VaultSidebarLayout.tsx", marker: "data-app-subnav" },
+  { file: "app/admin/_components/AdminSidebarNavWidget.tsx", marker: "data-app-subnav" },
+  { file: "app/admin/_components/AdminSidebarLayout.tsx", marker: "data-app-subnav" },
+  { file: "app/settings/_components/SettingsContent.tsx", marker: "data-app-subnav" },
+  { file: "components/forum/shared/ForumLayout.tsx", marker: "data-app-subnav" },
+  { file: "components/wiki-os/shared/WikiOSUnifiedSidebar.tsx", marker: "data-app-subnav" },
+];
+
+function sourceHrefs(file: string): string[] {
+  const source = fs.readFileSync(path.join(srcDir, file), "utf-8");
+  const hrefs = [
+    ...source.matchAll(/href:\s*"(\/[^"]*)"/g),
+    ...source.matchAll(/withBasePath\("(\/[^"]*)"\)/g),
+  ].map((match) => match[1]!);
+  return [...new Set(hrefs)];
+}
+
+function isReachable(href: string): boolean {
+  const [pathname = "/", query = ""] = href.split("?");
+  const app = getAppForPath(pathname);
+  if (!app) return false;
+  if (app.href === href || app.sections.some((section) => section.href === href)) return true;
+  return getActiveSectionId(app, pathname, new URLSearchParams(query)) !== undefined;
+}
+
+describe("hidden app sub-navigation", () => {
+  it.each(HIDDEN_SUBNAVS)("$file is marked data-app-subnav", ({ file, marker }) => {
+    expect(fs.readFileSync(path.join(srcDir, file), "utf-8")).toContain(marker);
+  });
+
+  it.each(HIDDEN_SUBNAVS.map(({ file }) => file).filter((file) => sourceHrefs(file).length > 0))(
+    "every destination of %s is in the section map",
+    (file) => {
+      expect(sourceHrefs(file).filter((href) => !isReachable(href))).toEqual([]);
+    }
+  );
+
+  it("reads the admin console's full rail", () => {
+    expect(sourceHrefs("app/admin/_components/AdminSidebarNavWidget.tsx").length).toBeGreaterThan(
+      25
+    );
   });
 });
 
@@ -142,6 +202,8 @@ describe("app section map resolvers", () => {
     ["/countries/caphiria/dossier", "countries"],
     ["/admin/users", "admin"],
     ["/settings", "settings"],
+    ["/stashes", "wiki"],
+    ["/labs/vexel", "labs"],
   ])("puts %s in %s", (pathname, appId) => {
     expect(getAppForPath(pathname)?.id).toBe(appId);
   });
@@ -161,6 +223,35 @@ describe("app section map resolvers", () => {
     const forum = getApp("forum");
     expect(getActiveSectionId(forum, "/forum/search", null)).toBe("search");
     expect(getActiveSectionId(forum, "/forum/thread/9", null)).toBe("forums");
+  });
+
+  it("resolves forum feeds and wiki aliases", () => {
+    const forum = getApp("forum");
+    expect(getActiveSectionId(forum, "/forum", new URLSearchParams("sort=trending"))).toBe(
+      "trending"
+    );
+    expect(getActiveSectionId(forum, "/forum", new URLSearchParams("sort=new"))).toBe("new-posts");
+    expect(getActiveSectionId(forum, "/forum", new URLSearchParams())).toBe("forums");
+    const wiki = getApp("wiki");
+    expect(getActiveSectionId(wiki, "/wiki/Main_Page", null)).toBe("main");
+    expect(getActiveSectionId(wiki, "/wiki/Some_Article", null)).toBeUndefined();
+    expect(getActiveSectionId(wiki, "/stashes", null)).toBe("stashes");
+    expect(getAppForPath("/labs/onoma/studio")?.id).toBe("labs");
+    expect(getActiveSectionId(getApp("labs"), "/labs/onoma/studio", null)).toBe("onoma");
+  });
+
+  it("groups consecutive sections under their sub-heading", () => {
+    const runs = groupSections(getApp("admin").sections);
+    expect(runs[0]).toMatchObject({ group: undefined });
+    expect(runs[0]?.sections.map((section) => section.id)).toEqual(["overview"]);
+    expect(runs.slice(1).map((run) => run.group)).toEqual([
+      "Platform",
+      "Apps",
+      "Simulation",
+      "Users & security",
+      "Labs",
+    ]);
+    expect(groupSections(getApp("mycountry").sections)).toHaveLength(1);
   });
 
   it("matches query sections, falling back to the default tab", () => {
@@ -209,13 +300,43 @@ describe("app visibility and the tab bar", () => {
     expect(admin).not.toContain("wiki");
   });
 
+  it("shows Labs like the legacy nav: signed in, unless showLabsTab is off", () => {
+    const hidden = { showLabsTab: false };
+    expect(getVisibleApps({ signedIn: false, isAdmin: false }).map((app) => app.id)).not.toContain(
+      "labs"
+    );
+    expect(getVisibleApps({ signedIn: true, isAdmin: false }).map((app) => app.id)).toContain(
+      "labs"
+    );
+    const member = getVisibleApps({ signedIn: true, isAdmin: false, navigationSettings: hidden });
+    expect(member.map((app) => app.id)).not.toContain("labs");
+    // Admins and `labs.access` holders keep it.
+    const admin = getVisibleApps({ signedIn: true, isAdmin: true, navigationSettings: hidden });
+    expect(admin.map((app) => app.id)).toContain("labs");
+    const granted = getVisibleApps({
+      signedIn: true,
+      isAdmin: false,
+      hasLabsAccess: true,
+      navigationSettings: hidden,
+    });
+    expect(granted.map((app) => app.id)).toContain("labs");
+    // The bypass is Labs-only.
+    const wikiOff = getVisibleApps({
+      signedIn: true,
+      isAdmin: true,
+      hasLabsAccess: true,
+      navigationSettings: { showWikiTab: false },
+    });
+    expect(wikiOff.map((app) => app.id)).not.toContain("wiki");
+  });
+
   it("gives the tab bar four primary apps and puts the rest under More", () => {
     const visible = getVisibleApps({ signedIn: true, isAdmin: true });
     const { primary, more } = splitTabBarApps(visible);
     expect(primary.map((app) => app.id)).toEqual(["home", "mycountry", "maps", "thinkpages"]);
     expect(primary).toHaveLength(TAB_BAR_SLOTS);
     expect(more.map((app) => app.id)).toEqual(
-      expect.arrayContaining(["countries", "wiki", "forum", "vault", "admin"])
+      expect.arrayContaining(["countries", "wiki", "forum", "vault", "labs", "admin"])
     );
     const signedOut = splitTabBarApps(getVisibleApps({ signedIn: false, isAdmin: false }));
     expect(signedOut.primary.map((app) => app.id)).toEqual(["maps", "countries", "wiki", "forum"]);

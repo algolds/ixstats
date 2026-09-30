@@ -14,6 +14,7 @@ import { SettingsSidebarNav } from "./SettingsSidebarNav";
 import { SettingsSkeleton } from "./SettingsSkeleton";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { Backlight } from "~/components/ui/backlight";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { type SettingSectionId } from "../_lib/sections";
 
 export { SettingsSkeleton };
@@ -180,6 +181,9 @@ export function SettingsContent() {
             </div>
           </Backlight>
 
+          {/* Phone title under the new navigation shell (nothing with the flag off). */}
+          <ShellPageHeader title="Settings" className="relative" />
+
           <DashboardSidebarLayout
             heroCollapsed={heroCollapsed}
             onHeroExpand={() => setHeroCollapsed(false)}
@@ -210,8 +214,9 @@ export function SettingsContent() {
 
             {/* Two-Pane Layout: Left Main Viewport (8 cols), Right Navigation Rail (4 cols) */}
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-              {/* Left Column: Active Settings Viewport */}
-              <main className="min-w-0 lg:col-span-8">
+              {/* Left Column: Active Settings Viewport (full width under the new shell, where the
+                  AppSidebar lists the tabs and the rail below is hidden) */}
+              <main className="facet-nav:lg:col-span-12 min-w-0 lg:col-span-8">
                 {activeSection === "account" && <AccountIdentityPanel user={user} />}
 
                 {activeSection === "country" &&
@@ -257,7 +262,7 @@ export function SettingsContent() {
               </main>
 
               {/* Right Column: Sticky Navigation Rail */}
-              <div className="lg:col-span-4">
+              <div data-app-subnav="" className="lg:col-span-4">
                 <SettingsSidebarNav
                   activeSection={activeSection}
                   onSelectSection={handleSelectSection}

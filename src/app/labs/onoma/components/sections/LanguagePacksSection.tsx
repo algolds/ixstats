@@ -241,7 +241,7 @@ export function LanguagePacksSection({
 
         {/* Detailed Inspection Drawer */}
         {activePack && (
-          <div className="sticky top-20 space-y-4 lg:col-span-5">
+          <div className="sticky top-(--shell-top-offset) space-y-4 lg:col-span-5">
             <FacetMaterial
               material="satin"
               className="border-border/40 space-y-4 rounded-2xl border p-5 shadow-xl backdrop-blur-xl"

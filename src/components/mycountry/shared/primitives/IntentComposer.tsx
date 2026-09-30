@@ -442,7 +442,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             </StepSection>
           </div>
 
-          <StepSection step={4} title="Review and declare" className="lg:sticky lg:top-20">
+          <StepSection step={4} title="Review and declare" className="lg:sticky lg:top-(--shell-top-offset)">
             <DeclarePanel
               goal={goal}
               approachLabel={activePackage ? tierMeta(activePackage.tier).label : "—"}

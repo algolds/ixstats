@@ -9,11 +9,17 @@
  *
  * Adding an app: add an entry to `APPS` (and its tint to `tokens.css` if it is new), then list it in
  * `TAB_BAR_PRIORITY` if it should be able to take a tab. Adding a section: add it to the app's
- * `sections`; use `match` for extra path prefixes that belong to it (sub-pages, legacy aliases).
+ * `sections`; use `match` for extra path prefixes that belong to it (sub-pages, legacy aliases) and
+ * `group` to list it under a sub-heading (admin, settings).
+ *
+ * Under the new shell the apps' own sub-navigation (vault, admin, settings, WikiOS, forum) is hidden
+ * with `data-app-subnav` (`src/styles/facet/shell.css`), so every destination it offered must be
+ * listed here.
  */
 
 import type { ComponentType, SVGProps } from "react";
 import {
+  Activity,
   Archive,
   Bell,
   Bookmark,
@@ -23,13 +29,21 @@ import {
   Cart,
   ChatBubble,
   ChatLines,
+  CheckSquare,
   Clock,
+  Coins,
   Community,
+  Component,
+  Cpu,
   Crown,
   Database,
   DocMagnifyingGlass,
   Download,
   EditPencil,
+  FireFlame,
+  Flask,
+  Folder,
+  Gamepad,
   Globe,
   Group,
   Hammer,
@@ -42,9 +56,11 @@ import {
   Mail,
   Map as MapIcon,
   MapPin,
+  MediaImage,
   Medal,
   MultiplePages,
   OpenBook,
+  Package,
   Page,
   Palette,
   Plus,
@@ -54,7 +70,10 @@ import {
   Shield,
   ShieldCheck,
   Shuffle,
+  Sparks,
   StatsReport,
+  Terminal,
+  Translate,
   Trophy,
   User,
   Wallet,
@@ -76,6 +95,7 @@ export type AppId =
   | "forum"
   | "sports"
   | "countries"
+  | "labs"
   | "help"
   | "admin"
   | "settings";
@@ -84,6 +104,7 @@ export type AppId =
 export interface NavigationVisibilitySettings {
   showWikiTab?: boolean;
   showCardsTab?: boolean;
+  showLabsTab?: boolean;
   showMapsTab?: boolean;
   showForumTab?: boolean;
   showHelpTab?: boolean;
@@ -97,12 +118,17 @@ export interface AppSection {
   icon: NavIcon;
   /** Only the exact path is this section (e.g. an app's overview). */
   exact?: boolean;
-  /** Extra path prefixes that belong to this section. */
+  /** Extra path prefixes that belong to this section (exact paths when `exact` is set). */
   match?: string[];
   /** For query sections: also current when the page has no query (the page's default tab). */
   isDefault?: boolean;
   /** Overrides the app tint while this section is current (e.g. Intelligence is crimson). */
   tint?: AppTint;
+  /**
+   * Sub-heading the section is listed under. Consecutive sections with the same `group` form one
+   * group (`groupSections`); ungrouped sections lead the list without a heading.
+   */
+  group?: string;
 }
 
 export interface AppDefinition {
@@ -118,8 +144,21 @@ export interface AppDefinition {
   adminOnly?: boolean;
   /** Admin navigation setting that hides the app when false. */
   navSetting?: keyof NavigationVisibilitySettings;
+  /**
+   * Who still sees the app while its `navSetting` is off (the legacy nav shows Labs to admins and
+   * to holders of the `labs.access` permission regardless of `showLabsTab`).
+   */
+  navSettingBypass?: { admin?: boolean; labsAccess?: boolean };
   /** `footer`: pinned to the bottom of the sidebar instead of listed in the app switcher. */
   placement?: "main" | "footer";
+}
+
+/** The admin console's sections of one sidebar group: `[id, label, href, icon]` rows. */
+function adminGroup(
+  group: string,
+  rows: ReadonlyArray<readonly [id: string, label: string, href: string, icon: NavIcon]>
+): AppSection[] {
+  return rows.map(([id, label, href, icon]) => ({ id, label, href, icon, group }));
 }
 
 export const APPS: readonly AppDefinition[] = [
@@ -202,6 +241,7 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/vault"],
     requiresAuth: true,
     navSetting: "showCardsTab",
+    // Mirrors the vault's pill bar (VaultSidebarLayout); its Achievements entry is Home → Achievements.
     sections: [
       { id: "dashboard", label: "Dashboard", href: "/vault", icon: Wallet, exact: true },
       {
@@ -230,11 +270,20 @@ export const APPS: readonly AppDefinition[] = [
     href: "/wiki",
     icon: OpenBook,
     tint: "wiki",
-    match: ["/wiki", "/util", "/blurbs"],
+    match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
-    // WikiOS utilities live under /util; the /wiki/<tool> routes are redirect stubs.
+    // WikiOS utilities live under /util; the /wiki/<tool> routes are redirect stubs. Mirrors the
+    // WikiOS rail's navigation (WikiOSUnifiedSidebar), which is hidden under the new shell; the
+    // rail's search, create-page and page tools stay.
     sections: [
-      { id: "main", label: "Main page", href: "/wiki", icon: OpenBook, exact: true },
+      {
+        id: "main",
+        label: "Main page",
+        href: "/wiki",
+        icon: OpenBook,
+        exact: true,
+        match: ["/wiki/Main_Page"],
+      },
       {
         id: "search",
         label: "Search",
@@ -264,6 +313,14 @@ export const APPS: readonly AppDefinition[] = [
         icon: Journal,
         match: ["/wiki/contributions"],
       },
+      { id: "stashes", label: "Stashes", href: "/stashes", icon: Bookmark },
+      {
+        id: "repository",
+        label: "Repository",
+        href: "/util/repository",
+        icon: MediaImage,
+        match: ["/wiki/repository"],
+      },
       { id: "blurbs", label: "Blurbs", href: "/blurbs", icon: Page },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
     ],
@@ -276,8 +333,12 @@ export const APPS: readonly AppDefinition[] = [
     tint: "forum",
     match: ["/forum"],
     navSetting: "showForumTab",
+    // Mirrors the forum's own rail/pill bar (ForumLayout), hidden under the new shell. Its
+    // "Messages" entry is ThinkPages → Messages.
     sections: [
       { id: "forums", label: "All forums", href: "/forum", icon: ChatBubble },
+      { id: "trending", label: "Trending", href: "/forum?sort=trending", icon: FireFlame },
+      { id: "new-posts", label: "New posts", href: "/forum?sort=new", icon: Clock },
       { id: "search", label: "Search", href: "/forum/search", icon: Search },
       { id: "bookmarks", label: "Bookmarks", href: "/forum/bookmarks", icon: Bookmark },
       { id: "new-thread", label: "New thread", href: "/forum/new-thread", icon: Plus },
@@ -311,6 +372,21 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
+    id: "labs",
+    label: "Labs",
+    href: "/labs/onoma",
+    icon: Flask,
+    // Onoma's brand is blue; the sky `maps` tint is the closest app tint.
+    tint: "maps",
+    match: ["/labs"],
+    requiresAuth: true,
+    navSetting: "showLabsTab",
+    navSettingBypass: { admin: true, labsAccess: true },
+    // As the legacy "Labs" menu: only labs with a shipped entry point (MyLeague lives in Sports).
+    // Onoma keeps its own in-app navigation (src/app/labs/onoma).
+    sections: [{ id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate }],
+  },
+  {
     id: "help",
     label: "Help",
     href: "/help",
@@ -328,18 +404,67 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/admin"],
     requiresAuth: true,
     adminOnly: true,
+    // Mirrors the admin console's rail (AdminSidebarNavWidget), hidden under the new shell.
     sections: [
       { id: "overview", label: "Overview", href: "/admin", icon: ShieldCheck, exact: true },
-      { id: "platform", label: "Platform", href: "/admin/platform", icon: Server },
-      { id: "users", label: "Users", href: "/admin/users", icon: User },
-      { id: "user-roles", label: "Roles", href: "/admin/user-roles", icon: Lock },
-      { id: "countries", label: "Countries", href: "/admin/countries", icon: Globe },
-      { id: "maps", label: "Maps", href: "/admin/maps", icon: MapIcon },
-      { id: "wikios", label: "WikiOS", href: "/admin/wikios-settings", icon: OpenBook },
-      { id: "vault", label: "Vault", href: "/admin/vault", icon: MultiplePages },
-      { id: "thinkpages", label: "ThinkPages", href: "/admin/thinkpages", icon: ChatLines },
-      { id: "notifications", label: "Notifications", href: "/admin/notifications", icon: Bell },
-      { id: "logs", label: "Logs", href: "/admin/logs", icon: Database },
+      ...adminGroup("Platform", [
+        ["platform", "General settings", "/admin/platform", Server],
+        ["bot", "Bot", "/admin/bot", Cpu],
+        ["notifications", "Notifications", "/admin/notifications", Bell],
+        ["realms", "Realms", "/admin/realms", Sparks],
+      ]),
+      ...adminGroup("Apps", [
+        ["maps", "WorldStudio", "/admin/maps", MapIcon],
+        ["style-editor", "Map style editor", "/admin/maps/style-editor", Palette],
+        ["wikios", "WikiOS", "/admin/wikios-settings", OpenBook],
+        ["lorescanner", "LoreScanner", "/admin/lorescanner", Search],
+        ["image-repo", "Image repository", "/admin/image-repo", MediaImage],
+        ["stash", "Stash", "/admin/stash", Folder],
+        ["vault", "Vault & IxCredits", "/admin/vault", Coins],
+        ["cards", "Card packs & lore", "/admin/cards", Package],
+        ["achievements", "Achievements", "/admin/achievements", Medal],
+        ["thinkpages", "ThinkPages", "/admin/thinkpages", ChatLines],
+        ["blurbs", "Blurbs & prompts", "/admin/blurbs", ChatBubble],
+        ["polls", "Polls", "/admin/polls", CheckSquare],
+        ["myleague", "MyLeague", "/admin/myleague", Trophy],
+      ]),
+      ...adminGroup("Simulation", [
+        ["countries", "Countries", "/admin/countries", Globe],
+        ["calculations", "Calculations", "/admin/calculations", Cpu],
+        ["rings-audit", "Vitality rings audit", "/admin/rings-audit", Activity],
+        ["reference-data", "Reference data", "/admin/reference-data", Database],
+        ["storyteller", "Storyteller", "/admin/storyteller", Gamepad],
+        ["national-issues", "National issues", "/admin/national-issues", Journal],
+        ["diplomatic-options", "Diplomatic options", "/admin/diplomatic-options", Bookmark],
+        ["diplomatic-scenarios", "Diplomatic scenarios", "/admin/diplomatic-scenarios", Shield],
+        ["npc-personalities", "NPC personalities", "/admin/npc-personalities", Group],
+        ["military-equipment", "Military equipment", "/admin/military-equipment", Package],
+        ["economic-archetypes", "Economic archetypes", "/admin/economic-archetypes", Trophy],
+        ["economic-components", "Economic components", "/admin/economic-components", Component],
+        [
+          "government-components",
+          "Government components",
+          "/admin/government-components",
+          Database,
+        ],
+        [
+          "intelligence-templates",
+          "Intelligence templates",
+          "/admin/intelligence-templates",
+          Shield,
+        ],
+      ]),
+      ...adminGroup("Users & security", [
+        ["users", "Users", "/admin/users", User],
+        ["user-roles", "Roles", "/admin/user-roles", Lock],
+        ["logs", "Logs", "/admin/logs", Terminal],
+        ["membership", "Membership tiers", "/admin/membership", Medal],
+      ]),
+      ...adminGroup("Labs", [
+        ["narrator", "AI narrator", "/admin/narrator", ChatBubble],
+        ["onoma", "Onoma", "/admin/onoma", Translate],
+        ["facet-lab", "Facet lab", "/admin/facet-lab", Component],
+      ]),
     ],
   },
   {
@@ -350,7 +475,8 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/settings"],
     requiresAuth: true,
     placement: "footer",
-    // Tabs of src/app/settings (`?tab=` ids from src/app/settings/_lib/sections.ts).
+    // Tabs of src/app/settings (`?tab=` ids and categories from src/app/settings/_lib/sections.ts);
+    // the page's own tab rail is hidden under the new shell.
     sections: [
       {
         id: "account",
@@ -358,30 +484,70 @@ export const APPS: readonly AppDefinition[] = [
         href: "/settings?tab=account",
         icon: User,
         isDefault: true,
+        group: "Profile",
       },
-      { id: "country", label: "MyCountry", href: "/settings?tab=country", icon: Crown },
+      {
+        id: "country",
+        label: "MyCountry",
+        href: "/settings?tab=country",
+        icon: Crown,
+        group: "Profile",
+      },
       {
         id: "appearance",
         label: "Appearance & accessibility",
         href: "/settings?tab=appearance",
         icon: Palette,
+        group: "Preferences",
       },
-      { id: "wikios", label: "WikiOS", href: "/settings?tab=wikios", icon: OpenBook },
+      {
+        id: "wikios",
+        label: "WikiOS",
+        href: "/settings?tab=wikios",
+        icon: OpenBook,
+        group: "Preferences",
+      },
       {
         id: "notifications",
         label: "Notifications",
         href: "/settings?tab=notifications",
         icon: Bell,
+        group: "Preferences",
       },
-      { id: "social", label: "Social & ThinkPages", href: "/settings?tab=social", icon: ChatLines },
-      { id: "privacy", label: "Privacy & security", href: "/settings?tab=privacy", icon: Lock },
-      { id: "vault", label: "Vault status", href: "/settings?tab=vault", icon: Wallet },
-      { id: "cosmetics", label: "Cosmetics", href: "/settings?tab=cosmetics", icon: Palette },
+      {
+        id: "social",
+        label: "Social & ThinkPages",
+        href: "/settings?tab=social",
+        icon: ChatLines,
+        group: "Preferences",
+      },
+      {
+        id: "privacy",
+        label: "Privacy & security",
+        href: "/settings?tab=privacy",
+        icon: Lock,
+        group: "Preferences",
+      },
+      {
+        id: "vault",
+        label: "Vault status",
+        href: "/settings?tab=vault",
+        icon: Wallet,
+        group: "Vault",
+      },
+      {
+        id: "cosmetics",
+        label: "Cosmetics",
+        href: "/settings?tab=cosmetics",
+        icon: Palette,
+        group: "Vault",
+      },
       {
         id: "cards",
         label: "NationStates cards",
         href: "/settings?tab=cards",
         icon: MultiplePages,
+        group: "Vault",
       },
     ],
   },
@@ -398,6 +564,7 @@ export const TAB_BAR_PRIORITY: readonly AppId[] = [
   "forum",
   "vault",
   "sports",
+  "labs",
   "help",
 ];
 export const TAB_BAR_SLOTS = 4;
@@ -480,7 +647,9 @@ export function getActiveSectionId(
       else if (section.isDefault && noQuery) score = 5_000;
       else continue;
     } else if (section.exact) {
-      if (path === sectionPath) score = sectionPath.length;
+      for (const alias of [sectionPath, ...(section.match ?? [])]) {
+        if (path === normalizePath(alias)) score = Math.max(score, normalizePath(alias).length);
+      }
     } else {
       for (const prefix of [sectionPath, ...(section.match ?? [])]) {
         if (matchesPrefix(path, prefix)) score = Math.max(score, normalizePath(prefix).length);
@@ -505,9 +674,24 @@ export function isChromelessPath(pathname: string): boolean {
   return CHROMELESS_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix));
 }
 
+/** Consecutive runs of sections sharing a `group` (ungrouped runs have no `group`). */
+export function groupSections(
+  sections: readonly AppSection[]
+): { group: string | undefined; sections: AppSection[] }[] {
+  const runs: { group: string | undefined; sections: AppSection[] }[] = [];
+  for (const section of sections) {
+    const last = runs[runs.length - 1];
+    if (last && last.group === section.group) last.sections.push(section);
+    else runs.push({ group: section.group, sections: [section] });
+  }
+  return runs;
+}
+
 export interface AppVisibilityContext {
   signedIn: boolean;
   isAdmin: boolean;
+  /** Holds the `labs.access` permission (sees Labs even when `showLabsTab` is off). */
+  hasLabsAccess?: boolean;
   navigationSettings?: NavigationVisibilitySettings | null;
 }
 
@@ -515,13 +699,16 @@ export interface AppVisibilityContext {
 export function getVisibleApps({
   signedIn,
   isAdmin,
+  hasLabsAccess = false,
   navigationSettings,
 }: AppVisibilityContext): AppDefinition[] {
   return APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;
     if (app.adminOnly && !isAdmin) return false;
     if (app.navSetting && navigationSettings && navigationSettings[app.navSetting] === false) {
-      return false;
+      const bypass = app.navSettingBypass;
+      const exempt = (bypass?.admin && isAdmin) || (bypass?.labsAccess && hasLabsAccess);
+      if (!exempt) return false;
     }
     return true;
   });

@@ -15,10 +15,19 @@
                            (legacy nav: 5rem = `lg:top-20`; new shell: the Halo band).
    --shell-header-top      `top` for a sticky page toolbar (PageHeader).
    --shell-halo-reserve    Width kept clear in the middle of a page toolbar for Halo.
+
+   Hooks for feature code:
+   [data-app-subnav]       An app's own sub-navigation (tab rail, pill bar). Hidden under
+                           the new shell, where the AppSidebar / TabBar list the same
+                           destinations (src/lib/navigation/app-sections.ts).
+   facet-nav:              Variant for styles that apply only under the new shell.
    ========================================================================== */
 
 /* AppSidebar collapsed to icons. */
 @custom-variant sidebar-collapsed (&:where([data-sidebar="collapsed"] *));
+
+/* Only under the new shell (e.g. `facet-nav:lg:col-span-12` where a hidden sub-nav freed a column). */
+@custom-variant facet-nav (&:where([data-nav="facet"] *));
 
 @layer base {
   :root {
@@ -82,5 +91,14 @@
   :root[data-nav="facet"] [data-shell-main] {
     padding-left: var(--shell-sidebar-width);
     padding-bottom: var(--shell-tabbar-height);
+  }
+}
+
+@layer utilities {
+  /* App-local sub-navigation duplicates the AppSidebar under the new shell. In the utilities layer
+     (and more specific than one class) so it beats the element's own `flex` / `lg:block`. Pure CSS,
+     so it is right before first paint and never flashes. */
+  :root[data-nav="facet"] [data-app-subnav] {
+    display: none;
   }
 }

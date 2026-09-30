@@ -275,6 +275,7 @@ to do the same for page-level differences (e.g. adopting `PageHeader` only under
 | `TabBar` | `pathname`, `searchParams`, `apps`. Floating `material-regular` bar above the safe-area inset, `z-chrome`: four primary apps (`TAB_BAR_PRIORITY`) + **More**, which opens a bottom `Sheet` (medium/large detents) with the current app's sections and the other apps as a `FacetList`. 44px targets, `aria-current`. |
 | `PageHeader` | `title`, `subtitle?`, `back?: { href, label? }`, `actions?`. `text-large-title` `<h1>` that collapses into a sticky `material-thin` toolbar title when it scrolls under the toolbar (opacity only; instant under Reduce Motion). Reference adoption: `/help` (flag on only). |
 | `ShellGate` | `variant="facet" \| "legacy"`: render children only under that shell (CSS-gated until hydrated). |
+| `ShellPageHeader` | `title`, `subtitle?`, `back?`, `actions?`, `phoneOnly?` (default true), `className?`. An app index page's `PageHeader` inside `ShellGate variant="facet"`, `lg:hidden` by default — phones get a title (the TabBar has none) while the sidebar names the app at ≥1024px. Nothing with the flag off. Adopted on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`, `/admin`. |
 | `ShellHalo` | Halo floating top-centre over the content area, clear of the sidebar, `z-nav`. Hidden on /maps (MapDynamicIsland). |
 
 ### 12.3 Section map (`src/lib/navigation/app-sections.ts`)
@@ -283,7 +284,10 @@ One list of apps — `id`, `label`, `href`, iconoir `icon`, `data-app` `tint`, `
 (`requiresAuth`, `adminOnly`, the admin `navSetting`) and `sections` (`href`, `icon`, optional `exact`, extra `match`
 prefixes, `isDefault` for query tabs, a per-section `tint`). Resolvers: `getAppForPath`, `getActiveSectionId` (most
 specific section wins; query sections such as `/settings?tab=appearance` match on the query),
-`getTintForPath`, `getVisibleApps`, `splitTabBarApps`, `isChromelessPath`.
+`getTintForPath`, `getVisibleApps`, `splitTabBarApps`, `isChromelessPath`, `groupSections` (consecutive sections with
+the same `group` render under a sub-heading in the sidebar — `role="group"` — and as their own `FacetList` section in
+the TabBar's More sheet). An `exact` section's `match` entries are exact aliases (`/wiki/Main_Page` is Main page).
+`navSettingBypass` keeps an app visible to admins / `labs.access` holders when its admin setting is off (Labs).
 
 | App | Tint | Sections |
 |---|---|---|
@@ -292,15 +296,26 @@ specific section wins; query sections such as `/settings?tab=appearance` match o
 | Maps | `maps` | — (chromeless) |
 | ThinkPages | `thinkpages` | Accounts, ThinkTanks, Messages |
 | Vault | `vault` | Dashboard, Cards, Collections, Marketplace, Crafting, Import |
-| Wiki | `wiki` | Main page, Search, Recent changes, Categories, Random article, Watchlist, Contributions, Blurbs, Utilities |
-| Forum | `forum` | All forums, Search, Bookmarks, New thread |
+| Wiki | `wiki` | Main page, Search, Recent changes, Categories, Random article, Watchlist, Contributions, Stashes, Repository, Blurbs, Utilities |
+| Forum | `forum` | All forums, Trending (`?sort=trending`), New posts (`?sort=new`), Search, Bookmarks, New thread |
 | Sports | `sports` | MyLeague, MyClub |
 | Countries | default | Directory, Explore, Collections, Leaderboards, Realms |
+| Labs (signed in; `showLabsTab`, admins and `labs.access` always) | `maps` (Onoma blue) | Onoma (`/labs/*` belongs to Labs) |
 | Help | default | — |
-| Admin (admins) | `admin` | Overview, Platform, Users, Roles, Countries, Maps, WikiOS, Vault, ThinkPages, Notifications, Logs |
-| Settings (sidebar footer) | default | The `?tab=` panels of `/settings` |
+| Admin (admins) | `admin` | Overview · **Platform** (General settings, Bot, Notifications, Realms) · **Apps** (WorldStudio, Map style editor, WikiOS, LoreScanner, Image repository, Stash, Vault & IxCredits, Card packs & lore, Achievements, ThinkPages, Blurbs & prompts, Polls, MyLeague) · **Simulation** (Countries, Calculations, Vitality rings audit, Reference data, Storyteller, National issues, Diplomatic options/scenarios, NPC personalities, Military equipment, Economic archetypes/components, Government components, Intelligence templates) · **Users & security** (Users, Roles, Logs, Membership tiers) · **Labs** (AI narrator, Onoma, Facet lab) |
+| Settings (sidebar footer) | default | The `?tab=` panels of `/settings`, grouped Profile · Preferences · Vault; the current tab is highlighted from the URL (the page writes `?tab=` with `history.replaceState`, which Next syncs into `useSearchParams`) |
 
 Link only to routes that render (the guard rejects redirect stubs such as `/wiki/recent-changes` → use `/util/…`).
+
+**App sub-navigation.** Under the new shell an app's own sub-navigation would duplicate the sidebar, so mark it
+`data-app-subnav`: `shell.css` hides it with `html[data-nav="facet"] [data-app-subnav] { display: none }` (utilities
+layer, so it beats the element's own `flex`/`lg:block`; pure CSS, so no flash). Everything it linked to must be in the
+section map — the guard reads the hrefs of each marked file and fails if one is unreachable. Marked today: the vault
+pill bar, the admin console rail and its mobile header, the settings tab rail (the panel then spans the grid with
+`facet-nav:lg:col-span-12` — the `facet-nav:` variant applies only under the new shell), the forum rail and pill bar,
+and the WikiOS rail's navigation/library rows (its search, create-page and page tools stay). Entity-scoped section
+bars — a sports league's or club's sections (`SportsShell`), the vault's in-page tabs, Onoma's own navigation — are
+page content, not app navigation, and stay.
 Chromeless routes (`CHROMELESS_PREFIXES`): `/maps`, `/mycountry/map-editor`, `/admin/maps/editor`,
 `/admin/maps/style-editor` — no sidebar or tab bar.
 
@@ -316,13 +331,26 @@ Set by `shell.css` on `:root` (and zeroed on chromeless routes); read them, don'
 | `--shell-header-top` | the nav bar height | 0 — `top` of `PageHeader`'s sticky toolbar |
 | `--shell-halo-reserve` | 0 | 11rem / 25rem — kept clear in the middle of a page toolbar for Halo |
 
-Sticky rails that hard-code `lg:top-20` still clear the Halo band under the new shell; new rails should use
-`top-(--shell-top-offset)`. Fixed-position page elements must offset themselves by `--shell-sidebar-width` /
-`--shell-tabbar-height` if they sit at the leading or bottom edge. Variant: `sidebar-collapsed:` (styles inside the
-collapsed sidebar).
+Sticky rails use `top-(--shell-top-offset)` (5rem = the old `top-20` with the legacy nav, so flag-off is unchanged;
+`top-[calc(var(--shell-top-offset)+1rem)]` for the old `top-24`). Fixed-position page elements offset themselves by
+`--shell-sidebar-width` / `--shell-tabbar-height` when they sit at the leading or bottom edge —
+`left-(--shell-sidebar-width)`, `bottom-[calc(var(--shell-tabbar-height)+1rem)]`, a viewport-centred bar
+`left-[calc(50%+var(--shell-sidebar-width)/2)]`; sticky-bottom bars `bottom: var(--shell-tabbar-height)`. Migrated:
+the settings/admin/vault/sports/dashboard/dossier/explore/document rails, the WikiOS reader rails and Commons/image
+detail panels, the builder save bar and archetype confirmation, the ThinkPages post composer, the forum reply
+composer, the WikiOS margin drawer, the media MiniPlayer and the dev toolbars. Variants: `sidebar-collapsed:` (styles
+inside the collapsed sidebar), `facet-nav:` (styles only under the new shell).
+
+The sidebar's collapse (256 ↔ 64px) is instant: it changes `--shell-sidebar-width`, which also pads `<main>`, and
+animating that would relayout the page every frame; a transform-based version needs the sidebar to stop driving
+`<main>`'s padding during the transition.
 
 ## Changelog
 
+- **3.0 + Phase 3 gaps (2026-09-30)** — App sub-navigation hidden under the new shell (`data-app-subnav`) with every
+  destination in the section map (grouped admin and settings sections, forum feeds, WikiOS stashes/repository);
+  Labs/Onoma in the map; fixed and sticky page chrome offset by the `--shell-*` variables; `ShellPageHeader` phone titles
+  on the app index pages; `facet-nav:` variant.
 - **3.0 + Phase 3 (2026-09-30)** — Navigation shell behind `facet-nav`: `AppShell`, `AppSidebar`, `TabBar`,
   `PageHeader`, `ShellGate`, Halo as island; the app section map and its route guard; `--shell-*` layout variables;
   "New navigation (preview)" in Settings.

@@ -62,7 +62,7 @@ export function PremiumPreviewFrame({
         <GlassPanel
           accent={meta.accent}
           texture="none"
-          className="sticky top-20 z-30 px-3 py-2.5 sm:px-4"
+          className="sticky top-(--shell-top-offset) z-30 px-3 py-2.5 sm:px-4"
         >
           <div className="flex items-center gap-3">
             <Crown className="h-4 w-4 shrink-0 text-amber-500" />

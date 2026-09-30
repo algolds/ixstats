@@ -59,6 +59,34 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
   });
 
+  it("lists grouped sections under labelled sub-headings", () => {
+    renderSidebar({
+      pathname: "/admin/calculations",
+      apps: getVisibleApps({ signedIn: true, isAdmin: true }),
+    });
+    const simulation = screen.getByRole("group", { name: "Simulation" });
+    expect(within(simulation).getByRole("link", { name: "Calculations" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(screen.getByRole("heading", { name: "Users & security" })).toBeInTheDocument();
+    // The ungrouped overview leads without a heading of its own.
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/admin");
+    expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+  });
+
+  it("highlights the settings tab of the current URL within its group", () => {
+    renderSidebar({ pathname: "/settings", searchParams: new URLSearchParams("tab=cosmetics") });
+    const vault = screen.getByRole("group", { name: "Vault" });
+    expect(within(vault).getByRole("link", { name: "Cosmetics" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(screen.getByRole("link", { name: "IxnayID & Passport" })).not.toHaveAttribute(
+      "aria-current"
+    );
+  });
+
   it("shows the account and the app switcher", () => {
     renderSidebar();
     expect(screen.getByRole("link", { name: "Account: diplomat" })).toHaveAttribute(

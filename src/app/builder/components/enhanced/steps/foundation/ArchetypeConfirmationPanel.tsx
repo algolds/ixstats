@@ -24,7 +24,7 @@ export function ArchetypeConfirmationPanel({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
-          className="fixed right-0 bottom-6 left-0 z-50 flex justify-center px-4"
+          className="fixed right-0 bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-(--shell-sidebar-width) z-50 flex justify-center px-4"
         >
           <div className="flex w-full max-w-2xl items-center justify-between gap-6 rounded-xl border border-border/40 bg-background/95 px-6 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <div className="space-y-1">

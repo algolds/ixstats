@@ -286,7 +286,7 @@ export default function ExplorePage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
           {/* Sidebar: Filters (sticky rail on desktop) */}
           <aside aria-label="Filters" className="hidden lg:block">
-            <div className="lg:sticky lg:top-20">{renderFilterSidebar("glass")}</div>
+            <div className="lg:sticky lg:top-(--shell-top-offset)">{renderFilterSidebar("glass")}</div>
           </aside>
 
           {/* Main content: Sort/search bar, grid, pagination */}

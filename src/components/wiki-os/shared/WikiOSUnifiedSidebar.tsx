@@ -363,103 +363,109 @@ export function WikiOSUnifiedSidebar({
           index: rowIndex++,
         })}
 
-        <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
+        {/* Navigation + Library groups: hidden under the new shell, where the AppSidebar / TabBar
+            list the same destinations (app-sections.ts → Wiki). Search, create and page tools stay. */}
+        <div data-app-subnav="" className="contents">
+          <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
-        {/* Navigation Group (Categories/Utilities hidden on article pages) */}
-        {NAV_GROUP_1.filter((item) => !(isArticlePage && item.id === "categories")).map((item) => {
-          let glowClass =
-            "border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15 rail-glow-blue rail-animate-bounce";
-          if (item.id === "categories") {
-            glowClass =
-              "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 rail-glow-green";
-          } else if (item.id === "recent") {
-            glowClass =
-              "border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15 rail-glow-amber rail-animate-spin";
-          } else if (item.id === "utilities") {
-            glowClass = "border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20 rail-glow-di";
-          } else if (item.id === "random") {
-            glowClass =
-              "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15 rail-glow-di rail-animate-wiggle";
-          }
+          {/* Navigation Group (Categories/Utilities hidden on article pages) */}
+          {NAV_GROUP_1.filter((item) => !(isArticlePage && item.id === "categories")).map(
+            (item) => {
+              let glowClass =
+                "border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15 rail-glow-blue rail-animate-bounce";
+              if (item.id === "categories") {
+                glowClass =
+                  "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 rail-glow-green";
+              } else if (item.id === "recent") {
+                glowClass =
+                  "border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15 rail-glow-amber rail-animate-spin";
+              } else if (item.id === "utilities") {
+                glowClass = "border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20 rail-glow-di";
+              } else if (item.id === "random") {
+                glowClass =
+                  "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15 rail-glow-di rail-animate-wiggle";
+              }
 
-          return renderRow({
-            id: item.id,
-            href: withBasePath(item.href),
-            icon: item.icon,
-            title: item.title,
-            glowClass,
-            isActive: activeId === item.id,
-            index: rowIndex++,
-          });
-        })}
+              return renderRow({
+                id: item.id,
+                href: withBasePath(item.href),
+                icon: item.icon,
+                title: item.title,
+                glowClass,
+                isActive: activeId === item.id,
+                index: rowIndex++,
+              });
+            }
+          )}
 
-        <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
+          <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
-        {/* Library Group (Permanently anchored across all views with Dynamic In-Page Stashing) */}
-        {renderRow({
-          id: "stashes",
-          href: withBasePath("/stashes"),
-          icon: isArticlePage && isCurrentPageStashed ? BookmarkCheck : Bookmark,
-          title: "Stashes",
-          glowClass:
-            isArticlePage && isCurrentPageStashed
-              ? "rail-glow-rose rail-animate-pulse border-rose-500/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
-              : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
-          isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
-          badge:
-            isArticlePage && isSignedIn ? (
-              <button
-                type="button"
-                onClick={handleToggleCurrentPageStash}
-                className={cn(
-                  "cursor-pointer rounded-md p-1 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90",
-                  isCurrentPageStashed
-                    ? "border border-rose-500/40 bg-rose-500/25 text-rose-300 hover:bg-rose-500/35"
-                    : "border border-white/10 bg-white/5 text-[var(--wikios-text-dim)] hover:bg-white/10 hover:text-rose-400"
-                )}
-                title={
-                  isCurrentPageStashed
-                    ? "Remove current article from Stash"
-                    : "Quick save current article to Stash"
-                }
-              >
-                {isCurrentPageStashed ? (
-                  <Check className="h-3 w-3 text-rose-300" />
-                ) : (
-                  <Plus className="h-3 w-3" />
-                )}
-              </button>
-            ) : undefined,
-          index: rowIndex++,
-        })}
-
-        {renderRow({
-          id: "images",
-          href: withBasePath("/util/repository"),
-          icon: ImageIcon,
-          title: "Repository",
-          glowClass:
-            "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15",
-          isActive:
-            pathname === "/util/repository" ||
-            pathname.startsWith("/util/repository/") ||
-            pathname.startsWith("/wiki/repository/"),
-          index: rowIndex++,
-        })}
-
-        {!isArticlePage &&
-          renderRow({
-            id: "utilities",
-            href: withBasePath("/util"),
-            icon: Wrench,
-            title: "Utilities",
-            glowClass: "rail-glow-di border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20",
-            isActive:
-              pathname === "/util" ||
-              pathname.startsWith("/util") ||
-              pathname.startsWith("/wiki/utilities"),
+          {/* Library Group (Permanently anchored across all views with Dynamic In-Page Stashing) */}
+          {renderRow({
+            id: "stashes",
+            href: withBasePath("/stashes"),
+            icon: isArticlePage && isCurrentPageStashed ? BookmarkCheck : Bookmark,
+            title: "Stashes",
+            glowClass:
+              isArticlePage && isCurrentPageStashed
+                ? "rail-glow-rose rail-animate-pulse border-rose-500/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
+                : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
+            isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
+            badge:
+              isArticlePage && isSignedIn ? (
+                <button
+                  type="button"
+                  onClick={handleToggleCurrentPageStash}
+                  className={cn(
+                    "cursor-pointer rounded-md p-1 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90",
+                    isCurrentPageStashed
+                      ? "border border-rose-500/40 bg-rose-500/25 text-rose-300 hover:bg-rose-500/35"
+                      : "border border-white/10 bg-white/5 text-[var(--wikios-text-dim)] hover:bg-white/10 hover:text-rose-400"
+                  )}
+                  title={
+                    isCurrentPageStashed
+                      ? "Remove current article from Stash"
+                      : "Quick save current article to Stash"
+                  }
+                >
+                  {isCurrentPageStashed ? (
+                    <Check className="h-3 w-3 text-rose-300" />
+                  ) : (
+                    <Plus className="h-3 w-3" />
+                  )}
+                </button>
+              ) : undefined,
             index: rowIndex++,
           })}
+
+          {renderRow({
+            id: "images",
+            href: withBasePath("/util/repository"),
+            icon: ImageIcon,
+            title: "Repository",
+            glowClass:
+              "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15",
+            isActive:
+              pathname === "/util/repository" ||
+              pathname.startsWith("/util/repository/") ||
+              pathname.startsWith("/wiki/repository/"),
+            index: rowIndex++,
+          })}
+
+          {!isArticlePage &&
+            renderRow({
+              id: "utilities",
+              href: withBasePath("/util"),
+              icon: Wrench,
+              title: "Utilities",
+              glowClass: "rail-glow-di border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20",
+              isActive:
+                pathname === "/util" ||
+                pathname.startsWith("/util") ||
+                pathname.startsWith("/wiki/utilities"),
+              index: rowIndex++,
+            })}
+        </div>
 
         {/* Page Tools: Dynamically shown on article page */}
         {isArticlePage && (

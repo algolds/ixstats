@@ -166,7 +166,7 @@ export default function FacetMaterialsLabPage() {
 
         {/* 2. Sandbox (sticky) + Snippet Exporter */}
         <div className="flex min-w-0 flex-1 flex-col gap-6">
-          <div className="lg:sticky lg:top-24">
+          <div className="lg:sticky lg:top-[calc(var(--shell-top-offset)+1rem)]">
             <LabSandbox
               config={config}
               onChange={handleConfigChange}

@@ -362,11 +362,22 @@ values on hover or tap.
    the app section map `src/lib/navigation/app-sections.ts` (12 apps; route guard in
    `tests/lib/navigation/app-sections.test.ts`) and the `--shell-*` layout variables (`--shell-top-offset` for sticky
    rails). `PageHeader` is adopted on `/help` under the flag. Maps and the full-screen map editors stay chromeless.
-   **Before flipping the flag:** apps with their own sub-navigation (vault, admin, settings, wiki-os, sports, forum)
-   still render it next to the sidebar — fold it into the section map as each app converts in Phase 4; Labs/Onoma is
-   not in the map yet; fixed-position page chrome (map editor overlays, the builder, WikiOS drawers) doesn't offset by
-   `--shell-sidebar-width`; retire `navigation.tsx`, `useNavigationScroll` and `lib/navigation-config.ts` with the
-   legacy shell.
+   **Gaps closed 2026-09-30:** ✅ app sub-navigation — vault, admin, settings, WikiOS and forum mark theirs
+   `data-app-subnav` and it is hidden under the flag (CSS, no flash); every destination is in the map (admin's full
+   console rail and settings' tabs as grouped sections, forum Trending/New, WikiOS Stashes/Repository, a real
+   `/admin/calculations` route) and the route guard checks each marked file's hrefs; the settings tab is highlighted
+   from `?tab=`. ✅ Labs/Onoma in the map (signed in, `showLabsTab` with the admin / `labs.access` bypass, as the
+   legacy menu). ✅ Fixed and sticky page chrome offsets by `--shell-*` (builder save bar and archetype panel, WikiOS
+   margin drawer and detail panels, ThinkPages composer, forum composer, MiniPlayer, the `lg:top-20` rails).
+   ✅ Phone titles: `ShellPageHeader` on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`,
+   `/admin`. Flag-off rendering is unchanged (the variables keep their legacy values; hidden nodes are CSS-gated).
+   **Still before flipping the flag:** `/countries` index needs its `ShellPageHeader` (left for the countries work in
+   progress); sports keep a league's/club's section bar inside `SportsShell` — entity-scoped, not in the map, so it
+   stays (decide whether the sidebar should show contextual entity sections); the admin rail still shows
+   `SystemStatusWidget` beside the sidebar; the WikiOS rail keeps search/create/page tools, so wiki pages still show
+   a slim rail; the sidebar collapse is instant (animating `--shell-sidebar-width` relayouts `<main>`); Onoma keeps
+   its own chrome; retire `navigation.tsx`, `useNavigationScroll` and `lib/navigation-config.ts` with the legacy
+   shell.
 4. **Apps, worst-first:** dashboard, achievements, passport/settings, ThinkPages, WikiOS, labs chrome, Halo views,
    vault, messages, forum, admin, sports, countries, builder; then re-check MyCountry and maps against Facet 3.
    `facet-guards` gains each app's rules as it converts.

@@ -1732,6 +1732,12 @@
       top: 80px;
       height: calc(100vh - 88px);
     }
+
+    /* New navigation shell: clear the Halo band instead of the legacy nav bar. */
+    :root[data-nav="facet"] .wikios-commons-detail {
+      top: var(--shell-top-offset);
+      height: calc(100vh - var(--shell-top-offset) - 0.5rem);
+    }
   }
 
   /* IxWiki fallback */

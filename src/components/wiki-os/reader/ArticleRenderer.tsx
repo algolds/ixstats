@@ -731,7 +731,7 @@ export function ArticleRenderer({
       {/* Right static panel — Vector 2022 / Notion pattern: companion pinned, only TOC scrolls */}
       {!marginOpen && !companionCollapsed && (
         <aside
-          className="animate-in fade-in sticky top-20 hidden max-h-[calc(100vh-6rem)] w-[240px] shrink-0 flex-col gap-3 self-start border-l border-white/5 pr-1 pl-3 duration-200 xl:flex 2xl:w-[280px]"
+          className="animate-in fade-in sticky top-(--shell-top-offset) hidden max-h-[calc(100vh-6rem)] w-[240px] shrink-0 flex-col gap-3 self-start border-l border-white/5 pr-1 pl-3 duration-200 xl:flex 2xl:w-[280px]"
           aria-label="Article companion and table of contents"
         >
           <button
@@ -793,7 +793,7 @@ export function ArticleRenderer({
             soundEffects.press();
             setCompanionCollapsed(false);
           }}
-          className="text-muted-foreground/40 hover:text-foreground sticky top-20 hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l border-white/5 pt-8 transition-colors duration-150 select-none hover:border-white/10 hover:bg-white/[0.04] xl:flex"
+          className="text-muted-foreground/40 hover:text-foreground sticky top-(--shell-top-offset) hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l border-white/5 pt-8 transition-colors duration-150 select-none hover:border-white/10 hover:bg-white/[0.04] xl:flex"
           title="Show companion"
           aria-label="Show companion"
         >

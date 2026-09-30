@@ -81,7 +81,7 @@ export function DevCountryViewToolbar() {
       <button
         onClick={() => setToolbarExpanded(true)}
         className={cn(
-          "fixed right-4 bottom-4 z-50",
+          "fixed right-4 bottom-[calc(var(--shell-tabbar-height)+1rem)] z-50",
           "flex items-center gap-2 px-3 py-2",
           "rounded-full shadow-lg",
           "border backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105",
@@ -104,7 +104,7 @@ export function DevCountryViewToolbar() {
   return (
     <div
       className={cn(
-        "fixed right-4 bottom-4 z-50 w-80",
+        "fixed right-4 bottom-[calc(var(--shell-tabbar-height)+1rem)] z-50 w-80",
         "rounded-xl p-4 shadow-2xl",
         "border backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         isViewingOtherCountry

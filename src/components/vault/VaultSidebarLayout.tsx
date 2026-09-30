@@ -70,7 +70,7 @@ export function VaultSidebarLayout({
         <div className="flex gap-4 sm:gap-6">
           {/* Desktop: Fixed sidebar widgets */}
           <div className="relative z-30 hidden shrink-0 lg:block">
-            <div className="sticky top-20 space-y-4">
+            <div className="sticky top-(--shell-top-offset) space-y-4">
               <DashboardPlayerWidget />
               <VaultWidget />
               <DashboardQuickLinks />
@@ -79,8 +79,8 @@ export function VaultSidebarLayout({
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
-            {/* Mobile: Horizontal nav strip */}
-            <div className="mb-4 lg:hidden">
+            {/* Mobile: Horizontal nav strip (hidden under the new shell: the TabBar lists it) */}
+            <div data-app-subnav="" className="mb-4 lg:hidden">
               <div className="facet-hierarchy-child border-border bg-background/60 scrollbar-none overflow-x-auto rounded-xl border p-1.5 backdrop-blur-md dark:bg-black/30">
                 <div className="flex min-w-max gap-1.5">
                   {mobileNavItems.map((item) => {

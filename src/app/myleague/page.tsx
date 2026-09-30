@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { LeagueCover } from "~/components/sports/LeagueCover";
 import { withBasePath } from "~/lib/base-path";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
@@ -123,6 +124,8 @@ export default function MyLeaguePage() {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
+      {/* Phone title under the new navigation shell (nothing with the flag off). */}
+      <ShellPageHeader title="MyLeague" className="px-0 pt-0 sm:px-0" />
       {/* Dynamic League Creator Dialog */}
       <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
 
