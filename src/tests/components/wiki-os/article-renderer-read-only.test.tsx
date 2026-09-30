@@ -36,7 +36,11 @@ jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn(), info: jest.fn(), warning: jest.fn() }),
 }));
 jest.mock("~/lib/flags/flag-color-extractor", () => ({ getFlagColors: () => null }));
-jest.mock("~/lib/wiki-os/editor/wiki-embed-shared", () => ({ EMBED_CSS: "", EMBED_JS: "" }));
+jest.mock("~/lib/wiki-os/editor/wiki-embed-shared", () => ({
+  EMBED_CSS: "",
+  EMBED_JS: "",
+  EMBED_PREFETCH: "/maps?embed=true",
+}));
 jest.mock("~/components/wiki-os/reader/AppleBooksTocDrawer", () => ({
   AppleBooksTocDrawer: () => null,
 }));

@@ -197,6 +197,10 @@ if [ -d "public/images/uploads_backup" ]; then
     cp -n public/images/uploads_backup/* public/images/uploads/ 2>/dev/null || true
 fi
 
+# MapLibre's web worker is served from public/maplibre/ (gitignored). Without it every map
+# stalls on "Worker failed to load", so make sure it is there even if postinstall was skipped.
+node scripts/setup/copy-maplibre-worker.mjs || true
+
 # ------------------------------------------------------------------------------
 # 7. Smart Prisma Schema Synchronization
 # ------------------------------------------------------------------------------
