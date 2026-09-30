@@ -4,6 +4,7 @@
 **Subsystem:** Stash (`STASH_VERSION = 1`)  
 **Primary Action:** `STASH` | **Domain Accent:** Crimson Rose (`#f43f5e` / rose-500, see [stash-style-guide.md](stash-style-guide.md))  
 **Route:** `/stashes` | **Status:** Release Candidate (platform 1.4.0)  
+*(Stash is WikiOS's storage, but not WikiOS-only: forum threads (`forum/stash.ts`, `contentType: "forum_thread"`), the Onoma Name Bank (`onoma/namebank.ts`, `contentType` `name` and `dictionary`), lore cards (`lore-cards/wiki.ts`) and the media editor (`commons:`-prefixed titles) also write `StashItem` rows. The `StashItem.contentType` comment in `wiki.prisma` lists only `wiki | forum_thread | forum_post`.)*  
 *(Note: Prisma models are `Stash` / `StashItem` / `StashAnnotation`; the tables keep the legacy `lore_stash*` names)*  
 
 ---

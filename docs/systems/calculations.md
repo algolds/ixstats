@@ -3,7 +3,7 @@
 **Parent Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Scope:** Mathematical formulas, worked examples, and deterministic rules for growth caps, tax brackets, and vitality indices.  
-**Status:** 📀 Gold Master (100% Ready)  
+**Status:** ✅ Live formulas plus reference models; see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 
 This document provides mathematical formulas, worked examples, and architectural rules for all economic models, tier-based growth caps, synergy calculations, and statistical indices in IxStates.
 

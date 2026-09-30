@@ -4,16 +4,16 @@ Status: Release candidate (Plan 170 & Plan 191 complete)
 Package: `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
 Runtime: TypeScript 7.0, Next.js 16 App Router  
 
-WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Reads take under 2ms and writes take under 10ms.
+WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Saves commit to PostgreSQL first (target under 10ms); rendering still goes through MediaWiki (see below).
 
 ---
 
 ## Architectural highlights
 
 - **PostgreSQL primary storage.** Writes commit in under 10ms directly to `wiki_articles` and `wiki_revisions`.
-- **Pre-compiled HTML.** `contentHtml` serves reads directly from database indexes in under 2ms.
-- **Relational link graph (`wiki_links`).** Stores directed edges for backlink queries in under 1ms and identifies red links without extra lookups.
-- **Native Media & Asset Engine (`MediaAssetService`).** Manages 7,555+ media files in `wiki_assets` with MD5 shard paths, automated dimensions extraction, JIT auto-registration, and immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
+- **`contentHtml` cache.** `contentHtml` is served when present, but `ArticleRepository.saveArticle` writes an empty string unless the caller supplies HTML, so the next read re-renders through MediaWiki `action=parse`; every read also calls MediaWiki for author data. There is no measured sub-2ms, no-PHP read path.
+- **Relational link graph (`wiki_links`).** Stores directed edges for indexed backlink queries and identifies red links without extra lookups.
+- **Native Media & Asset Engine (`MediaAssetService`).** Manages 7,555+ media records in `wiki_assets` (pointers to images on ixwiki.com; `md5Hash` hashes the filename, not the content) with MD5 shard paths, automated dimensions extraction, JIT auto-registration, and immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
 - **No direct MariaDB connection.** The MariaDB pool (`mysql-pool.ts` / `mysql-reader.ts`) was removed on 2026-08-25 (`80eee985d`). Bridge reads are PostgreSQL (`bridge/pg-*.ts`) plus the MediaWiki HTTP Action API.
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
 - **Outbound export (`MediaWikiExportWorker`).** Queues upstream `action=edit` calls asynchronously over the shared bot session. Authorship lives in `WikiRevision.author`; per-user `rev_actor` patching is not implemented (`updateRevisionActor` is a no-op).
@@ -28,7 +28,7 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 ```mermaid
 flowchart TD
     subgraph "WikiOS client"
-        UI["Article reader, Canvas editor, Narrator player"]
+        UI["Article reader, Canvas editor, Narrator (text-to-speech) player"]
     end
 
     subgraph "tRPC backend (src/server/api/routers/wikios/)"
@@ -36,7 +36,7 @@ flowchart TD
     end
 
     subgraph "WikiOS core engine (src/lib/wiki-os/)"
-        Repo["ArticleRepository (<10ms save, <2ms read)"]
+        Repo["ArticleRepository (PostgreSQL save; empty contentHtml re-renders via MediaWiki)"]
         LinkGraph["LinkGraphService (O(1) backlinks)"]
         Search["NativeSearchService (Two-tier search)"]
         Media["MediaAssetService (wiki_assets & MD5 sharding)"]
@@ -78,12 +78,12 @@ src/lib/wiki-os/
 ├── page-ref.ts                # Page reference (title + wiki source) helpers
 │
 ├── core/                      # PostgreSQL domain services
-│   ├── article-repository.ts  # CRUD repository (<2ms read, <10ms write)
+│   ├── article-repository.ts  # CRUD repository (PostgreSQL save and read)
 │   ├── link-graph-service.ts  # Directed link graph engine
 │   ├── native-search-service.ts # Two-tier search service
 │   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
 │   ├── wiki-ast.ts            # IxWiki AST block model (+ wiki-ast-guards.ts)
-│   ├── parser-functions.ts    # ParserFunctions evaluator (#if, #switch, #expr)
+│   ├── parser-functions.ts    # ParserFunctions evaluator (#if, #switch, #expr); exercised only by tests
 │   └── category-service.ts    # Recursive category tree queries
 │
 ├── guardian/                  # Security and CDN management
@@ -146,7 +146,7 @@ src/lib/wiki-os/
 | Image search | File search across local assets and Wikimedia Commons |
 | Mode toggle | Switch between visual and source editor modes |
 | Edit summary | Summary input field and minor edit checkbox |
-| Rollback | Revert to previous revisions in a single transaction |
+| Rollback | Reads the revision history, then saves the old revision as a new one via `saveArticle` (two steps, not one transaction; no cache purge) |
 
 ### Margin and discussions
 
@@ -188,7 +188,7 @@ WikiOS Margin replaces standalone talk pages with an inspector docked to the rea
 | Full-text search | PostgreSQL `tsvector` queries across article content and infoboxes |
 | Snippet highlights | Results include context snippets with match markers |
 | Namespace filter | Filter by articles, categories, or templates |
-| Spotlight overlay | `Cmd+K` palette with trigram typo-tolerant search |
+| Spotlight overlay | `Cmd+K` palette; title search is a case-insensitive `contains` (not trigram, no GIN index) |
 
 ---
 

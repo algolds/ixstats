@@ -11,7 +11,7 @@ The NationStates (NS) integration allows users to import their existing NationSt
 ## Architecture & Features
 
 - **Card Dump Sync**: Admin-triggered region syncs (`nsImport.fetchRegionCards`, `/admin/cards` NS Import Suite) that ingest the per-season Trading Cards dump (`cardlist_S{season}.xml.gz`, published once per season, not daily) via `processRegionCardsFromDump()` in `src/lib/nationstates/sync-processor.ts`. There is no scheduled sync job.
-- **Collection Import**: Verify NS nation ownership (`nsImport.requestVerification` → `checkVerification`, backed by `NSVerification`) and import deck cards into `CardOwnership` (`nsImport.importDeck`, `/vault/import`); imports earn an `EARN_BONUS` of 50 IxC per card (cap 5,000).
+- **Collection Import**: Verify NS nation ownership (`nsImport.requestVerification` → `checkVerification`, backed by `NSVerification`) and import deck cards into `CardOwnership` (`nsImport.importDeck`, `/vault/import`); imports earn an `EARN_BONUS` of 50 IxC per newly imported card (cap 5,000), paid once per nation whichever account imports it (`ns-import/decks.ts`).
 - **Streaming Image Proxy (`/api/proxy-ns-image`)**: Server-side proxy restricted to nationstates.net / Wikimedia hosts, 24h cache, and a placeholder redirect when NS blocks the request — no persistent binary disk writes.
 - **Attribution Footer (`NationStatesAttribution.tsx`)**: Pinned footer inside `CardDetailsModal` displaying clear fan-site attribution copy and a takedown trigger.
 - **Self-Service Takedown Verification**: Nation owners verify identity via HMAC-MD5 token to retire their card and clear artwork immediately.

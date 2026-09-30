@@ -7,7 +7,13 @@
 
 The Crisis Events Engine is designed to generate algorithmic natural disasters, economic crises, diplomatic incidents, social unrest, and security threats with realistic progression, compounding escalation, and player response choices.
 
-> **Implementation status (2026-09):** Only the read side exists. `CrisisEvent` rows (`prisma/schema/diplomacy.prisma`: type, title, severity, affected countries, casualties, economic impact, `responseStatus`) are written only by the demo seed (`src/lib/demo-seed/domains/seed-security.ts`). The `crisisEvents` router exposes `getActive` and `getStatistics`, which the dashboard player widget reads for the active-crisis count. The taxonomy, lifecycle state machine, response postures, and consequence wiring below are **design targets** and are not implemented. There is no `/admin/crisis-events` page and no generator, response mutation, or spine integration. Player-facing "crises" today are urgent National Issues (see [MyCountry](./mycountry.md)).
+> **Implementation status (2026-09):** Only the read side exists. `CrisisEvent` rows (`prisma/schema/diplomacy.prisma`: type, title, severity, affected countries, casualties, economic impact, `responseStatus`) are written only by the demo seed (`src/lib/demo-seed/domains/seed-security.ts`). The `crisisEvents` router exposes `getActive` and `getStatistics`, which the dashboard player widget reads for the active-crisis count. The taxonomy, lifecycle state machine, response postures, and consequence wiring below are **design targets** and are not implemented. There is no `/admin/crisis-events` page and no generator, response mutation, or spine integration for `CrisisEvent`. The one working event producer is the separate admin world-events (Storyteller) tool, described below. Player-facing "crises" today are urgent National Issues (see [MyCountry](./mycountry.md)).
+
+---
+
+## Admin World Events (Storyteller): the only producer today
+
+Admins can author world events at `/admin/storyteller` (`src/app/admin/storyteller/`, `EventWizard`, `WorldTimeline`, `SandboxMode`), backed by `src/server/api/routers/admin/worldEvents.ts` (`getWorldEvents`, `createWorldEvent`, `updateWorldEvent`, `simulateWorldEvent`, plus diplomatic-option CRUD and `getUpcomingEvents`). `createWorldEvent` writes a `WorldEvent` (`prisma/schema/government.prisma`: name, type such as `economic_crisis`, `natural_disaster` or `pandemic`, severity 0-1, duration in IxTime years, affected countries, optional chain) and, when `generateEffects` is set, one `StorytellerEffect` per affected country (negative for severity >= 0.5). Those effects feed the `IxStatsCalculator` projection (see [Economy](./economy.md)), and creation is written to `AdminAuditLog`. `updateWorldEvent` with `isActive: false` deactivates the linked effects. This tool does not create `CrisisEvent` rows, so the `getActive` crisis feed above stays empty outside the demo seed.
 
 ---
 

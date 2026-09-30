@@ -3,7 +3,7 @@
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Concord Living-World Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Primary Action:** `ALLIED` | **Domain Accent:** Cyan Blue (`#06B6D4` / `--color-cyan-500`)  
-**Route:** `/mycountry/diplomacy` (Diplomacy Domain) | **Status:** 📀 Gold Master (100% Ready)  
+**Route:** `/mycountry/diplomacy` (Diplomacy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); embassies, stances and cultural exchange work, consent-based flows do not  
 
 The diplomacy domain handles international relations, embassy networks, cultural exchanges, multilateral alliances, foreign policy actions, diplomatic scenarios, and NPC reactions to cultural exchanges. Direct diplomatic communications route through **ThinkShare** (`/messages`).
 
@@ -60,6 +60,15 @@ Computes 8 core traits (Assertiveness, Cooperativeness, Economic Focus, Cultural
 
 ### 3. Unified Messaging (ThinkShare)
 Diplomatic channels are `ThinkshareConversation` / `DiplomaticChannel` records carrying security classifications (`PUBLIC` → `TOP_SECRET`), message signatures, and encryption flags.
+
+---
+
+## Known Gaps
+
+- **Cooperative foreign policy cannot be accepted.** `free_trade` and `military_alliance` (`COOPERATIVE_FP` in `diplomacy/policies/foreignPolicy.ts`) are created with status `proposed` and no effects, awaiting the target's consent, but there is no accept/decline procedure and no UI, so they stay proposed. Hostile actions are enacted immediately.
+- **Alliance invites skip consent**: inviting a nation makes it a member at once (`policies/alliances.ts`).
+- **Shared data is synthesised** and the cultural-exchange analysis shows randomised percentages in the UI.
+- Embassy missions and upgrades were deleted (plan 312); no mission is playable.
 
 ---
 

@@ -12,7 +12,7 @@ Vault is the central incentive, social currency, and metagame reward platform fo
 ## Layout & Sections
 
 There is no client-side `VaultRouter` — `/vault` uses normal Next.js routes wrapped in a shared layout (`src/app/vault/layout.tsx`: `AuthenticationGuard` → `VaultSidebarLayout`):
-- `src/components/vault/VaultSidebarNav.tsx` – Section navigation (`VAULT_NAV_ITEMS`: Dashboard, Cards, Marketplace, Import) plus `getSectionFromPathname` / `getSubTabFromPathname`
+- `src/components/vault/VaultSidebarNav.tsx` – Section navigation (`VAULT_NAV_ITEMS`: Dashboard, Cards, Marketplace, Import; Import is hidden unless the localStorage flag `ixstats-show-ns-importer` is set, which no UI sets, and an admin setting (`showCardsTab`) can hide the whole Vault) plus `getSectionFromPathname` / `getSubTabFromPathname`
 - `src/components/vault/VaultSidebarLayout.tsx` – Grid layout (adds the Achievements / Leaderboards links)
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): Balance overview, today's earnings breakdown, XP progress bar, yield projections, recent activity

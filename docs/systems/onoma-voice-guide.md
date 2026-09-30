@@ -1,7 +1,7 @@
 # Onoma Voice Guide — Kokoro Phoneme Integration
 
 **Last updated:** August 2026  
-**Status:** Production Ready (Beta) — Onoma Voice v2  
+**Status:** Beta, restricted to owners, admins and beta testers — Onoma Voice v2  
 **Hierarchy:** Sub-system of Onoma (`ONOMA_VERSION = 4`), powering WikiOS article narration and name pronunciation.
 
 This document covers the architecture, configuration, testing, and operation of the Onoma natural voice system, powered by `kokoro-fastapi` and `kokoro-web`.
@@ -14,8 +14,10 @@ The TTS synthesis pipeline operates on a **deterministic-first, fallback-safe** 
 
 ```mermaid
 graph TD
-    A[Client Request /api/onoma/tts] --> B{Kokoro Enabled?}
-    B -->|No| C[Web Speech API Fallback]
+    A[Client Request /api/onoma/tts] --> A2{Signed in as owner / admin / beta?}
+    A2 -->|No: 401 / 403| C[Web Speech API Fallback]
+    A2 -->|Yes| B{Kokoro Enabled?}
+    B -->|No| C
     B -->|Yes| D{Engine Selected?}
     D -->|kokoro-fastapi| E{IPA present & fastapi configured?}
     E -->|Yes| F[Normalize IPA to Kokoro tokens]
@@ -28,6 +30,8 @@ graph TD
     J -->|2xx MP3| K[Cache as JSON & Return MP3]
     J -->|Fail| L[Return 502 / Web Speech API Fallback]
 ```
+
+> **Access:** The route requires a signed-in user with a system-owner, admin/staff (role level <= 20) or beta-tester (role `beta_tester` or level 90) role (`src/app/api/onoma/tts/route.ts`); other users get 401/403. Ordinary users only ever hear the browser's Web Speech API. The route is also rate limited (`onoma-tts`).
 
 ### Key Components
 1. **Linguistic Normalization** (`src/lib/onoma/kokoro-phonemes.ts`): Translates raw IPA to Kokoro-compliant English phonemes, remapping known letters (e.g. `r -> ɹ`, `x -> k`, `c -> k`, `g -> ɡ`) and silently removing unsupported characters to prevent voice distortion.

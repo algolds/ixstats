@@ -10,11 +10,11 @@
 
 With the completion of Plan 170 and Plan 191 (Stage 2b):
 
-- **PostgreSQL is 100% authoritative for internal WikiOS reads, writes, search, and assets.**
+- **PostgreSQL is authoritative for stored wikitext, revisions, the link graph and search.** Rendering, templates, Lua, uploads, image bytes, file-search and category-autocomplete fallbacks, author and creator data, and the Main Page still come from MediaWiki; assets are metadata pointers to `ixwiki.com/images`.
 - **4,685+ namespace-0 articles** and **4,685+ revisions** are stored natively in `wiki_articles` and `wiki_revisions`.
-- **48,200+ link graph edges** are indexed in `wiki_links` for sub-1ms backlink lookups and zero-query Red Link resolution.
-- **7,555+ media files** are registered in `wiki_assets` with MD5 shard paths and immutable edge caching.
-- **Sub-1.5ms Spotlight Search** is served via `NativeSearchService`.
+- **48,200+ link graph edges** are indexed in `wiki_links` for indexed backlink lookups and zero-query Red Link resolution.
+- **7,555+ media files** are registered in `wiki_assets` with MD5 shard paths (hash of the filename) and immutable edge caching.
+- **Spotlight Search** is served via `NativeSearchService` (a Prisma `contains` query; no trigram or GIN index).
 - **Sub-10ms Save Operations** commit directly to PostgreSQL first, dispatching non-blocking background queue tasks (`MediaWikiExportWorker`) to synchronize with upstream MediaWiki.
 - **MediaWiki is demoted to a headless render (`action=parse`), export, and recent-changes source in the app.** Its public web UI is still live until Stage 3 cuts over.
 
@@ -24,11 +24,11 @@ With the completion of Plan 170 and Plan 191 (Stage 2b):
 
 1. **`WikiRevision` Append-Only Ledger**:
    - `id`, `articleId`, `mwRevId`, `wikitext`, `contentHtml`, `author`, `authorId`, `summary`, `minor`, `source`, `parentRevisionId`, `byteSize`, `byteDelta`, `createdAt`.
-   - Indexed `(articleId, createdAt)` for instant sub-2ms revision lookups.
+   - Indexed `(articleId, createdAt)` for indexed revision lookups.
 2. **PostgreSQL Primary Save Pipeline**:
    - `ArticleRepository.saveArticle()` writes directly to PostgreSQL in <10ms, registers newly referenced images via `MediaAssetService`, updates `wiki_links`, and purges Cloudflare edge caches.
 3. **High-Performance Native Reader**:
-   - Pre-compiled `contentHtml` serves reads directly from database indexes without runtime PHP overhead.
+   - `contentHtml` is served when present, but saves currently store it empty, so the next read renders through MediaWiki `action=parse` (PHP). The native ParserFunctions evaluator (`core/parser-functions.ts`) is exercised only by tests.
 4. **Sister-Wiki Federation**:
    - Direct HTTP adapters (`http-reader.ts`) connect to external wikis (`iiwiki`, `althistory`) with a circuit breaker and parallel search dispatch. Their pages open read-only via `/wiki/[slug]?source=…` (Sept 2026).
 5. **Direct-edit capture**:

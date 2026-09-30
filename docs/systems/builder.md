@@ -3,7 +3,7 @@
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Subsystem:** Country Builder (`BUILDER_VERSION = 4`)  
 **Primary Action:** `CREATE` | **Domain Accent:** Amber Gold (`#F59E0B` / `--color-amber-500`)  
-**Route:** `/builder` (create) · `/mycountry/editor` (edit) | **Status:** 📀 Gold Master (100% Ready)  
+**Route:** `/builder` (create) · `/mycountry/editor` (edit) | **Status:** ✅ Live for the 4-step wizard and wiki import; guide, diagnostics and autosave are 🟡 Partial (see [SYSTEM_STATUS.md](SYSTEM_STATUS.md))  
 
 The Country Builder serves as the sovereign onboarding and creation suite for MyCountry. It lets players configure a new nation across four build steps — foundation & identity, government, economics, and preview/commit — plus a wiki import path.
 
@@ -50,7 +50,7 @@ graph LR
 1. **Foundation & Identity**: Picks a reference country (or scratch/import), then configures name, flag (via `useUnifiedFlags` or MediaWiki asset fetch), and national symbols.
 2. **Government**: Selects atomic government components with live synergy score calculation and conflict warnings, then structure, departments, and budget.
 3. **Economics**: Economic components, sector splits, labor, demographics, and the tax system.
-4. **Preview & Create**: `countries.createCountry` persists everything in one `$transaction` (identity, demographics, fiscal/tax, government structure & components, economy builder state), assigns the nation to the user, grants the new-player (and wiki-import) IxCredit bonus, and routes to `/mycountry`.
+4. **Preview & Create**: `countries.createCountry` persists everything in one `$transaction` (identity, demographics, fiscal/tax, government structure & components, economy builder state), assigns the nation to the user, grants the new-player (and wiki-import) IxCredit bonus, and routes to `/mycountry`. If the user already has a nation, `createCountry` returns that existing nation without creating another. The builder creates only in the default realm and is one nation per account; additional nations go through realm claims (`src/server/modules/realms/realms.ownership.ts`).
 
 ---
 

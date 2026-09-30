@@ -56,7 +56,7 @@ Versioning communicates:
  │ 3. 📖 WIKIOS — Lore & Knowledge Operating System (v1)                                          │
  │    Action: PUBLISH | Domain Accent: Slate Cyan (#06B6D4) | Route: /wiki                        │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Native Lore Engine (v1)  │ High-speed lore platform with PostgreSQL storage, sub-2ms link    │
+ │ • Native Lore Engine (v1)  │ High-speed lore platform with PostgreSQL storage, indexed link    │
  │                            │ graph (`wiki_links`), and MediaWiki background sync.              │
  │ • Margin                   │ Split-canvas inspector, text markup, gutter pins, and threaded    │
  │                            │ discussions directly on article text.                             │
@@ -106,7 +106,8 @@ Versioning communicates:
  │    Role: Platform Simulation Backend | Powers living-world state across all apps               │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • IxTime Master Clock      │ Continuous world time synchronization, game epochs, and ticks.    │
- │ • Dynamic World Events     │ Algorithmic natural disaster, economic shock, and crisis queues.  │
+ │ • World Events (admin)     │ Admin-authored events that write Storyteller effects; crisis feed │
+ │                            │ is read-only, with no generator (see crisis-events.md).           │
  │ • Autonomous NPC AI        │ 8 personality traits and 6 behavioral archetypes with dampening.  │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -128,6 +129,8 @@ Versioning communicates:
  │ • Vexel (v1)               │ Procedural heraldic coat-of-arms and vector flag studio (/labs/vexel)
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+> **Registry mapping:** `VERSIONS.engines` in `src/lib/buildVersion.ts` has exactly three entries: `mycountry` (the "Statecraft Engine" above; Statecraft has no separate integer), `concord` and `atlas`. Other systems named under Concord (IxTime, crisis events, NPC AI) are a documentation grouping and are not versioned separately. The `MYCOUNTRY_ENGINE_VERSION` and `CONCORD_ENGINE_VERSION` constants are not read anywhere else in `src/`.
 
 ---
 
