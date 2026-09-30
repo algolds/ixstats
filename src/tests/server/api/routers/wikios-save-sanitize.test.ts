@@ -217,6 +217,12 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
   it("lets a wiki admin edit interface namespaces", async () => {
     const caller = createCaller(adminCtx() as never);
     await caller.saveWikitext({ title: "Template:Infobox", wikitext: "x" });
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
+      wikitext: "old",
+      title: "MediaWiki:Sidebar",
+      timestamp: "",
+      fromShadow: true,
+    });
     await caller.revertToRevision({ title: "MediaWiki:Sidebar", revid: "r1" });
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
   });

@@ -77,7 +77,11 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
 }
 
 export interface RevisionContent {
-  wikitext: string;
+  /**
+   * The revision's text; null when it is unknown: an imported history row holds "" as a placeholder
+   * while `byteSize` says the revision had content. Never treat null as an empty page.
+   */
+  wikitext: string | null;
   /** Title of the article the revision belongs to. */
   title: string;
   timestamp: string;
@@ -89,11 +93,17 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
   try {
     const rev = await db.wikiRevision.findFirst({
       where: "mwRevId" in key ? { source: "ixwiki", mwRevId: key.mwRevId } : { id: key.id },
-      select: { wikitext: true, createdAt: true, article: { select: { title: true } } },
+      select: {
+        wikitext: true,
+        byteSize: true,
+        createdAt: true,
+        article: { select: { title: true } },
+      },
     });
     if (rev) {
+      const isPlaceholder = rev.wikitext === "" && rev.byteSize > 0;
       return {
-        wikitext: rev.wikitext,
+        wikitext: isPlaceholder ? null : rev.wikitext,
         title: rev.article.title,
         timestamp: rev.createdAt.toISOString(),
       };

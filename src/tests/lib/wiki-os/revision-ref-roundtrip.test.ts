@@ -71,7 +71,12 @@ jest.mock("~/server/db", () => ({
       findFirst: async ({ where }: { where: MockRevisionWhere }) => {
         const row = mockRows.find((r) => mockMatches(r, where));
         return row
-          ? { wikitext: row.wikitext, createdAt: row.createdAt, article: { title: "Foo Bar" } }
+          ? {
+              wikitext: row.wikitext,
+              byteSize: row.byteSize,
+              createdAt: row.createdAt,
+              article: { title: "Foo Bar" },
+            }
           : null;
       },
     },

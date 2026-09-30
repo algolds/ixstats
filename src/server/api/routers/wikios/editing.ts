@@ -66,6 +66,41 @@ function requireCanonicalTitle(rawTitle: string): string {
   return canon.title;
 }
 
+/**
+ * The wikitext a revert or rollback may save over `title`, from the revision it restores. Throws
+ * when the text was never imported (a placeholder must not blank the page), when the revision
+ * belongs to another page, or when it would blank a page that has text (admins may).
+ */
+async function requireRestorableWikitext(
+  ctx: WikiAuthContext,
+  title: string,
+  revision: { wikitext: string | null; title: string }
+): Promise<string> {
+  const { wikitext } = revision;
+  if (wikitext === null) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "This revision's text has not been imported yet.",
+    });
+  }
+  if (canonicalizeTitle(revision.title)?.title !== title) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "That revision belongs to a different page.",
+    });
+  }
+  if (wikitext === "" && !isWikiAdmin(ctx)) {
+    const current = await ArticleRepository.findBySlug(title);
+    if (current?.wikitext) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Restoring this revision would blank the page. Only administrators can do that.",
+      });
+    }
+  }
+  return wikitext;
+}
+
 /** Archive/restore mirror MediaWiki delete/undelete, which are sysop rights. */
 function assertWikiAdmin(ctx: WikiAuthContext): void {
   if (!isWikiAdmin(ctx)) {
@@ -179,6 +214,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       if (!oldRev) {
         throw new Error(`Revision ${input.revid} not found`);
       }
+      const restoredWikitext = await requireRestorableWikitext(ctx, title, oldRev);
 
       const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
       const summary = input.summary || `Reverted to revision ${input.revid} via WikiOS`;
@@ -188,7 +224,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         {
           slug: title,
           title,
-          wikitext: oldRev.wikitext,
+          wikitext: restoredWikitext,
           summary,
           minor: false,
         },
@@ -200,12 +236,14 @@ export const wikiosEditingRouter = createTRPCRouter({
       MediaWikiExportWorker.enqueue({
         slug: title,
         title,
-        wikitext: oldRev.wikitext,
+        wikitext: restoredWikitext,
         summary,
         minor: false,
         authorWikiUsername: authorName,
         revisionId: saveResult.revisionId,
       });
+
+      void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
         success: true,
@@ -235,6 +273,7 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       const oldContent = await getRevisionWikitextShadow(targetRev.revid);
       if (!oldContent) throw new Error("Could not fetch target revision content");
+      const restoredWikitext = await requireRestorableWikitext(ctx, title, oldContent);
 
       const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
       const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
@@ -244,7 +283,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         {
           slug: title,
           title,
-          wikitext: oldContent.wikitext,
+          wikitext: restoredWikitext,
           summary,
           minor: false,
         },
@@ -256,12 +295,14 @@ export const wikiosEditingRouter = createTRPCRouter({
       MediaWikiExportWorker.enqueue({
         slug: title,
         title,
-        wikitext: oldContent.wikitext,
+        wikitext: restoredWikitext,
         summary,
         minor: false,
         authorWikiUsername: authorName,
         revisionId: saveResult.revisionId,
       });
+
+      void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
         success: true,
