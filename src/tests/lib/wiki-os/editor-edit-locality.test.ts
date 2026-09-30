@@ -204,6 +204,20 @@ describe("structure edits keep separators safe", () => {
     expect(save([first, second, h])).toBe("Alpha \n\nbeta.\n\n== Next ==\n");
   });
 
+  it("keeps text that follows an infobox on the infobox's closing line when it is edited", () => {
+    const input = "{{Infobox company\n| name = X\n}}'''X''' is a company.\n\nNext.\n";
+    const nodes = load(input);
+    expect(nodes.map((n) => n.type)).toEqual(["infobox-block", "p", "p"]);
+    expect(save(nodes)).toBe(input);
+    const edited = {
+      ...nodes[1]!,
+      children: nodes[1]!.children!.map((l) => (l.text === " is a company." ? { ...l, text: " is a firm." } : l)),
+    };
+    expect(save([nodes[0]!, edited, nodes[2]!])).toBe(
+      "{{Infobox company\n| name = X\n}}'''X''' is a firm.\n\nNext.\n"
+    );
+  });
+
   it("drops a deleted block with its separator and keeps the rest verbatim", () => {
     const input = "One.\n\n\nTwo.\n\nThree.\n";
     const nodes = load(input);

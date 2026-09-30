@@ -172,6 +172,15 @@ describe("blocks split the way MediaWiki reads them", () => {
     expect(types("one\n{{Citation needed}}\ntwo")).toEqual(["paragraph", "template", "paragraph"]);
   });
 
+  it("keeps an infobox a block when text follows it on its line; the text is the next block", () => {
+    const input = "{{Infobox company\n| name = X\n}}'''X''' is a company.\n\nNext.";
+    const { ast } = parse(input);
+    expect(ast.nodes.map((n) => n.type)).toEqual(["infobox", "paragraph", "paragraph"]);
+    expect(ast.nodes[1]!.sepBefore).toBe("");
+    expect(ast.nodes[1]!.raw).toBe("'''X''' is a company.");
+    expect(rebuild(input)).toBe(input);
+  });
+
   it("treats a template followed by text on its line as part of a paragraph", () => {
     expect(types("{{flag|X}} Vilena is a city.")).toEqual(["paragraph"]);
   });

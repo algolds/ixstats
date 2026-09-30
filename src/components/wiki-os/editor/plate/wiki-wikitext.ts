@@ -142,18 +142,19 @@ interface Written {
 
 /**
  * The separator to write before `el`. Between two blocks that are both written back unchanged and
- * were neighbours, it is the one they had. Otherwise an original block keeps its separator when it
- * is safe (any blank-line separator, or a single line break when the block before it is still its
- * original neighbour), everything else gets a blank line, and two paragraphs are always a blank
- * line apart (a single line break would merge them).
+ * were neighbours, it is the one they had, and a block that shared its line with the one before it
+ * (an infobox followed by text) stays on that line. Otherwise an original block keeps its
+ * separator when it is safe (any blank-line separator, or a single line break when the block
+ * before it is still its original neighbour), everything else gets a blank line, and two
+ * paragraphs are always a blank line apart (a single line break would merge them).
  */
 function separatorBefore(el: PlateNode, isOriginal: boolean, verbatim: boolean, prev: Written): string {
   const recorded = isOriginal ? el.wikiSep : undefined;
   let sep = "\n\n";
-  if (recorded !== undefined && recorded.includes("\n")) {
+  if (recorded !== undefined) {
     const adjacent = prev.srcEnd !== null && prev.srcEnd === (el.wikiSrc ?? 0) - recorded.length;
-    if (verbatim && prev.verbatim && adjacent) return recorded;
-    if (newlineCount(recorded) >= 2 || adjacent) sep = recorded;
+    if (adjacent && (!recorded.includes("\n") || (verbatim && prev.verbatim))) return recorded;
+    if (recorded.includes("\n") && (newlineCount(recorded) >= 2 || adjacent)) sep = recorded;
   }
   if (prev.type === "p" && el.type === "p" && newlineCount(sep) < 2) sep = "\n\n";
   return sep;

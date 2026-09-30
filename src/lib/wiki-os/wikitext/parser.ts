@@ -41,6 +41,8 @@ interface ScanContext {
 interface Scanned {
   node: WikiBlockNode;
   lineEnd: number;
+  /** Where the next block starts when this one ends before the end of its line (an infobox followed by text). */
+  resumeAt?: number;
 }
 
 const HEADING = /^(={1,6})\s*(.+?)\s*\1$/;
@@ -79,8 +81,8 @@ export function parse(input: string, options?: { title?: string; slug?: string }
     }
 
     const start = pos + (firstLine.length - firstLine.trimStart().length);
-    const { node, lineEnd } = scanBlock(ctx, start, firstLineEnd, nodes.length === 0);
-    const end = contentEnd(input, start, lineEnd);
+    const { node, lineEnd, resumeAt } = scanBlock(ctx, start, firstLineEnd, nodes.length === 0);
+    const end = contentEnd(input, start, resumeAt ?? lineEnd);
     node.src = { start, end };
     node.raw = input.slice(start, end);
     if (node.type === "template" || node.type === "infobox" || node.type === "parser-function") {
@@ -89,7 +91,7 @@ export function parse(input: string, options?: { title?: string; slug?: string }
     node.sepBefore = input.slice(cursor, start);
     nodes.push(node);
     cursor = end;
-    pos = lineEnd + 1;
+    pos = resumeAt ?? lineEnd + 1;
   }
 
   return {
@@ -213,8 +215,12 @@ function scanTemplateBlock(ctx: ScanContext, start: number, firstLineEnd: number
     return { node: templateNode(parsed), lineEnd: input.length };
   }
   const lineEnd = Math.max(firstLineEnd, logicalLineEnd(input, end, ctx.lastClose));
-  if (input.slice(end, lineEnd).trim() !== "") return null;
-  return { node: templateNode(parsed), lineEnd };
+  if (input.slice(end, lineEnd).trim() === "") return { node: templateNode(parsed), lineEnd };
+  // An infobox is a block even when text follows it on its line; the text is the next block.
+  if (parsed.classification === "infobox" && !parsed.isParserFunction) {
+    return { node: templateNode(parsed), lineEnd: end, resumeAt: end };
+  }
+  return null;
 }
 
 function templateNode(tmpl: ParsedTemplate): WikiBlockNode {
