@@ -32,8 +32,8 @@ import {
   extractStatKeys,
   CoordsPill,
   DynamicStatSpan,
-  type DynamicStatData,
 } from "./ArticlePlaceholders";
+import { useStatValues } from "./useStatValues";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
@@ -107,8 +107,6 @@ const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
   iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
   althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
 };
-
-const EMPTY_STATS_DATA: Record<string, DynamicStatData> = {};
 
 type PortalTarget =
   | {
@@ -338,11 +336,7 @@ export function ArticleRenderer({
     [contentHtml, infoboxHtml]
   );
 
-  const statsQuery = api.wikios.resolveWikiPlaceholders.useQuery(
-    { placeholders: statKeys },
-    { enabled: statKeys.length > 0, staleTime: 5 * 60 * 1000 }
-  );
-  const statsData = statsQuery.data || EMPTY_STATS_DATA;
+  const statsData = useStatValues(statKeys);
 
   const { data: currentUserData } = api.users.getCurrentUserWithRole.useQuery(undefined, {
     enabled: isAuthenticated,

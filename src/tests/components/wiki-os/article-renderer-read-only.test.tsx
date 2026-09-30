@@ -63,6 +63,7 @@ jest.mock("~/components/wiki-os/reader/ArticlePlaceholders", () => ({
   CoordsPill: () => null,
   DynamicStatSpan: () => null,
 }));
+jest.mock("~/components/wiki-os/reader/useStatValues", () => ({ useStatValues: () => ({}) }));
 jest.mock("~/components/wiki-os/reader/ArticleCategories", () => ({ CategoriesBar: () => null }));
 jest.mock("~/components/wiki-os/reader/ArticleFooter", () => ({ ArticleFooter: () => null }));
 jest.mock("~/components/wiki-os/margin", () => {
