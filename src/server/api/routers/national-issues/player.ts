@@ -18,100 +18,27 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
-import {
-  calculateCivilServiceCapacity,
-  calculateTotalConsumedStaff,
-} from "~/lib/government/atomic-utils";
-import { deriveBrokers } from "~/lib/statecraft/power-brokers";
-import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+import { loadCivCapState, RECON_CAPACITY_COST } from "~/lib/government/civcap";
 
 // Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
-const RECON_CAPACITY_COST = 20; // Capacity reserved per in-progress recon Meeting
 const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT across gov quality (penalty = fog, not time)
-const DELEGATION_WINDOW_MS = 5 * 24 * 60 * 60 * 1000; // delegated issues keep consuming CivCap for 5 IxTime days
 
 /**
  * Recon context for a country: its atomic build (for the fog) + Capacity state.
  * `used` includes in-progress recon Meetings, so over-committing recon over-extends
- * the civil service and clouds results (the Capacity lever biting).
+ * the civil service and clouds results (the Capacity lever biting). The CivCap sum
+ * itself lives in lib/government/civcap.ts (shared with policies and the MyCountry band).
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
-  const now = IxTime.getCurrentIxTime();
-  const [
-    country,
-    structure,
-    components,
-    pendingRecon,
-    allocations,
-    activePoliciesSum,
-    dismissedIssuesCount,
-  ] = await Promise.all([
-    db.country.findUnique({
-      where: { id: countryId },
-      select: { currentPopulation: true, governmentalEfficiency: true },
-    }),
-    db.governmentStructure.findUnique({
-      where: { countryId },
-      select: {
-        governmentEffectiveness: true,
-        departments: { where: { isActive: true }, select: { category: true } },
-      },
-    }),
-    db.governmentComponent.findMany({
-      where: { countryId, isActive: true },
-      take: 100,
-      select: { componentType: true },
-    }),
-    db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
-    // The budget in effect: the latest year at or before the current IxTime year
-    loadEffectiveBudget(db, countryId, { take: 50 }).then((budget) => budget.allocations),
-    db.policy.aggregate({
-      where: { countryId, status: "active" },
-      _sum: { civCapCost: true },
-    }),
-    db.nationalIssue.count({
-      where: {
-        countryId,
-        status: "dismissed",
-        respondedIxTime: { gte: now - DELEGATION_WINDOW_MS },
-      },
-    }),
-  ]);
-
-  const spendByCategory: Record<string, number> = {};
-  allocations.forEach((alloc) => {
-    const cat = alloc.department.category;
-    spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
-  });
-
-  const activeComponentTypes = components.map((c) => c.componentType);
-  const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
-  const isTechnocratsSatisfied = activeBrokers.some((b) => b.id === "technocrats" && b.satisfied);
-
-  const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
-  const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
-
-  const govStaff = calculateTotalConsumedStaff(
-    components.map((c) => c.componentType as any),
-    [],
-    []
-  );
-
-  // Apply 15% domestic policy upkeep Capacity relief if satisfied
-  const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
-  const policyCivCap = activePoliciesSum._sum.civCapCost ?? 0;
-  const dismissedCivCap = dismissedIssuesCount * 15;
-  const used =
-    effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
-
+  const civCap = await loadCivCapState(db, countryId);
   return {
-    componentTypes: components.map((c) => String(c.componentType)),
-    departmentCategories: (structure?.departments ?? []).map((d) => d.category),
-    capacity,
-    used,
-    available: Math.max(0, capacity - used),
-    overCapacity: used > capacity,
-    lowEfficiency: effectiveness < 40,
+    componentTypes: civCap.componentTypes,
+    departmentCategories: civCap.departmentCategories,
+    capacity: civCap.capacity,
+    used: civCap.used,
+    available: civCap.available,
+    overCapacity: civCap.overCapacity,
+    lowEfficiency: civCap.effectiveness < 40,
   };
 }
 

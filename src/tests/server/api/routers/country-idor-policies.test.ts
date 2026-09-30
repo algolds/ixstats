@@ -21,6 +21,7 @@ function policiesDb() {
     },
     governmentComponent: { findMany: jest.fn().mockResolvedValue([]) },
     nationalIssue: { count: jest.fn().mockResolvedValue(0) },
+    intent: { aggregate: jest.fn().mockResolvedValue({ _sum: { civCapCost: 0 } }) },
     budgetAllocation: {
       findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),

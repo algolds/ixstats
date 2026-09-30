@@ -5,94 +5,22 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
-import { IxTime } from "~/lib/ixtime";
-import {
-  calculateCivilServiceCapacity,
-  calculateTotalConsumedStaff,
-} from "~/lib/government/atomic-utils";
-import { deriveBrokers } from "~/lib/statecraft/power-brokers";
-import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+import type { PrismaClient } from "@prisma/client";
+import { loadCivCapState } from "~/lib/government/civcap";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
-const RECON_CAPACITY_COST = 20;
-
-async function loadPolicyReconContext(db: any, countryId: string) {
-  const now = IxTime.getCurrentIxTime();
-  const [
-    country,
-    structure,
-    components,
-    pendingRecon,
-    allocations,
-    activePoliciesSum,
-    dismissedIssuesCount,
-  ] = await Promise.all([
-    db.country.findUnique({
-      where: { id: countryId },
-      select: { currentPopulation: true, governmentalEfficiency: true },
-    }),
-    db.governmentStructure.findUnique({
-      where: { countryId },
-      select: {
-        governmentEffectiveness: true,
-        departments: { where: { isActive: true }, select: { category: true } },
-      },
-    }),
-    db.governmentComponent.findMany({
-      where: { countryId, isActive: true },
-      select: { componentType: true },
-    }),
-    db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
-    // The budget in effect: the latest year at or before the current IxTime year
-    loadEffectiveBudget(db, countryId).then((budget) => budget.allocations),
-    db.policy.aggregate({
-      where: { countryId, status: "active" },
-      _sum: { civCapCost: true },
-    }),
-    db.nationalIssue.count({
-      where: {
-        countryId,
-        status: "dismissed",
-        respondedIxTime: { gte: now - 5 },
-      },
-    }),
-  ]);
-
-  const spendByCategory: Record<string, number> = {};
-  allocations.forEach((alloc: any) => {
-    const cat = alloc.department.category;
-    spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
-  });
-
-  const activeComponentTypes = components.map((c: any) => c.componentType);
-  const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
-  const isTechnocratsSatisfied = activeBrokers.some(
-    (b: any) => b.id === "technocrats" && b.satisfied
-  );
-
-  const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
-  const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
-
-  const govStaff = calculateTotalConsumedStaff(
-    components.map((c: any) => c.componentType as any),
-    [],
-    []
-  );
-
-  const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
-  const policyCivCap = activePoliciesSum._sum.civCapCost ?? 0;
-  const dismissedCivCap = dismissedIssuesCount * 15;
-  const used =
-    effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
-
+/** Policy recon context: the shared CivCap state (lib/government/civcap.ts) + an efficiency flag. */
+async function loadPolicyReconContext(db: PrismaClient, countryId: string) {
+  const civCap = await loadCivCapState(db, countryId);
   return {
-    componentTypes: components.map((c: any) => String(c.componentType)),
-    departmentCategories: (structure?.departments ?? []).map((d: any) => d.category),
-    capacity,
-    used,
-    available: Math.max(0, capacity - used),
-    overCapacity: used > capacity,
-    lowEfficiency: effectiveness < 45,
+    componentTypes: civCap.componentTypes,
+    departmentCategories: civCap.departmentCategories,
+    capacity: civCap.capacity,
+    used: civCap.used,
+    available: civCap.available,
+    overCapacity: civCap.overCapacity,
+    lowEfficiency: civCap.effectiveness < 45,
+    breakdown: civCap.breakdown,
   };
 }
 

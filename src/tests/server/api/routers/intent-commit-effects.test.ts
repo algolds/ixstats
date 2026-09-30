@@ -114,6 +114,20 @@ describe("intent.commit", () => {
 
     expect(db.storytellerEffect.create).not.toHaveBeenCalled();
   });
+
+  it("stores the package's CivCap cost on the Intent so CivCap can consume it", async () => {
+    const db = makeDb();
+    const caller = createCallerFactory(intentRouter)(ctxFor(db));
+    await caller.commit({ countryId: "c1", goal: "Crack down on urban crime", tier: "extreme" });
+
+    const expected = assemblePackages("Crack down on urban crime").packages.find(
+      (p) => p.tier === "extreme"
+    )!.civCapCost;
+    expect(expected).toBeGreaterThan(0);
+    expect(db.intent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ status: "active", civCapCost: expected }),
+    });
+  });
 });
 
 describe("assemblePackages", () => {
