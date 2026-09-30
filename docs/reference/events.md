@@ -67,6 +67,8 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `policy-maintenance` | `0 */6 * * *` | — |
 | `national-issues` | `*/30 * * * *` | — |
 | `wiki-recentchanges` | `*/10 * * * *` | `cronSchedule_wikiRecentChanges` |
+| `budget-year-rollover` | `41 * * * *` | — |
+| `db-backup` | `17 3 * * *` | — |
 
 ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.
 
@@ -75,7 +77,7 @@ Manual scripts under `scripts/`:
 - `scripts/audit/run-all-tests.ts` – Aggregated regression runner
 - `scripts/audit/test-all-crud-operations.ts` – Exercises CRUD endpoints
 - `scripts/audit/verify-economic-calculations.ts` – Validates economic formulas
-- `scripts/setup/backup-db.ts` / `restore-db.ts` – Database maintenance (Postgres backups use `pg_dump`)
+- `scripts/setup/backup-db.ts` / `restore-db.ts` – `db:backup` / `db:restore` (`pg_dump -Fc` to `backups/` with retention; `pg_restore`), see [deployment.md](../operations/deployment.md#backups-and-restore)
 
 ## Event Producers
 - **ThinkShare messages** – `messages` router (`messaging.ts`, `conversations.ts`, `participants.ts`) → `getThinkPagesBroadcaster().broadcastMessage()`

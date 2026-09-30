@@ -143,6 +143,15 @@ bun install --frozen-lockfile
 echo "🗄️ Generating Prisma client..."
 bun run db:generate
 
+# Back up the database before the schema sync; never push the schema without a dump
+echo "💾 Backing up production database (backups/ixstats-<UTC timestamp>.dump)..."
+if bun run db:backup; then
+    echo "✅ Database backup completed"
+else
+    echo "❌ Database backup failed - aborting deployment before the schema sync"
+    exit 1
+fi
+
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
 bun run db:push:force

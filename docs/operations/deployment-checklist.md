@@ -94,12 +94,12 @@ git push origin v1.4.0
 
 - [ ] **Database backup created**
   ```bash
-  # Production database (PostgreSQL in Docker). Note: `bun run db:backup` is not
-  # implemented for PostgreSQL (it prints a pg_dump hint and exits 1).
-  docker exec ixstats-postgres pg_dump -U postgres -d ixstats -Fc > /root/ixstats-$(date +%F-%H%M).dump
+  # Production database (PostgreSQL in Docker): pg_dump -Fc into backups/, keeps the newest 14.
+  # deploy-production.sh also runs this before `db push` and aborts if it fails.
+  bun run db:backup
 
   # Verify backup file exists
-  ls -lh /root/ixstats-*.dump | tail -1
+  ls -lh backups/ixstats-*.dump | tail -1
   ```
 
 - [ ] **Environment files backed up**
@@ -117,7 +117,7 @@ git push origin production-pre-v1.4.0
   ```
 
 - [ ] **Backup retention verified**
-  - [ ] Database backups older than 30 days removed
+  - [ ] `backups/` holds the newest 14 dumps (`db:backup` prunes older ones; `--keep N` to change)
   - [ ] Sufficient disk space available (check with `df -h`)
 
 ---
@@ -760,8 +760,9 @@ Immediately rollback if:
 
 - [ ] **Restore database (if needed)**
   ```bash
-  # PostgreSQL (Docker), from the pre-deploy dump
-  docker exec -i ixstats-postgres pg_restore -U postgres -d ixstats --clean < /root/ixstats-<stamp>.dump
+  # PostgreSQL (Docker), from the pre-deploy dump in backups/ (prints the plan; add --yes to restore)
+  bun run db:restore -- ixstats-<stamp>.dump --i-know-this-is-production
+  bun run db:restore -- ixstats-<stamp>.dump --i-know-this-is-production --yes
 
   # Verify restore
   docker exec ixstats-postgres psql -U postgres -d ixstats -c "SELECT count(*) FROM \"Country\";"
@@ -793,7 +794,7 @@ After successful deployment (wait 24-48 hours):
 
 - [ ] **Remove old backups**
   ```bash
-  # Keep last 7 days of backups
+  # backups/ is pruned by db:backup (newest 14 kept); remove older manual dumps in /root
   find /root -maxdepth 1 -name "ixstats-*.dump" -mtime +7 -delete
   ```
 

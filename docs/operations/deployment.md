@@ -17,7 +17,7 @@ For the step-by-step release procedure see [`deployment-checklist.md`](deploymen
 ### Alternative Commands
 - `bun run preview` – Build + start Next.js server on `${PORT:-3550}`
 - `bun run start:next` – Direct Next.js start without the custom server (no WebSocket support)
-- `bun run deploy:prod` – Runs `scripts/deploy-production.sh`: on the VPS it hard-resets the checkout to its current branch from the `master` remote, then `bun install --frozen-lockfile`, `db:generate`, `db:push:force`, build, `deploy-ixworld.sh`, `pm2 startOrReload ecosystem.config.cjs --update-env`, and `start-production.sh`
+- `bun run deploy:prod` – Runs `scripts/deploy-production.sh`: on the VPS it hard-resets the checkout to its current branch from the `master` remote, then `bun install --frozen-lockfile`, `db:generate`, `db:backup` (the deploy aborts if the dump fails), `db:push:force`, build, `deploy-ixworld.sh`, `pm2 startOrReload ecosystem.config.cjs --update-env`, and `start-production.sh`
 - `bun run deploy:local` – Local checks + push + remote `deploy-production.sh` (see [`local-dev-setup.md`](local-dev-setup.md))
 
 ## Server Behaviour (`server.mjs`)
@@ -35,8 +35,43 @@ For the step-by-step release procedure see [`deployment-checklist.md`](deploymen
 
 ## Database Management
 - Production database: PostgreSQL with PostGIS extension for geographic features
-- Use `pg_dump` for backups before promotions (`docker exec ixstats-postgres pg_dump -U postgres -d ixstats -Fc > …`); store backups securely. `bun run db:backup` is **not** implemented for PostgreSQL — it prints a `pg_dump` hint and exits 1
+- Back up with `bun run db:backup` (see [Backups and restore](#backups-and-restore)); `deploy-production.sh` takes one before every schema sync
 - Schema changes are applied with `prisma db push` (`bun run db:push:force`, also run by `deploy-production.sh`); it stops on possible data loss, so review any such warning before accepting it
+
+## Backups and restore
+
+`bun run db:backup` (`scripts/setup/backup-db.ts`, logic in `src/lib/system/db-backup.ts`) writes a
+`pg_dump -Fc` custom-format dump to `backups/ixstats-<UTC timestamp>.dump` (gitignored, so the deploy
+script's `git clean -fd` leaves it alone) and then deletes the oldest `ixstats-*.dump` files beyond the
+newest 14. It exits non-zero on any failure and never leaves a partial file behind.
+
+- **Source.** When the Docker container `ixstats-postgres` is running (production, WSL local dev) it runs
+  `docker exec ixstats-postgres pg_dump -U postgres -Fc ixstats`, so the host needs no Postgres client.
+  Otherwise it runs the host's `pg_dump` against `DATABASE_URL` (Prisma-only query parameters are dropped;
+  the password is passed as `PGPASSWORD`). `--no-docker` forces `DATABASE_URL`.
+- **Options.** `bun run db:backup -- --keep 30 --dir /srv/ixstats-backups`.
+- **Deploys.** `scripts/deploy-production.sh` runs `bun run db:backup` before `bun run db:push:force`
+  and aborts the deploy if the dump fails.
+- **Schedule.** The cron job `db-backup` (`src/server/cron/jobs.ts`) takes the same dump daily at 03:17 UTC
+  with the default retention, into `backups/` under the cron runner's working directory. Like every job it
+  is off until named in `CRON_ENABLED_JOBS` (or `*`); restart `ixstats-cron` after changing it.
+- **Off-site.** Dumps live on the same VPS as the database; copy them elsewhere
+  (`scp ixwiki:/ixwiki/public/projects/ixstats/backups/ixstats-<stamp>.dump .`) for disaster recovery.
+
+`bun run db:restore` lists the dumps in `backups/`, and `bun run db:restore -- <file>` prints the target
+and the exact `pg_restore` command without changing anything. Add `--yes` to run
+`pg_restore --clean --if-exists --no-owner` into the running `ixstats-postgres` container (the dump is piped
+in on stdin), or into `DATABASE_URL` when the container is not running. Under `NODE_ENV=production` the
+script refuses unless `--i-know-this-is-production` is also passed:
+
+```bash
+bun run db:backup   # dump the current state first
+bun run db:restore -- ixstats-20260930T031700Z.dump --i-know-this-is-production        # review the plan
+bun run db:restore -- ixstats-20260930T031700Z.dump --i-know-this-is-production --yes  # restore
+docker exec ixstats-postgres psql -U postgres -d ixstats -c 'SELECT count(*) FROM "Country";'
+```
+
+Stop the web app and `ixstats-cron` during a production restore so nothing writes mid-restore.
 
 ## Health & Monitoring
 - Rate limiter and error logger configured via environment toggles (`RATE_LIMIT_ENABLED`, `DISCORD_WEBHOOK_ENABLED`)
@@ -47,7 +82,7 @@ For the step-by-step release procedure see [`deployment-checklist.md`](deploymen
 ## Deployment Checklist
 1. Verify environment variables using `bun run auth:check:prod` / `bun run verify:environment` and compare with [Environment Configuration](#environment-configuration) below and `src/env.ts`
 2. Run `bun run audit:wiring` and `bun run test:critical`
-3. Create a database backup with `pg_dump` (see Database Management; `bun run db:backup` does not work on PostgreSQL)
+3. Create a database backup with `bun run db:backup` (`deploy-production.sh` also takes one before `db push`; see [Backups and restore](#backups-and-restore))
 4. Build and deploy the new release
 5. Monitor Discord/webhook alerts and server logs after rollout
 

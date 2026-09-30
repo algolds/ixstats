@@ -74,9 +74,13 @@ export const DepartmentInputSchema = z.object({
   functions: z.array(z.string()).optional(),
 });
 
+/** Bounds for `budgetYear`, an IxTime game year (see ~/lib/government/budget-year). */
+export const BUDGET_YEAR_MIN = 1900;
+export const BUDGET_YEAR_MAX = 3000;
+
 export const BudgetAllocationInputSchema = z.object({
   departmentId: z.string().min(1),
-  budgetYear: z.number().int().min(2020).max(2035),
+  budgetYear: z.number().int().min(BUDGET_YEAR_MIN).max(BUDGET_YEAR_MAX),
   allocatedAmount: z.number().nonnegative(),
   allocatedPercent: z.number().min(0).max(100),
   notes: z.string().optional(),

@@ -3,6 +3,7 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 type Prisma = PrismaClient;
 
@@ -159,7 +160,7 @@ export async function seedGovernmentTree(
   }
 
   // Budget allocations for each department
-  const budgetYear = new Date().getFullYear();
+  const budgetYear = currentBudgetYear();
   const budgets = [
     { departmentId: deptIds[0]!, allocatedAmount: 85000000000, allocatedPercent: 22 },
     { departmentId: deptIds[1]!, allocatedAmount: 58000000000, allocatedPercent: 15 },

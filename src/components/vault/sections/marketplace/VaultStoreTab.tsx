@@ -47,6 +47,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -162,7 +163,7 @@ export function VaultStoreTab() {
     },
   });
 
-  const spendCreditsMutation = api.vault.spendCredits.useMutation({
+  const purchaseStoreItemMutation = api.vault.purchaseStoreItem.useMutation({
     onSuccess: () => {
       notify.success("Item unlocked successfully!");
       void utils.vault.getBalance.invalidate();
@@ -201,16 +202,7 @@ export function VaultStoreTab() {
 
   const upgradeItems: StoreItem[] = ((storeItemsData || []) as any[])
     .filter((item) => item.category === "upgrades")
-    .filter((item) => {
-      if (item.id === "upgrade_card_capacity_mega") {
-        const purchaseCounts = (
-          ownedData as { purchaseCounts?: Record<string, number> } | undefined
-        )?.purchaseCounts;
-        const standardCount = purchaseCounts?.["upgrade_card_capacity"] || 0;
-        return standardCount >= 5;
-      }
-      return true;
-    })
+    .filter((item) => storePrerequisiteMet(item.id, ownedData?.purchaseCounts))
     .map((item) => ({
       id: item.id,
       name: item.name,
@@ -226,12 +218,7 @@ export function VaultStoreTab() {
   const handleCustomPurchaseConfirm = () => {
     if (!activeCheckoutItem) return;
     setPurchasingItemId(activeCheckoutItem.id);
-    spendCreditsMutation.mutate({
-      amount: activeCheckoutItem.price,
-      type: "SPEND_COSMETIC",
-      source: `Purchase item: ${activeCheckoutItem.name}`,
-      metadata: { itemId: activeCheckoutItem.id },
-    });
+    purchaseStoreItemMutation.mutate({ itemId: activeCheckoutItem.id });
   };
 
   const isLoading =
@@ -454,15 +441,8 @@ export function VaultStoreTab() {
                         item={item}
                         onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
                         isPurchasing={purchasingItemId === item.id}
-                        isOwned={
-                          !!(
-                            ownedData as { purchasedIds?: string[] } | undefined
-                          )?.purchasedIds?.includes(item.id)
-                        }
-                        purchaseCount={
-                          (ownedData as { purchaseCounts?: Record<string, number> } | undefined)
-                            ?.purchaseCounts?.[item.id] ?? 0
-                        }
+                        isOwned={!!ownedData?.purchasedItemIds.includes(item.id)}
+                        purchaseCount={ownedData?.purchaseCounts[item.id] ?? 0}
                       />
                     ))}
                   </div>
@@ -485,15 +465,9 @@ export function VaultStoreTab() {
                         item={item}
                         onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
                         isPurchasing={purchasingItemId === item.id}
-                        isOwned={
-                          !!(
-                            ownedData as { purchasedIds?: string[] } | undefined
-                          )?.purchasedIds?.includes(item.id)
-                        }
-                        purchaseCount={
-                          (ownedData as { purchaseCounts?: Record<string, number> } | undefined)
-                            ?.purchaseCounts?.[item.id] ?? 0
-                        }
+                        // Upgrades stack, so they are never "owned"; the count shows how many.
+                        isOwned={false}
+                        purchaseCount={ownedData?.purchaseCounts[item.id] ?? 0}
                       />
                     ))}
                   </div>
@@ -515,7 +489,9 @@ export function VaultStoreTab() {
         item={activeCheckoutItem}
         onClose={() => setActiveCheckoutItem(null)}
         onConfirm={handleCustomPurchaseConfirm}
-        isPurchasing={purchasingItemId === activeCheckoutItem?.id && spendCreditsMutation.isPending}
+        isPurchasing={
+          purchasingItemId === activeCheckoutItem?.id && purchaseStoreItemMutation.isPending
+        }
       />
 
       <VaultParticleExplosionModal

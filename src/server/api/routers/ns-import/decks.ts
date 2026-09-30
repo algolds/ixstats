@@ -142,12 +142,40 @@ export const nsImportDecksRouter = createTRPCRouter({
         });
       }
 
+      // A verification pays for one import: claim it atomically (expire it now) so a
+      // repeated or concurrent call can't import and collect the bonus again.
+      const claimedAt = new Date();
+      const claim = await ctx.db.nSVerification.updateMany({
+        where: {
+          id: verification.id,
+          userId: ctx.user.id,
+          verified: true,
+          expiresAt: { gt: claimedAt },
+        },
+        data: { expiresAt: claimedAt },
+      });
+      if (claim.count !== 1) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "This verification has expired or was already used. Please verify again.",
+        });
+      }
+      // If the deck can't be fetched, nothing was imported: give the verification back.
+      const releaseClaim = () =>
+        ctx.db.nSVerification
+          .update({
+            where: { id: verification.id },
+            data: { expiresAt: verification.expiresAt },
+          })
+          .catch(() => {});
+
       const nationName = verification.nationName;
       // Fetch deck from NS API
       let deckData;
       try {
         deckData = await nsApiClient.fetchDeck(nationName);
       } catch (error) {
+        await releaseClaim();
         const msg = error instanceof Error ? error.message : String(error);
         if (msg === "RATE_LIMIT") {
           throw new TRPCError({
@@ -169,6 +197,7 @@ export const nsImportDecksRouter = createTRPCRouter({
       }
 
       if (!deckData) {
+        await releaseClaim();
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Failed to fetch deck from NationStates (Unknown Nation or Empty Deck).",
@@ -176,6 +205,7 @@ export const nsImportDecksRouter = createTRPCRouter({
       }
 
       if (deckData.cards.length === 0) {
+        await releaseClaim();
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "This nation has no cards in their deck.",
@@ -192,6 +222,7 @@ export const nsImportDecksRouter = createTRPCRouter({
         marketValue: number;
       }[] = [];
       const skippedCards: string[] = [];
+      let alreadyOwned = 0;
 
       // Get vault config and calculate user's maximum capacity limit
       const config = await getVaultConfig(ctx.db as any);
@@ -351,27 +382,31 @@ export const nsImportDecksRouter = createTRPCRouter({
             },
           });
 
-          if (!existingOwnership) {
-            // Get next serial number for this card
-            const maxSerial = await ctx.db.cardOwnership.findFirst({
-              where: { cardId: card.id },
-              orderBy: { serialNumber: "desc" },
-              select: { serialNumber: true },
-            });
-            const nextSerial = (maxSerial?.serialNumber || 0) + 1;
-
-            // Create new ownership
-            await ctx.db.cardOwnership.create({
-              data: {
-                id: `own_${Date.now()}_${ctx.user.id}_${card.id}`,
-                userId: ctx.user.id,
-                cardId: card.id,
-                ownerId: ctx.user.id,
-                serialNumber: nextSerial,
-                isLocked: false,
-              },
-            });
+          if (existingOwnership) {
+            // Already in the collection: nothing new to import, count or pay for
+            alreadyOwned++;
+            continue;
           }
+
+          // Get next serial number for this card
+          const maxSerial = await ctx.db.cardOwnership.findFirst({
+            where: { cardId: card.id },
+            orderBy: { serialNumber: "desc" },
+            select: { serialNumber: true },
+          });
+          const nextSerial = (maxSerial?.serialNumber || 0) + 1;
+
+          // Create new ownership
+          await ctx.db.cardOwnership.create({
+            data: {
+              id: `own_${Date.now()}_${ctx.user.id}_${card.id}`,
+              userId: ctx.user.id,
+              cardId: card.id,
+              ownerId: ctx.user.id,
+              serialNumber: nextSerial,
+              isLocked: false,
+            },
+          });
 
           importedCardIds.push(card.id);
           importedCardData.push({
@@ -399,18 +434,22 @@ export const nsImportDecksRouter = createTRPCRouter({
         }
       }
 
-      // Award bonus IxCredits for import (per-card, capped — config-tunable)
+      // Award bonus IxCredits for newly imported cards (per-card, capped — config-tunable),
+      // once per nation whichever account imports it
       const bcfg = await getBonusConfig(ctx.db);
-      const bonusAmount = nsImportBonus(bcfg, importedCardIds.length);
+      let bonusAmount = nsImportBonus(bcfg, importedCardIds.length);
       if (bonusAmount > 0) {
-        await grantBonus(ctx.db, ctx.user.id, "bonus:ns_deck_import", bonusAmount, {
+        const bonus = await grantBonus(ctx.db, ctx.user.id, "bonus:ns_deck_import", bonusAmount, {
+          onceKey: `bonus:ns_deck_import:${nationName.trim().toLowerCase().replace(/\s+/g, "_")}`,
           metadata: { nationName, cardsImported: importedCardIds.length },
         });
+        if (!bonus.granted) bonusAmount = 0;
       }
 
       return {
         success: true,
         cardsImported: importedCardIds.length,
+        cardsAlreadyOwned: alreadyOwned,
         cardsSkipped: skippedCards.length,
         bonusCredits: bonusAmount,
         nation: nationName,
