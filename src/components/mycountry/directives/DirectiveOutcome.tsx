@@ -2,6 +2,7 @@
 
 import React from "react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EffectList, type EffectItem } from "./EffectList";
 import { ledgerToEffect, gdpShiftToEffect } from "./directive-model";
@@ -25,13 +26,14 @@ export function DirectiveOutcome({ intentId }: { intentId: string }) {
     return (
       <p className="text-muted-foreground text-sm">
         Recorded effects could not be loaded.{" "}
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="xs"
           onClick={() => void outcome.refetch()}
-          className="text-foreground focus-visible:ring-ring rounded underline underline-offset-2 outline-none focus-visible:ring-2"
+          className="text-foreground h-auto px-0 underline"
         >
           Try again
-        </button>
+        </Button>
       </p>
     );
   }

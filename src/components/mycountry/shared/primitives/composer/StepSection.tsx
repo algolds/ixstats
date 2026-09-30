@@ -1,5 +1,10 @@
 import React from "react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
+
+/** The composer always has four steps: goal, approach, projected impact, review and declare. */
+const STEP_COUNT = 4;
 
 export interface StepSectionProps {
   step: number;
@@ -11,7 +16,10 @@ export interface StepSectionProps {
   className?: string;
 }
 
-/** One numbered step of the directive composer: a grouped card with a plain header. */
+/**
+ * One step of the directive composer: a depth-2 Facet card (solid, since it sits inside the
+ * Directives workspace's glass shell) with a "Step n of 4" eyebrow over a plain title.
+ */
 export function StepSection({
   step,
   title,
@@ -22,26 +30,28 @@ export function StepSection({
 }: StepSectionProps) {
   const headingId = `directive-step-${step}`;
   return (
-    <section
+    <FacetCard
+      depth={2}
+      surface="solid"
+      role="region"
       aria-labelledby={headingId}
-      className={cn("border-border bg-card rounded-2xl border p-4 sm:p-6", className)}
+      className={cn("rounded-2xl", className)}
     >
-      <header className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums"
-        >
-          {step}
-        </span>
+      <FacetCardHeader className="flex-row items-start gap-3 p-4 sm:p-6">
         <div className="min-w-0 flex-1">
-          <h3 id={headingId} className="text-foreground text-base leading-6 font-semibold">
+          <Eyebrow className="block">
+            Step {step} of {STEP_COUNT}
+          </Eyebrow>
+          <h3 id={headingId} className="text-foreground mt-1 text-base leading-6 font-semibold">
             {title}
           </h3>
           {description && <p className="text-muted-foreground mt-0.5 text-sm">{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
-      </header>
-      {children && <div className="mt-4">{children}</div>}
-    </section>
+      </FacetCardHeader>
+      {children && (
+        <FacetCardContent className="px-4 pb-4 sm:px-6 sm:pb-6">{children}</FacetCardContent>
+      )}
+    </FacetCard>
   );
 }

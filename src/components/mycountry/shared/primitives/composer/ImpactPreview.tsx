@@ -2,6 +2,9 @@
 
 import React from "react";
 import { City, Coins, Journal, Page, WarningTriangle } from "iconoir-react";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { EffectList } from "~/components/mycountry/directives/EffectList";
 import {
@@ -26,8 +29,8 @@ export interface ImpactPreviewProps {
 
 function SubHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-      {children}
+    <h4 className="mb-2">
+      <Eyebrow>{children}</Eyebrow>
     </h4>
   );
 }
@@ -47,9 +50,7 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
             const Icon = CHANGE_ICONS[c.kind] ?? Page;
             return (
               <li key={`${c.label}-${i}`} className="flex items-start gap-3">
-                <span className="bg-muted text-muted-foreground mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg">
-                  <Icon className="h-3.5 w-3.5" />
-                </span>
+                <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <div className="min-w-0">
                   <p className="text-foreground text-sm font-medium first-letter:uppercase">
                     {c.label}
@@ -80,42 +81,39 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
 
       <div>
         <SubHeading>Stakeholders</SubHeading>
-        <dl className="border-border divide-border divide-y rounded-xl border text-sm">
-          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-            <dt className="text-muted-foreground">Acceptance</dt>
-            <dd className={cn("font-medium", TONE_CLASSES[acceptance.tone].text)}>
-              {acceptance.label}
-            </dd>
-          </div>
-          {broker && (
+        <FacetContainer depth={3} surface="solid" className="rounded-xl">
+          <dl className="divide-border divide-y text-sm">
             <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-              <dt className="text-muted-foreground flex items-center gap-2">
-                <City className="h-4 w-4" aria-hidden />
-                Aligned power broker
-              </dt>
-              <dd className="text-foreground text-right font-medium">
-                {broker.name}
-                <span className="text-muted-foreground font-normal">
-                  {" "}
-                  · {broker.satisfied ? "satisfied" : broker.unlocked ? "active" : "neutral"}
-                </span>
+              <dt className="text-muted-foreground">Acceptance</dt>
+              <dd className={cn("font-medium", TONE_CLASSES[acceptance.tone].text)}>
+                {acceptance.label}
               </dd>
             </div>
-          )}
-        </dl>
-        {tierMaySpawnResistance(pkg.tier) && (
-          <p
-            className={cn(
-              "mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs",
-              TONE_CLASSES.caution.chip
+            {broker && (
+              <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                <dt className="text-muted-foreground flex items-center gap-2">
+                  <City className="h-4 w-4" aria-hidden />
+                  Aligned power broker
+                </dt>
+                <dd className="text-foreground text-right font-medium">
+                  {broker.name}
+                  <span className="text-muted-foreground font-normal">
+                    {" "}
+                    · {broker.satisfied ? "satisfied" : broker.unlocked ? "active" : "neutral"}
+                  </span>
+                </dd>
+              </div>
             )}
-          >
-            <WarningTriangle className="mt-px h-4 w-4 shrink-0" aria-hidden />
-            <span>
+          </dl>
+        </FacetContainer>
+        {tierMaySpawnResistance(pkg.tier) && (
+          <Alert role="note" className="mt-3 border-amber-500/30 text-amber-600">
+            <WarningTriangle aria-hidden />
+            <AlertDescription className="text-xs">
               May stir up a resistance issue. You will need to resolve it before you can mark this
               directive complete.
-            </span>
-          </p>
+            </AlertDescription>
+          </Alert>
         )}
       </div>
     </div>

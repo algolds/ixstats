@@ -2,6 +2,9 @@
 
 import React from "react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
@@ -30,7 +33,7 @@ function Tile({
 }) {
   const body = (
     <>
-      <span className="text-muted-foreground text-xs font-medium">{label}</span>
+      <Eyebrow className="block">{label}</Eyebrow>
       <span
         className={cn(
           "text-foreground mt-1 block text-2xl leading-8 font-semibold tabular-nums",
@@ -39,27 +42,27 @@ function Tile({
       >
         {value}
       </span>
-      <span className="text-muted-foreground mt-0.5 block text-xs">{detail}</span>
+      <span className="text-muted-foreground mt-0.5 block text-xs font-normal">{detail}</span>
     </>
   );
   const cls = "block w-full px-4 py-3 text-left sm:px-5 sm:py-4";
   return onClick ? (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={onClick}
-      className={cn(
-        cls,
-        "hover:bg-muted/40 focus-visible:ring-ring transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset"
-      )}
+      className={cn(cls, "h-auto rounded-none whitespace-normal focus-visible:ring-inset")}
     >
       {body}
-    </button>
+    </Button>
   ) : (
     <div className={cls}>{body}</div>
   );
 }
 
-/** The three numbers that gate a new directive: weekly slots, CivCap, and what is in force. */
+/**
+ * The three numbers that gate a new directive: weekly slots, CivCap, and what is in force.
+ * A depth-2 Facet card (solid: it sits inside the workspace's glass shell).
+ */
 export function DirectiveStatusStrip({
   countryId,
   nowIxTime,
@@ -78,7 +81,11 @@ export function DirectiveStatusStrip({
   const civCapKnown = !!cc && Number.isFinite(cc.capacity) && cc.capacity > 0;
 
   return (
-    <div className="border-border bg-card divide-border grid grid-cols-1 divide-y overflow-hidden rounded-2xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <FacetCard
+      depth={2}
+      surface="solid"
+      className="divide-border grid grid-cols-1 divide-y overflow-hidden rounded-2xl sm:grid-cols-3 sm:divide-x sm:divide-y-0"
+    >
       <Tile
         label="Weekly slots"
         value={
@@ -136,6 +143,6 @@ export function DirectiveStatusStrip({
               : `${executingCount ?? 0} executing this week`
         }
       />
-    </div>
+    </FacetCard>
   );
 }

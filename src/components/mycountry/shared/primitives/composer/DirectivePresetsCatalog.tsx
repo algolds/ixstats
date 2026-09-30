@@ -12,7 +12,10 @@ import {
   ShieldCheck,
   Train,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Toggle } from "~/components/ui/toggle";
 import {
   DIRECTIVE_DOMAINS,
   filterPresets,
@@ -40,7 +43,7 @@ export interface DirectivePresetsCatalogProps {
   onDomainChange?: (domain: DirectiveDomain | "All") => void;
 }
 
-/** Step 1 browser: domain filter chips and the matching presets, grouped by domain. */
+/** Step 1 browser: domain filter toggles and the matching presets, grouped by domain. */
 export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatalog({
   query,
   onSelectGoal,
@@ -89,67 +92,56 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
         className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
       >
         {(["All", ...DIRECTIVE_DOMAINS] as const).map((d) => {
-          const active = domain === d;
           const count = d === "All" ? totalMatches : (counts.get(d) ?? 0);
           return (
-            <button
+            <Toggle
               key={d}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setDomain(d)}
-              data-cuelume-press="tick"
-              className={cn(
-                "focus-visible:ring-ring inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.97]",
-                active
-                  ? "border-foreground/20 bg-foreground text-background"
-                  : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              )}
+              variant="outline"
+              size="sm"
+              pressed={domain === d}
+              onPressedChange={() => setDomain(d)}
+              className="shrink-0 gap-1.5 rounded-full px-3 text-xs font-semibold max-sm:h-11"
             >
               <span>{d}</span>
-              <span className={cn("tabular-nums", active ? "opacity-70" : "opacity-60")}>
-                {count}
-              </span>
-            </button>
+              <span className="tabular-nums opacity-60">{count}</span>
+            </Toggle>
           );
         })}
       </div>
 
       {groups.length === 0 ? (
-        <div className="border-border bg-muted/30 rounded-2xl border border-dashed px-4 py-8 text-center">
+        <FacetContainer depth={3} surface="solid" className="rounded-xl px-4 py-8 text-center">
           <p className="text-foreground text-sm font-medium">No presets match</p>
           <p className="text-muted-foreground mt-1 text-xs">
             {query.trim()
               ? "Use your own wording as a custom goal, or clear the search."
               : "Try another domain."}
           </p>
-        </div>
+        </FacetContainer>
       ) : (
         <div className="space-y-6">
           {groups.map(({ domain: d, presets }) => {
             const Icon = DOMAIN_ICONS[d];
             return (
               <section key={d} aria-label={`${d} presets`} className="space-y-2">
-                <h4 className="text-muted-foreground flex items-center gap-2 px-1 text-xs font-semibold tracking-wide uppercase">
-                  <Icon className="h-3.5 w-3.5" />
-                  {d}
+                <h4 className="flex items-center gap-2 px-1">
+                  <Icon className="text-muted-foreground h-3.5 w-3.5" aria-hidden />
+                  <Eyebrow>{d}</Eyebrow>
                 </h4>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {presets.map((p) => (
                     <li key={p.label}>
-                      <button
-                        type="button"
+                      <Button
+                        variant="outline"
                         onClick={() => onSelectGoal(p.label)}
-                        data-cuelume-press="press"
-                        className="group border-border bg-card hover:bg-muted/40 focus-visible:ring-ring flex h-full w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-[color,background-color,border-color,transform] duration-150 outline-none hover:border-amber-500/40 focus-visible:ring-2 active:scale-[0.98]"
+                        className="h-full min-h-11 w-full justify-start gap-3 rounded-xl px-3 py-3 text-left whitespace-normal hover:border-amber-500/40"
                       >
-                        <span className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                          <Icon className="h-4 w-4" />
-                        </span>
+                        <Icon className="text-muted-foreground" aria-hidden />
                         <span className="text-foreground min-w-0 flex-1 text-sm leading-snug font-medium">
                           {p.label}
                         </span>
-                        <NavArrowRight className="text-muted-foreground/60 h-4 w-4 shrink-0" />
-                      </button>
+                        <NavArrowRight className="text-muted-foreground/60" aria-hidden />
+                      </Button>
                     </li>
                   ))}
                 </ul>

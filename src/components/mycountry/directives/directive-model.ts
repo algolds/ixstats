@@ -32,37 +32,41 @@ export const OFFERED_TIERS: readonly OfferedTier[] = [
 
 export type Tone = "positive" | "caution" | "negative" | "info" | "neutral";
 
-/** Status colour classes. The only place this page reaches past the neutral theme tokens. */
-export const TONE_CLASSES: Record<Tone, { dot: string; text: string; chip: string; bar: string }> =
+/**
+ * Status colour classes: the only place this page reaches past the neutral theme tokens.
+ * Mid shades (600) read in both themes, so there are no `dark:` overrides; `badge` is merged
+ * onto `<Badge variant="outline">`.
+ */
+export const TONE_CLASSES: Record<Tone, { dot: string; text: string; badge: string; bar: string }> =
   {
     positive: {
       dot: "bg-emerald-500",
-      text: "text-emerald-700 dark:text-emerald-400",
-      chip: "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
+      text: "text-emerald-600",
+      badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
       bar: "bg-emerald-500",
     },
     caution: {
       dot: "bg-amber-500",
-      text: "text-amber-700 dark:text-amber-400",
-      chip: "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+      text: "text-amber-600",
+      badge: "border-amber-500/30 bg-amber-500/10 text-amber-600",
       bar: "bg-amber-500",
     },
     negative: {
-      dot: "bg-red-500",
-      text: "text-red-700 dark:text-red-400",
-      chip: "border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-300",
-      bar: "bg-red-500",
+      dot: "bg-destructive",
+      text: "text-destructive",
+      badge: "border-destructive/30 bg-destructive/10 text-destructive",
+      bar: "bg-destructive",
     },
     info: {
       dot: "bg-sky-500",
-      text: "text-sky-700 dark:text-sky-400",
-      chip: "border-sky-500/30 bg-sky-500/10 text-sky-800 dark:text-sky-300",
+      text: "text-sky-600",
+      badge: "border-sky-500/30 bg-sky-500/10 text-sky-600",
       bar: "bg-sky-500",
     },
     neutral: {
       dot: "bg-muted-foreground/60",
       text: "text-muted-foreground",
-      chip: "border-border bg-muted/50 text-muted-foreground",
+      badge: "text-muted-foreground",
       bar: "bg-muted-foreground/60",
     },
   };

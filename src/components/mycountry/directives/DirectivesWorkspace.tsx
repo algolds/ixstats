@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Archive, KeyCommand, Page, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { KitButton } from "~/components/mycountry/directives/KitButton";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
-import { cn } from "~/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Toggle } from "~/components/ui/toggle";
 import { useIxTimeStore } from "~/stores/ixtime-store";
-import { FOCUS_RING, PRESSABLE, SegmentedFilter } from "~/components/mycountry/shell/surface-kit";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import { useCountryData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import {
@@ -51,14 +53,16 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="border-border bg-card flex flex-col items-center rounded-2xl border border-dashed px-6 py-12 text-center">
-      <span className="bg-muted text-muted-foreground flex h-10 w-10 items-center justify-center rounded-full">
-        <Icon className="h-5 w-5" />
-      </span>
+    <FacetCard
+      depth={2}
+      surface="solid"
+      className="flex flex-col items-center rounded-2xl px-6 py-12 text-center"
+    >
+      <Icon className="text-muted-foreground h-6 w-6" aria-hidden />
       <p className="text-foreground mt-4 text-base font-semibold">{title}</p>
       <p className="text-muted-foreground mt-1 max-w-sm text-sm">{body}</p>
       {action && <div className="mt-6">{action}</div>}
-    </div>
+    </FacetCard>
   );
 }
 
@@ -75,6 +79,10 @@ function ListSkeleton() {
 /**
  * The Directives page (`/mycountry/executive`): status up top, then three views —
  * declare a new directive, track the ones in force, and review past directives and outcomes.
+ *
+ * Facet depth: the workspace is the one glass shell (depth 1); the cards inside it (status
+ * strip, composer steps) are depth 2 and the directive rows / approach options depth 3, all
+ * `surface="solid"` so blur never stacks.
  */
 export function DirectivesWorkspace({
   countryId,
@@ -138,11 +146,40 @@ export function DirectivesWorkspace({
     setView("new");
   };
 
+  const tabsId = useId();
+  const tabId = (v: DirectivesView) => `${tabsId}-tab-${v}`;
+  const panelId = (v: DirectivesView) => `${tabsId}-panel-${v}`;
+
   const views: { id: DirectivesView; label: string; count?: number }[] = [
     { id: "new", label: "New directive" },
     { id: "active", label: "In force", count: tree.data ? active.length : undefined },
     { id: "history", label: "History", count: tree.data ? history.length : undefined },
   ];
+
+  // Roving focus for the view tabs (the Tabs primitive leaves arrow keys to its caller).
+  const onTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const index = views.findIndex((v) => v.id === view);
+    const last = views.length - 1;
+    const next =
+      e.key === "ArrowRight"
+        ? index === last
+          ? 0
+          : index + 1
+        : e.key === "ArrowLeft"
+          ? index === 0
+            ? last
+            : index - 1
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? last
+              : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    const id = views[next]!.id;
+    setView(id);
+    document.getElementById(tabId(id))?.focus();
+  };
 
   const cardProps = {
     nowIxTime,
@@ -152,31 +189,26 @@ export function DirectivesWorkspace({
   };
 
   return (
-    <div className="space-y-6">
+    <FacetContainer depth={1} className="space-y-6 rounded-3xl p-4 sm:p-6">
       {/* Page header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400">
-            <KeyCommand className="h-5 w-5" />
-          </span>
-          <div>
-            <h2 className="text-foreground text-2xl leading-8 font-semibold tracking-tight">
-              Directives
-            </h2>
-            <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
-              Set a national goal, choose how hard to push, and track what it changes. Each
-              directive uses a weekly slot and holds CivCap while it executes.
-            </p>
-          </div>
+        <div>
+          <h2 className="text-foreground text-2xl leading-8 font-semibold tracking-tight">
+            Directives
+          </h2>
+          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+            Set a national goal, choose how hard to push, and track what it changes. Each directive
+            uses a weekly slot and holds CivCap while it executes.
+          </p>
         </div>
         {!readOnly && (
-          <KitButton
-            variant="secondary"
-            className="self-start sm:self-auto"
+          <Button
+            variant="outline"
+            className="self-start max-sm:h-11 sm:self-auto"
             onClick={() => setShowPolicySheet(true)}
           >
             <Page /> Draft a custom policy
-          </KitButton>
+          </Button>
         )}
       </header>
 
@@ -188,166 +220,185 @@ export function DirectivesWorkspace({
         onShowActive={() => setView("active")}
       />
 
-      {/* Segmented control */}
-      <div
-        role="group"
-        aria-label="Directive views"
-        className="bg-muted/60 inline-flex w-full rounded-xl p-0.5 sm:w-auto"
-      >
-        {views.map((v) => {
-          const selected = view === v.id;
-          return (
-            <button
+      <Tabs value={view} onValueChange={(v) => setView(v as DirectivesView)} className="space-y-6">
+        <TabsList
+          role="tablist"
+          aria-label="Directive views"
+          onKeyDown={onTabKeyDown}
+          className="bg-muted/60 w-full rounded-full p-1 sm:w-fit"
+        >
+          {views.map((v) => (
+            <TabsTrigger
               key={v.id}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => setView(v.id)}
-              data-cuelume-press="page"
-              className={cn(
-                "inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-sm font-medium whitespace-nowrap sm:h-9 sm:flex-none sm:px-4",
-                PRESSABLE,
-                FOCUS_RING,
-                selected
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+              value={v.id}
+              role="tab"
+              id={tabId(v.id)}
+              aria-controls={panelId(v.id)}
+              className="h-11 flex-1 gap-1.5 px-3 sm:h-9 sm:flex-none sm:px-4"
             >
               {v.label}
               {v.count != null && v.count > 0 && (
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 text-xs tabular-nums",
-                    selected ? "bg-muted text-foreground" : "bg-card/60"
-                  )}
-                >
+                <Badge variant="secondary" className="rounded-full px-1.5 tabular-nums">
                   {v.count}
-                </span>
+                </Badge>
               )}
-            </button>
-          );
-        })}
-      </div>
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {/* Views */}
-      {view === "new" &&
-        (readOnly ? (
-          <EmptyState
-            icon={KeyCommand}
-            title="Viewing another nation"
-            body="Directives can only be declared for a nation you play. Its directives in force and history are still visible."
-          />
-        ) : (
-          <IntentComposer
-            key={seed.n}
-            countryId={countryId}
-            initialGoal={seed.goal}
-            followUpOf={followUpOf}
-            onFollowUpChange={setFollowUpOf}
-            onCommitted={onCommitted}
-            onViewActive={() => setView("active")}
-          />
-        ))}
-
-      {view === "active" &&
-        (tree.isLoading ? (
-          <ListSkeleton />
-        ) : tree.error ? (
-          <EmptyState
-            icon={Archive}
-            title="Directives could not be loaded"
-            body={tree.error.message}
-            action={
-              <KitButton variant="secondary" onClick={() => void tree.refetch()}>
-                Try again
-              </KitButton>
-            }
-          />
-        ) : active.length === 0 ? (
-          <EmptyState
-            icon={KeyCommand}
-            title="No directives in force"
-            body="Declare a directive to start moving your nation. It will appear here while it executes."
-            action={
-              !readOnly && (
-                <KitButton variant="primary" onClick={() => setView("new")}>
-                  <Plus /> Declare a directive
-                </KitButton>
-              )
-            }
-          />
-        ) : (
-          <div className="space-y-3">
-            {active.map((intent) => (
-              <DirectiveCard
-                key={intent.id}
-                intent={intent}
-                parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
-                onFollowUp={startFollowUp}
-                {...cardProps}
-              />
-            ))}
-          </div>
-        ))}
-
-      {view === "history" &&
-        (tree.isLoading ? (
-          <ListSkeleton />
-        ) : tree.error ? (
-          <EmptyState
-            icon={Archive}
-            title="History could not be loaded"
-            body={tree.error.message}
-            action={
-              <KitButton variant="secondary" onClick={() => void tree.refetch()}>
-                Try again
-              </KitButton>
-            }
-          />
-        ) : history.length === 0 ? (
-          <EmptyState
-            icon={Archive}
-            title="No past directives yet"
-            body="Completed and abandoned directives appear here, with the effects they recorded."
-          />
-        ) : (
-          <div className="space-y-4">
-            <SegmentedFilter
-              label="Filter history"
-              options={HISTORY_FILTERS}
-              value={historyFilter}
-              onChange={(f) => {
-                setHistoryFilter(f);
-                setHistoryLimit(HISTORY_PAGE);
-              }}
-              className="w-fit"
+        {/* Views */}
+        <TabsContent value="new" role="tabpanel" id={panelId("new")} aria-labelledby={tabId("new")}>
+          {readOnly ? (
+            <EmptyState
+              icon={KeyCommand}
+              title="Viewing another nation"
+              body="Directives can only be declared for a nation you play. Its directives in force and history are still visible."
             />
-            {filteredHistory.length === 0 ? (
-              <p className="text-muted-foreground px-1 text-sm">No {historyFilter} directives.</p>
-            ) : (
-              <div className="space-y-3">
-                {filteredHistory.slice(0, historyLimit).map((intent) => (
-                  <DirectiveCard
-                    key={intent.id}
-                    intent={intent}
-                    parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
-                    onReuseGoal={reuseGoal}
-                    {...cardProps}
-                  />
+          ) : (
+            <IntentComposer
+              key={seed.n}
+              countryId={countryId}
+              initialGoal={seed.goal}
+              followUpOf={followUpOf}
+              onFollowUpChange={setFollowUpOf}
+              onCommitted={onCommitted}
+              onViewActive={() => setView("active")}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent
+          value="active"
+          role="tabpanel"
+          id={panelId("active")}
+          aria-labelledby={tabId("active")}
+        >
+          {tree.isLoading ? (
+            <ListSkeleton />
+          ) : tree.error ? (
+            <EmptyState
+              icon={Archive}
+              title="Directives could not be loaded"
+              body={tree.error.message}
+              action={
+                <Button
+                  variant="outline"
+                  className="max-sm:h-11"
+                  onClick={() => void tree.refetch()}
+                >
+                  Try again
+                </Button>
+              }
+            />
+          ) : active.length === 0 ? (
+            <EmptyState
+              icon={KeyCommand}
+              title="No directives in force"
+              body="Declare a directive to start moving your nation. It will appear here while it executes."
+              action={
+                !readOnly && (
+                  <Button
+                    className="bg-amber-500 text-amber-950 hover:bg-amber-500/90 max-sm:h-11"
+                    onClick={() => setView("new")}
+                  >
+                    <Plus /> Declare a directive
+                  </Button>
+                )
+              }
+            />
+          ) : (
+            <div className="space-y-3">
+              {active.map((intent) => (
+                <DirectiveCard
+                  key={intent.id}
+                  intent={intent}
+                  parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
+                  onFollowUp={startFollowUp}
+                  {...cardProps}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent
+          value="history"
+          role="tabpanel"
+          id={panelId("history")}
+          aria-labelledby={tabId("history")}
+        >
+          {tree.isLoading ? (
+            <ListSkeleton />
+          ) : tree.error ? (
+            <EmptyState
+              icon={Archive}
+              title="History could not be loaded"
+              body={tree.error.message}
+              action={
+                <Button
+                  variant="outline"
+                  className="max-sm:h-11"
+                  onClick={() => void tree.refetch()}
+                >
+                  Try again
+                </Button>
+              }
+            />
+          ) : history.length === 0 ? (
+            <EmptyState
+              icon={Archive}
+              title="No past directives yet"
+              body="Completed and abandoned directives appear here, with the effects they recorded."
+            />
+          ) : (
+            <div className="space-y-4">
+              <div role="group" aria-label="Filter history" className="flex flex-wrap gap-2">
+                {HISTORY_FILTERS.map((f) => (
+                  <Toggle
+                    key={f.id}
+                    variant="outline"
+                    size="sm"
+                    pressed={historyFilter === f.id}
+                    onPressedChange={() => {
+                      setHistoryFilter(f.id);
+                      setHistoryLimit(HISTORY_PAGE);
+                    }}
+                    className="rounded-full px-3 max-sm:h-11"
+                  >
+                    {f.label}
+                  </Toggle>
                 ))}
               </div>
-            )}
-            {filteredHistory.length > historyLimit && (
-              <div className="flex justify-center">
-                <KitButton
-                  variant="secondary"
-                  onClick={() => setHistoryLimit((n) => n + HISTORY_PAGE)}
-                >
-                  Show more
-                </KitButton>
-              </div>
-            )}
-          </div>
-        ))}
+              {filteredHistory.length === 0 ? (
+                <p className="text-muted-foreground px-1 text-sm">No {historyFilter} directives.</p>
+              ) : (
+                <div className="space-y-3">
+                  {filteredHistory.slice(0, historyLimit).map((intent) => (
+                    <DirectiveCard
+                      key={intent.id}
+                      intent={intent}
+                      parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
+                      onReuseGoal={reuseGoal}
+                      {...cardProps}
+                    />
+                  ))}
+                </div>
+              )}
+              {filteredHistory.length > historyLimit && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    className="max-sm:h-11"
+                    onClick={() => setHistoryLimit((n) => n + HISTORY_PAGE)}
+                  >
+                    Show more
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {!readOnly && (
         <PolicyCreatorSheet
@@ -356,6 +407,6 @@ export function DirectivesWorkspace({
           countryId={countryId}
         />
       )}
-    </div>
+    </FacetContainer>
   );
 }

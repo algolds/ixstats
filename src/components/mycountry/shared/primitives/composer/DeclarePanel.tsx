@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { GitFork, Lock, WarningCircle, Xmark } from "iconoir-react";
-import { KitButton } from "~/components/mycountry/directives/KitButton";
+import { GitFork, Lock, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
@@ -36,7 +38,10 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-/** Step 4: the confirmation card — what it costs, what is left, and the Declare button. */
+/**
+ * Step 4: the confirmation card — what it costs, what is left, and the Declare button (the
+ * page's one gold primary action).
+ */
 export function DeclarePanel({
   goal,
   approachLabel,
@@ -100,53 +105,55 @@ export function DeclarePanel({
       </dl>
 
       {followUpOf && (
-        <div className="border-border bg-muted/40 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs">
+        <FacetContainer
+          depth={3}
+          surface="solid"
+          className="flex items-center gap-2 rounded-xl py-1 pr-1 pl-3 text-xs"
+        >
           <GitFork className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
           <span className="text-muted-foreground min-w-0 flex-1 truncate">
             Follow-up to <span className="text-foreground font-medium">{followUpOf.goal}</span>
           </span>
           {onClearFollowUp && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClearFollowUp}
               aria-label="Remove follow-up link"
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-md p-1 outline-none focus-visible:ring-2"
+              className="text-muted-foreground max-sm:h-11 max-sm:w-11"
             >
-              <Xmark className="h-3.5 w-3.5" />
-            </button>
+              <Xmark />
+            </Button>
           )}
-        </div>
+        </FacetContainer>
       )}
 
       {goesOver && !blockedReason && (
-        <p className={cn("rounded-xl border px-3 py-2.5 text-xs", TONE_CLASSES.caution.chip)}>
-          This puts you over civil-service capacity. You can still declare it, but recon and policy
-          previews become less reliable until capacity frees up.
-        </p>
+        <Alert role="note" className="border-amber-500/30 text-amber-600">
+          <WarningTriangle aria-hidden />
+          <AlertDescription className="text-xs">
+            This puts you over civil-service capacity. You can still declare it, but recon and
+            policy previews become less reliable until capacity frees up.
+          </AlertDescription>
+        </Alert>
       )}
 
       {error && (
-        <p
-          role="alert"
-          className={cn(
-            "flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs",
-            TONE_CLASSES.negative.chip
-          )}
-        >
-          <WarningCircle className="mt-px h-4 w-4 shrink-0" aria-hidden />
-          <span>{error}</span>
-        </p>
+        <Alert variant="destructive" className="border-destructive/30">
+          <WarningCircle aria-hidden />
+          <AlertDescription className="text-xs">{error}</AlertDescription>
+        </Alert>
       )}
 
-      <KitButton
-        variant="primary"
+      <Button
+        size="lg"
         onClick={onDeclare}
         disabled={isPending || !!blockedReason || disabled}
         data-cuelume-press="press"
-        className="w-full sm:h-11"
+        className="w-full bg-amber-500 px-4 text-amber-950 hover:bg-amber-500/90 max-sm:h-11"
       >
         {isPending ? "Declaring…" : "Declare directive"}
-      </KitButton>
+      </Button>
       {blockedReason && (
         <p className="text-muted-foreground flex items-start gap-2 text-xs">
           <Lock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
