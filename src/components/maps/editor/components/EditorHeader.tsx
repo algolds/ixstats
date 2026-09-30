@@ -207,7 +207,7 @@ export const EditorHeader = React.memo(function EditorHeader({
 
   return (
     <FacetContainer
-      depth={1}
+      material="regular"
       className="pointer-events-auto flex h-11 shrink-0 items-center gap-2 rounded-none px-3"
     >
       {/* Exit button */}

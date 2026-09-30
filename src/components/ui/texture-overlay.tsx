@@ -22,6 +22,14 @@ export type TextureType =
   | "diamonds"
   | "none";
 
+/**
+ * The Facet 3 textures (§0 decision 2, §5): decorative only (empty states, heroes, wiki reading
+ * surface), opacity ≤ 0.05, never on data. The other `TextureType` values still render until the
+ * Phase 4 app migrations remove them; their CSS lives with the lab stylesheet.
+ */
+export const SANCTIONED_TEXTURES = ["dots", "grid", "paperGrain"] as const satisfies readonly TextureType[];
+export type SanctionedTexture = (typeof SANCTIONED_TEXTURES)[number];
+
 interface TextureOverlayProps {
   texture: TextureType;
   opacity?: number;
@@ -82,6 +90,7 @@ export function TextureOverlay({ texture, opacity, className }: TextureOverlayPr
 
   return (
     <div
+      aria-hidden
       className={cn("texture-overlay pointer-events-none absolute inset-0", pattern, className)}
       style={{ opacity: finalOpacity }}
     />

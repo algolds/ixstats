@@ -189,7 +189,7 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
       {/* Batch Actions Bar */}
       {editor.selectedIds.size > 1 && (
         <div className="pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2">
-          <FacetContainer depth={2} className="overflow-hidden rounded-xl">
+          <FacetContainer material="regular" className="overflow-hidden rounded-xl">
             <BatchActionsBar
               selectedCount={editor.selectedIds.size}
               subdivisionCount={subdivisionCount}

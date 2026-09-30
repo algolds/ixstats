@@ -482,7 +482,7 @@ export default function MapEditorOverlay({
           <div className="pointer-events-auto hidden shrink-0 sm:block">
             {isWorldMode && activeEditorMode === "border_edit" ? (
               <FacetContainer
-                depth={1}
+                material="regular"
                 role="toolbar"
                 aria-label="Border tools"
                 aria-orientation="vertical"
@@ -548,7 +548,7 @@ export default function MapEditorOverlay({
                 className="bg-background/60 absolute inset-0 z-30 flex items-center justify-center"
               >
                 <FacetContainer
-                  depth={2}
+                  material="regular"
                   className="flex items-center gap-3 rounded-2xl px-5 py-4 text-left"
                 >
                   <Loader aria-hidden className="text-muted-foreground h-5 w-5 animate-spin" />

@@ -85,7 +85,7 @@ export function RouteEditingToolbar({
     if (!estimate) return null;
     return (
       <div className="absolute bottom-12 left-1/2 z-10 -translate-x-1/2">
-        <FacetContainer depth={2} className="rounded-full py-1">
+        <FacetContainer material="regular" className="rounded-full py-1">
           <EstimateText estimate={estimate} />
         </FacetContainer>
       </div>
@@ -96,7 +96,7 @@ export function RouteEditingToolbar({
 
   return (
     <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-      <FacetContainer depth={2} className="flex items-center gap-1.5 rounded-full p-1.5">
+      <FacetContainer material="regular" className="flex items-center gap-1.5 rounded-full p-1.5">
         <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
           Drag route vertices · Midpoints to add · Right-click to remove
         </span>

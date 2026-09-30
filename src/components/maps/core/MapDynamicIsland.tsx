@@ -460,7 +460,7 @@ export function MapDynamicIsland({
       {isMobile ? (
         showResults && (
           <FacetContainer
-            depth={2}
+            material="regular"
             id="map-search-results"
             role="listbox"
             aria-label="Search results"
@@ -480,7 +480,7 @@ export function MapDynamicIsland({
               className="mt-2"
             >
               <FacetContainer
-                depth={2}
+                material="regular"
                 id="map-search-results"
                 role="listbox"
                 aria-label="Search results"

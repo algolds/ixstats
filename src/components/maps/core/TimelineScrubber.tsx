@@ -93,7 +93,7 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
   if (!expanded && isAtNow) {
     return (
       <div {...stopMapEvents} className={`absolute right-4 bottom-12 z-20 ${className ?? ""}`}>
-        <FacetContainer depth={2} className="rounded-full">
+        <FacetContainer material="regular" className="rounded-full">
           <Button
             type="button"
             variant="ghost"
@@ -116,7 +116,7 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
       className={`absolute right-4 bottom-12 z-20 w-80 max-w-[calc(100vw-2rem)] ${className ?? ""}`}
     >
       <FacetContainer
-        depth={2}
+        material="regular"
         role="group"
         aria-label="Historical timeline"
         className="rounded-2xl p-4"

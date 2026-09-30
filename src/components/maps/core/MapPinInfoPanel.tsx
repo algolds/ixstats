@@ -221,7 +221,7 @@ export default function MapPinInfoPanel({
         onTouchStart={(e) => e.stopPropagation()}
         className="absolute top-3 right-3 z-20 hidden w-72 sm:block"
       >
-        <FacetContainer depth={2} className="rounded-2xl">
+        <FacetContainer material="regular" className="rounded-2xl">
           {panelContent}
         </FacetContainer>
       </div>
@@ -231,7 +231,7 @@ export default function MapPinInfoPanel({
         className="absolute inset-x-0 bottom-0 z-20 sm:hidden"
         style={{ animation: "slideInUp 0.25s ease-out" }}
       >
-        <FacetContainer depth={2} className="max-h-[50vh] rounded-t-2xl rounded-b-none">
+        <FacetContainer material="regular" className="max-h-[50vh] rounded-t-2xl rounded-b-none">
           <div className="flex justify-center pt-2 pb-1">
             <div className="bg-border h-1 w-8 rounded-full" />
           </div>

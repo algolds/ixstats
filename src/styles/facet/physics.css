@@ -23,14 +23,8 @@
 @layer components {
   /* ─── 1. Material base (FacetMaterial) ───────────────────────────────── */
 
-  /* Zero-specificity defaults: FacetMaterial's texture overlay and sheen are
-     absolutely positioned, so the wrapper needs a containing block and a
-     radius. Any `absolute`/`fixed`/`sticky` or `rounded-*` utility wins. */
-  :where(.facet-material) {
-    position: relative;
-    border-radius: var(--radius, 16px);
-  }
-
+  /* FacetMaterial sets its own `relative rounded-card` (utilities), so there is
+     no zero-specificity position/radius default here. */
   .facet-material {
     overflow: hidden;
     transition:

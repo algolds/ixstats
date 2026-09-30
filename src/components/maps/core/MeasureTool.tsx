@@ -51,7 +51,7 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
       {active && points.length >= 2 && (
         <div className="fixed top-36 left-6 z-30 sm:absolute sm:top-14 sm:left-3">
           <FacetContainer
-            depth={2}
+            material="regular"
             role="status"
             className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm"
           >

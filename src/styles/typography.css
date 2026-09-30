@@ -353,18 +353,17 @@
    Tailwind's `.font-sans/.font-mono/.font-serif` or `.tabular-nums`, and the
    unused named scale (`text-display-hero` … `text-map-label`) and
    `.font-display/.font-wiki-sans/.font-onoma/.font-ipa` were deleted.
-   `--font-sans` is overridden by themes.css (`var(--font-preset-sans, …)`).
+
+   Font stacks: `--font-sans/-mono/-serif/-display` are owned by `@theme` in
+   styles/facet/tokens.css (Facet 3 §3). This file keeps the @font-face faces,
+   the wiki/Onoma/IPA stacks and the legacy `national`/`sovereign` preset
+   override, which stays while src/lib/design/appearance.ts still writes
+   `data-typography` (Facet 3 removes presets in Phase 4 settings work).
    ========================================================================== */
 
 @layer base {
-  /* Blueprint 2: Modernist Swiss (Akzidenz-Grotesk + Schibsted Grotesk + Azeret Mono - Default) */
-  :root,
-  [data-typography="swiss"] {
-    --font-preset-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
-    --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
-    --font-display: "Akzidenz-Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
-    --font-mono: "Azeret Mono", "DINPro", ui-monospace, monospace;
-    --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
+  /* Swiss (the default): the sans/mono/serif/display stacks come from @theme (tokens.css). */
+  :root {
     --font-wiki-sans: "Host Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
     --font-onoma: "Schibsted Grotesk", ui-sans-serif, sans-serif;
     --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
@@ -373,7 +372,6 @@
   /* Blueprint 1: Klim National (Sovereign Editorial Modernism) */
   [data-typography="national"],
   [data-typography="sovereign"] {
-    --font-preset-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-display: "Neutraface 2", "Neutraface Text", ui-sans-serif, sans-serif;
     --font-mono: "DINPro", ui-monospace, monospace;

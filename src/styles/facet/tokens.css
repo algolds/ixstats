@@ -300,11 +300,24 @@
   --color-onoma-accent-glow: rgba(254, 240, 54, 0.3);
 }
 
+/* ─── §3 Typefaces ─────────────────────────────────────────────────────────── */
+/* The single owner of the font stacks (the @font-face faces live in styles/typography.css).
+   Swiss for all UI; Azeret Mono only for code, IDs, coordinates and hashes; National /
+   Neutraface only through `text-display`. The legacy `data-typography="national|sovereign"`
+   preset still overrides `--font-sans`/`--font-mono`/`--font-display` there until presets go. */
+
+@theme static {
+  --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
+  --font-display: "National", "Neutraface 2", ui-sans-serif, system-ui, sans-serif;
+}
+
 /* ─── §3 Text styles (rem × --text-scale) ────────────────────────────────── */
 /* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set. */
 
 @utility text-display {
-  font-family: var(--font-facet-display);
+  font-family: var(--font-display);
   font-size: calc(2.5rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(2.75rem * var(--text-scale, 1)));
   font-weight: var(--tw-font-weight, 700);
@@ -485,7 +498,6 @@
     --shadow-strength: 1;
     --material-highlight: rgba(255, 255, 255, 0.2);
     --material-highlight-hover: rgba(255, 255, 255, 0.4);
-    --font-facet-display: "National", "Neutraface 2", ui-sans-serif, system-ui, sans-serif;
 
     /* Density (§4): component padding/gap multiplier and control heights 28/36/44 */
     --density: 1;
@@ -738,16 +750,104 @@
   }
 }
 
-/* §4 Continuous corners where supported (card, sheet and control radii). */
+/* §4 Continuous corners where supported (sheet, card, row and control radii).
+   Covered forms: the base utilities and any variant of them (`md:rounded-card`,
+   `hover:rounded-control`) via four substring selectors, and the side/corner forms
+   (`rounded-t-sheet`, `rounded-tl-row`…) as plain class selectors. Variant + side
+   combinations (`md:rounded-t-sheet`) are not covered. Nothing else sets `corner-shape`. */
 @supports (corner-shape: squircle) {
   @layer utilities {
-    .rounded-sheet,
-    .rounded-card,
-    .rounded-row,
-    .rounded-control-lg,
-    .rounded-control,
-    .rounded-control-sm {
+    [class*="rounded-sheet"],
+    [class*="rounded-card"],
+    [class*="rounded-row"],
+    [class*="rounded-control"],
+    .rounded-t-sheet,
+    .rounded-r-sheet,
+    .rounded-b-sheet,
+    .rounded-l-sheet,
+    .rounded-s-sheet,
+    .rounded-e-sheet,
+    .rounded-tl-sheet,
+    .rounded-tr-sheet,
+    .rounded-br-sheet,
+    .rounded-bl-sheet,
+    .rounded-ss-sheet,
+    .rounded-se-sheet,
+    .rounded-es-sheet,
+    .rounded-ee-sheet,
+    .rounded-t-card,
+    .rounded-r-card,
+    .rounded-b-card,
+    .rounded-l-card,
+    .rounded-s-card,
+    .rounded-e-card,
+    .rounded-tl-card,
+    .rounded-tr-card,
+    .rounded-br-card,
+    .rounded-bl-card,
+    .rounded-ss-card,
+    .rounded-se-card,
+    .rounded-es-card,
+    .rounded-ee-card,
+    .rounded-t-row,
+    .rounded-r-row,
+    .rounded-b-row,
+    .rounded-l-row,
+    .rounded-s-row,
+    .rounded-e-row,
+    .rounded-tl-row,
+    .rounded-tr-row,
+    .rounded-br-row,
+    .rounded-bl-row,
+    .rounded-ss-row,
+    .rounded-se-row,
+    .rounded-es-row,
+    .rounded-ee-row,
+    .rounded-t-control-lg,
+    .rounded-r-control-lg,
+    .rounded-b-control-lg,
+    .rounded-l-control-lg,
+    .rounded-s-control-lg,
+    .rounded-e-control-lg,
+    .rounded-tl-control-lg,
+    .rounded-tr-control-lg,
+    .rounded-br-control-lg,
+    .rounded-bl-control-lg,
+    .rounded-ss-control-lg,
+    .rounded-se-control-lg,
+    .rounded-es-control-lg,
+    .rounded-ee-control-lg,
+    .rounded-t-control,
+    .rounded-r-control,
+    .rounded-b-control,
+    .rounded-l-control,
+    .rounded-s-control,
+    .rounded-e-control,
+    .rounded-tl-control,
+    .rounded-tr-control,
+    .rounded-br-control,
+    .rounded-bl-control,
+    .rounded-ss-control,
+    .rounded-se-control,
+    .rounded-es-control,
+    .rounded-ee-control,
+    .rounded-t-control-sm,
+    .rounded-r-control-sm,
+    .rounded-b-control-sm,
+    .rounded-l-control-sm,
+    .rounded-s-control-sm,
+    .rounded-e-control-sm,
+    .rounded-tl-control-sm,
+    .rounded-tr-control-sm,
+    .rounded-br-control-sm,
+    .rounded-bl-control-sm,
+    .rounded-ss-control-sm,
+    .rounded-se-control-sm,
+    .rounded-es-control-sm,
+    .rounded-ee-control-sm {
       corner-shape: squircle;
     }
   }
 }
+
+

@@ -179,7 +179,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
 
   return (
     <FacetContainer
-      depth={1}
+      material="regular"
       role="toolbar"
       aria-label="Editor tools"
       aria-orientation={horizontal ? "horizontal" : "vertical"}

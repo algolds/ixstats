@@ -2,12 +2,16 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils/cn";
 
+/**
+ * shadcn-shaped card on Facet 3 roles (§7.1): the same opaque surface as `FacetCard`
+ * (`bg-surface`, `separator` hairline, `rounded-card`, `shadow-card`). Prefer `FacetCard`.
+ */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        "bg-surface text-label border-separator rounded-card shadow-card flex flex-col gap-6 border py-6",
         className
       )}
       {...props}
@@ -32,7 +36,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("text-headline leading-none", className)}
       {...props}
     />
   );
@@ -42,7 +46,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-body text-label-secondary", className)}
       {...props}
     />
   );

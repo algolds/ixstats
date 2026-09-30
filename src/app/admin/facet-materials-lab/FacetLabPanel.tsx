@@ -65,7 +65,8 @@ export default function FacetMaterialsLabPage() {
 
   // Generate dynamic CSS class lists
   const generatedClassNames = React.useMemo(() => {
-    const classes = ["facet-material", `facet-material-${config.material}`];
+    // `relative rounded-card`: what the FacetMaterial component adds (the CSS no longer does).
+    const classes = ["relative", "rounded-card", "facet-material", `facet-material-${config.material}`];
     classes.push(`facet-depth-${config.depth}`);
 
     if (config.variant !== "base") {

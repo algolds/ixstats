@@ -100,7 +100,7 @@ export function TourHUD({
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         className="fixed bottom-6 left-6 z-40 w-[calc(100%-3rem)] max-w-[380px]"
       >
-        <FacetContainer depth={2} className="overflow-hidden rounded-2xl">
+        <FacetContainer material="regular" className="overflow-hidden rounded-2xl">
           {/* HUD Header */}
           <div className="border-border flex items-start justify-between border-b px-5 py-4">
             <div className="flex items-center gap-3">

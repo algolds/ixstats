@@ -175,7 +175,7 @@ export function MapKeyboardControls({
           Powered by IxStates
         </span>
         {/* Desktop only — keyboard shortcuts are irrelevant on touch devices */}
-        <FacetContainer depth={2} className="hidden rounded-lg sm:block">
+        <FacetContainer material="regular" className="hidden rounded-lg sm:block">
           <Button
             type="button"
             variant="ghost"
@@ -198,7 +198,7 @@ export function MapKeyboardControls({
           className={`absolute right-12 bottom-12 z-20 w-56 ${sidePanelOpen ? "sm:right-[25rem]" : ""}`}
         >
           <FacetContainer
-            depth={2}
+            material="regular"
             role="region"
             aria-label="Keyboard shortcuts"
             className="rounded-xl p-3"

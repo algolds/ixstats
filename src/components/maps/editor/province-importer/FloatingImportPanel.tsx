@@ -140,7 +140,7 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         height: size.height,
       }}
     >
-      <FacetContainer depth={2} className="flex h-full flex-col overflow-hidden rounded-xl">
+      <FacetContainer material="regular" className="flex h-full flex-col overflow-hidden rounded-xl">
         {/* Drag handle — top bar area */}
         <div
           onPointerDown={onDragStart}

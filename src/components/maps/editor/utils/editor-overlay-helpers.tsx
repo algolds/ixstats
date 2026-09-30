@@ -15,7 +15,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
       role="status"
       className="bg-background absolute inset-0 z-40 flex items-center justify-center p-6"
     >
-      <FacetContainer depth={2} className="w-full max-w-xs space-y-4 rounded-2xl p-6 text-center">
+      <FacetContainer material="regular" className="w-full max-w-xs space-y-4 rounded-2xl p-6 text-center">
         <Map className="text-muted-foreground mx-auto h-6 w-6" aria-hidden />
         <div>
           <h2 className="text-foreground text-sm font-semibold">Loading map editor…</h2>

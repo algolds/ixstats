@@ -20,11 +20,14 @@ import { TextureOverlay, type TextureType } from "~/components/ui/texture-overla
 // Tokens — optional chrome for demos / quick styling
 // ============================================================================
 
-/** Border + shadow stack using theme tokens so elevation reads in light and dark. */
-export const cutoutCardSurfaceShadowClassName = cn("facet-cutout-card");
+/** Hairline + elevation on Facet 3 roles (opaque — no backdrop blur; §0 decision 1). */
+export const cutoutCardSurfaceShadowClassName = cn(
+  "border-separator shadow-card border transition-shadow duration-fast ease-out-facet hover:shadow-floating"
+);
 
+/** The opaque card surface (`FacetCard` roles) with the cutout hover group. */
 export const cutoutCardSurfaceClassName = cn(
-  "group/cutout relative cursor-pointer overflow-hidden rounded-[28px] bg-card text-card-foreground",
+  "group/cutout bg-surface text-label rounded-card relative cursor-pointer overflow-hidden",
   cutoutCardSurfaceShadowClassName
 );
 
@@ -59,11 +62,11 @@ export function useCutoutContentStaggerVariants() {
         },
       },
       item: {
-        hidden: { opacity: 0, y: 12, filter: "blur(5px)" },
+        // Transform and opacity only (§8) — no blur filter.
+        hidden: { opacity: 0, y: 12 },
         show: {
           opacity: 1,
           y: 0,
-          filter: "blur(0px)",
           transition: { type: "spring", duration: 0.48, bounce: 0.14 },
         },
       },

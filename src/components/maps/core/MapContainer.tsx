@@ -464,7 +464,7 @@ export function MapContainer({
 
         {showBetaNotice && (
           <FacetContainer
-            depth={2}
+            material="regular"
             role="note"
             className="pointer-events-auto w-full max-w-sm rounded-2xl p-3"
             onMouseDown={(e) => e.stopPropagation()}
@@ -633,7 +633,7 @@ export function MapContainer({
           role="alert"
           className="bg-map-ocean absolute inset-0 z-[var(--z-depth-overlay)] flex items-center justify-center p-6 text-center"
         >
-          <FacetContainer depth={3} className="max-w-md space-y-6 rounded-2xl p-8">
+          <FacetContainer material="thick" className="max-w-md space-y-6 rounded-2xl p-8">
             <WarningTriangle className="text-destructive mx-auto h-8 w-8" aria-hidden />
             <div className="space-y-2">
               <h3 className="text-foreground text-xl font-semibold">

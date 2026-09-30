@@ -52,7 +52,7 @@ export function MapHintPill({
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 max-w-[90%] -translate-x-1/2">
       <FacetContainer
-        depth={2}
+        material="regular"
         className="text-muted-foreground truncate rounded-full px-3 py-1 text-xs"
       >
         {text}

@@ -67,7 +67,7 @@ export function HypsometricElevationHUD({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 absolute bottom-9 left-1/2 z-40 -translate-x-1/2">
-      <FacetContainer depth={2} className="text-foreground flex flex-col rounded-xl p-3">
+      <FacetContainer material="regular" className="text-foreground flex flex-col rounded-xl p-3">
         {/* Top Header */}
         <div className="flex items-center justify-between gap-6 pb-2">
           <div className="flex items-center gap-2">

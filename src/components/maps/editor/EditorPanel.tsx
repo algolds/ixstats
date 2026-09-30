@@ -243,7 +243,7 @@ export function EditorPanel({
   if (collapsed && isStacked) {
     return (
       <FacetContainer
-        depth={1}
+        material="regular"
         className={`flex shrink-0 items-center justify-between px-2 py-1.5 ${
           placement === "bottom" ? "h-9 w-32 rounded-md" : "h-9 w-full rounded-none"
         }`}
@@ -281,7 +281,7 @@ export function EditorPanel({
       <div className="relative flex h-full">
         {!collapsed && (
           <FacetContainer
-            depth={1}
+            material="regular"
             className="flex flex-col rounded-none"
             style={{
               width: placement === "bottom" ? "100%" : panelWidth,
@@ -365,7 +365,7 @@ export function EditorPanel({
 
       {!collapsed && (
         <FacetContainer
-          depth={1}
+          material="regular"
           className={`flex flex-col rounded-none ${placement === "bottom" ? "w-full" : "h-full"}`}
           style={{
             width: placement === "bottom" ? "100%" : panelWidth,

@@ -338,7 +338,7 @@ export function MapPickerModal({
               {/* Status overlay */}
               <div className="pointer-events-none absolute top-4 right-4 left-4 z-10">
                 <FacetContainer
-                  depth={2}
+                  material="regular"
                   role="status"
                   className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold"
                 >

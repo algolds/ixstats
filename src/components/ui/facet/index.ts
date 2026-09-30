@@ -20,4 +20,9 @@ export type { SliderBounds, UseSliderPhysicsOptions } from "./hooks/useSliderPhy
 
 // Export physical materials components and types
 export { FacetMaterial } from "./shared/FacetMaterial";
-export type { FacetMaterialProps, FacetMaterialType } from "./shared/FacetMaterial";
+export type {
+  FacetMaterialProps,
+  FacetMaterialType,
+  FacetGlassMaterialType,
+  FacetLegacyMaterialType,
+} from "./shared/FacetMaterial";

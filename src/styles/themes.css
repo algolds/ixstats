@@ -13,8 +13,7 @@
    =================================== */
 
 :root {
-  /* Font definition driven by typography preset */
-  --font-sans: var(--font-preset-sans, "National", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  /* Font stacks are owned by @theme in styles/facet/tokens.css (Facet 3 §3). */
 
   /* Backgrounds → roles */
   --color-bg-primary: var(--color-background-grouped);

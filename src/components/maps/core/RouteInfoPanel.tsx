@@ -204,7 +204,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
   if (isLoading) {
     return (
       <div className="absolute top-16 right-4 z-30 w-72">
-        <FacetContainer depth={2} className="space-y-3 rounded-2xl p-4" aria-busy="true">
+        <FacetContainer material="regular" className="space-y-3 rounded-2xl p-4" aria-busy="true">
           <Skeleton className="h-5 w-2/3" />
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-5/6" />
@@ -216,7 +216,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
   if (!route) {
     return (
       <div className="absolute top-16 right-4 z-30 w-72">
-        <FacetContainer depth={2} className="rounded-2xl p-4">
+        <FacetContainer material="regular" className="rounded-2xl p-4">
           <p className="text-muted-foreground text-sm">Route not found</p>
           <Button variant="link" size="xs" onClick={onClose} className="mt-1 px-0">
             Close
@@ -303,7 +303,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
       onTouchStart={(e) => e.stopPropagation()}
       className="animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 duration-200"
     >
-      <FacetContainer depth={2} className="max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-2xl">
+      <FacetContainer material="regular" className="max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-2xl">
         {/* Header */}
         <div className="border-border flex items-start gap-2 border-b px-4 py-3">
           <TypeIcon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" aria-hidden />

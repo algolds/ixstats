@@ -179,7 +179,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
   if (mode === "split-subdivision") {
     return (
       <FacetContainer
-        depth={1}
+        material="regular"
         role="toolbar"
         aria-label="Tool options"
         className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"
@@ -218,7 +218,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
   return (
     <FacetContainer
-      depth={1}
+      material="regular"
       role="toolbar"
       aria-label="Tool options"
       className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"

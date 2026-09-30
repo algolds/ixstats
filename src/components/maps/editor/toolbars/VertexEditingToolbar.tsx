@@ -20,7 +20,7 @@ export function VertexEditingToolbar({
 
   return (
     <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-      <FacetContainer depth={2} className="flex items-center gap-1.5 rounded-full p-1.5">
+      <FacetContainer material="regular" className="flex items-center gap-1.5 rounded-full p-1.5">
         <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
           Drag vertices · Midpoints to add · Right-click to remove
         </span>

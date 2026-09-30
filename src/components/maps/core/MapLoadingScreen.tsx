@@ -49,7 +49,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
           <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6 px-6 text-center">
             {/* Facet emblem */}
             <FacetContainer
-              depth={2}
+              material="regular"
               className="flex h-20 w-20 items-center justify-center rounded-full"
             >
               <img

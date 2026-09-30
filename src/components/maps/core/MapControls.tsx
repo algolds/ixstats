@@ -134,7 +134,7 @@ export function MapControls({
     >
       {/* Icon button row: one floating Facet toolbar */}
       <FacetContainer
-        depth={2}
+        material="regular"
         role="toolbar"
         aria-label="Map controls"
         className="flex w-fit items-center gap-0.5 rounded-xl p-1"
@@ -335,7 +335,7 @@ function IconButton({
 function DropdownPanel({ children, label }: { children: React.ReactNode; label: string }) {
   return (
     <FacetContainer
-      depth={2}
+      material="regular"
       id="map-controls-panel"
       role="region"
       aria-label={label}
