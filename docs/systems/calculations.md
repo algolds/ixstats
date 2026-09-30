@@ -68,7 +68,7 @@ The growth floor defaults to `-0.10` (`minGrowthFloor`). Storyteller `GDP_ADJUST
 
 Growth effects change the rate for the whole span from `baselineDate` to the target time, so they also reshape the projected path before their own start.
 
-### Level effects (national-issue consequences)
+### Level effects (national-issue consequences and directives)
 
 `GDP_LEVEL_ADJUSTMENT` (`gdp_level_adjustment`) and `POPULATION_LEVEL_ADJUSTMENT` (`population_level_adjustment`) scale GDP per capita or population by `1 + value × phaseIn` after the growth calculation, bypassing the tier cap. `phaseIn` (`levelPhaseIn`) is 0 before the effect's `ixTimeTimestamp`, rises linearly over `duration` IxTime years, and stays 1 afterwards; an effect with no duration applies at once. They never alter the path before they start, and the shift is kept after the duration ends.
 
@@ -79,6 +79,8 @@ National-issue resolution (`src/lib/national-issues/projection-effects.ts`) crea
 | `actualGdpGrowth` add / subtract X (percentage points) | `gdp_level_adjustment`, duration 1 IxTime year (or `durationDays` rounded to whole years) | `(1 ± X/100)^years − 1`, capped at ±3% |
 | `currentTotalGdp` / `currentGdpPerCapita` multiply m | `gdp_level_adjustment`, no duration | `m − 1`, capped at ±3% |
 | `currentPopulation` multiply m | `population_level_adjustment`, no duration | `m − 1`, capped at ±1% |
+
+Growth directives (`routers/intent.ts`) also create a `gdp_level_adjustment`, phased in over 1 IxTime year: `growthModifierToLevelShift(m, 1)` = `(1 + g(1+m)) / (1+g) − 1` at the reference growth `g = 3%` (`REFERENCE_GDP_GROWTH`), where `m` is the package's growth modifier (capped at 0.05).
 
 Any other operation on those fields (`set`, an absolute add to GDP) is dropped: it is not applied, not listed in the issue's consequence log, and not shown in the recon preview.
 

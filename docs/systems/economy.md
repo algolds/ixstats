@@ -62,7 +62,7 @@ There is no growth tick and no loop back into the baseline. Headline population 
 1. **Growth Computation**: Evaluates tier-based growth caps, diminishing returns ($>\$60\text{k}$), active policy multipliers, and embassy trade bonuses.
 2. **Fiscal Balancing** (reference calculation): Computes total revenue against department budgets, calculating national surplus/deficit and debt-to-GDP accumulation.
 3. **Vault Integration**: Economic health and budget weights (`BudgetVaultCalculator`, `src/lib/economy/budget-vault-calculator.ts`) feed the passive-income cron (`passive-income-distribution-cron.ts` → `vaultService.earnCreditsOnce`), rewarding sound economic management.
-4. **Decisions → GDP**: Directives add a `growth_rate_modifier` effect. National-issue consequences on GDP, GDP per capita, population and GDP growth (`actualGdpGrowth`) become `gdp_level_adjustment` / `population_level_adjustment` effects (`src/lib/national-issues/projection-effects.ts`); see [calculations](./calculations.md#level-effects-national-issue-consequences).
+4. **Decisions → GDP**: Growth directives (`intent.commit`) add a `gdp_level_adjustment` effect worth the growth their modifier would add at a 3% reference rate over 1 IxTime year (`growthModifierToLevelShift`). National-issue consequences on GDP, GDP per capita, population and GDP growth (`actualGdpGrowth`) become `gdp_level_adjustment` / `population_level_adjustment` effects (`src/lib/national-issues/projection-effects.ts`); see [calculations](./calculations.md#level-effects-national-issue-consequences-and-directives).
 5. **Legibility & Auditing**: Stat adjustments routed through `CountryEventSpine` are logged to `CountryChangeLog` and surfaced in the MyCountry canon feed (`mycountry.getCanonFeed`).
 
 ---

@@ -4,7 +4,11 @@
  * shift phases in over `duration` IxTime years from the effect's start, is kept afterwards, and
  * never touches the projection before the effect starts.
  */
-import { IxStatsCalculator, levelPhaseIn } from "~/lib/economy/calculations";
+import {
+  growthModifierToLevelShift,
+  IxStatsCalculator,
+  levelPhaseIn,
+} from "~/lib/economy/calculations";
 import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData, EconomicConfig, StorytellerEffect } from "~/types/ixstats";
 
@@ -113,5 +117,14 @@ describe("population_level_adjustment", () => {
     const without = statsAt(3);
     expect(withEffect.currentPopulation / without.currentPopulation).toBeCloseTo(1.002, 6);
     expect(withEffect.currentTotalGdp / without.currentTotalGdp).toBeCloseTo(1.002, 6);
+  });
+});
+
+describe("growthModifierToLevelShift", () => {
+  it("is the extra growth a relative modifier adds at the reference rate", () => {
+    // 3% growth x 1.02 for a year: 1.0306 / 1.03 - 1
+    expect(growthModifierToLevelShift(0.02, 1)).toBe(0.000583);
+    expect(growthModifierToLevelShift(0.05, 2)).toBeCloseTo(Math.pow(1.0315 / 1.03, 2) - 1, 6);
+    expect(growthModifierToLevelShift(0, 1)).toBe(0);
   });
 });

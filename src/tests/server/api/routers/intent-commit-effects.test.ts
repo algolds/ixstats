@@ -3,7 +3,7 @@
 // the hoisted jest.mock() factories rely on the ambient global.
 //
 // Directives (intent.commit) must take effect: the spine write is linked to the Intent row,
-// growth directives add a growth_rate_modifier StorytellerEffect (what the GDP projection
+// growth directives add a gdp_level_adjustment StorytellerEffect (what the GDP projection
 // reads), and zero-value levers are not applied.
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -86,7 +86,7 @@ describe("intent.commit", () => {
     expect(params.consequences.every((c) => c.value !== 0)).toBe(true);
   });
 
-  it("adds a growth_rate_modifier StorytellerEffect for an economy directive", async () => {
+  it("adds a phased gdp_level_adjustment StorytellerEffect for an economy directive", async () => {
     const db = makeDb();
     const caller = createCallerFactory(intentRouter)(ctxFor(db));
     await caller.commit({
@@ -98,8 +98,9 @@ describe("intent.commit", () => {
     expect(db.storytellerEffect.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         countryId: "c1",
-        inputType: "growth_rate_modifier",
-        value: 0.02,
+        inputType: "gdp_level_adjustment",
+        // A 2% growth modifier at the 3% reference rate for 1 year: (1.0306 / 1.03) - 1.
+        value: 0.000583,
         duration: 1,
         isActive: true,
         createdBy: "intent:intent_1",
