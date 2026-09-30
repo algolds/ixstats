@@ -169,6 +169,11 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
 
     expect(result).toMatchObject({ success: true, title: "Foo bar", revisionId: "rev-new" });
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledWith(
+      expect.objectContaining({ editSummary: "Reverted to revision r1 via WikiOS" }),
+      expect.anything(),
+      expect.anything()
+    );
     expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Foo bar", wikitext: "old text", revisionId: "rev-new" })
     );
@@ -247,5 +252,20 @@ describe("wikiosEditingRouter.rollback (plan 402)", () => {
     expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledTimes(1);
     expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledTimes(1);
     expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledWith("Foo bar");
+  });
+});
+
+describe("wikiosEditingRouter.saveWikitext edit summary (plan 402)", () => {
+  it("hands the summary to saveArticle as the edit summary, never as the article excerpt", async () => {
+    await createCaller(userCtx() as never).saveWikitext({
+      title: "Foo bar",
+      wikitext: "Foo bar is a country.",
+      summary: "fixed typo",
+    });
+
+    const [input] = jest.mocked(ArticleRepository.saveArticle).mock.calls[0] ?? [];
+    expect(input).toMatchObject({ editSummary: "fixed typo" });
+    expect(input).not.toHaveProperty("summary");
+    expect(input).not.toHaveProperty("excerpt");
   });
 });

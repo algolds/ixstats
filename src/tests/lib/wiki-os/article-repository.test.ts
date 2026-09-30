@@ -92,11 +92,16 @@ beforeEach(() => {
 });
 
 describe("ArticleRepository.saveArticle", () => {
-  const save = (slug: string, title = "", wikitext = "body") => {
+  const save = (
+    slug: string,
+    title = "",
+    wikitext = "body",
+    extra: { editSummary?: string; excerpt?: string } = {}
+  ) => {
     mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
       savedRow(args.create.title)
     );
-    return ArticleRepository.saveArticle({ slug, title, wikitext });
+    return ArticleRepository.saveArticle({ slug, title, wikitext, ...extra });
   };
 
   it("upserts on the canonical title, not the spelling that was typed", async () => {
@@ -134,6 +139,47 @@ describe("ArticleRepository.saveArticle", () => {
   it("rejects a title MediaWiki would refuse before touching the database", async () => {
     await expect(save("a[b")).rejects.toThrow("Invalid title");
     expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("keeps the edit summary on the revision and the excerpt of the text on the article (plan 402)", async () => {
+    const text = "Foo is a [[country]] in Eurth.";
+    const { article } = await save("Foo", "", text, { editSummary: "fixed typo" });
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    expect(args.create.summary).toBe("Foo is a country in Eurth.");
+    expect(args.update.summary).toBe("Foo is a country in Eurth.");
+    expect(article.summary).toBe("Foo is a country in Eurth.");
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data.summary).toBe("fixed typo");
+  });
+
+  it("does not blank the excerpt when the edit summary is empty (plan 402)", async () => {
+    await save("Foo", "", "Foo is a country.", { editSummary: "" });
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    expect(args.update.summary).toBe("Foo is a country.");
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data.summary).toBe("");
+  });
+
+  it("stores no edit summary as null and never uses it as the excerpt (plan 402)", async () => {
+    await save("Foo", "", "Foo is a country.");
+
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data.summary).toBeNull();
+    expect(mockUpsert.mock.calls[0]?.[0].create.summary).toBe("Foo is a country.");
+  });
+
+  it("caps the derived excerpt and lets an explicit excerpt override it (plan 402)", async () => {
+    await save("Foo", "", "word ".repeat(500));
+    expect(mockUpsert.mock.calls[0]?.[0].create.summary.length).toBeLessThanOrEqual(480);
+
+    await save("Foo", "", "Foo is a country.", { excerpt: "Custom excerpt." });
+    expect(mockUpsert.mock.calls[1]?.[0].create.summary).toBe("Custom excerpt.");
+    expect(mockUpsert.mock.calls[1]?.[0].update.summary).toBe("Custom excerpt.");
+  });
+
+  it("stores a null excerpt for a blank page (plan 402)", async () => {
+    await save("Foo", "", "");
+
+    expect(mockUpsert.mock.calls[0]?.[0].update.summary).toBeNull();
   });
 
   it("writes a redirect's canonical target title and fragment on create and update (plan 402)", async () => {

@@ -152,7 +152,10 @@ export interface SaveArticleInput {
   contentJson?: WikiBlock[];
   contentHtml?: string;
   wikitext?: string;
-  summary?: string;
+  /** The edit summary ("fixed typo"): stored on the revision only, never as the article's excerpt. */
+  editSummary?: string;
+  /** Overrides the article's excerpt (`WikiArticle.summary`); default: derived from the wikitext. */
+  excerpt?: string;
   minor?: boolean;
   namespace?: number;
   namespacePrefix?: string | null;

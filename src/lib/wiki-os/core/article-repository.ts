@@ -21,6 +21,7 @@ import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
 import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
+import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 
 /** The columns a reader needs from a WikiArticle row. */
 const ARTICLE_SELECT = {
@@ -158,6 +159,8 @@ export class ArticleRepository {
     const { title, slug } = canon;
     const wikitext = input.wikitext || "";
     const contentHtml = input.contentHtml || "";
+    // The excerpt (search snippets, link previews) comes from the text, never the edit summary.
+    const excerpt = input.excerpt ?? (cleanWikitextExcerpt(wikitext, 300).slice(0, 480) || null);
     const redirect = parseRedirect(wikitext);
     const redirectTargetSlug = redirect?.title ?? null;
     const redirectTargetFragment = redirect?.fragment ?? null;
@@ -193,7 +196,7 @@ export class ArticleRepository {
           source,
           wikitext,
           contentHtml,
-          summary: input.summary ?? null,
+          summary: excerpt,
           redirectTargetSlug,
           redirectTargetFragment,
           authorId: resolvedDbUserId,
@@ -207,7 +210,7 @@ export class ArticleRepository {
           namespacePrefix: canon.namespacePrefix,
           wikitext,
           contentHtml,
-          summary: input.summary ?? undefined,
+          summary: excerpt,
           redirectTargetSlug,
           redirectTargetFragment,
           lastEditorId: resolvedDbUserId ?? undefined,
@@ -242,7 +245,7 @@ export class ArticleRepository {
           articleId: article.id,
           wikitext,
           contentHtml,
-          summary: input.summary ?? null,
+          summary: input.editSummary ?? null,
           minor: input.minor ?? false,
           source,
           author: authorName,
@@ -292,7 +295,7 @@ export class ArticleRepository {
         contentHtml: contentHtml || "",
         contentJson: null,
         wikitext: result.article.wikitext,
-        summary: input.summary ?? null,
+        summary: excerpt,
         namespace: result.article.namespace ?? 0,
         namespacePrefix: result.article.namespacePrefix ?? null,
         protectionLevel: result.article.protectionLevel ?? "ALL",
