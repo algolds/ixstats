@@ -7,7 +7,6 @@
  */
 
 import { z } from "zod/v4";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, lightMutationProcedure, publicProcedure } from "~/server/api/trpc";
 import {
   getWikiActorLabel,
@@ -17,6 +16,7 @@ import {
 } from "~/lib/wiki-os/auth";
 import {
   authorizeAction,
+  refusals,
   requireCanonicalTitle,
   requireGroupChange,
   requireRight,
@@ -32,7 +32,6 @@ import {
 } from "~/lib/wiki-os/rights";
 import {
   PageManagementService,
-  PageOperationError,
   talkTitleOf,
   type PageActor,
 } from "~/lib/wiki-os/core/page-management-service";
@@ -62,18 +61,6 @@ const actorOf = (ctx: WikiAuthContext): PageActor => ({
   userId: requireWikiUserId(ctx),
   name: getWikiActorLabel(ctx),
 });
-
-/** Turn a service refusal (no such page, destination exists) into the matching TRPCError. */
-async function refusals<T>(work: Promise<T>): Promise<T> {
-  try {
-    return await work;
-  } catch (error) {
-    if (error instanceof PageOperationError) {
-      throw new TRPCError({ code: error.code, message: error.message });
-    }
-    throw error;
-  }
-}
 
 /** What a client may learn of a permissions snapshot: names, groups and rights, never ids. */
 function publicPermissions(permissions: WikiPermissions) {

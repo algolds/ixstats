@@ -23,6 +23,8 @@ import {
   requireCanonicalTitle,
   requireGroupChange,
   requireRight,
+  requireUploadTitle,
+  refusals,
   rightForLevel,
   type ActionDecision,
   type PageRestriction,
@@ -494,5 +496,70 @@ describe("importVerdict (per-page authorization of a dump)", () => {
       reason: "Only wiki administrators can import pages in this namespace.",
     });
     expect(verdict(sysop, "Portal:Testia", 100).allowed).toBe(true);
+  });
+});
+
+describe("requireUploadTitle (the name MediaWiki stores an upload under)", () => {
+  it.each([
+    ["Flag.png", "File:Flag.png"],
+    ["flag of testia.png", "File:Flag of testia.png"],
+    ["pics/2026/Flag.png", "File:Flag.png"],
+    ["C:\\pics\\Flag.png", "File:Flag.png"],
+    ["../../../Flag.png", "File:Flag.png"],
+    ["Template:Flag.png", "File:Template-Flag.png"],
+    ["MediaWiki:Common.js", "File:MediaWiki-Common.js"],
+    ["Module:Foo", "File:Module-Foo"],
+    ["File:Flag.png", "File:File-Flag.png"],
+    ["a[b]{c}|d#e.png", "File:A-b--c--d-e.png"],
+    ["  Flag.png  ", "File:Flag.png"],
+  ])("%s becomes %s", (raw, title) => {
+    expect(requireUploadTitle(raw)).toBe(title);
+  });
+
+  it.each(["", "dir/", "dir\\", "a%41.png"])("refuses %p", (raw) => {
+    expect(() => requireUploadTitle(raw)).toThrow("That page title is not valid.");
+  });
+
+  it("never lands in another namespace, whatever the name says", () => {
+    for (const raw of [
+      "Template:X.png",
+      "User:Bob/x.png",
+      "MediaWiki:Common.js",
+      "Special:Upload",
+    ]) {
+      expect(requireUploadTitle(raw).startsWith("File:")).toBe(true);
+    }
+  });
+});
+
+describe("an upload is held by the File: page's edit protection too", () => {
+  const editProtected = [restriction("edit", "sysop")];
+
+  it("refuses an autoconfirmed uploader, lets a sysop, and ignores an expired one", () => {
+    expect(denialCode(autoconfirmed, "upload", "File:Flag.png", editProtected)).toBe(
+      "protectedpage"
+    );
+    expect(isAllowed(sysop, "upload", "File:Flag.png", editProtected)).toBe(true);
+    expect(
+      isAllowed(autoconfirmed, "upload", "File:Flag.png", [restriction("edit", "sysop", PAST)])
+    ).toBe(true);
+  });
+});
+
+describe("refusals", () => {
+  it("maps a page-service refusal to the TRPC code of the same name and passes anything else through", async () => {
+    const { PageOperationError } = jest.requireActual<
+      typeof import("~/lib/wiki-os/core/page-management-service")
+    >("~/lib/wiki-os/core/page-management-service");
+    for (const code of ["NOT_FOUND", "CONFLICT", "BAD_REQUEST"] as const) {
+      await expect(
+        refusals(Promise.reject(new PageOperationError(code, "no")))
+      ).rejects.toMatchObject({
+        code,
+        message: "no",
+      });
+    }
+    await expect(refusals(Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+    await expect(refusals(Promise.resolve(7))).resolves.toBe(7);
   });
 });

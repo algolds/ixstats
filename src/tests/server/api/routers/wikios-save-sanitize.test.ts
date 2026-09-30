@@ -30,6 +30,8 @@ jest.mock("~/lib/wiki-os/core", () => ({
 }));
 jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
   __esModule: true,
+  PageOperationError: jest.requireActual("~/lib/wiki-os/core/page-management-service")
+    .PageOperationError,
   PageManagementService: {
     restoreArticle: jest.fn(),
   },
@@ -391,15 +393,13 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
       revisionId: "rev-1" as never,
       extractedLinksCount: 0,
     });
-    jest
-      .mocked(getRevisionWikitextShadow)
-      .mockResolvedValue({
-        wikitext: "old",
-        title: "Caphiria",
-        source: "ixwiki",
-        timestamp: "",
-        fromShadow: true,
-      });
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
+      wikitext: "old",
+      title: "Caphiria",
+      source: "ixwiki",
+      timestamp: "",
+      fromShadow: true,
+    });
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
         {
@@ -497,9 +497,91 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
 
     mockRestrictions({ action: "upload", level: "sysop" });
     await expect(
-      createCaller(userCtx("Linked") as never).uploadFile({ ...upload, filename: "File:Flag.png" })
+      createCaller(userCtx("Linked") as never).uploadFile({ ...upload, filename: "Flag.png" })
     ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
     expect(executeMediaWikiWrite).toHaveBeenCalledTimes(1);
+  });
+
+  // The security review: rights are checked against the title MediaWiki will store the upload under.
+  describe("the upload name is canonicalized before it is authorized and sent", () => {
+    beforeEach(() => mockVerifiedLink("Linked"));
+    const uploaded = () => jest.mocked(executeMediaWikiWrite).mock.calls[0]?.[0];
+
+    it.each([
+      ["Flag.png", "Flag.png"],
+      ["some/dir/Flag.png", "Flag.png"],
+      ["C:\\pics\\Flag.png", "Flag.png"],
+      ["../../Flag.png", "Flag.png"],
+      ["Template:Flag.png", "Template-Flag.png"],
+      ["MediaWiki:Common.js", "MediaWiki-Common.js"],
+      ["File:Flag.png", "File-Flag.png"],
+      ["flag.png", "Flag.png"],
+    ])("%s is stored, and authorized, as File:%s", async (filename, stored) => {
+      await createCaller(userCtx("Linked") as never).uploadFile({ filename, fileBase64: "AAAA" });
+      expect(uploaded()).toMatchObject({ action: "upload", filename: stored });
+    });
+
+    it("holds an upload to the edit protection of the File: page it would rewrite", async () => {
+      mockRestrictions({ action: "edit", level: "sysop" });
+      await expect(
+        createCaller(userCtx("Linked") as never).uploadFile({
+          filename: "evil/Flag.png",
+          fileBase64: "AAAA",
+        })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
+      expect(executeMediaWikiWrite).not.toHaveBeenCalled();
+    });
+
+    it("loads the protections of the canonical File: title, nothing else", async () => {
+      mockRestrictions({ action: "upload", level: "sysop" });
+      await createCaller(userCtx("Linked") as never)
+        .uploadFile({
+          filename: "Flag.png",
+          fileBase64: "AAAA",
+        })
+        .catch(() => undefined);
+      const db_ = db as unknown as { wikiRestriction: { findMany: jest.Mock } };
+      expect(db_.wikiRestriction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { source: "ixwiki", title: "File:Flag.png" } })
+      );
+    });
+
+    it("refuses a name with nothing usable in it", async () => {
+      await expect(
+        createCaller(userCtx("Linked") as never).uploadFile({
+          filename: "dir/",
+          fileBase64: "AAAA",
+        })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(executeMediaWikiWrite).not.toHaveBeenCalled();
+    });
+  });
+
+  it("restoreArticle checks and acts in the realm it was asked for, and maps service refusals", async () => {
+    const caller = createCaller(adminCtx() as never);
+    jest
+      .mocked(PageManagementService.restoreArticle)
+      .mockResolvedValue({ success: true, articleId: "a1" });
+
+    await caller.restoreArticle({ title: "foo_bar", realm: "iiwiki" });
+    expect(PageManagementService.restoreArticle).toHaveBeenCalledWith(
+      "Foo bar",
+      { userId: "dbadmin", name: "Admin" },
+      "iiwiki"
+    );
+
+    const { PageOperationError } = jest.requireActual<
+      typeof import("~/lib/wiki-os/core/page-management-service")
+    >("~/lib/wiki-os/core/page-management-service");
+    for (const code of ["NOT_FOUND", "CONFLICT", "BAD_REQUEST"] as const) {
+      jest
+        .mocked(PageManagementService.restoreArticle)
+        .mockRejectedValueOnce(new PageOperationError(code, `refused ${code}`));
+      await expect(caller.restoreArticle({ title: "Foo" })).rejects.toMatchObject({
+        code,
+        message: `refused ${code}`,
+      });
+    }
   });
 
   it("will not save over a deleted page: an administrator restores it first", async () => {

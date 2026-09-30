@@ -24,7 +24,13 @@ import {
   resolveWikiUsername,
   type WikiAuthContext,
 } from "~/lib/wiki-os/auth";
-import { authorizeAction, requireCanonicalTitle, requireRight } from "~/lib/wiki-os/permissions";
+import {
+  authorizeAction,
+  refusals,
+  requireCanonicalTitle,
+  requireRight,
+  requireUploadTitle,
+} from "~/lib/wiki-os/permissions";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
@@ -324,11 +330,10 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await authorizeAction(
-        ctx,
-        "upload",
-        `File:${input.filename.replace(/^(?:File|Image):/i, "")}`
-      );
+      // The name MediaWiki will store it under: the rights are checked against that, not the raw text.
+      const fileTitle = requireUploadTitle(input.filename);
+      await authorizeAction(ctx, "upload", fileTitle);
+      const fileName = fileTitle.slice("File:".length);
 
       // Validate file size (10MB max)
       const fileBuffer = Buffer.from(input.fileBase64, "base64");
@@ -338,7 +343,7 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       // 1. Dual-Ingest: Register asset in PostgreSQL wiki_assets
       try {
-        const cleanName = input.filename.replace(/^File:/, "").replace(/ /g, "_");
+        const cleanName = fileName.replace(/ /g, "_");
         const ext = cleanName.split(".").pop()?.toLowerCase() || "png";
         const mimeType =
           ext === "svg"
@@ -363,7 +368,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       const result = await executeMediaWikiWrite(
         {
           action: "upload",
-          filename: input.filename,
+          filename: fileName,
           comment: `${input.comment} (via WikiOS)`,
           text: input.description,
           ignorewarnings: "1",
@@ -374,7 +379,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       const resAny = result.result as any;
       return {
         success: result.success,
-        filename: resAny?.upload?.filename ?? input.filename,
+        filename: resAny?.upload?.filename ?? fileName,
         url: resAny?.upload?.imageinfo?.url ?? null,
         descriptionUrl: resAny?.upload?.imageinfo?.descriptionurl ?? null,
       };
@@ -393,13 +398,15 @@ export const wikiosEditingRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       // The right first, so a caller without it learns nothing about which titles are valid.
       await requireRight(ctx, "undelete");
-      const title = requireCanonicalTitle(input.title);
-      await authorizeAction(ctx, "undelete", title);
+      const title = requireCanonicalTitle(input.title, input.realm);
+      await authorizeAction(ctx, "undelete", title, input.realm);
       const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
-      return PageManagementService.restoreArticle(
-        title,
-        { userId: requireWikiUserId(ctx), name: getWikiActorLabel(ctx) },
-        input.realm
+      return refusals(
+        PageManagementService.restoreArticle(
+          title,
+          { userId: requireWikiUserId(ctx), name: getWikiActorLabel(ctx) },
+          input.realm
+        )
       );
     }),
 });

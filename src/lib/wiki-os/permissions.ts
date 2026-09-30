@@ -12,6 +12,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "~/server/db";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
+import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import {
   checkEditPolicy,
@@ -78,7 +79,7 @@ const RESTRICTIONS_FOR_ACTION: Readonly<Record<WikiAction, readonly RestrictionT
   create: ["create", "edit"],
   move: ["move"],
   rollback: ["edit"],
-  upload: ["upload"],
+  upload: ["upload", "edit"], // a re-upload also rewrites the File: page, which its edit protection guards
   delete: [],
   undelete: [],
   protect: [],
@@ -187,6 +188,30 @@ export function requireCanonicalTitle(rawTitle: string, source = "ixwiki"): stri
   if (!canon)
     throw new TRPCError({ code: "BAD_REQUEST", message: "That page title is not valid." });
   return canon.title;
+}
+
+/**
+ * The canonical `File:` title MediaWiki gives an upload named `rawFilename`, which is the title its
+ * rights are checked against: the part after the last `/` or `\\`, with `:` and the characters a title
+ * cannot hold turned into `-` (so "Template:Foo.png" is `File:Template-Foo.png`, never a Template: page).
+ * BAD_REQUEST when nothing usable is left.
+ */
+export function requireUploadTitle(rawFilename: string): string {
+  const base = rawFilename.split(/[\\/]/).pop() ?? "";
+  const name = base.replace(/[\u0000-\u001F\u007F:#<>[\]{}|]/g, "-").trim();
+  return requireCanonicalTitle(`File:${name}`);
+}
+
+/** Turn a page-service refusal (no such page, the destination exists) into the matching TRPCError. */
+export async function refusals<T>(work: Promise<T>): Promise<T> {
+  try {
+    return await work;
+  } catch (error) {
+    if (error instanceof PageOperationError) {
+      throw new TRPCError({ code: error.code, message: error.message });
+    }
+    throw error;
+  }
 }
 
 /**
