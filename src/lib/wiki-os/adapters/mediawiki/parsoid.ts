@@ -10,55 +10,37 @@ import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser"
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 
 /**
- * Render an article through MediaWiki `action=parse` so templates, parser functions and Lua expand.
- *
- * When the Postgres wikitext is at hand it is what gets rendered (`text=` with the title as context).
- * `page=` reads MediaWiki's own copy of the page, which is the pre-edit version until the background
- * export lands (or forever under SKIP_MEDIAWIKI_SYNC), so it is only the fallback for HTML-only rows.
+ * Render an article's Postgres wikitext through MediaWiki `action=parse` (`text=`, with the title as
+ * context) so templates, parser functions and Lua expand. MediaWiki's own copy of the page is never
+ * read: it is the pre-edit version until the background export lands (or forever under
+ * SKIP_MEDIAWIKI_SYNC). `wikitext` must not be blank (the render service never sends a blank page).
  * Returns null when MediaWiki is unreachable or returns nothing.
  */
 export async function renderArticleViaMediaWiki(
-  wikitext: string | null | undefined,
+  wikitext: string,
   title: string
 ): Promise<string | null> {
   try {
-    const common = {
-      prop: "text",
-      disablelimitreport: "1",
-      disableeditsection: "1",
-      formatversion: "2",
-      format: "json",
-    };
-    let res: Response;
-    if (wikitext && wikitext.trim() !== "") {
-      res = await fetch(getMediaWikiApiUrl("ixwiki"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": DEFAULT_USER_AGENT,
-          "Api-User-Agent": DEFAULT_USER_AGENT,
-        },
-        body: new URLSearchParams({
-          ...common,
-          action: "parse",
-          text: wikitext,
-          title,
-          contentmodel: "wikitext",
-        }).toString(),
-        signal: AbortSignal.timeout(6000),
-      });
-    } else {
-      const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-      const params = new URLSearchParams({
-        ...common,
+    const res = await fetch(getMediaWikiApiUrl("ixwiki"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Api-User-Agent": DEFAULT_USER_AGENT,
+      },
+      body: new URLSearchParams({
         action: "parse",
-        page: title.replace(/ /g, "_"),
-      });
-      res = await fetch(`${wikiUrl.replace(/\/+$/, "")}/api.php?${params.toString()}`, {
-        headers: { "User-Agent": DEFAULT_USER_AGENT },
-        signal: AbortSignal.timeout(3500),
-      });
-    }
+        text: wikitext,
+        title,
+        contentmodel: "wikitext",
+        prop: "text",
+        disablelimitreport: "1",
+        disableeditsection: "1",
+        formatversion: "2",
+        format: "json",
+      }).toString(),
+      signal: AbortSignal.timeout(6000),
+    });
     if (!res.ok) return null;
     const data = (await res.json()) as { parse?: { text?: unknown } };
     const text = data?.parse?.text;

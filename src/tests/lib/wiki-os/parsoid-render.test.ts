@@ -39,17 +39,6 @@ test("renders the given wikitext with text= and the title as context", async () 
   expect(body.has("page")).toBe(false);
 });
 
-test("falls back to page= only when there is no wikitext", async () => {
-  fetchMock.mockResolvedValue(okParse("<p>upstream</p>"));
-
-  const html = await renderArticleViaMediaWiki("", "My Page");
-
-  expect(html).toBe("<p>upstream</p>");
-  const url = new URL(String(fetchMock.mock.calls[0]![0]));
-  expect(url.searchParams.get("page")).toBe("My_Page");
-  expect(url.searchParams.has("text")).toBe(false);
-});
-
 test("returns null when MediaWiki is unreachable or answers with an error", async () => {
   fetchMock.mockRejectedValueOnce(new Error("ECONNREFUSED"));
   expect(await renderArticleViaMediaWiki("x", "T")).toBeNull();
