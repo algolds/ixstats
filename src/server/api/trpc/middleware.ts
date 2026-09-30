@@ -7,6 +7,7 @@ import { t } from "./init";
 import { rateLimiter } from "~/lib/cache";
 import { db, isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
+import { hasPremiumTier } from "~/lib/auth/premium";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
 import { touchLastSeen } from "./last-seen";
 import {
@@ -292,7 +293,8 @@ export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
   }
 
   const membershipTier = (ctx.user as any).membershipTier || "basic";
-  const isPremium = membershipTier === "mycountry_premium";
+  // hasPremiumTier also honours NEXT_PUBLIC_PREMIUM_FOR_ALL (test builds).
+  const isPremium = hasPremiumTier(membershipTier);
 
   if (!isPremium) {
     console.warn(

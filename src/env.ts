@@ -180,6 +180,8 @@ export const env = createEnv({
     NEXT_PUBLIC_IXWORLD_STANDALONE: z.string().optional(),
     // Map glyph (font PBF) URL template that overrides the default
     NEXT_PUBLIC_MAP_GLYPHS_URL: z.string().optional(),
+    // "true" grants MyCountry Premium features to every user (test builds; keep off in production)
+    NEXT_PUBLIC_PREMIUM_FOR_ALL: z.string().optional(),
   },
 
   /**
@@ -283,6 +285,7 @@ export const env = createEnv({
     NEXT_PUBLIC_WS_PORT: process.env.NEXT_PUBLIC_WS_PORT,
     NEXT_PUBLIC_IXWORLD_STANDALONE: process.env.NEXT_PUBLIC_IXWORLD_STANDALONE,
     NEXT_PUBLIC_MAP_GLYPHS_URL: process.env.NEXT_PUBLIC_MAP_GLYPHS_URL,
+    NEXT_PUBLIC_PREMIUM_FOR_ALL: process.env.NEXT_PUBLIC_PREMIUM_FOR_ALL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -1,3 +1,5 @@
+import { hasPremiumTier } from "./premium";
+
 export type Actions = "manage" | "create" | "read" | "update" | "delete" | "use" | "access";
 
 export type Subjects =
@@ -29,7 +31,7 @@ export function defineAbilityFor(
   const isOwner = normalizedRole === "owner";
   const isAdmin = normalizedRole === "admin";
   const isStaff = normalizedRole === "staff";
-  const isPremium = normalizedTier === "mycountry_premium" || isOwner || isAdmin || isStaff;
+  const isPremium = hasPremiumTier(normalizedTier) || isOwner || isAdmin || isStaff;
 
   const canManageUser = isOwner || isAdmin || permissions.some((p) => p.startsWith("user."));
   const canManageRole = isOwner || isAdmin || permissions.some((p) => p.startsWith("role."));
