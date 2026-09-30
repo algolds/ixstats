@@ -32,6 +32,7 @@ The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects t
 ThinkTanks are dedicated research and policy drafting rooms for alliances, international coalitions, and co-authors:
 - **Group Feed**: Asynchronous notes, lore drafts, and critique requests with quick intent tags.
 - **Role-Based Membership**: Group ownership, admin/member roles, invitations, and member roster management.
+- **Realm Boards**: every realm has a board ThinkTank at `/r/[realm]/board`. Anyone can read it, owners of a nation in the realm post there, and its posts also appear in the realm-filtered feed (`thinkpages.getFeed({ realmId })`). See [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board) and [Realms](./realms.md).
 - **Joint Working Papers** *(pending)*: `CollaborativeDoc` CRUD procedures and a `ThinktankPapersTab` component exist, but the Docs tab is not yet mounted in the workspace. Real-time group chat is likewise deferred (see [ThinkTanks](./thinktanks.md#roadmap-pillars-deferred--future-phases)).
 
 ---
