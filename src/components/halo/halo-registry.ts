@@ -42,7 +42,8 @@ export type SystemActionId =
   | "mark-all-read"
   | "reload-data"
   | "random-wiki"
-  | "random-country";
+  | "random-country"
+  | "sign-out";
 
 export interface CommandEntry {
   id?: string;
