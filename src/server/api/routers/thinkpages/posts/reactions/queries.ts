@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { env } from "~/env";
 
 export const thinkpagesPostsReactionsQueriesRouter = createTRPCRouter({
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
@@ -146,26 +147,30 @@ export const thinkpagesPostsReactionsQueriesRouter = createTRPCRouter({
 
                 let serverNickname = u.global_name || u.username;
 
-                try {
-                  const memberRes = await fetch(
-                    `https://discord.com/api/v10/guilds/552179975769161729/members/${u.id}`,
-                    {
-                      method: "GET",
-                      headers: {
-                        Authorization: `Bot ${discordBotToken}`,
-                        "User-Agent": "IxStats/1.0",
-                      },
-                      signal: AbortSignal.timeout(3000),
+                // Guild nicknames need the guild ID; without it the Discord name is shown.
+                const guildId = env.DISCORD_GUILD_ID;
+                if (guildId) {
+                  try {
+                    const memberRes = await fetch(
+                      `https://discord.com/api/v10/guilds/${guildId}/members/${u.id}`,
+                      {
+                        method: "GET",
+                        headers: {
+                          Authorization: `Bot ${discordBotToken}`,
+                          "User-Agent": "IxStats/1.0",
+                        },
+                        signal: AbortSignal.timeout(3000),
+                      }
+                    );
+                    if (memberRes.ok) {
+                      const memberData = (await memberRes.json()) as { nick?: string | null };
+                      if (memberData.nick) {
+                        serverNickname = memberData.nick;
+                      }
                     }
-                  );
-                  if (memberRes.ok) {
-                    const memberData = (await memberRes.json()) as { nick?: string | null };
-                    if (memberData.nick) {
-                      serverNickname = memberData.nick;
-                    }
+                  } catch (err) {
+                    console.warn(`Failed to fetch guild member nickname for ${u.id}:`, err);
                   }
-                } catch (err) {
-                  console.warn(`Failed to fetch guild member nickname for ${u.id}:`, err);
                 }
 
                 let localAcc = null;
@@ -255,129 +260,8 @@ export const thinkpagesPostsReactionsQueriesRouter = createTRPCRouter({
             }
           }
 
-          // Fallback to deterministic mock reactions if bot token is missing or if fetch returned nothing
-          if (discordReactions.length === 0) {
-            const MOCK_DISCORD_USERS = [
-              { username: "bourgondie", displayName: "Burgundie", avatarSeed: "bourgondie" },
-              { username: "urcea", displayName: "Urcea", avatarSeed: "urcea" },
-              { username: "radamancio", displayName: "Pelaxia", avatarSeed: "radamancio" },
-              { username: "masinstante", displayName: "Kiravia", avatarSeed: "masinstante" },
-              { username: "keaor", displayName: "Faneria", avatarSeed: "keaor" },
-              { username: "youngheroes", displayName: "Argyrea", avatarSeed: "youngheroes" },
-              { username: "bobbo3", displayName: "Daxia", avatarSeed: "bobbo3" },
-              {
-                username: "potatolover9566",
-                displayName: "Canespa",
-                avatarSeed: "potatolover9566",
-              },
-              { username: "jaded_outcast", displayName: "Kabasa", avatarSeed: "jaded_outcast" },
-              { username: "helvianir", displayName: "Maresteyn", avatarSeed: "helvianir" },
-              { username: "samuel_pw", displayName: "Olmeria", avatarSeed: "samuel_pw" },
-              { username: "extrudi", displayName: "Caphiria", avatarSeed: "extrudi" },
-              { username: "grisblanco", displayName: "Cartadania", avatarSeed: "grisblanco" },
-              {
-                username: "thatvillagerguy",
-                displayName: "Kostava",
-                avatarSeed: "thatvillagerguy",
-              },
-              { username: "iander", displayName: "Yonderre", avatarSeed: "iander" },
-              { username: "stealie_2", displayName: "Thervala", avatarSeed: "stealie_2" },
-              { username: "fabong1722", displayName: "Metzetta", avatarSeed: "fabong1722" },
-              { username: "glubert2004", displayName: "Nasastan", avatarSeed: "glubert2004" },
-              { username: "cdr_mustang", displayName: "Alstin", avatarSeed: "cdr_mustang" },
-              { username: "nelly", displayName: "Nelly", avatarSeed: "nelly" },
-              { username: "wumpus", displayName: "Wumpus", avatarSeed: "wumpus" },
-            ];
-
-            const activeTypes = input.reactionType ? [input.reactionType] : Object.keys(counts);
-            for (const type of activeTypes) {
-              const count = counts[type] || 0;
-              if (count <= 0) continue;
-
-              for (let i = 0; i < count; i++) {
-                const index =
-                  (input.postId.charCodeAt(0) + type.charCodeAt(0) + i) % MOCK_DISCORD_USERS.length;
-                const mockUser = MOCK_DISCORD_USERS[index]!;
-
-                let localAcc = null;
-
-                // 1. Look up User by Discord Username (IxnayID auth sync)
-                const linkedUser = await db.user.findFirst({
-                  where: {
-                    discordUsername: mockUser.username,
-                  },
-                  select: {
-                    clerkUserId: true,
-                  },
-                });
-
-                if (linkedUser) {
-                  localAcc = await db.thinkpagesAccount.findFirst({
-                    where: {
-                      clerkUserId: linkedUser.clerkUserId,
-                    },
-                    select: {
-                      id: true,
-                      username: true,
-                      displayName: true,
-                      profileImageUrl: true,
-                      accountType: true,
-                      verified: true,
-                    },
-                  });
-                }
-
-                // 2. Fallback to direct username or bio lookup
-                if (!localAcc) {
-                  localAcc = await db.thinkpagesAccount.findFirst({
-                    where: {
-                      OR: [
-                        { username: mockUser.username },
-                        { bio: { contains: `discord:${mockUser.username}` } },
-                      ],
-                    },
-                    select: {
-                      id: true,
-                      username: true,
-                      displayName: true,
-                      profileImageUrl: true,
-                      accountType: true,
-                      verified: true,
-                    },
-                  });
-                }
-
-                if (localAcc) {
-                  discordReactions.push({
-                    id: `mock_discord_react_${input.postId}_${type}_${i}`,
-                    postId: input.postId,
-                    reactionType: type,
-                    timestamp: new Date(post.createdAt),
-                    account: {
-                      ...localAcc,
-                      profileImageUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${mockUser.avatarSeed}`,
-                    },
-                  });
-                } else {
-                  discordReactions.push({
-                    id: `mock_discord_react_${input.postId}_${type}_${i}`,
-                    postId: input.postId,
-                    reactionType: type,
-                    timestamp: new Date(post.createdAt),
-                    account: {
-                      id: `mock_discord_user_${mockUser.username}`,
-                      username: mockUser.displayName,
-                      displayName: mockUser.displayName,
-                      profileImageUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${mockUser.avatarSeed}`,
-                      accountType: "citizen",
-                      verified: mockUser.username !== "nelly" && mockUser.username !== "wumpus",
-                      isDiscordUser: true,
-                    },
-                  });
-                }
-              }
-            }
-          }
+          // No fallback: when the Discord fetch fails or no bot token is set, only local
+          // reactors are listed. The post's reaction counts still come from reactionCounts.
         }
       }
 
