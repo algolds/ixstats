@@ -85,7 +85,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const rawHtml = await wikitextToHtml(input.wikitext, input.title);
+      const rawHtml = await wikitextToHtml(input.wikitext, requireCanonicalTitle(input.title));
       const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
       const infoboxPrefix = transformed.infoboxHtml
         ? `<div class="wikios-infobox-container mb-4 float-right clear-right max-w-[340px] ml-4">${transformed.infoboxHtml}</div>`
@@ -340,9 +340,10 @@ export const wikiosEditingRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       assertWikiAdmin(ctx);
+      const title = requireCanonicalTitle(input.title);
       const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
       return PageManagementService.restoreArticle(
-        input.title,
+        title,
         ctx.auth.userId || "anonymous",
         input.realm
       );

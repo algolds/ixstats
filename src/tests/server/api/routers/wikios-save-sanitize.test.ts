@@ -272,3 +272,52 @@ describe("wikiosEditingRouter canonical titles (plan 403)", () => {
     expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
   });
 });
+
+describe("wikiosEditingRouter preview and restore canonical titles (plan 403)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(wikitextToHtml).mockResolvedValue("<p>hi</p>");
+    jest
+      .mocked(PageManagementService.restoreArticle)
+      .mockResolvedValue({ success: true, articleId: "a1" });
+  });
+
+  it("previews against the canonical title", async () => {
+    const caller = createCaller(userCtx("Linked") as never);
+
+    await caller.previewWikitext({ wikitext: "hi", title: "user_talk:jane" });
+
+    expect(wikitextToHtml).toHaveBeenCalledWith("hi", "User talk:Jane");
+  });
+
+  it("refuses to preview a title MediaWiki would refuse", async () => {
+    const caller = createCaller(userCtx("Linked") as never);
+
+    await expect(caller.previewWikitext({ wikitext: "hi", title: "a[b" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(wikitextToHtml).not.toHaveBeenCalled();
+  });
+
+  it("restores by the canonical title", async () => {
+    const caller = createCaller(adminCtx() as never);
+
+    await caller.restoreArticle({ title: "foo_bar" });
+
+    expect(PageManagementService.restoreArticle).toHaveBeenCalledWith(
+      "Foo bar",
+      "system_owner_id",
+      "ixwiki"
+    );
+  });
+
+  it("checks the admin right before the title, and refuses an invalid title", async () => {
+    await expect(
+      createCaller(userCtx("Linked") as never).restoreArticle({ title: "a[b" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      createCaller(adminCtx() as never).restoreArticle({ title: "a[b" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(PageManagementService.restoreArticle).not.toHaveBeenCalled();
+  });
+});
