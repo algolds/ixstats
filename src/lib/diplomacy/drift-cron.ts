@@ -1,15 +1,29 @@
 import { db } from "~/server/db";
+import { expireStaleDiplomaticProposals } from "~/lib/diplomacy/proposal-lifecycle";
 
 export interface DiplomaticDriftResult {
   relationsProcessed: number;
   relationsUpdated: number;
+  proposalsExpired: number;
+  invitesExpired: number;
 }
 
 export async function runDiplomaticDrift(): Promise<DiplomaticDriftResult> {
   const result: DiplomaticDriftResult = {
     relationsProcessed: 0,
     relationsUpdated: 0,
+    proposalsExpired: 0,
+    invitesExpired: 0,
   };
+
+  // Sweep pending proposals / alliance invites past their answer window (also enforced lazily).
+  try {
+    const expired = await expireStaleDiplomaticProposals(db);
+    result.proposalsExpired = expired.proposalsExpired;
+    result.invitesExpired = expired.invitesExpired;
+  } catch (err) {
+    console.error("[DiplomaticDrift] Proposal expiry sweep failed:", err);
+  }
 
   const relations = await db.diplomaticRelation.findMany({
     where: { status: "active" },
