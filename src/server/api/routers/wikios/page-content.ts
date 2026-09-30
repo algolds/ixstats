@@ -35,7 +35,6 @@ import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-se
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
