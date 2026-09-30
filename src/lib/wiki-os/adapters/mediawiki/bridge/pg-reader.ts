@@ -102,6 +102,7 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
       select: {
         wikitext: true,
         byteSize: true,
+        textDeleted: true,
         mwRevId: true,
         source: true,
         createdAt: true,
@@ -109,7 +110,9 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
       },
     });
     if (rev) {
-      const isPlaceholder = rev.wikitext === "" && (rev.mwRevId !== null || rev.byteSize > 0);
+      // Deleted text (MediaWiki revision deletion) is hidden, not an empty page: unknown too.
+      const isPlaceholder =
+        rev.textDeleted || (rev.wikitext === "" && (rev.mwRevId !== null || rev.byteSize > 0));
       return {
         wikitext: isPlaceholder ? null : rev.wikitext,
         title: rev.article.title,

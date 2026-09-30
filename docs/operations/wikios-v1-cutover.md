@@ -277,6 +277,46 @@ The script saves and restores the IxStats `.next` and, on a failed health probe,
 on the **first** deploy there is none, so it says so and leaves the new release in place for inspection (`pm2 logs
 wikios`). Private and loopback only: `HOSTNAME=127.0.0.1` in the ecosystem file, nothing public points at port 3560 yet.
 
+### Optional: raise the web XML import limit
+
+The admin page `/util/import` (route `POST /api/wiki/import`) takes a MediaWiki XML dump, plain or gzipped, as the
+raw request body and streams it into the importer. It accepts **up to 10 MB** (the code's limit is 9.5 MiB of body),
+and says so; anything larger is imported from the command line, which has no limit and streams the file:
+
+```bash
+bun scripts/wikios-import-xml.ts /tmp/ixwiki.xml.gz --dry-run       # read only: what would happen
+bun scripts/wikios-import-xml.ts /tmp/ixwiki.xml.gz --yes           # writes to the database in DATABASE_URL
+```
+
+The limit is 9.5 MiB, not 10, because Next.js clones every request body for its proxy and caps the clone at
+`experimental.proxyClientMaxBodySize` (**10 MiB by default**): a body above that arrives silently truncated, which the
+route could not tell from a cut-off dump. Staying under the cap keeps "too large" a clear HTTP 413.
+
+Raising it is an **optional operator step** (skip it unless admins really need bigger uploads in the browser):
+
+1. In the server-local `next.config.js` (the file edited above), set the Next.js cap to the new size, e.g. 50 MiB:
+
+   ```js
+   experimental: {
+     // ...existing experimental options...
+     proxyClientMaxBodySize: "50mb",
+   },
+   ```
+
+2. Set the route's own limit **below** it (by at least 0.5 MiB: the default is 9.5 against 10), in
+   the runtime env of the WikiOS process (`$WK/.env.production.local` is shared with IxStates, so put it in the
+   `env` block of `$WK/ecosystem.wikios.config.cjs`):
+
+   ```js
+   WIKIOS_IMPORT_MAX_BYTES: String(49.5 * 1024 * 1024),   // 51904512; unset = 9.5 MiB
+   ```
+
+3. `pm2 startOrReload "$WK/ecosystem.wikios.config.cjs" --update-env`, then rebuild (`next.config.js` changed) with
+   `"$IX/scripts/deploy-wikios.sh"`. The import page reads the limit from the server, so it states the new number.
+
+Both numbers must move together: a route limit at or above the Next.js cap reintroduces silent truncation. A gzipped
+dump is bounded twice, by the bytes sent (this limit) and by what it expands to (256 MiB, fixed in the route).
+
 **Rollback:** `pm2 delete wikios && pm2 save`; `sudo cp -a "$BK/next.config.js" "$IX/next.config.js"` if you want the
 file as it was (edits 1 and 2 do not affect the IxStates build). Edit 3 (dropping `/api/ixwiki-proxy`) is the change
 the plan asks for; nothing in `src/` uses that path.
