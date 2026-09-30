@@ -1295,8 +1295,8 @@ export const wikiosTemplatesRouter = createTRPCRouter({
           .max(255)
           .regex(/^[^{}|\[\]<>\n]+$/),
         params: z
-          .record(z.string().max(64), z.string().max(4000))
-          .refine((params) => Object.keys(params).length <= 60, "At most 60 parameters"),
+          .record(z.string().max(64), z.string().max(20_000))
+          .refine((params) => Object.keys(params).length <= 200, "At most 200 parameters"),
       })
     )
     .query(async ({ input }) => {

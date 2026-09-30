@@ -437,9 +437,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
   resolveWikiPlaceholders: publicProcedure
     .input(
       z.object({
-        placeholders: z.array(z.string()).optional(),
-        text: z.string().optional(),
-        countryId: z.string().optional(),
+        placeholders: z.array(z.string().max(512)).max(200).optional(),
+        text: z.string().max(200_000).optional(),
+        countryId: z.string().max(64).optional(),
       })
     )
     .query(async ({ input, ctx }) => {

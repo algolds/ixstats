@@ -12,7 +12,7 @@ jest.mock("~/server/db", () => ({
     wikiArticle: { upsert: jest.fn() },
     wikiRevision: { findFirst: jest.fn(), create: jest.fn() },
     stash: { findFirst: jest.fn(), create: jest.fn() },
-    stashItem: { upsert: jest.fn() },
+    stashItem: { upsert: jest.fn(), deleteMany: jest.fn() },
     lorewardUserStats: { findUnique: jest.fn(), count: jest.fn() },
     auditLog: { create: jest.fn() },
     $transaction: jest.fn(),
@@ -83,6 +83,8 @@ import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
+import { forumStashRouter } from "~/server/api/routers/forum/stash";
+import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
 import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
 import { wikiosTemplatesRouter } from "~/server/api/routers/wikios/templates";
 import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
@@ -104,7 +106,7 @@ const mockDb = db as unknown as {
   wikiArticle: { upsert: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
   stash: { findFirst: jest.Mock; create: jest.Mock };
-  stashItem: { upsert: jest.Mock };
+  stashItem: { upsert: jest.Mock; deleteMany: jest.Mock };
   lorewardUserStats: { findUnique: jest.Mock; count: jest.Mock };
   $transaction: jest.Mock;
 };
@@ -357,14 +359,21 @@ describe("S7: template preview is signed-in, bounded, sanitised and SHA-256 keye
     ["template-breaking characters", { template: "Foo}}{{Bar", params: {} }],
     ["a pipe in the template name", { template: "Foo|bar", params: {} }],
     ["an over-long parameter name", { template: "T", params: { ["k".repeat(65)]: "v" } }],
-    ["an over-long parameter value", { template: "T", params: { k: "v".repeat(4001) } }],
+    ["an over-long parameter value", { template: "T", params: { k: "v".repeat(20_001) } }],
     [
-      "more than 60 parameters",
-      { template: "T", params: Object.fromEntries(Array.from({ length: 61 }, (_, i) => [`p${i}`, "v"])) },
+      "more than 200 parameters",
+      { template: "T", params: Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`p${i}`, "v"])) },
     ],
   ])("rejects %s", async (_label, input) => {
     await expect(previewCaller(userCtx())(input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(renderTemplateWithRedisCache).not.toHaveBeenCalled();
+  });
+
+  it("accepts 200 parameters and values up to 20,000 characters", async () => {
+    const params = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`p${i}`, "v".repeat(100)]));
+    params.p0 = "v".repeat(20_000);
+
+    await expect(previewCaller(userCtx())({ template: "T", params })).resolves.toBe("<p>ok</p>");
   });
 
   it("sanitises the rendered HTML before returning it", async () => {
@@ -417,18 +426,46 @@ describe("S7: template wikitext cannot be broken out of", () => {
     fetchMock.mockRestore();
   });
 
-  it("escapes a literal pipe in a value as {{!}}", async () => {
-    await getTemplatePreview("Quote box", { text: "a|b", author: "Me" });
+  it("previews a parameter whose value is a nested template: |flag={{flag|X}}", async () => {
+    await expect(getTemplatePreview("Infobox country", { flag: "{{flag|X}}" })).resolves.toContain(
+      "rendered"
+    );
 
-    expect(sentWikitext()).toBe("{{Quote box|text=a{{!}}b|author=Me}}");
+    expect(sentWikitext()).toBe("{{Infobox country|flag={{flag|X}}}}");
+  });
+
+  it("escapes a literal pipe at depth 0 of a value as {{!}}: |x=a|b", async () => {
+    await getTemplatePreview("Quote box", { x: "a|b", author: "Me" });
+
+    expect(sentWikitext()).toBe("{{Quote box|x=a{{!}}b|author=Me}}");
+  });
+
+  it("escapes only depth-0 pipes and keeps the ones inside nested calls and links", async () => {
+    await getTemplatePreview("T", {
+      x: "a|[[File:F.png|thumb|caption]]|{{flag|X|size=2}} b|{{c|{{d|e}}}}",
+    });
+
+    expect(sentWikitext()).toBe(
+      "{{T|x=a{{!}}[[File:F.png|thumb|caption]]{{!}}{{flag|X|size=2}} b{{!}}{{c|{{d|e}}}}}}"
+    );
+  });
+
+  it("keeps triple-brace parameters balanced", async () => {
+    await getTemplatePreview("T", { x: "{{{1|default}}}" });
+
+    expect(sentWikitext()).toBe("{{T|x={{{1|default}}}}}");
   });
 
   it.each([
-    ["closing braces", { text: "x}}{{evil|k=v" }],
-    ["an opening brace pair", { text: "{{evil" }],
-    ["a nested template", { text: "{{Flag|Foo}}" }],
-  ])("refuses a value with %s without calling MediaWiki", async (_label, params) => {
-    await expect(getTemplatePreview("Quote box", params)).resolves.toBe("Invalid parameter");
+    ["a stray closing pair: |x=a}}b", "a}}b"],
+    ["closing then opening: |x=x}}{{evil|k=v", "x}}{{evil|k=v"],
+    ["an unclosed template", "{{evil"],
+    ["an unclosed link", "[[Foo"],
+    ["a stray link closer", "a]]b"],
+    ["mismatched pairs", "{{x]]"],
+    ["an over-closed call", "{{a}}}}"],
+  ])("refuses %s without calling MediaWiki", async (_label, value) => {
+    await expect(getTemplatePreview("Quote box", { x: value })).resolves.toBe("Invalid parameter");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -506,5 +543,118 @@ describe("S7: unbounded title and query inputs are capped", () => {
     await expect(caller.searchBusinesses({ query: "q".repeat(257) })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe("S5: forum stashThread / unstashThread only touch the caller's own stashes", () => {
+  const forumCaller = () => createCallerFactory(forumStashRouter)(asCtx(userCtx()));
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.stashItem.upsert.mockResolvedValue({});
+    mockDb.stashItem.deleteMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("stashThread answers NOT_FOUND for another user's stashId and never upserts", async () => {
+    mockDb.stash.findFirst.mockResolvedValue(null);
+
+    await expect(
+      forumCaller().stashThread({ threadId: 7, title: "A thread", stashId: "someone_elses_stash" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    expect(mockDb.stash.findFirst).toHaveBeenCalledWith({
+      where: { id: "someone_elses_stash", userId: { in: ["db1", "user_1"] } },
+      select: { id: true },
+    });
+    expect(mockDb.stashItem.upsert).not.toHaveBeenCalled();
+  });
+
+  it("stashThread upserts into an owned stashId", async () => {
+    mockDb.stash.findFirst.mockResolvedValue({ id: "mine" });
+
+    const result = await forumCaller().stashThread({ threadId: 7, title: "A thread", stashId: "mine" });
+
+    expect(result).toEqual({ success: true, stashId: "mine" });
+    expect(mockDb.stashItem.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { stashId_pageTitle: { stashId: "mine", pageTitle: "forum:thread:7" } },
+      })
+    );
+  });
+
+  it("unstashThread answers NOT_FOUND for another user's stashId and never deletes", async () => {
+    mockDb.stash.findFirst.mockResolvedValue(null);
+
+    await expect(
+      forumCaller().unstashThread({ threadId: 7, stashId: "someone_elses_stash" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    expect(mockDb.stashItem.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("unstashThread deletes from an owned stashId", async () => {
+    mockDb.stash.findFirst.mockResolvedValue({ id: "mine" });
+
+    await forumCaller().unstashThread({ threadId: 7, stashId: "mine" });
+
+    expect(mockDb.stashItem.deleteMany).toHaveBeenCalledWith({
+      where: { stashId: "mine", pageTitle: "forum:thread:7" },
+    });
+  });
+
+  it("rejects an over-long stashId", async () => {
+    await expect(
+      forumCaller().stashThread({ threadId: 7, title: "A thread", stashId: "s".repeat(65) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});
+
+describe("S8: bounded inputs on stash, placeholder, profile and discussion endpoints", () => {
+  const ctx = () => asCtx(userCtx());
+
+  it("caps wikios stash ids (64), contentType (32) and titles (512)", async () => {
+    const caller = createCallerFactory(wikiosStashRouter)(ctx());
+    const bad = { code: "BAD_REQUEST" };
+    await expect(caller.stashPage({ pageTitle: "P", stashId: "s".repeat(65) })).rejects.toMatchObject(bad);
+    await expect(caller.stashPage({ pageTitle: "P", contentType: "c".repeat(33) })).rejects.toMatchObject(bad);
+    await expect(caller.stashPage({ pageTitle: "p".repeat(513) })).rejects.toMatchObject(bad);
+    await expect(caller.deleteStash({ id: "s".repeat(65) })).rejects.toMatchObject(bad);
+    await expect(caller.unstashPage({ pageTitle: "P", stashId: "s".repeat(65) })).rejects.toMatchObject(bad);
+    await expect(caller.getStashItems({ stashId: "s".repeat(65) })).rejects.toMatchObject(bad);
+  });
+
+  it("caps resolveWikiPlaceholders at 200 placeholders of 512 characters and 200k of text", async () => {
+    const caller = createCallerFactory(wikiosPageContentRouter)(ctx());
+    const bad = { code: "BAD_REQUEST" };
+    await expect(
+      caller.resolveWikiPlaceholders({ placeholders: Array.from({ length: 201 }, () => "x") })
+    ).rejects.toMatchObject(bad);
+    await expect(caller.resolveWikiPlaceholders({ placeholders: ["x".repeat(513)] })).rejects.toMatchObject(bad);
+    await expect(caller.resolveWikiPlaceholders({ text: "t".repeat(200_001) })).rejects.toMatchObject(bad);
+  });
+
+  it("caps getAuthorProfile's username at 255 characters", async () => {
+    await expect(
+      createCallerFactory(wikiosUserTalkRouter)(ctx()).getAuthorProfile({ username: "u".repeat(256) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("puts the discussion mutations on the rate-limited procedure builder", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/server/api/routers/wikios/discussions.ts"),
+      "utf8"
+    );
+    for (const name of ["createThread", "postComment", "resolveThread", "deleteThread"]) {
+      expect(source).toMatch(new RegExp(`${name}: lightMutationProcedure`));
+    }
+    expect(source).not.toMatch(/: protectedProcedure/);
+  });
+
+  it("caps discussion thread ids at 64 characters", async () => {
+    const caller = createCallerFactory(wikiosDiscussionsRouter)(ctx());
+    const bad = { code: "BAD_REQUEST" };
+    await expect(caller.deleteThread({ threadId: "t".repeat(65) })).rejects.toMatchObject(bad);
+    await expect(caller.resolveThread({ threadId: "t".repeat(65), resolved: true })).rejects.toMatchObject(bad);
+    await expect(caller.postComment({ threadId: "t".repeat(65), content: "hi" })).rejects.toMatchObject(bad);
   });
 });

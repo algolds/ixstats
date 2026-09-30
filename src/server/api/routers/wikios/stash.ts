@@ -63,7 +63,7 @@ export const wikiosStashRouter = createTRPCRouter({
   updateStash: protectedProcedure
     .input(
       z.object({
-        id: z.string(),
+        id: z.string().max(64),
         name: z.string().min(1).max(100).optional(),
         color: z.string().max(20).optional(),
         icon: z.string().max(50).optional(),
@@ -82,7 +82,7 @@ export const wikiosStashRouter = createTRPCRouter({
 
   /** Delete a stash (cannot delete default). */
   deleteStash: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const userIds = requireWikiUserIds(ctx);
       const stash = await db.stash.findUnique({ where: { id: input.id } });
@@ -97,8 +97,8 @@ export const wikiosStashRouter = createTRPCRouter({
     .input(
       z.object({
         pageTitle: z.string().min(1).max(500),
-        stashId: z.string().optional(),
-        contentType: z.string().optional(),
+        stashId: z.string().max(64).optional(),
+        contentType: z.string().max(32).optional(),
         contentId: z.number().optional(),
       })
     )
@@ -152,7 +152,7 @@ export const wikiosStashRouter = createTRPCRouter({
 
   /** Remove a page from a stash (or all stashes if no stashId). */
   unstashPage: protectedProcedure
-    .input(z.object({ pageTitle: z.string().min(1).max(500), stashId: z.string().optional() }))
+    .input(z.object({ pageTitle: z.string().min(1).max(500), stashId: z.string().max(64).optional() }))
     .mutation(async ({ input, ctx }) => {
       const userIds = requireWikiUserIds(ctx);
       if (input.stashId) {
@@ -195,9 +195,9 @@ export const wikiosStashRouter = createTRPCRouter({
   getStashItems: protectedProcedure
     .input(
       z.object({
-        stashId: z.string(),
+        stashId: z.string().max(64),
         limit: z.number().min(1).max(100).default(50),
-        cursor: z.string().optional(),
+        cursor: z.string().max(64).optional(),
       })
     )
     .query(async ({ input, ctx }) => {

@@ -28,7 +28,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
     .input(
       z
         .object({
-          username: z.string().optional(),
+          username: z.string().max(255).optional(),
         })
         .optional()
     )

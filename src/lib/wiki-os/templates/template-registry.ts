@@ -181,21 +181,49 @@ export async function searchTemplatesFromWiki(
 const INVALID_PARAMETER_PREVIEW = "Invalid parameter";
 /** A key containing these could end the parameter name early or open a second parameter. */
 const UNSAFE_PARAM_KEY = /[|={}\n\r]/;
-/** A value containing these could close (or open) a template call and inject wikitext around it. */
-const UNSAFE_PARAM_VALUE = /\{\{|\}\}/;
+
+/**
+ * A parameter value made safe to place inside `{{name|key=<value>}}`, or null when it could break out.
+ * Balanced nested `{{…}}` and `[[…]]` are kept as written (a nested `{{flag|X}}` previews); braces or
+ * brackets that do not pair up are refused, since they would close or open a call around the value.
+ * A `|` is escaped as `{{!}}` only at nesting depth 0; inside a nested call or link it is that
+ * construct's own separator.
+ */
+function escapeParamValue(value: string): string | null {
+  const closers: string[] = [];
+  let out = "";
+  for (let i = 0; i < value.length; i++) {
+    const pair = value.slice(i, i + 2);
+    if (pair === "{{" || pair === "[[") {
+      closers.push(pair === "{{" ? "}}" : "]]");
+    } else if (pair === "}}" || pair === "]]") {
+      if (closers.pop() !== pair) return null;
+    } else {
+      out += value[i] === "|" && closers.length === 0 ? "{{!}}" : value[i];
+      continue;
+    }
+    out += pair;
+    i++;
+  }
+  return closers.length === 0 ? out : null;
+}
 
 /**
  * `{{name|k=v}}` for the given params, or null when a key or value could break out of the call.
- * Literal pipes in values are escaped as `{{!}}`; empty values are skipped.
+ * Empty values are skipped.
  */
 function buildTemplateInvocation(
   templateName: string,
   params: Record<string, string>
 ): string | null {
-  const entries = Object.entries(params).filter(([, v]) => v.trim() !== "");
-  if (entries.some(([k, v]) => UNSAFE_PARAM_KEY.test(k) || UNSAFE_PARAM_VALUE.test(v))) return null;
-  const paramParts = entries.map(([k, v]) => `|${k}=${v.replace(/\|/g, "{{!}}")}`);
-  return `{{${templateName}${paramParts.join("")}}}`;
+  const parts: string[] = [];
+  for (const [key, value] of Object.entries(params)) {
+    if (value.trim() === "") continue;
+    const safeValue = escapeParamValue(value);
+    if (safeValue === null || UNSAFE_PARAM_KEY.test(key)) return null;
+    parts.push(`|${key}=${safeValue}`);
+  }
+  return `{{${templateName}${parts.join("")}}}`;
 }
 
 /**

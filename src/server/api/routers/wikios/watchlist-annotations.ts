@@ -16,7 +16,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   addAnnotation: protectedProcedure
     .input(
       z.object({
-        itemId: z.string().optional(),
+        itemId: z.string().max(64).optional(),
         pageTitle: z.string().min(1).max(500).optional(),
         anchorSelector: z.string().max(500).default("p"),
         anchorOffset: z.number().default(0),
@@ -74,7 +74,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
 
   /** Delete an annotation. */
   deleteAnnotation: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const ann = await db.stashAnnotation.findUnique({
         where: { id: input.id },
