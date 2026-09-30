@@ -12,6 +12,7 @@ import {
   Repeat,
   Group,
   Plus,
+  Trash,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -30,6 +31,15 @@ interface ThinktankFeedTabProps {
   canReadFeed?: boolean;
   currentUserId: string;
   onJoin?: () => void;
+  /**
+   * Shown in place of the composer to non-members of a group anyone may read (a realm board); the feed
+   * then stays readable instead of being blurred behind the join overlay.
+   */
+  readOnlyNotice?: React.ReactNode;
+  /** Only offer personas of these countries (a realm board: the caller's nations in the realm). */
+  accountCountryIds?: string[];
+  /** Group managers (realm-board moderators) may remove posts from the feed. */
+  canModerate?: boolean;
 }
 
 export function ThinktankFeedTab({
@@ -40,6 +50,9 @@ export function ThinktankFeedTab({
   canReadFeed = true,
   currentUserId,
   onJoin,
+  readOnlyNotice,
+  accountCountryIds,
+  canModerate = false,
 }: ThinktankFeedTabProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -59,7 +72,10 @@ export function ThinktankFeedTab({
     enabled: Boolean(currentUserId),
   });
 
-  const accounts = myAccountsData ?? [];
+  const accounts = (myAccountsData ?? []).filter(
+    (acc: any) => !accountCountryIds || accountCountryIds.includes(acc.countryId)
+  );
+  const readOnly = !isMember && readOnlyNotice !== undefined;
   const activeAccountId = selectedAccountId || accounts[0]?.id || "";
 
   // Join Mutation (for overlay CTA)
@@ -94,11 +110,24 @@ export function ThinktankFeedTab({
     },
   });
 
+  const removePostMutation = api.thinkpages.removeGroupPost.useMutation({
+    onSuccess: () => {
+      soundEffects.release();
+      notify.success("Post removed from the feed.");
+      void utils.thinkpages.getGroupFeed.invalidate({ groupId });
+    },
+    onError: (err) => {
+      soundEffects.error();
+      notify.error(err.message || "Failed to remove post");
+    },
+  });
+
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
     if (!postContent.trim()) return;
 
-    if (allowPersonaPosting && !activeAccountId) {
+    // A realm board without a persona of the realm falls back to "post as yourself" on the server.
+    if (allowPersonaPosting && !activeAccountId && !accountCountryIds) {
       notify.error("Please select a persona account to post.");
       return;
     }
@@ -120,10 +149,17 @@ export function ThinktankFeedTab({
       <div
         className={cn(
           "mx-auto max-w-3xl space-y-6 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 md:p-6",
-          !isMember && "pointer-events-none opacity-40 blur-[5px] filter select-none"
+          !isMember && !readOnly && "pointer-events-none opacity-40 blur-[5px] filter select-none"
         )}
       >
+        {readOnly && (
+          <div className="border-border/50 bg-muted/30 text-muted-foreground rounded-2xl border p-4 text-xs">
+            {readOnlyNotice}
+          </div>
+        )}
+
         {/* ── Group Feed Composer ── */}
+        {!readOnly && (
         <div className="border-border/50 bg-card/60 overflow-hidden rounded-2xl border p-4 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-white/10 dark:bg-white/[0.03]">
           <form onSubmit={handlePublish} className="space-y-3">
             {/* Multi-Persona Selector Chips */}
@@ -244,6 +280,7 @@ export function ThinktankFeedTab({
             </div>
           </form>
         </div>
+        )}
 
         {/* ── Feed Timeline ── */}
         <div className="space-y-4">
@@ -383,6 +420,21 @@ export function ThinktankFeedTab({
                       <Repeat className="h-3.5 w-3.5" />
                       <span>{post.repostsCount ?? 0}</span>
                     </button>
+                    {canModerate && (
+                      <button
+                        type="button"
+                        disabled={removePostMutation.isPending}
+                        onClick={() => {
+                          if (!confirm("Remove this post from the feed?")) return;
+                          soundEffects.press();
+                          removePostMutation.mutate({ groupId, postId: post.id });
+                        }}
+                        className="ml-auto flex items-center gap-1 text-xs transition-colors hover:text-red-500"
+                      >
+                        <Trash className="h-3.5 w-3.5" />
+                        <span>Remove</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -392,7 +444,7 @@ export function ThinktankFeedTab({
       </div>
 
       {/* ── Floating Frosted Glass Overlay (Apple Design) ── */}
-      {!isMember && (
+      {!isMember && !readOnly && (
         <div className="bg-background/20 absolute inset-0 z-20 flex items-center justify-center p-4 backdrop-blur-xs">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
