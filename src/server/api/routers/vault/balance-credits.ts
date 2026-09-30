@@ -14,24 +14,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
-import { type VaultTransactionType } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
-
-/**
- * Vault transaction type enum for validation
- */
-const vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
 
 export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
@@ -53,59 +36,6 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       throw new Error("Failed to retrieve vault balance", { cause: error });
     }
   }),
-
-  /**
-   * Get transaction history with pagination
-   */
-  spendCredits: protectedProcedure
-    .input(
-      z.object({
-        amount: z.number().min(0.01, "Amount must be positive"),
-        type: vaultTransactionTypeEnum,
-        source: z.string().min(1, "Source is required"),
-        metadata: z.record(z.string(), z.any()).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          throw new Error("User ID not found in authentication context");
-        }
-
-        // Validate spending type
-        if (!input.type.startsWith("SPEND_") && input.type !== "ADMIN_ADJUSTMENT") {
-          throw new Error("Invalid transaction type for spending");
-        }
-
-        const result = await vaultService.spendCredits(
-          ctx.auth.userId,
-          input.amount,
-          input.type as VaultTransactionType,
-          input.source,
-          ctx.db as any,
-          input.metadata
-        );
-
-        if (!result.success) {
-          throw new Error(result.message || "Failed to spend credits");
-        }
-
-        await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-        return {
-          success: true,
-          newBalance: result.newBalance,
-          amountSpent: input.amount,
-          message: `Spent ${input.amount} IxCredits. New balance: ${result.newBalance} IxCredits`,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error spending credits:", error);
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error("Failed to spend credits", { cause: error });
-      }
-    }),
 
   /**
    * Get vault level

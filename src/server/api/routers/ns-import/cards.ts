@@ -11,6 +11,8 @@ import {
   protectedProcedure,
   adminProcedure,
   publicProcedure,
+  lightMutationProcedure,
+  rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
@@ -18,6 +20,24 @@ import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { Prisma } from "@prisma/client";
 
 // ─── Background Processing Functions ──────────────────────────────
+
+/** Normalize an NS nation name for comparison: case, underscores and spacing don't matter. */
+export function normalizeNationName(name: string): string {
+  return name.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function nationNamesMatch(a: string, b: string): boolean {
+  const left = normalizeNationName(a);
+  return left.length > 0 && left === normalizeNationName(b);
+}
+
+/** The nation an NS-import card depicts: its NS data name, falling back to the title. */
+function cardNationName(card: { title: string; metadata: unknown; nsData: unknown }): string {
+  const meta = (card.metadata as { nsData?: { name?: unknown } } | null) ?? {};
+  const nsData = (card.nsData as { name?: unknown } | null) ?? {};
+  const name = meta.nsData?.name ?? nsData.name;
+  return typeof name === "string" && name.trim() ? name : card.title;
+}
 
 export const nsImportCardsRouter = createTRPCRouter({
   /**
@@ -34,7 +54,7 @@ export const nsImportCardsRouter = createTRPCRouter({
   /**
    * Public/Protected: Self-service NationStates card takedown by verifying nation ownership via NS API.
    */
-  requestSelfServiceTakedown: publicProcedure
+  requestSelfServiceTakedown: rateLimitedPublicProcedure
     .input(
       z.object({
         cardId: z.string(),
@@ -55,6 +75,14 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
+      // Self-service takedowns only cover NationStates flag cards.
+      if (card.cardType !== "NS_IMPORT") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only NationStates-import cards can be taken down by their flag owner.",
+        });
+      }
+
       // 1. Verify nation ownership on NationStates
       const isVerified = await nsApiClient.verifyOwnership(
         input.nationName.trim(),
@@ -69,13 +97,8 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
-      // 2. Validate nation match against card title / metadata
-      const cleanNation = input.nationName.toLowerCase().replace(/_/g, " ").trim();
-      const cleanTitle = card.title.toLowerCase().replace(/_/g, " ").trim();
-
-      const isMatch = cleanTitle.includes(cleanNation) || cleanNation.includes(cleanTitle);
-
-      if (!isMatch) {
+      // 2. The verified nation must be exactly the card's nation (not a substring of it).
+      if (!nationNamesMatch(input.nationName, cardNationName(card))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: `Verified nation "${input.nationName}" does not match card target "${card.title}". Takedowns require ownership of the card's flag nation.`,
@@ -472,7 +495,7 @@ export const nsImportCardsRouter = createTRPCRouter({
    * Refresh market values for user's 0-value NS cards by re-fetching from NS API,
    * then recalculate deckValue from actual card values.
    */
-  refreshCardValues: protectedProcedure.mutation(async ({ ctx }) => {
+  refreshCardValues: lightMutationProcedure.mutation(async ({ ctx }) => {
     // Find all NS_IMPORT cards owned by the current user with 0 market value
     const ownerships = await ctx.db.cardOwnership.findMany({
       where: { userId: ctx.user.id },

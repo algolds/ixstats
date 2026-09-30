@@ -11,10 +11,21 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
+import { LedgerError, getOrCreateVault, spendCreditsTx } from "~/lib/vault/vault-ledger";
+import { clearUserPerksCache } from "~/lib/vault/vault-perks";
+import {
+  countStorePurchases,
+  isRepeatableStoreItem,
+  storePrerequisiteMet,
+} from "~/lib/vault/store-purchases";
+import { globalCache } from "~/lib/cache";
 import { type VaultTransactionType } from "@prisma/client";
 import { resolveVaultUserId } from "./_resolveUserId";
+
+const STORE_SPEND_TYPES: VaultTransactionType[] = ["SPEND_COSMETIC", "SPEND_BOOST"];
 
 /**
  * Vault transaction type enum for validation
@@ -81,32 +92,15 @@ export const vaultStoreRouter = createTRPCRouter({
       const transactions = await ctx.db.vaultTransaction.findMany({
         where: {
           vault: { userId },
-          type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
+          type: { in: STORE_SPEND_TYPES },
         },
         select: {
           metadata: true,
         },
       });
 
-      const purchasedItemIds = new Set<string>();
-      const purchaseCounts: Record<string, number> = {};
-      for (const tx of transactions) {
-        let meta = tx.metadata;
-        if (typeof meta === "string") {
-          try {
-            meta = JSON.parse(meta);
-          } catch {
-            // non-JSON metadata — treated as no item match
-          }
-        }
-        if (meta && typeof meta === "object") {
-          const metaObj = meta as Record<string, any>;
-          if (metaObj.itemId && typeof metaObj.itemId === "string") {
-            purchasedItemIds.add(metaObj.itemId);
-            purchaseCounts[metaObj.itemId] = (purchaseCounts[metaObj.itemId] || 0) + 1;
-          }
-        }
-      }
+      const purchaseCounts = countStorePurchases(transactions);
+      const purchasedItemIds = new Set<string>(Object.keys(purchaseCounts));
 
       // Also ensure any currently equipped cosmetics are marked as owned
       const vault = await ctx.db.myVault.findUnique({
@@ -130,6 +124,82 @@ export const vaultStoreRouter = createTRPCRouter({
       throw new Error("Failed to retrieve purchased items", { cause: error });
     }
   }),
+
+  /**
+   * Buy a store item. The price, availability and prerequisites come from
+   * `VaultStoreItem` on the server; the client only names the item.
+   */
+  purchaseStoreItem: lightMutationProcedure
+    .input(z.object({ itemId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const item = await ctx.db.vaultStoreItem.findUnique({ where: { id: input.itemId } });
+      if (!item || !item.isActive) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "This item is not available." });
+      }
+
+      const userId = await resolveVaultUserId(ctx);
+      const type: VaultTransactionType = isRepeatableStoreItem(item.category)
+        ? "SPEND_BOOST"
+        : "SPEND_COSMETIC";
+
+      try {
+        const result = await ctx.db.$transaction(async (tx) => {
+          const vault = await getOrCreateVault(userId, tx);
+          // Serialize purchases per vault so the ownership and prerequisite checks can't race
+          await tx.$queryRaw`SELECT id FROM "my_vault" WHERE id = ${vault.id} FOR UPDATE`;
+
+          const purchaseCounts = countStorePurchases(
+            await tx.vaultTransaction.findMany({
+              where: { vaultId: vault.id, type: { in: STORE_SPEND_TYPES } },
+              select: { metadata: true },
+            })
+          );
+          const equipped = (vault.equippedCosmetics ?? "").split(",").filter(Boolean);
+
+          if (
+            !isRepeatableStoreItem(item.category) &&
+            ((purchaseCounts[item.id] ?? 0) > 0 || equipped.includes(item.id))
+          ) {
+            throw new TRPCError({ code: "CONFLICT", message: "You already own this item." });
+          }
+          if (!storePrerequisiteMet(item.id, purchaseCounts)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "You don't meet the requirements for this item yet.",
+            });
+          }
+
+          return spendCreditsTx(tx, {
+            userId,
+            amount: item.price,
+            type,
+            source: `Purchase item: ${item.name}`,
+            metadata: { itemId: item.id, price: item.price },
+          });
+        });
+
+        await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
+        clearUserPerksCache(userId);
+        clearUserPerksCache(ctx.auth.userId);
+
+        return {
+          success: true,
+          itemId: item.id,
+          amountSpent: result.amount,
+          newBalance: result.newBalance,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        if (error instanceof LedgerError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+        console.error("[Vault Router] purchaseStoreItem error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to complete the purchase.",
+        });
+      }
+    }),
 
   // Get vault configuration (DB-backed)
   listStoreItems: protectedProcedure.query(async ({ ctx }) => {
