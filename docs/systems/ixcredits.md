@@ -61,8 +61,9 @@ $$\text{Daily Dividend} = (\text{BaseRate} + \text{PopulationBonus} + \text{Grow
 
 ### 4. Metagame Bonuses (`EARN_BONUS`) — Uncapped
 Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the daily caps and the `isEarningEnabled` gate; amounts are admin-tunable (`vault_bonus_*` SystemConfig):
-- **Achievement Unlocks** (one-time each): Common 100, Uncommon 250, Rare 500, Epic 1,000, Legendary 2,500 IxC
+- **Achievement Unlocks** (one-time each): Common 100, Uncommon 250, Rare 500, Epic 1,000, Legendary 2,500 IxC. Account-level achievements (tenure, achievement count, own ThinkPages posts, card collection) unlock without a country; see [achievements.md](./achievements.md)
 - **New Player** 5,000 IxC, **Wiki Country Import** 2,500 IxC, **Loreward** win 2,500 IxC
+- **New Player bonus is an IxnayID bonus.** `grantNewPlayerBonus()` pays it when the account is created (`UserManagementService.getOrCreateUser`), with no country needed. Accounts that predate this get it the first time they open the Vault (`vault.getBalance`; switch off with `NEW_PLAYER_BONUS_ON_VAULT_OPEN` in `vault-bonus.ts`). Every path (sign-up, Vault open, the country builder and realm claims) uses the source `bonus:new_player` with `oneTime`, so the ledger check plus the idempotency key `bonus:new_player:<User.id>` pay it once per account: whichever path runs first pays, and the rest are no-ops
 - **NS Deck Import**: 50 IxC per newly imported card, capped at 5,000 IxC, paid **once per nation, whichever account imports it** (`onceKey` on the nation name, `ns-import/decks.ts`)
 
 Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that would exceed the remaining allowance is clamped.

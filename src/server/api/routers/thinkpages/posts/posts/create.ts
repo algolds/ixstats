@@ -7,6 +7,7 @@ import { validateNoXSS } from "~/lib/utils";
 import { vaultService } from "~/lib/vault/vault-service";
 import { globalCache } from "~/lib/cache";
 import { personaDisplayName } from "../../post-utils";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 
 const invalidateFeeds = async () => {
   try {
@@ -450,6 +451,7 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
       }
     }
 
+    queueAchievementCheck(clerkUserId);
     await invalidateFeeds();
 
     return {

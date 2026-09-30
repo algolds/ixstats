@@ -21,7 +21,8 @@ import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof
 import { parsePrismaError } from "~/lib/prisma-error";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { globalCache } from "~/lib/cache";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
@@ -37,12 +38,13 @@ async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): P
     .catch((e: Error) => console.error("[realms] claim notification failed:", e));
   await getBonusConfig(db)
     .then((cfg) =>
-      grantBonus(db, event.clerkUserId, "bonus:new_player", cfg.newPlayer, {
+      grantBonus(db, event.clerkUserId, NEW_PLAYER_BONUS_SOURCE, cfg.newPlayer, {
         oneTime: true,
         metadata: { countryId: event.countryId, countryName: event.countryName },
       })
     )
     .catch((e: Error) => console.error("[realms] new-player bonus failed:", e));
+  queueAchievementCheck(event.clerkUserId, event.countryId);
   await globalCache.delete(`user_profile:${event.clerkUserId}`);
 }
 

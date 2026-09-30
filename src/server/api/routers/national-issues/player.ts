@@ -15,6 +15,7 @@ import { NationalIssuesEngine } from "~/lib/national-issues";
 import type { ResponseOptionTemplate } from "~/lib/national-issues";
 import { NationalIssuesConsequences } from "~/lib/national-issues";
 import { notificationAPI } from "~/lib/notifications/api";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
@@ -422,6 +423,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
           message: result.error || "Failed to resolve issue",
         });
       }
+      queueAchievementCheck(ctx.user?.id);
 
       // Notify: national issue decision made
       try {

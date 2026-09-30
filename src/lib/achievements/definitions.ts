@@ -78,6 +78,8 @@ export interface ExtendedAchievementData {
   // Activity metrics
   daysActive?: number;
   totalAchievements?: number;
+  /** Whether the user has a country (the `gen-first-country` rule). */
+  countryClaimed?: boolean;
 
   // Card metrics
   loreCardCount?: number;
@@ -91,6 +93,14 @@ export interface ExtendedAchievementData {
    */
   scaleThresholds?: import("./scaling").ScaleThresholds;
 }
+
+/**
+ * Evaluation data for a user with no country: only account-level achievements
+ * (see `scope.ts`) are evaluated against it.
+ */
+export type AccountAchievementData = Omit<ExtendedAchievementData, "country"> & {
+  country?: undefined;
+};
 
 export interface AchievementDefinition {
   id: string;

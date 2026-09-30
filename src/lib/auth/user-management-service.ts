@@ -10,6 +10,8 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import type { PrismaClient, User, Role } from "@prisma/client";
 import { SYSTEM_OWNER_IDS, isSystemOwner } from "./system-owner-constants";
+import { grantNewPlayerBonus } from "~/lib/vault/vault-bonus";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 
 interface UserWithRole extends User {
   role: Role | null;
@@ -84,7 +86,8 @@ export class UserManagementService {
       }
 
       // Use transaction to prevent race conditions during creation
-      return await this.db.$transaction(async (tx) => {
+      let created = false;
+      const user = await this.db.$transaction(async (tx) => {
         // Double-check user doesn't exist (race condition protection)
         const raceCheckUser = await tx.user.findUnique({
           where: { clerkUserId },
@@ -150,8 +153,15 @@ export class UserManagementService {
         console.log(
           `[UserManagementService] Created user: ${clerkUserId}, role: ${newUser.role?.name || "NO_ROLE"}, isSystemOwner: ${isSystemOwnerUser}`
         );
+        created = true;
         return newUser as UserWithRole;
       });
+      // IxnayID onboarding: the new-player bonus and first achievements need no country
+      if (created) {
+        await grantNewPlayerBonus(this.db, user.id, "account_created");
+        queueAchievementCheck(user.id);
+      }
+      return user;
     } catch (error) {
       console.error(`[UserManagementService] Failed to get/create user ${clerkUserId}:`, error);
 

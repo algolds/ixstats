@@ -3,18 +3,17 @@ import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/a
 import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsManagementRouter = createTRPCRouter({
-  // User action: Retroactively sync collector achievements and titles
+  // User action: evaluate the caller's achievements now. Account-level achievements
+  // evaluate without a country; country achievements use the active country if any.
   syncMyCollectorAchievements: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.user.clerkUserId;
     const user = await ctx.db.user.findUnique({
       where: { clerkUserId: userId },
       select: { countryId: true },
     });
-    if (!user?.countryId) {
-      return { success: false, message: "No claimed country found for this user." };
-    }
-    const unlocked = await achievementService.checkAndUnlock(userId, user.countryId, ctx.db);
-    return { success: true, unlocked };
+    const countryId = user?.countryId ?? null;
+    const unlocked = await achievementService.checkAndUnlock(userId, countryId, ctx.db);
+    return { success: true, unlocked, countryEvaluated: countryId !== null };
   }),
 
   // Admin: grant a specific achievement to a user. Admin-only because it takes an
