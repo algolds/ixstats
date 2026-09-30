@@ -6,7 +6,7 @@ badge: Living World
 
 ## Achievement System
 
-Achievements are automatic rewards that unlock when your country data meets specific criteria. The Achievement Service monitors country changes and checks unlock conditions whenever data updates, so you never need to manually claim achievements.
+Achievements are automatic rewards that belong to your account. Account achievements (joining, time on the platform, your ThinkPages posts and your card collection) unlock even if you don't have a country; country achievements (economy, population, military, diplomacy, government) unlock from your active country's data. Checks run when you open the Achievements page, and in the background after actions such as opening a pack or posting, so you never need to manually claim achievements.
 
 ## Rarity Tiers & Rewards
 

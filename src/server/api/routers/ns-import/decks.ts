@@ -11,6 +11,7 @@ import { TRPCError } from "@trpc/server";
 import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { generateNSImportDescription } from "~/lib/nationstates/import-service";
 
 export const nsImportDecksRouter = createTRPCRouter({
@@ -445,6 +446,7 @@ export const nsImportDecksRouter = createTRPCRouter({
         });
         if (!bonus.granted) bonusAmount = 0;
       }
+      if (importedCardIds.length > 0) queueAchievementCheck(ctx.user.id);
 
       return {
         success: true,

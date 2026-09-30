@@ -9,6 +9,7 @@ import { LedgerError } from "~/lib/vault/vault-ledger";
 import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 
 /**
  * Card Packs Router
@@ -168,6 +169,7 @@ export const cardPacksUserRouter = createTRPCRouter({
         }
 
         const results = await openPack(ctx.db, ctx.user.id, input.userPackId);
+        queueAchievementCheck(ctx.user.id);
 
         // Sync to forum profile (fire-and-forget)
         syncUserToForum(ctx.user.id).catch((err: unknown) => {

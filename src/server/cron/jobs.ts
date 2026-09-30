@@ -200,6 +200,16 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/government/budget-year-rollover-cron")).runBudgetYearRollover,
   },
   {
+    // Evaluates achievements (account-level and active-country) for users seen recently.
+    name: "achievements-evaluate",
+    defaultSchedule: "41 * * * *",
+    lockName: "achievements-evaluate",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/lib/achievements/evaluate-cron",
+    exportName: "runAchievementsEvaluate",
+    load: async () => (await import("~/lib/achievements/evaluate-cron")).runAchievementsEvaluate,
+  },
+  {
     // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
     name: "db-backup",
     defaultSchedule: "17 3 * * *",
