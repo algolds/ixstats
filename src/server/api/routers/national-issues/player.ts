@@ -18,6 +18,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
+import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
@@ -340,7 +341,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         lowEfficiency: cx.lowEfficiency,
       };
       const optionsOut = options.map((o) => {
-        const cons = o.consequences ?? [];
+        // Only what resolving would actually apply (unmappable projection effects are dropped).
+        const cons = (o.consequences ?? []).filter(isAppliedIssueConsequence);
         const reveals = revealConsequences(
           cons.map((c) => ({ targetField: c.targetField })),
           reconInput
