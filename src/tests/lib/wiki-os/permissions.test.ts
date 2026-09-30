@@ -16,6 +16,7 @@ jest.mock("~/lib/auth", () => ({
 }));
 
 import {
+  assertPageVisible,
   authorizeAction,
   decideAction,
   requireCanonicalTitle,
@@ -412,5 +413,33 @@ describe("requireRight and requireCanonicalTitle", () => {
   it("canonicalizes a title or refuses it", () => {
     expect(requireCanonicalTitle("user_talk:jane")).toBe("User talk:Jane");
     expect(() => requireCanonicalTitle("a[b")).toThrow("That page title is not valid.");
+  });
+});
+
+describe("assertPageVisible", () => {
+  it("lets everyone see a published page, and a page that does not exist is not its business", async () => {
+    await expect(
+      assertPageVisible(ctx(), { status: "PUBLISHED" }, "Caphiria")
+    ).resolves.toBeUndefined();
+    await expect(assertPageVisible(ctx(), null, "Caphiria")).resolves.toBeUndefined();
+    expect(mockDb.wikiUserGroup.findMany).not.toHaveBeenCalled();
+  });
+
+  it("hides a deleted page from anyone without deletedhistory", async () => {
+    await expect(
+      assertPageVisible(ctx(), { status: "ARCHIVED" }, "Caphiria")
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    await expect(
+      assertPageVisible({ auth: null, user: null }, { status: "ARCHIVED" }, "Caphiria")
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("shows a deleted page to a sysop", async () => {
+    mockDb.wikiUserGroup.findMany.mockResolvedValue([{ group: "sysop", expiresAt: null }]);
+    await expect(
+      assertPageVisible(ctx(), { status: "ARCHIVED" }, "Caphiria")
+    ).resolves.toBeUndefined();
   });
 });

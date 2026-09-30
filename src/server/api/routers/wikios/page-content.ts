@@ -36,7 +36,7 @@ import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholde
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
-import { getWikiPermissions } from "~/lib/wiki-os/rights";
+import { assertPageVisible } from "~/lib/wiki-os/permissions";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -171,17 +171,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
       const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki").catch(
         () => null
       );
-      // A deleted (archived) page is "not found" unless the reader may see deleted pages. Checked here,
-      // before every fallback below, so no cache or bridge path can serve what this lookup hides.
-      if (nativeArticle?.status === "ARCHIVED") {
-        const { rights } = await getWikiPermissions(ctx);
-        if (!rights.has("deletedhistory")) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `The page "${input.title}" does not exist on IxWiki.`,
-          });
-        }
-      }
+      // A deleted page is "not found" unless the reader may see deleted pages: checked before every fallback below.
+      await assertPageVisible(ctx, nativeArticle, input.title);
       if (nativeArticle && (nativeArticle.contentHtml || nativeArticle.wikitext)) {
         let rawHtml =
           nativeArticle.contentHtml && nativeArticle.contentHtml.trim() !== ""

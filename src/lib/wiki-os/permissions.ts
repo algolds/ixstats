@@ -229,3 +229,19 @@ export async function requireGroupChange(
     throw forbidden("permissiondenied", `You cannot add or remove the "${refused}" group.`);
   }
 }
+
+/** Throws NOT_FOUND for a deleted (archived) page unless the reader holds `deletedhistory`: to everyone else it does not exist. */
+export async function assertPageVisible(
+  ctx: WikiAuthContext,
+  article: { status: string } | null,
+  title: string
+): Promise<void> {
+  if (article?.status !== "ARCHIVED") return;
+  const { rights } = await getWikiPermissions(ctx);
+  if (!rights.has("deletedhistory")) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: `The page "${title}" does not exist on IxWiki.`,
+    });
+  }
+}
