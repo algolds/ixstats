@@ -36,6 +36,7 @@ import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholde
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { getHeadRevisionRef } from "~/lib/wiki-os/core/edit-conflict";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -416,11 +417,17 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
       // Read-through the Postgres shadow store (resilient to MediaWiki downtime).
-      const result = await getArticleWikitextShadow(input.title, "ixwiki");
+      const [result, revisionRef] = await Promise.all([
+        getArticleWikitextShadow(input.title, "ixwiki"),
+        // Without the shadow store the editor still loads; it then saves without a base revision.
+        getHeadRevisionRef(input.title).catch(() => null),
+      ]);
       return {
         wikitext: result?.wikitext ?? "",
         revid: result?.revid ?? null,
         timestamp: result?.timestamp ?? null,
+        /** The latest revision the editor is based on; send it back as `baseRevisionRef` when saving. */
+        revisionRef,
       };
     }),
 

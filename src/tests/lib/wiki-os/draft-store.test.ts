@@ -3,8 +3,11 @@ import {
   saveDraft,
   getDraft,
   clearDraft,
+  clearEditorBase,
   hasDraft,
+  isDraftStale,
   listDrafts,
+  setEditorBase,
   type WikiEditorDraft,
 } from "~/lib/wiki-os/editor/draft-store";
 
@@ -109,5 +112,36 @@ describe("draft-store", () => {
     const titles = allDrafts.map((d: WikiEditorDraft) => d.title);
     expect(titles).toContain("Unified Nation");
     expect(titles).toContain("Legacy Only");
+  });
+
+  describe("base revision (WK-2)", () => {
+    const draft = { title: "Based", source: "ixwiki", mode: "source", wikitext: "x" } as const;
+
+    it("stores the base revision the caller passes, including null for a new page", () => {
+      saveDraft({ ...draft, baseRevisionRef: "rev-4" });
+      expect(getDraft("Based")?.baseRevisionRef).toBe("rev-4");
+      saveDraft({ ...draft, baseRevisionRef: null });
+      expect(getDraft("Based")?.baseRevisionRef).toBeNull();
+    });
+
+    it("stamps the revision the editor was loaded from when the caller passes none", () => {
+      setEditorBase("Based", "rev-7");
+      saveDraft(draft);
+      expect(getDraft("Based")?.baseRevisionRef).toBe("rev-7");
+      clearEditorBase("Based");
+      saveDraft(draft);
+      expect(getDraft("Based")?.baseRevisionRef).toBeUndefined();
+    });
+
+    it("calls a draft stale when it was started from another revision than the current one", () => {
+      const base = { ...draft, savedAt: 1 };
+      expect(isDraftStale({ ...base, baseRevisionRef: "rev-1" }, "rev-1")).toBe(false);
+      expect(isDraftStale({ ...base, baseRevisionRef: "rev-1" }, "rev-2")).toBe(true);
+      expect(isDraftStale({ ...base, baseRevisionRef: null }, null)).toBe(false);
+      expect(isDraftStale({ ...base, baseRevisionRef: null }, "rev-2")).toBe(true);
+      // a draft from before the base was recorded: stale for any page that has a revision
+      expect(isDraftStale(base, "rev-2")).toBe(true);
+      expect(isDraftStale(base, null)).toBe(false);
+    });
   });
 });

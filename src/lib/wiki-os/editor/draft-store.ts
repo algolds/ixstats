@@ -8,7 +8,11 @@ export interface WikiEditorDraft {
   readonly wikitext?: string;
   readonly html?: string;
   readonly mode: "visual" | "source";
-  readonly basetimestamp?: string;
+  /**
+   * The revision (`revisionRef`) the draft was started from; null for a page that did not exist.
+   * Absent on drafts saved before this field existed, which are treated as based on an unknown revision.
+   */
+  readonly baseRevisionRef?: string | null;
   readonly savedAt: number;
 }
 
@@ -21,14 +25,40 @@ function draftKey(title: string, source = "ixwiki"): string {
 }
 
 /**
+ * The revision each open editor was loaded from, by draft key. `saveDraft` stamps it on every draft
+ * it writes, whichever editor component calls it, so a draft always knows what it was based on.
+ */
+const editorBases = new Map<string, string | null>();
+
+/** Records that the editor for `title` is editing the page as of `revisionRef` (null: a new page). */
+export function setEditorBase(title: string, revisionRef: string | null, source = "ixwiki"): void {
+  editorBases.set(draftKey(title, source), revisionRef);
+}
+
+/** The editor for `title` was closed. */
+export function clearEditorBase(title: string, source = "ixwiki"): void {
+  editorBases.delete(draftKey(title, source));
+}
+
+/**
+ * Whether `draft` was started from a different revision than `currentRevisionRef`, i.e. the page
+ * changed after the draft was written and restoring it silently would replace fresher text.
+ */
+export function isDraftStale(draft: WikiEditorDraft, currentRevisionRef: string | null): boolean {
+  return (draft.baseRevisionRef ?? null) !== currentRevisionRef;
+}
+
+/**
  * Save an in-progress editor draft to client storage.
  */
 export function saveDraft(draft: Omit<WikiEditorDraft, "savedAt">): void {
   if (typeof window === "undefined") return;
   try {
     const key = draftKey(draft.title, draft.source);
+    const base = draft.baseRevisionRef === undefined ? editorBases.get(key) : draft.baseRevisionRef;
     const payload: WikiEditorDraft = {
       ...draft,
+      ...(base === undefined ? {} : { baseRevisionRef: base }),
       savedAt: Date.now(),
     };
     window.localStorage.setItem(key, JSON.stringify(payload));

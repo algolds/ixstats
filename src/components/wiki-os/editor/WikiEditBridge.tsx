@@ -3,7 +3,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { saveDraft, getDraft, clearDraft } from "~/lib/wiki-os/editor/draft-store";
+import { useNotify } from "~/hooks/useNotify";
+import { Button } from "~/components/ui/button";
+import {
+  saveDraft,
+  getDraft,
+  clearDraft,
+  clearEditorBase,
+  isDraftStale,
+  setEditorBase,
+  type WikiEditorDraft,
+} from "~/lib/wiki-os/editor/draft-store";
 import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
 
 const WikiVisualEditor = dynamic(
@@ -34,6 +44,25 @@ interface WikiEditBridgeProps {
   onSaveSuccess?: () => void;
 }
 
+/** The page as the editor was opened on: the text and the revision that text is the content of. */
+interface LoadedPage {
+  wikitext: string;
+  revisionRef: string | null;
+}
+
+/** A save the server refused because the page changed: the page as it is now. */
+interface ConflictState {
+  currentWikitext: string;
+  currentRevisionRef: string | null;
+}
+
+interface PendingSave {
+  wikitext: string;
+  summary: string;
+  minor: boolean;
+  keepEditing?: boolean;
+}
+
 export function WikiEditBridge({
   title,
   initialMode = "source",
@@ -41,11 +70,19 @@ export function WikiEditBridge({
   onClose,
   onSaveSuccess,
 }: WikiEditBridgeProps) {
+  const notify = useNotify();
+  const utils = api.useUtils();
   const [mode, setMode] = useState<"source" | "visual">(initialMode);
   const [_saving, setSaving] = useState(false);
-  const [editConflict, setEditConflict] = useState(false);
+  const [conflict, setConflict] = useState<ConflictState | null>(null);
   const [activeWikitext, setActiveWikitext] = useState<string | null>(null);
-  const [draftRestored, setDraftRestored] = useState(false);
+  /** Frozen when the editor opens (later refetches must not move the base under the user's text). */
+  const [loaded, setLoaded] = useState<LoadedPage | null>(null);
+  const [staleDraft, setStaleDraft] = useState<WikiEditorDraft | null>(null);
+  const [draftResolved, setDraftResolved] = useState(false);
+  /** Changes when the editors must start over from new text (Load current version). */
+  const [editorKey, setEditorKey] = useState(0);
+  const pendingSave = useRef<PendingSave | null>(null);
 
   // Single Authoritative Fetch via getWikitext (read-through Postgres + MediaWiki fallback)
   const {
@@ -56,20 +93,59 @@ export function WikiEditBridge({
 
   const saveWikitext = api.wikios.saveWikitext.useMutation();
 
-  // Restore draft from canonical draft store
+  if (loaded === null && !wtLoading) {
+    setLoaded({
+      wikitext: wikitextData?.wikitext ?? "",
+      revisionRef: wikitextData?.revisionRef ?? null,
+    });
+  }
+
+  // Drafts saved from any editor component are stamped with the revision this editor was loaded from.
   useEffect(() => {
-    const localDraft = getDraft(title);
-    if (localDraft && !draftRestored) {
-      if (localDraft.wikitext) {
-        // oxlint-disable-next-line
-        setActiveWikitext(localDraft.wikitext);
-      }
-      if (localDraft.mode) {
-        setMode(localDraft.mode);
-      }
-      setDraftRestored(true);
+    if (loaded === null) return;
+    setEditorBase(title, loaded.revisionRef);
+    return () => clearEditorBase(title);
+  }, [title, loaded]);
+
+  const restoreDraft = useCallback((draft: WikiEditorDraft) => {
+    if (draft.wikitext) setActiveWikitext(draft.wikitext);
+    if (draft.mode) setMode(draft.mode);
+  }, []);
+
+  // A local draft is restored only while the page has not changed since it was written; a draft
+  // that is older than the published page waits for the author's decision instead of replacing it.
+  useEffect(() => {
+    if (loaded === null || draftResolved) return;
+    // The draft lives in localStorage, an external store this effect synchronises with.
+    const draft = getDraft(title);
+    if (!draft || !(draft.wikitext || draft.html)) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setDraftResolved(true);
+    } else if (isDraftStale(draft, loaded.revisionRef)) {
+      setStaleDraft(draft);
+    } else {
+      restoreDraft(draft);
+      setDraftResolved(true);
     }
-  }, [title, draftRestored]);
+  }, [title, loaded, draftResolved, restoreDraft]);
+
+  // Restoring an old draft edits the text it was written on, so a save is checked against that revision.
+  const handleRestoreStaleDraft = useCallback(() => {
+    if (!staleDraft) return;
+    restoreDraft(staleDraft);
+    setLoaded((prev) => ({
+      wikitext: prev?.wikitext ?? "",
+      revisionRef: staleDraft.baseRevisionRef ?? null,
+    }));
+    setStaleDraft(null);
+    setDraftResolved(true);
+  }, [staleDraft, restoreDraft]);
+
+  const handleDiscardStaleDraft = useCallback(() => {
+    clearDraft(title);
+    setStaleDraft(null);
+    setDraftResolved(true);
+  }, [title]);
 
   // Instant In-Memory Mode Switching (Invariant 3 & Invariant 7)
   const handleModeSwitch = useCallback(
@@ -95,33 +171,40 @@ export function WikiEditBridge({
     lastSerializedRef.current = result;
   }, []);
 
-  const handleVisualSave = useCallback(
-    async (content: string, summary: string, minor: boolean, keepEditing?: boolean) => {
+  const performSave = useCallback(
+    async (save: PendingSave, baseRevisionRef: string | null) => {
       setSaving(true);
-      setEditConflict(false);
+      setConflict(null);
       try {
-        const wikitextToSave = lastSerializedRef.current?.wikitext || content;
         const result = await saveWikitext.mutateAsync({
           title,
-          wikitext: wikitextToSave,
-          summary,
-          minor,
-          basetimestamp: wikitextData?.timestamp ?? undefined,
+          wikitext: save.wikitext,
+          summary: save.summary,
+          minor: save.minor,
+          baseRevisionRef: baseRevisionRef ?? undefined,
         });
 
-        if ((result as { editConflict?: boolean }).editConflict) {
-          setEditConflict(true);
+        if (!result.success) {
+          pendingSave.current = save;
+          setConflict({
+            currentWikitext: result.currentWikitext,
+            currentRevisionRef: result.currentRevisionRef,
+          });
           throw new Error("Edit conflict detected: this page was modified by another user.");
         }
 
+        pendingSave.current = null;
         clearDraft(title);
 
-        if (keepEditing) {
+        if (save.keepEditing) {
+          // The next save builds on this one.
           const res = await refetchWikitext();
           if (res.data) {
             setActiveWikitext(res.data.wikitext);
+            setLoaded({ wikitext: res.data.wikitext, revisionRef: res.data.revisionRef ?? null });
           }
         } else {
+          void utils.wikios.getWikitext.invalidate({ title });
           onSaveSuccess?.();
           onClose();
         }
@@ -132,65 +215,106 @@ export function WikiEditBridge({
         setSaving(false);
       }
     },
-    [title, wikitextData, saveWikitext, refetchWikitext, onSaveSuccess, onClose]
+    [title, saveWikitext, refetchWikitext, utils, onSaveSuccess, onClose]
+  );
+
+  const handleVisualSave = useCallback(
+    (content: string, summary: string, minor: boolean, keepEditing?: boolean) =>
+      performSave(
+        { wikitext: lastSerializedRef.current?.wikitext || content, summary, minor, keepEditing },
+        loaded?.revisionRef ?? null
+      ),
+    [performSave, loaded]
   );
 
   const handleSourceSave = useCallback(
-    async (wikitext: string, summary: string, minor: boolean, keepEditing?: boolean) => {
-      setSaving(true);
-      setEditConflict(false);
-      try {
-        const result = await saveWikitext.mutateAsync({
-          title,
-          wikitext,
-          summary,
-          minor,
-          basetimestamp: wikitextData?.timestamp ?? undefined,
-        });
-
-        if ((result as { editConflict?: boolean }).editConflict) {
-          setEditConflict(true);
-          throw new Error("Edit conflict detected: this page was modified by another user.");
-        }
-
-        clearDraft(title);
-
-        if (keepEditing) {
-          const res = await refetchWikitext();
-          if (res.data) {
-            setActiveWikitext(res.data.wikitext);
-          }
-        } else {
-          onSaveSuccess?.();
-          onClose();
-        }
-      } catch (err) {
-        console.error("Failed to save wikitext:", err);
-        throw err;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [title, wikitextData, saveWikitext, refetchWikitext, onSaveSuccess, onClose]
+    (wikitext: string, summary: string, minor: boolean, keepEditing?: boolean) =>
+      performSave({ wikitext, summary, minor, keepEditing }, loaded?.revisionRef ?? null),
+    [performSave, loaded]
   );
 
-  if (wtLoading && activeWikitext === null) {
+  // "Load current version": the author's text is kept as a draft, the editor starts over on the page as it is now.
+  const handleLoadCurrent = useCallback(() => {
+    if (!conflict) return;
+    if (pendingSave.current) {
+      saveDraft({ title, source: "ixwiki", mode, wikitext: pendingSave.current.wikitext });
+    }
+    pendingSave.current = null;
+    setActiveWikitext(conflict.currentWikitext);
+    setLoaded({ wikitext: conflict.currentWikitext, revisionRef: conflict.currentRevisionRef });
+    setConflict(null);
+    setEditorKey((key) => key + 1);
+  }, [conflict, mode, title]);
+
+  // "Save anyway": the same save, on top of the version that is there now.
+  const handleSaveAnyway = useCallback(async () => {
+    const pending = pendingSave.current;
+    if (!conflict || !pending) return;
+    try {
+      await performSave(pending, conflict.currentRevisionRef);
+      notify.success("Article Published", "Your changes have been published over the newer version.");
+    } catch {
+      notify.error("Save Failed", "Could not save article changes.");
+    }
+  }, [conflict, performSave, notify]);
+
+  if (staleDraft) {
+    return (
+      <div className="wikios-edit-bridge relative min-h-[600px] w-full">
+        <div
+          role="alert"
+          className="mb-4 rounded-xl border border-border bg-card/75 p-4 text-sm text-foreground"
+        >
+          <p>
+            <strong>Older draft found:</strong> this page changed after you saved your local draft.
+            Restoring it will replace the current text in the editor; saving will then ask you to
+            confirm, because it is based on an older version.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleRestoreStaleDraft}>
+              Restore my draft
+            </Button>
+            <Button size="sm" onClick={handleDiscardStaleDraft}>
+              Use current version
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Editors mount only once the draft question is settled: they restore drafts on their own.
+  if (loaded === null || !draftResolved) {
     return <EditorLoading text="Loading article..." />;
   }
 
-  const initialWikitextValue = activeWikitext ?? wikitextData?.wikitext ?? "";
+  const initialWikitextValue = activeWikitext ?? loaded.wikitext;
 
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">
-      {editConflict && (
-        <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-          <strong>Edit Conflict Detected:</strong> Someone else modified this page since you opened
-          it. Please review your edits before saving.
+      {conflict && (
+        <div
+          role="alert"
+          className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-foreground"
+        >
+          <p>
+            <strong>Edit Conflict Detected:</strong> someone else saved this page after you opened
+            it. Your text is still in the editor and nothing was saved.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleLoadCurrent}>
+              Load current version
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => void handleSaveAnyway()}>
+              Save anyway
+            </Button>
+          </div>
         </div>
       )}
 
       {mode === "visual" ? (
         <WikiVisualEditor
+          key={editorKey}
           title={title}
           initialWikitext={initialWikitextValue}
           onSave={handleVisualSave}
@@ -200,6 +324,7 @@ export function WikiEditBridge({
         />
       ) : (
         <WikiSourceEditor
+          key={editorKey}
           title={title}
           initialWikitext={initialWikitextValue}
           initialSection={initialSection}

@@ -27,6 +27,7 @@ import {
 } from "~/lib/wiki-os/auth";
 import { checkEditPolicy } from "~/lib/wiki-os/namespace-policy";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
@@ -107,12 +108,16 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
         turnstileToken: z.string().optional(),
-        basetimestamp: z.string().optional(),
+        /** `revisionRef` of the page when the editor loaded it; absent for a page that did not exist. */
+        baseRevisionRef: z.string().max(64).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
       await assertCanEditArticle(ctx, title);
+
+      const conflict = await detectEditConflict(title, input.baseRevisionRef);
+      if (conflict) return { success: false as const, editConflict: true as const, ...conflict };
 
       if (input.turnstileToken) {
         await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
@@ -147,7 +152,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
-        success: true,
+        success: true as const,
         title,
         revisionId: saveResult.revisionId,
         extractedLinksCount: saveResult.extractedLinksCount,
