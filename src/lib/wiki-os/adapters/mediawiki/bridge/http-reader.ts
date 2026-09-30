@@ -234,7 +234,8 @@ export async function httpGetCategoryMembers(
 export async function fetchMediaWikiPageAuthorsAndRevisions(
   title: string,
   wiki: WikiSource = "ixwiki",
-  limit: number = 250
+  limit: number = 250,
+  timeoutMs: number = 8000
 ): Promise<{
   creator: { username: string; timestamp: string; avatar?: string | null } | null;
   lastEditor: { username: string; timestamp: string; avatar?: string | null } | null;
@@ -269,7 +270,7 @@ export async function fetchMediaWikiPageAuthorsAndRevisions(
   try {
     const res = await fetch(url.toString(), {
       headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as any;
