@@ -56,6 +56,12 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
+import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
+import {
+  getRevisionWikitextShadow,
+  getArticleHistoryShadow,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 
 const createCaller = createCallerFactory(wikiosEditingRouter);
@@ -78,9 +84,9 @@ describe("wikiosEditingRouter.saveWikitext", () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(protectedArticle("SYSOP"));
     const caller = createCaller(userCtx("Linked") as never);
 
-    await expect(
-      caller.saveWikitext({ title: "Locked", wikitext: "x" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.saveWikitext({ title: "Locked", wikitext: "x" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
     expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
   });
 });
@@ -97,5 +103,135 @@ describe("wikiosEditingRouter page management", () => {
       code: "FORBIDDEN",
     });
     expect(PageManagementService.restoreArticle).not.toHaveBeenCalled();
+  });
+});
+
+const adminCtx = () =>
+  createMockRouterContext({
+    auth: { userId: "system_owner_id" },
+    user: {
+      id: "dbadmin",
+      clerkUserId: "system_owner_id",
+      wikiUsername: "Admin",
+      role: { name: "admin", level: 0 },
+    },
+  });
+
+describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+    jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
+      article: {} as never,
+      revisionId: "rev-1" as never,
+      extractedLinksCount: 0,
+    });
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValue({ wikitext: "old", title: "X", timestamp: "", fromShadow: true });
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [
+        {
+          revid: "r2",
+          user: "bob",
+          timestamp: "",
+          comment: "",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+        },
+        {
+          revid: "r1",
+          user: "amy",
+          timestamp: "",
+          comment: "",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+        },
+      ],
+      hasMore: false,
+      fromShadow: true,
+    });
+  });
+
+  const forbidden = [
+    "Template:Infobox",
+    "Module:Foo",
+    "MediaWiki:Common.js",
+    "User:Someone/common.js",
+  ];
+
+  it.each(forbidden)("saveWikitext refuses %s for a non-admin", async (title) => {
+    const caller = createCaller(userCtx("Linked") as never);
+    await expect(caller.saveWikitext({ title, wikitext: "x" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    expect(MediaWikiExportWorker.enqueue).not.toHaveBeenCalled();
+  });
+
+  it.each(forbidden)("revertToRevision refuses %s for a non-admin", async (title) => {
+    const caller = createCaller(userCtx("Linked") as never);
+    await expect(caller.revertToRevision({ title, revid: "r1" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+  });
+
+  it.each(forbidden)("rollback refuses %s for a non-admin", async (title) => {
+    const caller = createCaller(userCtx("Linked") as never);
+    await expect(caller.rollback({ title })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+  });
+
+  it("allows an article, the user's own page, and passes the revision id to the export", async () => {
+    const caller = createCaller(userCtx("Linked") as never);
+    await caller.saveWikitext({ title: "Caphiria", wikitext: "x" });
+    await caller.saveWikitext({ title: "User:Linked/Notes", wikitext: "x" });
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
+    expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Caphiria", revisionId: "rev-1" })
+    );
+  });
+
+  it("refuses another user's page and a user page without a linked account", async () => {
+    await expect(
+      createCaller(userCtx("Linked") as never).saveWikitext({ title: "User:Other", wikitext: "x" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      createCaller(userCtx(null) as never).saveWikitext({ title: "User:Linked", wikitext: "x" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("lets a wiki admin edit interface namespaces", async () => {
+    const caller = createCaller(adminCtx() as never);
+    await caller.saveWikitext({ title: "Template:Infobox", wikitext: "x" });
+    await caller.revertToRevision({ title: "MediaWiki:Sidebar", revid: "r1" });
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("wikiosEditingRouter.previewWikitext (NEW-13)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(wikitextToHtml).mockResolvedValue("<p>hi</p>");
+  });
+
+  it("rejects an anonymous caller", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const caller = createCaller(createMockRouterContext({ auth: null, user: null }) as never);
+    await expect(caller.previewWikitext({ wikitext: "hi", title: "T" })).rejects.toThrow(
+      /Authentication required/
+    );
+    expect(wikitextToHtml).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("renders for a signed-in user", async () => {
+    const caller = createCaller(userCtx("Linked") as never);
+    await expect(caller.previewWikitext({ wikitext: "hi", title: "T" })).resolves.toHaveProperty(
+      "html"
+    );
   });
 });

@@ -9,6 +9,8 @@ import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
 const mockSystemConfigFindUnique = jest.fn();
 const mockSystemConfigUpsert = jest.fn();
 const mockWikiArticleUpsert = jest.fn();
+const mockWikiArticleFindUnique = jest.fn();
+const mockWikiArticleFindFirst = jest.fn();
 const mockWikiRevisionFindFirst = jest.fn();
 const mockWikiRevisionCreateMany = jest.fn();
 
@@ -18,7 +20,11 @@ jest.mock("~/server/db", () => ({
       findUnique: (...a: unknown[]) => mockSystemConfigFindUnique(...a),
       upsert: (...a: unknown[]) => mockSystemConfigUpsert(...a),
     },
-    wikiArticle: { upsert: (...a: unknown[]) => mockWikiArticleUpsert(...a) },
+    wikiArticle: {
+      upsert: (...a: unknown[]) => mockWikiArticleUpsert(...a),
+      findUnique: (...a: unknown[]) => mockWikiArticleFindUnique(...a),
+      findFirst: (...a: unknown[]) => mockWikiArticleFindFirst(...a),
+    },
     wikiRevision: {
       findFirst: (...a: unknown[]) => mockWikiRevisionFindFirst(...a),
       createMany: (...a: unknown[]) => mockWikiRevisionCreateMany(...a),
@@ -106,6 +112,8 @@ beforeEach(() => {
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
   mockWikiArticleUpsert.mockResolvedValue({ id: "art-1" });
+  mockWikiArticleFindUnique.mockResolvedValue(null);
+  mockWikiArticleFindFirst.mockResolvedValue(null);
   mockWikiRevisionFindFirst.mockResolvedValue(null);
   mockWikiRevisionCreateMany.mockResolvedValue({ count: 1 });
 });
@@ -192,4 +200,37 @@ test("inserts revisions with createMany skipDuplicates", async () => {
       data: [expect.objectContaining({ mwRevId: 100, source: "ixwiki", articleId: "art-1" })],
     })
   );
+});
+
+test("clears cached contentHtml when the synced wikitext differs (NEW-2)", async () => {
+  rcResponses = [{ changes: [change("A", 100, 1)] }];
+  mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Old body." });
+
+  await runAutoSyncCycle();
+
+  const args = mockWikiArticleUpsert.mock.calls[0]?.[0];
+  expect(args.update).toMatchObject({ wikitext: "Body text.", contentHtml: "" });
+});
+
+test("keeps cached contentHtml when the synced wikitext is unchanged", async () => {
+  rcResponses = [{ changes: [change("A", 100, 1)] }];
+  mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Body text." });
+
+  await runAutoSyncCycle();
+
+  const args = mockWikiArticleUpsert.mock.calls[0]?.[0];
+  expect(args.update).not.toHaveProperty("contentHtml");
+});
+
+test("skips the bot revision WikiOS exported (article mwLatestRevId matches) (NEW-4)", async () => {
+  rcResponses = [{ changes: [change("A", 100, 1)] }];
+  mockWikiArticleFindFirst.mockResolvedValue({ id: "art-1" });
+
+  await runAutoSyncCycle();
+
+  expect(mockWikiArticleFindFirst).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { source: "ixwiki", mwLatestRevId: 100 } })
+  );
+  expect(syncedTitles()).toEqual([]);
+  expect(mockWikiArticleUpsert).not.toHaveBeenCalled();
 });

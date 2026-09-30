@@ -2,6 +2,8 @@ import { db } from "~/server/db";
 import {
   getArticleWikitextShadow,
   getArticleHistoryShadow,
+  getArticleAuthors,
+  saveArticleHtmlShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 
 const mockGetArticleWikitext = jest.fn();
@@ -17,6 +19,8 @@ const mockWikiRevisionCreate = jest.fn();
 const mockWikiRevisionFindFirst = jest.fn();
 const mockWikiRevisionFindMany = jest.fn();
 const mockTransaction = jest.fn();
+const mockFetchAuthors = jest.fn();
+const mockWikiArticleUpdateMany = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -27,6 +31,7 @@ jest.mock("~/server/db", () => ({
       upsert: (...args: any[]) => mockWikiArticleUpsert(...args),
       delete: (...args: any[]) => mockWikiArticleDelete(...args),
       deleteMany: (...args: any[]) => mockWikiArticleDeleteMany(...args),
+      updateMany: (...args: any[]) => mockWikiArticleUpdateMany(...args),
     },
     wikiRevision: {
       create: (...args: any[]) => mockWikiRevisionCreate(...args),
@@ -41,6 +46,10 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
   getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),
   getRevisionWikitext: (...a: unknown[]) => mockGetRevisionWikitext(...a),
+}));
+
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge/http-reader", () => ({
+  fetchMediaWikiPageAuthorsAndRevisions: (...a: unknown[]) => mockFetchAuthors(...a),
 }));
 
 const row = (overrides: Record<string, unknown> = {}) => ({
@@ -168,4 +177,79 @@ test("history read-through falls back to MediaWiki bridge when no local revision
 
   expect(mockGetPageHistory).toHaveBeenCalled();
   expect(res.revisions[0]).toMatchObject({ revid: "7", user: "carol", byteDelta: 3 });
+});
+
+describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
+  const mwData = (title: string) => ({
+    creator: { username: `creator-of-${title}`, timestamp: "2026-01-01T00:00:00Z" },
+    lastEditor: { username: "editor", timestamp: "2026-02-01T00:00:00Z" },
+    revisions: [],
+    contributors: [{ username: "editor", editCount: 1 }],
+    totalContributors: 1,
+  });
+
+  it("calls MediaWiki once for repeated views, with a short timeout", async () => {
+    mockFetchAuthors.mockResolvedValue(mwData("CachedPage"));
+
+    const first = await getArticleAuthors("CachedPage");
+    const second = await getArticleAuthors("cachedpage");
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
+    expect(mockFetchAuthors).toHaveBeenCalledWith("CachedPage", "ixwiki", 250, 2500);
+    expect(first.creator).toMatchObject({ username: "creator-of-CachedPage" });
+    expect(second.creator).toMatchObject({ username: "creator-of-CachedPage" });
+  });
+
+  it("shares one in-flight request between concurrent views", async () => {
+    mockFetchAuthors.mockResolvedValue(mwData("ConcurrentPage"));
+
+    await Promise.all([getArticleAuthors("ConcurrentPage"), getArticleAuthors("ConcurrentPage")]);
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
+  });
+
+  it("remembers a failed lookup briefly instead of retrying every view", async () => {
+    mockFetchAuthors.mockRejectedValue(new Error("timeout"));
+
+    await getArticleAuthors("DownPage");
+    await getArticleAuthors("DownPage");
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
+  });
+
+  it("still overlays a newer Postgres edit on the cached MediaWiki data", async () => {
+    mockFetchAuthors.mockResolvedValue(mwData("OverlayPage"));
+    mockWikiRevisionFindFirst.mockResolvedValue({
+      author: "WikiOSUser",
+      createdAt: new Date("2026-03-01T00:00:00Z"),
+    });
+
+    await getArticleAuthors("OverlayPage");
+    const again = await getArticleAuthors("OverlayPage");
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
+    expect(again.lastEditor).toMatchObject({ username: "WikiOSUser" });
+  });
+});
+
+describe("saveArticleHtmlShadow", () => {
+  it("only writes when the article still holds the wikitext it was rendered from", async () => {
+    mockWikiArticleUpdateMany.mockResolvedValue({ count: 1 });
+
+    await saveArticleHtmlShadow("Foo", "<p>x</p>", "ixwiki", "rendered from this");
+
+    expect(mockWikiArticleUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ wikitext: "rendered from this" }),
+      })
+    );
+  });
+
+  it("writes unconditionally when no source wikitext is given", async () => {
+    mockWikiArticleUpdateMany.mockResolvedValue({ count: 1 });
+
+    await saveArticleHtmlShadow("Foo", "<p>x</p>");
+
+    expect(mockWikiArticleUpdateMany.mock.calls.at(-1)?.[0].where).not.toHaveProperty("wikitext");
+  });
 });

@@ -27,6 +27,65 @@ export interface ParsoidArticle {
 }
 
 /**
+ * Render an article through MediaWiki `action=parse` so templates, parser functions and Lua expand.
+ *
+ * When the Postgres wikitext is at hand it is what gets rendered (`text=` with the title as context).
+ * `page=` reads MediaWiki's own copy of the page, which is the pre-edit version until the background
+ * export lands (or forever under SKIP_MEDIAWIKI_SYNC), so it is only the fallback for HTML-only rows.
+ * Returns null when MediaWiki is unreachable or returns nothing.
+ */
+export async function renderArticleViaMediaWiki(
+  wikitext: string | null | undefined,
+  title: string
+): Promise<string | null> {
+  try {
+    const common = {
+      prop: "text",
+      disablelimitreport: "1",
+      disableeditsection: "1",
+      formatversion: "2",
+      format: "json",
+    };
+    let res: Response;
+    if (wikitext && wikitext.trim() !== "") {
+      res = await fetch(getMediaWikiApiUrl("ixwiki"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": DEFAULT_USER_AGENT,
+          "Api-User-Agent": DEFAULT_USER_AGENT,
+        },
+        body: new URLSearchParams({
+          ...common,
+          action: "parse",
+          text: wikitext,
+          title,
+          contentmodel: "wikitext",
+        }).toString(),
+        signal: AbortSignal.timeout(6000),
+      });
+    } else {
+      const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+      const params = new URLSearchParams({
+        ...common,
+        action: "parse",
+        page: title.replace(/ /g, "_"),
+      });
+      res = await fetch(`${wikiUrl.replace(/\/+$/, "")}/api.php?${params.toString()}`, {
+        headers: { "User-Agent": DEFAULT_USER_AGENT },
+        signal: AbortSignal.timeout(3500),
+      });
+    }
+    if (!res.ok) return null;
+    const data = (await res.json()) as { parse?: { text?: unknown } };
+    const text = data?.parse?.text;
+    return typeof text === "string" && text !== "" ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch rendered HTML for an article directly from PostgreSQL / in-process wikitext compiler (<2ms).
  */
 export async function getArticleHtml(title: string): Promise<ParsoidArticle> {
@@ -75,32 +134,18 @@ export async function getArticleHtml(title: string): Promise<ParsoidArticle> {
     const htmlHasInfobox = html && !hasCorruptedMarkup && (html.includes("infobox") || html.includes("aside"));
 
     if ((!html || hasCorruptedMarkup || (wikitextHasInfobox && !htmlHasInfobox)) && !isMainPage) {
-      try {
-        const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-        const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-        const res = await fetch(
-          `${apiEndpoint}?action=parse&page=${encodeURIComponent(cleanTitle.replace(/ /g, "_"))}&prop=text&disablelimitreport=1&disableeditsection=1&formatversion=2&format=json`,
-          {
-            headers: { "User-Agent": "IxStats-Builder" },
-            signal: AbortSignal.timeout(3500),
-          }
+      const parsed = await renderArticleViaMediaWiki(article.wikitext, cleanTitle);
+      if (parsed) {
+        html = parsed;
+        void saveArticleHtmlShadow(cleanTitle, html, "ixwiki", article.wikitext || undefined).catch(
+          () => {}
         );
-        if (res.ok) {
-          const data = (await res.json()) as any;
-          const parsed = data?.parse?.text;
-          if (parsed && typeof parsed === "string") {
-            html = parsed;
-            void saveArticleHtmlShadow(cleanTitle, html, "ixwiki").catch(() => {});
-          }
-        }
-      } catch {
-        // Fall through to local wikitext compiler
       }
     }
 
     if ((!html || hasCorruptedMarkup) && article.wikitext) {
       html = parseWikitextToHtml(article.wikitext, "ixwiki");
-      void saveArticleHtmlShadow(cleanTitle, html, "ixwiki").catch(() => {});
+      void saveArticleHtmlShadow(cleanTitle, html, "ixwiki", article.wikitext).catch(() => {});
     }
 
     return {
