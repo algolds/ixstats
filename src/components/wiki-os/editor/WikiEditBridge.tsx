@@ -121,7 +121,8 @@ export function WikiEditBridge({
     if (!draft || !(draft.wikitext || draft.html)) {
       // oxlint-disable-next-line react/set-state-in-effect
       setDraftResolved(true);
-    } else if (isDraftStale(draft, loaded.revisionRef)) {
+    } else if (draft.wikitext !== loaded.wikitext && isDraftStale(draft, loaded.revisionRef)) {
+      // (A draft that equals the published text loses nothing whichever way it is restored.)
       setStaleDraft(draft);
     } else {
       restoreDraft(draft);

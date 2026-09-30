@@ -204,6 +204,14 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     expect(getDraft("Vesperia")).toBeNull();
   });
 
+  it("does not raise the older-draft question for a draft that equals the published text", async () => {
+    // The visual editor writes a draft of what it just published; it must not greet the next edit.
+    saveDraft({ title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Server text", baseRevisionRef: undefined });
+    await openEditor();
+    expect(screen.queryByText(/Older draft found/)).toBeNull();
+    expect(lastSourceProps().initialWikitext).toBe("Server text");
+  });
+
   it("treats a draft with no recorded base as older than a page that has a revision", async () => {
     saveDraft({ title: "Vesperia", source: "ixwiki", mode: "source", wikitext: "Legacy draft", baseRevisionRef: undefined });
     render(<WikiEditBridge title="Vesperia" initialMode="source" onClose={onClose} />);
