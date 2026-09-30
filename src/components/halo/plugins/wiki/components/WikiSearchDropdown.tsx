@@ -1,6 +1,6 @@
 "use client";
 // src/components/halo/plugins/wiki/components/WikiSearchDropdown.tsx
-// Full-text wiki article search input & results dropdown with snippet highlights.
+// Full-text wiki article search input & results dropdown. Snippets are plain text.
 
 import { useRef, useEffect } from "react";
 import { Search, Xmark as X } from "iconoir-react";
@@ -87,10 +87,9 @@ export function WikiSearchDropdown({
                   </PreText>
                 </span>
                 {result.snippet && (
-                  <span
-                    className="text-muted-foreground [&_.searchmatch]:text-foreground mt-0.5 line-clamp-1 pl-[22px] text-xs [&_.searchmatch]:font-semibold"
-                    dangerouslySetInnerHTML={{ __html: result.snippet }}
-                  />
+                  <span className="text-muted-foreground mt-0.5 line-clamp-1 pl-[22px] text-xs">
+                    {result.snippet}
+                  </span>
                 )}
               </button>
             ))

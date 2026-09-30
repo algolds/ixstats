@@ -30,8 +30,12 @@ export interface WikiAuthIdentity {
   userId: string | null;
   /** MediaWiki username, either explicitly linked or resolved via Smart Hierarchy. */
   wikiUsername: string | null;
-  /** Whether the user explicitly linked a MediaWiki account (stands in for "autoconfirmed"). */
-  hasLinkedWikiAccount: boolean;
+  /**
+   * Whether `User.wikiUsername` is set. NOT proof of a linked wiki account: the column can hold a
+   * display fallback, so it must never gate authorization. Use `getVerifiedWikiUsername` (storage.ts),
+   * which reads the verified `WikiAccountLink`, for anything security-relevant.
+   */
+  hasLegacyWikiUsername: boolean;
   /** Active country name if affiliated. */
   countryName: string | null;
   /** Whether the user is system owner / wiki admin. */
@@ -81,14 +85,14 @@ export function getWikiAuth(ctx: WikiAuthContext): WikiAuthIdentity {
   const internalUserId = ctx.user?.id ?? null;
   const countryName = ctx.user?.country?.name ?? null;
   const wikiUsername = resolveWikiUsername(ctx);
-  const hasLinkedWikiAccount = Boolean(ctx.user?.wikiUsername?.trim());
+  const hasLegacyWikiUsername = Boolean(ctx.user?.wikiUsername?.trim());
   const isAdmin = !!userId && isSystemOwner(userId);
 
   return {
     internalUserId,
     userId,
     wikiUsername,
-    hasLinkedWikiAccount,
+    hasLegacyWikiUsername,
     countryName,
     isAdmin,
   };
@@ -97,19 +101,21 @@ export function getWikiAuth(ctx: WikiAuthContext): WikiAuthIdentity {
 /**
  * Whether `identity` may edit an article with the given protection.
  * `null` (new page) is editable by anyone signed in; expired protection counts as "ALL";
- * "AUTOCONFIRMED" is approximated as "has a linked wiki account"; "SYSOP", "PROTECTED" and
- * unknown levels are admin-only.
+ * "AUTOCONFIRMED" is approximated as "has a verified linked wiki account" (the caller resolves
+ * `hasVerifiedWikiAccount` from `WikiAccountLink`); "SYSOP", "PROTECTED" and unknown levels are
+ * admin-only.
  */
 export function canEditProtectedArticle(
   article: { protectionLevel: string; protectionExpiry: Date | null } | null,
   identity: WikiAuthIdentity,
+  hasVerifiedWikiAccount: boolean,
   now: Date = new Date()
 ): boolean {
   if (article === null) return identity.userId !== null;
   const expired = article.protectionExpiry !== null && article.protectionExpiry < now;
   const level = expired ? "ALL" : article.protectionLevel;
   if (level === "ALL") return identity.userId !== null;
-  if (level === "AUTOCONFIRMED") return identity.isAdmin || identity.hasLinkedWikiAccount;
+  if (level === "AUTOCONFIRMED") return identity.isAdmin || hasVerifiedWikiAccount;
   return identity.isAdmin;
 }
 

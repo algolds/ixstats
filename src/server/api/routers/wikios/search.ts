@@ -98,7 +98,7 @@ export const wikiosSearchRouter = createTRPCRouter({
   advancedSearch: publicProcedure
     .input(
       z.object({
-        query: z.string().min(1).max(500),
+        query: z.string().min(1).max(256),
         limit: z.number().min(1).max(50).default(20),
         offset: z.number().min(0).default(0),
         namespace: z.number().optional(),
@@ -220,7 +220,7 @@ export const wikiosSearchRouter = createTRPCRouter({
         query: z.string().max(200).optional(),
         category: z.string().max(200).optional(),
         limit: z.number().min(1).max(50).default(20),
-        fileTypes: z.array(z.string()).optional(),
+        fileTypes: z.array(z.string().max(100)).max(20).optional(),
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
       })
     )
@@ -347,7 +347,7 @@ export const wikiosSearchRouter = createTRPCRouter({
   searchBusinesses: publicProcedure
     .input(
       z.object({
-        query: z.string().optional(),
+        query: z.string().max(256).optional(),
         countryId: z.string().optional(),
         limit: z.number().min(1).max(50).default(30),
       })

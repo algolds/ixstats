@@ -3,6 +3,7 @@
 // Returns the same shape as /api/wiki/random-articles so the admin tool consumes it directly.
 
 import { NextResponse } from "next/server";
+import { wikiProxyRateLimitResponse } from "~/app/api/mediawiki/_rate-limit";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
@@ -10,6 +11,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const limited = await wikiProxyRateLimitResponse(request, "wiki category-articles");
+  if (limited) return limited;
+
   try {
     const { searchParams } = new URL(request.url);
     const source = searchParams.get("source") as WikiSource | null;

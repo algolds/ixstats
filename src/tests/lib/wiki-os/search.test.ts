@@ -6,8 +6,20 @@
 // src/lib/wiki-os/__tests__/search-service.test.ts
 // Unit tests for WikiOS fast search and wikitext summary extractor.
 
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import { extractIntroFromWikitext } from "~/lib/wiki-os/core/native-search-service";
+
+const mockFindMany = jest.fn();
+const mockQueryRaw = jest.fn();
+jest.mock("~/server/db", () => ({
+  db: {
+    wikiArticle: {
+      findMany: (...args: unknown[]) => mockFindMany(...args),
+      count: jest.fn().mockResolvedValue(1),
+    },
+    $queryRawUnsafe: (...args: unknown[]) => mockQueryRaw(...args),
+  },
+}));
 
 describe("WikiOS Search & Summary Service", () => {
   it("extracts clean introductory prose from complex wikitext", () => {
@@ -83,5 +95,94 @@ The [[Treaty of Oakhaven]] was signed in 1904 between the {{Flag|Oakhaven}} King
     expect(cleanSnippet).not.toContain("[[");
     expect(cleanSnippet).not.toContain("{{");
     expect(cleanSnippet).toContain("Treaty of Oakhaven");
+  });
+});
+
+describe("NativeSearchService snippets are plain text", () => {
+  const XSS = "<img src=x onerror=alert(1)>";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const expectPlainText = (snippet: string) => {
+    expect(snippet).not.toContain("<");
+    expect(snippet).not.toContain(">");
+  };
+
+  it("strips markup from a spotlight row summary", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "1",
+        title: "Burgundie",
+        summary: `${XSS}Burgundie is a kingdom.`,
+        wikitext: null,
+        readingTime: 1,
+        leadImageUrl: null,
+      },
+    ]);
+
+    const [item] = await NativeSearchService.spotlightSearch("Burg");
+
+    expectPlainText(item!.snippet);
+    expect(item!.snippet).toContain("Burgundie is a kingdom.");
+  });
+
+  it("strips tags from the wikitext fallback, including a truncated tag", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "1",
+        title: "Burgundie",
+        summary: null,
+        wikitext: `'''Burgundie''' is a <script>alert(1)</script>kingdom <img src=x onerror=alert(1)`,
+        readingTime: 1,
+        leadImageUrl: null,
+      },
+    ]);
+
+    const [item] = await NativeSearchService.spotlightSearch("Burg");
+
+    expectPlainText(item!.snippet);
+    expect(item!.snippet).toContain("Burgundie is a");
+  });
+
+  it("strips markup from full-text rows (tsvector path)", async () => {
+    mockQueryRaw.mockResolvedValue([
+      {
+        id: "1",
+        title: "Burgundie",
+        slug: "Burgundie",
+        summary: null,
+        preview: `[[Burgundie|The kingdom]] ${XSS} and {{Flag|Burgundie}} more`,
+        readingTime: 1,
+        leadImageUrl: null,
+        rank: 0.5,
+      },
+    ]);
+
+    const { results } = await NativeSearchService.fulltextSearch("Burgundie");
+
+    expectPlainText(results[0]!.snippet);
+    expect(results[0]!.snippet).toContain("The kingdom");
+    expect(results[0]!.snippet).not.toContain("{{");
+  });
+
+  it("strips markup from the Prisma fallback window", async () => {
+    mockQueryRaw.mockRejectedValue(new Error("no tsvector"));
+    mockFindMany.mockResolvedValue([
+      {
+        id: "1",
+        title: "Burgundie",
+        wikitext: `Intro text ${XSS} kingdom of Burgundie [[Urcea]]`,
+        summary: null,
+        readingTime: 1,
+        leadImageUrl: null,
+      },
+    ]);
+
+    const { results } = await NativeSearchService.fulltextSearch("kingdom");
+
+    expectPlainText(results[0]!.snippet);
+    expect(results[0]!.snippet).toContain("kingdom of Burgundie Urcea");
   });
 });

@@ -7,7 +7,7 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, lightMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import {
@@ -27,6 +27,7 @@ import {
 } from "~/lib/wiki-os/auth";
 import { checkEditPolicy } from "~/lib/wiki-os/namespace-policy";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { getVerifiedWikiUsername } from "~/lib/wiki-os/storage";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
@@ -41,15 +42,18 @@ async function assertCanEditArticle(
   realm = "ixwiki"
 ): Promise<WikiAuthIdentity> {
   const identity = getWikiAuth(ctx);
+  const verifiedWikiUsername = identity.internalUserId
+    ? await getVerifiedWikiUsername(identity.internalUserId)
+    : null;
   const policy = checkEditPolicy(title, {
     isAdmin: identity.isAdmin,
-    linkedWikiUsername: identity.hasLinkedWikiAccount ? identity.wikiUsername : null,
+    linkedWikiUsername: verifiedWikiUsername,
   });
   if (!policy.allowed) {
     throw new TRPCError({ code: "FORBIDDEN", message: policy.reason });
   }
   const existing = await ArticleRepository.findBySlug(title, realm);
-  if (!canEditProtectedArticle(existing, identity)) {
+  if (!canEditProtectedArticle(existing, identity, verifiedWikiUsername !== null)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "This page is protected." });
   }
   return identity;
@@ -77,7 +81,7 @@ export const wikiosEditingRouter = createTRPCRouter({
    * Preview wikitext by converting it to HTML via Parsoid. Signed-in only: it forwards up to 200k
    * characters to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  previewWikitext: protectedProcedure
+  previewWikitext: readOnlyProcedure
     .input(
       z.object({
         wikitext: z.string().max(200_000),
@@ -99,11 +103,12 @@ export const wikiosEditingRouter = createTRPCRouter({
   /**
    * Save wikitext directly (from source editor).
    */
-  saveWikitext: protectedProcedure
+  saveWikitext: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        wikitext: z.string(),
+        // MediaWiki's own page size limit (2 MB).
+        wikitext: z.string().max(2_000_000),
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
         turnstileToken: z.string().optional(),
@@ -158,7 +163,7 @@ export const wikiosEditingRouter = createTRPCRouter({
    * Revert a page to a specific revision.
    * Fetches the old revision's wikitext and saves it as a new edit.
    */
-  revertToRevision: protectedProcedure
+  revertToRevision: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -213,7 +218,7 @@ export const wikiosEditingRouter = createTRPCRouter({
    * Quick rollback: revert all consecutive edits by the last editor.
    * Finds the most recent revision by a different user and reverts to it.
    */
-  rollback: protectedProcedure
+  rollback: lightMutationProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
@@ -268,11 +273,12 @@ export const wikiosEditingRouter = createTRPCRouter({
   /**
    * Upload a file (image/document) with Dual-Ingest (PostgreSQL wiki_assets + MediaWiki Action API).
    */
-  uploadFile: protectedProcedure
+  uploadFile: lightMutationProcedure
     .input(
       z.object({
         filename: z.string().min(1).max(255),
-        fileBase64: z.string(),
+        // ~10 MB decoded; rejected by validation, before anything is decoded.
+        fileBase64: z.string().max(15_000_000),
         description: z.string().max(10000).default(""),
         comment: z.string().max(500).default("Uploaded via WikiOS"),
       })
@@ -331,7 +337,7 @@ export const wikiosEditingRouter = createTRPCRouter({
   /**
    * Restore an Archived Article
    */
-  restoreArticle: protectedProcedure
+  restoreArticle: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),

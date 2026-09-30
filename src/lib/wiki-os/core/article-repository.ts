@@ -171,19 +171,9 @@ export class ArticleRepository {
           where: {
             OR: [{ id: authorId }, { clerkUserId: authorId }],
           },
-          select: { id: true, wikiUsername: true },
+          select: { id: true },
         });
-        if (user) {
-          resolvedDbUserId = user.id;
-          if (!user.wikiUsername && authorName && authorName !== "Community Contributor") {
-            await tx.user
-              .update({
-                where: { id: user.id },
-                data: { wikiUsername: authorName, lastWikiSync: new Date() },
-              })
-              .catch(() => null);
-          }
-        }
+        if (user) resolvedDbUserId = user.id;
       }
 
       // 1. Upsert WikiArticle
