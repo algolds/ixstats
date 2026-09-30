@@ -34,4 +34,6 @@ export interface FacetTabsProps {
   /** Extra classes merged onto the moving active indicator (e.g. to match the
    * container's corner radius at the edge tabs). twMerge lets this override defaults. */
   indicatorClassName?: string;
+  /** Accessible name for the tablist. */
+  "aria-label"?: string;
 }

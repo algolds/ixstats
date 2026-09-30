@@ -55,6 +55,7 @@ interface FacetTabTriggerProps {
   tone: string;
   handlers: ReturnType<typeof useSliderPhysics>["handlers"];
   handleTabClick: (tabId: string, e: React.MouseEvent) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
 }
 
 function FacetTabTrigger({
@@ -66,12 +67,20 @@ function FacetTabTrigger({
   tone,
   handlers,
   handleTabClick,
+  onKeyDown,
 }: FacetTabTriggerProps) {
   const Icon = tab.icon;
 
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={isActive}
+      tabIndex={isActive ? 0 : -1}
       data-tab-id={tab.id}
+      data-cuelume-press="page"
+      data-cuelume-hover="tick"
+      onKeyDown={onKeyDown}
       onClick={(e) => handleTabClick(tab.id, e)}
       onPointerDown={handlers.onPointerDown}
       onPointerMove={handlers.onPointerMove}
@@ -80,17 +89,12 @@ function FacetTabTrigger({
       className={cn(
         "relative z-20 flex cursor-pointer items-center justify-center whitespace-nowrap transition-colors duration-150 outline-none select-none",
         tab.className ?? "flex-1",
-        "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
+        "focus-visible:ring-ring focus-visible:ring-2",
         metrics.item,
         isActive
           ? cn(
               "font-semibold",
-              tab.activeTextClassName ||
-                (tone === "neutral"
-                  ? "text-slate-950 dark:text-white"
-                  : tone === "accent"
-                    ? "text-foreground"
-                    : "text-foreground")
+              tab.activeTextClassName || "text-foreground"
             )
           : "text-muted-foreground hover:text-foreground opacity-80 hover:opacity-100"
       )}
@@ -106,15 +110,15 @@ function FacetTabTrigger({
             isActive
               ? tab.activeIconClassName ||
                   (tone === "neutral"
-                    ? "text-slate-950 dark:text-white"
+                    ? "text-foreground"
                     : tone === "accent"
-                      ? "text-indigo-500 dark:text-indigo-400"
+                      ? "text-indigo-500"
                       : tone === "mycountry"
-                        ? "text-amber-500 dark:text-amber-400"
+                        ? "text-(--facet-mycountry)"
                         : tone === "forum"
-                          ? "text-orange-500 dark:text-orange-400"
-                          : "text-red-500 dark:text-red-400")
-              : "text-slate-400 dark:text-slate-500"
+                          ? "text-orange-500"
+                          : "text-red-500")
+              : "text-muted-foreground"
           )}
         >
           <Icon className="h-full w-full" />
@@ -134,9 +138,7 @@ function FacetTabTrigger({
         <span
           className={cn(
             "ml-1.5 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-xs leading-none font-bold",
-            isActive
-              ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
-              : "bg-black/10 text-slate-600 dark:bg-white/10 dark:text-slate-400"
+            isActive ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
           )}
         >
           {tab.badge}
@@ -157,6 +159,7 @@ export function FacetTabs({
   showTexture: _showTexture,
   className,
   indicatorClassName,
+  "aria-label": ariaLabel,
 }: FacetTabsProps) {
   const metrics = sizeClasses[size];
   const { bounds, containerRef } = useTabBounds(tabs);
@@ -261,15 +264,36 @@ export function FacetTabs({
     }
   };
 
+  // Roving focus (WAI-ARIA tabs): arrows move between tabs and activate them.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    const ids = tabs.map((t) => t.id);
+    const current = ids.indexOf(activeTab);
+    let next: number | null = null;
+    if (e.key === "ArrowRight") next = (current + 1) % ids.length;
+    else if (e.key === "ArrowLeft") next = (current - 1 + ids.length) % ids.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = ids.length - 1;
+    if (next === null) return;
+    e.preventDefault();
+    const nextId = ids[next]!;
+    onChange(nextId);
+    const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>("[data-tab-id]");
+    Array.from(buttons ?? [])
+      .find((b) => b.dataset.tabId === nextId)
+      ?.focus();
+  };
+
   const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.12));
   const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.28));
 
   return (
     <div
       ref={containerRef}
+      role="tablist"
+      aria-label={ariaLabel}
       className={cn(
         "group/tabs relative flex items-center overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
-        "border-border/60 bg-secondary/40 dark:bg-muted/30 border",
+        "border-border/60 bg-muted/40 border",
         "shadow-xs",
         metrics.container,
         className
@@ -319,6 +343,7 @@ export function FacetTabs({
           tone={tone}
           handlers={handlers}
           handleTabClick={handleTabClick}
+          onKeyDown={handleKeyDown}
         />
       ))}
     </div>

@@ -31,7 +31,6 @@ type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number
 
 import dynamic from "next/dynamic";
 import { useNotify } from "~/hooks/useNotify";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 const GlassCanvasComposer = dynamic(
   () => import("~/components/thinkpages/GlassCanvasComposer").then((m) => m.GlassCanvasComposer),
@@ -232,10 +231,7 @@ export function UnifiedDashboardSection({
               <FacetTabs
                 tabs={TABS}
                 activeTab={activeTab}
-                onChange={(tabId) => {
-                  soundEffects.press();
-                  setActiveTab(tabId as FeedTab);
-                }}
+                onChange={(tabId) => setActiveTab(tabId as FeedTab)}
                 tone="accent"
                 size="md"
                 className="flex-1"

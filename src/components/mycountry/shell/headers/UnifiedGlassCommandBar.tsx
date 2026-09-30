@@ -19,7 +19,6 @@ import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { assetUrl } from "~/lib/base-path";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { DOMAIN_TILES, DomainTileButton } from "../ExecutiveActionCards";
 import { CooldownTimer } from "../ExecutiveHome";
 import { MYCOUNTRY_PRIMARY_ACTION } from "../status-tone";
@@ -228,8 +227,8 @@ export function UnifiedGlassCommandBar({
             tone="mycountry"
             className="w-max min-w-full"
             activeTab={activeTab}
+            aria-label="MyCountry sections"
             onChange={(id) => {
-              soundEffects.press();
               if (isExecutiveMode) onChangeMode("home");
               onNavigate?.(id);
             }}
@@ -237,12 +236,7 @@ export function UnifiedGlassCommandBar({
               id,
               icon,
               className: "flex-1 min-h-11 sm:min-h-9",
-              label: (
-                <>
-                  {title}
-                  {id === activeTab ? <span className="sr-only"> (current section)</span> : null}
-                </>
-              ),
+              label: title,
               ...(id === "diplomacy" && diplomacyInboxCount > 0
                 ? { badge: diplomacyInboxCount }
                 : {}),
