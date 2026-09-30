@@ -298,13 +298,29 @@ function createParser(state: ReaderState): SaxesParser {
   return parser;
 }
 
+/** A web `ReadableStream` (an uploaded `File.stream()`, a `fetch` body) as an async iterable. */
+export async function* chunksOfStream(
+  stream: ReadableStream<Uint8Array>
+): AsyncGenerator<Uint8Array> {
+  const reader = stream.getReader();
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      yield value;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 /**
  * Read an export dump. `stream` yields the file in pieces (strings, or UTF-8 bytes: a character
  * split across two chunks is reassembled). Throws on malformed XML or a document that is not a
  * MediaWiki export; pages yielded before the failure were complete.
  */
 export async function* readExport(
-  stream: AsyncIterable<string | Buffer>
+  stream: AsyncIterable<string | Uint8Array>
 ): AsyncGenerator<ImportEvent> {
   const state: ReaderState = {
     path: [],

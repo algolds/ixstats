@@ -3,6 +3,7 @@
  */
 
 export * from "./export-writer";
+export * from "./exporter";
 export * from "./import-reader";
 export * from "./importer";
 export * from "./revision-plan";

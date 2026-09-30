@@ -75,6 +75,7 @@ const seedArticle = (overrides: Partial<ArticleRow> = {}): ArticleRow => {
     redirectTargetSlug: null,
     redirectTargetFragment: null,
     protectionLevel: "ALL",
+    updatedAt: new Date("2025-01-01T00:00:00Z"),
     ...overrides,
   };
   store.articles.push(row);

@@ -25,6 +25,7 @@ export interface ArticleRow {
   redirectTargetSlug: string | null;
   redirectTargetFragment: string | null;
   protectionLevel: string;
+  updatedAt: Date;
 }
 
 export interface RevisionRow {
@@ -82,7 +83,43 @@ function matchesValue(actual: unknown, expected: unknown): boolean {
 }
 
 const matches = (row: Row, where: Where): boolean =>
-  Object.entries(where).every(([key, expected]) => matchesValue(row[key], expected));
+  Object.entries(where).every(([key, expected]) =>
+    key === "OR"
+      ? (expected as Where[]).some((alternative) => matches(row, alternative))
+      : matchesValue(row[key], expected)
+  );
+
+interface Query {
+  where?: Where;
+  orderBy?: Record<string, "asc" | "desc"> | Array<Record<string, "asc" | "desc">>;
+  take?: number;
+  skip?: number;
+  cursor?: { id: string };
+  select?: Record<string, boolean>;
+}
+
+const comparable = (value: unknown): number | string =>
+  value instanceof Date ? value.getTime() : (value as number | string);
+
+/** where + orderBy + cursor/skip/take over `rows`, like Prisma's findMany. */
+function runQuery<T extends Row>(rows: T[], query: Query): T[] {
+  const orderings = [query.orderBy ?? []].flat().flatMap((order) => Object.entries(order));
+  let found = rows.filter((row) => matches(row, query.where ?? {}));
+  found = [...found].sort((a, b) => {
+    for (const [key, direction] of orderings) {
+      const left = comparable(a[key]);
+      const right = comparable(b[key]);
+      if (left !== right) return (left < right ? -1 : 1) * (direction === "asc" ? 1 : -1);
+    }
+    return 0;
+  });
+  if (query.cursor) {
+    const at = found.findIndex((row) => row.id === query.cursor?.id);
+    found = found.slice(at === -1 ? 0 : at);
+  }
+  found = found.slice(query.skip ?? 0);
+  return query.take === undefined ? found : found.slice(0, query.take);
+}
 
 function pick<T extends Row>(row: T, select?: Record<string, boolean>): Partial<T> {
   if (!select) return { ...row };
@@ -110,6 +147,12 @@ const articleDelegate = {
     const { source, title } = where.source_title;
     const row = store.articles.find((a) => a.source === source && a.title === title);
     return row ? pick(row, select) : null;
+  },
+  findMany: async (query: Query) =>
+    runQuery(store.articles as unknown as Row[], query).map((row) => pick(row, query.select)),
+  findFirst: async (query: Query) => {
+    const [row] = runQuery(store.articles as unknown as Row[], query);
+    return row ? pick(row, query.select) : null;
   },
   create: async ({
     data,
@@ -139,6 +182,7 @@ const articleDelegate = {
       redirectTargetSlug: null,
       redirectTargetFragment: null,
       protectionLevel: "ALL",
+      updatedAt: new Date(),
       ...Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)),
     };
     if (store.articles.some((a) => a.source === row.source && a.title === row.title)) {
@@ -157,10 +201,12 @@ const articleDelegate = {
 };
 
 const revisionDelegate = {
-  findMany: async ({ where, select }: { where: Where; select?: Record<string, boolean> }) =>
-    store.revisions
-      .filter((row) => matches(row as unknown as Row, where))
-      .map((row) => pick(row, select)),
+  findMany: async (query: Query) =>
+    runQuery(store.revisions as unknown as Row[], query).map((row) => pick(row, query.select)),
+  findFirst: async (query: Query) => {
+    const [row] = runQuery(store.revisions as unknown as Row[], query);
+    return row ? pick(row, query.select) : null;
+  },
   createMany: async ({ data }: { data: Array<Partial<RevisionRow>> }) => {
     store.writes += 1;
     for (const item of data) {
