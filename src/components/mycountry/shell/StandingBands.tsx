@@ -37,14 +37,74 @@ export interface StandingBandsProps {
   countryId: string;
 }
 
+/** CivCap state as served by `policies.getPolicyReconContext` (lib/government/civcap.ts). */
+export interface CivCapBandInput {
+  capacity: number;
+  used: number;
+  available: number;
+  overCapacity: boolean;
+  breakdown?: {
+    governmentStaff: number;
+    recon: number;
+    policies: number;
+    directives: number;
+    delegatedIssues: number;
+  };
+}
+
+/** The CivCap band: real CivCap used/capacity, with the weekly directive slots in the tooltip. */
+export function describeCivCapBand(
+  civCap: CivCapBandInput | null | undefined,
+  slots: { used: number; cap: number } | null | undefined
+): { value: string; title: string } {
+  const slotLine = slots
+    ? `Directives this week: ${slots.used}/${slots.cap} slots used.`
+    : "Directive slots unavailable.";
+  if (!civCap || !Number.isFinite(civCap.capacity) || !Number.isFinite(civCap.used)) {
+    return { value: "—", title: `Civil Service Capacity unavailable. ${slotLine}` };
+  }
+  const b = civCap.breakdown;
+  const breakdown = b
+    ? ` Staff ${b.governmentStaff}, policies ${b.policies}, directives ${b.directives}, recon ${b.recon}, delegated issues ${b.delegatedIssues}.`
+    : "";
+  const status = civCap.overCapacity ? " Over capacity." : "";
+  return {
+    value: `${Math.round(civCap.used)}/${Math.round(civCap.capacity)}`,
+    title:
+      `CivCap: ${Math.round(civCap.used)} used of ${Math.round(civCap.capacity)} ` +
+      `(${Math.round(civCap.available)} available).${status}${breakdown} ${slotLine}`,
+  };
+}
+
+type RingKey =
+  | "economicVitality"
+  | "populationWellbeing"
+  | "diplomaticStanding"
+  | "governmentalEfficiency";
+const RING_KEYS: Record<string, RingKey> = {
+  economic: "economicVitality",
+  population: "populationWellbeing",
+  diplomatic: "diplomaticStanding",
+  government: "governmentalEfficiency",
+};
+
+function finiteScore(raw: unknown): number | null {
+  return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
+}
+
 /** National Standing rail card — population/GDP telemetry + governance strip + 4 vitality rings. */
 function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.Element {
-  const { country } = useCountryData();
+  const { country, activityRingsData } = useCountryData();
   const [showExactPop, setShowExactPop] = useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
 
-  // Live Intent Capacity Query for CivCap throughput
+  // Weekly directive slots (shown in the CivCap tooltip)
   const intentStatus = api.intent.getStatus.useQuery(
+    { countryId },
+    { enabled: !!countryId, refetchInterval: 20_000 }
+  );
+  // Civil Service Capacity: the shared used/available sum (lib/government/civcap.ts)
+  const civCapQuery = api.policies.getPolicyReconContext.useQuery(
     { countryId },
     { enabled: !!countryId, refetchInterval: 20_000 }
   );
@@ -61,23 +121,46 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
   }, [country?.stabilityMetrics?.stabilityScore]);
 
-  // 3. Live Statecraft Civil Capacity Throughput
-  const usedSlots = intentStatus.data?.usedThisWeek ?? 0;
-  const slotCap = intentStatus.data?.cap ?? 3;
-  const capacityPct = useMemo(() => {
-    return Math.round(Math.max(10, Math.min(100, ((slotCap - usedSlots) / slotCap) * 100)));
-  }, [usedSlots, slotCap]);
+  // 3. Civil Service Capacity used/capacity; directive slots go in the tooltip
+  const civCapBand = useMemo(
+    () =>
+      describeCivCapBand(
+        civCapQuery.data,
+        intentStatus.data
+          ? { used: intentStatus.data.usedThisWeek, cap: intentStatus.data.cap }
+          : null
+      ),
+    [civCapQuery.data, intentStatus.data]
+  );
+
+  // Server-computed vitality (countries.getActivityRingsData); a null score has no data yet
+  const ringScores = useMemo(() => {
+    const src = (activityRingsData ?? null) as Partial<Record<RingKey, unknown>> | null;
+    return {
+      economicVitality: finiteScore(src?.economicVitality),
+      populationWellbeing: finiteScore(src?.populationWellbeing),
+      diplomaticStanding: finiteScore(src?.diplomaticStanding),
+      governmentalEfficiency: finiteScore(src?.governmentalEfficiency),
+    };
+  }, [activityRingsData]);
 
   const rings = useMemo<VitalityRing[]>(() => {
-    if (!country) return [];
-    return createVitalityRingsFromCountry(country);
-  }, [country]);
+    if (!country || !activityRingsData) return [];
+    return createVitalityRingsFromCountry(ringScores);
+  }, [country, activityRingsData, ringScores]);
+
+  const knownRings = useMemo(
+    () => rings.filter((r) => ringScores[RING_KEYS[r.id]!] !== null),
+    [rings, ringScores]
+  );
 
   const compositeScore = useMemo(() => {
-    return rings.length > 0
-      ? Math.round(rings.reduce((sum: number, r: VitalityRing) => sum + r.value, 0) / rings.length)
+    return knownRings.length > 0
+      ? Math.round(
+          knownRings.reduce((sum: number, r: VitalityRing) => sum + r.value, 0) / knownRings.length
+        )
       : 0;
-  }, [rings]);
+  }, [knownRings]);
 
   const ratingLabelText = useMemo(() => getRatingLabel(compositeScore), [compositeScore]);
 
@@ -166,10 +249,14 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
               title="Click for full Vitality Breakdown"
             >
               <Activity className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
-              <span className="font-semibold">{ratingLabelText}</span>
-              <span className="text-muted-foreground font-mono text-xs">
-                ({compositeScore})
+              <span className="font-semibold">
+                {knownRings.length > 0 ? ratingLabelText : "—"}
               </span>
+              {knownRings.length > 0 && (
+                <span className="text-muted-foreground font-mono text-xs">
+                  ({compositeScore})
+                </span>
+              )}
             </motion.button>
           </div>
 
@@ -234,15 +321,20 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
                 <div
                   className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs"
-                  title={`${usedSlots} of ${slotCap} weekly Directive slots utilized (${capacityPct}% throughput remaining)`}
+                  title={civCapBand.title}
+                  data-testid="civcap-band"
                 >
                   <Zap className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                   <div className="flex min-w-0 flex-col">
                     <span className="text-muted-foreground/70 text-xs leading-none font-bold tracking-wider uppercase">
-                      Directives
+                      CivCap
                     </span>
-                    <span className="text-foreground truncate font-mono text-xs leading-tight font-bold tabular-nums">
-                      {usedSlots}/{slotCap}
+                    <span
+                      className={`truncate font-mono text-xs leading-tight font-bold tabular-nums ${
+                        civCapQuery.data?.overCapacity ? "text-rose-500" : "text-foreground"
+                      }`}
+                    >
+                      {civCapBand.value}
                     </span>
                   </div>
                 </div>
@@ -252,33 +344,50 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
           {/* 4 Vitality Rings Grid */}
           <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-            {rings.map((ring) => (
-              <motion.button
-                key={ring.id}
-                type="button"
-                whileHover={{
-                  scale: 1.02,
-                  transition: { type: "spring", stiffness: 400, damping: 25 },
-                }}
-                whileTap={{ scale: 0.96 }}
-                onClick={handleOpenBreakdown}
-                className="group/ring border-border/50 bg-card/40 hover:border-border/80 hover:bg-card/70 flex cursor-pointer items-center gap-2 rounded-xl border p-2 text-left backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]"
-              >
-                <HealthRing value={ring.value} size={34} color={ring.color} label={ring.label} />
-                <div className="min-w-0 flex-1">
-                  <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-xs font-bold tracking-wider uppercase transition-colors">
-                    {ring.label}
-                  </span>
-                  <span
-                    className="text-foreground text-xs font-bold tabular-nums"
-                    style={{ color: ring.color }}
-                  >
-                    {ring.value}
-                    <span className="text-muted-foreground/60 text-xs font-normal">/100</span>
-                  </span>
-                </div>
-              </motion.button>
-            ))}
+            {rings.map((ring) => {
+              const known = ringScores[RING_KEYS[ring.id]!] !== null;
+              return (
+                <motion.button
+                  key={ring.id}
+                  type="button"
+                  whileHover={{
+                    scale: 1.02,
+                    transition: { type: "spring", stiffness: 400, damping: 25 },
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={handleOpenBreakdown}
+                  className="group/ring border-border/50 bg-card/40 hover:border-border/80 hover:bg-card/70 flex cursor-pointer items-center gap-2 rounded-xl border p-2 text-left backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]"
+                >
+                  <HealthRing
+                    value={known ? ring.value : 0}
+                    size={34}
+                    color={known ? ring.color : "#94a3b8"}
+                    label={ring.label}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-xs font-bold tracking-wider uppercase transition-colors">
+                      {ring.label}
+                    </span>
+                    {known ? (
+                      <span
+                        className="text-foreground text-xs font-bold tabular-nums"
+                        style={{ color: ring.color }}
+                      >
+                        {ring.value}
+                        <span className="text-muted-foreground/60 text-xs font-normal">/100</span>
+                      </span>
+                    ) : (
+                      <span
+                        className="text-muted-foreground text-xs font-bold tabular-nums"
+                        title="No data yet"
+                      >
+                        —
+                      </span>
+                    )}
+                  </div>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
       </FacetCard>
@@ -286,7 +395,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       <VitalityBreakdownModal
         isOpen={isBreakdownOpen}
         onClose={() => setIsBreakdownOpen(false)}
-        rings={rings}
+        rings={knownRings}
         countryName={country?.name}
       />
     </>
