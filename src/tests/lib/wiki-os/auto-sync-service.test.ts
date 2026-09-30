@@ -234,3 +234,32 @@ test("skips the bot revision WikiOS exported (article mwLatestRevId matches) (NE
   expect(syncedTitles()).toEqual([]);
   expect(mockWikiArticleUpsert).not.toHaveBeenCalled();
 });
+
+test("stores the canonical title, slug and namespace of a synced page (plan 403)", async () => {
+  rcResponses = [{ changes: [change("user talk:jane_doe", 100, 1)] }];
+
+  await runAutoSyncCycle();
+
+  const args = mockWikiArticleUpsert.mock.calls[0]?.[0];
+  expect(args.where).toEqual({ source_title: { source: "ixwiki", title: "User talk:Jane doe" } });
+  expect(args.create).toMatchObject({
+    title: "User talk:Jane doe",
+    slug: "user_talk:jane_doe",
+    namespace: 3,
+    namespacePrefix: "User talk",
+  });
+  expect(args.update).toMatchObject({
+    slug: "user_talk:jane_doe",
+    namespace: 3,
+    namespacePrefix: "User talk",
+  });
+});
+
+test("skips a change whose title MediaWiki itself would refuse", async () => {
+  rcResponses = [{ changes: [change("a[b", 100, 1)] }];
+
+  await runAutoSyncCycle();
+
+  expect(syncedTitles()).toEqual([]);
+  expect(mockWikiArticleUpsert).not.toHaveBeenCalled();
+});

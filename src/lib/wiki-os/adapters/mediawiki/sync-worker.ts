@@ -8,6 +8,7 @@
 
 import { executeMediaWikiWrite, updateRevisionActor } from "./write-service";
 import { db } from "~/server/db";
+import { canonicalizeTitle } from "../../core/title";
 
 export interface MediaWikiSyncJob {
   slug: string;
@@ -68,11 +69,7 @@ export class MediaWikiExportWorker {
           .updateMany({
             where: {
               source: "ixwiki",
-              OR: [
-                { title: job.title },
-                { title: job.title.replace(/_/g, " ") },
-                { slug: job.slug },
-              ],
+              title: canonicalizeTitle(job.title || job.slug)?.title ?? job.title,
             },
             data: {
               mwLatestRevId: res.revisionId,
