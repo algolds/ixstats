@@ -5,6 +5,7 @@
  * Guarantees sub-3ms reads from pre-compiled contentHtml and sub-10ms writes.
  */
 
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import {
   toArticleSlug,
@@ -20,6 +21,12 @@ import {
 import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
 import { canonicalizeTitle } from "./title";
+import {
+  planRevisionImport,
+  type ExistingRevisionRow,
+  type ImportedRevision,
+  type RevisionPlan,
+} from "../xml/revision-plan";
 import { mwSha1Base36 } from "../xml/sha1";
 
 /** The columns a reader needs from a WikiArticle row. */
@@ -48,6 +55,230 @@ const ARTICLE_SELECT = {
   syncedAt: true,
   updatedAt: true,
 } as const;
+
+/** The article fields an imported head revision writes (computed by the importer from its wikitext). */
+export interface ImportedHead {
+  /** The head revision's timestamp: it only replaces a current head that is older. */
+  createdAt: Date;
+  mwRevId: number | null;
+  wikitext: string;
+  summary: string | null;
+  wordCount: number;
+  readingTime: number;
+  /** Canonical title of the redirect target, or null when the head is not a redirect. */
+  redirectTargetSlug: string | null;
+  redirectTargetFragment: string | null;
+}
+
+export interface ImportPageInput {
+  source: string;
+  /** Canonical title (`canonicalizeTitle`). */
+  title: string;
+  slug: string;
+  namespace: number;
+  namespacePrefix: string | null;
+  mwPageId: number | null;
+  /** Protection from a dump's legacy `<restrictions>`; only ever applied to an unprotected page. */
+  protectionLevel: "SYSOP" | "AUTOCONFIRMED" | null;
+  /** The dump's revisions, oldest first. */
+  revisions: ImportedRevision[];
+  /** The newest dump revision that has text, or null when none does. */
+  head: ImportedHead | null;
+  /** Read and plan, write nothing. */
+  dryRun: boolean;
+}
+
+export interface ImportPageResult {
+  /** The page did not exist (a dry run reports it, a real run created it). */
+  created: boolean;
+  inserted: number;
+  /** Empty placeholder revisions that received their text. */
+  filled: number;
+  /** Revisions the page already had (including twins that only got their rev id). */
+  skipped: number;
+  /** Revisions whose rev id already belongs to another page. */
+  conflicts: number;
+  /** The page's wikitext, redirect and render state now come from the dump's head revision. */
+  headUpdated: boolean;
+}
+
+/** One page is imported atomically; a long history needs far more than Prisma's 5 s default. */
+const IMPORT_TRANSACTION = { maxWait: 10_000, timeout: 300_000 } as const;
+/** Rows per `createMany` and ids per `IN (...)`: well inside PostgreSQL's bind-parameter limit. */
+const IMPORT_BATCH = 500;
+
+type ImportClient = Prisma.TransactionClient;
+type ExistingArticle = { id: string; mwPageId: number | null; protectionLevel: string };
+
+/** Stored rows of the page, plus any row anywhere that carries one of the dump's rev ids. */
+async function loadExistingRows(
+  client: ImportClient,
+  input: ImportPageInput,
+  articleId: string | null
+): Promise<ExistingRevisionRow[]> {
+  const select = { id: true, articleId: true, mwRevId: true, sha1: true, createdAt: true } as const;
+  const revIds = input.revisions.flatMap((r) => (r.mwRevId === null ? [] : [r.mwRevId]));
+  const rows = articleId
+    ? await client.wikiRevision.findMany({ where: { articleId }, select })
+    : [];
+  for (let i = 0; i < revIds.length; i += IMPORT_BATCH) {
+    rows.push(
+      ...(await client.wikiRevision.findMany({
+        where: {
+          source: input.source,
+          mwRevId: { in: revIds.slice(i, i + IMPORT_BATCH) },
+          ...(articleId ? { articleId: { not: articleId } } : {}),
+        },
+        select,
+      }))
+    );
+  }
+  const blank = articleId
+    ? await client.wikiRevision.findMany({
+        where: { articleId, wikitext: "" },
+        select: { id: true },
+      })
+    : [];
+  const blankIds = new Set(blank.map((row) => row.id));
+  return rows.map((row) => ({ ...row, isPlaceholder: blankIds.has(row.id) }));
+}
+
+/** The article columns that change when the dump's head revision becomes the page's head. */
+function headColumns(input: ImportPageInput, head: ImportedHead) {
+  return {
+    wikitext: head.wikitext,
+    // The reader prefers cached HTML, so a changed head must clear it (see syncPageOrThrow).
+    contentHtml: "",
+    htmlSyncedAt: null,
+    summary: head.summary,
+    wordCount: head.wordCount,
+    readingTime: head.readingTime,
+    mwLatestRevId: head.mwRevId,
+    redirectTargetSlug: head.redirectTargetSlug,
+    redirectTargetFragment: head.redirectTargetFragment,
+    namespace: input.namespace,
+    namespacePrefix: input.namespacePrefix,
+  };
+}
+
+async function insertRevisions(
+  client: ImportClient,
+  articleId: string,
+  source: string,
+  revisions: ImportedRevision[]
+): Promise<void> {
+  for (let i = 0; i < revisions.length; i += IMPORT_BATCH) {
+    await client.wikiRevision.createMany({
+      data: revisions.slice(i, i + IMPORT_BATCH).map((revision) => ({
+        articleId,
+        source,
+        mwRevId: revision.mwRevId,
+        author: revision.author,
+        authorId: revision.authorId,
+        summary: revision.summary,
+        minor: revision.minor,
+        byteSize: revision.byteSize,
+        byteDelta: revision.byteDelta,
+        sha1: revision.sha1,
+        createdAt: revision.createdAt,
+        wikitext: revision.wikitext ?? "",
+        format: "WIKITEXT",
+      })),
+    });
+  }
+}
+
+/** Apply a plan: the article first (its id is needed), then the revision rows. Returns the id. */
+async function writeImport(
+  client: ImportClient,
+  input: ImportPageInput,
+  article: ExistingArticle | null,
+  plan: RevisionPlan,
+  head: ImportedHead | null
+): Promise<string> {
+  const protection = input.protectionLevel ?? undefined;
+  let articleId: string;
+  if (article) {
+    articleId = article.id;
+    const data = {
+      ...(head ? headColumns(input, head) : {}),
+      ...(article.mwPageId === null && input.mwPageId !== null ? { mwPageId: input.mwPageId } : {}),
+      ...(protection && article.protectionLevel === "ALL" ? { protectionLevel: protection } : {}),
+    };
+    if (Object.keys(data).length > 0) {
+      await client.wikiArticle.update({ where: { id: article.id }, data });
+    }
+  } else {
+    const created = await client.wikiArticle.create({
+      data: {
+        title: input.title,
+        slug: input.slug,
+        source: input.source,
+        status: "PUBLISHED",
+        format: "WIKITEXT",
+        namespace: input.namespace,
+        namespacePrefix: input.namespacePrefix,
+        mwPageId: input.mwPageId,
+        protectionLevel: protection,
+        wikitext: "",
+        ...(head ? headColumns(input, head) : {}),
+      },
+      select: { id: true },
+    });
+    articleId = created.id;
+  }
+
+  await insertRevisions(client, articleId, input.source, plan.inserts);
+  for (const { rowId, revision } of plan.fills) {
+    await client.wikiRevision.update({
+      where: { id: rowId },
+      data: { wikitext: revision.wikitext ?? "", sha1: revision.sha1, byteSize: revision.byteSize },
+    });
+  }
+  for (const { rowId, mwRevId } of plan.stamps) {
+    await client.wikiRevision.update({ where: { id: rowId }, data: { mwRevId } });
+  }
+  return articleId;
+}
+
+/** Read, plan and (unless a dry run) write one page's import; `articleId` is null for a dry run of a new page. */
+async function importInto(
+  client: ImportClient,
+  input: ImportPageInput
+): Promise<{ result: ImportPageResult; articleId: string | null; head: ImportedHead | null }> {
+  const article = await client.wikiArticle.findUnique({
+    where: { source_title: { source: input.source, title: input.title } },
+    select: { id: true, mwPageId: true, protectionLevel: true },
+  });
+  const existing = await loadExistingRows(client, input, article?.id ?? null);
+  const plan = planRevisionImport(article?.id ?? null, existing, input.revisions);
+
+  // The dump's head replaces the page's head only when it is newer than every revision stored.
+  const previousHeadAt = existing
+    .filter((row) => row.articleId === article?.id)
+    .reduce<Date | null>(
+      (latest, row) => (!latest || row.createdAt > latest ? row.createdAt : latest),
+      null
+    );
+  const head =
+    input.head && (!previousHeadAt || input.head.createdAt > previousHeadAt) ? input.head : null;
+
+  const articleId = input.dryRun
+    ? (article?.id ?? null)
+    : await writeImport(client, input, article, plan, head);
+  return {
+    articleId,
+    head,
+    result: {
+      created: article === null,
+      inserted: plan.inserts.length,
+      filled: plan.fills.length,
+      skipped: plan.skipped,
+      conflicts: plan.conflicts,
+      headUpdated: head !== null,
+    },
+  };
+}
 
 export class ArticleRepository {
   static async getArticleBySlug(
@@ -316,6 +547,31 @@ export class ArticleRepository {
       revisionId: toRevisionId(result.revision.id),
       extractedLinksCount: linksCount,
     };
+  }
+
+  /**
+   * Import one page's revisions from an XML dump, atomically (one transaction per page).
+   *
+   * Creates the page if it is new, adds the revisions it does not hold (authored as the dump says,
+   * never as the importer), fills empty placeholder revisions with their text, and, when the dump's
+   * head revision is newer than every revision stored, makes it the page's head (wikitext,
+   * redirect, render state). An older dump never replaces a newer head, and importing the same
+   * dump twice changes nothing. With `dryRun` it reads and plans but writes nothing.
+   */
+  static async importPageRevisions(input: ImportPageInput): Promise<ImportPageResult> {
+    const { result, articleId, head } = input.dryRun
+      ? await importInto(db, input)
+      : await db.$transaction((tx) => importInto(tx, input), IMPORT_TRANSACTION);
+
+    // Link graph outside the transaction, best effort, exactly as saveArticle does it.
+    if (!input.dryRun && head && articleId) {
+      try {
+        await LinkGraphService.syncArticleLinks(articleId, head.wikitext, "", input.source);
+      } catch (linkErr) {
+        console.warn("[ArticleRepository] Best-effort link graph sync failed:", linkErr);
+      }
+    }
+    return result;
   }
 
   /**
