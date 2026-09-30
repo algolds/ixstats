@@ -26,31 +26,15 @@ function absoluteCss(css: string, origin: string): string {
   return css.replace(CSS_URL_REGEX, (_match, path: string) => `url("${origin}${path}")`);
 }
 
-/**
- * Rewrite relative image/asset URLs in editor HTML to absolute MediaWiki URLs, on the DOM (string
- * surgery on HTML can be made to end inside an attribute value and publish the rest of it as live
- * markup). Preserves all data-mw and Parsoid metadata attributes. Outside a browser the HTML comes
- * back unchanged.
- */
-export function fixEditorImageUrls(html: string, source: WikiSource = "ixwiki"): string {
-  if (!html) return "";
+/** True when `html` could hold a relative MediaWiki asset path or an image: anything else needs no parse. */
+function mayNeedFixing(html: string): boolean {
+  return ["/images/", "/data/", "/load.php", "Special:FilePath", "<img"].some((sign) =>
+    html.includes(sign)
+  );
+}
 
-  // Fast-path bailout: if no relative MediaWiki asset patterns exist, return unmodified
-  if (
-    !html.includes("/images/") &&
-    !html.includes("/data/") &&
-    !html.includes("/load.php") &&
-    !html.includes("Special:FilePath") &&
-    !html.includes("<img")
-  ) {
-    return html;
-  }
-
-  const parsed = parseInert(html);
-  if (!parsed) return html;
-  const { template, content } = parsed;
-  const origin = getWikiBaseUrl(source);
-
+/** Rewrite the relative asset references of `content` in place. */
+function absolutizeAssets(content: DocumentFragment, origin: string): void {
   // 1. src attributes — images, thumbnails, data files
   for (const el of Array.from(content.querySelectorAll("[src]"))) {
     const src = el.getAttribute("src") ?? "";
@@ -80,6 +64,21 @@ export function fixEditorImageUrls(html: string, source: WikiSource = "ixwiki"):
   for (const img of Array.from(content.querySelectorAll("img:not([referrerpolicy])"))) {
     img.setAttribute("referrerpolicy", "no-referrer");
   }
+}
 
-  return template.innerHTML;
+/**
+ * Rewrite relative image/asset URLs in editor HTML to absolute MediaWiki URLs, on the DOM (string
+ * surgery on HTML can be made to end inside an attribute value and publish the rest of it as live
+ * markup). Preserves all data-mw and Parsoid metadata attributes. Outside a browser the HTML comes
+ * back unchanged.
+ */
+export function fixEditorImageUrls(html: string, source: WikiSource = "ixwiki"): string {
+  if (!html) return "";
+  if (!mayNeedFixing(html)) return html;
+
+  const parsed = parseInert(html);
+  if (!parsed) return html;
+
+  absolutizeAssets(parsed.content, getWikiBaseUrl(source));
+  return parsed.template.innerHTML;
 }
