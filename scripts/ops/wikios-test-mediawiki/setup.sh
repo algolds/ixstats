@@ -72,8 +72,8 @@ if [ ! -f "$ENV_FILE" ]; then
     unset bot_password
 fi
 
-# shellcheck disable=SC1090
 set -a
+# shellcheck source=/dev/null
 source "$ENV_FILE"
 set +a
 

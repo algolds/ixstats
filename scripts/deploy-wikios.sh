@@ -12,13 +12,21 @@
 # - $WIKIOS_DIR/ecosystem.wikios.config.cjs exists (copy of
 #   deploy/wikios/ecosystem.wikios.config.cjs.example) and $WIKIOS_DIR/.env.production.local holds
 #   the runtime environment. Both are preserved across deploys.
+# - $WIKIOS_DIR/.env.wikios-build holds the BUILD-time variables of the standalone build, at least
+#   NEXT_PUBLIC_IXSTATES_URL=<the IxStates URL that works on the server> (there is deliberately no
+#   default). This file is sourced here only. NEXT_PUBLIC_WIKIOS_STANDALONE must never appear in
+#   .env.production(.local): deploy-production.sh exports those files into the IxStates build, which
+#   would turn IxStates into a redirect loop. This script refuses to run if it finds it there.
 #
 # Behaviour:
-# - Builds the WikiOS-flavoured Next.js standalone bundle WITHOUT clobbering the IxStats
-#   production `.next` (the IxStats prod server runs `next start` from it). The existing `.next`
-#   is saved aside before the build and restored afterwards.
+# - Builds the WikiOS-flavoured Next.js standalone bundle in the IxStats checkout. The IxStats
+#   production server runs `next start` from `.next`, so the existing `.next` is saved aside before
+#   the build and restored afterwards (same as deploy-ixworld.sh): IxStates is degraded for the
+#   length of the build, routes it has not served yet fail and its static chunks 404. Run off-peak.
 # - flock-based lock so a crashed deploy never wedges future deploys. The IxWorld deploy lock is
-#   taken too, because both scripts move the same IxStats `.next` aside.
+#   taken too, because both scripts move the same IxStats `.next` aside. deploy-production.sh has
+#   no lock, so this script refuses to start while it is running (and it must not be started while
+#   this script runs).
 # - Snapshot of the current release (hardlinks) before swap, with automatic rollback
 #   if the post-deploy health check fails.
 # - Graceful `pm2 startOrReload` instead of delete/start.
@@ -35,6 +43,7 @@ LOCK_FILE="/tmp/deploy-wikios.lock"
 IXWORLD_LOCK_FILE="/tmp/deploy-ixworld.lock"
 PM2_APP_NAME="wikios"
 ECOSYSTEM_FILE="ecosystem.wikios.config.cjs"
+BUILD_ENV_FILE="$WIKIOS_DIR/.env.wikios-build"
 HEALTH_URL="http://127.0.0.1:3560/wiki/Main_Page"
 HEALTH_RETRIES=20
 HEALTH_INTERVAL=3
@@ -67,6 +76,12 @@ fi
 
 log "=== Starting WikiOS Deployment ==="
 
+# deploy-production.sh has no lock and rebuilds/cleans the same .next this script moves aside.
+if pgrep -f 'scripts/deploy-production.sh' > /dev/null 2>&1; then
+    log "ERROR: deploy-production.sh is running. Wait for it to finish; the two must not overlap."
+    exit 1
+fi
+
 # --- Restore the saved IxStats .next if a previous run died mid-deploy ---
 restore_next() {
     if [ -d "$SAVED_NEXT" ]; then
@@ -94,6 +109,32 @@ if [ ! -f "$WIKIOS_DIR/$ECOSYSTEM_FILE" ]; then
     log "ERROR: $WIKIOS_DIR/$ECOSYSTEM_FILE not found. Copy deploy/wikios/ecosystem.wikios.config.cjs.example there first."
     exit 1
 fi
+
+# Build-time variables of the standalone build (NEXT_PUBLIC_* are inlined by `next build`).
+if [ ! -f "$BUILD_ENV_FILE" ]; then
+    log "ERROR: $BUILD_ENV_FILE not found. Create it with NEXT_PUBLIC_IXSTATES_URL=<working IxStates URL>."
+    exit 1
+fi
+set -a
+# shellcheck source=/dev/null
+. "$BUILD_ENV_FILE"
+set +a
+case "${NEXT_PUBLIC_IXSTATES_URL:-}" in
+    http://*|https://*) ;;
+    *)
+        log "ERROR: NEXT_PUBLIC_IXSTATES_URL in $BUILD_ENV_FILE must be an http(s) URL (there is no default)."
+        exit 1
+        ;;
+esac
+
+# The flag turns the whole process into WikiOS; in a file that deploy-production.sh exports it would
+# turn the IxStates build into WikiOS too.
+for env_file in "$IXSTATS_DIR/.env" "$IXSTATS_DIR/.env.local" "$IXSTATS_DIR/.env.production" "$IXSTATS_DIR/.env.production.local"; do
+    if [ -f "$env_file" ] && grep -qE '^[[:space:]]*(export[[:space:]]+)?NEXT_PUBLIC_WIKIOS_STANDALONE[[:space:]]*=' "$env_file"; then
+        log "ERROR: $env_file sets NEXT_PUBLIC_WIKIOS_STANDALONE. Remove that line: it belongs to this script only."
+        exit 1
+    fi
+done
 
 cd "$IXSTATS_DIR"
 
@@ -156,12 +197,21 @@ fi
 log "[3/4] Deploying to $WIKIOS_DIR..."
 mkdir -p "$WIKIOS_DIR"
 
-# Hardlink snapshot of the current release (instant, space-efficient). rsync replaces
-# files via temp+rename so the snapshot's inodes are preserved for rollback.
-if [ -d "$WIKIOS_DIR" ] && [ -n "$(ls -A "$WIKIOS_DIR" 2>/dev/null)" ]; then
+# A previous release exists only if a standalone server.js was deployed before. On the first
+# deploy $WIKIOS_DIR holds just the operator-installed ecosystem and env files, and "rolling back"
+# to a snapshot of that would wipe the new release and leave pm2 with nothing to run.
+had_previous_release=false
+if [ -f "$WIKIOS_DIR/server.js" ]; then
+    had_previous_release=true
+fi
+rm -rf "$PREV_RELEASE"
+if [ "$had_previous_release" = "true" ]; then
+    # Hardlink snapshot of the current release (instant, space-efficient). rsync replaces
+    # files via temp+rename so the snapshot's inodes are preserved for rollback.
     log "Snapshotting current release -> $PREV_RELEASE"
-    rm -rf "$PREV_RELEASE"
     cp -al "$WIKIOS_DIR" "$PREV_RELEASE" 2>/dev/null || cp -a "$WIKIOS_DIR" "$PREV_RELEASE"
+else
+    log "First deploy: no previous release to snapshot."
 fi
 
 # Sync standalone output. Note: standalone server.js expects static under .next/static
@@ -192,7 +242,7 @@ fi
 
 # Step 3: Graceful PM2 reload (starts if absent, reloads if present)
 log "[4/4] Reloading PM2 processes..."
-pm2 startOrReload "$WIKIOS_DIR/$ECOSYSTEM_FILE" --silent
+pm2 startOrReload "$WIKIOS_DIR/$ECOSYSTEM_FILE" --update-env --silent
 pm2 save --silent &>/dev/null
 
 # Step 4: Health check with automatic rollback
@@ -212,14 +262,16 @@ done
 
 if [ "$healthy" != "true" ]; then
     log "ERROR: Health check failed after $HEALTH_RETRIES attempts."
-    if [ -d "$PREV_RELEASE" ]; then
+    if [ "$had_previous_release" = "true" ] && [ -d "$PREV_RELEASE" ]; then
         log "Rolling back to previous release..."
         rsync -ah --delete "$PREV_RELEASE/" "$WIKIOS_DIR/"
-        pm2 startOrReload "$WIKIOS_DIR/$ECOSYSTEM_FILE" --silent
+        pm2 startOrReload "$WIKIOS_DIR/$ECOSYSTEM_FILE" --update-env --silent
         pm2 save --silent &>/dev/null
         log "Rollback complete."
     else
-        log "No previous release snapshot available for rollback."
+        log "This was the first deploy, so there is no previous release to roll back to."
+        log "The new release stays in $WIKIOS_DIR for inspection: pm2 logs $PM2_APP_NAME --lines 100"
+        log "Nothing public points at it yet; to remove it: pm2 delete $PM2_APP_NAME && pm2 save"
     fi
     exit 1
 fi
