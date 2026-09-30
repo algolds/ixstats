@@ -19,6 +19,7 @@ import {
 } from "./domain-types";
 import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
+import { canonicalizeTitle } from "./title";
 
 export class ArticleRepository {
   static async getArticleBySlug(
@@ -119,9 +120,10 @@ export class ArticleRepository {
     revisionId: RevisionId;
     extractedLinksCount: number;
   }> {
-    const slug = toArticleSlug(input.slug || input.title);
+    const canon = canonicalizeTitle(input.title || input.slug);
+    if (!canon) throw new Error("Invalid title");
+    const { title, slug } = canon;
     const source = input.source || "ixwiki";
-    const title = input.title || input.slug.replace(/_/g, " ");
     const wikitext = input.wikitext || "";
     const contentHtml = input.contentHtml || "";
 
@@ -161,6 +163,8 @@ export class ArticleRepository {
         create: {
           title,
           slug,
+          namespace: canon.namespaceId,
+          namespacePrefix: canon.namespacePrefix,
           source,
           wikitext,
           contentHtml,
@@ -171,6 +175,9 @@ export class ArticleRepository {
           wordCount: words,
         },
         update: {
+          slug,
+          namespace: canon.namespaceId,
+          namespacePrefix: canon.namespacePrefix,
           wikitext,
           contentHtml,
           summary: input.summary ?? undefined,
