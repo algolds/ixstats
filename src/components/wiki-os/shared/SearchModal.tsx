@@ -140,10 +140,9 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                     {item.title}
                   </span>
                   {item.snippet && (
-                    <span
-                      className="mt-0.5 line-clamp-1 text-xs text-[var(--wikios-text-dim)] [&_.searchmatch]:font-semibold [&_.searchmatch]:text-[var(--wikios-text)]"
-                      dangerouslySetInnerHTML={{ __html: item.snippet }}
-                    />
+                    <span className="mt-0.5 line-clamp-1 text-xs text-[var(--wikios-text-dim)]">
+                      {item.snippet}
+                    </span>
                   )}
                 </button>
               </li>
