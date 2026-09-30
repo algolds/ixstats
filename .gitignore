@@ -244,3 +244,6 @@ scripts/reports/
 data/political-audit/
 scripts/*.json
 scripts/*_report.md
+
+# WikiOS bench / parity / round-trip script output (plan 405)
+.bench-out/

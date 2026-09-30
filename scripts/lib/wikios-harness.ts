@@ -7,7 +7,8 @@
  * working as the application changes.
  */
 
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { JSDOM } from "jsdom";
 import { z } from "zod";
 
@@ -72,10 +73,30 @@ function inHostQueue<T>(host: string, intervalMs: number, task: () => Promise<T>
   return run;
 }
 
-async function timedFetch(url: string, init: RequestInit, timeoutMs: number): Promise<FetchResult> {
+function failedResult(url: string, elapsedMs: number, error: unknown): FetchResult {
+  return {
+    url,
+    status: 0,
+    ttfbMs: elapsedMs,
+    totalMs: elapsedMs,
+    bytes: 0,
+    body: "",
+    headers: {},
+    error: error instanceof Error ? error.message : String(error),
+  };
+}
+
+async function timedFetch(
+  url: string,
+  init: RequestInit,
+  userAgent: string | null,
+  timeoutMs: number
+): Promise<FetchResult> {
   const started = performance.now();
   try {
-    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    const headers = new Headers(init.headers);
+    if (userAgent !== null) headers.set("User-Agent", userAgent);
+    const response = await fetch(url, { ...init, headers, signal: AbortSignal.timeout(timeoutMs) });
     const ttfbMs = performance.now() - started;
     const buffer = await response.arrayBuffer();
     const totalMs = performance.now() - started;
@@ -89,38 +110,34 @@ async function timedFetch(url: string, init: RequestInit, timeoutMs: number): Pr
       headers: Object.fromEntries(response.headers),
     };
   } catch (error) {
-    const elapsed = performance.now() - started;
-    return {
-      url,
-      status: 0,
-      ttfbMs: elapsed,
-      totalMs: elapsed,
-      bytes: 0,
-      body: "",
-      headers: {},
-      error: error instanceof Error ? error.message : String(error),
-    };
+    return failedResult(url, performance.now() - started, error);
   }
 }
 
 /**
  * `fetch` with a per-host queue (>= 1 s between the end of one request and the start of the next to the
  * same host), a 20 s timeout and the allowlisted `IxStats-Builder` User-Agent for ixwiki.com hosts.
- * Never throws: a failed request resolves with `status: 0` and an `error` message.
+ * Never throws: a failed request or an invalid URL resolves with `status: 0` and an `error` message.
  */
-export function throttledFetch(
+export async function throttledFetch(
   url: string,
   init: RequestInit = {},
   options: ThrottleOptions = {}
 ): Promise<FetchResult> {
-  const target = new URL(url);
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch {
+    return failedResult(url, 0, `invalid URL: ${url}`);
+  }
+  if (target.protocol !== "http:" && target.protocol !== "https:") {
+    return failedResult(url, 0, `unsupported URL protocol: ${target.protocol}`);
+  }
   const ixwiki = isIxwikiHost(target.hostname);
   const requested = options.minIntervalMs ?? MIN_INTERVAL_MS;
   const intervalMs = ixwiki ? Math.max(requested, MIN_INTERVAL_MS) : requested;
-  const headers = new Headers(init.headers);
-  if (ixwiki) headers.set("User-Agent", IXWIKI_USER_AGENT);
   return inHostQueue(target.host, intervalMs, () =>
-    timedFetch(url, { ...init, headers }, options.timeoutMs ?? REQUEST_TIMEOUT_MS)
+    timedFetch(url, init, ixwiki ? IXWIKI_USER_AGENT : null, options.timeoutMs ?? REQUEST_TIMEOUT_MS)
   );
 }
 
@@ -178,7 +195,12 @@ function toCanonicalTitle(raw: string): string {
   return collapse(safeDecode(raw).replace(/_/g, " "));
 }
 
-/** The page title a link points at: the `title=` query of `index.php` links, else the last path segment. */
+const WIKI_PATH = /(?:^|\/)wiki\/(.+)$/;
+
+/**
+ * The page title a link points at: the `title=` query of `index.php` links, else everything after
+ * `/wiki/` (so subpages keep their path), else the last path segment.
+ */
 export function canonicalLinkTitle(href: string): string | null {
   if (href.startsWith("#") || /^(?:javascript|mailto|tel|data):/i.test(href)) return null;
   let url: URL;
@@ -188,9 +210,10 @@ export function canonicalLinkTitle(href: string): string | null {
     return null;
   }
   const fromQuery = url.searchParams.get("title");
+  const fromWikiPath = WIKI_PATH.exec(url.pathname)?.[1];
   const segment = url.pathname.split("/").filter(Boolean).pop();
-  const raw = fromQuery ?? segment ?? (url.hostname === "wiki.invalid" ? "" : url.hostname);
-  const title = toCanonicalTitle(raw);
+  const raw = fromQuery ?? fromWikiPath ?? segment ?? (url.hostname === "wiki.invalid" ? "" : url.hostname);
+  const title = toCanonicalTitle(raw.replace(/\/+$/, ""));
   return title === "" ? null : title;
 }
 
@@ -341,6 +364,7 @@ function setJaccard(a: readonly string[], b: readonly string[]): number {
   return total === 0 ? 1 : shared / total;
 }
 
+/** Table-count and infobox agreement, 0..1. */
 function structureScore(a: NormalizedDoc, b: NormalizedDoc): number {
   const tableRatio = a.tables === b.tables ? 1 : Math.min(a.tables, b.tables) / Math.max(a.tables, b.tables);
   const infoboxMatch = a.infobox === b.infobox ? 1 : 0;
@@ -348,32 +372,44 @@ function structureScore(a: NormalizedDoc, b: NormalizedDoc): number {
 }
 
 export interface SimilarityScores {
-  text: number;
-  links: number;
-  images: number;
-  headings: number;
-  structure: number;
+  /** Field scores are 0..100, or null when the field is empty on both sides and so is not compared. */
+  text: number | null;
+  links: number | null;
+  images: number | null;
+  headings: number | null;
+  structure: number | null;
+  /** Weighted mean over the fields that are not null, with the weights re-normalised; 100 when none is. */
   overall: number;
 }
 
 /** Weights of the overall score, in percent. */
 const WEIGHTS = { text: 50, links: 20, images: 15, headings: 10, structure: 5 } as const;
 
-/** Per-field similarity (0..100) and the weighted overall score: text 50, links 20, images 15, headings 10, tables+infobox 5. */
+const emptyBothSides = (a: { length: number }, b: { length: number }): boolean => a.length === 0 && b.length === 0;
+
+/**
+ * Per-field similarity (0..100) and the weighted overall score: text 50, links 20, images 15, headings 10,
+ * tables+infobox 5. A field that is empty on both sides says nothing about fidelity, so it is excluded
+ * (null) and the remaining weights are re-normalised rather than scoring it 100.
+ */
 export function similarity(a: NormalizedDoc, b: NormalizedDoc): SimilarityScores {
-  const text = wordJaccard(a.text, b.text) * 100;
-  const links = setJaccard(a.links, b.links) * 100;
-  const images = setJaccard(a.images, b.images) * 100;
-  const headings = setJaccard(a.headings, b.headings) * 100;
-  const structure = structureScore(a, b) * 100;
-  const overall =
-    (text * WEIGHTS.text +
-      links * WEIGHTS.links +
-      images * WEIGHTS.images +
-      headings * WEIGHTS.headings +
-      structure * WEIGHTS.structure) /
-    100;
-  return { text, links, images, headings, structure, overall };
+  const noStructure = a.tables === 0 && b.tables === 0 && !a.infobox && !b.infobox;
+  const scores = {
+    text: emptyBothSides(a.text, b.text) ? null : wordJaccard(a.text, b.text) * 100,
+    links: emptyBothSides(a.links, b.links) ? null : setJaccard(a.links, b.links) * 100,
+    images: emptyBothSides(a.images, b.images) ? null : setJaccard(a.images, b.images) * 100,
+    headings: emptyBothSides(a.headings, b.headings) ? null : setJaccard(a.headings, b.headings) * 100,
+    structure: noStructure ? null : structureScore(a, b) * 100,
+  };
+  let weighted = 0;
+  let totalWeight = 0;
+  for (const field of Object.keys(WEIGHTS) as Array<keyof typeof WEIGHTS>) {
+    const score = scores[field];
+    if (score === null) continue;
+    weighted += score * WEIGHTS[field];
+    totalWeight += WEIGHTS[field];
+  }
+  return { ...scores, overall: totalWeight === 0 ? 100 : weighted / totalWeight };
 }
 
 /** The first `limit` items of `from` that `other` lacks. */
@@ -409,6 +445,32 @@ export function encodeWikiTitle(title: string): string {
 
 export function stripTrailingSlashes(url: string): string {
   return url.replace(/\/+$/, "");
+}
+
+/** A command-line URL option: must be an absolute http(s) URL. Returns it without trailing slashes. */
+export function parseHttpUrl(value: string | undefined, flag: string): string {
+  if (value === undefined || value === "") throw new Error(`${flag} is required`);
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${flag} must be an absolute http(s) URL, got "${value}"`);
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`${flag} must be an http(s) URL, got "${value}"`);
+  }
+  return stripTrailingSlashes(url.href);
+}
+
+/** Last-resort handler for a script's `main()`: print the message (no stack, no secrets) and exit 1. */
+export function exitWithError(error: Error | string): never {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+}
+
+/** Creates the parent directory of `file` so default outputs under `.bench-out/` can be written. */
+export function ensureParentDir(file: string): void {
+  mkdirSync(dirname(file), { recursive: true });
 }
 
 /** A non-batched tRPC query over HTTP: `GET <base>/api/trpc/<procedure>?input={"json":<input>}` (superjson). */
@@ -504,8 +566,14 @@ function walkLcs(a: readonly string[], b: readonly string[], aOffset: number, bO
   return changes;
 }
 
+export interface LineDiffResult {
+  changes: DiffLine[];
+  /** True when the middle of the diff exceeded the LCS cap and was reported as wholly replaced. */
+  truncated: boolean;
+}
+
 /** The changed lines between two texts, in order: common head and tail trimmed, then a longest-common-subsequence diff. */
-export function lineDiff(input: string, output: string): DiffLine[] {
+export function lineDiff(input: string, output: string): LineDiffResult {
   const a = input.split("\n");
   const b = output.split("\n");
   let head = 0;
@@ -516,9 +584,10 @@ export function lineDiff(input: string, output: string): DiffLine[] {
   }
   const middleA = a.slice(head, a.length - tail);
   const middleB = b.slice(head, b.length - tail);
-  return middleA.length * middleB.length > MAX_LCS_CELLS
-    ? replaceWhole(middleA, middleB, head, head)
-    : walkLcs(middleA, middleB, head, head);
+  if (middleA.length * middleB.length > MAX_LCS_CELLS) {
+    return { changes: replaceWhole(middleA, middleB, head, head), truncated: true };
+  }
+  return { changes: walkLcs(middleA, middleB, head, head), truncated: false };
 }
 
 export const CONSTRUCTS = [

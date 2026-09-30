@@ -9,11 +9,13 @@
  * pages, which is where render fidelity breaks.
  *
  * Usage:
- *   bun scripts/audit/wikios-render-parity.ts --mw-api https://ixwiki.com/api.php --wikios http://localhost:3000 \
- *     [--pages scripts/bench/pages.default.json] [--sample N] [--out parity.json] [--interval-ms 1000]
+ *   bun scripts/audit/wikios-render-parity.ts --mw-api <MediaWiki api.php URL> [--wikios http://localhost:3000] \
+ *     [--pages scripts/bench/pages.default.json] [--sample N] [--out .bench-out/parity.json] [--interval-ms 1000]
  *
- * Requests are throttled (>= 1 s per host, IxStats-Builder User-Agent for ixwiki.com). The exit code is 0
- * unless the arguments are invalid; the caller reads the numbers.
+ * `--mw-api` is required (there is no production default). Requests are throttled (>= 1 s per host,
+ * IxStats-Builder User-Agent for ixwiki.com). The exit code is 0 unless the arguments or the page list are
+ * invalid; the caller reads the numbers. Percentages are given over every requested page (a page that could
+ * not be scored counts as < 70) and over the scored pages only.
  */
 
 import { writeFileSync } from "node:fs";
@@ -21,10 +23,13 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import {
+  ensureParentDir,
+  exitWithError,
   loadPageList,
   mean,
   missingFrom,
   normalizeHtml,
+  parseHttpUrl,
   parseTrpcData,
   samplePages,
   similarity,
@@ -68,7 +73,27 @@ interface TemplateRow {
   allPages: number;
 }
 
+/** Percentages of pages by overall score. */
+interface Shares {
+  atLeast98: number;
+  atLeast90: number;
+  below70: number;
+}
+
+interface Aggregate {
+  requested: number;
+  scored: number;
+  failed: number;
+  /** Mean overall score of the scored pages, null when none was scored. */
+  meanScore: number | null;
+  /** Over every requested page: a page that could not be scored counts as < 70. */
+  overRequested: Shares;
+  scoredOnly: Shares | null;
+  templatesOnLowestPages: TemplateRow[];
+}
+
 const DEFAULT_PAGES = fileURLToPath(new URL("../bench/pages.default.json", import.meta.url));
+const DEFAULT_OUT = ".bench-out/parity.json";
 const DIFF_LIMIT = 5;
 const LOW_SCORE = 90;
 const MIN_LOW_PAGES = 3;
@@ -88,7 +113,7 @@ const articleSchema = z.object({
 });
 
 const USAGE =
-  "Usage: bun scripts/audit/wikios-render-parity.ts --mw-api <api.php url> --wikios <url> [--pages file] [--sample n] [--out file] [--interval-ms n]";
+  "Usage: bun scripts/audit/wikios-render-parity.ts --mw-api <api.php url> [--wikios <url>] [--pages file] [--sample n] [--out file] [--interval-ms n]";
 
 function parseConfig(argv: string[]): Config {
   const { values } = parseArgs({
@@ -108,11 +133,11 @@ function parseConfig(argv: string[]): Config {
     throw new Error("--sample must be >= 1 and --interval-ms >= 0");
   }
   return {
-    mwApi: values["mw-api"] ?? "https://ixwiki.com/api.php",
-    wikios: values.wikios ?? "http://localhost:3000",
+    mwApi: parseHttpUrl(values["mw-api"], "--mw-api"),
+    wikios: parseHttpUrl(values.wikios ?? "http://localhost:3000", "--wikios"),
     pages: values.pages ?? DEFAULT_PAGES,
     sample,
-    out: values.out ?? "parity.json",
+    out: values.out ?? DEFAULT_OUT,
     intervalMs,
   };
 }
@@ -205,8 +230,15 @@ async function scorePage(title: string, config: Config): Promise<PageResult> {
 
 const isScored = (page: PageResult): page is ScoredPage => page.scores !== undefined && page.differences !== undefined;
 
-const percentAtLeast = (scored: ScoredPage[], threshold: number): number =>
-  (scored.filter((page) => page.scores.overall >= threshold).length / scored.length) * 100;
+const percentOf = (count: number, whole: number): number => (whole === 0 ? 0 : (count / whole) * 100);
+
+/** Shares of `scored` pages over `denominator` pages; `unscored` pages are added to the "< 70" bucket. */
+function shares(scored: ScoredPage[], denominator: number, unscored: number): Shares {
+  const atLeast = (threshold: number): number =>
+    percentOf(scored.filter((page) => page.scores.overall >= threshold).length, denominator);
+  const below70 = scored.filter((page) => page.scores.overall < 70).length + unscored;
+  return { atLeast98: atLeast(98), atLeast90: atLeast(90), below70: percentOf(below70, denominator) };
+}
 
 /** The pages to explain: everything under LOW_SCORE, or at least the MIN_LOW_PAGES lowest. */
 function lowScoringPages(scored: ScoredPage[]): ScoredPage[] {
@@ -232,11 +264,25 @@ function templateRows(scored: ScoredPage[]): TemplateRow[] {
     .slice(0, TEMPLATE_ROWS);
 }
 
+function aggregate(results: PageResult[]): Aggregate {
+  const scored = results.filter(isScored);
+  const failed = results.length - scored.length;
+  return {
+    requested: results.length,
+    scored: scored.length,
+    failed,
+    meanScore: scored.length === 0 ? null : mean(scored.map((page) => page.scores.overall)),
+    overRequested: shares(scored, results.length, failed),
+    scoredOnly: scored.length === 0 ? null : shares(scored, scored.length, 0),
+    templatesOnLowestPages: scored.length === 0 ? [] : templateRows(scored),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Report
 // ---------------------------------------------------------------------------
 
-const fixed = (value: number): string => value.toFixed(1);
+const fixed = (value: number | null): string => (value === null ? "n/a" : value.toFixed(1));
 
 function listLine(label: string, items: string[]): string | null {
   return items.length === 0 ? null : `    ${label}: ${items.join("; ")}`;
@@ -244,7 +290,7 @@ function listLine(label: string, items: string[]): string | null {
 
 function renderPage(page: ScoredPage): string {
   const { scores, differences: diff } = page;
-  const header = `${fixed(scores.overall).padStart(5)}  ${page.title}  (text ${fixed(scores.text)}, links ${fixed(scores.links)}, images ${fixed(scores.images)}, headings ${fixed(scores.headings)}, structure ${fixed(scores.structure)})`;
+  const header = `${fixed(scores.overall).padStart(5)}  ${page.title}  (text ${fixed(scores.text)}, links ${fixed(scores.links)}, images ${fixed(scores.images)}, headings ${fixed(scores.headings)}, structure ${fixed(scores.structure)}; n/a = empty on both sides, not compared)`;
   return [
     header,
     listLine("links missing in WikiOS", diff.linksMissingInWikios),
@@ -258,22 +304,24 @@ function renderPage(page: ScoredPage): string {
     .join("\n");
 }
 
+const renderShares = (label: string, value: Shares): string =>
+  `${label}: >= 98 ${fixed(value.atLeast98)}%, >= 90 ${fixed(value.atLeast90)}%, < 70 ${fixed(value.below70)}%`;
+
 function renderReport(results: PageResult[], config: Config): string {
   const scored = results.filter(isScored);
-  const failed = results.filter((page) => !isScored(page));
+  const total = aggregate(results);
   const lines = [`# WikiOS render parity — ${results.length} pages`, "", `MediaWiki: ${config.mwApi}   WikiOS: ${config.wikios}`, ""];
   lines.push("## Pages (lowest first)", "");
   lines.push(...[...scored].sort((a, b) => a.scores.overall - b.scores.overall).map(renderPage));
-  for (const page of failed) lines.push(`  n/a  ${page.title}  (${page.error})`);
+  for (const page of results.filter((result) => !isScored(result))) lines.push(`  n/a  ${page.title}  (${page.error})`);
+  lines.push("", "## Aggregate", "");
+  lines.push(`Requested pages: ${total.requested}; scored: ${total.scored}; failed: ${total.failed}`);
+  lines.push(renderShares("Over all requested pages (failed count as < 70)", total.overRequested));
+  if (total.scoredOnly !== null) lines.push(renderShares("Scored pages only", total.scoredOnly));
+  lines.push(`Mean score (scored pages): ${fixed(total.meanScore)}`);
   if (scored.length > 0) {
-    lines.push("", "## Aggregate", "");
-    lines.push(`Scored pages: ${scored.length} (failed: ${failed.length})`);
-    lines.push(`Mean score: ${fixed(mean(scored.map((page) => page.scores.overall)))}`);
-    lines.push(`Pages >= 98: ${fixed(percentAtLeast(scored, 98))}%`);
-    lines.push(`Pages >= 90: ${fixed(percentAtLeast(scored, 90))}%`);
-    lines.push(`Pages < 70: ${fixed(100 - percentAtLeast(scored, 70))}%`);
     lines.push("", "## Templates on the lowest-scoring pages", "");
-    lines.push(...templateRows(scored).map((row) => `${row.lowPages} low / ${row.allPages} all  ${row.template}`));
+    lines.push(...total.templatesOnLowestPages.map((row) => `${row.lowPages} low / ${row.allPages} all  ${row.template}`));
   }
   return lines.join("\n");
 }
@@ -298,26 +346,11 @@ async function main(): Promise<void> {
     console.error(`[${index + 1}/${titles.length}] ${title}`);
     results.push(await scorePage(title, config));
   }
-  const scored = results.filter(isScored);
+  ensureParentDir(config.out);
   writeFileSync(
     config.out,
     JSON.stringify(
-      {
-        meta: { ...config, titles, generatedAt: new Date().toISOString() },
-        pages: results,
-        aggregate:
-          scored.length === 0
-            ? null
-            : {
-                scored: scored.length,
-                failed: results.length - scored.length,
-                meanScore: mean(scored.map((page) => page.scores.overall)),
-                percentAtLeast98: percentAtLeast(scored, 98),
-                percentAtLeast90: percentAtLeast(scored, 90),
-                percentBelow70: 100 - percentAtLeast(scored, 70),
-                templatesOnLowestPages: templateRows(scored),
-              },
-      },
+      { meta: { ...config, titles, generatedAt: new Date().toISOString() }, pages: results, aggregate: aggregate(results) },
       null,
       2
     )
@@ -326,4 +359,4 @@ async function main(): Promise<void> {
   console.log(`\nFull results written to ${config.out}`);
 }
 
-void main();
+main().catch(exitWithError);

@@ -7,35 +7,36 @@
  * of every referenced same-origin JS/CSS asset (each asset is fetched once and cached across pages).
  *
  * Run 1 is labelled "cold" and later runs "warm"; the script cannot purge either system's caches, so the
- * label only says which pass a sample came from.
+ * label only says which pass a sample came from. The comparison rules (derived `page+data.*` rows, tolerance,
+ * reference-only rows) live in scripts/lib/wikios-bench-summary.ts and are printed as caveats with the table.
  *
  * Usage:
- *   bun scripts/bench/wikios-bench.ts --mw https://ixwiki.com --wikios http://localhost:3000 \
- *     [--pages scripts/bench/pages.default.json] [--runs 3] [--out bench-results.json] [--interval-ms 1000]
+ *   bun scripts/bench/wikios-bench.ts --mw <MediaWiki base URL> [--wikios http://localhost:3000] \
+ *     [--pages scripts/bench/pages.default.json] [--runs 3] [--out .bench-out/bench-results.json] [--interval-ms 1000]
  *
- * Every request goes through `throttledFetch`: at least one second between requests to the same host
- * (enforced for ixwiki.com regardless of `--interval-ms`) and the allowlisted IxStats-Builder User-Agent.
- * Exit code is 0 unless the arguments are invalid; the caller reads the numbers.
+ * `--mw` is required (there is no production default). Every request goes through `throttledFetch`: at least
+ * one second between requests to the same host (enforced for ixwiki.com regardless of `--interval-ms`) and
+ * the allowlisted IxStats-Builder User-Agent. Exit code is 0 unless the arguments or the page list are
+ * invalid; the caller reads the numbers.
  */
 
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { CAVEATS, renderTable, summarize, type MetricSample, type System } from "../lib/wikios-bench-summary";
 import {
   encodeWikiTitle,
+  ensureParentDir,
+  exitWithError,
   extractAssetRefs,
   loadPageList,
-  percentile,
-  stripTrailingSlashes,
+  parseHttpUrl,
   throttledFetch,
   trpcQueryUrl,
   type FetchResult,
 } from "../lib/wikios-harness";
 
-type System = "mediawiki" | "wikios";
-type Phase = "cold" | "warm";
 type Kind = "page" | "data" | "search" | "history";
-type Verdict = "WINS" | "LOSES" | "TIE" | "MIXED" | "n/a";
 
 interface Config {
   mw: string;
@@ -50,15 +51,6 @@ interface RequestSpec {
   system: System;
   kind: Kind;
   url: string;
-}
-
-interface MetricSample {
-  system: System;
-  metric: string;
-  phase: Phase;
-  page: string;
-  run: number;
-  value: number;
 }
 
 interface Failure {
@@ -76,51 +68,18 @@ interface Collector {
   failures: Failure[];
 }
 
-interface Stats {
-  n: number;
-  p50: number;
-  p75: number;
-}
-
-interface SummaryRow {
-  metric: string;
-  phase: Phase;
-  mediawiki: Stats | null;
-  wikios: Stats | null;
-  result: Verdict;
-}
-
 const DEFAULT_PAGES = fileURLToPath(new URL("./pages.default.json", import.meta.url));
+const DEFAULT_OUT = ".bench-out/bench-results.json";
 const SEARCH_PREFIX_LENGTH = 4;
 const SEARCH_LIMIT = 10;
 const HISTORY_LIMIT = 50;
-
-const METRIC_ORDER = [
-  "page.ttfbMs",
-  "page.totalMs",
-  "page.bytes",
-  "page.scripts",
-  "page.stylesheets",
-  "page.images",
-  "page.assetBytes",
-  "page.weightBytes",
-  "data.ttfbMs",
-  "data.totalMs",
-  "data.bytes",
-  "search.ttfbMs",
-  "search.totalMs",
-  "search.bytes",
-  "history.ttfbMs",
-  "history.totalMs",
-  "history.bytes",
-] as const;
 
 // ---------------------------------------------------------------------------
 // Arguments
 // ---------------------------------------------------------------------------
 
 const USAGE =
-  "Usage: bun scripts/bench/wikios-bench.ts --mw <url> --wikios <url> [--pages file] [--runs n] [--out file] [--interval-ms n]";
+  "Usage: bun scripts/bench/wikios-bench.ts --mw <url> [--wikios <url>] [--pages file] [--runs n] [--out file] [--interval-ms n]";
 
 function parseConfig(argv: string[]): Config {
   const { values } = parseArgs({
@@ -138,11 +97,11 @@ function parseConfig(argv: string[]): Config {
   const intervalMs = Number.parseInt(values["interval-ms"] ?? "1000", 10);
   if (!(runs >= 1) || !(intervalMs >= 0)) throw new Error("--runs must be >= 1 and --interval-ms >= 0");
   return {
-    mw: stripTrailingSlashes(values.mw ?? "https://ixwiki.com"),
-    wikios: stripTrailingSlashes(values.wikios ?? "http://localhost:3000"),
+    mw: parseHttpUrl(values.mw, "--mw"),
+    wikios: parseHttpUrl(values.wikios ?? "http://localhost:3000", "--wikios"),
     pages: values.pages ?? DEFAULT_PAGES,
     runs,
-    out: values.out ?? "bench-results.json",
+    out: values.out ?? DEFAULT_OUT,
     intervalMs,
   };
 }
@@ -324,62 +283,8 @@ async function benchPage(
 }
 
 // ---------------------------------------------------------------------------
-// Summary
+// Report
 // ---------------------------------------------------------------------------
-
-function toStats(values: number[]): Stats | null {
-  return values.length === 0 ? null : { n: values.length, p50: percentile(values, 50), p75: percentile(values, 75) };
-}
-
-/** Lower is better for every metric: WINS needs both p50 and p75 below MediaWiki's, LOSES both at or above. */
-function verdict(mediawiki: Stats | null, wikios: Stats | null): Verdict {
-  if (!mediawiki || !wikios) return "n/a";
-  if (wikios.p50 === mediawiki.p50 && wikios.p75 === mediawiki.p75) return "TIE";
-  if (wikios.p50 < mediawiki.p50 && wikios.p75 < mediawiki.p75) return "WINS";
-  if (wikios.p50 >= mediawiki.p50 && wikios.p75 >= mediawiki.p75) return "LOSES";
-  return "MIXED";
-}
-
-function summarize(samples: MetricSample[]): SummaryRow[] {
-  const values = new Map<string, number[]>();
-  for (const sample of samples) {
-    const key = `${sample.metric}|${sample.phase}|${sample.system}`;
-    values.set(key, [...(values.get(key) ?? []), sample.value]);
-  }
-  const rows: SummaryRow[] = [];
-  for (const metric of METRIC_ORDER) {
-    for (const phase of ["warm", "cold"] as const) {
-      const mediawiki = toStats(values.get(`${metric}|${phase}|mediawiki`) ?? []);
-      const wikios = toStats(values.get(`${metric}|${phase}|wikios`) ?? []);
-      if (mediawiki || wikios) rows.push({ metric, phase, mediawiki, wikios, result: verdict(mediawiki, wikios) });
-    }
-  }
-  return rows;
-}
-
-function formatValue(metric: string, value: number): string {
-  if (Number.isNaN(value)) return "-";
-  if (metric.endsWith("Ms")) return `${value.toFixed(0)} ms`;
-  if (metric.toLowerCase().endsWith("bytes")) return `${(value / 1024).toFixed(1)} kB`;
-  return value.toFixed(0);
-}
-
-function cell(metric: string, stats: Stats | null, field: "p50" | "p75"): string {
-  return stats ? formatValue(metric, stats[field]) : "-";
-}
-
-function renderTable(rows: SummaryRow[]): string {
-  const lines = [
-    "| Metric | Phase | MediaWiki p50 | MediaWiki p75 | WikiOS p50 | WikiOS p75 | Result |",
-    "| :--- | :--- | ---: | ---: | ---: | ---: | :--- |",
-  ];
-  for (const row of rows) {
-    lines.push(
-      `| ${row.metric} | ${row.phase} | ${cell(row.metric, row.mediawiki, "p50")} | ${cell(row.metric, row.mediawiki, "p75")} | ${cell(row.metric, row.wikios, "p50")} | ${cell(row.metric, row.wikios, "p75")} | ${row.result} |`
-    );
-  }
-  return lines.join("\n");
-}
 
 function renderFailures(failures: Failure[]): string {
   if (failures.length === 0) return "No failed requests.";
@@ -418,10 +323,17 @@ async function main(): Promise<void> {
   }
 
   const summary = summarize(collector.samples);
+  ensureParentDir(config.out);
   writeFileSync(
     config.out,
     JSON.stringify(
-      { meta: { ...config, startedAt, finishedAt: new Date().toISOString(), titles }, samples: collector.samples, failures: collector.failures, summary },
+      {
+        meta: { ...config, startedAt, finishedAt: new Date().toISOString(), titles },
+        caveats: CAVEATS,
+        samples: collector.samples,
+        failures: collector.failures,
+        summary,
+      },
       null,
       2
     )
@@ -430,8 +342,9 @@ async function main(): Promise<void> {
   console.log(`MediaWiki: ${config.mw}   WikiOS: ${config.wikios}`);
   console.log("Cold = run 1, warm = later runs (labels only; caches are not purged). Lower is better.\n");
   console.log(renderTable(summary));
+  console.log(`\n${CAVEATS.map((caveat) => `- ${caveat}`).join("\n")}`);
   console.log(`\n${renderFailures(collector.failures)}`);
   console.log(`\nRaw samples written to ${config.out}`);
 }
 
-void main();
+main().catch(exitWithError);
