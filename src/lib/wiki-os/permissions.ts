@@ -13,7 +13,12 @@ import { TRPCError } from "@trpc/server";
 import { db } from "~/server/db";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
-import { checkEditPolicy, isOwnUserSpace, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
+import {
+  checkEditPolicy,
+  isOwnUserSpace,
+  parseWikiTitle,
+  type EditPolicyResult,
+} from "~/lib/wiki-os/namespace-policy";
 import {
   changeableGroups,
   getWikiPermissions,
@@ -309,4 +314,28 @@ export async function visibleTitles(
   });
   const hidden = new Set(rows.map((row) => row.title));
   return rawTitles.filter((raw) => !hidden.has(canonicalizeTitle(raw, { source })?.title ?? ""));
+}
+
+/**
+ * May a dump import the page `title` (canonical, stored in `namespaceId`) for the caller in
+ * `permissions`? The same block and namespace rules as `decideAction` for an import: Template:,
+ * Module:, MediaWiki: pages and the like need `editprotected`, site and user script/style/data pages
+ * need their interface-admin right. A namespace this wiki does not know (the dump's own prefix) is
+ * administrators' only.
+ */
+export function importVerdict(
+  permissions: WikiPermissions,
+  title: string,
+  namespaceId: number,
+  now = new Date()
+): EditPolicyResult {
+  const namespaceKnown = namespaceId === (parseWikiTitle(title)?.namespaceId ?? 0);
+  if (!namespaceKnown && !permissions.rights.has("editprotected")) {
+    return {
+      allowed: false,
+      reason: "Only wiki administrators can import pages in this namespace.",
+    };
+  }
+  const decision = decideAction({ action: "import", title, permissions, restrictions: [], now });
+  return decision.allowed ? { allowed: true } : { allowed: false, reason: decision.reason };
 }

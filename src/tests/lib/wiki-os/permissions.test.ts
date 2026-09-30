@@ -19,6 +19,7 @@ import {
   assertPageVisible,
   authorizeAction,
   decideAction,
+  importVerdict,
   requireCanonicalTitle,
   requireGroupChange,
   requireRight,
@@ -441,5 +442,57 @@ describe("assertPageVisible", () => {
     await expect(
       assertPageVisible(ctx(), { status: "ARCHIVED" }, "Caphiria")
     ).resolves.toBeUndefined();
+  });
+});
+
+describe("importVerdict (per-page authorization of a dump)", () => {
+  const verdict = (who: WikiPermissions, title: string, namespaceId: number) =>
+    importVerdict(who, title, namespaceId);
+
+  it.each([
+    ["Caphiria", 0],
+    ["Talk:Caphiria", 1],
+    ["Template:Infobox", 10],
+    ["Module:Foo", 828],
+    ["MediaWiki:Sidebar", 8],
+    ["Help:Editing", 12],
+  ])("lets a sysop import %s", (title, ns) => {
+    expect(verdict(sysop, title, ns).allowed).toBe(true);
+  });
+
+  it.each([
+    ["MediaWiki:Common.js", 8],
+    ["MediaWiki:Common.css", 8],
+    ["MediaWiki:Gadgets.json", 8],
+    ["User:Bob/common.js", 2],
+    ["User:Bob/vector.css", 2],
+  ])("keeps %s from a sysop and gives it to an interface administrator", (title, ns) => {
+    const refused = verdict(sysop, title, ns);
+    expect(refused.allowed).toBe(false);
+    expect(verdict(owner, title, ns).allowed).toBe(true);
+  });
+
+  it("names the right that is missing", () => {
+    const refused = verdict(sysop, "MediaWiki:Common.js", 8);
+    expect(refused).toEqual({
+      allowed: false,
+      reason: "Editing this MediaWiki page needs the editsitejs right.",
+    });
+  });
+
+  it("refuses everything to a blocked importer, and Special: pages to everyone", () => {
+    const blocked = perms(["*", "user", "sysop"], {
+      block: { reason: "spam", expiresAt: null, allowUserTalk: true },
+    });
+    expect(verdict(blocked, "Caphiria", 0).allowed).toBe(false);
+    expect(verdict(owner, "Special:Version", -1).allowed).toBe(false);
+  });
+
+  it("leaves a namespace this wiki does not know (the dump's own prefix) to administrators", () => {
+    expect(verdict(perms(["*", "user", "bot"]), "Portal:Testia", 100)).toMatchObject({
+      allowed: false,
+      reason: "Only wiki administrators can import pages in this namespace.",
+    });
+    expect(verdict(sysop, "Portal:Testia", 100).allowed).toBe(true);
   });
 });

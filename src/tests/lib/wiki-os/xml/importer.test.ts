@@ -1083,6 +1083,69 @@ describe("options", () => {
   });
 });
 
+describe("per-page authorization (plan 409: canWritePage)", () => {
+  const deny = (reason: string) => ({ allowed: false as const, reason });
+
+  it("skips a page the callback refuses, lists it as a permission error, and imports the rest", async () => {
+    const summary = await importFixture({
+      canWritePage: (_title, namespaceId) =>
+        namespaceId === 10
+          ? deny("Only wiki administrators can edit pages in this namespace.")
+          : { allowed: true },
+    });
+
+    expect(summary.pages).toBe(5);
+    expect(summary.pagesCreated).toBe(4);
+    expect(summary.errors).toEqual([
+      {
+        title: "Template:Infobox testia",
+        message: "permission: Only wiki administrators can edit pages in this namespace.",
+      },
+    ]);
+    expect(store.articles.map((a) => a.title).sort()).toEqual([
+      "File:Testia flag.png",
+      "Kingdom of Testia",
+      "Talk:Kingdom of Testia",
+      "Testia",
+    ]);
+  });
+
+  it("asks with the canonical title and the stored namespace of every page", async () => {
+    const asked: Array<[string, number]> = [];
+    await importFixture({
+      canWritePage: (title, namespaceId) => {
+        asked.push([title, namespaceId]);
+        return { allowed: true };
+      },
+    });
+
+    expect(asked).toEqual([
+      ["Kingdom of Testia", 0],
+      ["Testia", 0],
+      ["Talk:Kingdom of Testia", 1],
+      ["Template:Infobox testia", 10],
+      ["File:Testia flag.png", 6],
+    ]);
+  });
+
+  it("writes nothing for a refused page in a dry run either, and does not count it as a write failure", async () => {
+    const summary = await importFixture({ dryRun: true, canWritePage: () => deny("no") });
+
+    expect(store.writes).toBe(0);
+    expect(summary.pagesCreated).toBe(0);
+    expect(summary.errors).toHaveLength(5);
+    expect(summary.errors.every((e) => e.message === "permission: no")).toBe(true);
+    // a refusal is a rejection, not a database failure: the import never gives up early
+    expect(summary.errors.some((e) => e.title === "(dump)")).toBe(false);
+  });
+
+  it("writes every page when there is no callback (the operator's command line tools)", async () => {
+    const summary = await importFixture();
+    expect(summary.errors).toEqual([]);
+    expect(store.articles).toHaveLength(5);
+  });
+});
+
 describe("events that are not pages", () => {
   it("ignores siteinfo and counts only pages", async () => {
     const events: ImportEvent[] = [

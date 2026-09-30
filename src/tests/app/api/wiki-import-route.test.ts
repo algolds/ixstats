@@ -27,11 +27,34 @@ import { DEFAULT_MAX_UPLOAD_BYTES } from "~/lib/wiki-os/xml/import-request";
 const mockAuth = jest.mocked(auth) as unknown as jest.Mock;
 const mockPermissions = jest.mocked(getWikiPermissionsForAuthId);
 
-/** Who the caller is to the rights engine: a sysop (may import) or a plain signed-in user (may not). */
-const asSysop = () =>
-  mockPermissions.mockResolvedValue({ rights: new Set(["read", "edit", "import"]) } as never);
-const asPlainUser = () =>
-  mockPermissions.mockResolvedValue({ rights: new Set(["read", "edit"]) } as never);
+/** Who the caller is to the rights engine, as a permissions snapshot holding `rights`. */
+const asHolding = (...rights: string[]) =>
+  mockPermissions.mockResolvedValue({
+    groups: [],
+    rights: new Set(rights),
+    block: null,
+    verifiedWikiUsername: null,
+  } as never);
+const SYSOP_RIGHTS = [
+  "read",
+  "edit",
+  "createpage",
+  "createtalk",
+  "import",
+  "editprotected",
+  "editinterface",
+];
+const INTERFACE_ADMIN_RIGHTS = [
+  "editsitecss",
+  "editsitejs",
+  "editsitejson",
+  "editusercss",
+  "edituserjs",
+  "edituserjson",
+];
+const asSysop = () => asHolding(...SYSOP_RIGHTS);
+const asInterfaceAdmin = () => asHolding(...SYSOP_RIGHTS, ...INTERFACE_ADMIN_RIGHTS);
+const asPlainUser = () => asHolding("read", "edit");
 
 const FIXTURE = readFileSync(
   join(__dirname, "../../fixtures/xml/mediawiki-export-0.11.xml"),
@@ -340,5 +363,86 @@ describe("POST /api/wiki/import: what it refuses", () => {
     expect(FIXTURE.length).toBeGreaterThan(2000);
     expect(res.status).toBe(413);
     expect((await res.json()).error).toMatch(/larger than 2000 bytes/);
+  });
+});
+
+describe("POST /api/wiki/import: per-page authorization (plan 409)", () => {
+  const page = (title: string, ns: number, id: number, model: string, text: string) => `
+  <page>
+    <title>${title}</title>
+    <ns>${ns}</ns>
+    <id>${id}</id>
+    <revision>
+      <id>${id * 10}</id>
+      <timestamp>2026-01-02T03:04:05Z</timestamp>
+      <contributor><username>Jane</username><id>7</id></contributor>
+      <model>${model}</model>
+      <format>text/x-wiki</format>
+      <text xml:space="preserve">${text}</text>
+    </revision>
+  </page>`;
+  const DUMP = `<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11" xml:lang="en">${page("Kingdom of Testia", 0, 1, "wikitext", "Testia is a kingdom.")}${page("MediaWiki:Common.js", 8, 2, "javascript", "alert(1);")}${page("User:Bob/common.css", 2, 3, "css", "body{}")}${page("Template:Infobox testia", 10, 4, "wikitext", "{{{name}}}")}
+</mediawiki>`;
+  const write = (as: () => void) => {
+    as();
+    return POST(post(DUMP, { query: "?dryRun=false" }));
+  };
+  const titles = () => store.articles.map((a) => a.title).sort();
+
+  it("lets a sysop import articles and templates, but skips the site script and user style pages", async () => {
+    const res = await write(asSysop);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(titles()).toEqual(["Kingdom of Testia", "Template:Infobox testia"]);
+    expect(body).toMatchObject({ pages: 4, pagesCreated: 2, errorCount: 2 });
+    expect(body.errors).toEqual([
+      {
+        title: "MediaWiki:Common.js",
+        message: "permission: Editing this MediaWiki page needs the editsitejs right.",
+      },
+      {
+        title: "User:Bob/common.css",
+        message:
+          "permission: Only interface administrators can edit user script, style and data pages.",
+      },
+    ]);
+  });
+
+  it("lets an interface administrator import every page of the dump", async () => {
+    const res = await write(asInterfaceAdmin);
+
+    expect((await res.json()).errorCount).toBe(0);
+    expect(titles()).toEqual([
+      "Kingdom of Testia",
+      "MediaWiki:Common.js",
+      "Template:Infobox testia",
+      "User:Bob/common.css",
+    ]);
+  });
+
+  it("reports the skipped pages in a dry run too, without writing", async () => {
+    asSysop();
+    const res = await POST(post(DUMP));
+    const body = await res.json();
+
+    expect(body).toMatchObject({ dryRun: true, pagesCreated: 2, errorCount: 2 });
+    expect(store.writes).toBe(0);
+  });
+
+  it("skips a page in a namespace the wiki does not know unless the caller is an administrator", async () => {
+    const unknown = `<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11" xml:lang="en">${page("Portal:Testia", 100, 9, "wikitext", "A portal.")}</mediawiki>`;
+    asHolding("read", "edit", "import");
+    const refused = await (await POST(post(unknown, { query: "?dryRun=false" }))).json();
+    expect(refused.errors).toEqual([
+      {
+        title: "Portal:Testia",
+        message: "permission: Only wiki administrators can import pages in this namespace.",
+      },
+    ]);
+
+    asSysop();
+    const allowed = await (await POST(post(unknown, { query: "?dryRun=false" }))).json();
+    expect(allowed).toMatchObject({ pagesCreated: 1, errorCount: 0 });
   });
 });

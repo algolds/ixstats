@@ -20,6 +20,7 @@ import {
 } from "../core/article-repository";
 import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace } from "../core/title";
+import type { EditPolicyResult } from "../namespace-policy";
 import { cleanExcerpt } from "../transformers/wikitext-parser";
 import type { ImportEvent, ImportPage } from "./import-reader";
 import { checkInt4, modelWarning, PageRejected, parseMwTimestamp } from "./import-validation";
@@ -49,6 +50,12 @@ export interface ImportOptions {
   dryRun?: boolean;
   /** Called after every page with the running (live, mutable) summary. */
   onProgress?: (summary: ImportSummary) => void;
+  /**
+   * May the importer write the page with this canonical title and stored namespace id? A page it
+   * refuses is skipped and listed in `errors` as `permission: <reason>`. Omitted (the operator's
+   * command line tools), every page is written.
+   */
+  canWritePage?: (title: string, namespaceId: number) => EditPolicyResult;
 }
 
 /** Title used for errors that are about the dump rather than one of its pages. */
@@ -61,6 +68,7 @@ const SUMMARY_COLUMN_LIMIT = 480;
 interface ImportContext {
   source: string;
   dryRun: boolean;
+  canWritePage: ImportOptions["canWritePage"];
   /** MediaWiki username to WikiOS user id (null: no verified link); one lookup per name per import. */
   authors: Map<string, string | null>;
 }
@@ -258,6 +266,8 @@ async function buildPageInput(
   ctx: ImportContext
 ): Promise<{ input: ImportPageInput; warnings: string[] }> {
   const { canon, namespace } = resolveIdentity(page, ctx.source);
+  const verdict = ctx.canWritePage?.(canon.title, namespace.namespaceId);
+  if (verdict && !verdict.allowed) throw new PageRejected(`permission: ${verdict.reason}`);
   if (page.revisions.length === 0) throw new PageRejected("The page has no revisions");
 
   await linkAuthors(page, ctx);
@@ -323,10 +333,10 @@ async function importOnePage(
  */
 export async function importExport(
   events: AsyncIterable<ImportEvent>,
-  { source = "ixwiki", dryRun = false, onProgress }: ImportOptions = {}
+  { source = "ixwiki", dryRun = false, onProgress, canWritePage }: ImportOptions = {}
 ): Promise<ImportSummary> {
   const summary = emptySummary();
-  const ctx: ImportContext = { source, dryRun, authors: new Map() };
+  const ctx: ImportContext = { source, dryRun, canWritePage, authors: new Map() };
   let failuresInARow = 0;
   try {
     for await (const event of events) {
