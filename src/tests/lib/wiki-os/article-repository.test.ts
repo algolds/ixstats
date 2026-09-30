@@ -10,6 +10,7 @@ const mockRevisionCreate = jest.fn();
 const mockFindUnique = jest.fn();
 const mockFindMany = jest.fn();
 const mockFindFirst = jest.fn();
+const mockRevisionFindMany = jest.fn();
 
 jest.mock("~/server/db", () => {
   const tx = {
@@ -23,6 +24,7 @@ jest.mock("~/server/db", () => {
   return {
     db: {
       $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
+      wikiRevision: { findMany: (...a: unknown[]) => mockRevisionFindMany(...a) },
       wikiArticle: {
         findUnique: (...a: unknown[]) => mockFindUnique(...a),
         findMany: (...a: unknown[]) => mockFindMany(...a),
@@ -86,6 +88,7 @@ beforeEach(() => {
   mockFindUnique.mockResolvedValue(null);
   mockFindMany.mockResolvedValue([]);
   mockFindFirst.mockResolvedValue(null);
+  mockRevisionFindMany.mockResolvedValue([]);
 });
 
 describe("ArticleRepository.saveArticle", () => {
@@ -216,5 +219,61 @@ describe("ArticleRepository.findBySlug", () => {
     expect(mockFindUnique).not.toHaveBeenCalled();
     expect(mockFindMany).not.toHaveBeenCalled();
     expect(article?.title).toBe("a[b");
+  });
+});
+
+describe("ArticleRepository.getHistory", () => {
+  const revision = (articleId: string) => ({
+    id: `rev-${articleId}`,
+    mwRevId: null,
+    articleId,
+    summary: null,
+    minor: false,
+    author: "alice",
+    authorId: null,
+    createdAt: new Date("2026-06-01T00:00:00Z"),
+    wikitext: "body",
+    byteSize: 4,
+    byteDelta: 4,
+    format: "WIKITEXT",
+  });
+
+  it("reads the revisions of the one canonical article, never a case variant's", async () => {
+    const rows = new Map([
+      ["foo bar", articleRow("foo bar")],
+      ["Foo bar", articleRow("Foo bar")],
+    ]);
+    mockFindUnique.mockImplementation(
+      async (args: { where: { source_title: { title: string } } }) =>
+        rows.get(args.where.source_title.title) ?? null
+    );
+    mockRevisionFindMany.mockResolvedValue([revision("id-Foo bar")]);
+
+    const history = await ArticleRepository.getHistory("foo_bar", "ixwiki", 10);
+
+    expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
+    expect(mockRevisionFindMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { articleId: "id-Foo bar" },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+    expect(history).toEqual([expect.objectContaining({ articleId: "id-Foo bar", author: "alice" })]);
+  });
+
+  it("follows a unique case-variant slug match, and the newest row when it is ambiguous", async () => {
+    mockFindMany.mockResolvedValue([articleRow("NATO")]);
+    await ArticleRepository.getHistory("nato");
+    expect(mockRevisionFindMany.mock.calls[0]?.[0].where).toEqual({ articleId: "id-NATO" });
+
+    mockFindMany.mockResolvedValue([articleRow("NATO"), articleRow("Nato")]);
+    mockFindFirst.mockResolvedValue(articleRow("NATO"));
+    await ArticleRepository.getHistory("nAto");
+    expect(mockFindFirst.mock.calls[0]?.[0].orderBy).toEqual({ updatedAt: "desc" });
+    expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ articleId: "id-NATO" });
+  });
+
+  it("is empty, without reading revisions, when the article does not exist", async () => {
+    await expect(ArticleRepository.getHistory("Nowhere")).resolves.toEqual([]);
+    expect(mockRevisionFindMany).not.toHaveBeenCalled();
   });
 });

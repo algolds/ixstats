@@ -333,28 +333,19 @@ export class ArticleRepository {
   }
 
   /**
-   * Get full chronological revision history for an article
+   * Get full chronological revision history for an article. The article is resolved exactly as
+   * `findBySlug` resolves it, so the history of one page never merges in a case-variant row's.
    */
   static async getHistory(
     slug: string,
     source = "ixwiki",
     limit = 50
   ): Promise<WikiRevisionSummary[]> {
-    const normalized = toArticleSlug(slug);
+    const article = await this.lookupArticle(slug, source);
+    if (!article) return [];
 
     const revisions = await db.wikiRevision.findMany({
-      where: {
-        article: {
-          source,
-          OR: [
-            { slug: { equals: normalized, mode: "insensitive" } },
-            { slug: { equals: slug, mode: "insensitive" } },
-            { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
-            { title: { equals: slug, mode: "insensitive" } },
-            { title: { equals: normalized, mode: "insensitive" } },
-          ],
-        },
-      },
+      where: { articleId: article.id },
       orderBy: { createdAt: "desc" },
       take: limit,
       select: {

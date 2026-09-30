@@ -12,6 +12,7 @@ const mockGetPageHistory = jest.fn();
 const mockGetRevisionWikitext = jest.fn();
 
 const mockWikiArticleFindFirst = jest.fn();
+const mockWikiArticleFindMany = jest.fn();
 const mockWikiArticleUpsert = jest.fn();
 const mockWikiArticleDelete = jest.fn();
 const mockWikiArticleDeleteMany = jest.fn();
@@ -28,6 +29,7 @@ jest.mock("~/server/db", () => ({
     wikiArticle: {
       findFirst: (...args: any[]) => mockWikiArticleFindFirst(...args),
       findUnique: (...args: any[]) => mockWikiArticleFindFirst(...args),
+      findMany: (...args: any[]) => mockWikiArticleFindMany(...args),
       upsert: (...args: any[]) => mockWikiArticleUpsert(...args),
       delete: (...args: any[]) => mockWikiArticleDelete(...args),
       deleteMany: (...args: any[]) => mockWikiArticleDeleteMany(...args),
@@ -74,6 +76,7 @@ beforeEach(() => {
     return Promise.all(cb);
   });
   mockWikiArticleFindFirst.mockResolvedValue(null);
+  mockWikiArticleFindMany.mockResolvedValue([]);
   mockWikiArticleUpsert.mockResolvedValue(row());
   mockWikiArticleDelete.mockResolvedValue(undefined);
   mockWikiArticleDeleteMany.mockResolvedValue(undefined);
@@ -120,6 +123,7 @@ test("page deleted on MediaWiki returns null when not in DB", async () => {
 });
 
 test("history read-through serves local revisions when present", async () => {
+  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
   mockWikiRevisionFindMany.mockResolvedValue([
     {
       id: "rev-1",
@@ -156,6 +160,9 @@ test("history read-through serves local revisions when present", async () => {
     byteDelta: -2,
   });
   expect(res.revisions[1]).toMatchObject({ revid: "9001", byteDelta: 6 });
+  expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { articleId: "art1" } })
+  );
   expect(mockGetPageHistory).not.toHaveBeenCalled();
 });
 
