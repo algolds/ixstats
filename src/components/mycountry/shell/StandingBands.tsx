@@ -22,6 +22,7 @@ import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";
+import { assetUrl } from "~/lib/base-path";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -98,7 +99,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     return showExactPop ? Math.round(population).toLocaleString() : formatCompact(population);
   }, [showExactPop, population]);
 
-  const flagUrl = country?.flagUrl || country?.flag;
+  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
 
   const handleOpenBreakdown = () => {
     soundEffects.bloom();

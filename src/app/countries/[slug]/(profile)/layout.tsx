@@ -183,8 +183,8 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
           realm: country.realm ?? null,
           sovereignUser,
         }}
-        flagUrl={flagUrl}
-        flagLoading={flagLoading}
+        flagUrl={country.flag || flagUrl}
+        flagLoading={country.flag ? false : flagLoading}
         unsplashImageUrl={unsplashImageUrl}
         isOwnCountry={!!isOwnCountry}
         showGdpPerCapita={showGdpPerCapita}
