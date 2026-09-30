@@ -15,6 +15,7 @@ import { generateSlug } from "~/lib/utils";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { globalCache } from "~/lib/cache";
+import { hasPremiumTier } from "~/lib/auth/premium";
 import { activateOwnedNation, assignNation } from "~/server/modules/realms";
 
 export const usersCountryLinkingRouter = createTRPCRouter({
@@ -251,7 +252,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
       });
 
       const tier = (user?.membershipTier as "basic" | "mycountry_premium") ?? "basic";
-      const isPremium = tier === "mycountry_premium";
+      const isPremium = hasPremiumTier(tier);
 
       return {
         tier,

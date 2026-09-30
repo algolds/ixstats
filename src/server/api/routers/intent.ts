@@ -18,6 +18,7 @@ import {
   weightAcceptance,
   CATEGORY_TO_BROKER,
   TIER_RISK,
+  GROWTH_EFFECT_YEARS,
   type Tier,
   type Category,
 } from "~/lib/intent/assemble";
@@ -266,49 +267,6 @@ export const intentRouter = createTRPCRouter({
         });
       }
 
-      // Apply the package through the spine (bounded + audited + narrated).
-      const applied = await CountryEventSpine.recordCountryEvent({
-        db: ctx.db,
-        countryId: input.countryId,
-        sourceType: "decision",
-        description: `Intent (${input.tier}): ${input.goal}`,
-        consequences: pkg.consequences.map((c) => ({
-          targetModel: c.targetModel,
-          targetField: c.targetField,
-          operation: c.operation,
-          value: c.value,
-        })),
-      });
-
-      // Apply structured budget deltas (bounded; never a core stat). Best-effort.
-      const budgetChanges = pkg.changes.filter(
-        (c) => c.kind === "budget" && c.deptCategory && c.deltaPercent
-      );
-      for (const bc of budgetChanges) {
-        try {
-          const alloc = await ctx.db.budgetAllocation.findFirst({
-            where: {
-              governmentStructure: { countryId: input.countryId },
-              department: { category: bc.deptCategory! },
-            },
-            // most-recent budget year, then the largest line in that category
-            orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
-          });
-          if (alloc) {
-            const next = Math.max(
-              0,
-              Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!)
-            );
-            await ctx.db.budgetAllocation.update({
-              where: { id: alloc.id },
-              data: { allocatedPercent: next },
-            });
-          }
-        } catch {
-          /* budget row missing / structure absent — line stays descriptive only */
-        }
-      }
-
       // Auto-summation prose — ThinkPages draft-ready (push deferred to phase 6).
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
@@ -353,6 +311,68 @@ export const intentRouter = createTRPCRouter({
             riskRating: TIER_RISK[input.tier as Tier],
           },
         });
+      }
+
+      // Apply the package through the spine (bounded + audited + narrated), linked to the
+      // Intent row so the ledger entries trace back to this directive.
+      const applied = await CountryEventSpine.recordCountryEvent({
+        db: ctx.db,
+        countryId: input.countryId,
+        sourceType: "decision",
+        sourceId: intent.id,
+        description: `Intent (${input.tier}): ${input.goal}`,
+        consequences: pkg.consequences.map((c) => ({
+          targetModel: c.targetModel,
+          targetField: c.targetField,
+          operation: c.operation,
+          value: c.value,
+        })),
+      });
+
+      // Growth-oriented directives move the GDP projection the same way active policies do:
+      // a time-limited growth_rate_modifier StorytellerEffect (read by IxStatsCalculator).
+      if (pkg.gdpGrowthModifier > 0) {
+        await ctx.db.storytellerEffect.create({
+          data: {
+            countryId: input.countryId,
+            ixTimeTimestamp: new Date(now),
+            inputType: "growth_rate_modifier",
+            value: pkg.gdpGrowthModifier,
+            description: `Directive: ${input.goal}`,
+            duration: GROWTH_EFFECT_YEARS,
+            isActive: true,
+            createdBy: `intent:${intent.id}`,
+          },
+        });
+      }
+
+      // Apply structured budget deltas (bounded; never a core stat). Best-effort.
+      const budgetChanges = pkg.changes.filter(
+        (c) => c.kind === "budget" && c.deptCategory && c.deltaPercent
+      );
+      for (const bc of budgetChanges) {
+        try {
+          const alloc = await ctx.db.budgetAllocation.findFirst({
+            where: {
+              governmentStructure: { countryId: input.countryId },
+              department: { category: bc.deptCategory! },
+            },
+            // most-recent budget year, then the largest line in that category
+            orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
+          });
+          if (alloc) {
+            const next = Math.max(
+              0,
+              Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!)
+            );
+            await ctx.db.budgetAllocation.update({
+              where: { id: alloc.id },
+              data: { allocatedPercent: next },
+            });
+          }
+        } catch {
+          /* budget row missing / structure absent — line stays descriptive only */
+        }
       }
 
       // Deterministic resistance spawn: never fails the commit (try/catch inside).

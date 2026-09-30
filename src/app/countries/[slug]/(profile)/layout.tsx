@@ -29,6 +29,9 @@ import { CommandProfileView } from "../_components/concepts/CommandProfileView";
 import { EditorialProfileView } from "../_components/concepts/EditorialProfileView";
 import { AtlasProfileView } from "../_components/concepts/AtlasProfileView";
 
+/** v2: earlier builds saved the prototype "command" layout as everyone's default. */
+const CONCEPT_STORAGE_KEY = "ixstates_profile_concept_v2";
+
 /**
  * CountryProfileLayout — persistent country shell (route group `(profile)`).
  * Owns the country query via `CountryDataProvider`, header, breadcrumbs,
@@ -56,8 +59,10 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   const { userProfile } = useUserCountry();
   const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");
 
-  // Concept switcher state with URL and localStorage sync (default: command)
-  const [concept, setConceptState] = useState<ProfileConcept>("command");
+  // Concept switcher state with URL and localStorage sync. Default: the standard factbook,
+  // the only layout wired to the country's real data — the concept layouts are design
+  // prototypes filled with sample (Caphirian) figures.
+  const [concept, setConceptState] = useState<ProfileConcept>("standard");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -67,7 +72,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
         setConceptState(paramConcept);
         return;
       }
-      const saved = localStorage.getItem("ixstates_profile_concept") as ProfileConcept | null;
+      const saved = localStorage.getItem(CONCEPT_STORAGE_KEY) as ProfileConcept | null;
       if (saved && ["command", "editorial", "atlas", "standard"].includes(saved)) {
         setConceptState(saved);
       }
@@ -78,7 +83,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
     setConceptState(newConcept);
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("ixstates_profile_concept", newConcept);
+        localStorage.setItem(CONCEPT_STORAGE_KEY, newConcept);
         const url = new URL(window.location.href);
         url.searchParams.set("concept", newConcept);
         window.history.replaceState({}, "", url.toString());
@@ -178,8 +183,8 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
           realm: country.realm ?? null,
           sovereignUser,
         }}
-        flagUrl={flagUrl}
-        flagLoading={flagLoading}
+        flagUrl={country.flag || flagUrl}
+        flagLoading={country.flag ? false : flagLoading}
         unsplashImageUrl={unsplashImageUrl}
         isOwnCountry={!!isOwnCountry}
         showGdpPerCapita={showGdpPerCapita}
@@ -221,6 +226,15 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
         </div>
 
         {/* Concept Views Dispatcher */}
+        {concept !== "standard" && (
+          <div
+            role="note"
+            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-medium text-amber-900 dark:text-amber-200"
+          >
+            Prototype layout: most sections below show sample figures, not {country.name}&apos;s
+            data. Switch to Standard Factbook for the live profile.
+          </div>
+        )}
         {concept === "command" && <CommandProfileView country={country} slug={slug} />}
         {concept === "editorial" && <EditorialProfileView country={country} slug={slug} />}
         {concept === "atlas" && <AtlasProfileView country={country} slug={slug} />}

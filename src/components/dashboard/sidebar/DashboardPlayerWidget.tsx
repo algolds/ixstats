@@ -256,25 +256,26 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           </>
         )}
 
-        {/* Compact horizontal row of quick-action icons */}
-        <div className="grid grid-cols-3 gap-1.5 pt-1.5">
+        {/* Quick actions: full-width rows, since three columns in the 12rem sidebar are narrower
+            than the labels at the 12px minimum text size. */}
+        <div className="grid grid-cols-1 gap-1.5 pt-1.5">
           {/* Messages */}
           <Link
             href="/messages"
-            className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/15 px-1.5 py-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-indigo-500/25 active:scale-[0.94] dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
+            className="group/icon relative flex min-w-0 items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/15 px-2.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-indigo-500/25 active:scale-[0.94] dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
             title={
               totalUnreadMessages > 0
                 ? `${totalUnreadMessages} unread messages`
                 : "No unread messages"
             }
           >
-            <Mail className="h-4 w-4 text-indigo-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-indigo-400" />
+            <Mail className="h-4 w-4 shrink-0 text-indigo-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-indigo-400" />
             {totalUnreadMessages > 0 && (
               <span className="animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-xs font-semibold text-white tabular-nums shadow-md dark:bg-blue-500">
                 {totalUnreadMessages}
               </span>
             )}
-            <span className="mt-1.5 text-xs font-medium tracking-normal text-indigo-800 dark:text-indigo-300">
+            <span className="min-w-0 truncate text-xs font-medium tracking-normal text-indigo-800 dark:text-indigo-300">
               Mail
             </span>
           </Link>
@@ -284,10 +285,10 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <Link
               href={createUrl("/mycountry/executive?focus=directives")}
               data-cuelume-press="soft"
-              className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 px-1 py-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-amber-500/25 active:scale-[0.94] dark:border-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              className="group/icon relative flex min-w-0 items-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/15 px-2.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-amber-500/25 active:scale-[0.94] dark:border-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
               title={`${issueCount} pending directives (${urgentCount} urgent)`}
             >
-              <ClipboardList className="h-4 w-4 text-amber-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-amber-400" />
+              <ClipboardList className="h-4 w-4 shrink-0 text-amber-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-amber-400" />
               {(issueCount > 0 || urgentCount > 0) && (
                 <span
                   className={cn(
@@ -298,14 +299,14 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                   {urgentCount > 0 ? urgentCount : issueCount}
                 </span>
               )}
-              <span className="mt-1.5 max-w-full truncate text-xs font-medium tracking-normal text-amber-800 dark:text-amber-300">
+              <span className="min-w-0 truncate text-xs font-medium tracking-normal text-amber-800 dark:text-amber-300">
                 Directives
               </span>
             </Link>
           ) : (
-            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-100/60 px-1 py-2.5 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
-              <ClipboardList className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-xs font-medium tracking-normal">
+            <div className="flex min-w-0 cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/60 px-2.5 py-2 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
+              <ClipboardList className="text-muted-foreground h-4 w-4 shrink-0" />
+              <span className="text-muted-foreground min-w-0 truncate text-xs font-medium tracking-normal">
                 Directives
               </span>
             </div>
@@ -317,7 +318,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               href={createUrl("/mycountry/executive?focus=agenda")}
               data-cuelume-press="soft"
               className={cn(
-                "group/icon relative flex flex-col items-center justify-center rounded-xl px-1 py-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] active:scale-[0.94]",
+                "group/icon relative flex min-w-0 items-center gap-2 rounded-xl px-2.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] active:scale-[0.94]",
                 pendingActions > 0
                   ? "border border-orange-500/35 bg-orange-500/15 hover:bg-orange-500/25 dark:border-orange-500/25 dark:bg-orange-500/10 dark:hover:bg-orange-500/20"
                   : "border border-emerald-500/35 bg-emerald-500/15 hover:bg-emerald-500/25 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
@@ -328,7 +329,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             >
               <CalendarCheck
                 className={cn(
-                  "h-4 w-4 transition-transform duration-150 group-hover/icon:scale-110",
+                  "h-4 w-4 shrink-0 transition-transform duration-150 group-hover/icon:scale-110",
                   pendingActions > 0
                     ? "text-orange-600 dark:text-orange-400"
                     : "text-emerald-600 dark:text-emerald-400"
@@ -344,7 +345,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               />
               <span
                 className={cn(
-                  "mt-1.5 max-w-full truncate text-xs font-medium tracking-normal",
+                  "min-w-0 truncate text-xs font-medium tracking-normal",
                   pendingActions > 0
                     ? "text-orange-900 dark:text-orange-400"
                     : "text-emerald-900 dark:text-emerald-400"
@@ -354,9 +355,9 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               </span>
             </Link>
           ) : (
-            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-100/60 px-1 py-2.5 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
-              <CalendarCheck className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-xs font-medium tracking-normal">
+            <div className="flex min-w-0 cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/60 px-2.5 py-2 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
+              <CalendarCheck className="text-muted-foreground h-4 w-4 shrink-0" />
+              <span className="text-muted-foreground min-w-0 truncate text-xs font-medium tracking-normal">
                 Agenda
               </span>
             </div>

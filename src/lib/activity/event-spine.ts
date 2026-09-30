@@ -140,7 +140,11 @@ export class CountryEventSpine {
 
         if (!record) continue;
 
-        const previousValue = (record[consequence.targetField] as number) ?? 0;
+        // An unset (null) stat has no baseline to move from: skip it rather than treating it
+        // as 0 (subtracting from a missing unemployment rate used to write 0% unemployment).
+        const storedValue = record[consequence.targetField];
+        if (typeof storedValue !== "number" || !Number.isFinite(storedValue)) continue;
+        const previousValue = storedValue;
 
         // Compute new value
         let newValue: number;

@@ -753,10 +753,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           selectedAccount={accounts[0] || null}
           accounts={accounts}
           isOwner={true}
-          onPost={() => {
-            setIsRepostOpen(false);
-            notify.success(`Reposted "${cleanTitle}" to ThinkPages!`);
-          }}
+          onPost={() => setIsRepostOpen(false)}
         />
       )}
     </div>

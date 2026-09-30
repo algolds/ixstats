@@ -119,6 +119,28 @@ describe("CountryEventSpine", () => {
     });
   });
 
+  test("skips a stat that has no stored value instead of treating it as 0", async () => {
+    mockDb.country.findUnique.mockResolvedValue({ id: countryId, unemploymentRate: null });
+
+    const results = await CountryEventSpine.recordCountryEvent({
+      db: mockDb,
+      countryId,
+      sourceType: "decision",
+      description: "Directive",
+      consequences: [
+        {
+          targetModel: "Country",
+          targetField: "unemploymentRate",
+          operation: "subtract",
+          value: 0.6,
+        },
+      ],
+    });
+
+    expect(results).toHaveLength(0);
+    expect(mockDb.country.update).not.toHaveBeenCalled();
+  });
+
   test("falls back to general ledger log when no consequences are applied", async () => {
     await CountryEventSpine.recordCountryEvent({
       db: mockDb,

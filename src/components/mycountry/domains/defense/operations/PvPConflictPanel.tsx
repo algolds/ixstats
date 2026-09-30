@@ -40,6 +40,8 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   const [strikeOpen, setStrikeOpen] = useState(false);
   const [targetId, setTargetId] = useState("");
   const [reason, setReason] = useState("");
+  // Outcome of the last PvNPC strike, shown after the dialog closes.
+  const [strikeResult, setStrikeResult] = useState<{ target: string; won: boolean } | null>(null);
 
   const { data: conflicts, refetch } = api.security.getConflicts.useQuery(
     { countryId },
@@ -52,14 +54,11 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   );
 
   // Only unclaimed (NPC) related nations; resolvePvNPCConflict rejects player nations.
-  const { data: npcTargets } = api.security.getPvNPCTargets.useQuery(undefined, {
+  const npcTargetsQuery = api.security.getPvNPCTargets.useQuery(undefined, {
     enabled: strikeOpen,
+    retry: false,
   });
-
-  const handleStrikeOpenChange = (open: boolean) => {
-    setStrikeOpen(open);
-    setTargetId("");
-  };
+  const npcTargets = npcTargetsQuery.data;
 
   const proposeMutation = api.security.proposePvPConflict.useMutation({
     onSuccess: () => {
@@ -75,8 +74,23 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   });
 
   const resolvePvNPCMutation = api.security.resolvePvNPCConflict.useMutation({
-    onSuccess: () => void refetch(),
+    onSuccess: (conflict) => {
+      setStrikeResult({
+        target: conflict.defender?.name ?? "the target",
+        won: conflict.winner === countryId,
+      });
+      setStrikeOpen(false);
+      setTargetId("");
+      setReason("");
+      void refetch();
+    },
   });
+
+  const handleStrikeOpenChange = (open: boolean) => {
+    setStrikeOpen(open);
+    setTargetId("");
+    if (open) resolvePvNPCMutation.reset();
+  };
 
   const targetCountries = relationships
     ? [
@@ -151,6 +165,18 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                     rows={2}
                   />
                 </div>
+                {npcTargetsQuery.error && (
+                  <div className="text-sm text-red-500">{npcTargetsQuery.error.message}</div>
+                )}
+                {npcTargets?.length === 0 && (
+                  <p className="text-muted-foreground text-xs">
+                    Strikes target NPC (unclaimed) nations you have diplomatic relations with. Open
+                    relations with one under Diplomacy first.
+                  </p>
+                )}
+                {resolvePvNPCMutation.error && (
+                  <div className="text-sm text-red-500">{resolvePvNPCMutation.error.message}</div>
+                )}
                 <Button
                   onClick={() =>
                     resolvePvNPCMutation.mutate({
@@ -232,6 +258,21 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
           </Dialog>
         </div>
       </div>
+
+      {strikeResult && (
+        <div
+          role="status"
+          className={
+            strikeResult.won
+              ? "rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-sm text-green-600 dark:text-green-400"
+              : "rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-600 dark:text-red-400"
+          }
+        >
+          {strikeResult.won
+            ? `Victory: your strike on ${strikeResult.target} succeeded. Both economies take a hit; see Past Conflicts.`
+            : `Defeat: the strike on ${strikeResult.target} was repelled. See Past Conflicts for casualties.`}
+        </div>
+      )}
 
       {/* Pending challenges that need response */}
       {pendingForMe.length > 0 && (

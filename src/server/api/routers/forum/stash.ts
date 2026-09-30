@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 
 export const forumStashRouter = createTRPCRouter({
   // =========================================================================
@@ -28,13 +29,13 @@ export const forumStashRouter = createTRPCRouter({
       let targetStashId = input.stashId;
       if (!targetStashId) {
         const defaultStash = await db.stash.findFirst({
-          where: { userId: ctx.auth.userId, isDefault: true },
+          where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
         });
         if (defaultStash) {
           targetStashId = defaultStash.id;
         } else {
           const created = await db.stash.create({
-            data: { userId: ctx.auth.userId, name: "My Stash", isDefault: true },
+            data: { userId: requireWikiUserId(ctx), name: "My Stash", isDefault: true },
           });
           targetStashId = created.id;
         }
@@ -80,7 +81,7 @@ export const forumStashRouter = createTRPCRouter({
       } else {
         // Remove from all user's stashes
         const userStashes = await db.stash.findMany({
-          where: { userId: ctx.auth.userId },
+          where: { userId: { in: requireWikiUserIds(ctx) } },
           select: { id: true },
         });
         await db.stashItem.deleteMany({
@@ -103,7 +104,7 @@ export const forumStashRouter = createTRPCRouter({
       const { db } = await import("~/server/db");
       const pageTitle = `forum:thread:${input.threadId}`;
       const userStashes = await db.stash.findMany({
-        where: { userId: ctx.auth.userId },
+        where: { userId: { in: requireWikiUserIds(ctx) } },
         select: { id: true, name: true, color: true },
       });
 
@@ -136,7 +137,7 @@ export const forumStashRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { db } = await import("~/server/db");
       const userStashes = await db.stash.findMany({
-        where: { userId: ctx.auth.userId },
+        where: { userId: { in: requireWikiUserIds(ctx) } },
         select: { id: true },
       });
 

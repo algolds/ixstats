@@ -59,6 +59,10 @@ export const economyProcedures = {
         },
         owner: { select: SOVEREIGN_OWNER_SELECT },
         realm: { select: { id: true, name: true, slug: true } },
+        // Read by the MyCountry Standing band (issues and directives move these).
+        stabilityMetrics: {
+          select: { stabilityScore: true, trustInGovernment: true, socialCohesion: true },
+        },
       };
 
       if (availableRelations.economicProfile) includeObject.economicProfile = true;

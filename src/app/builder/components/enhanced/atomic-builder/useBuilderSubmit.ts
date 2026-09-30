@@ -84,8 +84,11 @@ export function useBuilderSubmit({
     },
   });
 
+  const utils = api.useUtils();
   const updateCountryMutation = api.countries.updateCountry.useMutation({
     onSuccess: (country) => {
+      // Flags are resolved by name and cached for an hour on the client.
+      void utils.countries.flags.resolveBatch.invalidate();
       try {
         if (typeof window !== "undefined") {
           localStorage.removeItem(`builder_state_${countryId}`);

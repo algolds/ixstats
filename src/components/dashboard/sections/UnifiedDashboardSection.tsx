@@ -257,7 +257,7 @@ export function UnifiedDashboardSection({
                   account={selectedAccount}
                   onAccountSelect={setSelectedAccount}
                   onPost={() => {
-                    notify.success("Posted successfully!");
+                    // The composer shows the success toast.
                     utils.activities.getGlobalFeed.refetch();
                     if (hasCountry) {
                       utils.activities.getFollowingFeed.refetch();
@@ -445,7 +445,7 @@ export function UnifiedDashboardSection({
           onCreateAccount={() => setShowAccountCreation(true)}
           isOwner={hasCountry}
           onPost={() => {
-            notify.success("Reposted successfully!");
+            // The composer shows the success toast.
             utils.activities.getGlobalFeed.refetch();
             if (hasCountry) {
               utils.activities.getFollowingFeed.refetch();
