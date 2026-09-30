@@ -48,6 +48,7 @@
     "db:migrate:force": "prisma migrate dev",
     "db:push": "echo '⛔ ERROR: db:push blocked - database contains production data (82 nations). Use db:push:force to override.' && exit 1",
     "db:push:force": "prisma db push",
+    "db:remap-budget-years": "bun scripts/migrations/remap-budget-years.ts",
     "db:reset": "echo '⛔ DANGEROUS: db:reset is PERMANENTLY blocked. This would destroy 82 nations of production data.' && exit 1",
     "db:restore": "bun scripts/setup/restore-db.ts",
     "db:seed": "bun scripts/setup/seed-db.ts",

@@ -12,7 +12,7 @@ scripts/
 ├── audit/                        # Architecture guard (audit-arch.ts) & test validation suites (see audit/README.md)
 ├── verification/                 # CI gates: partitioned typecheck runner, Jest quarantine runner, entrypoint check, verify-strict
 ├── docs/                         # Reference-doc synchronizer (docs:sync / docs:check)
-├── setup/                        # Database seeders, init, backup/restore stubs, asset generators, Clerk/auth checks
+├── setup/                        # Database seeders, init, backup/restore, asset generators, Clerk/auth checks
 ├── deployment/                   # Staging/rollback/validation tooling (see deployment/README.md)
 ├── diagnostics/                  # Health check, benchmark, cache and DB analysis scripts (diagnostics:*)
 ├── cron/                         # Cron job checker (cron:check)
@@ -20,6 +20,7 @@ scripts/
 ├── onoma/                        # Linguistics lexicon & Kokoro TTS dictionary tools
 ├── ops/                          # Nginx & server configuration templates
 ├── realms/                       # Realms data backfill (owners, IxWorld slug, wiki links, visibility) + realm lore index import
+├── migrations/                   # One-off data migrations (dry run by default, --apply writes)
 ├── reports/                      # Generated report outputs
 ├── *.sh / *.js / *.ts            # Core root runners (with-base-path.sh, deploy-production.sh, wiki sync, etc.)
 └── archive/                      # Historical migrations, one-off backfills, and GIS tools
@@ -37,7 +38,7 @@ scripts/
 | [`scripts/write-build-version.js`](write-build-version.js) | **Prebuild Hook**: Reads git short SHA and writes `src/lib/buildVersion.generated.ts`. |
 | [`scripts/with-base-path.sh`](with-base-path.sh) | Wraps Next.js build/start with the `/projects/ixstates` production basePath. |
 | [`scripts/post-build.sh`](post-build.sh) | **Postbuild Hook**: Copies standalone public assets and ensures standalone directory parity. |
-| [`scripts/deploy-production.sh`](deploy-production.sh) | Full production deployment script (build, postbuild, PM2 reload, asset sync). |
+| [`scripts/deploy-production.sh`](deploy-production.sh) | Full production deployment script (`db:backup` before the schema sync — aborts if the dump fails — then build, postbuild, PM2 reload, asset sync). |
 | [`scripts/start-production.js`](start-production.js) | Legacy production startup script (not wired to any `package.json` alias; `bun run start:prod` uses the root `start-production.sh`, `bun run start` uses `server.mjs`). |
 | [`scripts/deploy-ixworld.sh`](deploy-ixworld.sh) | Maps standalone build runner (`NEXT_PUBLIC_IXWORLD_STANDALONE=true`). |
 | [`scripts/dev-local.sh`](dev-local.sh) | WSL local dev (`bun run dev:local`): SSH tunnels, prod DB snapshot into the local `ixstats-postgres` container, asset rsync, then `start-development.sh`. |
@@ -83,14 +84,23 @@ scripts/
 
 ---
 
+## 🔁 Data Migrations (`scripts/migrations/`)
+
+| Script | Purpose & Command |
+| :--- | :--- |
+| [`scripts/migrations/remap-budget-years.ts`](migrations/remap-budget-years.ts) | `bun run db:remap-budget-years [-- --apply]` — one-off MC-1 fix: shifts `BudgetAllocation.budgetYear` rows still on real-calendar years (≤ 2035) onto the IxTime basis (`currentBudgetYear()`) by the constant offset `ixYear − realYear`. Dry run by default (prints the year mapping and conflicts); `--apply` writes in one transaction. Take a `db:backup` first. |
+| [`scripts/migrations/budget-year-remap-plan.ts`](migrations/budget-year-remap-plan.ts) | Pure planner for the remap above (`planBudgetYearRemap`); a target year the department already holds is reported, never overwritten. |
+
+---
+
 ## 🗄️ Database & Environment Setup (`scripts/setup/`)
 
 | Script | Purpose & Command |
 | :--- | :--- |
 | [`scripts/setup/init-db.ts`](setup/init-db.ts) | Initializes database tables and seed prerequisites (`bun run db:init`). |
 | [`scripts/setup/seed-db.ts`](setup/seed-db.ts) | Primary database seeder for countries, government structures, and initial users (`bun run db:seed`). |
-| [`scripts/setup/backup-db.ts`](setup/backup-db.ts) | `bun run db:backup` — **not implemented for PostgreSQL**: prints a `pg_dump` hint and exits 1. Use `pg_dump` directly. |
-| [`scripts/setup/restore-db.ts`](setup/restore-db.ts) | `bun run db:restore` — lists `prisma/backups/backup_*.sql`; the actual PostgreSQL restore is **not implemented** (prints a `psql` hint). |
+| [`scripts/setup/backup-db.ts`](setup/backup-db.ts) | `bun run db:backup [-- --keep 14] [--dir backups] [--no-docker]` — `pg_dump -Fc` (via the `ixstats-postgres` container when it is running, else `DATABASE_URL`) to `backups/ixstats-<UTC timestamp>.dump`, then prunes to the newest N. Non-zero exit on failure. Run by `deploy-production.sh` before `db push` and by the `db-backup` cron job. |
+| [`scripts/setup/restore-db.ts`](setup/restore-db.ts) | `bun run db:restore [-- <file> [--yes] [--i-know-this-is-production] [--no-docker]]` — lists `backups/`; with a file, prints the `pg_restore --clean --if-exists --no-owner` plan and runs it only with `--yes`. Refused under `NODE_ENV=production` without `--i-know-this-is-production`. |
 | [`scripts/setup/seed-sports-standalone.ts`](setup/seed-sports-standalone.ts) | Seeds standalone sports leagues, clubs, and schedules (`bun run db:seed:sports`). |
 | [`scripts/setup/seed-vault-items.ts`](setup/seed-vault-items.ts) | Seeds cards, card packs, and store perks. |
 | [`scripts/setup/generate-pack-assets.ts`](setup/generate-pack-assets.ts) | Generates SVG pack art and foil textures for card packs. |

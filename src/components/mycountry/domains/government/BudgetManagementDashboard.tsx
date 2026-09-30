@@ -4,7 +4,9 @@ import React, { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { formatNumber, safeFormatCurrency, toTitleCase } from "~/lib/utils";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear, latestBudgetYearUpTo } from "~/lib/government/budget-year";
+import { Button } from "~/components/ui/button";
+import { useNotify } from "~/hooks/useNotify";
 import type {
   GovernmentStructure,
   GovernmentDepartment,
@@ -41,7 +43,7 @@ export function BudgetManagementDashboard({
   budgetAllocations: propAllocations,
   revenueSources: propRevenue,
   onUpdateBudget: _onUpdateBudget,
-  isReadOnly: _isReadOnly = false,
+  isReadOnly = false,
 }: BudgetManagementDashboardProps) {
   const { data: fetchedGov } = api.government.getFullByCountryId.useQuery(
     { countryId: countryId ?? "" },
@@ -59,9 +61,28 @@ export function BudgetManagementDashboard({
   const [selectedView, setSelectedView] = useState<
     "overview" | "departments" | "revenue" | "analysis"
   >("overview");
-  const [selectedYear, setSelectedYear] = useState(
-    new Date(IxTime.getCurrentIxTime()).getFullYear()
-  );
+  // The budget in effect is the latest year at or before the current IxTime year: after a
+  // rollover the previous year's budget stays in effect until the new one is started.
+  const currentYear = currentBudgetYear();
+  const effectiveYear =
+    latestBudgetYearUpTo(
+      budgetAllocations.map((a: BudgetAllocation) => a.budgetYear),
+      currentYear
+    ) ?? currentYear;
+  const needsNewYearBudget = effectiveYear < currentYear;
+  const [chosenYear, setSelectedYear] = useState<number | null>(null);
+  const selectedYear = chosenYear ?? effectiveYear;
+
+  const notify = useNotify();
+  const utils = api.useUtils();
+  const startBudgetYear = api.government.startBudgetYear.useMutation({
+    onSuccess: async (result) => {
+      notify.success(`FY${result.toYear} budget started from FY${result.fromYear}`);
+      setSelectedYear(result.toYear);
+      await utils.government.getFullByCountryId.invalidate({ countryId: countryId ?? "" });
+    },
+    onError: (error) => notify.error(error.message),
+  });
   const [overviewChartMode, setOverviewChartMode] = useState<"allocation" | "trend">("allocation");
 
   // Calculate budget summary
@@ -215,10 +236,7 @@ export function BudgetManagementDashboard({
             onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
             className="border-border/40 bg-card/60 text-foreground hover:border-border/60 cursor-pointer rounded-xl border px-3 py-1.5 font-mono text-xs font-semibold backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-2 focus:ring-emerald-500/30"
           >
-            {Array.from({ length: 5 }, (_, i) => {
-              const currentIxYear = new Date(IxTime.getCurrentIxTime()).getFullYear();
-              return currentIxYear - i;
-            }).map((year) => (
+            {Array.from({ length: 5 }, (_, i) => currentBudgetYear() - i).map((year) => (
               <option
                 key={year}
                 value={year}
@@ -235,6 +253,26 @@ export function BudgetManagementDashboard({
           </Badge>
         </div>
       </div>
+
+      {needsNewYearBudget && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <p className="text-foreground text-sm">
+            A new fiscal year has begun. Your FY{effectiveYear} budget stays in effect until you
+            set the FY{currentYear} budget.
+          </p>
+          {countryId && !isReadOnly && !propAllocations && (
+            <Button
+              size="sm"
+              onClick={() => startBudgetYear.mutate({ countryId })}
+              disabled={startBudgetYear.isPending}
+            >
+              {startBudgetYear.isPending
+                ? "Starting…"
+                : `Start FY${currentYear} budget from FY${effectiveYear}`}
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Key Metrics Cards */}
       <BudgetKeyMetrics

@@ -5,6 +5,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { checkComponentSynergy } from "~/lib/government/synergy";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -399,7 +400,7 @@ export async function syncGovernmentStructure(
       for (const alloc of govInput.budgetAllocations) {
         const realDeptId = deptIdMap.get(alloc.departmentId);
         if (!realDeptId) continue;
-        const budgetYear = alloc.budgetYear ?? new Date().getFullYear();
+        const budgetYear = alloc.budgetYear ?? currentBudgetYear();
         const dedupeKey = `${realDeptId}:${budgetYear}`;
         if (seenAlloc.has(dedupeKey)) continue;
         seenAlloc.add(dedupeKey);

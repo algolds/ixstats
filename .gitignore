@@ -144,6 +144,7 @@ prettier.config.js
 scripts/audit/reports/
 scripts/audit-reports/
 prisma/backups/
+/backups/
 
 # --------------------------------------------------------------------------------
 # Archive & Generated Docs

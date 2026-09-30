@@ -4,6 +4,7 @@
  */
 
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import type {
   EconomicInputs,
   NationalIdentityData,
@@ -388,7 +389,7 @@ function createDepartmentsFromParsed(
     allocations.push({
       departmentId: dept.name,
       allocatedPercent: 5,
-      budgetYear: new Date().getFullYear(),
+      budgetYear: currentBudgetYear(),
       allocatedAmount: totalBudget * 0.05,
     });
   }
