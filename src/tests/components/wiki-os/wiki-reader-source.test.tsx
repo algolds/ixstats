@@ -11,6 +11,7 @@ const mockSetActiveModal = jest.fn();
 const mockReplace = jest.fn();
 let mockSearch = "";
 let mockSlug = "Portal%3AEurth";
+let mockSignedIn = true;
 
 jest.mock("next/navigation", () => ({
   useParams: () => ({ slug: mockSlug }),
@@ -22,6 +23,9 @@ jest.mock("~/trpc/react", () => ({
     useUtils: () => ({ wikios: { getWikitext: { prefetch: mockPrefetch } } }),
     wikios: { getArticleHtml: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } },
   },
+}));
+jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
+  useWikiAuth: () => ({ isSignedIn: mockSignedIn }),
 }));
 jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
   WikiOSLayout: ({ children, readOnly }: { children: ReactNode; readOnly?: boolean }) => {
@@ -73,6 +77,7 @@ describe("WikiOS reader ?source=", () => {
     jest.clearAllMocks();
     mockSlug = "Portal%3AEurth";
     mockSearch = "";
+    mockSignedIn = true;
     Object.assign(window, { requestIdleCallback: (cb: () => void) => cb() });
     document.head.querySelector('link[rel="canonical"]')?.remove();
   });
@@ -110,6 +115,27 @@ describe("WikiOS reader ?source=", () => {
       "href",
       "https://ixwiki.com/wiki/Aurelia"
     );
+  });
+
+  it("warms the editor's wikitext only for a signed-in reader (plan 404)", () => {
+    mockSlug = "Aurelia";
+    found("Aurelia");
+
+    mockSignedIn = false;
+    render(<WikiOSArticlePage />);
+    expect(mockPrefetch).not.toHaveBeenCalled();
+
+    mockSignedIn = true;
+    render(<WikiOSArticlePage />);
+    expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
+  });
+
+  it("passes the page's own authorship through untouched: an IxWiki page gets none and loads it itself (plan 404)", () => {
+    mockSlug = "Aurelia";
+    found("Aurelia");
+    render(<WikiOSArticlePage />);
+
+    expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ authorInfo: null }));
   });
 
   it("?margin=1 opens the margin on an IxWiki page only (ruling E-l′)", () => {

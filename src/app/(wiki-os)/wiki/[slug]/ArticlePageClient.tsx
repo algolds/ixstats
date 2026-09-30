@@ -21,6 +21,7 @@ import {
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { RESERVED_TOOL_PAGES } from "./reserved-tool-pages";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
 
 /**
@@ -43,6 +44,7 @@ export default function WikiOSArticlePage() {
   const router = useRouter();
   const utils = api.useUtils();
   const { setActiveModal } = useWikiContext();
+  const { isSignedIn } = useWikiAuth();
   const articleRef = useRef<HTMLDivElement>(null);
 
   const { wikiSource, isEditAction, isMarginParam } = readerParams(searchParams);
@@ -174,16 +176,17 @@ export default function WikiOSArticlePage() {
     }
   );
 
-  // Background idle wikitext warmup so clicking Edit is 0ms
+  // Background idle wikitext warmup so clicking Edit is 0ms. Only a signed-in reader can edit:
+  // an anonymous reader never pays for the wikitext (up to 2 MB) of every page they open.
   useEffect(() => {
-    if (data && !isMainPage && isIxWiki) {
+    if (data && !isMainPage && isIxWiki && isSignedIn) {
       if ("requestIdleCallback" in window) {
         window.requestIdleCallback(() => {
           void utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
         });
       }
     }
-  }, [data, title, isMainPage, isIxWiki, utils]);
+  }, [data, title, isMainPage, isIxWiki, isSignedIn, utils]);
 
   // Canonical link and page title
   useEffect(() => {
@@ -274,48 +277,7 @@ export default function WikiOSArticlePage() {
                 categories={data.categories}
                 lastModified={data.lastModified ?? null}
                 wikiSource={wikiSource}
-                authorInfo={
-                  data.authorInfo
-                    ? {
-                        creator:
-                          typeof (data.authorInfo as any).creator === "object"
-                            ? ((data.authorInfo as any).creator?.username ?? null)
-                            : ((data.authorInfo as any).creator ??
-                              (data.authorInfo as any).author ??
-                              null),
-                        creatorAvatar:
-                          (data.authorInfo as any).creator?.avatar ??
-                          (data.authorInfo as any).creatorAvatar ??
-                          null,
-                        createdAt:
-                          (data.authorInfo as any).createdAt ??
-                          (data.authorInfo as any).creator?.timestamp ??
-                          (data.authorInfo as any).createdTimestamp ??
-                          null,
-                        lastEditor:
-                          typeof (data.authorInfo as any).lastEditor === "object"
-                            ? ((data.authorInfo as any).lastEditor?.username ?? null)
-                            : ((data.authorInfo as any).lastEditor ?? null),
-                        lastEditorAvatar:
-                          (data.authorInfo as any).lastEditor?.avatar ??
-                          (data.authorInfo as any).lastEditorAvatar ??
-                          null,
-                        lastEditedAt:
-                          (data.authorInfo as any).lastEditedAt ??
-                          (data.authorInfo as any).lastEditor?.timestamp ??
-                          (data.authorInfo as any).lastModifiedTimestamp ??
-                          null,
-                        contributors:
-                          (data.authorInfo as any).topContributors ??
-                          (data.authorInfo as any).contributors ??
-                          [],
-                        totalContributors:
-                          (data.authorInfo as any).totalContributors ??
-                          (data.authorInfo as any).topContributors?.length ??
-                          0,
-                      }
-                    : null
-                }
+                authorInfo={data.authorInfo}
               />
             )}
           </>

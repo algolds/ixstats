@@ -22,9 +22,11 @@ import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 import { EMBED_CSS, EMBED_JS, EMBED_PREFETCH } from "~/lib/wiki-os/editor/wiki-embed-shared";
 import { parseWikiSource } from "~/lib/wiki-os/config";
+import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
 
 // Subcomponent imports
-import { WikiOSHeader, type ArticleAuthorInfo } from "./ArticleHeader";
+import { WikiOSHeader } from "./ArticleHeader";
+import { normalizeAuthorInfo } from "./author-info";
 import { QuickHistoryModal, QuickBacklinksModal } from "./ArticleModals";
 import {
   injectPlaceholderElements,
@@ -92,8 +94,13 @@ interface ArticleRendererProps {
   categories: string[];
   lastModified: string | null;
   wikiSource?: "ixwiki" | "iiwiki" | "althistory";
+  /** Authorship the page already came with (another wiki's page); an IxWiki page loads its own. */
   authorInfo?: ArticleAuthorInfo | null;
 }
+
+/** An embed is a `.ix-embed-wrap` block (the class EMBED_CSS styles); only pages with one need the embed assets. */
+const EMBED_MARKER = "ix-embed-wrap";
+const AUTHORS_STALE_MS = 10 * 60 * 1000;
 
 // oxlint-disable-next-line eslint/no-unused-vars
 const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
@@ -189,6 +196,16 @@ export function ArticleRenderer({
   const utils = api.useUtils();
 
   const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
+
+  // Authorship loads beside the article, never in front of it (it can take MediaWiki a moment).
+  const authorsQuery = api.wikios.getArticleAuthors.useQuery(
+    { title, wikiSource: source },
+    { enabled: !authorInfo && !!title, staleTime: AUTHORS_STALE_MS, retry: false }
+  );
+  const authors = useMemo(
+    () => normalizeAuthorInfo(authorInfo ?? authorsQuery.data),
+    [authorInfo, authorsQuery.data]
+  );
 
   // Query discussions for Gutter Pins & counts
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -353,9 +370,14 @@ export function ArticleRenderer({
     return { lat: c.lat || 0, lng: c.lng || 0 };
   }, [viewerCountryData]);
 
-  // Inject shared embed CSS + JS
+  const hasEmbeds = useMemo(
+    () => contentHtml.includes(EMBED_MARKER) || Boolean(infoboxHtml?.includes(EMBED_MARKER)),
+    [contentHtml, infoboxHtml]
+  );
+
+  // Inject shared embed CSS + JS (and warm the /maps page they frame) only for a page that embeds a map
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (!hasEmbeds || typeof document === "undefined") return;
 
     if (!document.getElementById("ixstats-embed-css")) {
       const style = document.createElement("style");
@@ -384,7 +406,7 @@ export function ArticleRenderer({
       link.setAttribute("as", "document");
       document.head.appendChild(link);
     }
-  }, []);
+  }, [hasEmbeds]);
 
   const processedHtml = useMemo(() => {
     const html = injectPlaceholderElements(contentHtml);
@@ -610,7 +632,7 @@ export function ArticleRenderer({
           countryData={countryData}
           featuredImageUrl={featuredImageUrl}
           themeColors={themeColors}
-          authorInfo={authorInfo}
+          authorInfo={authors}
           awardsData={awardsData}
           tocLength={toc.length}
           onTocClick={() => setTocOpen(true)}
@@ -619,11 +641,7 @@ export function ArticleRenderer({
 
         {/* Mobile Byline Strip (< XL screens where right Intel HUD is hidden) */}
         {(() => {
-          const creator = authorInfo?.creator;
-          const creatorName =
-            typeof creator === "object"
-              ? (creator as any)?.username
-              : creator || (authorInfo as any)?.author || null;
+          const creatorName = authors?.creator ?? null;
 
           if (!creatorName && !lastModified) return null;
 
@@ -762,7 +780,7 @@ export function ArticleRenderer({
             slug={slug}
             contentHtml={contentHtml}
             lastModified={lastModified}
-            authorInfo={authorInfo}
+            authorInfo={authors}
             categories={categories}
             awardsData={awardsData}
             marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
