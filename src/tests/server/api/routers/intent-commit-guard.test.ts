@@ -73,14 +73,14 @@ function makeDb(seed: IntentRow[]) {
         if (!row) throw new Error("not found");
         return { ...row };
       }),
-      // cooldownStatus: { countryId, status: { in }, createdIxTime: { gte } }
+      // cooldownStatus: { countryId, tier: { not: "proposed" }, createdIxTime: { gte } }
       findMany: jest.fn(
         async ({
           where,
         }: {
           where: {
             countryId: string;
-            status: { in: string[] };
+            tier: { not: string };
             createdIxTime: { gte: number };
           };
         }) =>
@@ -88,7 +88,7 @@ function makeDb(seed: IntentRow[]) {
             .filter(
               (r) =>
                 r.countryId === where.countryId &&
-                where.status.in.includes(r.status) &&
+                r.tier !== where.tier.not &&
                 r.createdIxTime >= where.createdIxTime.gte
             )
             .sort((a, b) => a.createdIxTime - b.createdIxTime)

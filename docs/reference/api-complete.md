@@ -3,7 +3,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (77 Routers, 932 Endpoints)
+### Live tRPC API Inventory (77 Routers, 925 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -33,7 +33,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.diplomaticPolicies`** | 7 | 10 | 0 | **17** | `src/server/api/routers/diplomacy/policies/index.ts` |
 | **`api.diplomaticScenarios`** | 4 | 4 | 0 | **8** | `src/server/api/routers/diplomaticScenarios/index.ts` |
 | **`api.economicArchetypes`** | 2 | 4 | 0 | **6** | `src/server/api/routers/economicArchetypes/index.ts` |
-| **`api.economicComponents`** | 3 | 5 | 0 | **8** | `src/server/api/routers/economicComponents/index.ts` |
+| **`api.economicComponents`** | 3 | 1 | 0 | **4** | `src/server/api/routers/economicComponents/index.ts` |
 | **`api.economics`** | 2 | 3 | 0 | **5** | `src/server/api/routers/economics/index.ts` |
 | **`api.elections`** | 6 | 5 | 0 | **11** | `src/server/api/routers/elections/index.ts` |
 | **`api.formulas`** | 1 | 2 | 0 | **3** | `src/server/api/routers/formulas.ts` |
@@ -45,7 +45,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.geoSovereignty`** | 2 | 3 | 0 | **5** | `src/server/api/routers/geo/sovereignty.ts` |
 | **`api.geoWiki`** | 3 | 0 | 0 | **3** | `src/server/api/routers/geo/wiki.ts` |
 | **`api.government`** | 3 | 4 | 0 | **7** | `src/server/api/routers/government/index.ts` |
-| **`api.governmentComponents`** | 2 | 5 | 0 | **7** | `src/server/api/routers/governmentComponents/index.ts` |
+| **`api.governmentComponents`** | 2 | 1 | 0 | **3** | `src/server/api/routers/governmentComponents/index.ts` |
 | **`api.heraldry`** | 6 | 5 | 0 | **11** | `src/server/api/routers/heraldry/index.ts` |
 | **`api.historical`** | 1 | 0 | 0 | **1** | `src/server/api/routers/historical/index.ts` |
 | **`api.intelligence`** | 0 | 0 | 0 | **0** | `src/server/api/routers/intelligence/index.ts` |
@@ -56,7 +56,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.lorewards`** | 7 | 4 | 0 | **11** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 2 | 5 | 0 | **7** | `src/server/api/routers/meetings/index.ts` |
 | **`api.messages`** | 5 | 13 | 0 | **18** | `src/server/api/routers/messages/index.ts` |
-| **`api.militaryEquipment`** | 4 | 6 | 0 | **10** | `src/server/api/routers/militaryEquipment/index.ts` |
+| **`api.militaryEquipment`** | 5 | 6 | 0 | **11** | `src/server/api/routers/militaryEquipment/index.ts` |
 | **`api.mycountry`** | 4 | 0 | 0 | **4** | `src/server/api/routers/mycountry/index.ts` |
 | **`api.narrator`** | 3 | 3 | 0 | **6** | `src/server/api/routers/narrator/index.ts` |
 | **`api.nationalIssues`** | 11 | 10 | 0 | **21** | `src/server/api/routers/national-issues/index.ts` |
@@ -84,7 +84,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.vault`** | 25 | 19 | 0 | **44** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 55 | 20 | 0 | **75** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **459** | **472** | **0** | **932** | **77 registered namespaces** |
+| **TOTALS** | **460** | **464** | **0** | **925** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.

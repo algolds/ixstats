@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, within } from "@testing-library/react";
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, it, expect } from "@jest/globals";
 import type { CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import { ECONOMIC_TIERS } from "~/lib/economic-tier-filter";
 
