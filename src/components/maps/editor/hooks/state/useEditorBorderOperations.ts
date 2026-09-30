@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { notifyFromStore } from "~/hooks/useNotify";
 import type { BorderEditorActions, BorderEditorState } from "~/hooks/useBorderEditor";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import { api } from "~/trpc/react";
@@ -45,7 +46,12 @@ export function useEditorBorderOperations({
       setActiveEditorMode("view");
     } catch (err) {
       console.error("Save failed:", err);
-      alert(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      notifyFromStore({
+        title: "Border save failed",
+        message: err instanceof Error ? err.message : "Unknown error",
+        type: "error",
+        priority: "high",
+      });
     } finally {
       setIsSubmitting(false);
     }

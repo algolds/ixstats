@@ -59,6 +59,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
     // Reset value to a sensible default for the new field
     if (nextField === "color") setValue("#3b82f6");
     else if (nextField === "level") setValue("1");
+    else if (nextField === "type") setValue("province");
     else setValue("");
   }, []);
 
@@ -87,7 +88,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
   const canBulkEdit = subdivisionCount > 0 && !isMutating;
 
   return (
-    <div className="border-border bg-muted/50 flex min-h-8 flex-wrap items-center gap-2 border-b px-3 py-1 text-xs">
+    <div className="flex min-h-9 flex-wrap items-center gap-2 px-3 py-1 text-xs">
       <span className="text-foreground font-medium">{selectedCount} selected</span>
       {subdivisionCount > 0 && subdivisionCount < selectedCount && (
         <span className="text-muted-foreground">
@@ -191,7 +192,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
           <button
             onClick={handleApply}
             disabled={pending || !value.trim()}
-            className="flex items-center gap-1 rounded bg-blue-600/80 px-2 py-0.5 text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded px-2 py-0.5 transition-colors disabled:opacity-50"
           >
             <Check className="h-3 w-3" />
             Apply to {subdivisionCount}
@@ -213,7 +214,8 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
       <button
         onClick={onBatchDelete}
         disabled={isMutating}
-        className="flex items-center gap-1 rounded px-2 py-1 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"
+        className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
+        title="Delete selected (Delete)"
       >
         <Trash2 className="h-3 w-3" />
         Delete Selected

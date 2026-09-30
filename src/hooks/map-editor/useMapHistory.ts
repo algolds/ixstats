@@ -3,23 +3,29 @@
 import { useState, useCallback, useRef } from "react";
 import type { FeatureType } from "./editor-types";
 
+/** Snapshot of a feature's fields, recorded for undo (previous) or redo (next). */
+export type HistoryData = Record<string, string | number | boolean | object | null | undefined>;
+
 export interface EditorAction {
-  type: "create" | "delete" | "update";
+  /** "batch" groups several sub-actions (merge, split, bulk edit) into one undo step. */
+  type: "create" | "delete" | "update" | "batch";
   featureType: FeatureType;
   featureId: string;
   description: string;
   timestamp: number;
   /** Data needed to undo (previous state for update/delete, or id for create) */
-  previousData?: Record<string, string | number | boolean | object | null | undefined>;
+  previousData?: HistoryData;
   /** Data needed to redo (new state for update/create) */
-  newData?: Record<string, string | number | boolean | object | null | undefined>;
+  newData?: HistoryData;
   /** For topology-cascaded updates: additional features changed in the same action */
   cascadedUpdates?: Array<{
     featureId: string;
     featureType: FeatureType;
-    previousData: Record<string, string | number | boolean | object | null | undefined>;
-    newData: Record<string, string | number | boolean | object | null | undefined>;
+    previousData: HistoryData;
+    newData: HistoryData;
   }>;
+  /** Ordered sub-actions of a "batch" action (undone in reverse). */
+  subActions?: EditorAction[];
 }
 
 export type PushableEditorAction = Omit<EditorAction, "timestamp"> & {

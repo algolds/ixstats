@@ -12,7 +12,8 @@ import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
-import { Globe as Globe2, SystemRestart as Loader2 } from "iconoir-react";
+import Link from "next/link";
+import { Globe as Globe2, SystemRestart as Loader2, EditPencil, Palette } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import nextDynamic from "next/dynamic";
 
@@ -60,7 +61,22 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
         icon={Globe2}
         title="Atlas World Map"
         description="Manage the IxEarth map, assign countries, coordinate PostGIS layers, and review vector edits."
-      />
+      >
+        <Link
+          href="/admin/maps/editor"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-xs transition-[background-color,transform] active:scale-[0.98]"
+        >
+          <EditPencil className="h-3.5 w-3.5" />
+          Open World Editor
+        </Link>
+        <Link
+          href="/admin/maps/style-editor"
+          className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[background-color,color,transform] active:scale-[0.98]"
+        >
+          <Palette className="h-3.5 w-3.5" />
+          Style Editor
+        </Link>
+      </AdminHeader>
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">

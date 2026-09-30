@@ -11,6 +11,7 @@ import {
   OpenBook as BookOpen,
   Plus,
   Cut as Scissors,
+  ZoomIn,
 } from "iconoir-react";
 
 import type { ContextMenuFeature } from "./types/editor-state";
@@ -29,6 +30,7 @@ interface FeatureContextMenuProps {
   onSnapToBorder?: () => void;
   onSnapToCoast?: () => void;
   onSplitCity?: () => void;
+  onZoomTo?: () => void;
 }
 
 interface MenuItem {
@@ -52,6 +54,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   onSnapToBorder,
   onSnapToCoast,
   onSplitCity,
+  onZoomTo,
 }: FeatureContextMenuProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -95,6 +98,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
       { label: "Edit Properties", icon: Pencil, onClick: onEdit },
       { label: "Duplicate", icon: Copy, onClick: onDuplicate }
     );
+    if (onZoomTo) primaryItems.push({ label: "Zoom To", icon: ZoomIn, onClick: onZoomTo });
 
     if (feature.type === "city" && onSplitCity) {
       primaryItems.push({
@@ -151,17 +155,20 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   // Clamp position to viewport
   const menuWidth = 208;
   const menuHeight = (primaryItems.length + secondaryItems.length + 1) * 32 + 8;
-  const clampedX = typeof window !== "undefined" ? Math.min(x, window.innerWidth - menuWidth - 8) : x;
-  const clampedY = typeof window !== "undefined" ? Math.min(y, window.innerHeight - menuHeight - 8) : y;
+  const clampedX =
+    typeof window !== "undefined" ? Math.min(x, window.innerWidth - menuWidth - 8) : x;
+  const clampedY =
+    typeof window !== "undefined" ? Math.min(y, window.innerHeight - menuHeight - 8) : y;
 
   const renderItem = (item: MenuItem) => (
     <button
       key={item.label}
+      role="menuitem"
       onClick={() => {
         item.onClick();
         onClose();
       }}
-      className={`active:scale-[0.98] flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ${
+      className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] ${
         item.danger
           ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
           : "text-foreground/90 hover:bg-accent hover:text-accent-foreground"
@@ -175,6 +182,8 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   return createPortal(
     <div
       data-context-menu
+      role="menu"
+      aria-label={`${feature.name} actions`}
       className="animate-in fade-in zoom-in-95 border-border bg-card/90 fixed z-[9999] min-w-[208px] origin-top-left overflow-hidden rounded-xl border py-1.5 shadow-2xl backdrop-blur-xl duration-100"
       style={{ left: clampedX, top: clampedY }}
     >

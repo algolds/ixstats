@@ -25,7 +25,7 @@ export function VertexEditingToolbar({
       <div className="bg-border hidden h-4 w-px sm:block" />
       <button
         onClick={handleSimplifyAndSave}
-        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
         title="Simplify vertices, snap to country border, and save"
       >
         <svg
@@ -45,20 +45,22 @@ export function VertexEditingToolbar({
       </button>
       <button
         onClick={handleSave}
-        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-        title="Save current geometry"
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+        title="Save the shape and keep reshaping (Ctrl+Z undoes the save)"
       >
         Save
       </button>
       <button
         onClick={finishVertexEdit}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+        title="Save any changes and stop reshaping"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
       >
         Done
       </button>
       <button
         onClick={cancelVertexEdit}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+        title="Discard unsaved vertex changes"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
       >
         Cancel
       </button>

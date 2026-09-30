@@ -4,7 +4,7 @@
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
 **Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer  
 **Primary Action:** `MAP` | **Domain Accent:** Sky Blue (`#0EA5E9` / `--color-blue-500`)  
-**Routes:** `/maps` (players edit their own nation in place), `/admin/maps/editor` (world editor), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map ✅ Live; map editor, pipeline and worldgen 🟡 Partial or 🧪 Labs)  
+**Routes:** `/maps` (players edit their own nation in place), `/mycountry/map-editor` (the same country editor, full-screen), `/admin/maps/editor` (world editor), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map ✅ Live; map editor, pipeline and worldgen 🟡 Partial or 🧪 Labs)  
 
 Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built on **MapLibre GL JS**, it powers interactive vector globe maps, procedural realm generation, grounded manual IxEarth cartography, admin GIS suites, and precision player territory editors.
 
@@ -85,7 +85,7 @@ z-index values are `LAYER_CONFIGS` in `src/lib/maps/map-config.ts`; tolerances a
 
 ---
 
-## Map Editor Studio Architecture (`/admin/maps/editor`, in-place on `/maps`)
+## Map Editor Studio Architecture (`/admin/maps/editor`, `/mycountry/map-editor`, in-place on `/maps`)
 
 The Map Editor (`MapEditorOverlay`, `src/components/maps/editor/`) is a full-screen vector cartography workstation for authoring geography at national, regional, and municipal levels:
 
@@ -101,7 +101,24 @@ The Map Editor (`MapEditorOverlay`, `src/components/maps/editor/`) is a full-scr
 - **Copy-on-Write Polygon Updates (`border-editor.ts`)**: `cloneRingsWithTarget` avoids full geometry deep-clones during 60fps drag operations.
 - **Two-Phase Hit-Testing (`src/components/maps/editor/utils/hit-test.ts`)**: Exact point selection wins, polygon containment second, grab-assist over empty space only.
 - **Nominal Coordinate Typing (`src/types/maps/editor-domain.ts`)**: TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`) prevent axis-inversion coordinate bugs.
-- **Import**: Province SVG/PNG import in the editor (`province-importer/`); whole-map SVG, PNG or JPEG through the admin Import Pipeline (`/admin/maps` → `PipelineWizard`). The editor has no GeoJSON/SVG export.
+- **Import / export**: Province SVG/PNG import in the editor (`province-importer/`); whole-map SVG, PNG or JPEG through the admin Import Pipeline (`/admin/maps` → `PipelineWizard`). The editor's Settings menu imports a GeoJSON file (points → cities, or POIs when the feature has a `category`; polygons → regions; lines are skipped) and exports every feature as a GeoJSON FeatureCollection (`src/hooks/map-editor/editor-geo-ops.ts`). An import is one undo step. There is no SVG export.
+
+### 3. Editing Model: Undo, Drafts, Confirmations
+- **Every write is undoable.** Creates, deletes, attribute edits, point drags and arrow-key nudges (a burst of nudges is one save), region reshapes with their topology-cascaded neighbours, duplicates, merges/splits, bulk delete/edit, the city placement tools and GeoJSON imports all land on the history stack (`useMapHistory`, 50 steps). Multi-feature operations record one `"batch"` action. `useHistoryReversalExecutor` replays actions as **partial** patches (only the recorded fields are sent) and keeps an id alias map, because re-creating a deleted feature gives it a new id. Undo/redo run one at a time and close any open vertex/path edit first.
+- **Region reshaping** (select a region → drag vertices, click a midpoint to add, right-click/Backspace to remove) saves through `geoFeatures.updateSubdivision` with `cascadedNeighbors`, writing only the neighbours whose shared vertices actually moved. "Done" saves only when something changed; "Cancel" restores the neighbours.
+- **Tools that were stubs now work:** route and river drawing collect clicks (Enter finishes a route), the split-region tool draws a line and splits into "A"/"B" pieces, scatter cities, regional capitals for regions with no city ("Auto-Create Cities" while gaps are highlighted, `H`), snap city to region border / coastline (the `background` landmass layer, within 3°), bulk edit of region type/level/colour/government type (colour and government type go through `countryGeo.upsertSubdivision`), and the gap / empty-region overlay. Union keeps the merged shape and deletes the others; subtract and intersect reshape the first region and keep the rest.
+- **Drafts:** an unsaved placement or drawing (placed point, closed shape, route waypoints, river path) is mirrored to `localStorage` per country and offered back when the editor reopens (`useEditorDraft`). Saved edits need no draft — they are on the server already.
+- **Leaving:** the status bar shows Saving… / Unsaved / Saved *n* ago and the last error; the exit button asks before discarding unsaved work, and the browser warns on reload/close while work is unsaved.
+- **Confirmations** use a themed AlertDialog (`EditorConfirmDialog`) instead of `window.confirm`; deleting from the Delete key, context menu, inspector, tool bar or header always asks and says the delete can be undone.
+- **Keyboard:** one listener in `useMapEditorOverlayState` owns undo/redo, selection (Ctrl+A / Ctrl+D / Ctrl+J duplicate), Delete, Enter, Escape (close menu → cancel drawing → clear selection → leave tool → exit), `G` grid, `H` gaps, `F` panels, `I` import, `?` shortcut sheet, and the border editor's `V P X M T B`; tool letters (`V M C P K T Y R J U`) go through the plugin provider. The shortcut sheet lists exactly what is wired.
+- **Wiki tab** (country editor): scans unlinked features against IxWiki search, links the best match in one click and lists map-vs-infobox conflicts (`WikiScannerPanel`, `useWikiScanner`).
+
+### 4. Performance Model
+- **Pointer work never re-renders the editor.** Cursor position, hovered feature, terrain-at-cursor and zoom live in `transientMapStore`, which notifies at most once per animation frame; only leaf components (status bar, hover tooltip, elevation HUD) subscribe. Hover hit-testing (`queryRenderedFeatures`), the lasso/marquee outline and cascade previews during a vertex drag are all frame-batched and drawn straight into their GeoJSON sources.
+- **Layers upload only on real change.** `useMapLayers` keys feature uploads on the features array and the visibility *values*; opacity is a paint-property effect. The overlay passes memoised layer props, and the plugin context is stable (plugins read `context.state` through a getter), so map listeners are not re-registered on unrelated renders.
+- **Rulers** re-render on map move in their own component (`EditorRulers`), so they track the camera without re-rendering the map.
+- **Feature queries** are invalidated through one debounced call per burst (features + routes only; the country border and linkage are not refetched after feature edits).
+- **Phones** mount the bottom sheet only (and only once there is something to fill in); desktop never mounts the hidden sheet, and phones never mount the docked panels.
 
 ---
 

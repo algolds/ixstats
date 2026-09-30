@@ -85,6 +85,8 @@ interface PropertiesPanelContentProps {
   countries?: PropertiesPanelCountry[];
   onEditRoute?: (routeId: string) => void;
   handleEditRoute?: (routeId: string) => void;
+  /** Confirming delete from the editor state (falls back to an immediate delete). */
+  handleDeleteFeature?: (feature: EditorFeature) => void | Promise<void>;
 }
 
 export const PropertiesPanelContent = memo(function PropertiesPanelContent({
@@ -131,9 +133,43 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
   countries,
   onEditRoute,
   handleEditRoute,
+  handleDeleteFeature,
 }: PropertiesPanelContentProps) {
   const effectiveOnEditRoute = onEditRoute ?? handleEditRoute;
   const realm = useMapRealm();
+
+  // Terrain under a freshly placed point (feeds the placement summary and smart suggestions).
+  const pendingCoords = editor.pendingCoordinates;
+  const wantsPointInfo =
+    !!pendingCoords &&
+    (editor.mode === "add-city" || editor.mode === "add-poi" || editor.mode === "add-peak");
+  const { data: rawPendingPointInfo, isFetching: isPendingPointInfoLoading } =
+    api.geoCore.getPointInfo.useQuery(
+      { lng: pendingCoords?.[0] ?? 0, lat: pendingCoords?.[1] ?? 0, realm },
+      { enabled: wantsPointInfo, staleTime: 5 * 60_000 }
+    );
+  const pendingPointInfo = useMemo(() => {
+    if (!wantsPointInfo || !rawPendingPointInfo) return null;
+    const elev = rawPendingPointInfo.elevation as
+      | { zoneName?: string | null; color?: string | null; elevationMeters?: number | null }
+      | null
+      | undefined;
+    const clim = rawPendingPointInfo.climate as
+      { climateName?: string | null; color?: string | null } | null | undefined;
+    return {
+      elevation: elev
+        ? {
+            zoneName: elev.zoneName ?? null,
+            elevationLabel:
+              typeof elev.elevationMeters === "number"
+                ? `${Math.round(elev.elevationMeters).toLocaleString()} m`
+                : null,
+            color: elev.color ?? null,
+          }
+        : null,
+      climate: clim ? { climateName: clim.climateName ?? null, color: clim.color ?? null } : null,
+    };
+  }, [wantsPointInfo, rawPendingPointInfo]);
   const utils = api.useUtils();
   const updateRouteMutation = api.transport.updateRoute.useMutation({
     onSuccess: () => {
@@ -357,8 +393,8 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
       lastSavedAt={editor.lastSavedAt ? editor.lastSavedAt.getTime() : null}
       onSubmit={handleSubmit}
       onCancel={editor.resetForm}
-      pendingPointInfo={null}
-      isPendingPointInfoLoading={editor.isPendingPointInfoLoading}
+      pendingPointInfo={pendingPointInfo}
+      isPendingPointInfoLoading={wantsPointInfo && isPendingPointInfoLoading}
       countryId={activeCountryId ?? undefined}
       routeWaypoints={editor.routeWaypoints}
       finishRoute={editor.finishRoute}
@@ -403,7 +439,17 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
             coords
           )
         }
-        onDelete={() => editor.handleDeleteFeature(editor.selectedFeature!)}
+        onDelete={() => {
+          const feat = editor.selectedFeature;
+          if (!feat) return;
+          if (handleDeleteFeature) void handleDeleteFeature(feat);
+          else void editor.handleDeleteFeature(feat);
+        }}
+        onSnapCoastline={
+          editor.selectedFeature?.type === "city"
+            ? () => void editor.snapCityToCoastline(editor.selectedFeature!.id)
+            : undefined
+        }
         onDuplicate={() => editor.duplicateFeature(editor.selectedFeature!)}
         onPromoteCapital={editor.promoteCapital}
         onReverseRoute={editor.reverseRoute}

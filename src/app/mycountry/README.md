@@ -17,7 +17,7 @@ All `page.tsx` files below (except `/mycountry/editor`) render `<MyCountryRouter
 | `/mycountry/politics` | politics | eager | Cabinet, parties, legislature, bills, power brokers (`PoliticsDrillDown`). |
 | `/mycountry/defense` | defense | lazy (`dynamic`) | Premium-gated (`PremiumPreviewFrame`). |
 | `/mycountry/intelligence` | defense | lazy | Maps to the Defense section — there is no standalone intelligence surface. |
-| `/mycountry/map-editor` | map-editor | — | Premium-gated; reached from the Editor toggle. Currently falls through to `ExecutiveHome` (no dedicated map-editor surface). |
+| `/mycountry/map-editor` | map-editor | own page | Full-screen country map editor (`src/app/mycountry/map-editor/page.tsx` → `MapEditorOverlay`), the same editor that opens in place on `/maps`. Signed-out users go to sign-in, users without a country to the builder. Client-side section switches to `map-editor` inside the shell (the Editor toggle) still render `ExecutiveHome`. |
 | `/mycountry/editor` | — | — | Separate page; renders `BuilderRouter` for post-creation country editing. |
 
 Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)` wrapped in `PremiumPreviewFrame`. Intelligence and defense nav items are also hidden for non-premium users unless an admin enables them via `api.admin.getNavigationSettings`.

@@ -21,39 +21,73 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: "Tools",
     shortcuts: [
-      { keys: "V", description: "Select / View mode" },
-      { keys: "C / 1", description: "Add City tool" },
-      { keys: "R / 2", description: "Add Region tool" },
-      { keys: "P / 3", description: "Add POI tool" },
-      { keys: "T / 4", description: "Add Route tool" },
-      { keys: "K", description: "Add Mountain Peak tool" },
-      { keys: "B", description: "Paint / Brush mode" },
-      { keys: "I", description: "Import Provinces" },
+      { keys: "V", description: "Select" },
+      { keys: "M", description: "Lasso / marquee select" },
+      { keys: "C / 1", description: "Add city" },
+      { keys: "R / 2", description: "Draw region" },
+      { keys: "P / 3", description: "Add point of interest" },
+      { keys: "T / 4", description: "Draw route" },
+      { keys: "K", description: "Add mountain peak" },
+      { keys: "Y", description: "Draw river" },
+      { keys: "J", description: "Draw lake" },
+      { keys: "U", description: "Ruler (measure distance & elevation)" },
+      { keys: "I", description: "Import provinces (SVG/PNG)" },
     ],
   },
   {
     title: "Selection",
     shortcuts: [
-      { keys: "Ctrl+A", description: "Select all visible features" },
-      { keys: "Ctrl+D", description: "Deselect all" },
-      { keys: "Delete / Backspace", description: "Delete selected feature" },
+      { keys: "Shift + Click", description: "Add / remove a feature from the selection" },
+      { keys: "Shift + Drag", description: "Box-select features" },
+      { keys: "Ctrl + A", description: "Select all features" },
+      { keys: "Ctrl + D", description: "Deselect all" },
+      { keys: "Delete / Backspace", description: "Delete selection (asks first)" },
+      { keys: "Ctrl + J", description: "Duplicate selected feature" },
+      { keys: "Arrow keys", description: "Nudge selected point (Shift = 10×)" },
+    ],
+  },
+  {
+    title: "Drawing",
+    shortcuts: [
+      { keys: "Enter", description: "Finish route / apply region split" },
+      { keys: "Backspace", description: "Remove last vertex while drawing a region or lake" },
+      {
+        keys: "Ctrl + Z",
+        description: "Remove last point while drawing a route, river or split line",
+      },
+      { keys: "Shift + Drag", description: "Lock vertex drag to an axis" },
+      { keys: "Space + Drag", description: "Pan the map in any tool" },
+      { keys: "Escape", description: "Cancel drawing, then leave the tool" },
     ],
   },
   {
     title: "Edit",
     shortcuts: [
-      { keys: "Ctrl+Z", description: "Undo last action" },
-      { keys: "Ctrl+Shift+Z", description: "Redo last action" },
-      { keys: "Ctrl+S", description: "Save current form" },
-      { keys: "Escape", description: "Cancel / Exit mode" },
+      { keys: "Ctrl + Z", description: "Undo (all feature edits, moves and bulk operations)" },
+      { keys: "Ctrl + Shift + Z / Ctrl + Y", description: "Redo" },
+      { keys: "Ctrl + S", description: "Save the open form" },
     ],
   },
   {
-    title: "Navigation",
+    title: "View",
     shortcuts: [
-      { keys: "F", description: "Toggle side panel" },
-      { keys: "G", description: "Toggle grid" },
-      { keys: "?", description: "Show this shortcut sheet" },
+      { keys: "G", description: "Toggle coordinate grid" },
+      { keys: "H", description: "Highlight gaps & regions without cities" },
+      { keys: "F", description: "Hide / show side panels" },
+      { keys: "?", description: "Show this sheet" },
+    ],
+  },
+  {
+    title: "Border editor (world editor)",
+    shortcuts: [
+      { keys: "V", description: "Select" },
+      { keys: "P", description: "Edit vertices" },
+      { keys: "X", description: "Split borders" },
+      { keys: "M", description: "Merge borders" },
+      { keys: "T", description: "Trace rivers / coast" },
+      { keys: "B", description: "Territory brush" },
+      { keys: "Ctrl + Z / Ctrl + Shift + Z", description: "Undo / redo border edits" },
+      { keys: "Escape", description: "Leave border editing" },
     ],
   },
 ];
@@ -87,13 +121,21 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={handleOverlayClick}
+      role="presentation"
     >
-      <div className="border-border bg-card relative mx-4 max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border shadow-2xl">
+      <div
+        className="border-border bg-card relative mx-4 max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border shadow-2xl"
+        aria-modal="true"
+        aria-labelledby="map-editor-shortcuts-title"
+      >
         {/* Header */}
         <div className="border-border bg-card sticky top-0 flex items-center justify-between border-b px-5 py-3">
-          <h2 className="text-foreground text-sm font-semibold">Keyboard Shortcuts</h2>
+          <h2 id="map-editor-shortcuts-title" className="text-foreground text-sm font-semibold">
+            Keyboard Shortcuts
+          </h2>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1 transition-colors"
           >
             <X className="h-4 w-4" />
@@ -115,7 +157,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
                   >
                     <span className="text-muted-foreground">{shortcut.description}</span>
                     <div className="flex items-center gap-1">
-                      {shortcut.keys.split(/(\+| \/ )/).map((part, i) => {
+                      {shortcut.keys.split(/( \+ | \/ )/).map((part, i) => {
                         const trimmed = part.trim();
                         if (trimmed === "+" || trimmed === "/") {
                           return (

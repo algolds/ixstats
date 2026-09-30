@@ -41,7 +41,7 @@ masked in the admin config; sports season and simulation procedures require the 
 | Cabinet meetings can't conclude | MyCountry | `completeMeeting` and the decision/implement mutations were deleted (plans 312/332); meetings are schedule-only |
 | Crafting fails end to end | Vault | `/vault/crafting` sends card IDs where `CardOwnership` IDs are expected; `successRate` 0–1 vs 0–100; seed uses fields and a `MYTHIC` rarity the schema lacks ([cards.md](../systems/cards.md)) |
 | Vexel attach-to-country blanks the coat of arms | Labs › Vexel | Writes an empty `coatOfArms` to `Country` |
-| `/mycountry/map-editor` has no surface | MyCountry | The route falls through to the Executive home |
+| `/mycountry/map-editor` inside the shell | MyCountry | Loading the URL opens the full-screen map editor (2026-09-30), but the shell's client-side switch to the `map-editor` section (Editor toggle) still renders the Executive home |
 | `/admin/calculations` 404s on reload | Admin | No `page.tsx`; works only via client routing |
 | Topic links 404 | ThinkPages | `PostBody.tsx:61` links `/thinkpages/topic/<slug>`, which has no route |
 | Premium check disagrees | Premium | Three definitions: `lib/tier-utils.ts` (also counts `premium`/`executive`), `premiumMiddleware`/`getMembershipStatus` (`mycountry_premium` only), and `ability.ts` (also passes owners, admins, staff) |

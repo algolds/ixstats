@@ -57,7 +57,14 @@ interface UseSubdivisionVertexEditProps {
   selectedFeature: EditorFeature | null;
   features: EditorFeature[];
   countryGeometry: Polygon | MultiPolygon | null;
-  onGeometryUpdate?: (featureId: string, geometry: object) => void;
+  /** Saves the edited region; `cascaded` lists neighbours whose shared vertices moved with it. */
+  onGeometryUpdate?: (
+    featureId: string,
+    geometry: object,
+    cascaded?: Array<{ id: string; geometry: object }>
+  ) => void;
+  /** Reports whether the region has unsaved vertex changes (drives the leave warning). */
+  onDirtyChange?: (dirty: boolean) => void;
   worldMapLayers?: MapLayerData[];
   editorVisibleLayers?: Set<string>;
   snapEnabled?: boolean;
@@ -81,6 +88,7 @@ export function useSubdivisionVertexEdit({
   features,
   countryGeometry,
   onGeometryUpdate,
+  onDirtyChange,
   worldMapLayers,
   editorVisibleLayers,
   snapEnabled,
@@ -114,11 +122,77 @@ export function useSubdivisionVertexEdit({
   const onGeometryUpdateRef = useRef(onGeometryUpdate);
   // oxlint-disable-next-line
   onGeometryUpdateRef.current = onGeometryUpdate;
+  const onDirtyChangeRef = useRef(onDirtyChange);
+  // oxlint-disable-next-line
+  onDirtyChangeRef.current = onDirtyChange;
+
+  // Unsaved-change tracking: any visual update after entry marks the edit dirty.
+  const dirtyRef = useRef(false);
+  const suppressDirtyRef = useRef(false);
+  const markDirty = useCallback((dirty: boolean) => {
+    if (dirtyRef.current === dirty) return;
+    dirtyRef.current = dirty;
+    onDirtyChangeRef.current?.(dirty);
+  }, []);
+
+  // Neighbours reshaped by the topology cascade during this edit session.
+  const changedNeighborIdsRef = useRef<Set<string>>(new Set());
+  // Cascade visuals are written to the subdivisions source at most once per frame.
+  const pendingCascadeRef = useRef<Map<string, Polygon | MultiPolygon>>(new Map());
+  const cascadeFrameRef = useRef<number | null>(null);
+
+  const flushCascadeVisuals = useCallback(() => {
+    cascadeFrameRef.current = null;
+    const pending = pendingCascadeRef.current;
+    if (!map || pending.size === 0) return;
+    try {
+      const src = map.getSource("editor-subdivisions") as
+        | {
+            _data?: { features?: Array<{ properties?: { id?: string }; geometry?: unknown }> };
+            _options?: {
+              data?: { features?: Array<{ properties?: { id?: string }; geometry?: unknown }> };
+            };
+            setData?: (data: FeatureCollection) => void;
+          }
+        | undefined;
+      const data = src?._data || src?._options?.data;
+      if (src?.setData && data?.features) {
+        for (const f of data.features) {
+          const id = f.properties?.id;
+          if (id && pending.has(id)) f.geometry = pending.get(id);
+        }
+        src.setData(data as FeatureCollection);
+      }
+    } catch {
+      // Visual-only feedback
+    }
+    pending.clear();
+  }, [map]);
+
+  const queueCascadeVisual = useCallback(
+    (fid: string, geom: Polygon | MultiPolygon) => {
+      pendingCascadeRef.current.set(fid, geom);
+      if (cascadeFrameRef.current === null) {
+        cascadeFrameRef.current = requestAnimationFrame(flushCascadeVisuals);
+      }
+    },
+    [flushCascadeVisuals]
+  );
+
+  const changedNeighborsPayload = useCallback((): Array<{ id: string; geometry: object }> => {
+    const out: Array<{ id: string; geometry: object }> = [];
+    for (const fid of changedNeighborIdsRef.current) {
+      const geom = neighborGeometriesRef.current.get(fid);
+      if (geom) out.push({ id: fid, geometry: geom });
+    }
+    return out;
+  }, []);
 
   const updateVertexEditVis = useCallback(
     (fastOnly = false) => {
       const state = vertexEditRef.current;
       if (!map || !state) return;
+      if (!suppressDirtyRef.current) markDirty(true);
 
       const geo = state.currentGeometry;
 
@@ -151,7 +225,7 @@ export function useSubdivisionVertexEdit({
       const overlapGeoJson = calculateOverlapGeoJson(geo, featuresRef.current, state.featureId);
       getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
     },
-    [map]
+    [map, markDirty]
   );
 
   const scheduleThrottledUpdate = useCallback(() => {
@@ -176,6 +250,9 @@ export function useSubdivisionVertexEdit({
       if (throttledUpdateRef.current) {
         clearTimeout(throttledUpdateRef.current);
       }
+      if (cascadeFrameRef.current !== null) {
+        cancelAnimationFrame(cascadeFrameRef.current);
+      }
     };
   }, []);
 
@@ -187,33 +264,38 @@ export function useSubdivisionVertexEdit({
     getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
   }, [map]);
 
+  const resetSubdivisionFilters = useCallback(() => {
+    if (!map) return;
+    for (const lid of [
+      "editor-subdivisions-fill",
+      "editor-subdivisions-stroke",
+      "editor-subdivisions-labels",
+      "editor-subdivisions-hover",
+    ]) {
+      if (map.getLayer(lid)) map.setFilter(lid, null);
+    }
+  }, [map]);
+
+  /** "Done": saves only when something changed, then leaves vertex editing. */
   const finishVertexEdit = useCallback(() => {
     const state = vertexEditRef.current;
-    if (state && onGeometryUpdateRef.current) {
+    if (state && dirtyRef.current && onGeometryUpdateRef.current) {
       let finalGeo = state.currentGeometry;
       const border = countryGeometryRef.current;
       if (border) {
         const { geometry } = clipGeometryToBorder(finalGeo, border);
         finalGeo = geometry as Polygon | MultiPolygon;
       }
-      onGeometryUpdateRef.current(state.featureId, finalGeo);
+      onGeometryUpdateRef.current(state.featureId, finalGeo, changedNeighborsPayload());
     }
     vertexEditRef.current = null;
+    topologyIndexRef.current = null;
+    changedNeighborIdsRef.current = new Set();
+    markDirty(false);
     setIsVertexEditing(false);
     clearVertexEditVis();
-
-    // Reset subdivision filters
-    if (map) {
-      for (const lid of [
-        "editor-subdivisions-fill",
-        "editor-subdivisions-stroke",
-        "editor-subdivisions-labels",
-        "editor-subdivisions-hover",
-      ]) {
-        if (map.getLayer(lid)) map.setFilter(lid, null);
-      }
-    }
-  }, [map, clearVertexEditVis]);
+    resetSubdivisionFilters();
+  }, [clearVertexEditVis, resetSubdivisionFilters, changedNeighborsPayload, markDirty]);
 
   const handleSimplifyAndSave = useCallback(() => {
     const state = vertexEditRef.current;
@@ -252,10 +334,23 @@ export function useSubdivisionVertexEdit({
     updateVertexEditVis();
 
     if (onGeometryUpdateRef.current) {
-      onGeometryUpdateRef.current(state.featureId, state.currentGeometry);
+      onGeometryUpdateRef.current(
+        state.featureId,
+        state.currentGeometry,
+        changedNeighborsPayload()
+      );
+      changedNeighborIdsRef.current = new Set();
+      markDirty(false);
     }
-  }, [updateVertexEditVis, worldMapLayers, editorVisibleLayers]);
+  }, [
+    updateVertexEditVis,
+    worldMapLayers,
+    editorVisibleLayers,
+    changedNeighborsPayload,
+    markDirty,
+  ]);
 
+  /** "Save": writes the region plus only the neighbours the cascade actually moved. */
   const handleSave = useCallback(() => {
     const state = vertexEditRef.current;
     if (!state || !onGeometryUpdateRef.current) return;
@@ -271,35 +366,30 @@ export function useSubdivisionVertexEdit({
       }
 
       state.currentGeometry = finalGeo as Polygon | MultiPolygon;
+      suppressDirtyRef.current = true;
       updateVertexEditVis();
+      suppressDirtyRef.current = false;
     }
-    onGeometryUpdateRef.current(state.featureId, finalGeo);
-
-    // Save cascaded neighbor geometries
-    for (const [fid, geom] of neighborGeometriesRef.current) {
-      if (onGeometryUpdateRef.current) {
-        onGeometryUpdateRef.current(fid, geom);
-      }
-    }
-  }, [updateVertexEditVis]);
+    onGeometryUpdateRef.current(state.featureId, finalGeo, changedNeighborsPayload());
+    changedNeighborIdsRef.current = new Set();
+    markDirty(false);
+  }, [updateVertexEditVis, changedNeighborsPayload, markDirty]);
 
   const cancelVertexEdit = useCallback(() => {
+    // Put cascaded neighbours back to their saved shapes.
+    for (const fid of changedNeighborIdsRef.current) {
+      const original = featuresRef.current.find((f) => f.id === fid)?.geometry;
+      if (original) queueCascadeVisual(fid, original as Polygon | MultiPolygon);
+    }
     vertexEditRef.current = null;
     topologyIndexRef.current = null;
     neighborGeometriesRef.current = new Map();
+    changedNeighborIdsRef.current = new Set();
+    markDirty(false);
     setIsVertexEditing(false);
     clearVertexEditVis();
-    if (map) {
-      for (const lid of [
-        "editor-subdivisions-fill",
-        "editor-subdivisions-stroke",
-        "editor-subdivisions-labels",
-        "editor-subdivisions-hover",
-      ]) {
-        if (map.getLayer(lid)) map.setFilter(lid, null);
-      }
-    }
-  }, [map, clearVertexEditVis]);
+    resetSubdivisionFilters();
+  }, [clearVertexEditVis, resetSubdivisionFilters, queueCascadeVisual, markDirty]);
 
   // 1. Enter/exit vertex editing effect
   useEffect(() => {
@@ -345,9 +435,13 @@ export function useSubdivisionVertexEdit({
           .map((f) => [f.id, JSON.parse(JSON.stringify(f.geometry))])
       );
 
+      changedNeighborIdsRef.current = new Set();
       // oxlint-disable-next-line
       setIsVertexEditing(true);
+      suppressDirtyRef.current = true;
       updateVertexEditVis();
+      suppressDirtyRef.current = false;
+      markDirty(false);
 
       for (const lid of [
         "editor-subdivisions-fill",
@@ -360,7 +454,7 @@ export function useSubdivisionVertexEdit({
     } else if (vertexEditRef.current) {
       cancelVertexEdit();
     }
-  }, [map, isLoaded, mode, selectedFeature, updateVertexEditVis, cancelVertexEdit]);
+  }, [map, isLoaded, mode, selectedFeature, updateVertexEditVis, cancelVertexEdit, markDirty]);
 
   // 2. Vertex drag/click event listeners on MapLibre & Window
   useEffect(() => {
@@ -384,8 +478,7 @@ export function useSubdivisionVertexEdit({
         coord,
         originalCoord: [...coord] as Position,
         initialGeometry: JSON.parse(JSON.stringify(vertexEditRef.current.currentGeometry)) as
-          | Polygon
-          | MultiPolygon,
+          Polygon | MultiPolygon,
         startScreenPoint: { x: e.point.x, y: e.point.y },
         committed: false,
         lockedAxis: null,
@@ -482,30 +575,12 @@ export function useSubdivisionVertexEdit({
 
         const cascaded = cascadeMoveVertex(topologyIndexRef.current, allGeoms, oldKey, target);
 
-        // Update neighbor geometries in tracking map + visual source
+        // Update neighbor geometries in tracking map + (frame-batched) visual source
         for (const [fid, updatedGeom] of cascaded) {
           if (fid !== vertexEditRef.current.featureId) {
             neighborGeometriesRef.current.set(fid, updatedGeom);
-            try {
-              const src = map?.getSource("editor-subdivisions") as {
-                _data?: { features?: Array<{ properties?: { id?: string }; geometry?: Geometry | Polygon | MultiPolygon }> };
-                _options?: { data?: { features?: Array<{ properties?: { id?: string }; geometry?: Geometry | Polygon | MultiPolygon }> } };
-                serialize?: () => object;
-                setData?: (data: FeatureCollection) => void;
-              } | undefined;
-              if (src && typeof src.serialize === "function" && typeof src.setData === "function") {
-                const data = src._data || src._options?.data;
-                if (data?.features) {
-                  const idx = data.features.findIndex((f) => f.properties?.id === fid);
-                  if (idx >= 0 && data.features[idx]) {
-                    data.features[idx]!.geometry = updatedGeom;
-                    src.setData(data as FeatureCollection);
-                  }
-                }
-              }
-            } catch (_e) {
-              // Visual-only feedback
-            }
+            changedNeighborIdsRef.current.add(fid);
+            queueCascadeVisual(fid, updatedGeom);
           }
         }
         draggingRef.current = { ...drag, coord: target };
@@ -645,8 +720,7 @@ export function useSubdivisionVertexEdit({
           coord,
           originalCoord: [...coord] as Position,
           initialGeometry: JSON.parse(JSON.stringify(vertexEditRef.current.currentGeometry)) as
-            | Polygon
-            | MultiPolygon,
+            Polygon | MultiPolygon,
           startScreenPoint: { x, y },
           committed: true, // Touch commits immediately upon hit
           lockedAxis: null,
@@ -768,6 +842,7 @@ export function useSubdivisionVertexEdit({
     map,
     isLoaded,
     updateVertexEditVis,
+    queueCascadeVisual,
     worldMapLayers,
     editorVisibleLayers,
     snapEnabled,

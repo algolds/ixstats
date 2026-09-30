@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
-import { api } from "~/trpc/react";
-import { useMapRealm } from "~/components/maps/core/MapRealmContext";
+import { useState, useCallback } from "react";
 import type { FeatureCollection } from "geojson";
-import type { EditorFeature, MapEditorInstance, EditorContextMenuData } from "~/components/maps/editor/types/editor-state";
+import { confirmEditorAction } from "~/components/maps/editor/components/EditorConfirmDialog";
+import type {
+  EditorFeature,
+  MapEditorInstance,
+  EditorContextMenuData,
+} from "~/components/maps/editor/types/editor-state";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 
 interface UseEditorSelectionStateProps {
@@ -21,11 +23,6 @@ export function useEditorSelectionState({
   expandPropertiesPanel,
   transportRouteData,
 }: UseEditorSelectionStateProps) {
-  const [hoveredFeature, setHoveredFeature] = useState<{
-    feature: (typeof editor.allFeatures)[number];
-    screenPos: { x: number; y: number };
-  } | null>(null);
-
   const [contextMenu, setContextMenu] = useState<EditorContextMenuData | null>(null);
 
   const [selectedRouteId, setSelectedRouteIdState] = useState<string | null>(null);
@@ -120,46 +117,49 @@ export function useEditorSelectionState({
     [setSelectedRouteId]
   );
 
-  const [debouncedCoords, setDebouncedCoords] = useState<[number, number] | null>(null);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const unsubscribe = transientMapStore.subscribe(() => {
-      const coords = transientMapStore.getSnapshot().cursorCoords;
-      if (timer) clearTimeout(timer);
-      if (!coords) {
-        setDebouncedCoords(null);
+  /** Frames a feature: points fly in, shapes fit their bounding box. */
+  const zoomToFeature = useCallback(
+    (feature: EditorFeature) => {
+      const ref = mapRef.current;
+      if (!ref) return;
+      if (feature.coordinates) {
+        const map = ref.getMap();
+        ref.flyTo(feature.coordinates[0], feature.coordinates[1], Math.max(map?.getZoom() ?? 0, 8));
         return;
       }
-      timer = setTimeout(() => {
-        setDebouncedCoords(coords);
-      }, 250);
-    });
-
-    return () => {
-      unsubscribe();
-      if (timer) clearTimeout(timer);
-    };
-  }, []);
-
-  const realm = useMapRealm();
-  const { data: cursorTerrainInfo } = api.geoCore.getPointInfo.useQuery(
-    { lng: debouncedCoords?.[0] ?? 0, lat: debouncedCoords?.[1] ?? 0, realm },
-    { enabled: !!debouncedCoords, staleTime: 30_000, gcTime: 60_000 }
+      if (!feature.geometry) return;
+      let minLng = Infinity;
+      let minLat = Infinity;
+      let maxLng = -Infinity;
+      let maxLat = -Infinity;
+      const visit = (c: unknown): void => {
+        if (Array.isArray(c) && typeof c[0] === "number" && typeof c[1] === "number") {
+          const [lng, lat] = c as [number, number];
+          if (lng < minLng) minLng = lng;
+          if (lng > maxLng) maxLng = lng;
+          if (lat < minLat) minLat = lat;
+          if (lat > maxLat) maxLat = lat;
+        } else if (Array.isArray(c)) {
+          for (const inner of c) visit(inner);
+        }
+      };
+      visit((feature.geometry as { coordinates?: unknown }).coordinates);
+      if (!Number.isFinite(minLng)) return;
+      const map = ref.getMap();
+      if (map) {
+        map.fitBounds(
+          [
+            [minLng, minLat],
+            [maxLng, maxLat],
+          ],
+          { padding: 80, duration: 700, maxZoom: 11 }
+        );
+      } else {
+        ref.flyTo((minLng + maxLng) / 2, (minLat + maxLat) / 2, 7);
+      }
+    },
+    [mapRef]
   );
-
-  useEffect(() => {
-    if (cursorTerrainInfo) {
-      const elev = cursorTerrainInfo.elevation as { elevationMeters?: number | null } | undefined;
-      const clim = cursorTerrainInfo.climate as { color?: string | null } | undefined;
-      transientMapStore.setTerrainInfo({
-        elevation: cursorTerrainInfo.elevation?.zoneName ?? null,
-        elevationMeters: elev?.elevationMeters ?? null,
-        climate: cursorTerrainInfo.climate?.climateName ?? null,
-        biomeColor: clim?.color ?? null,
-      });
-    }
-  }, [cursorTerrainInfo]);
 
   const handleSelectFeature = useCallback(
     (feature: EditorFeature | null) => {
@@ -175,34 +175,10 @@ export function useEditorSelectionState({
       }
       editor.startEditing(feature);
       expandPropertiesPanel();
-      if (mapRef.current) {
-        if (feature.coordinates) {
-          mapRef.current.flyTo(feature.coordinates[0], feature.coordinates[1], 8);
-        } else if (feature.geometry) {
-          const geo = feature.geometry as {
-            type?: string;
-            coordinates?: [number, number][][] | [number, number][][][];
-          };
-          const ring =
-            geo.type === "Polygon"
-              ? (geo.coordinates?.[0] as [number, number][])
-              : (geo.coordinates?.[0]?.[0] as [number, number][]);
-          if (ring && ring.length > 0) {
-            let cx = 0;
-            let cy = 0;
-            for (const pt of ring) {
-              cx += pt[0];
-              cy += pt[1];
-            }
-            cx /= ring.length;
-            cy /= ring.length;
-            mapRef.current.flyTo(cx, cy, 7);
-          }
-        }
-      }
+      zoomToFeature(feature);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [editor, mapRef, expandPropertiesPanel]
+    [editor, zoomToFeature, expandPropertiesPanel]
   );
 
   const handleEditFeature = useCallback(
@@ -215,25 +191,25 @@ export function useEditorSelectionState({
   );
 
   const handleDeleteFeature = useCallback(
-    (feature: EditorFeature) => {
-      if (confirm(`Delete "${feature.name}"? This action cannot be undone.`)) {
-        editor.handleDeleteFeature(feature);
-      }
+    async (feature: EditorFeature) => {
+      const ok = await confirmEditorAction({
+        title: `Delete "${feature.name}"?`,
+        description: "You can bring it back with Undo (Ctrl+Z) while the editor is open.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (ok) await editor.handleDeleteFeature(feature);
     },
     [editor]
   );
 
   return {
-    hoveredFeature,
-    setHoveredFeature,
     contextMenu,
     setContextMenu,
     selectedRouteId,
     setSelectedRouteId,
     handleRouteClick,
-    debouncedCoords,
-    setDebouncedCoords,
-    cursorTerrainInfo,
+    zoomToFeature,
     handleSelectFeature,
     handleEditFeature,
     handleDeleteFeature,

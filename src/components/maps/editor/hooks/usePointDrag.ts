@@ -20,14 +20,14 @@ interface UsePointDragProps {
   onFeatureSelect?: (feature: EditorFeature | null) => void;
   updatePointCoordinates?: (
     featureId: string,
-    featureType: "city" | "poi" | "storyPin" | "mapLabel",
+    featureType: "city" | "poi" | "storyPin" | "mapLabel" | "peak",
     coordinates: [number, number]
   ) => Promise<void>;
 }
 
 interface DragState {
   featureId: string;
-  featureType: "city" | "poi" | "storyPin" | "mapLabel";
+  featureType: "city" | "poi" | "storyPin" | "mapLabel" | "peak";
   originalCoords: [number, number];
   currentCoords: [number, number];
   startScreenPoint: ScreenPoint;
@@ -79,6 +79,7 @@ export function usePointDrag({
       "editor-points-capital",
       "editor-points-city",
       "editor-points-poi",
+      "editor-points-peak",
       "editor-points-story-pin",
       "editor-points-map-label",
       "editor-points-labels",
@@ -212,9 +213,7 @@ export function usePointDrag({
         }));
 
       cachedPointFeaturesRef.current = allPointFeatures;
-      activeFeatureIndexRef.current = allPointFeatures.findIndex(
-        (f) => f.properties.id === id
-      );
+      activeFeatureIndexRef.current = allPointFeatures.findIndex((f) => f.properties.id === id);
 
       // Select feature in editor immediately
       if (onFeatureSelectRef.current) {
@@ -317,6 +316,8 @@ export function usePointDrag({
       }
     };
 
+    let nudgeTimer: ReturnType<typeof setTimeout> | null = null;
+
     const onKeyDown = (e: KeyboardEvent) => {
       // Escape cancellation mid-drag
       if (e.key === "Escape" && dragRef.current) {
@@ -367,7 +368,8 @@ export function usePointDrag({
           (sel.type !== "city" &&
             sel.type !== "poi" &&
             sel.type !== "storyPin" &&
-            sel.type !== "mapLabel")
+            sel.type !== "mapLabel" &&
+            sel.type !== "peak")
         ) {
           return;
         }
@@ -389,9 +391,16 @@ export function usePointDrag({
         // Update coordinates reference in-memory for seamless repeated nudging
         sel.coordinates = newCoords;
 
-        if (updatePointCoordinatesRef.current) {
-          void updatePointCoordinatesRef.current(sel.id, sel.type, newCoords);
-        }
+        // Commit once the arrow keys go quiet: a burst of nudges is one save and one undo step.
+        if (nudgeTimer) clearTimeout(nudgeTimer);
+        const nudgeType = sel.type;
+        const nudgeId = sel.id;
+        nudgeTimer = setTimeout(() => {
+          nudgeTimer = null;
+          if (updatePointCoordinatesRef.current) {
+            void updatePointCoordinatesRef.current(nudgeId, nudgeType, newCoords);
+          }
+        }, 400);
       }
     };
 
@@ -414,6 +423,7 @@ export function usePointDrag({
       map.off("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("keydown", onKeyDown);
+      if (nudgeTimer) clearTimeout(nudgeTimer);
     };
   }, [map, isLoaded]);
 }

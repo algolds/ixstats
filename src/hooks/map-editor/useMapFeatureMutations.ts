@@ -29,8 +29,6 @@ interface UseMapFeatureMutationsOptions {
   peakForm: PeakFormData;
   riverForm: NamedRiverFormData;
   lakeForm: NamedLakeFormData;
-  editingRouteId: string | null;
-  editingRouteVertices: [number, number][];
   resetForm: () => void;
   setMode: (mode: EditorMode) => void;
   invalidateAllMapData: () => void;
@@ -53,8 +51,6 @@ export function useMapFeatureMutations({
   peakForm,
   riverForm,
   lakeForm,
-  editingRouteId,
-  editingRouteVertices,
   resetForm,
   setMode,
   invalidateAllMapData,
@@ -95,40 +91,20 @@ export function useMapFeatureMutations({
   const updateNamedLake = api.geoFeatures.updateNamedLake.useMutation();
   const deleteNamedLake = api.geoFeatures.deleteNamedLake.useMutation();
 
-  const createRoute = api.transport.createRoute.useMutation();
-  const updateRoute = api.transport.updateRoute.useMutation();
-  const updateRouteGeometry = api.transport.updateRouteGeometry.useMutation();
   const deleteRoute = api.transport.deleteRoute.useMutation();
 
-  const isMutating =
-    createCity.isPending ||
-    updateCity.isPending ||
-    deleteCity.isPending ||
-    createSubdivision.isPending ||
-    updateSubdivision.isPending ||
-    deleteSubdivision.isPending ||
-    createPOI.isPending ||
-    updatePOI.isPending ||
-    deletePOI.isPending ||
-    createStoryPin.isPending ||
-    updateStoryPin.isPending ||
-    deleteStoryPin.isPending ||
-    createMapLabel.isPending ||
-    updateMapLabel.isPending ||
-    deleteMapLabel.isPending ||
-    createPeak.isPending ||
-    updatePeak.isPending ||
-    deletePeak.isPending ||
-    createNamedRiver.isPending ||
-    updateNamedRiver.isPending ||
-    deleteNamedRiver.isPending ||
-    createNamedLake.isPending ||
-    updateNamedLake.isPending ||
-    deleteNamedLake.isPending ||
-    createRoute.isPending ||
-    updateRoute.isPending ||
-    updateRouteGeometry.isPending ||
-    deleteRoute.isPending;
+  // prettier-ignore
+  const isMutating = [
+    createCity, updateCity, deleteCity,
+    createSubdivision, updateSubdivision, deleteSubdivision,
+    createPOI, updatePOI, deletePOI,
+    createStoryPin, updateStoryPin, deleteStoryPin,
+    createMapLabel, updateMapLabel, deleteMapLabel,
+    createPeak, updatePeak, deletePeak,
+    createNamedRiver, updateNamedRiver, deleteNamedRiver,
+    createNamedLake, updateNamedLake, deleteNamedLake,
+    deleteRoute,
+  ].some((m) => m.isPending);
 
   const onSuccess = useCallback(
     (
@@ -157,7 +133,15 @@ export function useMapFeatureMutations({
       setLastSavedAt(new Date());
       setMutationError(null);
     },
-    [pushAction, resetForm, setMode, invalidateAllMapData, debouncedRefetch, setLastSavedAt, setMutationError]
+    [
+      pushAction,
+      resetForm,
+      setMode,
+      invalidateAllMapData,
+      debouncedRefetch,
+      setLastSavedAt,
+      setMutationError,
+    ]
   );
 
   const submitCity = useCallback(async () => {
@@ -173,14 +157,10 @@ export function useMapFeatureMutations({
         isSubdivisionCapital: cityForm.isSubdivisionCapital,
         subdivisionId: cityForm.subdivisionId,
       });
-      onSuccess(
-        "create",
-        "city",
-        res.id,
-        `Created City "${cityForm.name}"`,
-        undefined,
-        { ...cityForm, coordinates: pendingCoordinates }
-      );
+      onSuccess("create", "city", res.id, `Created City "${cityForm.name}"`, undefined, {
+        ...cityForm,
+        coordinates: pendingCoordinates,
+      });
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to create city");
     }
@@ -224,7 +204,9 @@ export function useMapFeatureMutations({
         name: subdivisionForm.name,
         type: subdivisionForm.type,
         level: subdivisionForm.level,
-        geometry: pendingGeometry as Parameters<typeof createSubdivision.mutateAsync>[0]["geometry"],
+        geometry: pendingGeometry as Parameters<
+          typeof createSubdivision.mutateAsync
+        >[0]["geometry"],
         capital: subdivisionForm.capital,
         population: subdivisionForm.population,
       });
@@ -237,7 +219,9 @@ export function useMapFeatureMutations({
         { ...subdivisionForm, geometry: pendingGeometry }
       );
     } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create subdivision");
+      setMutationError(
+        e instanceof Error && e.message ? e.message : "Failed to create subdivision"
+      );
     }
   }, [countryId, pendingGeometry, subdivisionForm, createSubdivision, onSuccess, setMutationError]);
 
@@ -267,7 +251,9 @@ export function useMapFeatureMutations({
           { ...form, geometry: selectedFeature.geometry || form.geometry }
         );
       } catch (e) {
-        setMutationError(e instanceof Error && e.message ? e.message : "Failed to update subdivision");
+        setMutationError(
+          e instanceof Error && e.message ? e.message : "Failed to update subdivision"
+        );
       }
     },
     [countryId, selectedFeature, subdivisionForm, updateSubdivision, onSuccess, setMutationError]
@@ -285,14 +271,10 @@ export function useMapFeatureMutations({
         icon: poiForm.icon,
         wikiPageTitle: poiForm.wikiPageTitle,
       });
-      onSuccess(
-        "create",
-        "poi",
-        res.id,
-        `Created POI "${poiForm.name}"`,
-        undefined,
-        { ...poiForm, coordinates: pendingCoordinates }
-      );
+      onSuccess("create", "poi", res.id, `Created POI "${poiForm.name}"`, undefined, {
+        ...poiForm,
+        coordinates: pendingCoordinates,
+      });
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to create POI");
     }
@@ -331,7 +313,7 @@ export function useMapFeatureMutations({
   const submitStoryPin = useCallback(async () => {
     if (!countryId || !pendingCoordinates) return;
     try {
-      await createStoryPin.mutateAsync({
+      const res = await createStoryPin.mutateAsync({
         countryId,
         title: storyPinForm.title,
         coordinates: pendingCoordinates,
@@ -339,7 +321,14 @@ export function useMapFeatureMutations({
         ixTimeYear: storyPinForm.ixTimeYear,
         category: storyPinForm.category,
       });
-      onSuccess();
+      onSuccess(
+        "create",
+        "storyPin",
+        res.id,
+        `Created Story Pin "${storyPinForm.title}"`,
+        undefined,
+        { ...storyPinForm, coordinates: pendingCoordinates }
+      );
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to create story pin");
     }
@@ -357,7 +346,14 @@ export function useMapFeatureMutations({
         ixTimeYear: storyPinForm.ixTimeYear,
         category: storyPinForm.category,
       });
-      onSuccess();
+      onSuccess(
+        "update",
+        "storyPin",
+        selectedFeature.id,
+        `Updated Story Pin "${storyPinForm.title}"`,
+        { ...selectedFeature.properties, coordinates: selectedFeature.coordinates },
+        { ...storyPinForm, coordinates: selectedFeature.coordinates }
+      );
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to update story pin");
     }
@@ -366,7 +362,7 @@ export function useMapFeatureMutations({
   const submitMapLabel = useCallback(async () => {
     if (!countryId || !pendingCoordinates) return;
     try {
-      await createMapLabel.mutateAsync({
+      const res = await createMapLabel.mutateAsync({
         countryId,
         text: mapLabelForm.text,
         labelType: mapLabelForm.labelType,
@@ -374,7 +370,10 @@ export function useMapFeatureMutations({
         fontSize: mapLabelForm.fontSize,
         color: mapLabelForm.color,
       });
-      onSuccess();
+      onSuccess("create", "mapLabel", res.id, `Created Label "${mapLabelForm.text}"`, undefined, {
+        ...mapLabelForm,
+        coordinates: pendingCoordinates,
+      });
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to create map label");
     }
@@ -392,7 +391,14 @@ export function useMapFeatureMutations({
         fontSize: mapLabelForm.fontSize,
         color: mapLabelForm.color,
       });
-      onSuccess();
+      onSuccess(
+        "update",
+        "mapLabel",
+        selectedFeature.id,
+        `Updated Label "${mapLabelForm.text}"`,
+        { ...selectedFeature.properties, coordinates: selectedFeature.coordinates },
+        { ...mapLabelForm, coordinates: selectedFeature.coordinates }
+      );
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to update map label");
     }
@@ -407,14 +413,10 @@ export function useMapFeatureMutations({
         elevation: peakForm.elevation,
         coordinates: pendingCoordinates,
       });
-      onSuccess(
-        "create",
-        "peak",
-        res.id,
-        `Created Peak "${peakForm.name}"`,
-        undefined,
-        { ...peakForm, coordinates: pendingCoordinates }
-      );
+      onSuccess("create", "peak", res.id, `Created Peak "${peakForm.name}"`, undefined, {
+        ...peakForm,
+        coordinates: pendingCoordinates,
+      });
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to create peak");
     }
@@ -455,14 +457,10 @@ export function useMapFeatureMutations({
         name: riverForm.name,
         geometry: pendingGeometry as Parameters<typeof createNamedRiver.mutateAsync>[0]["geometry"],
       });
-      onSuccess(
-        "create",
-        "river",
-        res.id,
-        `Created River "${riverForm.name}"`,
-        undefined,
-        { ...riverForm, geometry: pendingGeometry }
-      );
+      onSuccess("create", "river", res.id, `Created River "${riverForm.name}"`, undefined, {
+        ...riverForm,
+        geometry: pendingGeometry,
+      });
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to create river");
     }
@@ -501,14 +499,10 @@ export function useMapFeatureMutations({
         name: lakeForm.name,
         geometry: pendingGeometry as Parameters<typeof createNamedLake.mutateAsync>[0]["geometry"],
       });
-      onSuccess(
-        "create",
-        "lake",
-        res.id,
-        `Created Lake "${lakeForm.name}"`,
-        undefined,
-        { ...lakeForm, geometry: pendingGeometry }
-      );
+      onSuccess("create", "lake", res.id, `Created Lake "${lakeForm.name}"`, undefined, {
+        ...lakeForm,
+        geometry: pendingGeometry,
+      });
     } catch (e) {
       setMutationError(e instanceof Error && e.message ? e.message : "Failed to create lake");
     }
@@ -623,8 +617,5 @@ export function useMapFeatureMutations({
     submitLake,
     submitEditLake,
     deleteFeature,
-    updateRouteGeometry,
-    createRoute,
-    updateRoute,
   };
 }

@@ -65,15 +65,6 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
   visible,
   cities,
 }: ProvincePreviewLayerProps) {
-  // Debug mount
-  console.log("[ProvincePreview] MOUNTED", {
-    hasMap: !!map,
-    provinceCount: provinces.length,
-    includedCount: provinces.filter((p) => p.included).length,
-    hasBorder: !!countryBorder,
-    visible,
-  });
-
   // ── Country border reference layer ──
   useEffect(() => {
     if (!map || !countryBorder) return;
@@ -159,21 +150,8 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     // Detect if provinces are in SVG coordinates (outside WGS84 range)
     const needsTransform = svgMaxX > 180 || svgMaxY > 90 || svgMinX < -180 || svgMinY < -90;
 
-    console.log("[ProvincePreview] FC computation:", {
-      includedCount: included.length,
-      svgBounds: {
-        svgMinX: svgMinX.toFixed(2),
-        svgMinY: svgMinY.toFixed(2),
-        svgMaxX: svgMaxX.toFixed(2),
-        svgMaxY: svgMaxY.toFixed(2),
-      },
-      needsTransform,
-      hasBorder: !!countryBorder,
-    });
-
     if (!needsTransform) {
       // Already in geographic coordinates — pass through
-      console.log("[ProvincePreview] Passthrough mode (coords already geographic)");
       return {
         type: "FeatureCollection",
         features: included.map((p, i): Feature => ({
@@ -339,35 +317,6 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
             "text-halo-width": 1.5,
           },
         });
-
-        // Log bounds for debugging
-        const bounds = fc.features.reduce(
-          (acc, f) => {
-            const geom = f.geometry;
-            if (!geom) return acc;
-            const coords: Position[][] =
-              geom.type === "Polygon"
-                ? (geom as Polygon).coordinates
-                : geom.type === "MultiPolygon"
-                  ? (geom as MultiPolygon).coordinates.flat(1)
-                  : [];
-            for (const ring of coords) {
-              for (const pt of ring) {
-                if (pt && typeof pt[0] === "number" && typeof pt[1] === "number") {
-                  acc.minLng = Math.min(acc.minLng, pt[0]);
-                  acc.minLat = Math.min(acc.minLat, pt[1]);
-                  acc.maxLng = Math.max(acc.maxLng, pt[0]);
-                  acc.maxLat = Math.max(acc.maxLat, pt[1]);
-                }
-              }
-            }
-            return acc;
-          },
-          { minLng: Infinity, minLat: Infinity, maxLng: -Infinity, maxLat: -Infinity }
-        );
-        console.log(
-          `[ProvincePreview] Created ${fc.features.length} features, bounds: lng ${bounds.minLng.toFixed(2)}-${bounds.maxLng.toFixed(2)}, lat ${bounds.minLat.toFixed(2)}-${bounds.maxLat.toFixed(2)}`
-        );
       }
     } catch (err) {
       console.error("[ProvincePreview] Error creating/updating layers:", err);

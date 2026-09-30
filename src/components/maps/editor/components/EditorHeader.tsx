@@ -20,6 +20,9 @@ import {
   HelpCircle,
   Magnet,
   Eye,
+  Download,
+  KeyCommand,
+  Trash,
 } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
@@ -28,6 +31,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapEditorInstance, EditorFeature } from "../types/editor-state";
 import type { RouteType } from "~/lib/economy/transport-generator";
+import { featuresToGeoJSON } from "~/hooks/map-editor/editor-geo-ops";
 
 interface SimplifyAllMutation {
   isPending: boolean;
@@ -52,12 +56,16 @@ interface TransportMutation {
 
 interface RecalculateGeoMutation {
   isPending: boolean;
-  mutateAsync: (args?: { countryId?: string } | void) => Promise<{
-    processed: number;
-    failed: number;
-    total: number;
-    errors: string[];
-  } | { success?: boolean } | void>;
+  mutateAsync: (args?: { countryId?: string } | void) => Promise<
+    | {
+        processed: number;
+        failed: number;
+        total: number;
+        errors: string[];
+      }
+    | { success?: boolean }
+    | void
+  >;
 }
 
 interface EditorHeaderProps {
@@ -84,6 +92,9 @@ interface EditorHeaderProps {
   setSnapTolerance: (v: number) => void;
   panelsLocked: boolean;
   setPanelsLocked: (v: boolean) => void;
+  /** Deletes the current (multi-)selection after confirmation. */
+  onDeleteSelection?: () => void;
+  onShowShortcuts?: () => void;
 }
 
 export const EditorHeader = React.memo(function EditorHeader({
@@ -110,9 +121,67 @@ export const EditorHeader = React.memo(function EditorHeader({
   setSnapTolerance,
   panelsLocked,
   setPanelsLocked,
+  onDeleteSelection,
+  onShowShortcuts,
 }: EditorHeaderProps) {
   const notify = useNotify();
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const importInputRef = React.useRef<HTMLInputElement>(null);
+
+  const undoAction = editor.history.actions[editor.history.position];
+  const redoAction = editor.history.actions[editor.history.position + 1];
+
+  const handleExportGeoJSON = React.useCallback(() => {
+    const fc = featuresToGeoJSON(editor.allFeatures);
+    if (fc.features.length === 0) {
+      notify.info("Nothing to export", "This map has no features yet.");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: "application/geo+json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const slug = (countryInfo?.name ?? "map").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    a.href = url;
+    a.download = `${slug}-features.geojson`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify.success("GeoJSON exported", `${fc.features.length} features`);
+  }, [editor.allFeatures, countryInfo?.name, notify]);
+
+  const handleImportFile = React.useCallback(
+    async (file: File) => {
+      if (file.size > 20 * 1024 * 1024) {
+        notify.error("File too large", "GeoJSON imports are limited to 20 MB.");
+        return;
+      }
+      try {
+        const doc: unknown = JSON.parse(await file.text());
+        const result = await editor.importGeoJSON(doc);
+        if (result.created === 0) {
+          notify.warning(
+            "Nothing imported",
+            result.skipped > 0
+              ? `${result.skipped} features were not points or polygons.`
+              : "The file had no features."
+          );
+          return;
+        }
+        notify.success(
+          `Imported ${result.created} feature${result.created === 1 ? "" : "s"}`,
+          [
+            result.skipped ? `${result.skipped} skipped (lines/unsupported)` : null,
+            result.failed ? `${result.failed} rejected by the server` : null,
+            "Undo (Ctrl+Z) removes the whole import.",
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        );
+      } catch (e) {
+        notify.error("Import failed", e instanceof Error ? e.message : "Not a valid GeoJSON file");
+      }
+    },
+    [editor, notify]
+  );
 
   const resolvedCountryName = useMemo(() => {
     return (
@@ -173,30 +242,30 @@ export const EditorHeader = React.memo(function EditorHeader({
       {(!isWorldMode || editor.mode !== "view") && (
         <div className="ml-2 flex items-center gap-0.5">
           <button
-            disabled={!editor.historyCanUndo}
+            disabled={!editor.historyCanUndo || editor.isMutating}
             onClick={() => editor.undo()}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
-            title="Undo (Ctrl+Z)"
+            title={
+              undoAction ? `Undo: ${undoAction.description} (Ctrl+Z)` : "Nothing to undo (Ctrl+Z)"
+            }
+            aria-label="Undo"
           >
             <Undo2 className="h-3.5 w-3.5" />
           </button>
           <button
-            disabled={!editor.historyCanRedo}
+            disabled={!editor.historyCanRedo || editor.isMutating}
             onClick={() => editor.redo()}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
-            title="Redo (Ctrl+Shift+Z)"
+            title={
+              redoAction
+                ? `Redo: ${redoAction.description} (Ctrl+Shift+Z)`
+                : "Nothing to redo (Ctrl+Shift+Z)"
+            }
+            aria-label="Redo"
           >
             <Redo2 className="h-3.5 w-3.5" />
           </button>
         </div>
-      )}
-
-      {/* Save indicator */}
-      {editor.isMutating && (
-        <span className="ml-2 animate-pulse text-xs text-amber-500">Saving…</span>
-      )}
-      {!editor.isMutating && editor.lastSavedAt && (
-        <span className="ml-2 text-xs text-emerald-500">Saved</span>
       )}
 
       <div className="ml-auto" />
@@ -214,7 +283,8 @@ export const EditorHeader = React.memo(function EditorHeader({
                 ? "bg-primary/15 text-primary"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
-            title="Toggle Grid (G)"
+            title="Toggle grid (G)"
+            aria-pressed={showGrid}
           >
             <Grid3X3 className="h-3.5 w-3.5" />
           </button>
@@ -226,7 +296,7 @@ export const EditorHeader = React.memo(function EditorHeader({
               }
             }}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
-            title="Center on Country"
+            title="Zoom to country"
           >
             <Crosshair className="h-3.5 w-3.5" />
           </button>
@@ -238,11 +308,11 @@ export const EditorHeader = React.memo(function EditorHeader({
                 ? "bg-primary/15 text-primary"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
-            title={`Highlight Gaps & Empty Regions: ${editor.showGaps ? "On" : "Off"}`}
+            title={`Highlight gaps & empty regions: ${editor.showGaps ? "On" : "Off"} (H)`}
+            aria-pressed={editor.showGaps}
           >
             <Eye className="h-3.5 w-3.5" />
           </button>
-
 
           {/* Snap toggle (tolerance lives in the Settings popover below) */}
           <button
@@ -254,6 +324,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
             title={`Snap: ${snapEnabled ? "On" : "Off"} (tolerance in Settings)`}
+            aria-pressed={snapEnabled}
           >
             <Magnet className="h-3.5 w-3.5" />
           </button>
@@ -290,6 +361,17 @@ export const EditorHeader = React.memo(function EditorHeader({
                 <MountainIcon className="h-3.5 w-3.5" />
               </button>
             </div>
+          )}
+
+          {onShowShortcuts && (
+            <button
+              onClick={onShowShortcuts}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground hidden h-6 w-6 items-center justify-center rounded-md transition-colors sm:flex"
+              title="Keyboard shortcuts (?)"
+              aria-label="Keyboard shortcuts"
+            >
+              <KeyCommand className="h-3.5 w-3.5" />
+            </button>
           )}
 
           {/* Help & Guide Button */}
@@ -336,8 +418,39 @@ export const EditorHeader = React.memo(function EditorHeader({
                     title="Import provinces from external GeoJSON"
                   >
                     <FileUp className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                    <span className="font-medium">Import Provinces</span>
+                    <span className="font-medium">Import Provinces (SVG/PNG)</span>
+                    <span className="bg-muted text-muted-foreground ml-auto rounded px-1 font-mono text-xs">
+                      I
+                    </span>
                   </button>
+
+                  {!isWorldMode || activeCountryId ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsSettingsOpen(false);
+                          importInputRef.current?.click();
+                        }}
+                        disabled={editor.isMutating}
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
+                        title="Create cities, POIs and regions from a GeoJSON file (points → cities, polygons → regions)"
+                      >
+                        <FileUp className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+                        <span className="font-medium">Import GeoJSON…</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsSettingsOpen(false);
+                          handleExportGeoJSON();
+                        }}
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
+                        title="Download every feature on this map as a GeoJSON FeatureCollection"
+                      >
+                        <Download className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+                        <span className="font-medium">Export GeoJSON</span>
+                      </button>
+                    </>
+                  ) : null}
 
                   {/* Simplify All */}
                   {editor.allFeatures.some((f: EditorFeature) => f.type === "subdivision") && (
@@ -354,19 +467,16 @@ export const EditorHeader = React.memo(function EditorHeader({
                             `Simplified ${result.updated}/${result.total} regions (${result.reduction}% vertex reduction)`
                           );
                         } catch (e) {
-                          notify.error(`Simplification error: ${e instanceof Error ? e.message : "Unknown"}`);
+                          notify.error(
+                            `Simplification error: ${e instanceof Error ? e.message : "Unknown"}`
+                          );
                         }
                       }}
                       disabled={simplifyAll.isPending || !activeCountryId}
                       className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
                       title="Simplify all regions — reduce vertices while preserving shape"
                     >
-                      <Minimize2
-                        className={cn(
-                          "h-3.5 w-3.5 shrink-0 text-indigo-500",
-                          simplifyAll.isPending && "animate-pulse"
-                        )}
-                      />
+                      <Minimize2 className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
                       <span className="font-medium">
                         {simplifyAll.isPending ? "Simplifying..." : "Simplify All Regions"}
                       </span>
@@ -403,7 +513,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                           step="0.001"
                           value={snapTolerance}
                           onChange={(e) => setSnapTolerance(parseFloat(e.target.value))}
-                          className="h-1 flex-1 accent-primary"
+                          className="accent-primary h-1 flex-1"
                         />
                         <span className="text-muted-foreground w-10 text-right font-mono text-xs tabular-nums">
                           {snapTolerance.toFixed(3)}°
@@ -455,7 +565,9 @@ export const EditorHeader = React.memo(function EditorHeader({
                               `Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`
                             );
                           } catch (e) {
-                            notify.error(`Transport generation error: ${e instanceof Error ? e.message : "Unknown"}`);
+                            notify.error(
+                              `Transport generation error: ${e instanceof Error ? e.message : "Unknown"}`
+                            );
                           }
                         }}
                         disabled={generateTransport.isPending}
@@ -474,7 +586,9 @@ export const EditorHeader = React.memo(function EditorHeader({
                             await recalculateGeo.mutateAsync({ countryId: activeCountryId });
                             notify.success("Geographic profile recalculated successfully");
                           } catch (e) {
-                            notify.error(`Recalculation error: ${e instanceof Error ? e.message : "Unknown"}`);
+                            notify.error(
+                              `Recalculation error: ${e instanceof Error ? e.message : "Unknown"}`
+                            );
                           }
                         }}
                         disabled={recalculateGeo.isPending}
@@ -501,17 +615,29 @@ export const EditorHeader = React.memo(function EditorHeader({
       </div>
 
       {/* Bulk delete — shown when multi-select has items */}
-      {editor.selectedIds.size > 0 && (
+      {editor.selectedIds.size > 0 && onDeleteSelection && (
         <button
-          onClick={async () => {
-            if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
-            await editor.bulkDeleteSelected();
-          }}
-          className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20 active:scale-[0.98] transition dark:text-red-400"
+          onClick={onDeleteSelection}
+          disabled={editor.isMutating}
+          className="text-destructive bg-destructive/10 hover:bg-destructive/20 ml-1 flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-[color,background-color,transform] active:scale-[0.98] disabled:opacity-50"
+          title="Delete selected (Delete)"
         >
-          Delete {editor.selectedIds.size} Selected
+          <Trash className="h-3 w-3" />
+          <span className="hidden sm:inline">Delete {editor.selectedIds.size}</span>
         </button>
       )}
+
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".geojson,.json,application/geo+json,application/json"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void handleImportFile(file);
+        }}
+      />
     </div>
   );
 });

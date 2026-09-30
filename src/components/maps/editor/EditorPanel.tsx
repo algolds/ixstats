@@ -22,7 +22,7 @@ import {
   MailIn as Inbox,
 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
-import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
+import { FeatureListSkeleton, LayerPanelSkeleton } from "~/components/maps/editor/EditorSkeleton";
 
 const PANEL_MIN_W = 256;
 const PANEL_MAX_W = 480;
@@ -32,7 +32,10 @@ const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 export type TabId =
   "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty" | "history" | "queue";
 
-const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<{ className?: string; title?: string }> }> = {
+const TAB_DEFS: Record<
+  TabId,
+  { label: string; Icon: React.ComponentType<{ className?: string; title?: string }> }
+> = {
   layers: { label: "Layers", Icon: Layers },
   features: { label: "Features", Icon: List },
   properties: { label: "Properties", Icon: Settings2 },
@@ -494,11 +497,7 @@ export function EditorPanel({
               )}
               {activeTab === "layers" && (
                 <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
-                  {layersContent ?? (
-                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
-                      Layers panel coming soon
-                    </div>
-                  )}
+                  {layersContent ?? <LayerPanelSkeleton />}
                 </div>
               )}
               {activeTab === "features" && featureListContent && (
@@ -509,8 +508,8 @@ export function EditorPanel({
               {activeTab === "wiki" && (
                 <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
                   {wikiContent ?? (
-                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
-                      Wiki scanner coming soon
+                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-center text-xs">
+                      Select a country to scan its features for IxWiki pages.
                     </div>
                   )}
                 </div>

@@ -48,6 +48,7 @@ import { MapHintPill } from "./toolbars/MapHintPill";
 import { getFeatureCoords } from "./utils/map-helpers";
 import { transientMapStore } from "./utils/transientStore";
 import { hitTestFeatures } from "./utils/hit-test";
+import { EditorRulers } from "./components/EditorRulers";
 
 type EditorMouseEvent = MapLayerMouseEvent & { routeClicked?: boolean };
 type MapFilterSpec = Parameters<MapLibreMap["setFilter"]>[1];
@@ -59,9 +60,11 @@ export interface EditorMapRef {
 
 const INTERACTIVE_LAYERS = [
   "editor-subdivisions-fill",
+  "editor-lines",
   "editor-points-capital",
   "editor-points-city",
   "editor-points-poi",
+  "editor-points-peak",
   "editor-points-story-pin",
   "editor-points-map-label",
   "editor-points-labels",
@@ -92,8 +95,14 @@ interface EditorMapProps {
   selectedFeature: EditorFeature | null;
   /** Called when user hovers/clicks a feature on the map */
   onFeatureSelect?: (feature: EditorFeature | null) => void;
-  /** Called when user finishes editing polygon vertices */
-  onGeometryUpdate?: (featureId: string, geometry: object) => void;
+  /** Called when user saves edited polygon vertices (with any topology-cascaded neighbours) */
+  onGeometryUpdate?: (
+    featureId: string,
+    geometry: object,
+    cascaded?: Array<{ id: string; geometry: object }>
+  ) => void;
+  /** Reports unsaved vertex edits so the editor can warn before leaving */
+  onVertexEditDirtyChange?: (dirty: boolean) => void;
   /** Background map layers (world map context) */
   worldMapLayers?: import("~/components/maps/core/IxWorldMap").MapLayerData[];
   /** Visible layer types in the editor context */
@@ -121,7 +130,7 @@ interface EditorMapProps {
   theme?: MapTheme;
   updatePointCoordinates?: (
     featureId: string,
-    featureType: "city" | "poi" | "storyPin" | "mapLabel",
+    featureType: "city" | "poi" | "storyPin" | "mapLabel" | "peak",
     coordinates: [number, number]
   ) => Promise<void>;
   isPickingLocation?: boolean;
@@ -177,6 +186,7 @@ const EditorMap = memo(
       selectedFeature,
       onFeatureSelect,
       onGeometryUpdate,
+      onVertexEditDirtyChange,
       worldMapLayers,
       editorVisibleLayers,
       showGrid,
@@ -220,12 +230,6 @@ const EditorMap = memo(
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [activeDragGuide, setActiveDragGuide] = useState<{
-      type: "h" | "v";
-      currentVal: number;
-      screenPos: number;
-    } | null>(null);
-
     const context = useMapEditorContext();
 
     const snapPoint = useCallback(
@@ -255,79 +259,6 @@ const EditorMap = memo(
       },
       [context]
     );
-
-    useEffect(() => {
-      if (!activeDragGuide) return;
-
-      const handleMouseMove = (e: MouseEvent) => {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect || !mapRef.current) return;
-
-        const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-        const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-
-        if (activeDragGuide.type === "h") {
-          const lat = mapRef.current.unproject([x, y]).lat;
-          setActiveDragGuide({
-            type: "h",
-            currentVal: lat,
-            screenPos: y,
-          });
-        } else {
-          const lng = mapRef.current.unproject([x, y]).lng;
-          setActiveDragGuide({
-            type: "v",
-            currentVal: lng,
-            screenPos: x,
-          });
-        }
-      };
-
-      const handleMouseUp = () => {
-        if (setGuides) {
-          const newGuide = {
-            id: `guide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            type: activeDragGuide.type,
-            value: activeDragGuide.currentVal,
-          };
-          setGuides((prev) => [...prev, newGuide]);
-        }
-        setActiveDragGuide(null);
-      };
-
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
-    }, [activeDragGuide, setGuides]);
-
-    const handleTopRulerMouseDown = (e: React.MouseEvent) => {
-      e.preventDefault();
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect || !mapRef.current) return;
-      const y = e.clientY - rect.top;
-      const lat = mapRef.current.unproject([e.clientX - rect.left, y]).lat;
-      setActiveDragGuide({
-        type: "h",
-        currentVal: lat,
-        screenPos: y,
-      });
-    };
-
-    const handleLeftRulerMouseDown = (e: React.MouseEvent) => {
-      e.preventDefault();
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect || !mapRef.current) return;
-      const x = e.clientX - rect.left;
-      const lng = mapRef.current.unproject([x, e.clientY - rect.top]).lng;
-      setActiveDragGuide({
-        type: "v",
-        currentVal: lng,
-        screenPos: x,
-      });
-    };
 
     const [spacebarPanActive, setSpacebarPanActive] = useState(false);
     const spacebarPanActiveRef = useRef(false);
@@ -495,6 +426,7 @@ const EditorMap = memo(
       features,
       countryGeometry,
       onGeometryUpdate,
+      onDirtyChange: onVertexEditDirtyChange,
       worldMapLayers,
       editorVisibleLayers,
       snapEnabled,
@@ -691,6 +623,7 @@ const EditorMap = memo(
           if (locked[key]) out.push(...layers);
         };
         addIf("regions", ["editor-subdivisions-fill", "editor-gaps-fill"]);
+        addIf("geography", ["editor-points-peak", "editor-lines"]);
         addIf("cities", ["editor-points-capital", "editor-points-city"]);
         addIf("pois", ["editor-points-poi"]);
         addIf("stories", ["editor-points-story-pin"]);
@@ -698,9 +631,14 @@ const EditorMap = memo(
         return out;
       };
 
-      const onMouseMove = (e: MapLayerMouseEvent) => {
-        routePluginEvent("onMouseMove", e);
-        if (e.defaultPrevented) return;
+      // Hover hit-testing (queryRenderedFeatures) runs at most once per animation frame.
+      let hoverFrame: number | null = null;
+      let lastMove: MapLayerMouseEvent | null = null;
+
+      const processHover = () => {
+        hoverFrame = null;
+        const e = lastMove;
+        if (!e) return;
 
         if (spacebarPanActiveRef.current) {
           map.getCanvas().style.cursor = "grab";
@@ -712,7 +650,7 @@ const EditorMap = memo(
         }
         if (isVertexEditing) return;
 
-        // ponytail: Suppress region hit-testing and hover highlight when tool modes are active
+        // Suppress region hit-testing and hover highlight when tool modes are active
         const currentMode = modeRef.current;
         if (currentMode !== "view" && currentMode !== "paint") {
           if (lastHoveredIdRef.current !== null) {
@@ -722,7 +660,6 @@ const EditorMap = memo(
             }
           }
           transientMapStore.setHoveredFeatureId(null);
-          transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);
           return;
         }
 
@@ -756,7 +693,18 @@ const EditorMap = memo(
         }
 
         transientMapStore.setHoveredFeatureId(hitId);
-        transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);
+      };
+
+      const onMouseMove = (e: MapLayerMouseEvent) => {
+        routePluginEvent("onMouseMove", e);
+        if (e.defaultPrevented) return;
+        // Cheap: the store batches listener notifications per frame.
+        transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat], {
+          x: e.point.x,
+          y: e.point.y,
+        });
+        lastMove = e;
+        if (hoverFrame === null) hoverFrame = requestAnimationFrame(processHover);
       };
 
       const onMouseLeave = () => {
@@ -780,7 +728,11 @@ const EditorMap = memo(
 
         if (spacebarPanActiveRef.current) return;
         if (isPickingLocationRef.current) return;
-        if (e.routeClicked || (e.originalEvent as (MouseEvent & { routeClicked?: boolean }))?.routeClicked) return;
+        if (
+          e.routeClicked ||
+          (e.originalEvent as MouseEvent & { routeClicked?: boolean })?.routeClicked
+        )
+          return;
         // Post-drag clicks (map pan / feature drag) must not select (Plan 120 P2).
         if (wasDragRef.current) return;
 
@@ -842,7 +794,11 @@ const EditorMap = memo(
         if (e.defaultPrevented) return;
 
         if (isPickingLocationRef.current) return;
-        if (e.routeClicked || (e.originalEvent as (MouseEvent & { routeClicked?: boolean }))?.routeClicked) return;
+        if (
+          e.routeClicked ||
+          (e.originalEvent as MouseEvent & { routeClicked?: boolean })?.routeClicked
+        )
+          return;
         if (isVertexEditing) return;
         if (wasDragRef.current) return;
 
@@ -940,7 +896,16 @@ const EditorMap = memo(
       map.on("mouseup", onMouseUp);
       map.on("dblclick", onDoubleClick);
 
+      const onCanvasLeave = () => {
+        lastMove = null;
+        transientMapStore.setCursorCoords(null);
+        transientMapStore.setHoveredFeatureId(null);
+      };
+      map.getCanvasContainer().addEventListener("mouseleave", onCanvasLeave);
+
       return () => {
+        if (hoverFrame !== null) cancelAnimationFrame(hoverFrame);
+        map.getCanvasContainer().removeEventListener("mouseleave", onCanvasLeave);
         map.off("mousemove", onMouseMove);
         map.off("mouseleave", "editor-subdivisions-fill", onMouseLeave);
         map.off("click", onClickFeature);
@@ -961,7 +926,11 @@ const EditorMap = memo(
         if (e.defaultPrevented) return;
 
         if (spacebarPanActiveRef.current) return;
-        if (e.routeClicked || (e.originalEvent as (MouseEvent & { routeClicked?: boolean }))?.routeClicked) return;
+        if (
+          e.routeClicked ||
+          (e.originalEvent as MouseEvent & { routeClicked?: boolean })?.routeClicked
+        )
+          return;
         if (isVertexEditing) return;
         // Post-drag clicks (map pan) must not place/insert anything (Plan 120 P2).
         if (wasDragRef.current) return;
@@ -1070,20 +1039,45 @@ const EditorMap = memo(
         };
       };
 
+      // The marquee is drawn straight into its GeoJSON source once per frame —
+      // no React state per pointer move.
+      let lassoFrame: number | null = null;
+      let pendingLasso: Polygon | null = null;
+      const drawLasso = () => {
+        lassoFrame = null;
+        const src = map.getSource("editor-lasso") as { setData?: (d: unknown) => void } | undefined;
+        src?.setData?.(
+          pendingLasso
+            ? { type: "Feature", geometry: pendingLasso, properties: {} }
+            : { type: "FeatureCollection", features: [] }
+        );
+      };
+      const scheduleLasso = (geom: Polygon | null) => {
+        pendingLasso = geom;
+        if (lassoFrame === null) lassoFrame = requestAnimationFrame(drawLasso);
+      };
+
       const onMouseMove = (e: MapLayerMouseEvent) => {
         if (!isDrawing) return;
 
         if (isRect) {
-          const geom = buildRectGeometry([e.lngLat.lng, e.lngLat.lat]);
-          if (geom) setLassoGeometry?.(geom);
+          scheduleLasso(buildRectGeometry([e.lngLat.lng, e.lngLat.lat]));
           return;
         }
 
+        const last = pts[pts.length - 1];
+        // Skip sub-pixel jitter so long freehand loops stay light.
+        if (
+          last &&
+          Math.abs(last[0] - e.lngLat.lng) < 1e-6 &&
+          Math.abs(last[1] - e.lngLat.lat) < 1e-6
+        ) {
+          return;
+        }
         pts.push([e.lngLat.lng, e.lngLat.lat]);
-        setLassoGeometry?.({
-          type: "Polygon" as const,
-          coordinates: [[...pts, pts[0]!]],
-        });
+        if (pts.length >= 2) {
+          scheduleLasso({ type: "Polygon", coordinates: [[...pts, pts[0]!]] });
+        }
       };
 
       const onMouseUp = (e: MapLayerMouseEvent) => {
@@ -1111,6 +1105,7 @@ const EditorMap = memo(
         } else if (pts.length >= 3 && onApplyLassoSelection) {
           onApplyLassoSelection(pts, mode);
         }
+        scheduleLasso(null);
         setLassoGeometry?.(null);
       };
 
@@ -1119,6 +1114,7 @@ const EditorMap = memo(
       map.on("mouseup", onMouseUp);
 
       return () => {
+        if (lassoFrame !== null) cancelAnimationFrame(lassoFrame);
         map.off("mousedown", onMouseDown);
         map.off("mousemove", onMouseMove);
         map.off("mouseup", onMouseUp);
@@ -1161,86 +1157,6 @@ const EditorMap = memo(
       }
     }, [isLoaded, selectedFeature, selectedIds]);
 
-    const rect = containerRef.current?.getBoundingClientRect();
-    const rulerWidth = rect ? rect.width - 24 : 0;
-    const rulerHeight = rect ? rect.height - 24 : 0;
-
-    const ticks: { x: number; isMajor: boolean; label?: string }[] = [];
-    const yTicks: { y: number; isMajor: boolean; label?: string }[] = [];
-
-    const map = mapRef.current;
-    if (map && rect && isLoaded) {
-      // Top Ruler calculations (horizontal, longitude)
-      const west = map.unproject([24, 0]).lng;
-      const east = map.unproject([rect.width, 0]).lng;
-      const diffLng = east - west;
-
-      let step = 10;
-      if (diffLng < 0.1) step = 0.01;
-      else if (diffLng < 0.2) step = 0.02;
-      else if (diffLng < 0.5) step = 0.05;
-      else if (diffLng < 1) step = 0.1;
-      else if (diffLng < 2) step = 0.2;
-      else if (diffLng < 5) step = 0.5;
-      else if (diffLng < 10) step = 1;
-      else if (diffLng < 25) step = 2;
-      else if (diffLng < 50) step = 5;
-      else if (diffLng < 100) step = 10;
-      else step = 20;
-
-      const minorStep = step / 5;
-      const startLng = Math.ceil(west / minorStep) * minorStep;
-      const endLng = Math.floor(east / minorStep) * minorStep;
-
-      for (let lng = startLng; lng <= endLng + minorStep / 2; lng += minorStep) {
-        const proj = map.project([lng, map.getCenter().lat]);
-        const x = proj.x - 24;
-        if (x >= 0 && x <= rulerWidth) {
-          const isMajor = Math.abs(Math.round(lng / minorStep) % 5) === 0;
-          ticks.push({
-            x,
-            isMajor,
-            label: isMajor ? lng.toFixed(Math.max(0, -Math.floor(Math.log10(step)))) : undefined,
-          });
-        }
-      }
-
-      // Left Ruler calculations (vertical, latitude)
-      const north = map.unproject([0, 24]).lat;
-      const south = map.unproject([0, rect.height]).lat;
-      const diffLat = north - south;
-
-      let stepLat = 10;
-      if (diffLat < 0.1) stepLat = 0.01;
-      else if (diffLat < 0.2) stepLat = 0.02;
-      else if (diffLat < 0.5) stepLat = 0.05;
-      else if (diffLat < 1) stepLat = 0.1;
-      else if (diffLat < 2) stepLat = 0.2;
-      else if (diffLat < 5) stepLat = 0.5;
-      else if (diffLat < 10) stepLat = 1;
-      else if (diffLat < 25) stepLat = 2;
-      else if (diffLat < 50) stepLat = 5;
-      else if (diffLat < 100) stepLat = 10;
-      else stepLat = 20;
-
-      const minorStepLat = stepLat / 5;
-      const startLat = Math.ceil(south / minorStepLat) * minorStepLat;
-      const endLat = Math.floor(north / minorStepLat) * minorStepLat;
-
-      for (let lat = startLat; lat <= endLat + minorStepLat / 2; lat += minorStepLat) {
-        const proj = map.project([map.getCenter().lng, lat]);
-        const y = proj.y - 24;
-        if (y >= 0 && y <= rulerHeight) {
-          const isMajor = Math.abs(Math.round(lat / minorStepLat) % 5) === 0;
-          yTicks.push({
-            y,
-            isMajor,
-            label: isMajor ? lat.toFixed(Math.max(0, -Math.floor(Math.log10(stepLat)))) : undefined,
-          });
-        }
-      }
-    }
-
     return (
       <div className="relative h-full w-full select-none" style={{ minHeight: 400 }}>
         <style>{`
@@ -1263,154 +1179,14 @@ const EditorMap = memo(
           </div>
         )}
 
-        {isLoaded && rect && map && (
-          <>
-            {/* Top Ruler */}
-            <svg
-              className="pointer-events-auto absolute top-0 right-0 left-[24px] z-20 h-6 cursor-ns-resize border-b border-neutral-300 bg-neutral-100/90 select-none dark:border-neutral-800 dark:bg-neutral-900/90"
-              style={{ width: rulerWidth }}
-              onMouseDown={handleTopRulerMouseDown}
-            >
-              {ticks.map((t, idx) => (
-                <g key={idx}>
-                  <line
-                    x1={t.x}
-                    y1={t.isMajor ? 12 : 18}
-                    x2={t.x}
-                    y2={24}
-                    className="stroke-neutral-400 dark:stroke-neutral-600"
-                    strokeWidth={1}
-                  />
-                  {t.label && (
-                    <text
-                      x={t.x}
-                      y={10}
-                      className="fill-neutral-500 font-mono text-xs dark:fill-neutral-400"
-                      textAnchor="middle"
-                    >
-                      {t.label}
-                    </text>
-                  )}
-                </g>
-              ))}
-            </svg>
-
-            {/* Left Ruler */}
-            <svg
-              className="pointer-events-auto absolute top-[24px] bottom-0 left-0 z-20 w-6 cursor-ew-resize border-r border-neutral-300 bg-neutral-100/90 select-none dark:border-neutral-800 dark:bg-neutral-900/90"
-              style={{ height: rulerHeight }}
-              onMouseDown={handleLeftRulerMouseDown}
-            >
-              {yTicks.map((t, idx) => (
-                <g key={idx}>
-                  <line
-                    x1={t.isMajor ? 12 : 18}
-                    y1={t.y}
-                    x2={24}
-                    y2={t.y}
-                    className="stroke-neutral-400 dark:stroke-neutral-600"
-                    strokeWidth={1}
-                  />
-                  {t.label && (
-                    <text
-                      x={10}
-                      y={t.y + 3}
-                      className="fill-neutral-500 font-mono text-xs dark:fill-neutral-400"
-                      textAnchor="end"
-                    >
-                      {t.label}
-                    </text>
-                  )}
-                </g>
-              ))}
-            </svg>
-
-            {/* Corner box */}
-            <div className="pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-r border-b border-neutral-300 bg-neutral-200 dark:border-neutral-800 dark:bg-neutral-950">
-              <span className="font-mono text-xs font-bold text-neutral-400 dark:text-neutral-500">
-                °
-              </span>
-            </div>
-
-            {/* Guides SVG Overlay */}
-            <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
-              {showGuides &&
-                guides.map((guide) => {
-                  if (guide.type === "v") {
-                    const proj = map.project([guide.value, map.getCenter().lat]);
-                    const x = proj.x;
-                    if (x < 24 || x > rect.width) return null;
-                    return (
-                      <line
-                        key={guide.id}
-                        x1={x}
-                        y1={24}
-                        x2={x}
-                        y2={rect.height}
-                        className="pointer-events-auto cursor-col-resize stroke-cyan-500/80 dark:stroke-cyan-400/80"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,4"
-                        onDoubleClick={() => {
-                          if (setGuides) {
-                            setGuides((prev) => prev.filter((g) => g.id !== guide.id));
-                          }
-                        }}
-                      >
-                        <title>Double-click to delete guide</title>
-                      </line>
-                    );
-                  } else {
-                    const proj = map.project([map.getCenter().lng, guide.value]);
-                    const y = proj.y;
-                    if (y < 24 || y > rect.height) return null;
-                    return (
-                      <line
-                        key={guide.id}
-                        x1={24}
-                        y1={y}
-                        x2={rect.width}
-                        y2={y}
-                        className="pointer-events-auto cursor-row-resize stroke-cyan-500/80 dark:stroke-cyan-400/80"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,4"
-                        onDoubleClick={() => {
-                          if (setGuides) {
-                            setGuides((prev) => prev.filter((g) => g.id !== guide.id));
-                          }
-                        }}
-                      >
-                        <title>Double-click to delete guide</title>
-                      </line>
-                    );
-                  }
-                })}
-
-              {/* Active Drag Guide line */}
-              {activeDragGuide &&
-                (activeDragGuide.type === "v" ? (
-                  <line
-                    x1={activeDragGuide.screenPos}
-                    y1={24}
-                    x2={activeDragGuide.screenPos}
-                    y2={rect.height}
-                    className="stroke-amber-500/80 dark:stroke-amber-400/80"
-                    strokeWidth={1.5}
-                    strokeDasharray="2,2"
-                  />
-                ) : (
-                  <line
-                    x1={24}
-                    y1={activeDragGuide.screenPos}
-                    x2={rect.width}
-                    y2={activeDragGuide.screenPos}
-                    className="stroke-amber-500/80 dark:stroke-amber-400/80"
-                    strokeWidth={1.5}
-                    strokeDasharray="2,2"
-                  />
-                ))}
-            </svg>
-          </>
-        )}
+        <EditorRulers
+          map={mapRef.current}
+          isLoaded={isLoaded}
+          containerRef={containerRef}
+          guides={guides}
+          setGuides={setGuides}
+          showGuides={showGuides}
+        />
 
         {/* Floating subdivision drawing toolbar */}
         <DrawingToolbar
@@ -1446,6 +1222,7 @@ const EditorMap = memo(
           isVertexEditing={isVertexEditing}
           mode={mode}
           drawVerticesCount={drawVertices.length}
+          polylineCount={routeWaypoints?.length ?? 0}
         />
       </div>
     );

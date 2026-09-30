@@ -12,6 +12,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
+import { notifyFromStore } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -90,12 +91,21 @@ export function SvgUploadManager() {
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.name.endsWith(".svg")) {
-        alert("Please upload an SVG file.");
+        notifyFromStore({
+          title: "Please upload an SVG file",
+          type: "warning",
+          priority: "medium",
+        });
         return;
       }
 
       if (file.size > 50 * 1024 * 1024) {
-        alert("File too large. Maximum 50MB.");
+        notifyFromStore({
+          title: "File too large",
+          message: "Maximum 50 MB.",
+          type: "warning",
+          priority: "medium",
+        });
         return;
       }
 

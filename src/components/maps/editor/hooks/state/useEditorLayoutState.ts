@@ -38,7 +38,7 @@ export function useEditorLayoutState({
     return {
       panelA: {
         placement: "left",
-        tabs: isWorldMode ? ["linkages", "sovereignty", "layers"] : ["layers"],
+        tabs: isWorldMode ? ["linkages", "sovereignty", "layers"] : ["layers", "wiki"],
         collapsed: false,
       },
       panelB: {
@@ -101,6 +101,11 @@ export function useEditorLayoutState({
         }
         if (!next.panelA.tabs.includes("layers") && !next.panelB.tabs.includes("layers")) {
           next.panelA.tabs.push("layers");
+          changed = true;
+        }
+        // Country editor: the Wiki link scanner tab (added once for layouts saved before it existed).
+        if (!next.panelA.tabs.includes("wiki") && !next.panelB.tabs.includes("wiki")) {
+          next.panelA.tabs.push("wiki");
           changed = true;
         }
       }

@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
+import { notifyFromStore } from "~/hooks/useNotify";
+import { confirmEditorAction } from "~/components/maps/editor/components/EditorConfirmDialog";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 import type {
   PropertiesPanelCountry,
@@ -78,10 +80,15 @@ export function useEditorGeoDataState({
   const recalculateAreaMutation = api.geoCore.recalculateArea.useMutation({
     onSuccess: () => {
       refetchFeatureDetails();
-      alert("Area successfully recalculated!");
+      notifyFromStore({ title: "Area recalculated", type: "success", priority: "low" });
     },
     onError: (err) => {
-      alert(`Failed to recalculate area: ${err.message}`);
+      notifyFromStore({
+        title: "Area recalculation failed",
+        message: err.message,
+        type: "error",
+        priority: "high",
+      });
     },
   });
 
@@ -134,7 +141,7 @@ export function useEditorGeoDataState({
       utils.geoCore.getWorldMap.invalidate();
       utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
-      alert("Linkages synced successfully!");
+      notifyFromStore({ title: "Linkages synced", type: "success", priority: "low" });
     },
   });
 
@@ -145,7 +152,7 @@ export function useEditorGeoDataState({
       utils.geoCore.getWorldMap.invalidate();
       utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
-      alert("Auto-matching complete!");
+      notifyFromStore({ title: "Auto-matching complete", type: "success", priority: "low" });
     },
   });
 
@@ -211,10 +218,15 @@ export function useEditorGeoDataState({
       utils.geoCore.getMapBundle.invalidate();
       utils.geoCore.getMapStats.invalidate();
       refetchValidation();
-      alert("Feature properties updated successfully!");
+      notifyFromStore({ title: "Feature properties saved", type: "success", priority: "low" });
     },
     onError: (err) => {
-      alert(`Failed to save feature properties: ${err.message}`);
+      notifyFromStore({
+        title: "Could not save feature properties",
+        message: err.message,
+        type: "error",
+        priority: "high",
+      });
     },
   });
 
@@ -226,7 +238,12 @@ export function useEditorGeoDataState({
       refetchValidation();
     },
     onError: (err) => {
-      alert(`Failed to create country: ${err.message}`);
+      notifyFromStore({
+        title: "Could not create country",
+        message: err.message,
+        type: "error",
+        priority: "high",
+      });
     },
   });
 
@@ -338,10 +355,14 @@ export function useEditorGeoDataState({
     assignMutation.mutate({ featureId, countryId: assignCountryId, realm });
   };
 
-  const handleUnlink = (featureId: string) => {
-    if (confirm(`Unlink this feature (${featureId}) from its country?`)) {
-      unlinkMutation.mutate({ featureId, realm });
-    }
+  const handleUnlink = async (featureId: string) => {
+    const ok = await confirmEditorAction({
+      title: "Unlink this shape from its country?",
+      description: `The map shape ${featureId} will no longer belong to any country until it is linked again.`,
+      confirmLabel: "Unlink",
+      destructive: true,
+    });
+    if (ok) unlinkMutation.mutate({ featureId, realm });
   };
 
   const handleCreateSovereignty = () => {
@@ -367,10 +388,14 @@ export function useEditorGeoDataState({
     });
   };
 
-  const handleDeleteSovereignty = (id: string) => {
-    if (confirm("Are you sure you want to delete this sovereignty relationship?")) {
-      deleteSovereignty.mutate({ id });
-    }
+  const handleDeleteSovereignty = async (id: string) => {
+    const ok = await confirmEditorAction({
+      title: "Delete this sovereignty relationship?",
+      description: "This cannot be undone.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (ok) deleteSovereignty.mutate({ id });
   };
 
   const handleEditSovereignty = (rel: SovereigntyRelation) => {

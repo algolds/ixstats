@@ -31,6 +31,9 @@ import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapE
 import { useBorderEditorLayers } from "~/components/maps/editor/hooks/useBorderEditorLayers";
 import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
 import { RegionHoverTooltip } from "~/components/maps/editor/components/RegionHoverTooltip";
+import { CursorTerrainProbe } from "~/components/maps/editor/components/CursorTerrainProbe";
+import { EditorConfirmHost } from "~/components/maps/editor/components/EditorConfirmDialog";
+import { useIsMobile } from "~/hooks/useIsMobile";
 import { HypsometricElevationHUD } from "~/components/maps/editor/components/HypsometricElevationHUD";
 import { MapEditorPluginProvider } from "~/components/maps/editor/plugins/context";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
@@ -64,6 +67,17 @@ const EditorMap = dynamic(() => import("~/components/maps/editor/EditorMap"), {
   ),
 });
 
+/** Feature layers whose visibility / lock / opacity the Layers panel controls. */
+const LAYER_KEYS = [
+  "regions",
+  "cities",
+  "pois",
+  "stories",
+  "labels",
+  "routes",
+  "geography",
+] as const;
+
 interface MapEditorOverlayProps {
   countryId?: string;
   mapLayers?: MapLayerData[];
@@ -82,6 +96,8 @@ export default function MapEditorOverlay({
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
   const realm = useMapRealm();
+  // Phones use the bottom sheet; the docked side panels are not mounted there at all.
+  const isMobile = useIsMobile();
 
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [brushRadius, setBrushRadius] = useState(20);
@@ -119,7 +135,6 @@ export default function MapEditorOverlay({
     setPanelConfigs,
     handleMoveTab,
     handleChangePanelPlacement,
-    cursorZoom,
     showGrid,
     setShowGrid,
     showGuides,
@@ -127,7 +142,6 @@ export default function MapEditorOverlay({
     setSnapEnabled,
     snapTolerance,
     setSnapTolerance,
-    hoveredFeature,
     showShortcuts,
     setShowShortcuts,
     contextMenu,
@@ -149,7 +163,6 @@ export default function MapEditorOverlay({
     handleRouteClick,
     handleSelectFeature,
     toolsDisabled,
-    cursorTerrainInfo,
     featureCounts,
     panelsLocked,
     setPanelsLocked,
@@ -161,8 +174,7 @@ export default function MapEditorOverlay({
     isActive: isWorldMode && activeEditorMode === "border_edit",
     geometry: borderState.geometry,
     neighborGeometries: neighborGeoms as
-      | Array<{ featureId: string; geometry: Polygon | MultiPolygon | null }>
-      | undefined,
+      Array<{ featureId: string; geometry: Polygon | MultiPolygon | null }> | undefined,
     mode: borderState.mode,
     splitLine: borderState.splitLine,
     mergeTargets: borderState.mergeTargets,
@@ -199,6 +211,63 @@ export default function MapEditorOverlay({
 
   const [activeEditorMap, setActiveEditorMap] = React.useState<MapLibreMap | null>(null);
 
+  // Stable per-layer props for EditorMap (value-equal objects keep their identity, so the
+  // map layers are not re-uploaded on unrelated editor re-renders).
+  const layerVisibility = React.useMemo(() => {
+    const out: Record<string, boolean> = { border: layerStates.border?.visible ?? true };
+    for (const k of LAYER_KEYS) out[k] = layerStates[k]?.visible ?? true;
+    return out;
+  }, [layerStates]);
+  const lockedLayers = React.useMemo(() => {
+    const out: Record<string, boolean> = {};
+    for (const k of LAYER_KEYS) out[k] = layerStates[k]?.locked ?? false;
+    return out;
+  }, [layerStates]);
+  const layerOpacity = React.useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const k of LAYER_KEYS) out[k] = layerStates[k]?.opacity ?? (k === "regions" ? 0.6 : 1);
+    return out;
+  }, [layerStates]);
+  const countryGeometry = React.useMemo(
+    () => toPolygonGeometry(editor.countryGeo?.geometry as object | null),
+    [editor.countryGeo?.geometry]
+  );
+  const handleEditorMapReady = React.useCallback(
+    (map: MapLibreMap | null) => {
+      setActiveEditorMap(map);
+      setMapInstance(map);
+    },
+    [setMapInstance]
+  );
+  const handleEditorMapClick = React.useCallback(
+    (lng: number, lat: number) => editor.handleMapClick([lng, lat]),
+    [editor]
+  );
+  const handleUpdatePointCoordinates = React.useCallback(
+    (
+      id: string,
+      type: "city" | "poi" | "storyPin" | "mapLabel" | "peak",
+      coords: [number, number]
+    ) => editor.updatePointCoordinates(type, id, coords),
+    [editor]
+  );
+  const handleFeatureContextMenu = React.useCallback(
+    (
+      feature: import("~/hooks/useMapEditor").EditorFeature,
+      screenPos: { x: number; y: number }
+    ) => {
+      setContextMenu({ x: screenPos.x, y: screenPos.y, feature });
+    },
+    [setContextMenu]
+  );
+  // The in-progress polyline shown on the map: route waypoints, river path or split line.
+  const activePolyline =
+    editor.mode === "split-subdivision"
+      ? editor.splitLine
+      : editor.mode === "add-river"
+        ? editor.riverPath
+        : editor.routeWaypoints;
+
   const renderPanel = (panelId: "panelA" | "panelB") => (
     <MapEditorSidebarPanels
       panelId={panelId}
@@ -226,7 +295,7 @@ export default function MapEditorOverlay({
       <div
         className={`${
           isWorldMode && initialMapInstance
-            ? "bg-transparent pointer-events-none"
+            ? "pointer-events-none bg-transparent"
             : "bg-background pointer-events-auto"
         } absolute inset-0 z-30 flex flex-col`}
       >
@@ -258,6 +327,8 @@ export default function MapEditorOverlay({
           setSnapTolerance={setSnapTolerance}
           panelsLocked={panelsLocked}
           setPanelsLocked={setPanelsLocked}
+          onDeleteSelection={() => void state.requestDeleteSelection()}
+          onShowShortcuts={() => setShowShortcuts(true)}
         />
 
         {/* Photoshop-style context bar — shown when a feature tool is active */}
@@ -292,19 +363,9 @@ export default function MapEditorOverlay({
                   : undefined
               }
               onDelete={
-                editor.selectedIds.size > 0
-                  ? async () => {
-                      if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
-                      await editor.bulkDeleteSelected();
-                    }
-                  : editor.selectedFeature
-                    ? async () => {
-                        const sel = editor.selectedFeature;
-                        if (!sel) return;
-                        if (!confirm(`Delete "${sel.name}"?`)) return;
-                        await editor.handleDeleteFeature(sel);
-                      }
-                    : undefined
+                editor.selectedIds.size > 0 || editor.selectedFeature
+                  ? () => void state.requestDeleteSelection()
+                  : undefined
               }
               // Route options
               routeType={editor.routeType}
@@ -320,12 +381,28 @@ export default function MapEditorOverlay({
               onRouteEditCancel={editor.cancelRouteEdit}
               showGaps={editor.showGaps}
               emptyRegionsCount={emptyRegionsCount}
-              onCreateCentroidCities={editor.createCentroidCities}
+              onCreateCentroidCities={() => void editor.createCentroidCities()}
+              onCopyCoords={
+                editor.selectedFeature?.coordinates
+                  ? () => {
+                      const c = editor.selectedFeature!.coordinates!;
+                      void navigator.clipboard?.writeText(`${c[1].toFixed(5)}, ${c[0].toFixed(5)}`);
+                    }
+                  : undefined
+              }
+              onMoveToCoords={
+                editor.selectedFeature?.coordinates
+                  ? (lng, lat) =>
+                      editor.updatePointCoordinates(
+                        editor.selectedFeature!.type,
+                        editor.selectedFeature!.id,
+                        [lng, lat]
+                      )
+                  : undefined
+              }
               // City actions / scatter / snapping
               onScatterCities={(count, type, prefix) => {
-                if (editor.selectedFeature) {
-                  editor.scatterCities(count, type, prefix);
-                }
+                void editor.scatterCities(count, type, prefix);
               }}
               onSnapCityToSubdivisionBorder={
                 editor.selectedFeature ? () => editor.snapCityToSubdivisionBorder() : undefined
@@ -350,9 +427,11 @@ export default function MapEditorOverlay({
               onStartSplitSubdivision={() => editor.setMode("split-subdivision")}
               onExecuteSplitSubdivision={() => {
                 if (editor.selectedFeature) {
-                  void editor.executeSplitSubdivision(editor.selectedFeature.id, []);
+                  void editor.executeSplitSubdivision(editor.selectedFeature.id);
                 }
               }}
+              splitPointsCount={editor.splitLine.length}
+              onUndoWaypoint={editor.splitLine.length > 0 ? editor.undoLastSplitPoint : undefined}
               onMergeSelectedSubdivisions={editor.mergeSelectedSubdivisions}
               onApplyGeometryTransformation={(type, value) => {
                 if (editor.selectedFeature && (type === "rotate" || type === "scale")) {
@@ -362,7 +441,9 @@ export default function MapEditorOverlay({
                   });
                 }
               }}
-              onCancelSplit={() => editor.setMode("edit-subdivision")}
+              onCancelSplit={() =>
+                editor.setMode(editor.selectedFeature ? "edit-subdivision" : "view")
+              }
               selectedFeature={editor.selectedFeature}
               // Advanced City Operations
               selectedCitiesCount={selectedCitiesCount}
@@ -460,8 +541,8 @@ export default function MapEditorOverlay({
             panelsLocked={panelsLocked}
             toolsDisabled={toolsDisabled}
             isWorldMode={isWorldMode}
-            panelA={renderPanel("panelA")}
-            panelB={renderPanel("panelB")}
+            panelA={isMobile ? null : renderPanel("panelA")}
+            panelB={isMobile ? null : renderPanel("panelB")}
           >
             {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
               <div className="bg-map-ocean/80 absolute inset-0 z-30 flex flex-col items-center justify-center backdrop-blur-sm">
@@ -490,7 +571,7 @@ export default function MapEditorOverlay({
                 // If a map instance is already warm from parent MapContainer, reuse it directly
                 // without creating a second WebGL context. If standalone, mount MapContainer.
                 initialMapInstance ? (
-                  <div className="h-full w-full pointer-events-none" />
+                  <div className="pointer-events-none h-full w-full" />
                 ) : (
                   <MapContainer
                     showControls={true}
@@ -510,68 +591,37 @@ export default function MapEditorOverlay({
               ) : (
                 <EditorMap
                   ref={mapRef}
-                  onMapReady={(map) => {
-                    setActiveEditorMap(map);
-                    setMapInstance(map);
-                  }}
-                  countryGeometry={toPolygonGeometry(editor.countryGeo?.geometry as object | null)}
+                  onMapReady={handleEditorMapReady}
+                  countryGeometry={countryGeometry}
                   countryCentroid={editor.countryGeo?.centroid ?? null}
                   countryBbox={editor.countryGeo?.bbox ?? null}
-                  features={editor.allFeatures ?? []}
+                  features={editor.allFeatures}
                   mode={editor.mode}
                   pendingCoordinates={editor.pendingCoordinates}
                   selectedFeature={editor.selectedFeature}
                   selectedIds={editor.selectedIds}
                   onToggleSelect={editor.toggleSelectId}
-                  onMapClick={(lng, lat) => editor.handleMapClick([lng, lat])}
+                  onMapClick={handleEditorMapClick}
                   isPickingLocation={editor.isPickingLocation}
                   onDrawComplete={editor.handleDrawComplete}
                   onGeometryUpdate={editor.updateSubdivisionGeometry}
-                  updatePointCoordinates={(id, type, coords) =>
-                    editor.updatePointCoordinates(type, id, coords)
-                  }
+                  onVertexEditDirtyChange={state.setVertexEditDirty}
+                  updatePointCoordinates={handleUpdatePointCoordinates}
                   onFeatureSelect={handleSelectFeature}
                   worldMapLayers={worldMapLayers}
                   editorVisibleLayers={editorVisibleLayers}
                   showGrid={showGrid}
-                  routeWaypoints={editor.routeWaypoints}
+                  routeWaypoints={activePolyline}
                   drawRouteType={editor.routeType}
                   editingRouteId={editor.editingRouteId}
                   editingRouteVertices={editor.editingRouteVertices}
                   onRouteVerticesUpdate={editor.setEditingRouteVertices}
                   onRouteEditCommit={editor.commitRouteEdit}
                   onRouteEditCancel={editor.cancelRouteEdit}
-                  layerVisibility={{
-                    regions: layerStates.regions?.visible ?? true,
-                    cities: layerStates.cities?.visible ?? true,
-                    pois: layerStates.pois?.visible ?? true,
-                    stories: layerStates.stories?.visible ?? true,
-                    labels: layerStates.labels?.visible ?? true,
-                    routes: layerStates.routes?.visible ?? true,
-                  }}
-                  lockedLayers={{
-                    regions: layerStates.regions?.locked ?? false,
-                    cities: layerStates.cities?.locked ?? false,
-                    pois: layerStates.pois?.locked ?? false,
-                    stories: layerStates.stories?.locked ?? false,
-                    labels: layerStates.labels?.locked ?? false,
-                    routes: layerStates.routes?.locked ?? false,
-                  }}
-                  layerOpacity={{
-                    regions: layerStates.regions?.opacity ?? 0.6,
-                    cities: layerStates.cities?.opacity ?? 1,
-                    pois: layerStates.pois?.opacity ?? 1,
-                    stories: layerStates.stories?.opacity ?? 1,
-                    labels: layerStates.labels?.opacity ?? 1,
-                    routes: layerStates.routes?.opacity ?? 1,
-                  }}
-                  onFeatureContextMenu={(feature, screenPos) => {
-                    setContextMenu({
-                      x: screenPos.x,
-                      y: screenPos.y,
-                      feature,
-                    });
-                  }}
+                  layerVisibility={layerVisibility}
+                  lockedLayers={lockedLayers}
+                  layerOpacity={layerOpacity}
+                  onFeatureContextMenu={handleFeatureContextMenu}
                   gapFeatures={editor.gapFeatures}
                   showGaps={editor.showGaps}
                   emptyRegionsFeatures={editor.emptyRegionsFeatures}
@@ -592,7 +642,7 @@ export default function MapEditorOverlay({
               )}
 
               {/* Region stats tooltip */}
-              <RegionHoverTooltip hoveredFeature={hoveredFeature} editorMode={editor.mode} />
+              <RegionHoverTooltip features={editor.allFeatures} editorMode={editor.mode} />
 
               {/* Hypsometric Cross-Section Elevation HUD */}
               {(editor.mode === "ruler" ||
@@ -646,17 +696,19 @@ export default function MapEditorOverlay({
         {/* Status Bar */}
         <EditorStatusBar
           mode={editor.mode}
-          terrainInfo={
-            cursorTerrainInfo
-              ? {
-                  elevation: cursorTerrainInfo.elevation?.zoneName ?? null,
-                  climate: cursorTerrainInfo.climate?.climateName ?? null,
-                }
-              : null
-          }
-          zoom={cursorZoom}
           featureCount={editor.allFeatures.length}
+          selectedCount={editor.selectedIds.size}
+          isSaving={editor.isMutating}
+          lastSavedAt={editor.lastSavedAt}
+          hasUnsavedChanges={state.hasUnsavedChanges}
+          error={editor.mutationError}
+          onDismissError={() => editor.setMutationError(null)}
+          onShowShortcuts={() => setShowShortcuts(true)}
         />
+
+        {/* Leaf-only helpers: terrain lookup under the cursor and the confirm dialog host */}
+        <CursorTerrainProbe />
+        <EditorConfirmHost />
 
         {/* Auxiliary Overlays (mobile sheets, welcome modal, import wizards, shortcuts help) */}
         <MapEditorAuxiliaryOverlays

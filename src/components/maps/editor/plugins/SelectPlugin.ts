@@ -1,7 +1,4 @@
-import {
-  CursorPointer as MousePointer2,
-  SelectWindow as LassoSelect,
-} from "iconoir-react";
+import { CursorPointer as MousePointer2, SelectWindow as LassoSelect } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 import { isKeyboardInputTarget } from "../hooks/drag-utils";
 
@@ -37,25 +34,9 @@ export const SelectPlugin: MapEditorPlugin = {
       return false;
     }
 
-    const isMod = e.ctrlKey || e.metaKey;
+    // Undo/redo is owned by the editor's single keyboard handler
+    // (useMapEditorOverlayState) so one keypress never undoes twice.
     const key = e.key.toLowerCase();
-
-    // Map canvas undo / redo
-    if (isMod && key === "z") {
-      e.preventDefault();
-      if (e.shiftKey) {
-        context.state.editor.redo();
-      } else {
-        context.state.editor.undo();
-      }
-      return true;
-    }
-
-    if (isMod && key === "y") {
-      e.preventDefault();
-      context.state.editor.redo();
-      return true;
-    }
 
     if (e.ctrlKey || e.metaKey || e.altKey) {
       return false;

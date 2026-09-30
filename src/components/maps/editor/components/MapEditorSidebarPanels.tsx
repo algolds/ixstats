@@ -10,6 +10,7 @@ import {
   Type as TypeIcon,
   PathArrow as Route,
   CloudSunny as CloudSun,
+  ModernTv as Mountain,
 } from "iconoir-react";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
@@ -18,6 +19,7 @@ import { SovereigntyPanel } from "./SovereigntyPanel";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { HistoryPanel } from "./HistoryPanel";
 import { EditQueuePanel } from "../panels/EditQueuePanel";
+import { WikiScannerPanel } from "../panels/WikiScannerPanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 import type { useMapEditorOverlayState } from "../hooks/useMapEditorOverlayState";
 import type {
@@ -94,17 +96,26 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
 
   const effectiveActiveTab: TabId = panelId === "panelA" ? activeSidebarTab : panelBActiveTab;
 
-  const handleSelectFeature = useCallback((feat: EditorFeature) => {
-    state.handleSelectFeature?.(feat);
-  }, [state.handleSelectFeature]);
+  const handleSelectFeature = useCallback(
+    (feat: EditorFeature) => {
+      state.handleSelectFeature?.(feat);
+    },
+    [state.handleSelectFeature]
+  );
 
-  const handleEditFeature = useCallback((feat: EditorFeature) => {
-    state.handleEditFeature?.(feat);
-  }, [state.handleEditFeature]);
+  const handleEditFeature = useCallback(
+    (feat: EditorFeature) => {
+      state.handleEditFeature?.(feat);
+    },
+    [state.handleEditFeature]
+  );
 
-  const handleDeleteFeature = useCallback((feat: EditorFeature) => {
-    state.handleDeleteFeature?.(feat);
-  }, [state.handleDeleteFeature]);
+  const handleDeleteFeature = useCallback(
+    (feat: EditorFeature) => {
+      state.handleDeleteFeature?.(feat);
+    },
+    [state.handleDeleteFeature]
+  );
 
   const renderLayersElement = () => (
     <LayerPanel
@@ -169,7 +180,14 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
           icon: Route,
           visible: layerStates.routes?.visible ?? true,
           locked: layerStates.routes?.locked ?? false,
-          opacity: layerStates.routes?.opacity ?? 1,
+        },
+        {
+          id: "geography",
+          name: "Peaks, Rivers & Lakes",
+          icon: Mountain,
+          visible: layerStates.geography?.visible ?? true,
+          locked: layerStates.geography?.locked ?? false,
+          opacity: layerStates.geography?.opacity ?? 1,
         },
       ]}
       onToggleVisibility={(id) => {
@@ -212,12 +230,15 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
       onDeleteFeature={handleDeleteFeature}
       selectedIds={editor.selectedIds}
       onToggleSelect={editor.toggleSelectId}
+      onSelectIds={(ids) => editor.setSelectedIds(new Set(ids))}
       guides={editor.guides}
       onClearGuides={() => editor.setGuides([])}
       showGuides={state.showGuides}
       onToggleGuidesVisibility={state.setShowGuides}
       onDeleteGuide={(id: string) =>
-        editor.setGuides((prev: { id: string; type: "h" | "v"; value: number }[]) => prev.filter((g) => g.id !== id))
+        editor.setGuides((prev: { id: string; type: "h" | "v"; value: number }[]) =>
+          prev.filter((g) => g.id !== id)
+        )
       }
     />
   );
@@ -262,10 +283,16 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
           setPanelBActiveTab(tab);
         }
       }}
-      linkagesContent={effectiveActiveTab === "linkages" ? <LinkageValidationPanel {...state} /> : undefined}
-      sovereigntyContent={effectiveActiveTab === "sovereignty" ? <SovereigntyPanel {...state} /> : undefined}
+      linkagesContent={
+        effectiveActiveTab === "linkages" ? <LinkageValidationPanel {...state} /> : undefined
+      }
+      sovereigntyContent={
+        effectiveActiveTab === "sovereignty" ? <SovereigntyPanel {...state} /> : undefined
+      }
       historyContent={effectiveActiveTab === "history" ? renderHistoryElement() : undefined}
-      queueContent={effectiveActiveTab === "queue" && isWorldMode && isAdmin ? <EditQueuePanel /> : undefined}
+      queueContent={
+        effectiveActiveTab === "queue" && isWorldMode && isAdmin ? <EditQueuePanel /> : undefined
+      }
       featureCount={editor.allFeatures.length}
       featuresLoading={editor.featuresLoading}
       featureListContent={
@@ -284,7 +311,20 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
         ) : undefined
       }
       layersContent={effectiveActiveTab === "layers" ? renderLayersElement() : undefined}
-      propertiesContent={effectiveActiveTab === "properties" ? renderRightPanelContent() : undefined}
+      wikiContent={
+        effectiveActiveTab === "wiki" ? (
+          <WikiScannerPanel
+            scanner={state.wikiScanner}
+            onFocusFeature={(id) => {
+              const feat = editor.allFeatures.find((f) => f.id === id);
+              if (feat) state.handleSelectFeature?.(feat);
+            }}
+          />
+        ) : undefined
+      }
+      propertiesContent={
+        effectiveActiveTab === "properties" ? renderRightPanelContent() : undefined
+      }
       isStacked={isStacked}
       panelsLocked={panelsLocked}
     />

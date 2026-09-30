@@ -30,9 +30,7 @@ import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger } from "~/components/ui/popover";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
-import {
-  CityTransformationsPopover,
-} from "./toolbars/options/ScatterToolOptions";
+import { CityTransformationsPopover } from "./toolbars/options/ScatterToolOptions";
 import { SubdivisionOptions } from "./toolbars/options/SubdivisionOptions";
 import { RulerOptions } from "./toolbars/options/RulerOptions";
 import {
@@ -102,6 +100,8 @@ interface ToolOptionsBarProps {
   ) => void;
   onUndoWaypoint?: () => void;
   onCancelSplit?: () => void;
+  /** Points placed on the split line so far. */
+  splitPointsCount?: number;
   selectedFeature?: EditorFeature | null;
   // City operations
   selectedCitiesCount?: number;
@@ -160,23 +160,37 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
   const { mode } = props;
 
   // Don't render for view mode with no selection unless gap highlight is present
-  if (mode === "view" && !props.selectedCount && !props.onToggleGaps) return null;
+  if (
+    mode === "view" &&
+    !props.selectedCount &&
+    !(props.showGaps && (props.emptyRegionsCount ?? 0) > 0)
+  ) {
+    return null;
+  }
   if (mode === "import-provinces") return null;
 
   if (mode === "split-subdivision") {
     return (
       <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out">
-        <ToolLabel icon={Scissors} label="Split Subdivision" />
-        <span className="text-muted-foreground text-xs">
-          Click on the map to draw a split-line slicing through the subdivision.
+        <ToolLabel icon={Scissors} label="Split Region" />
+        <span className="text-muted-foreground hidden truncate text-xs md:inline">
+          {props.selectedFeature?.type === "subdivision"
+            ? `Click points across "${props.selectedFeature.name}" from edge to edge, then Split (Enter).`
+            : "Select a region first, then draw a line across it."}
+        </span>
+        <span className="text-muted-foreground font-mono text-xs tabular-nums">
+          {props.splitPointsCount ?? 0} pts
         </span>
         <div className={dividerClass} />
         <button
           onClick={props.onExecuteSplitSubdivision}
-          className={activeBtnClass}
-          title="Execute Split"
+          disabled={
+            (props.splitPointsCount ?? 0) < 2 || props.selectedFeature?.type !== "subdivision"
+          }
+          className={`${activeBtnClass} disabled:pointer-events-none disabled:opacity-40`}
+          title="Split the region along the line (Enter)"
         >
-          <Check className="h-3 w-3" /> Execute Split
+          <Check className="h-3 w-3" /> Split
         </button>
         {props.onUndoWaypoint && (
           <button onClick={props.onUndoWaypoint} className={btnClass} title="Undo last split point">
@@ -401,7 +415,6 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         </>
       )}
 
-
       {/* ── Lasso Select mode ── */}
       {mode === "lasso-select" && (
         <>
@@ -454,16 +467,24 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             ))}
           </select>
           <div className={dividerClass} />
-          <span className="text-xs font-mono tabular-nums text-muted-foreground">
+          <span className="text-muted-foreground font-mono text-xs tabular-nums">
             {props.routeWaypointsCount ?? 0} waypoints
           </span>
           {props.onUndoRouteWaypoint && (props.routeWaypointsCount ?? 0) > 0 && (
-            <button onClick={props.onUndoRouteWaypoint} className={btnClass} title="Undo last waypoint">
+            <button
+              onClick={props.onUndoRouteWaypoint}
+              className={btnClass}
+              title="Undo last waypoint"
+            >
               <Undo2 className="h-3 w-3" /> Undo
             </button>
           )}
           {props.onClearRouteWaypoints && (props.routeWaypointsCount ?? 0) > 0 && (
-            <button onClick={props.onClearRouteWaypoints} className={dangerBtnClass} title="Clear all waypoints">
+            <button
+              onClick={props.onClearRouteWaypoints}
+              className={dangerBtnClass}
+              title="Clear all waypoints"
+            >
               <Trash2 className="h-3 w-3" /> Clear
             </button>
           )}
@@ -475,18 +496,18 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={Route} label="Edit Route" />
           {props.editingRouteName && (
-            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            <span className="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-semibold">
               {props.editingRouteName}
             </span>
           )}
-          <span className="text-xs font-mono tabular-nums text-muted-foreground">
+          <span className="text-muted-foreground font-mono text-xs tabular-nums">
             {props.editingRouteNodesCount ?? 0} nodes
           </span>
           <div className={dividerClass} />
           {props.onRouteEditCommit && (
             <button
               onClick={props.onRouteEditCommit}
-              className="flex items-center gap-1 rounded bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold shadow-sm transition active:scale-[0.98]"
               title="Save route geometry"
             >
               <Check className="h-3 w-3" /> Save Path
@@ -495,7 +516,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           {props.onRouteEditCancel && (
             <button
               onClick={props.onRouteEditCancel}
-              className="rounded px-2 py-1 text-xs font-medium text-muted-foreground transition active:scale-[0.98] hover:bg-accent hover:text-foreground"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded px-2 py-1 text-xs font-medium transition active:scale-[0.98]"
               title="Cancel route editing"
             >
               Cancel

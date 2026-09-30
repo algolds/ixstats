@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { notifyFromStore } from "~/hooks/useNotify";
 import { useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
 import ExportDialog from "./ExportDialog";
@@ -71,9 +72,20 @@ export default function SaveControls() {
 
   const attachMutation = api.heraldry.attachToCountry.useMutation({
     onSuccess: () => {
-      alert(
-        "Successfully attached coat of arms to the country! The political map layers have been invalidated."
-      );
+      notifyFromStore({
+        title: "Coat of arms attached",
+        message: "The country's political map layers will refresh with the new arms.",
+        type: "success",
+        priority: "medium",
+      });
+    },
+    onError: (err) => {
+      notifyFromStore({
+        title: "Could not attach coat of arms",
+        message: err.message,
+        type: "error",
+        priority: "high",
+      });
     },
   });
 

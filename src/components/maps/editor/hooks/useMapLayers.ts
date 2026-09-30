@@ -55,6 +55,26 @@ export function useMapLayers({
 }: UseMapLayersProps) {
   const lastLoadedEditorDataRef = useRef<Map<string, MapLayerData["data"]>>(new Map());
 
+  // Value keys so a parent passing a fresh-but-equal object does not re-upload geometry.
+  const layerVisibilityRef = useRef(layerVisibility);
+  // oxlint-disable-next-line -- latest-value ref read inside the keyed effects
+  layerVisibilityRef.current = layerVisibility;
+  const layerOpacityRef = useRef(layerOpacity);
+  // oxlint-disable-next-line -- latest-value ref read inside the keyed effects
+  layerOpacityRef.current = layerOpacity;
+  const visibilityKey = layerVisibility
+    ? Object.keys(layerVisibility)
+        .sort()
+        .map((k) => `${k}:${layerVisibility[k] ? 1 : 0}`)
+        .join("|")
+    : "";
+  const opacityKey = layerOpacity
+    ? Object.keys(layerOpacity)
+        .sort()
+        .map((k) => `${k}:${layerOpacity[k]}`)
+        .join("|")
+    : "";
+
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
   useEffect(() => {
     if (!map || !isLoaded || !worldMapLayers || worldMapLayers.length === 0) return;
@@ -337,6 +357,20 @@ export function useMapLayers({
     // oxlint-disable-next-line
   }, [map, isLoaded, countryGeometry, countryColor, theme]);
 
+  // 2b. Country border layer visibility (Layers panel "Country Border" eye toggle)
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+    const visibility = layerVisibilityRef.current?.border === false ? "none" : "visible";
+    for (const id of [
+      "editor-country-fill",
+      "editor-country-stroke",
+      "editor-nonplayer-mask-fill",
+    ]) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility);
+    }
+    // oxlint-disable-next-line
+  }, [map, isLoaded, visibilityKey, countryGeometry, theme]);
+
   // 3. Coordinate grid overlay
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -433,17 +467,22 @@ export function useMapLayers({
   }, [map, isLoaded, showGrid, gridZoomBucket, countryBbox, theme]);
 
   // 4. Render existing features (subdivisions, cities, POIs, story pins, map labels)
+  // Data upload runs only when the features or the visibility *values* change —
+  // not when a parent re-renders with a fresh (but equal) visibility object.
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const lv = layerVisibility ?? {};
+    const lv = layerVisibilityRef.current ?? {};
     const visibleFeatures = features.filter((f) => {
       if (f.type === "city" && lv.cities === false) return false;
       if (f.type === "poi" && lv.pois === false) return false;
       if (f.type === "storyPin" && lv.stories === false) return false;
       if (f.type === "mapLabel" && lv.labels === false) return false;
       if (f.type === "subdivision" && lv.regions === false) return false;
-      if (f.type === "route" && lv.routes === false) return false;
+      // Routes are drawn by TransportOverlay, never by the editor's own sources.
+      if (f.type === "route") return false;
+      if ((f.type === "peak" || f.type === "river" || f.type === "lake") && lv.geography === false)
+        return false;
       return true;
     });
 
@@ -539,6 +578,18 @@ export function useMapLayers({
         },
       });
       map.addLayer({
+        id: "editor-points-peak",
+        type: "circle",
+        source: "editor-points",
+        filter: ["==", ["get", "featureType"], "peak"],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#78716c",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+      });
+      map.addLayer({
         id: "editor-points-map-label",
         type: "circle",
         source: "editor-points",
@@ -611,28 +662,57 @@ export function useMapLayers({
       });
     }
 
+    const isPolygonal = (g: unknown) => {
+      const t = (g as { type?: string } | undefined)?.type;
+      return t === "Polygon" || t === "MultiPolygon";
+    };
+    const isLinear = (g: unknown) => {
+      const t = (g as { type?: string } | undefined)?.type;
+      return t === "LineString" || t === "MultiLineString";
+    };
+
     const polyFeatures = visibleFeatures
-      .filter((f) => f.geometry)
+      .filter((f) => f.geometry && isPolygonal(f.geometry))
       .map((f) => ({
         type: "Feature" as const,
         geometry: f.geometry as Geometry,
-        properties: { id: f.id, name: f.name, color: f.properties.color },
+        properties: {
+          id: f.id,
+          name: f.name,
+          color: f.type === "lake" ? "#38bdf8" : f.properties.color,
+          featureType: f.type,
+        },
       }));
+
+    const lineFeatures = visibleFeatures
+      .filter((f) => f.type === "river" && f.geometry && isLinear(f.geometry))
+      .map((f) => ({
+        type: "Feature" as const,
+        geometry: f.geometry as Geometry,
+        properties: { id: f.id, name: f.name, featureType: f.type },
+      }));
+    const linesGeoJson = { type: "FeatureCollection" as const, features: lineFeatures };
+    if (map.getSource("editor-lines")) {
+      getGeoJSONSource(map, "editor-lines")?.setData(linesGeoJson);
+    } else {
+      map.addSource("editor-lines", { type: "geojson", data: linesGeoJson });
+      map.addLayer({
+        id: "editor-lines",
+        type: "line",
+        source: "editor-lines",
+        paint: {
+          "line-color": "#0284c7",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 3, 1.5, 8, 3.5],
+          "line-opacity": 0.9,
+        },
+        layout: { "line-cap": "round", "line-join": "round" },
+      });
+    }
 
     const polysGeoJson = { type: "FeatureCollection" as const, features: polyFeatures };
 
     if (map.getSource("editor-subdivisions")) {
       getGeoJSONSource(map, "editor-subdivisions")?.setData(polysGeoJson);
-      const regionsOpacity = layerOpacity?.regions ?? 0.6;
-      if (map.getLayer("editor-subdivisions-stroke")) {
-        map.setPaintProperty("editor-subdivisions-stroke", "line-opacity", regionsOpacity);
-      }
-      if (map.getLayer("editor-subdivisions-fill")) {
-        map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0.05 * regionsOpacity);
-      }
-      if (map.getLayer("editor-subdivisions-labels")) {
-        map.setPaintProperty("editor-subdivisions-labels", "text-opacity", regionsOpacity);
-      }
     } else {
       map.addSource("editor-subdivisions", { type: "geojson", data: polysGeoJson });
       map.addLayer({
@@ -699,7 +779,29 @@ export function useMapLayers({
       });
     }
     // oxlint-disable-next-line
-  }, [map, isLoaded, features, layerVisibility, layerOpacity, theme]);
+  }, [map, isLoaded, features, visibilityKey, theme]);
+
+  // Layer opacity is a paint change only — no data re-upload.
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+    const op = layerOpacityRef.current ?? {};
+    const regionsOpacity = op.regions ?? 0.6;
+    const set = (layer: string, prop: string, value: number) => {
+      if (map.getLayer(layer)) map.setPaintProperty(layer, prop as "line-opacity", value);
+    };
+    set("editor-subdivisions-stroke", "line-opacity", regionsOpacity);
+    set("editor-subdivisions-fill", "fill-opacity", 0.05 * regionsOpacity);
+    set("editor-subdivisions-labels", "text-opacity", regionsOpacity);
+    const cityOpacity = op.cities ?? 1;
+    set("editor-points-capital", "circle-opacity", cityOpacity);
+    set("editor-points-city", "circle-opacity", cityOpacity);
+    set("editor-points-poi", "circle-opacity", op.pois ?? 1);
+    set("editor-points-story-pin", "circle-opacity", op.stories ?? 1);
+    set("editor-map-labels", "text-opacity", op.labels ?? 1);
+    set("editor-lines", "line-opacity", 0.9 * (op.geography ?? 1));
+    set("editor-points-peak", "circle-opacity", op.geography ?? 1);
+    // oxlint-disable-next-line
+  }, [map, isLoaded, opacityKey, theme, features]);
 
   // 5. Render pending coordinates marker
   useEffect(() => {
@@ -1029,22 +1131,6 @@ export function useMapLayers({
     }
     // oxlint-disable-next-line
   }, [map, isLoaded, theme]);
-
-  // 8. Subdivisions fill — kept queryable (paint mode was removed in Plan 024).
-  useEffect(() => {
-    if (!map || !isLoaded || !map.getLayer("editor-subdivisions-fill")) return;
-    map.setPaintProperty("editor-subdivisions-fill", "fill-color", [
-      "coalesce",
-      ["get", "color"],
-      "#7c3aed",
-    ]);
-    map.setPaintProperty(
-      "editor-subdivisions-fill",
-      "fill-opacity",
-      0.05 * (layerOpacity?.regions ?? 0.6)
-    );
-    // oxlint-disable-next-line
-  }, [map, isLoaded, theme, layerOpacity]);
 
   // 9. Gap overlay (negative space highlights)
   useEffect(() => {

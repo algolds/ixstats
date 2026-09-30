@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import type { Map as MapLibreInstance, MapLayerMouseEvent } from "maplibre-gl";
+import type { Map as MapLibreInstance } from "maplibre-gl";
 import { useUser } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
+import { useHasRoleLevel } from "~/hooks/usePermissions";
 import { useMapEditor } from "~/hooks/useMapEditor";
 import { useMapData } from "~/hooks/useMapData";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
@@ -15,6 +16,14 @@ import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { EditorMode } from "~/hooks/map-editor/editor-types";
+import { notifyFromStore } from "~/hooks/useNotify";
+import {
+  confirmEditorAction,
+  isEditorConfirmOpen,
+} from "~/components/maps/editor/components/EditorConfirmDialog";
+import { isKeyboardInputTarget } from "~/components/maps/editor/hooks/drag-utils";
+import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
+import { useEditorDraft } from "./useEditorDraft";
 import {
   useEditorLayoutState,
   useEditorToolState,
@@ -45,15 +54,25 @@ export function useMapEditorOverlayState({
 
   // --- Map Editor & Border Editor Hooks ---
   const [borderState, borderActions] = useBorderEditor();
+  const realm = useMapRealm();
+  // Background layers (coastline, rivers, relief) — also feed snapping and the coast-snap tool.
+  const {
+    mapLayers: editorMapLayers,
+    toggleLayer: rawToggleEditorLayer,
+    visibleLayers: editorVisibleLayers,
+  } = useMapData(
+    ["background", "altitudes", "rivers", "lakes", "political", "country_labels"],
+    undefined,
+    realm
+  );
   const editor = useMapEditor(
     !isWorldMode || activeCountryId ? activeCountryId || undefined : undefined,
-    { skipLinkageGate: isWorldMode }
+    { skipLinkageGate: isWorldMode, worldMapLayers: editorMapLayers }
   );
   const importer = useProvinceImporter(
     (!isWorldMode || activeCountryId ? activeCountryId : undefined) ?? "__none__"
   );
 
-  const realm = useMapRealm();
   const { data: neighborGeoms } = api.geoCore.getNeighborGeometries.useQuery(
     { featureId: borderState.featureId!, realm },
     { enabled: !!borderState.featureId }
@@ -71,13 +90,7 @@ export function useMapEditorOverlayState({
   const disabledTools = useMemo<EditorMode[]>(() => {
     if (!isWorldMode) return [];
     if (!mapSelectedCountry) {
-      return [
-        "add-city",
-        "add-subdivision",
-        "add-poi",
-        "add-route",
-        "import-provinces",
-      ];
+      return ["add-city", "add-subdivision", "add-poi", "add-route", "import-provinces"];
     }
     if (!hasGeometry) {
       return ["add-city", "add-poi", "add-route"];
@@ -137,7 +150,10 @@ export function useMapEditorOverlayState({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const user = useUser();
-  const isAdmin = isSystemOwner(user.user?.id ?? "");
+  // Admin-role users (level ≤ 10, as in the main navigation) and system owners get the
+  // admin tools; the server still authorises every admin procedure itself.
+  const hasAdminRole = useHasRoleLevel(10);
+  const isAdmin = isSystemOwner(user.user?.id ?? "") || hasAdminRole;
   const utils = api.useUtils();
 
   const generateTransport = api.transport.generateRoutes.useMutation({
@@ -173,10 +189,28 @@ export function useMapEditorOverlayState({
     }
   }, [isWorldMode, activeCountryId, mapSelectedCountry, geo.featureList, mapRef]);
 
+  // Set by EditorMap while a region reshape has moves that are not saved yet.
+  const [vertexEditDirty, setVertexEditDirty] = useState(false);
+
+  /**
+   * True when leaving would lose work: an unsaved border edit or import, an
+   * in-progress drawing/placement, an unsaved region reshape, a write still in
+   * flight, or unsaved world-mode attribute edits. Merely having a tool active
+   * does not count.
+   */
   const hasUnsavedChanges = useMemo(() => {
     if (borderState.isDirty) return true;
     if (importer.step !== "upload") return true;
-    if (editor.mode !== "view") return true;
+    if (editor.isMutating) return true;
+    if (vertexEditDirty) return true;
+    if (editor.pendingCoordinates || editor.pendingGeometry) return true;
+    if (
+      editor.routeWaypoints.length > 0 ||
+      editor.riverPath.length > 0 ||
+      editor.splitLine.length > 0
+    )
+      return true;
+    if (editor.mode === "edit-route") return true;
 
     if (mapSelectedCountry) {
       const dbFeatureName = mapSelectedCountry.displayName || "";
@@ -195,6 +229,13 @@ export function useMapEditorOverlayState({
   }, [
     borderState.isDirty,
     importer.step,
+    editor.isMutating,
+    vertexEditDirty,
+    editor.pendingCoordinates,
+    editor.pendingGeometry,
+    editor.routeWaypoints.length,
+    editor.riverPath.length,
+    editor.splitLine.length,
     editor.mode,
     mapSelectedCountry,
     geo.editableFeatureName,
@@ -203,6 +244,21 @@ export function useMapEditorOverlayState({
     geo.propertiesJsonString,
     geo.featureDetails,
   ]);
+
+  // Unsaved placements/drawings survive a reload (offered back on next open).
+  useEditorDraft(editor, activeCountryId, !!editor.countryGeo && !editor.featuresLoading);
+
+  // Browser-level leave warning (tab close, reload, external navigation).
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Legacy browsers need a returnValue to show the prompt.
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const handleRequestExit = useCallback(() => {
     if (hasUnsavedChanges) {
@@ -221,10 +277,10 @@ export function useMapEditorOverlayState({
     }
   }, []);
 
+  // Success/failure toasts are raised by the caller (EditorHeader) with the result counts.
   const simplifyAll = api.geoFeatures.simplifySubdivisions.useMutation({
     onSuccess: () => {
       editor.refetchFeatures();
-      alert("All subdivisions simplified successfully.");
     },
   });
 
@@ -303,15 +359,6 @@ export function useMapEditorOverlayState({
     return () => clearTimeout(timer);
   }, [mapRef]);
 
-  const {
-    mapLayers: editorMapLayers,
-    toggleLayer: rawToggleEditorLayer,
-    visibleLayers: editorVisibleLayers,
-  } = useMapData(
-    ["background", "altitudes", "rivers", "lakes", "political", "country_labels"],
-    undefined,
-    realm
-  );
   const toggleEditorLayer = useCallback(
     (layer: string) => rawToggleEditorLayer(layer as Parameters<typeof rawToggleEditorLayer>[0]),
     [rawToggleEditorLayer]
@@ -330,9 +377,7 @@ export function useMapEditorOverlayState({
   const handleEditRoute = useCallback(
     (routeId: string) => {
       if (!transportRouteData?.features) return;
-      const feature = transportRouteData.features.find(
-        (f) => String(f.properties?.id) === routeId
-      );
+      const feature = transportRouteData.features.find((f) => String(f.properties?.id) === routeId);
       if (!feature || !feature.geometry) return;
       let vertices: [number, number][] = [];
       if (feature.geometry.type === "LineString") {
@@ -354,7 +399,12 @@ export function useMapEditorOverlayState({
         if (prev.routes?.visible) return prev;
         return {
           ...prev,
-          routes: { ...prev.routes, visible: true, locked: false, opacity: prev.routes?.opacity ?? 1 },
+          routes: {
+            ...prev.routes,
+            visible: true,
+            locked: false,
+            opacity: prev.routes?.opacity ?? 1,
+          },
         };
       });
     }
@@ -383,151 +433,329 @@ export function useMapEditorOverlayState({
     }
   }, [editor]);
 
-  // Keyboard shortcuts and mouse mousemove listeners
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName;
-      const inInput =
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        (e.target as HTMLElement)?.getAttribute("contenteditable") === "true";
-
-      if (!inInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const key = e.key.toLowerCase();
-        if (key === "v") {
-          e.preventDefault();
-          editor.setMode("view");
-        } else if (key === "c" || key === "1") {
-          e.preventDefault();
-          editor.setMode("add-city");
-        } else if (key === "r" || key === "2") {
-          e.preventDefault();
-          editor.setMode("add-subdivision");
-        } else if (key === "p" || key === "3") {
-          e.preventDefault();
-          editor.setMode("add-poi");
-        } else if (key === "t" || key === "4") {
-          e.preventDefault();
-          editor.setMode("add-route");
-        }
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        editor.undo();
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
-        e.preventDefault();
-        editor.redo();
-        return;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        if (editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")) {
-          handleSubmit();
-        }
-        return;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === "a" && !inInput) {
-        e.preventDefault();
-        editor.allFeatures.forEach((f) => {
-          if (!editor.selectedIds.has(f.id)) {
-            editor.toggleSelectId(f.id);
-          }
+  /**
+   * Deletes the multi-selection (or the single selected feature) after a themed
+   * confirmation. Shared by the Delete key, the tool options bar and the header.
+   */
+  const requestDeleteSelection = useCallback(async () => {
+    const ids = editor.selectedIds;
+    if (ids.size > 0) {
+      const ok = await confirmEditorAction({
+        title: `Delete ${ids.size} selected feature${ids.size === 1 ? "" : "s"}?`,
+        description: "You can bring them back with Undo (Ctrl+Z) while the editor is open.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
+      const count = ids.size;
+      const result = await editor.bulkDeleteSelected();
+      if (result && result.failCount > 0) {
+        notifyFromStore({
+          title: `Deleted ${result.successCount} of ${count}`,
+          message: `${result.failCount} could not be deleted`,
+          type: "warning",
+          priority: "medium",
         });
+      }
+      return;
+    }
+    if (editor.selectedFeature) {
+      await selection.handleDeleteFeature(editor.selectedFeature);
+    }
+  }, [editor, selection]);
+
+  const toggleAllPanels = useCallback(() => {
+    layout.setPanelConfigs((prev) => {
+      const collapse = !(prev.panelA.collapsed && prev.panelB.collapsed);
+      return {
+        panelA: { ...prev.panelA, collapsed: collapse },
+        panelB: { ...prev.panelB, collapsed: collapse },
+      };
+    });
+  }, [layout]);
+
+  // ── Keyboard shortcuts ──
+  // One window listener, registered once; it reads the latest state through a ref.
+  // Tool letters (V M C P K T Y R J U) are routed by the plugin provider; this
+  // handler owns undo/redo, selection, delete, save, escape, view toggles and the
+  // world editor's border-edit tools.
+  const keyStateRef = useRef({
+    editor,
+    importer,
+    handleSubmit,
+    handleRequestExit,
+    activeEditorMode,
+    borderActions,
+    handleExitBorderEdit: borderOps.handleExitBorderEdit,
+    contextMenu: selection.contextMenu,
+    setContextMenu: selection.setContextMenu,
+    requestDeleteSelection,
+    toggleAllPanels,
+    setShowGrid: tools.setShowGrid,
+    setShowShortcuts: tools.setShowShortcuts,
+    showShortcuts: tools.showShortcuts,
+    toolsDisabled: isWorldMode ? !mapSelectedCountry : !isLinked || !hasGeometry,
+    vertexEditDirty,
+  });
+  // oxlint-disable-next-line -- latest-value ref read by the stable key listener
+  keyStateRef.current = {
+    editor,
+    importer,
+    handleSubmit,
+    handleRequestExit,
+    activeEditorMode,
+    borderActions,
+    handleExitBorderEdit: borderOps.handleExitBorderEdit,
+    contextMenu: selection.contextMenu,
+    setContextMenu: selection.setContextMenu,
+    requestDeleteSelection,
+    toggleAllPanels,
+    setShowGrid: tools.setShowGrid,
+    setShowShortcuts: tools.setShowShortcuts,
+    showShortcuts: tools.showShortcuts,
+    toolsDisabled: isWorldMode ? !mapSelectedCountry : !isLinked || !hasGeometry,
+    vertexEditDirty,
+  };
+
+  useEffect(() => {
+    const LOCAL_UNDO_MODES = new Set<EditorMode>([
+      "add-subdivision",
+      "add-lake",
+      "edit-subdivision",
+    ]);
+
+    const handleEscape = () => {
+      const k = keyStateRef.current;
+      const ed = k.editor;
+      if (ed.mode === "import-provinces") {
+        k.importer.reset();
+        ed.setMode("view");
+      } else if (ed.mode === "edit-route") {
+        ed.cancelRouteEdit();
+      } else if (ed.mode !== "view") {
+        ed.resetForm();
+        ed.clearRouteWaypoints();
+        ed.setMode("view");
+      } else if (ed.selectedIds.size > 0) {
+        ed.clearMultiSelect();
+      } else if (ed.selectedFeature) {
+        ed.resetForm();
+      } else {
+        k.handleRequestExit();
+      }
+    };
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.isComposing) return;
+      // A confirmation dialog or the shortcut sheet owns the keyboard while open.
+      if (isEditorConfirmOpen()) return;
+      // Focus inside a popover/menu/dialog: that surface owns the keys (Esc closes it, not the tool).
+      const focused = document.activeElement as HTMLElement | null;
+      if (
+        focused?.closest?.(
+          '[role="dialog"],[role="alertdialog"],[role="menu"],[role="listbox"],[data-radix-popper-content-wrapper]'
+        )
+      ) {
         return;
       }
+      const k = keyStateRef.current;
+      const { editor: ed } = k;
+      const inInput =
+        isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement);
+      const mod = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
 
-      if ((e.ctrlKey || e.metaKey) && e.key === "d" && !inInput) {
-        e.preventDefault();
-        editor.clearMultiSelect();
-        return;
-      }
-
-      if (e.key === "Escape") {
-        if (editor.mode === "import-provinces") {
-          importer.reset();
-          editor.setMode("view");
-        } else if (editor.mode !== "view") {
-          editor.resetForm();
-        } else if (activeEditorMode === "border_edit") {
-          borderOps.handleExitBorderEdit();
-        } else {
-          handleRequestExit();
-        }
-        return;
-      }
-
-      if ((e.key === "Delete" || e.key === "Backspace") && !inInput) {
-        if (editor.selectedFeature && editor.mode === "view") {
+      if (k.showShortcuts) {
+        if (e.key === "Escape" || e.key === "?") {
           e.preventDefault();
-          selection.handleDeleteFeature(editor.selectedFeature);
+          k.setShowShortcuts(false);
         }
         return;
+      }
+
+      // ── Border editor (world mode) ──
+      if (k.activeEditorMode === "border_edit") {
+        if (inInput) return;
+        if (mod && key === "z") {
+          e.preventDefault();
+          if (e.shiftKey) k.borderActions.redo();
+          else k.borderActions.undo();
+          return;
+        }
+        if (mod && key === "y") {
+          e.preventDefault();
+          k.borderActions.redo();
+          return;
+        }
+        if (!mod && !e.altKey) {
+          const borderTool = (
+            {
+              v: "select",
+              p: "vertex_edit",
+              x: "split",
+              m: "merge",
+              t: "trace",
+              b: "brush",
+            } as const
+          )[key as "v" | "p" | "x" | "m" | "t" | "b"];
+          if (borderTool) {
+            e.preventDefault();
+            k.borderActions.setMode(borderTool);
+            return;
+          }
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          k.handleExitBorderEdit();
+        }
+        return;
+      }
+
+      // ── Save (works inside form fields too) ──
+      if (mod && key === "s") {
+        e.preventDefault();
+        if (ed.mode.startsWith("add-") || ed.mode.startsWith("edit-")) k.handleSubmit();
+        return;
+      }
+
+      if (inInput) return;
+
+      // ── Undo / Redo ──
+      if (mod && (key === "z" || key === "y")) {
+        const isRedo = key === "y" || e.shiftKey;
+        // An unsaved region reshape: Ctrl+Z must not undo an older server edit underneath it.
+        if (ed.mode === "edit-subdivision" && k.vertexEditDirty) return;
+        // Region/lake drawing removes its last vertex on Ctrl+Z; only fall through to the
+        // editor undo when the drawing tool did not claim the key (nothing drawn yet).
+        if (!isRedo && LOCAL_UNDO_MODES.has(ed.mode) && ed.mode !== "edit-subdivision") {
+          window.setTimeout(() => {
+            if (!e.defaultPrevented) void keyStateRef.current.editor.undo();
+          }, 0);
+          return;
+        }
+        e.preventDefault();
+        if (!isRedo) {
+          if (ed.mode === "add-route" && ed.routeWaypoints.length > 0) return ed.undoLastWaypoint();
+          if (ed.mode === "add-river" && ed.riverPath.length > 0) return ed.undoLastRiverPoint();
+          if (ed.mode === "split-subdivision" && ed.splitLine.length > 0)
+            return ed.undoLastSplitPoint();
+          void ed.undo();
+        } else {
+          void ed.redo();
+        }
+        return;
+      }
+
+      // ── Selection ──
+      if (mod && key === "a") {
+        e.preventDefault();
+        ed.selectAll();
+        return;
+      }
+      if (mod && key === "d") {
+        e.preventDefault();
+        ed.clearMultiSelect();
+        return;
+      }
+      if (mod && key === "j") {
+        e.preventDefault();
+        if (ed.selectedFeature) void ed.duplicateFeature(ed.selectedFeature);
+        return;
+      }
+
+      // ── Finish / delete ──
+      if (e.key === "Enter" && !mod) {
+        if (ed.mode === "add-route" && ed.routeWaypoints.length >= 2) {
+          e.preventDefault();
+          void ed.finishRoute().catch(() => undefined);
+        } else if (
+          ed.mode === "split-subdivision" &&
+          ed.selectedFeature &&
+          ed.splitLine.length >= 2
+        ) {
+          e.preventDefault();
+          void ed.executeSplitSubdivision(ed.selectedFeature.id);
+        }
+        return;
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        // In drawing/reshaping modes these keys remove the last/hovered vertex instead.
+        if (ed.mode !== "view" && !ed.mode.startsWith("edit-")) return;
+        if (ed.mode === "edit-subdivision" || ed.mode === "edit-route") return;
+        if (ed.selectedIds.size > 0 || ed.selectedFeature) {
+          e.preventDefault();
+          void k.requestDeleteSelection();
+        }
+        return;
+      }
+
+      // ── Escape: close menu → cancel drawing → clear selection → leave tool → exit ──
+      if (e.key === "Escape") {
+        if (k.contextMenu) {
+          k.setContextMenu(null);
+          return;
+        }
+        // Tool-local handlers (cancel a drag, clear an in-progress polygon) run on the
+        // same event; let them go first and only act if none of them claimed it.
+        window.setTimeout(() => {
+          if (!e.defaultPrevented) handleEscape();
+        }, 0);
+        return;
+      }
+
+      if (mod || e.altKey) return;
+
+      // ── View toggles & quick tools ──
+      if (e.key === "?") {
+        e.preventDefault();
+        k.setShowShortcuts(true);
+        return;
+      }
+      if (key === "g") {
+        e.preventDefault();
+        k.setShowGrid((v) => !v);
+        return;
+      }
+      if (key === "f") {
+        e.preventDefault();
+        k.toggleAllPanels();
+        return;
+      }
+      if (key === "h") {
+        e.preventDefault();
+        ed.setShowGaps(!ed.showGaps);
+        return;
+      }
+      if (k.toolsDisabled) return;
+      if (key === "i") {
+        e.preventDefault();
+        ed.setMode("import-provinces");
+        return;
+      }
+      const digitMode = (
+        { "1": "add-city", "2": "add-subdivision", "3": "add-poi", "4": "add-route" } as const
+      )[e.key as "1" | "2" | "3" | "4"];
+      if (digitMode) {
+        e.preventDefault();
+        ed.setMode(digitMode);
       }
     };
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [
-    editor,
-    importer,
-    handleSubmit,
-    selection,
-    handleRequestExit,
-    activeEditorMode,
-    borderOps.handleExitBorderEdit,
-  ]);
+  }, []);
 
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-
-  const handleMapMouseMove = useCallback(
-    (e: MapLayerMouseEvent) => {
-      if (!mapInstance) return;
-
-      if (activeEditorMode !== "view" || editor.mode !== "view") {
-        if (selectionRef.current.hoveredFeature) {
-          selectionRef.current.setHoveredFeature(null);
-        }
-        return;
-      }
-
-      const hits = mapInstance.queryRenderedFeatures(e.point, {
-        layers: ["editor-subdivisions-fill"],
-      });
-
-      const currentSelection = selectionRef.current;
-      if (hits.length > 0) {
-        const hitId = hits[0]?.properties?.id as string | undefined;
-        if (hitId && hitId !== currentSelection.hoveredFeature?.feature.id) {
-          const match = editor.allFeatures.find((f) => f.id === hitId);
-          if (match) {
-            currentSelection.setHoveredFeature({ feature: match, screenPos: { x: e.point.x, y: e.point.y } });
-          }
-        }
-      } else if (currentSelection.hoveredFeature) {
-        currentSelection.setHoveredFeature(null);
-      }
-    },
-    [mapInstance, editor.mode, editor.allFeatures, activeEditorMode]
-  );
-
+  // Zoom level for the status bar lives in the transient store (no editor re-render).
   useEffect(() => {
     const map = mapInstance;
     if (!map) return;
-    map.on("mousemove", handleMapMouseMove);
-    const onZoomEnd = () => tools.setCursorZoom(map.getZoom());
+    const onZoomEnd = () => transientMapStore.setZoom(map.getZoom());
+    onZoomEnd();
     map.on("zoomend", onZoomEnd);
     return () => {
-      map.off("mousemove", handleMapMouseMove);
       map.off("zoomend", onZoomEnd);
     };
-  }, [mapInstance, handleMapMouseMove, tools.setCursorZoom]);
+  }, [mapInstance]);
 
   const featureCounts = useMemo(
     () => ({
@@ -642,9 +870,6 @@ export function useMapEditorOverlayState({
     showRightPanel: isWorldMode
       ? true
       : editor.mode !== "view" && editor.mode !== "import-provinces",
-    cursorTerrainInfo: selection.cursorTerrainInfo,
-    cursorZoom: tools.cursorZoom,
-    setCursorZoom: tools.setCursorZoom,
     showGrid: tools.showGrid,
     setShowGrid: tools.setShowGrid,
     showGuides: tools.showGuides,
@@ -653,8 +878,6 @@ export function useMapEditorOverlayState({
     setSnapEnabled: tools.setSnapEnabled,
     snapTolerance: tools.snapTolerance,
     setSnapTolerance: tools.setSnapTolerance,
-    hoveredFeature: selection.hoveredFeature,
-    setHoveredFeature: selection.setHoveredFeature,
     showShortcuts: tools.showShortcuts,
     setShowShortcuts: tools.setShowShortcuts,
     contextMenu: selection.contextMenu,
@@ -702,6 +925,11 @@ export function useMapEditorOverlayState({
     handleSelectFeature: selection.handleSelectFeature,
     handleEditFeature: selection.handleEditFeature,
     handleDeleteFeature: selection.handleDeleteFeature,
+    zoomToFeature: selection.zoomToFeature,
+    requestDeleteSelection,
+    toggleAllPanels,
+    vertexEditDirty,
+    setVertexEditDirty,
     handleEditRoute,
     handleSubmit,
     featureCounts,

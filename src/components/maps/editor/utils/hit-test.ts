@@ -53,13 +53,15 @@ const POINT_LAYERS = [
   "editor-points-capital",
   "editor-points-city",
   "editor-points-poi",
+  "editor-points-peak",
   "editor-points-story-pin",
   "editor-points-map-label",
 ];
 
 const LABEL_LAYERS = ["editor-points-labels", "editor-map-labels"];
 
-const POLYGON_LAYERS = ["editor-subdivisions-fill"];
+// Line features (named rivers) sit above region fills, so list them first.
+const POLYGON_LAYERS = ["editor-lines", "editor-subdivisions-fill"];
 
 const GAP_LAYERS = ["editor-gaps-fill"];
 
@@ -67,6 +69,7 @@ const POINT_PRIORITY: Record<string, number> = {
   "editor-points-capital": 0,
   "editor-points-city": 1,
   "editor-points-poi": 2,
+  "editor-points-peak": 2,
   "editor-points-story-pin": 3,
   "editor-points-map-label": 4,
   "editor-points-labels": 5,
@@ -76,7 +79,7 @@ const POINT_PRIORITY: Record<string, number> = {
 function layerKind(layerId: string): HitLayerKind {
   if (layerId.startsWith("editor-points-")) return "point";
   if (layerId === "editor-map-labels") return "label";
-  if (layerId === "editor-subdivisions-fill") return "polygon";
+  if (layerId === "editor-subdivisions-fill" || layerId === "editor-lines") return "polygon";
   if (layerId === "editor-gaps-fill") return "gap";
   return "point";
 }
@@ -179,6 +182,8 @@ export function hitTestFeatures(
     return { hit: bestExactPoint, locked: !!lockedHit };
   }
 
+  // Thin lines win over the region fill they cross (render order would put the fill first).
+  exactPolys.sort((a, b) => POLYGON_LAYERS.indexOf(a.layerId) - POLYGON_LAYERS.indexOf(b.layerId));
   const bestExactPoly = exactPolys.find((h) => !opts.excludeLayers?.includes(h.layerId));
   if (bestExactPoly) {
     return { hit: bestExactPoly, locked: !!lockedHit };

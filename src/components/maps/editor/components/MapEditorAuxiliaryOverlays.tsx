@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
+import { List } from "iconoir-react";
 import dynamic from "next/dynamic";
 import { useNotify } from "~/hooks/useNotify";
+import { useIsMobile } from "~/hooks/useIsMobile";
 import { BatchActionsBar, type EditableField } from "~/components/maps/editor/BatchActionsBar";
 import { EditorDialogs } from "./EditorDialogs";
 import { EditorContextMenuWrapper } from "./EditorContextMenuWrapper";
@@ -65,47 +67,64 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
   const notify = useNotify();
   const { editor, importer } = state;
 
-  const handleSelectFeature = useCallback((feat: EditorFeature | null) => {
-    state.handleSelectFeature?.(feat);
-  }, [state.handleSelectFeature]);
+  const handleSelectFeature = useCallback(
+    (feat: EditorFeature | null) => {
+      state.handleSelectFeature?.(feat);
+    },
+    [state.handleSelectFeature]
+  );
 
-  const handleEditFeature = useCallback((feat: EditorFeature) => {
-    state.handleEditFeature?.(feat);
-  }, [state.handleEditFeature]);
+  const handleEditFeature = useCallback(
+    (feat: EditorFeature) => {
+      state.handleEditFeature?.(feat);
+    },
+    [state.handleEditFeature]
+  );
 
-  const handleDeleteFeature = useCallback((feat: EditorFeature) => {
-    state.handleDeleteFeature?.(feat);
-  }, [state.handleDeleteFeature]);
+  const handleDeleteFeature = useCallback(
+    (feat: EditorFeature) => {
+      state.handleDeleteFeature?.(feat);
+    },
+    [state.handleDeleteFeature]
+  );
 
   const subdivisionCount = useMemo(
     () =>
-      editor.allFeatures.filter(
-        (f) => editor.selectedIds.has(f.id) && f.type === "subdivision"
-      ).length,
+      editor.allFeatures.filter((f) => editor.selectedIds.has(f.id) && f.type === "subdivision")
+        .length,
     [editor.allFeatures, editor.selectedIds]
   );
 
-  const handleBatchDelete = useCallback(async () => {
-    const count = editor.selectedIds.size;
-    try {
-      await editor.bulkDeleteSelected();
-      notify.success(`Deleted ${count} features`);
-    } catch {
-      notify.error("Failed to delete selected features");
-    }
-  }, [editor, notify]);
+  const isMobile = useIsMobile();
+  const [mobileListOpen, setMobileListOpen] = useState(false);
 
-  const handleBulkEdit = useCallback(async (field: EditableField, value: string | number) => {
-    const result = await editor.bulkEditSelected(field, value);
-    if (result.failCount > 0) {
-      notify.error(
-        `Bulk edit: ${result.successCount} updated, ${result.failCount} failed.`
-      );
-    } else if (result.successCount > 0) {
-      notify.success(`Updated ${result.successCount} features`);
-    }
-    return result;
-  }, [editor, notify]);
+  // On phones the sheet covers most of the map, so placement/drawing tools only open it
+  // once there is something to fill in (a placed point, a closed shape, a drawn route).
+  const mobileSheetForTool =
+    editor.mode.startsWith("edit-") ||
+    (editor.mode.startsWith("add-") &&
+      (!!editor.pendingCoordinates ||
+        !!editor.pendingGeometry ||
+        (editor.mode === "add-route" && editor.routeWaypoints.length >= 2)));
+  const showMobileSheet =
+    isMobile && (mobileSheetForTool || (mobileListOpen && editor.mode === "view"));
+
+  const handleBatchDelete = useCallback(() => {
+    void state.requestDeleteSelection();
+  }, [state]);
+
+  const handleBulkEdit = useCallback(
+    async (field: EditableField, value: string | number) => {
+      const result = await editor.bulkEditSelected(field, value);
+      if (result.failCount > 0) {
+        notify.error(`Bulk edit: ${result.successCount} updated, ${result.failCount} failed.`);
+      } else if (result.successCount > 0) {
+        notify.success(`Updated ${result.successCount} features`);
+      }
+      return result;
+    },
+    [editor, notify]
+  );
 
   const renderRightPanelContent = () => (
     <PropertiesPanelContent
@@ -117,13 +136,33 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
 
   return (
     <>
-      {/* Mobile sheets */}
-      {editor.mode !== "view" && editor.mode !== "import-provinces" && (
+      {/* Mobile sheet — mounted only on phones so desktop never renders a hidden second
+          copy of the properties panel and feature list. */}
+      {isMobile && editor.mode === "view" && !mobileListOpen && editor.allFeatures.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setMobileListOpen(true)}
+          className="border-border bg-card/95 text-foreground pointer-events-auto absolute right-3 bottom-20 z-20 flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium shadow-lg backdrop-blur-md active:scale-[0.98] sm:hidden"
+        >
+          <List className="h-4 w-4" />
+          Features
+        </button>
+      )}
+
+      {showMobileSheet && (
         <div className="sm:hidden">
           <MobileEditorSheet
-            onClose={() => editor.resetForm()}
+            key={mobileSheetForTool ? "tool" : "list"}
+            onClose={() => {
+              setMobileListOpen(false);
+              if (mobileSheetForTool) {
+                const wasEditing = editor.mode.startsWith("edit-");
+                editor.resetForm();
+                if (wasEditing) editor.setMode("view");
+              }
+            }}
             title="Properties"
-            isEditMode={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")}
+            isEditMode={mobileSheetForTool}
             featureListContent={
               <LayerPanel
                 minimal
@@ -145,14 +184,16 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
 
       {/* Batch Actions Bar */}
       {editor.selectedIds.size > 1 && (
-        <BatchActionsBar
-          selectedCount={editor.selectedIds.size}
-          subdivisionCount={subdivisionCount}
-          onBatchDelete={handleBatchDelete}
-          onDeselectAll={editor.clearMultiSelect}
-          onBulkEdit={handleBulkEdit}
-          isMutating={editor.isMutating}
-        />
+        <div className="border-border bg-card/95 pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-xl border shadow-lg backdrop-blur-md">
+          <BatchActionsBar
+            selectedCount={editor.selectedIds.size}
+            subdivisionCount={subdivisionCount}
+            onBatchDelete={handleBatchDelete}
+            onDeselectAll={editor.clearMultiSelect}
+            onBulkEdit={handleBulkEdit}
+            isMutating={editor.isMutating}
+          />
+        </div>
       )}
 
       {/* Context Menu */}
@@ -160,6 +201,8 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         contextMenu={contextMenu}
         setContextMenu={setContextMenu}
         editor={editor}
+        onDeleteFeature={handleDeleteFeature}
+        onZoomToFeature={state.zoomToFeature}
       />
 
       {/* Keyboard Shortcut Sheet */}

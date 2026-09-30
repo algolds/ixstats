@@ -1,10 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { EditorMode } from "~/hooks/useMapEditor";
-import type { MapEditorContextType, PluginStateValue, MapEditorOverlayStateReturnType } from "./types";
+import type {
+  MapEditorContextType,
+  PluginStateValue,
+  MapEditorOverlayStateReturnType,
+} from "./types";
 import { getPlugins } from "./registry";
+import { isEditorConfirmOpen } from "../components/EditorConfirmDialog";
 
 const MapEditorContext = createContext<MapEditorContextType | null>(null);
 
@@ -33,23 +46,36 @@ export function MapEditorPluginProvider({ children, state }: MapEditorPluginProv
     []
   );
 
-  const onModeChange = useCallback(
-    (newMode: string) => {
-      state.editor?.setMode?.(newMode as EditorMode);
-    },
-    [state.editor]
-  );
+  // Plugins read `context.state` at event time, so the context exposes it through a
+  // getter over a ref: the context object (and every consumer's callbacks/effects)
+  // stays stable while the editor state changes underneath it.
+  const stateRef = useRef(state);
+  // oxlint-disable-next-line -- latest-value ref read by plugin handlers
+  stateRef.current = state;
+
+  const onModeChange = useCallback((newMode: string) => {
+    const current = stateRef.current;
+    const mode = newMode as EditorMode;
+    // Respect the same gating as the tool rail: no tools until a country/shape is ready.
+    if (mode !== "view" && mode !== "lasso-select" && mode !== "ruler") {
+      if (!current.isWorldMode && current.toolsDisabled) return;
+      if (current.disabledTools?.includes(mode)) return;
+    }
+    current.editor?.setMode?.(mode);
+  }, []);
 
   const contextValue = useMemo<MapEditorContextType>(
     () => ({
-      state,
+      get state() {
+        return stateRef.current;
+      },
       map,
       setMap,
       pluginStates,
       setPluginState,
       onModeChange,
     }),
-    [state, map, pluginStates, setPluginState, onModeChange]
+    [map, pluginStates, setPluginState, onModeChange]
   );
 
   // Centralized keyboard event routing
@@ -64,8 +90,18 @@ export function MapEditorPluginProvider({ children, state }: MapEditorPluginProv
           activeEl.tagName === "SELECT" ||
           activeEl.getAttribute("contenteditable") === "true");
       if (inInput) return;
+      // Border editing (world editor) has its own tool letters; dialogs own the keyboard.
+      const current = stateRef.current;
+      if (
+        current.activeEditorMode === "border_edit" ||
+        current.showShortcuts ||
+        isEditorConfirmOpen()
+      ) {
+        return;
+      }
+      if (e.defaultPrevented) return;
 
-      const activeMode = state.editor?.mode ?? "view";
+      const activeMode = current.editor?.mode ?? "view";
       const plugins = getPlugins();
 
       for (const plugin of plugins) {
@@ -90,8 +126,10 @@ export function MapEditorPluginProvider({ children, state }: MapEditorPluginProv
           activeEl.tagName === "SELECT" ||
           activeEl.getAttribute("contenteditable") === "true");
       if (inInput) return;
+      const current = stateRef.current;
+      if (current.activeEditorMode === "border_edit") return;
 
-      const activeMode = state.editor?.mode ?? "view";
+      const activeMode = current.editor?.mode ?? "view";
       const plugins = getPlugins();
 
       for (const plugin of plugins) {
@@ -112,7 +150,7 @@ export function MapEditorPluginProvider({ children, state }: MapEditorPluginProv
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [contextValue, state.editor?.mode]);
+  }, [contextValue]);
 
   return <MapEditorContext.Provider value={contextValue}>{children}</MapEditorContext.Provider>;
 }

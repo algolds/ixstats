@@ -15,16 +15,22 @@ interface EditorContextMenuWrapperProps {
   contextMenu: EditorContextMenuData | null;
   setContextMenu: (menu: EditorContextMenuData | null) => void;
   editor: MapEditorInstance;
+  /** Confirming delete (falls back to an immediate delete when omitted). */
+  onDeleteFeature?: (feature: EditorFeature) => void;
+  onZoomToFeature?: (feature: EditorFeature) => void;
 }
 
 export function EditorContextMenuWrapper({
   contextMenu,
   setContextMenu,
   editor,
+  onDeleteFeature,
+  onZoomToFeature,
 }: EditorContextMenuWrapperProps) {
   const router = useRouter();
 
   if (!contextMenu) return null;
+  const target = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
 
   return (
     <FeatureContextMenu
@@ -44,19 +50,29 @@ export function EditorContextMenuWrapper({
         setContextMenu(null);
       }}
       onDelete={() => {
-        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
-        if (feat) {
-          void editor.handleDeleteFeature(feat);
+        if (target) {
+          if (onDeleteFeature) onDeleteFeature(target);
+          else void editor.handleDeleteFeature(target);
         }
         setContextMenu(null);
       }}
-      onCopyCoords={() => {
-        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
-        if (feat && "coordinates" in feat && Array.isArray(feat.coordinates)) {
-          navigator.clipboard.writeText(`${feat.coordinates[1]}, ${feat.coordinates[0]}`);
-        }
-        setContextMenu(null);
-      }}
+      onZoomTo={
+        target && onZoomToFeature
+          ? () => {
+              onZoomToFeature(target);
+              setContextMenu(null);
+            }
+          : undefined
+      }
+      onCopyCoords={
+        target?.coordinates
+          ? () => {
+              const c = target.coordinates!;
+              void navigator.clipboard?.writeText(`${c[1].toFixed(5)}, ${c[0].toFixed(5)}`);
+              setContextMenu(null);
+            }
+          : undefined
+      }
       onOpenWiki={
         contextMenu.feature.wikiPageTitle
           ? () => {
