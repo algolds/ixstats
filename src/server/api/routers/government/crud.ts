@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/government";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { rollBudgetForward } from "~/lib/government/budget-allocations";
 
 export const governmentCrudRouter = createTRPCRouter({
   // Get government structure by country ID with configurable includes
@@ -107,5 +109,16 @@ export const governmentCrudRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const warnings = await detectGovernmentConflicts(ctx.db as any, input.countryId, input.data);
       return { warnings };
+    }),
+
+  /**
+   * Start the current IxTime year's budget by copying the budget in effect (MC-1). Departments
+   * that already have an allocation for the year keep it.
+   */
+  startBudgetYear: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return rollBudgetForward(ctx.db, input.countryId);
     }),
 });

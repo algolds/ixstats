@@ -14,7 +14,7 @@ import { COMPONENT_CATEGORIES } from "./atomic-data";
 import { calculateGovernmentEffectiveness } from "./atomic-utils";
 import { IxTime } from "~/lib/ixtime";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
-import { currentBudgetYear } from "./budget-year";
+import { loadEffectiveBudget } from "./budget-allocations";
 
 // Category → StorytellerEffect inputType + base effect value per component
 const CATEGORY_EFFECTS: Record<string, { inputType: string; base: number; desc: string }> = {
@@ -226,14 +226,7 @@ export async function applyGovernmentComponentEffects(
 
   // Calculate allocations to derive brokers
   const allocations =
-    preloaded?.allocations ??
-    (await db.budgetAllocation.findMany({
-      where: {
-        governmentStructure: { countryId },
-        budgetYear: currentBudgetYear(),
-      },
-      include: { department: { select: { category: true } } },
-    }));
+    preloaded?.allocations ?? (await loadEffectiveBudget(db, countryId)).allocations;
   const spendByCategory: Record<string, number> = {};
   allocations.forEach((alloc) => {
     const cat = alloc.department.category;

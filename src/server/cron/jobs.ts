@@ -189,6 +189,17 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/wiki-os/services/auto-sync-service")).runAutoSyncCycle,
   },
   {
+    // Once per new IxTime year, remind each owned country to set that year's budget (MC-1).
+    name: "budget-year-rollover",
+    defaultSchedule: "41 * * * *",
+    lockName: "budget-year-rollover",
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/lib/government/budget-year-rollover-cron",
+    exportName: "runBudgetYearRollover",
+    load: async () =>
+      (await import("~/lib/government/budget-year-rollover-cron")).runBudgetYearRollover,
+  },
+  {
     // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
     name: "db-backup",
     defaultSchedule: "17 3 * * *",

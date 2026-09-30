@@ -67,6 +67,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `policy-maintenance` | `0 */6 * * *` | — |
 | `national-issues` | `*/30 * * * *` | — |
 | `wiki-recentchanges` | `*/10 * * * *` | `cronSchedule_wikiRecentChanges` |
+| `budget-year-rollover` | `41 * * * *` | — |
 | `db-backup` | `17 3 * * *` | — |
 
 ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.

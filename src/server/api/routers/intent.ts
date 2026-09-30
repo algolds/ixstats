@@ -23,7 +23,7 @@ import {
 } from "~/lib/intent/assemble";
 import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
-import { currentBudgetYear } from "~/lib/government/budget-year";
+import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 
@@ -41,11 +41,7 @@ async function loadBrokers(db: PrismaClient, countryId: string): Promise<ActiveB
       take: 100,
       select: { componentType: true },
     }),
-    db.budgetAllocation.findMany({
-      where: { governmentStructure: { countryId }, budgetYear: currentBudgetYear() },
-      take: 50,
-      include: { department: { select: { category: true } } },
-    }),
+    loadEffectiveBudget(db, countryId, { take: 50 }).then((budget) => budget.allocations),
   ]);
 
   const spendByCategory: Record<string, number> = {};

@@ -11,3 +11,19 @@ import { IxTime } from "~/lib/ixtime";
 export function currentBudgetYear(ixTime?: number): number {
   return IxTime.getCurrentGameYear(ixTime);
 }
+
+/**
+ * The budget in effect: the latest budget year at or before `current`. A budget stays in effect
+ * after the IxTime year rolls over until the country sets one for the new year. Null when
+ * there is no budget yet.
+ */
+export function latestBudgetYearUpTo(
+  years: Iterable<number>,
+  current: number = currentBudgetYear()
+): number | null {
+  let latest: number | null = null;
+  for (const year of years) {
+    if (year <= current && (latest === null || year > latest)) latest = year;
+  }
+  return latest;
+}

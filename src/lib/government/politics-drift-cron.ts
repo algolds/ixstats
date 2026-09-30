@@ -16,7 +16,7 @@ import { applyGovernmentComponentEffects } from "./component-effects";
 import { isNewsworthySwing } from "./approval";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
-import { currentBudgetYear } from "./budget-year";
+import { loadEffectiveBudget } from "./budget-allocations";
 
 export interface PoliticsDriftResult {
   countriesProcessed: number;
@@ -47,13 +47,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
       const [parties, country, allocations, components] = await Promise.all([
         db.politicalParty.findMany({ where: { countryId, isActive: true } }),
         db.country.findUnique({ where: { id: countryId }, select: { adjustedGdpGrowth: true } }),
-        db.budgetAllocation.findMany({
-          where: {
-            governmentStructure: { countryId },
-            budgetYear: currentBudgetYear(),
-          },
-          include: { department: { select: { category: true } } },
-        }),
+        loadEffectiveBudget(db, countryId).then((budget) => budget.allocations),
         db.governmentComponent.findMany({
           where: { countryId, isActive: true },
           select: { componentType: true, effectivenessScore: true },

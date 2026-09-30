@@ -11,7 +11,7 @@ import {
   calculateTotalConsumedStaff,
 } from "~/lib/government/atomic-utils";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
-import { currentBudgetYear } from "~/lib/government/budget-year";
+import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 const RECON_CAPACITY_COST = 20;
@@ -43,13 +43,8 @@ async function loadPolicyReconContext(db: any, countryId: string) {
       select: { componentType: true },
     }),
     db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
-    db.budgetAllocation.findMany({
-      where: {
-        governmentStructure: { countryId },
-        budgetYear: currentBudgetYear(),
-      },
-      include: { department: { select: { category: true } } },
-    }),
+    // The budget in effect: the latest year at or before the current IxTime year
+    loadEffectiveBudget(db, countryId).then((budget) => budget.allocations),
     db.policy.aggregate({
       where: { countryId, status: "active" },
       _sum: { civCapCost: true },
