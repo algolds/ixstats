@@ -6,24 +6,30 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { globalCache } from "~/lib/cache";
 
 export const activitiesFeedPersonalRouter = createTRPCRouter({
-  // Get feed from countries the user follows
+  // Get feed from the countries the user's country follows and the personas the user follows
   getFollowingFeed: protectedProcedure
     .input(z.object({ limit: z.number().min(1).max(50).default(30) }))
     .query(async ({ ctx, input }) => {
       try {
         const countryId = ctx.user?.countryId;
-        if (!countryId) {
-          return { activities: [], followingCount: 0 };
-        }
 
-        // Get followed country IDs
-        const follows = await ctx.db.countryFollow.findMany({
-          where: { followerCountryId: countryId },
-          select: { followedCountryId: true },
-        });
-
+        // Followed countries (country → country follows need a country of your own)
+        const follows = countryId
+          ? await ctx.db.countryFollow.findMany({
+              where: { followerCountryId: countryId },
+              select: { followedCountryId: true },
+            })
+          : [];
         const followedIds = follows.map((f) => f.followedCountryId);
-        if (followedIds.length === 0) {
+
+        // Followed personas, from any of the user's own personas
+        const personaFollows = await ctx.db.thinkpagesFollow.findMany({
+          where: { followerClerkUserId: ctx.auth.userId },
+          select: { followedAccountId: true },
+        });
+        const followedAccountIds = [...new Set(personaFollows.map((f) => f.followedAccountId))];
+
+        if (followedIds.length === 0 && followedAccountIds.length === 0) {
           return { activities: [], followingCount: 0 };
         }
 
@@ -57,30 +63,35 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
           followingCount = cachedData.followingCount;
         } else {
           // Fetch ActivityFeed entries from followed countries
-          const activityFeedEntries = await ctx.db.activityFeed.findMany({
-            where: { countryId: { in: followedIds } },
-            orderBy: { createdAt: "desc" },
-            take: input.limit,
-            include: {
-              poll: {
+          const activityFeedEntries = followedIds.length
+            ? await ctx.db.activityFeed.findMany({
+                where: { countryId: { in: followedIds } },
+                orderBy: { createdAt: "desc" },
+                take: input.limit,
                 include: {
-                  options: {
+                  poll: {
                     include: {
-                      _count: {
-                        select: { votes: true },
+                      options: {
+                        include: {
+                          _count: {
+                            select: { votes: true },
+                          },
+                        },
                       },
                     },
                   },
                 },
-              },
-            },
-          });
+              })
+            : [];
 
-          // Fetch ThinkPages posts from followed countries
+          // Fetch ThinkPages posts from followed countries' personas and from followed personas
           const thinkpagesPosts = await ctx.db.thinkpagesPost.findMany({
             where: {
               visibility: "public",
-              account: { countryId: { in: followedIds } },
+              OR: [
+                ...(followedIds.length ? [{ account: { countryId: { in: followedIds } } }] : []),
+                ...(followedAccountIds.length ? [{ accountId: { in: followedAccountIds } }] : []),
+              ],
             },
             orderBy: { ixTimeTimestamp: "desc" },
             take: input.limit,
@@ -310,10 +321,10 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
 
           await globalCache.set(
             cacheKey,
-            { combinedActivities, followingCount: followedIds.length },
+            { combinedActivities, followingCount: followedIds.length + followedAccountIds.length },
             { ttl: 15 }
           );
-          followingCount = followedIds.length;
+          followingCount = followedIds.length + followedAccountIds.length;
         }
 
         const paginatedActivities = combinedActivities.slice(0, input.limit);
