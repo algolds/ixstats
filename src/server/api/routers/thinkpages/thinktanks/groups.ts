@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
@@ -15,11 +16,30 @@ import {
   UNKNOWN_DISPLAY_NAME,
 } from "~/server/shared/display-names";
 import {
+  canReadGroupType,
   requireGroupManager,
   requireGroupMember,
   requireGroupReader,
   requirePersonaAccount,
 } from "./access";
+import {
+  getRealmBoardAccess,
+  groupPostTag,
+  isRealmBoard,
+  REALM_BOARD_TYPE,
+  realmBoardPersona,
+  requireRealmPersona,
+} from "./realm-board";
+
+/** Realm boards belong to their realm: their type, lifetime and membership are not group-managed. */
+function rejectRealmBoard(group: { type: string }, action: string): void {
+  if (isRealmBoard(group)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `A realm board's ${action} follows its realm and cannot be changed here`,
+    });
+  }
+}
 import { filterInvitableUserIds } from "./invite-privacy";
 import { ensurePersonalAccount } from "../personal-account";
 
@@ -129,6 +149,9 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           ];
         } else if (input?.type === "created" && targetUserId) {
           whereClause.createdBy = targetUserId;
+        } else {
+          // Realm boards are listed in the realm directory (/realms), not among ThinkTanks.
+          whereClause.type = { not: REALM_BOARD_TYPE };
         }
 
         const groups = await db.thinktankGroup.findMany({
@@ -206,7 +229,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           return {
             ...group,
             // Member lists of non-public groups are visible to their members only.
-            members: group.type === "public" || isMember ? group.members : [],
+            members: canReadGroupType(group.type) || isMember ? group.members : [],
             tags: group.tags ? JSON.parse(group.tags) : [],
             isMember,
             isJoined: isMember,
@@ -230,7 +253,8 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         name: z.string().min(1).max(100).optional(),
         description: z.string().max(500).optional(),
         avatar: z.string().optional().nullable(),
-        type: z.enum(["public", "private", "invite_only"]).optional(),
+        // "realm_board" is accepted only as the unchanged type of a realm board (its settings form resends it).
+        type: z.enum(["public", "private", "invite_only", REALM_BOARD_TYPE]).optional(),
         category: z.string().optional(),
         tags: z.array(z.string()).optional(),
       })
@@ -240,7 +264,11 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const actorId = ctx.auth.userId;
       const { groupId, ...updateData } = input;
 
-      await requireGroupManager(db, groupId, actorId);
+      const { group: current } = await requireGroupManager(db, groupId, actorId);
+      if (updateData.type && updateData.type !== current.type) {
+        rejectRealmBoard(current, "type");
+        rejectRealmBoard({ type: updateData.type }, "type");
+      }
 
       const group = await db.thinktankGroup.update({
         where: { id: groupId },
@@ -285,6 +313,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const { group } = await requireGroupManager(db, input.groupId, ctx.auth.userId);
+      rejectRealmBoard(group, "lifetime");
       await db.thinktankGroup.delete({
         where: { id: input.groupId },
       });
@@ -444,20 +473,29 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
       const targetUserId = ctx.auth?.userId || "";
 
-      const isMember = targetUserId
-        ? group.createdBy === targetUserId ||
-          group.members.some((m: any) => m.userId === targetUserId)
-        : false;
-
-      const userRole = targetUserId
-        ? group.createdBy === targetUserId
-          ? "owner"
-          : group.members.find((m: any) => m.userId === targetUserId)?.role ||
-            (isMember ? "member" : null)
+      // Realm boards: membership is nation ownership in the realm, not a member row.
+      const boardAccess = isRealmBoard(group)
+        ? await getRealmBoardAccess(db, group.id, targetUserId)
         : null;
 
+      const isMember = boardAccess
+        ? boardAccess.isMember
+        : targetUserId
+          ? group.createdBy === targetUserId ||
+            group.members.some((m: any) => m.userId === targetUserId)
+          : false;
+
+      const userRole = boardAccess
+        ? boardAccess.role
+        : targetUserId
+          ? group.createdBy === targetUserId
+            ? "owner"
+            : group.members.find((m: any) => m.userId === targetUserId)?.role ||
+              (isMember ? "member" : null)
+          : null;
+
       // Members and documents of non-public groups are for members only (SL-2).
-      const canRead = group.type === "public" || isMember;
+      const canRead = canReadGroupType(group.type) || isMember;
 
       return {
         ...group,
@@ -470,6 +508,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         tags: parsedTags,
         isMember,
         userRole,
+        realmId: boardAccess?.realmId ?? null,
       };
     }),
 
@@ -608,12 +647,23 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const currentUserId = auth.userId;
 
       const { group } = await requireGroupMember(db, input.groupId, currentUserId);
+      const board = isRealmBoard(group)
+        ? await getRealmBoardAccess(db, group.id, currentUserId)
+        : null;
 
       let targetAccountId = input.accountId;
 
       // A persona account must belong to the caller, and the group must allow persona posting.
       if (targetAccountId) {
         await requirePersonaAccount(db, group, targetAccountId, currentUserId);
+        // On a realm board the persona speaks for one of the realm's nations.
+        if (board?.realmId) await requireRealmPersona(db, targetAccountId, board.realmId);
+      }
+
+      // On a realm board, "post as yourself" uses the caller's persona of a nation in the realm,
+      // creating a citizen persona in their first nation there when they have none.
+      if (!targetAccountId && board?.realmId && board.ownedCountryIds.length > 0) {
+        targetAccountId = await realmBoardPersona(db, currentUserId, board.ownedCountryIds);
       }
 
       // No persona given: post as yourself, through the caller's personal persona (one per user,
@@ -623,7 +673,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         targetAccountId = personal.id;
       }
 
-      const groupTag = `group:${input.groupId}`;
+      const groupTag = groupPostTag(input.groupId);
       const allTags = input.hashtags ? [...new Set([...input.hashtags, groupTag])] : [groupTag];
 
       const post = await db.thinkpagesPost.create({
@@ -632,7 +682,8 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           content: input.content,
           hashtags: JSON.stringify(allTags),
           visibility: "thinktank",
-          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
+          // Realm-board posts also show in the realm feed, which orders by real time (as main-feed posts are).
+          ixTimeTimestamp: board ? new Date() : new Date(IxTime.getCurrentIxTime()),
           mediaAttachments: input.mediaUrls
             ? {
                 create: input.mediaUrls.map((url) => ({
@@ -656,6 +707,38 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       return post;
     }),
 
+  /**
+   * Remove a post from a group's feed (moderation). Group owners and admins may do this; on a realm board
+   * that is the realm's moderators. The post leaves the group feed and is hidden everywhere else.
+   */
+  removeGroupPost: protectedProcedure
+    .input(z.object({ groupId: z.string(), postId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      await requireGroupManager(db, input.groupId, ctx.auth.userId);
+
+      const tag = groupPostTag(input.groupId);
+      const post = await db.thinkpagesPost.findFirst({
+        where: { id: input.postId, hashtags: { contains: `"${tag}"` } },
+        select: { id: true, hashtags: true },
+      });
+      if (!post) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found in this group" });
+      }
+
+      let tags: string[] = [];
+      try {
+        tags = JSON.parse(post.hashtags ?? "[]") as string[];
+      } catch {
+        tags = [];
+      }
+      await db.thinkpagesPost.update({
+        where: { id: post.id },
+        data: { visibility: "removed", hashtags: JSON.stringify(tags.filter((t) => t !== tag)) },
+      });
+      return { success: true, postId: post.id };
+    }),
+
   // Invite users to a ThinkTank group
   inviteToThinktank: protectedProcedure
     .input(
@@ -670,6 +753,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
       // Only the owner or a group admin can invite (the invite form is in group settings).
       const { group } = await requireGroupManager(db, input.groupId, invitedBy);
+      rejectRealmBoard(group, "membership");
       const requestedIds = [...new Set(input.userIds.map((id) => id.trim()))].filter(
         (id) => id && id !== invitedBy
       );

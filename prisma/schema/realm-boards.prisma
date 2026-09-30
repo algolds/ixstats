@@ -1,0 +1,13 @@
+// IxStates — Realm boards (the NationStates regional message board)
+
+/// A realm's board: a ThinktankGroup of type "realm_board", created the first time someone opens it
+/// (`realms.getBoard`). Plain id columns, no relations, so the shared Realm and ThinktankGroup models
+/// need no back-relation fields.
+model RealmBoard {
+  id        String   @id @default(cuid())
+  realmId   String   @unique // Realm.id — one board per realm
+  groupId   String   @unique // ThinktankGroup.id (type "realm_board")
+  createdAt DateTime @default(now())
+
+  @@map("realm_boards")
+}

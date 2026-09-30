@@ -24,6 +24,7 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { globalCache } from "~/lib/cache";
+import { listRealmDirectory, openRealmBoard } from "./places";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
 async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): Promise<void> {
@@ -201,4 +202,12 @@ export const realmsRouter = createTRPCRouter({
         data: { ...data, settings: withMaxNationsPerUser(realm.settings, maxNationsPerUser) },
       });
     }),
+
+  /** The realm directory (/realms): open realms, nation counts, board activity, the viewer's holdings. */
+  directory: publicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),
+
+  /** Open a realm's board (created on first open) and sync the caller's membership from their nations. */
+  getBoard: publicProcedure
+    .input(z.object({ slug: z.string().min(1).max(100) }))
+    .query(({ ctx, input }) => openRealmBoard(ctx.db, input.slug, ctx.auth?.userId ?? null)),
 });

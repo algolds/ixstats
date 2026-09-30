@@ -4,11 +4,21 @@
  * The acting user is always `ctx.auth.userId`. A member is anyone with an active ThinktankMember
  * row (or the group's creator). Managers are the owner and group admins (`role` "owner"/"admin").
  * Non-public groups (`private`, `invite_only`) are readable by members only.
+ * Realm boards (`realm_board`) follow nation ownership instead of member rows: see ./realm-board.ts.
  */
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
+import {
+  getRealmBoardAccess,
+  isRealmBoard,
+  REALM_BOARD_PUBLIC_READ,
+  REALM_BOARD_TYPE,
+} from "./realm-board";
 
-type AccessDb = Pick<PrismaClient, "thinktankGroup" | "thinktankMember">;
+type AccessDb = Pick<
+  PrismaClient,
+  "thinktankGroup" | "thinktankMember" | "realmBoard" | "realm" | "user" | "country"
+>;
 type AccountDb = Pick<PrismaClient, "thinkpagesAccount">;
 
 export const GROUP_MANAGER_ROLES = ["owner", "admin"] as const;
@@ -33,6 +43,10 @@ export async function getGroupAccess<G extends GroupLike>(
   group: G,
   userId: string | null | undefined
 ): Promise<GroupAccess<G>> {
+  if (isRealmBoard(group)) {
+    const { isMember, isManager, role } = await getRealmBoardAccess(db, group.id, userId);
+    return { group, isMember, isManager, role };
+  }
   if (!userId) return { group, isMember: false, isManager: false, role: null };
 
   const member = await db.thinktankMember.findUnique({
@@ -51,9 +65,14 @@ export async function getGroupAccess<G extends GroupLike>(
   };
 }
 
-/** Public groups are readable by anyone; other groups by their members only. */
+/** Public groups (and realm boards) are readable by anyone; other groups by their members only. */
 export function canReadGroup(access: GroupAccess<GroupLike>): boolean {
-  return access.group.type === "public" || access.isMember;
+  return canReadGroupType(access.group.type) || access.isMember;
+}
+
+/** Whether a group of this type is readable by non-members. */
+export function canReadGroupType(type: string): boolean {
+  return type === "public" || (type === REALM_BOARD_TYPE && REALM_BOARD_PUBLIC_READ);
 }
 
 async function loadActiveGroup(db: AccessDb, groupId: string) {

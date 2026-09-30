@@ -74,6 +74,12 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
           <h2 className="text-foreground text-sm font-bold">Nations · {realm.countries.length}</h2>
           <div className="flex items-center gap-3">
             <Link
+              href={createUrl(`/r/${encodeURIComponent(realm.slug)}/board`)}
+              className="text-muted-foreground hover:text-foreground text-xs font-medium"
+            >
+              Realm board
+            </Link>
+            <Link
               href={createUrl(`/maps?realm=${encodeURIComponent(realm.slug)}`)}
               className="text-muted-foreground hover:text-foreground text-xs font-medium"
             >

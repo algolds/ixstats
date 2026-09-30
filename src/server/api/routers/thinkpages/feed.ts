@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 // Import the wiki search service
 import { globalCache } from "~/lib/cache";
 import { resolveReactionCounts } from "./post-utils";
+import { realmFeedWhere } from "./realm-feed";
 
 interface PostDateFields {
   createdAt?: string | Date | null;
@@ -112,6 +113,7 @@ export function feedOrderBy(
 
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
+  realmId: z.string().max(100).optional(), // Feed filtered by realm (its nations' posts + its board); omitted = all realms
   hashtag: z.string().optional(),
   filter: z.enum(["recent", "trending", "hot"]).default("recent"),
   limit: z.number().min(1).max(50).default(20),
@@ -149,7 +151,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
     try {
-      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
+      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.realmId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
 
       const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
       if (cached) {
@@ -170,6 +172,12 @@ export const thinkpagesFeedRouter = createTRPCRouter({
         whereClause.account = {
           countryId: (input as any).countryId,
         };
+      }
+
+      if (input.realmId) {
+        // Realm board posts are "thinktank" posts, so the realm clause carries its own visibility.
+        delete whereClause.visibility;
+        whereClause.AND = [await realmFeedWhere(db, input.realmId)];
       }
 
       if (input.filter === "trending") {
