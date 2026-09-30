@@ -28,6 +28,7 @@ import { PostActions } from "../primitives/PostActions";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { LiveDataCard } from "../LiveDataCard";
+import { PersonaAuthorCard } from "../PersonaAuthorCard";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
 
@@ -129,12 +130,14 @@ export function HeroPostView({
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                onClick={() => onAccountClick?.(post.account.id)}
-                className="text-base leading-snug font-bold text-slate-100 hover:underline"
-              >
-                {post.account.displayName}
-              </button>
+              <PersonaAuthorCard username={post.account.username ?? ""}>
+                <button
+                  onClick={() => onAccountClick?.(post.account.id)}
+                  className="text-base leading-snug font-bold text-slate-100 hover:underline"
+                >
+                  {post.account.displayName}
+                </button>
+              </PersonaAuthorCard>
               {post.account.verified && (
                 <span
                   className="inline-flex h-4 w-4 items-center justify-center text-sm"

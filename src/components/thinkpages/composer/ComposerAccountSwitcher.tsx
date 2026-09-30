@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { NavArrowDown as ChevronDown, Plus } from "iconoir-react";
+import { NavArrowDown as ChevronDown, Plus, User as UserIcon } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
@@ -19,6 +19,9 @@ export interface ComposerAccountSwitcherProps {
   onCreateAccount?: () => void;
   isOwner: boolean;
   getAccountAvatar: (acc: any) => string;
+  /** Offered when the user has no personal persona yet: creates it and switches to it. */
+  onPostAsYourself?: () => void;
+  isPostAsYourselfPending?: boolean;
 }
 
 export function ComposerAccountSwitcher({
@@ -31,6 +34,8 @@ export function ComposerAccountSwitcher({
   onCreateAccount,
   isOwner,
   getAccountAvatar,
+  onPostAsYourself,
+  isPostAsYourselfPending = false,
 }: ComposerAccountSwitcherProps) {
   return (
     <div className="relative flex shrink-0 flex-col items-center">
@@ -98,6 +103,28 @@ export function ComposerAccountSwitcher({
             </div>
 
             <div className="thin-scrollbar grid max-h-52 gap-1 overflow-y-auto pr-0.5">
+              {onPostAsYourself && (
+                <button
+                  onClick={() => {
+                    onPostAsYourself();
+                    setShowAccountManager(false);
+                  }}
+                  disabled={isPostAsYourselfPending}
+                  className="text-foreground dark:hover:bg-secondary/70 flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-dashed border-black/10 p-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-black/5 active:scale-[0.98] disabled:opacity-60 dark:border-white/15"
+                >
+                  <div className="bg-muted text-muted-foreground flex h-7 w-7 items-center justify-center rounded-full">
+                    <UserIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-foreground truncate text-xs leading-tight font-bold tracking-tight">
+                      Post as yourself
+                    </div>
+                    <div className="text-muted-foreground mt-0.5 truncate text-xs font-medium">
+                      Your own name, no nation attached
+                    </div>
+                  </div>
+                </button>
+              )}
               {accounts.map((acc) => (
                 <button
                   key={acc.id}
@@ -130,7 +157,7 @@ export function ComposerAccountSwitcher({
                     variant="outline"
                     className="dark:border-border text-muted-foreground h-4 border-slate-200 px-1.5 py-0 text-xs font-bold tracking-wider uppercase"
                   >
-                    {acc.accountType}
+                    {acc.accountType === "personal" ? "you" : acc.accountType}
                   </Badge>
                 </button>
               ))}
