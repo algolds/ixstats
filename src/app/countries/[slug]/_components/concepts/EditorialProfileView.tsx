@@ -207,6 +207,7 @@ export function EditorialProfileView({ country, slug }: EditorialProfileViewProp
             {/* Global Position Rankings */}
             <GlobalPositionRankings
               countryName={country.name}
+              countryId={country.id}
               onOpenCompare={() => setIsCompareOpen(true)}
             />
 

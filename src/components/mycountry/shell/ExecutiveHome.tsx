@@ -14,6 +14,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
+import { WorldCensusCard } from "./WorldCensusCard";
 import { TerritoryMapWidget } from "./TerritoryMapWidget";
 import {
   ExecutiveActionCards,
@@ -137,6 +138,9 @@ export function ExecutiveHomeComponent({
         <aside className="space-y-5">
           {/* 1. National Standing & Vitality Rings */}
           <StandingBands countryId={countryId} />
+
+          {/* World Census: realm rankings across the national stats */}
+          <WorldCensusCard countryId={countryId} />
 
           {/* 2. Executive CivCap Throughput & Trigger */}
           {canCommit ? (
