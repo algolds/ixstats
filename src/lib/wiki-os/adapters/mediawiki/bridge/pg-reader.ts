@@ -25,7 +25,11 @@ export * from "./pg-site";
 // ---------------------------------------------------------------------------
 
 export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | null> {
-  const native = await ArticleRepository.getArticleBySlug(title, "ixwiki");
+  const native = await ArticleRepository.getArticleBySlug(title, "ixwiki", {
+    includeArchived: true,
+  });
+  // A deleted page is gone: the live MediaWiki copy below is not a substitute.
+  if (native?.status === "ARCHIVED") return null;
   if (native && native.wikitext) {
     return {
       title: native.title,
@@ -161,8 +165,10 @@ export async function ixwikiGetNamespacedWikitext(
           { slug: toArticleSlug(title) },
         ],
       },
-      select: { id: true, title: true, wikitext: true, namespace: true },
+      select: { id: true, title: true, wikitext: true, namespace: true, status: true },
     });
+    // A deleted page is gone: the live MediaWiki copy below is not a substitute.
+    if (art?.status === "ARCHIVED") return null;
     if (art && art.wikitext) {
       return {
         title: art.title,

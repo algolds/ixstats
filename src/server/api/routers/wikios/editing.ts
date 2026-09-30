@@ -51,7 +51,7 @@ async function assertCanEditArticle(
   title: string,
   realm = "ixwiki"
 ): Promise<void> {
-  const existing = await ArticleRepository.findBySlug(title, realm);
+  const existing = await ArticleRepository.findBySlug(title, realm, { includeArchived: true });
   const archived = existing?.status === "ARCHIVED";
   await authorizeAction(ctx, existing && !archived ? "edit" : "create", title, realm);
   if (archived) throw deletedPage();
@@ -243,7 +243,8 @@ export const wikiosEditingRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
       await authorizeAction(ctx, "rollback", title);
-      if ((await ArticleRepository.findBySlug(title))?.status === "ARCHIVED") throw deletedPage();
+      const current = await ArticleRepository.findBySlug(title, "ixwiki", { includeArchived: true });
+      if (current?.status === "ARCHIVED") throw deletedPage();
 
       // Read-through: serve from shadow history with MySQL fallback
       const history = await getArticleHistoryShadow(title, 50);

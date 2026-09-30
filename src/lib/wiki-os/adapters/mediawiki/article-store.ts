@@ -7,7 +7,7 @@
 
 import { db } from "~/server/db";
 import { Cache } from "~/lib/cache/cache";
-import { ArticleRepository } from "../../core/article-repository";
+import { ArticleRepository, type FindArticleOptions } from "../../core/article-repository";
 import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
 import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSource } from "./bridge";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
@@ -39,10 +39,13 @@ export interface HistoryRevision {
  */
 export async function getArticleWikitextShadow(
   title: string,
-  source: WikiSource = "ixwiki"
+  source: WikiSource = "ixwiki",
+  { includeArchived = false }: FindArticleOptions = {}
 ): Promise<ShadowResult | null> {
   // 1. Try PostgreSQL Authoritative Repository first (<2ms)
-  const article = await ArticleRepository.findBySlug(title, source);
+  const article = await ArticleRepository.findBySlug(title, source, { includeArchived: true });
+  // A deleted page is gone: MediaWiki's own copy of it (step 2) is not a substitute.
+  if (article?.status === "ARCHIVED" && !includeArchived) return null;
   if (article && article.wikitext) {
     return {
       wikitext: article.wikitext,

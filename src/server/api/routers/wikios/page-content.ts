@@ -173,9 +173,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
       const { title: resolvedTitle } = await resolveRedirect(rawTitle);
 
       // Fast-path: Check PostgreSQL Native Article Repository (<2ms)
-      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki").catch(
-        () => null
-      );
+      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki", {
+        includeArchived: true,
+      }).catch(() => null);
       // A deleted page is "not found" unless the reader may see deleted pages: checked before every fallback below.
       await assertPageVisible(ctx, nativeArticle, input.title);
       if (nativeArticle && (nativeArticle.contentHtml || nativeArticle.wikitext)) {
@@ -426,7 +426,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       await assertTitleVisible(ctx, input.title);
       // Read-through the Postgres shadow store (resilient to MediaWiki downtime).
-      const result = await getArticleWikitextShadow(input.title, "ixwiki");
+      const result = await getArticleWikitextShadow(input.title, "ixwiki", {
+        includeArchived: true, // visibility was asserted above
+      });
       return {
         wikitext: result?.wikitext ?? "",
         revid: result?.revid ?? null,
@@ -443,7 +445,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
       const { title: resolvedTitle } = await resolveRedirect(input.title);
       // A deleted page does not exist for a reader who may not see it.
       if (!(await canSeeTitle(ctx, resolvedTitle))) return { exists: false, resolvedTitle };
-      const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
+      const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki", {
+        includeArchived: true, // canSeeTitle above
+      });
       return { exists: !!article, resolvedTitle };
     }),
 

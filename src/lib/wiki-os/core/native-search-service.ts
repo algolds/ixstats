@@ -259,6 +259,7 @@ export async function getArticleSummaryFromShadow(
     const article = await db.wikiArticle.findFirst({
       where: {
         source,
+        status: "PUBLISHED",
         OR: [
           { slug },
           { title: { equals: cleanTitle, mode: "insensitive" } },

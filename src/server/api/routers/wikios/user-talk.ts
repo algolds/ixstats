@@ -183,7 +183,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         .findMany({
           where: {
             author: { equals: cleanUser, mode: "insensitive" },
-            article: { namespace: ns },
+            article: { namespace: ns, status: "PUBLISHED" },
           },
           include: {
             article: { select: { title: true } },

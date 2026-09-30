@@ -343,23 +343,34 @@ async function importInto(
   };
 }
 
+export interface FindArticleOptions {
+  /** Return a deleted (archived) page too. Default false: to a reader it does not exist. */
+  includeArchived?: boolean;
+}
+
 export class ArticleRepository {
   static async getArticleBySlug(
     slug: string,
-    source = "ixwiki"
+    source = "ixwiki",
+    options: FindArticleOptions = {}
   ): Promise<WikiArticleEntity | null> {
-    return this.findBySlug(slug, source);
+    return this.findBySlug(slug, source, options);
   }
 
   /**
    * Find an authoritative article by slug or title (<2ms query). The title is canonicalized first,
    * so `foo_bar` reads the row a save of "Foo bar" wrote.
    */
-  static async findBySlug(slug: string, source = "ixwiki"): Promise<WikiArticleEntity | null> {
+  static async findBySlug(
+    slug: string,
+    source = "ixwiki",
+    { includeArchived = false }: FindArticleOptions = {}
+  ): Promise<WikiArticleEntity | null> {
     try {
       const article = await this.lookupArticle(slug, source);
 
       if (!article || (!article.wikitext && !article.contentHtml)) return null;
+      if (article.status === "ARCHIVED" && !includeArchived) return null;
 
       return {
         id: toArticleId(article.id),

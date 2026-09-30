@@ -1,7 +1,7 @@
 /**
  * A tiny in-memory stand-in for the Prisma client's WikiOS tables, for tests that run the real services
  * (PageManagementService, RightsAdminService, the rights engine) end to end. It understands the subset of
- * Prisma the WikiOS code uses: equality, `in`, `not`, `gt`, `OR`, compound unique keys (`source_title`),
+ * Prisma the WikiOS code uses: equality, `in`, `not`, `gt`, `contains`, `OR`, compound unique keys (`source_title`),
  * `orderBy`, `take`, `cursor`/`skip`; `select` is ignored (full rows come back). Reads return copies, as a
  * real client does: a row fetched before an update still shows the old values afterwards.
  */
@@ -21,6 +21,13 @@ function matches(row: Row, where: Where): boolean {
     if (key === "AND") return (condition as Where[]).every((clause) => matches(row, clause));
     const value = row[key];
     if (!isPlainObject(condition)) return value === condition;
+    if ("contains" in condition) {
+      const text = String(value ?? "");
+      const needle = String(condition.contains);
+      return condition.mode === "insensitive"
+        ? text.toLowerCase().includes(needle.toLowerCase())
+        : text.includes(needle);
+    }
     if (value === undefined && !("in" in condition || "not" in condition || "gt" in condition)) {
       return matches(row, condition); // a compound unique key: { source_title: { source, title } }
     }
