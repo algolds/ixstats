@@ -119,12 +119,41 @@ const ALL_ROWS = 2_147_483_647;
 type ImportClient = Prisma.TransactionClient;
 type ExistingArticle = { id: string; mwPageId: number | null; protectionLevel: string };
 
-/** Stored rows of the page, plus any row anywhere that carries one of the dump's rev ids. */
+/**
+ * The page's rows that have text but no hash (written before `sha1` existed), hashed from their
+ * text, by row id. Only rows that can be a dump revision's twin are read: WikiOS's own edits (no
+ * MediaWiki rev id), or all of them when the dump has revisions without an id.
+ */
+async function hashUnhashedRows(
+  client: ImportClient,
+  input: ImportPageInput,
+  articleId: string | null
+): Promise<Map<string, string>> {
+  if (!articleId) return new Map();
+  const dumpHasIdless = input.revisions.some((revision) => revision.mwRevId === null);
+  const unhashed = await client.wikiRevision.findMany({
+    where: {
+      articleId,
+      sha1: null,
+      textDeleted: false,
+      wikitext: { not: "" },
+      ...(dumpHasIdless ? {} : { mwRevId: null }),
+    },
+    select: { id: true, wikitext: true },
+    take: ALL_ROWS,
+  });
+  return new Map(unhashed.map((row) => [row.id, mwSha1Base36(row.wikitext)]));
+}
+
+/**
+ * Stored rows of the page, plus any row anywhere that carries one of the dump's rev ids, and the
+ * hashes computed for rows that had none (`hashed`: to be written back by a real import).
+ */
 async function loadExistingRows(
   client: ImportClient,
   input: ImportPageInput,
   articleId: string | null
-): Promise<ExistingRevisionRow[]> {
+): Promise<{ rows: ExistingRevisionRow[]; hashed: Map<string, string> }> {
   const select = { id: true, articleId: true, mwRevId: true, sha1: true, createdAt: true } as const;
   const revIds = input.revisions.flatMap((r) => (r.mwRevId === null ? [] : [r.mwRevId]));
   const rows = articleId
@@ -150,7 +179,15 @@ async function loadExistingRows(
       })
     : [];
   const blankIds = new Set(blank.map((row) => row.id));
-  return rows.map((row) => ({ ...row, isPlaceholder: blankIds.has(row.id) }));
+  const hashed = await hashUnhashedRows(client, input, articleId);
+  return {
+    rows: rows.map((row) => ({
+      ...row,
+      sha1: row.sha1 ?? hashed.get(row.id) ?? null,
+      isPlaceholder: blankIds.has(row.id),
+    })),
+    hashed,
+  };
 }
 
 /** The article columns that change when the dump's head revision becomes the page's head. */
@@ -247,10 +284,14 @@ async function writeImport(
   input: ImportPageInput,
   article: ExistingArticle | null,
   plan: RevisionPlan,
-  head: ImportedHead | null
+  head: ImportedHead | null,
+  hashed: Map<string, string>
 ): Promise<string> {
   const articleId = await writeArticle(client, input, article, head);
   await insertRevisions(client, articleId, input.source, plan.inserts);
+  for (const [rowId, sha1] of hashed) {
+    await client.wikiRevision.update({ where: { id: rowId }, data: { sha1 } });
+  }
   for (const { rowId, revision } of plan.fills) {
     await client.wikiRevision.update({
       where: { id: rowId },
@@ -272,7 +313,7 @@ async function importInto(
     where: { source_title: { source: input.source, title: input.title } },
     select: { id: true, mwPageId: true, protectionLevel: true },
   });
-  const existing = await loadExistingRows(client, input, article?.id ?? null);
+  const { rows: existing, hashed } = await loadExistingRows(client, input, article?.id ?? null);
   const plan = planRevisionImport(article?.id ?? null, existing, input.revisions);
 
   // The dump's head replaces the page's head only when it is newer than every revision stored.
@@ -287,7 +328,7 @@ async function importInto(
 
   const articleId = input.dryRun
     ? (article?.id ?? null)
-    : await writeImport(client, input, article, plan, head);
+    : await writeImport(client, input, article, plan, head, hashed);
   return {
     articleId,
     head,
@@ -417,7 +458,8 @@ export class ArticleRepository {
       (cleanWikitextExcerpt(wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
         0,
         MAX_EXCERPT_LENGTH
-      ) || null);
+      ) ||
+        null);
     const redirect = parseRedirect(wikitext);
     const redirectTargetSlug = redirect?.title ?? null;
     const redirectTargetFragment = redirect?.fragment ?? null;

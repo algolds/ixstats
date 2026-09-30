@@ -94,6 +94,7 @@ describe("POST /api/wiki/import", () => {
       placeholdersFilled: 0,
       uploadsSkipped: 1,
       errors: [],
+      warnings: [],
       errorCount: 0,
     });
     expect(store.articles).toHaveLength(5);

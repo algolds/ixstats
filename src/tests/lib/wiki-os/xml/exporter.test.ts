@@ -521,6 +521,47 @@ describe("the loop: import, export, import again", () => {
     ]);
   });
 
+  it("a section redirect (Duncala#History of Duncala) survives export and import with its fragment", async () => {
+    seedPage(
+      {
+        title: "Duncala city",
+        wikitext: "#REDIRECT [[Duncala#History of Duncala]]",
+        redirectTargetSlug: "Duncala",
+        redirectTargetFragment: "History of Duncala",
+        mwPageId: 9,
+      },
+      [{ mwRevId: 1, wikitext: "#REDIRECT [[Duncala#History of Duncala]]" }]
+    );
+    seedPage(
+      { title: "Plain redirect", wikitext: "#REDIRECT [[Duncala]]", redirectTargetSlug: "Duncala" },
+      [{ mwRevId: 2, wikitext: "#REDIRECT [[Duncala]]" }]
+    );
+
+    for (const history of [true, false]) {
+      const xml = await exportXml({ source: "ixwiki", history });
+      expect(xml).toContain('<redirect title="Duncala#History of Duncala" />');
+      expect(xml).toContain('<redirect title="Duncala" />');
+      const saved = store.articles.map((a) => ({ ...a }));
+      const savedRevisions = store.revisions.map((r) => ({ ...r }));
+
+      resetStore();
+      await importExport(readExport(chunks(xml)));
+
+      expect(store.articles.find((a) => a.title === "Duncala city")).toMatchObject({
+        redirectTargetSlug: "Duncala",
+        redirectTargetFragment: "History of Duncala",
+      });
+      expect(store.articles.find((a) => a.title === "Plain redirect")).toMatchObject({
+        redirectTargetSlug: "Duncala",
+        redirectTargetFragment: null,
+      });
+
+      resetStore();
+      store.articles.push(...saved);
+      store.revisions.push(...savedRevisions);
+    }
+  });
+
   it("importing the export into the database it came from changes nothing", async () => {
     await importExport(readExport(chunks(FIXTURE)));
     const before = tables();

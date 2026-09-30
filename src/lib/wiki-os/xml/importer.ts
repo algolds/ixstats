@@ -18,9 +18,11 @@ import {
   type ImportedHead,
   type ImportPageInput,
 } from "../core/article-repository";
+import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace } from "../core/title";
 import { cleanExcerpt } from "../transformers/wikitext-parser";
 import type { ImportEvent, ImportPage } from "./import-reader";
+import { checkInt4, modelWarning, PageRejected, parseMwTimestamp } from "./import-validation";
 import type { ImportedRevision } from "./revision-plan";
 import { mwSha1Base36 } from "./sha1";
 import type { Contributor, XmlRevision } from "./types";
@@ -36,6 +38,8 @@ export interface ImportSummary {
   /** `<upload>` blocks skipped: files are imported elsewhere. */
   uploadsSkipped: number;
   errors: Array<{ title: string; message: string }>;
+  /** Things that do not stop a page from importing but are worth a look (hash or model mismatches). */
+  warnings: Array<{ title: string; message: string }>;
 }
 
 export interface ImportOptions {
@@ -61,9 +65,6 @@ interface ImportContext {
   authors: Map<string, string | null>;
 }
 
-/** A page the dump describes wrongly (as opposed to one the database failed to take). */
-class PageRejected extends Error {}
-
 /** Prisma opens its messages with "Invalid `client.model.op()` invocation in <file>" and a source frame. */
 const PRISMA_INVOCATION = /^\s*Invalid `[^`]+` invocation/;
 
@@ -87,6 +88,7 @@ function emptySummary(): ImportSummary {
     placeholdersFilled: 0,
     uploadsSkipped: 0,
     errors: [],
+    warnings: [],
   };
 }
 
@@ -107,6 +109,8 @@ function protectionFromRestrictions(
  * title's own prefix.
  */
 function resolveIdentity(page: ImportPage, source: string) {
+  checkInt4("page id", page.id);
+  checkInt4("namespace", page.ns);
   const canon = page.title.includes("#") ? null : canonicalizeTitle(page.title, { source });
   if (!canon) throw new PageRejected(`Invalid title ${JSON.stringify(page.title)}`);
 
@@ -150,30 +154,46 @@ function authorOf(
   return { author: contributor.username, authorId: authors.get(contributor.username) ?? null };
 }
 
-/** Milliseconds since the epoch of a revision's timestamp; throws on anything that is not a date. */
+/** Milliseconds since the epoch of a revision's timestamp; throws on anything but a dump timestamp. */
 function timestampOf(revision: XmlRevision): number {
-  const time = Date.parse(revision.timestamp);
-  if (Number.isNaN(time)) {
+  const time = parseMwTimestamp(revision.timestamp);
+  if (time === null) {
     throw new PageRejected(
-      `Revision ${revision.id ?? "(no id)"} has an invalid timestamp ${JSON.stringify(revision.timestamp)}`
+      `Revision ${revision.id ?? "(no id)"} has an invalid timestamp ${JSON.stringify(revision.timestamp)} ` +
+        "(expected YYYY-MM-DDTHH:MM:SSZ)"
     );
   }
   return time;
 }
 
-/** The page's revisions as stored rows, oldest first, sized and hashed. */
+/** Throws unless the revision's id and declared size fit their columns. */
+function checkRevisionNumbers(revision: XmlRevision): void {
+  checkInt4("revision id", revision.id);
+  checkInt4(`size of revision ${revision.id ?? "(no id)"}`, revision.bytes ?? null);
+}
+
+/**
+ * The page's revisions as stored rows, oldest first, sized and hashed. The hash is always computed
+ * from the text; `hashMismatches` counts the revisions whose dump hash says otherwise.
+ */
 function toImportedRevisions(
   page: ImportPage,
   authors: Map<string, string | null>
-): ImportedRevision[] {
+): { revisions: ImportedRevision[]; hashMismatches: number } {
+  for (const revision of page.revisions) checkRevisionNumbers(revision);
   const ordered = page.revisions
     .map((revision) => ({ revision, time: timestampOf(revision) }))
     .sort((a, b) => a.time - b.time || (a.revision.id ?? 0) - (b.revision.id ?? 0));
 
   let previousSize = 0;
-  return ordered.map(({ revision, time }) => {
+  let hashMismatches = 0;
+  const revisions = ordered.map(({ revision, time }) => {
     const text = revision.text;
     const byteSize = text === null ? (revision.bytes ?? 0) : Buffer.byteLength(text, "utf8");
+    const computed = text === null ? null : mwSha1Base36(text);
+    if (computed !== null && revision.sha1 !== null && revision.sha1 !== computed) {
+      hashMismatches += 1;
+    }
     const imported: ImportedRevision = {
       mwRevId: revision.id,
       createdAt: new Date(time),
@@ -185,12 +205,28 @@ function toImportedRevisions(
       minor: revision.minor,
       byteSize,
       byteDelta: byteSize - previousSize,
-      sha1: revision.sha1 ?? (text === null ? null : mwSha1Base36(text)),
+      sha1: computed ?? revision.sha1 ?? null,
       wikitext: text,
     };
     previousSize = byteSize;
     return imported;
   });
+  return { revisions, hashMismatches };
+}
+
+/**
+ * Where the head revision redirects: its own wikitext decides (MediaWiki's rule, with the section),
+ * and the dump's `<redirect title>` is the fallback for text the rule does not recognise.
+ */
+function redirectOf(
+  page: ImportPage,
+  wikitext: string,
+  source: string
+): { title: string; fragment: string | null } | null {
+  const fromText = parseRedirect(wikitext);
+  if (fromText) return fromText;
+  const fromTag = page.redirectTitle ? canonicalizeTitle(page.redirectTitle, { source }) : null;
+  return fromTag ? { title: fromTag.title, fragment: fromTag.fragment } : null;
 }
 
 /** The article fields of the newest revision that has text, or null when none has. */
@@ -203,7 +239,7 @@ function headOf(
   if (!newest || newest.wikitext === null) return null;
 
   const words = newest.wikitext.split(/\s+/).filter(Boolean).length;
-  const redirect = page.redirectTitle ? canonicalizeTitle(page.redirectTitle, { source }) : null;
+  const redirect = redirectOf(page, newest.wikitext, source);
   return {
     createdAt: newest.createdAt,
     mwRevId: newest.mwRevId,
@@ -216,13 +252,24 @@ function headOf(
   };
 }
 
-async function buildPageInput(page: ImportPage, ctx: ImportContext): Promise<ImportPageInput> {
+/** The store-ready page, and what about it is worth a warning. */
+async function buildPageInput(
+  page: ImportPage,
+  ctx: ImportContext
+): Promise<{ input: ImportPageInput; warnings: string[] }> {
   const { canon, namespace } = resolveIdentity(page, ctx.source);
   if (page.revisions.length === 0) throw new PageRejected("The page has no revisions");
 
   await linkAuthors(page, ctx);
-  const revisions = toImportedRevisions(page, ctx.authors);
-  return {
+  const { revisions, hashMismatches } = toImportedRevisions(page, ctx.authors);
+  const warnings = [
+    modelWarning(canon.title, page.revisions),
+    hashMismatches > 0
+      ? `${hashMismatches} revision(s) have a sha1 that does not match their text (the recomputed hash is stored)`
+      : null,
+  ].filter((warning): warning is string => warning !== null);
+
+  const input: ImportPageInput = {
     source: ctx.source,
     title: canon.title,
     slug: canon.slug,
@@ -234,6 +281,7 @@ async function buildPageInput(page: ImportPage, ctx: ImportContext): Promise<Imp
     head: headOf(page, revisions, ctx.source),
     dryRun: ctx.dryRun,
   };
+  return { input, warnings };
 }
 
 /** How one page went: imported, rejected as malformed, or failed in the database. */
@@ -248,7 +296,9 @@ async function importOnePage(
   summary.pages += 1;
   summary.uploadsSkipped += page.uploads;
   try {
-    const result = await ArticleRepository.importPageRevisions(await buildPageInput(page, ctx));
+    const { input, warnings } = await buildPageInput(page, ctx);
+    const result = await ArticleRepository.importPageRevisions(input);
+    for (const message of warnings) summary.warnings.push({ title: page.title, message });
     if (result.created) summary.pagesCreated += 1;
     summary.revisionsImported += result.inserted;
     summary.revisionsSkipped += result.skipped + result.conflicts;

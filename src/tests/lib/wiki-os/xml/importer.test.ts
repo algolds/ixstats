@@ -134,6 +134,7 @@ describe("fresh import of the export-0.11 fixture", () => {
       placeholdersFilled: 0,
       uploadsSkipped: 1,
       errors: [],
+      warnings: [],
     });
     expect(store.articles.map((a) => a.title)).toEqual([
       "Kingdom of Testia",
@@ -283,6 +284,7 @@ describe("re-import", () => {
       placeholdersFilled: 0,
       uploadsSkipped: 1,
       errors: [],
+      warnings: [],
     });
     expect(snapshotStore()).toEqual(before);
     expect(store.writes).toBe(0);
@@ -481,6 +483,276 @@ describe("a page with a long history", () => {
 
     expect(summary).toMatchObject({ placeholdersFilled: 1500, revisionsImported: 0, errors: [] });
     expect(store.revisions.every((r) => r.wikitext !== "")).toBe(true);
+  });
+});
+
+describe("values a dump may not carry", () => {
+  const revXml = (fields: { id?: string; ts?: string; text?: string; extra?: string }) =>
+    `<revision><id>${fields.id ?? "1"}</id><timestamp>${fields.ts ?? "2026-01-01T00:00:00Z"}</timestamp>` +
+    `${fields.extra ?? ""}<text${fields.text?.startsWith("<") ? "" : ""}>${fields.text ?? "x"}</text></revision>`;
+  const pageXml = (title: string, revisions: string, head = "<ns>0</ns><id>1</id>") =>
+    `<page><title>${title}</title>${head}${revisions}</page>`;
+  const dump = (...pages: string[]) => `<mediawiki>${pages.join("")}</mediawiki>`;
+  const good = pageXml("Good page", revXml({ id: "500" }), "<ns>0</ns><id>500</id>");
+
+  it.each([
+    "2026-01-02 03:04:05",
+    "2026-01-02T03:04:05.000Z",
+    "2026-01-02T03:04:05+00:00",
+    "2026-02-30T00:00:00Z",
+    "yesterday",
+    "",
+  ])("rejects the timestamp %j and imports the rest of the dump", async (ts) => {
+    const summary = await importXml(dump(pageXml("Bad", revXml({ ts })), good));
+
+    expect(summary.errors).toHaveLength(1);
+    expect(summary.errors[0]?.title).toBe("Bad");
+    expect(summary.errors[0]?.message).toMatch(/invalid timestamp .*expected YYYY-MM-DDTHH:MM:SSZ/);
+    expect(store.articles.map((a) => a.title)).toEqual(["Good page"]);
+  });
+
+  it("rejects a revision id that does not fit an integer column, with a readable message", async () => {
+    const summary = await importXml(
+      dump(
+        pageXml("Big", revXml({ id: "99999999999" })),
+        pageXml("Neg", revXml({ id: "-7" })),
+        good
+      )
+    );
+
+    expect(summary.errors.map((e) => e.message)).toEqual([
+      "The revision id must be a whole number from 0 to 2147483647, not 99999999999",
+      "The revision id must be a whole number from 0 to 2147483647, not -7",
+    ]);
+    expect(store.articles.map((a) => a.title)).toEqual(["Good page"]);
+  });
+
+  it("rejects a declared size, page id or namespace that is out of range", async () => {
+    const summary = await importXml(
+      dump(
+        pageXml(
+          "BadSize",
+          '<revision><id>2</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="-5" deleted="deleted" /></revision>'
+        ),
+        pageXml(
+          "HugeSize",
+          '<revision><id>3</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="3000000000" deleted="deleted" /></revision>'
+        ),
+        pageXml("BadPage", revXml({}), "<ns>0</ns><id>3000000000</id>"),
+        pageXml("BadNs", revXml({}), "<ns>-1</ns><id>4</id>"),
+        good
+      )
+    );
+
+    expect(summary.errors.map((e) => e.message)).toEqual([
+      "The size of revision 2 must be a whole number from 0 to 2147483647, not -5",
+      "The size of revision 3 must be a whole number from 0 to 2147483647, not 3000000000",
+      "The page id must be a whole number from 0 to 2147483647, not 3000000000",
+      "The namespace must be a whole number from 0 to 2147483647, not -1",
+    ]);
+    expect(store.articles.map((a) => a.title)).toEqual(["Good page"]);
+  });
+
+  it("accepts the largest values that fit", async () => {
+    const summary = await importXml(
+      dump(pageXml("Edge", revXml({ id: "2147483647" }), "<ns>0</ns><id>2147483647</id>"))
+    );
+
+    expect(summary.errors).toEqual([]);
+    expect(store.revisions[0]?.mwRevId).toBe(2147483647);
+  });
+});
+
+describe("hashes and content models", () => {
+  const withSha = (sha: string, text = "hello") =>
+    `<mediawiki><page><title>Foo</title><ns>0</ns><id>1</id><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp>` +
+    `<text xml:space="preserve">${text}</text><sha1>${sha}</sha1></revision></page></mediawiki>`;
+
+  it("stores the hash computed from the text and warns when the dump's hash disagrees", async () => {
+    const summary = await importXml(withSha("notthehashofhello"));
+
+    expect(store.revisions[0]?.sha1).toBe(mwSha1Base36("hello"));
+    expect(summary.errors).toEqual([]);
+    expect(summary.warnings).toEqual([
+      {
+        title: "Foo",
+        message:
+          "1 revision(s) have a sha1 that does not match their text (the recomputed hash is stored)",
+      },
+    ]);
+  });
+
+  it("stays quiet when the dump's hash is right, and needs none", async () => {
+    expect((await importXml(withSha(mwSha1Base36("hello")))).warnings).toEqual([]);
+    resetStore();
+    const noHash = `<mediawiki><page><title>Foo</title><ns>0</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>hello</text></revision></page></mediawiki>`;
+
+    const summary = await importXml(noHash);
+
+    expect(summary.warnings).toEqual([]);
+    expect(store.revisions[0]?.sha1).toBe(mwSha1Base36("hello"));
+  });
+
+  it("keeps the dump's hash for text that is not available", async () => {
+    const hidden = `<mediawiki><page><title>Foo</title><ns>0</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="5" sha1="kept" deleted="deleted" /></revision></page></mediawiki>`;
+
+    const summary = await importXml(hidden);
+
+    expect(summary.warnings).toEqual([]);
+    expect(store.revisions[0]).toMatchObject({ sha1: "kept", wikitext: "", textDeleted: true });
+  });
+
+  const withModel = (title: string, model: string, ns = 0) =>
+    `<mediawiki><page><title>${title}</title><ns>${ns}</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp>` +
+    `<model>${model}</model><text>x</text></revision></page></mediawiki>`;
+
+  it("warns, without failing, when a revision's model is not the one the title implies", async () => {
+    const summary = await importXml(withModel("Module:Foo", "wikitext", 828));
+
+    expect(summary.errors).toEqual([]);
+    expect(store.articles.map((a) => a.title)).toEqual(["Module:Foo"]);
+    expect(summary.warnings).toEqual([
+      {
+        title: "Module:Foo",
+        message:
+          'Content model "wikitext" differs from "Scribunto", the model MediaWiki\'s defaults give this title',
+      },
+    ]);
+  });
+
+  it("does not warn when the model matches", async () => {
+    expect((await importXml(withModel("Module:Foo", "Scribunto", 828))).warnings).toEqual([]);
+    resetStore();
+    expect((await importXml(withModel("MediaWiki:Common.css", "css", 8))).warnings).toEqual([]);
+  });
+});
+
+describe("a WikiOS revision without a hash", () => {
+  const TEXT = "Testia is a [[kingdom]].";
+  const seedNative = (overrides: Partial<RevisionRow> = {}) => {
+    const seeded = seedArticle();
+    return seedRevision(seeded.id, {
+      mwRevId: null,
+      wikitext: TEXT,
+      sha1: null,
+      byteSize: 24,
+      createdAt: new Date("2026-01-02T03:04:05.420Z"),
+      ...overrides,
+    });
+  };
+
+  it("is hashed from its text, matched to the dump's revision and stamped, not duplicated", async () => {
+    const native = seedNative();
+
+    const summary = await importFixture();
+
+    expect(native).toMatchObject({ mwRevId: 1001, sha1: mwSha1Base36(TEXT) });
+    expect(revisionsOf("Kingdom of Testia")).toHaveLength(3);
+    expect(summary.revisionsSkipped).toBe(1);
+    expect(summary.revisionsImported).toBe(6);
+  });
+
+  it("is only hashed in memory on a dry run, which still reports the match", async () => {
+    const native = seedNative();
+    store.writes = 0;
+
+    const summary = await importFixture({ dryRun: true });
+
+    expect(native).toMatchObject({ mwRevId: null, sha1: null });
+    expect(store.writes).toBe(0);
+    expect(summary.revisionsSkipped).toBe(1);
+    expect(summary.revisionsImported).toBe(6);
+  });
+
+  it("gets its hash written back even when nothing matches it", async () => {
+    const native = seedNative({
+      wikitext: "something else entirely",
+      createdAt: new Date("2025-05-05T00:00:00Z"),
+    });
+
+    const summary = await importFixture();
+
+    expect(native.sha1).toBe(mwSha1Base36("something else entirely"));
+    expect(native.mwRevId).toBeNull();
+    expect(summary.revisionsImported).toBe(7);
+  });
+
+  it("is not read when it cannot be a twin: rows with a MediaWiki id are matched by id, and deleted rows have no text to hash", async () => {
+    const seeded = seedArticle();
+    const synced = seedRevision(seeded.id, {
+      mwRevId: 1001,
+      wikitext: TEXT,
+      sha1: null,
+      createdAt: new Date("2026-01-02T03:04:05Z"),
+    });
+    const deleted = seedRevision(seeded.id, {
+      mwRevId: null,
+      wikitext: "",
+      textDeleted: true,
+      sha1: null,
+      byteSize: 0,
+    });
+
+    await importFixture();
+
+    expect(synced.sha1).toBeNull();
+    expect(deleted.sha1).toBeNull();
+  });
+});
+
+describe("redirects read from the head's wikitext", () => {
+  const redirectDump = (tag: string, text: string) =>
+    `<mediawiki><page><title>Duncala city</title><ns>0</ns><id>1</id>${tag}<revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text xml:space="preserve">${text}</text></revision></page></mediawiki>`;
+
+  it("takes the section from the wikitext when <redirect title> has none", async () => {
+    await importXml(
+      redirectDump('<redirect title="Duncala" />', "#REDIRECT [[Duncala#History of Duncala]]")
+    );
+
+    expect(article("Duncala city")).toMatchObject({
+      redirectTargetSlug: "Duncala",
+      redirectTargetFragment: "History of Duncala",
+    });
+  });
+
+  it("lets the wikitext win over a disagreeing tag", async () => {
+    await importXml(
+      redirectDump('<redirect title="Elsewhere#Other" />', "#REDIRECT [[duncala#Geography]]")
+    );
+
+    expect(article("Duncala city")).toMatchObject({
+      redirectTargetSlug: "Duncala",
+      redirectTargetFragment: "Geography",
+    });
+  });
+
+  it("derives the redirect from the wikitext when the dump has no <redirect> element", async () => {
+    await importXml(redirectDump("", "#REDIRECT [[Duncala]]"));
+
+    expect(article("Duncala city")).toMatchObject({
+      redirectTargetSlug: "Duncala",
+      redirectTargetFragment: null,
+    });
+  });
+
+  it("falls back to <redirect title>, fragment included, for text the redirect rule does not read", async () => {
+    await importXml(
+      redirectDump('<redirect title="duncala#Part one" />', "Moved: see the section.")
+    );
+
+    expect(article("Duncala city")).toMatchObject({
+      redirectTargetSlug: "Duncala",
+      redirectTargetFragment: "Part one",
+    });
+  });
+
+  it("stores no redirect for an ordinary page", async () => {
+    await importXml(redirectDump("", "Just an article."));
+
+    expect(article("Duncala city")).toMatchObject({
+      redirectTargetSlug: null,
+      redirectTargetFragment: null,
+    });
   });
 });
 
@@ -765,6 +1037,7 @@ describe("dry run", () => {
       placeholdersFilled: 0,
       uploadsSkipped: 1,
       errors: [],
+      warnings: [],
     });
     expect(store.writes).toBe(0);
     expect(store.articles).toHaveLength(0);
