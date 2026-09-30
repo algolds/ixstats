@@ -8,6 +8,7 @@ import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
 import { getValuationConfig, junkValue } from "~/lib/cards/valuation";
+import { vaultService, LedgerError } from "~/lib/vault/vault-service";
 import { LoreCategory } from "~/lib/cards/category-enums";
 
 /**
@@ -469,39 +470,26 @@ export const cardsInventoryRouter = createTRPCRouter({
             });
           }
 
-          const vault = await tx.myVault.findUnique({
-            where: { userId },
-          });
-
-          if (!vault) {
-            throw new Error("Vault not found. Please initialize your vault first.");
+          // Pay through the ledger (lifetime counters, XP, maintenance mode); a LedgerError
+          // rolls back the deletes above.
+          if (totalCredits <= 0) {
+            const vault = await tx.myVault.findUnique({ where: { userId } });
+            return { success: true, newBalance: vault?.credits ?? 0 };
           }
-
-          const updatedVault = await tx.myVault.update({
-            where: { id: vault.id },
-            data: {
-              credits: { increment: totalCredits },
-              lifetimeEarned: { increment: totalCredits },
-            },
-          });
-
-          await tx.vaultTransaction.create({
-            data: {
-              vaultId: vault.id,
-              credits: totalCredits,
-              balanceAfter: updatedVault.credits,
-              type: "EARN_CARDS",
-              source: `JUNK_CARDS`,
-              metadata: {
-                cardNames: ownerships.map((o) => o.cards.title),
-                ownershipIds: ownerships.map((o) => o.id),
-              },
+          const earned = await vaultService.earnCreditsTx(tx, {
+            userId,
+            amount: totalCredits,
+            type: "EARN_CARDS",
+            source: "JUNK_CARDS",
+            metadata: {
+              cardNames: ownerships.map((o) => o.cards.title),
+              ownershipIds: ownerships.map((o) => o.id),
             },
           });
 
           return {
             success: true,
-            newBalance: updatedVault.credits,
+            newBalance: earned.newBalance,
           };
         });
 
@@ -523,6 +511,9 @@ export const cardsInventoryRouter = createTRPCRouter({
         console.error("[CARDS_ROUTER] Error in junkCards:", error);
         if (error instanceof TRPCError) {
           throw error;
+        }
+        if (error instanceof LedgerError) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

@@ -4,6 +4,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { PackType, CardRarity } from "@prisma/client";
 import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
+import { spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { grantCardXp } from "./xp-utils";
 
 export interface PackOdds {
@@ -129,15 +130,7 @@ export async function createPack(
  */
 export async function purchasePack(db: PrismaClient, userId: string, packId: string) {
   return db.$transaction(async (tx) => {
-    const config = await getVaultConfig(tx as any);
-    if (config.isMaintenanceMode) {
-      throw new Error("Vault economy is currently in maintenance mode.");
-    }
-    if (!config.isPacksEnabled) {
-      throw new Error("Card pack purchases are currently disabled globally.");
-    }
-
-    // 1. Get pack details
+    // 1. Get pack details (maintenance / packs-disabled switches are enforced by the ledger)
     const pack = await tx.cardPack.findUnique({
       where: { id: packId },
     });
@@ -181,45 +174,20 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
       }
     }
 
-    // 3. Get user vault to check balance
-    const userVault = await tx.myVault.findUnique({
-      where: { userId },
-    });
-
-    if (!userVault) {
-      throw new Error("User vault not found");
-    }
-
-    if (userVault.credits < pack.priceCredits) {
-      throw new Error(
-        `Insufficient credits. Required: ${pack.priceCredits} IxC, Available: ${userVault.credits} IxC`
-      );
-    }
-
-    // 4. Deduct credits and create transaction record
-    await tx.myVault.update({
-      where: { userId },
-      data: {
-        credits: {
-          decrement: pack.priceCredits,
-        },
-      },
-    });
-
-    await tx.vaultTransaction.create({
-      data: {
-        id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        vaultId: userVault.id,
-        credits: -pack.priceCredits,
-        type: "PACK_PURCHASE",
+    // 3. Charge through the ledger (lifetime counters, kill switches, maintenance mode,
+    //    row-locked conditional decrement). Throws LedgerError, rolling this transaction back.
+    if (pack.priceCredits > 0) {
+      await spendCreditsTx(tx, {
+        userId,
+        amount: pack.priceCredits,
+        type: "SPEND_PACKS",
         source: "PACK_PURCHASE",
-        balanceAfter: userVault.credits - pack.priceCredits,
         metadata: {
           packId: pack.id,
           packName: pack.name,
         },
-      },
-    });
+      });
+    }
 
     // 5. Create UserPack record
     const userPack = await tx.userPack.create({

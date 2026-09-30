@@ -351,9 +351,26 @@ export async function getLoreTokensBalance(userId: string, db: PrismaClient): Pr
       const metaObj = meta as Record<string, unknown>;
       if (metaObj.useToken === true) {
         usedTokenCount++;
+      } else if (metaObj.tokenRefund === true) {
+        // A rejected request gives its token back
+        usedTokenCount--;
       }
     }
   }
 
   return Math.max(0, totalGranted - usedTokenCount);
+}
+
+/**
+ * The player's Vault level, derived from lifetime Vault XP (1 XP per IxC earned) and the
+ * configured XP-per-level. This is the real progression level used to gate crafting;
+ * `User.collectorLevel` is never written by anything.
+ */
+export async function getVaultLevel(userId: string, db: PrismaClient): Promise<number> {
+  const vault = await db.myVault.findUnique({
+    where: { userId },
+    select: { vaultXp: true },
+  });
+  const cfg = await getVaultConfig(db);
+  return Math.floor((vault?.vaultXp ?? 0) / cfg.xpPerLevel) + 1;
 }

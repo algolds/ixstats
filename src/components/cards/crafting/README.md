@@ -95,7 +95,7 @@ Not built: statistics overview, crafting history section, help section.
 
 1. **`getRecipes`** (Protected)
    - Filter recipes by status (ALL, UNLOCKED, LOCKED, COMPLETED), `recipeType`, and name/description search
-   - Returns active recipes with `isUnlocked` (`User.collectorLevel >= minLevel`), `isCompleted`, `completedCount`
+   - Returns active recipes with `isUnlocked` (Vault level (from Vault XP) `>= minLevel`), `isCompleted`, `completedCount`
 
 2. **`getRecipeById`** (Protected)
    - Detailed recipe information including unlock status, completion count, recent crafts
@@ -141,7 +141,7 @@ model CraftingRecipe {
 ]
 ```
 
-**Unlock requirement:** only `minLevel` (compared with `User.collectorLevel`). Achievement and prerequisite-recipe unlocks are not implemented.
+**Unlock requirement:** only `minLevel` (compared with the player's Vault level, `floor(vaultXp / xpPerLevel) + 1`; `User.collectorLevel` is not used because nothing writes it). Achievement and prerequisite-recipe unlocks are not implemented.
 
 ### CraftingHistory
 
@@ -202,7 +202,7 @@ Credits are spent with `SPEND_CRAFT` on every attempt, successful or not.
 
 ### Unlock System
 
-Recipes can be locked behind a **minimum collector level** (`minLevel`). Required achievements and completed-recipe prerequisites are not implemented.
+Recipes can be locked behind a **minimum Vault level** (`minLevel`). Required achievements and completed-recipe prerequisites are not implemented.
 
 ## Seed Data
 
@@ -245,7 +245,7 @@ Ownership and material validation happen just before the transaction. **If any s
 - Card XP for the crafted card (`src/lib/cards/xp-utils.ts`)
 
 ### User System
-- Collector level read for recipe unlocks (not modified by crafting)
+- Vault level read for recipe unlocks (not modified by crafting)
 
 ## UI/UX Features
 
