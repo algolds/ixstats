@@ -11,6 +11,7 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/auth", () => ({
   __esModule: true,
   isSystemOwner: (id: string) => id === "user_owner",
+  SYSTEM_OWNER_IDS: ["user_owner"],
   UserManagementService: jest.fn(),
 }));
 jest.mock("~/lib/auth/system-owner-constants", () => ({

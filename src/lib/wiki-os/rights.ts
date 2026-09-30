@@ -10,7 +10,7 @@
 //   - the groups their IxStates role maps to (`ROLE_GROUP_MAP`).
 // Enforcement of an action against these rights lives in `permissions.ts`.
 
-import { isSystemOwner } from "~/lib/auth";
+import { SYSTEM_OWNER_IDS, isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
@@ -401,7 +401,8 @@ export async function loadTargetPermissions(
       signedIn: user !== null,
       accountCreatedAt: user?.createdAt ?? null,
       roleName: user?.role?.name ?? null,
-      isSystemOwner: Boolean(user?.clerkUserId && isSystemOwner(user.clerkUserId)),
+      // Not `isSystemOwner`: that logs an [AUDIT] line per call, and this runs for any profile anyone looks up.
+      isSystemOwner: Boolean(user?.clerkUserId && SYSTEM_OWNER_IDS.includes(user.clerkUserId)),
       wikiUsername: target.wikiUsername,
       linkVerified: target.userId !== null,
     },

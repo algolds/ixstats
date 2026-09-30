@@ -12,7 +12,8 @@ jest.mock("~/server/db", () => ({
 }));
 jest.mock("~/lib/auth", () => ({
   __esModule: true,
-  isSystemOwner: (id: string) => id === "user_owner",
+  isSystemOwner: jest.fn((id: string) => id === "user_owner"),
+  SYSTEM_OWNER_IDS: ["user_owner"],
 }));
 
 import { isWikiAdmin } from "~/lib/wiki-os/auth";
@@ -23,10 +24,12 @@ import {
   changeableGroups,
   getWikiPermissions,
   getWikiPermissionsForAuthId,
+  loadTargetPermissions,
   resolveGroups,
   rightsForGroups,
   type GroupResolutionInput,
 } from "~/lib/wiki-os/rights";
+import { isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
 
 const NOW = new Date("2026-09-30T12:00:00Z");
@@ -409,5 +412,40 @@ describe("getWikiPermissionsForAuthId (callers without a request context)", () =
   it("recognises a system owner by their account id", async () => {
     mockDb.user.findUnique.mockResolvedValue(null);
     expect((await getWikiPermissionsForAuthId("user_owner")).rights.has("import")).toBe(true);
+  });
+});
+
+describe("loadTargetPermissions (someone else's profile)", () => {
+  it("maps a system owner from the configured ids without the audit-logging isSystemOwner", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      createdAt: ago(DAY),
+      clerkUserId: "user_owner",
+      role: { name: "user" },
+    });
+
+    const perms = await loadTargetPermissions({ userId: "db7", wikiUsername: "Boss" });
+
+    expect(perms.groups).toEqual(
+      expect.arrayContaining(["sysop", "bureaucrat", "interface-admin"])
+    );
+    expect(isSystemOwner).not.toHaveBeenCalled();
+  });
+
+  it("gives a linked ordinary user no more than autoconfirmed, and an unlinked wiki username only its explicit groups", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      createdAt: ago(DAY),
+      clerkUserId: "user_plain",
+      role: { name: "user" },
+    });
+    expect((await loadTargetPermissions({ userId: "db8", wikiUsername: "Plain" })).groups).toEqual([
+      "*",
+      "user",
+      "autoconfirmed",
+    ]);
+
+    groupRows = [{ wikiUsername: "Pending", group: "bot", expiresAt: null }];
+    const pending = await loadTargetPermissions({ userId: null, wikiUsername: "Pending" });
+    expect(pending.groups).toEqual(["*", "bot"]);
+    expect(mockDb.user.findUnique).toHaveBeenCalledTimes(1);
   });
 });
