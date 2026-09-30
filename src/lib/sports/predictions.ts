@@ -4,6 +4,10 @@ import { exchangeService } from "~/lib/vault/exchange-service";
 
 export type PredictionOutcome = "home" | "away" | "draw";
 
+/** Stake bounds (whole Sovereigns) for a single prediction. */
+export const MIN_PREDICTION_STAKE = 1;
+export const MAX_PREDICTION_STAKE = 10_000;
+
 export function outcomeFromScores(homeScore: number, awayScore: number): PredictionOutcome {
   if (homeScore > awayScore) return "home";
   if (awayScore > homeScore) return "away";
