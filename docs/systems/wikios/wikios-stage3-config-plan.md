@@ -1,3 +1,11 @@
+> **SUPERSEDED (plan 417, September 30, 2026).** This Stage 3 plan is replaced by the WikiOS v1 cutover
+> runbook, [`docs/operations/wikios-v1-cutover.md`](../../operations/wikios-v1-cutover.md): WikiOS now takes over
+> `ixwiki.com/wiki/*` as its own process, classic MediaWiki moves to `/classic/`, and MediaWiki becomes a
+> private render engine on loopback. The vhost and checker this plan refers to
+> (`scripts/ops/stage3-nginx-cutover.conf`, `scripts/ops/verify-stage3-cutover.ts`) were deleted; their
+> successors are `scripts/ops/nginx/wikios-*.conf`, `scripts/ops/mediawiki/wikios-localsettings.php` and
+> `scripts/ops/verify-wikios-takeover.ts`. Kept for history only; do not apply anything below.
+
 # WikiOS Stage 3 — Render-Service Isolation: Config Plan
 
 **Status:** PLANNING ONLY. Nothing in this doc has been applied. Every nginx / `LocalSettings.php`
