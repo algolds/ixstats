@@ -5,8 +5,10 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 describe("Plan 159: Crafting Recipes Query Batching", () => {
   const createCaller = createCallerFactory(craftingRecipesRouter);
 
-  it("fetches user collector level once and groups crafting history in 1 query", async () => {
-    const userFindUniqueMock = jest.fn().mockResolvedValue({ id: "user-1", collectorLevel: 5 });
+  it("fetches the vault level once and groups crafting history in 1 query", async () => {
+    // 4,200 Vault XP at 1,000 XP/level => level 5. User.collectorLevel is never written, so it
+    // must not gate anything.
+    const vaultFindUniqueMock = jest.fn().mockResolvedValue({ vaultXp: 4200 });
     const historyGroupByMock = jest.fn().mockResolvedValue([
       { recipeId: "r1", _count: { _all: 3 } },
       { recipeId: "r2", _count: { _all: 1 } },
@@ -21,8 +23,11 @@ describe("Plan 159: Crafting Recipes Query Batching", () => {
           { id: "r3", name: "Recipe 3", resultRarity: "COMMON", minLevel: 10, isActive: true },
         ]),
       },
-      user: {
-        findUnique: userFindUniqueMock,
+      myVault: {
+        findUnique: vaultFindUniqueMock,
+      },
+      systemConfig: {
+        findMany: jest.fn().mockResolvedValue([]),
       },
       craftingHistory: {
         groupBy: historyGroupByMock,
@@ -39,9 +44,9 @@ describe("Plan 159: Crafting Recipes Query Batching", () => {
     const result = await (caller as any).getRecipes({ filter: "ALL" });
 
     // Assert query batching
-    expect(userFindUniqueMock).toHaveBeenCalledTimes(1);
+    expect(vaultFindUniqueMock).toHaveBeenCalledTimes(1);
     // Plan 340 Step 2: crafting looks users up by the internal User.id, never the Clerk id.
-    expect(userFindUniqueMock.mock.calls[0][0].where).toEqual({ id: "user_db_id_1" });
+    expect(vaultFindUniqueMock.mock.calls[0][0].where).toEqual({ userId: "user_db_id_1" });
     expect(historyGroupByMock).toHaveBeenCalledTimes(1);
     expect(historyCountMock).toHaveBeenCalledTimes(0);
 
