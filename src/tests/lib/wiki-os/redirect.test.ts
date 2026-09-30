@@ -55,4 +55,55 @@ describe("parseRedirect", () => {
     expect(parseRedirect("")).toBeNull();
     expect(parseRedirect("An article about a [[Redirect]].")).toBeNull();
   });
+
+  it("takes the target up to the first pipe or closing brackets, even with a ] in the label", () => {
+    expect(parseRedirect("#REDIRECT [[Foo|la]bel]]")?.title).toBe("Foo");
+    expect(parseRedirect("#REDIRECT [[Foo]]]")?.title).toBe("Foo");
+    expect(parseRedirect("#REDIRECT [[Foo]bar]]")).toBeNull();
+  });
+
+  it("needs the link to close on the same line", () => {
+    expect(parseRedirect("#REDIRECT [[Foo")).toBeNull();
+    expect(parseRedirect("#REDIRECT [[Foo|label")).toBeNull();
+    expect(parseRedirect("#REDIRECT [[Foo\nBar]]")).toBeNull();
+    expect(parseRedirect("#REDIRECT [[Foo|label\n]]")).toBeNull();
+    expect(parseRedirect("#REDIRECT [[Foo]]\nMore text after the link.")?.title).toBe("Foo");
+  });
+
+  it("strips only ASCII whitespace before #REDIRECT: a no-break space or BOM is not a redirect", () => {
+    expect(parseRedirect("\u00A0#REDIRECT [[Foo]]")).toBeNull();
+    expect(parseRedirect("\uFEFF#REDIRECT [[Foo]]")).toBeNull();
+    expect(parseRedirect(" \t\r\n#REDIRECT\n[[Foo]]")?.title).toBe("Foo");
+  });
+
+  it("percent-decodes the target and the fragment, as MediaWiki's rawurldecode does", () => {
+    expect(parseRedirect("#REDIRECT [[%41bc]]")?.title).toBe("Abc");
+    expect(parseRedirect("#REDIRECT [[Foo%20bar#Sec%20one]]")).toMatchObject({
+      title: "Foo bar",
+      fragment: "Sec one",
+    });
+    expect(parseRedirect("#REDIRECT [[%3ACategory%3AX]]")?.title).toBe("Category:X");
+  });
+
+  it("refuses a target whose percent escape is malformed or decodes to something illegal", () => {
+    expect(parseRedirect("#REDIRECT [[Foo%FF]]")).toBeNull();
+    expect(parseRedirect("#REDIRECT [[Foo%5Dbar]]")).toBeNull();
+    expect(parseRedirect("#REDIRECT [[Foo%0Abar]]")).toBeNull();
+  });
+
+  it("rejects catastrophic input in linear time", () => {
+    const hostile = [
+      "#REDIRECT" + " ".repeat(200_000) + "x",
+      " ".repeat(200_000) + "x",
+      "#REDIRECT [[" + "a".repeat(200_000),
+      "#REDIRECT [[" + "a|".repeat(100_000),
+      "#REDIRECT [[" + "]".repeat(100_000) + "x",
+    ];
+    for (const text of hostile) {
+      const started = performance.now();
+      parseRedirect(text);
+      expect(performance.now() - started).toBeLessThan(100);
+    }
+    expect(parseRedirect("#REDIRECT" + " ".repeat(200_000) + "x")).toBeNull();
+  });
 });
