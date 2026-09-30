@@ -16,9 +16,12 @@ export default function WikiOSEditPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const source = parseWikiSource(searchParams.get("source"));
+  const isIxWiki = source === "ixwiki";
+
   // The URL segment is decoded once; the editor and its save work on the canonical title.
   const slug = decodeTitleParam(params.slug);
-  const canon = useMemo(() => canonicalizeTitle(slug), [slug]);
+  const canon = useMemo(() => canonicalizeTitle(slug, { source }), [slug, source]);
   const title = canon?.title ?? "";
 
   // Section edit links open the source editor at the heading they came from.
@@ -31,8 +34,6 @@ export default function WikiOSEditPage() {
   }, [router, title]);
 
   // Another wiki's page (?source=) is read-only in WikiOS (ruling E-l′): back to its read view.
-  const source = parseWikiSource(searchParams.get("source"));
-  const isIxWiki = source === "ixwiki";
   useEffect(() => {
     if (!isIxWiki) router.replace(withBasePath(wikiReaderPath(title, source)));
   }, [isIxWiki, router, title, source]);

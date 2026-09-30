@@ -45,16 +45,19 @@ export default function WikiOSArticlePage() {
   const { setActiveModal } = useWikiContext();
   const articleRef = useRef<HTMLDivElement>(null);
 
+  const { wikiSource, isEditAction, isMarginParam } = readerParams(searchParams);
+  const isIxWiki = wikiSource === "ixwiki";
+
   // The URL segment is decoded once; everything below works on the canonical title.
   const rawSlug = params.slug || "";
   const decodedSlug = decodeTitleParam(rawSlug);
-  const canon = useMemo(() => canonicalizeTitle(decodedSlug), [decodedSlug]);
+  const canon = useMemo(
+    () => canonicalizeTitle(decodedSlug, { source: wikiSource }),
+    [decodedSlug, wikiSource]
+  );
   const title = canon?.title ?? "";
   const slug = title.replace(/ /g, "_");
   const isMainPage = title === "Main Page";
-
-  const { wikiSource, isEditAction, isMarginParam } = readerParams(searchParams);
-  const isIxWiki = wikiSource === "ixwiki";
   const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
 
   // Normalized keys for reserved tool detection
@@ -147,16 +150,19 @@ export default function WikiOSArticlePage() {
     /^Special:/i.test(title) ||
     Boolean(targetReservedPath);
 
-  // A URL that is not the canonical spelling (`/wiki/foo_bar` for "Foo bar") moves to the canonical
-  // one, keeping the query string and hash. Compared decoded, so encoding differences never loop.
+  // An IxWiki URL that is not the canonical spelling (`/wiki/foo_bar` for "Foo bar") moves to the
+  // canonical one, keeping the query string and hash. Compared decoded, so encoding differences
+  // never loop. Another wiki's page (`?source=`) is never redirected, and neither is a subpage
+  // ("Foo/Bar"): its canonical path has a literal "/", which only plan 412's catch-all route serves.
   useEffect(() => {
-    if (!canon || isCategoryOrSpecialOrMain || decodedSlug === slug) return;
+    if (!canon || !isIxWiki || canon.title.includes("/")) return;
+    if (isCategoryOrSpecialOrMain || decodedSlug === slug) return;
     const query = searchParams.toString();
     const hash =
       window.location.hash ||
       (canon.fragment ? `#${encodeURIComponent(canon.fragment.replace(/ /g, "_"))}` : "");
     router.replace(`${withBasePath(`/wiki/${canon.urlPath}`)}${query ? `?${query}` : ""}${hash}`);
-  }, [canon, isCategoryOrSpecialOrMain, decodedSlug, slug, searchParams, router]);
+  }, [canon, isIxWiki, isCategoryOrSpecialOrMain, decodedSlug, slug, searchParams, router]);
 
   // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(

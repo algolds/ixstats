@@ -170,6 +170,16 @@ describe("WikiOS reader canonical titles (plan 403)", () => {
 
   it("moves a non-canonical URL to the canonical one, keeping the query string", () => {
     mockSlug = "foo_bar";
+    mockSearch = "margin=threads";
+    found("Foo bar");
+    render(<WikiOSArticlePage />);
+
+    expect(mockUseQuery).toHaveBeenCalledWith({ title: "Foo bar" }, expect.anything());
+    expect(mockReplace).toHaveBeenCalledWith("/wiki/Foo_bar?margin=threads");
+  });
+
+  it("never redirects another wiki's page (?source=), which is read under its own title rules", () => {
+    mockSlug = "foo_bar";
     mockSearch = "source=iiwiki";
     found("Foo bar");
     render(<WikiOSArticlePage />);
@@ -178,7 +188,31 @@ describe("WikiOS reader canonical titles (plan 403)", () => {
       { title: "Foo bar", wikiSource: "iiwiki" },
       expect.anything()
     );
-    expect(mockReplace).toHaveBeenCalledWith("/wiki/Foo_bar?source=iiwiki");
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("gives another wiki's title no IxWiki namespace (Project: is not IxWiki:)", () => {
+    mockSlug = "project%3Afoo";
+    mockSearch = "source=althistory";
+    found("Project:foo");
+    render(<WikiOSArticlePage />);
+
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      { title: "Project:foo", wikiSource: "althistory" },
+      expect.anything()
+    );
+  });
+
+  it("never redirects a subpage title: its canonical path needs the catch-all route (plan 412)", () => {
+    for (const slug of ["foo%2Fbar", "talk%3Afoo%2Fbar", "Foo/bar"]) {
+      mockSlug = slug;
+      found("Foo/bar");
+      render(<WikiOSArticlePage />);
+    }
+
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockUseQuery).toHaveBeenCalledWith({ title: "Foo/bar" }, expect.anything());
+    expect(mockUseQuery).toHaveBeenCalledWith({ title: "Talk:Foo/bar" }, expect.anything());
   });
 
   it("keeps a namespace colon literal and carries a fragment typed into the path", () => {
