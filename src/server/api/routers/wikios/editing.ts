@@ -212,7 +212,7 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       const oldRev = await getRevisionWikitextShadow(input.revid);
       if (!oldRev) {
-        throw new Error(`Revision ${input.revid} not found`);
+        throw new TRPCError({ code: "NOT_FOUND", message: `Revision ${input.revid} not found.` });
       }
       const restoredWikitext = await requireRestorableWikitext(ctx, title, oldRev);
 
@@ -265,14 +265,29 @@ export const wikiosEditingRouter = createTRPCRouter({
       // Read-through: serve from shadow history with MySQL fallback
       const history = await getArticleHistoryShadow(title, 50);
       const revisions = history.revisions;
-      if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
+      if (revisions.length < 2) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Not enough revisions to roll back.",
+        });
+      }
 
       const lastEditor = revisions[0]!.user;
       const targetRev = revisions.find((r) => r.user !== lastEditor);
-      if (!targetRev) throw new Error("All revisions are by the same user");
+      if (!targetRev) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "All revisions are by the same user, so there is nothing to roll back to.",
+        });
+      }
 
       const oldContent = await getRevisionWikitextShadow(targetRev.revid);
-      if (!oldContent) throw new Error("Could not fetch target revision content");
+      if (!oldContent) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "The revision to roll back to could not be found.",
+        });
+      }
       const restoredWikitext = await requireRestorableWikitext(ctx, title, oldContent);
 
       const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";

@@ -269,3 +269,51 @@ describe("wikiosEditingRouter.saveWikitext edit summary (plan 402)", () => {
     expect(input).not.toHaveProperty("excerpt");
   });
 });
+
+describe("wikiosEditingRouter revert and rollback error codes (plan 402)", () => {
+  it("revertToRevision answers NOT_FOUND for an unknown revision", async () => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(null);
+
+    await expect(
+      createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "r404" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Revision r404 not found." });
+    expectNothingSaved();
+  });
+
+  it("rollback answers PRECONDITION_FAILED when there is nothing older to roll back to", async () => {
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [historyEntry("r1", "amy")],
+      hasMore: false,
+      fromShadow: true,
+    });
+
+    await expect(
+      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(getRevisionWikitextShadow).not.toHaveBeenCalled();
+    expectNothingSaved();
+  });
+
+  it("rollback answers PRECONDITION_FAILED when every revision is by the same user", async () => {
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [historyEntry("r2", "amy"), historyEntry("r1", "amy")],
+      hasMore: false,
+      fromShadow: true,
+    });
+
+    await expect(
+      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(getRevisionWikitextShadow).not.toHaveBeenCalled();
+    expectNothingSaved();
+  });
+
+  it("rollback answers NOT_FOUND when the target revision cannot be read", async () => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(null);
+
+    await expect(
+      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expectNothingSaved();
+  });
+});
