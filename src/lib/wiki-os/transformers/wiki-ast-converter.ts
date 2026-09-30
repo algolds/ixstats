@@ -8,6 +8,9 @@
  */
 
 import { parse } from "../wikitext/parser";
+import { buildFileLink } from "../wikitext/file-params";
+import { plateFingerprint } from "./plate-fingerprint";
+import type { PlateNode } from "./plate-node";
 import {
   astToWikitext as coreAstToWikitext,
   serializeBlockNodeToWikitext,
@@ -16,6 +19,7 @@ import type {
   WikiDocument,
   WikiBlockNode,
   WikiInlineNode,
+  WikiInlineMarks,
   WikiHeadingBlock,
   WikiInfoboxBlock,
   WikiTemplateNode,
@@ -84,200 +88,202 @@ function ensureSlateInlineSurroundings(nodes: any[]): any[] {
 }
 
 /**
- * Converts a WikiAST Document into Slate/Plate compatible node trees.
+ * Records where a block came from on its Plate element (plan 414): the exact source text, the
+ * separator before it and a fingerprint of the element as loaded. The visual editor's serializer
+ * writes the source text back unchanged for as long as the fingerprint still matches.
+ */
+function withProvenance(
+  el: PlateNode,
+  node: WikiBlockNode,
+  position: { first: boolean; last: boolean },
+  trailing: string | undefined
+): PlateNode {
+  if (node.src === undefined || node.raw === undefined) return el;
+  el.wikiRaw = node.raw;
+  el.wikiSrc = node.src.start;
+  if (position.first) el.wikiLead = node.sepBefore ?? "";
+  else el.wikiSep = node.sepBefore ?? "";
+  if (position.last) el.wikiTrail = trailing ?? "";
+  el.wikiFp = plateFingerprint(el);
+  return el;
+}
+
+/** One top-level AST block as a Plate element; null for a block type the editor has no element for. */
+function blockToPlate(node: WikiBlockNode): PlateNode | null {
+  switch (node.type) {
+    case "heading":
+    case "h2":
+    case "h3":
+    case "h4": {
+      const hNode = node as WikiHeadingBlock;
+      const level = hNode.level ?? 2;
+      return { type: `h${level}`, children: astInlinesToPlateLeaves(hNode.children) };
+    }
+
+    case "paragraph":
+    case "p":
+      return { type: "p", children: astInlinesToPlateLeaves(node.children) };
+
+    case "infobox": {
+      const ib = node as WikiInfoboxBlock;
+      return {
+        type: "infobox-block",
+        templateName: ib.templateName,
+        title: ib.title,
+        params: ib.params || {},
+        paramList: ib.paramList || [],
+        positional: ib.positional || [],
+        classification: "infobox",
+        rawWikitext: ib.raw || ib.rawWikitext,
+        parseState: ib.parseState,
+        children: [{ text: "" }],
+      } as PlateNode;
+    }
+
+    case "template": {
+      const tmpl = node as WikiTemplateNode;
+      return {
+        type: "template-block",
+        templateName: tmpl.templateName || tmpl.name,
+        name: tmpl.templateName || tmpl.name,
+        params: tmpl.params || {},
+        paramList: tmpl.paramList || [],
+        positional: tmpl.positional || [],
+        classification: tmpl.classification || "standard",
+        rawWikitext: tmpl.raw || tmpl.rawWikitext,
+        parseState: tmpl.parseState,
+        children: [{ text: "" }],
+      } as PlateNode;
+    }
+
+    case "parser-function": {
+      const pfn = node as WikiParserFunctionBlock;
+      return {
+        type: "template-block",
+        templateName: pfn.functionName,
+        name: pfn.functionName,
+        params: {},
+        positional: pfn.branches || [],
+        classification: "standard",
+        rawWikitext: pfn.raw || pfn.rawWikitext,
+        parseState: pfn.parseState,
+        children: [{ text: "" }],
+      } as PlateNode;
+    }
+
+    case "raw": {
+      // Source the editor cannot edit faithfully: shown read-only, saved back verbatim.
+      const rawNode = node as WikiRawNode;
+      return {
+        type: "raw-wikitext",
+        rawWikitext: rawNode.raw || rawNode.rawWikitext,
+        construct: rawNode.construct,
+        tag: rawNode.tag,
+        children: [{ text: "" }],
+      };
+    }
+
+    case "media": {
+      const mb = node as MediaBlock;
+      return {
+        type: "media",
+        filename: mb.filename,
+        align: mb.align || "thumb",
+        caption: mb.caption,
+        width: mb.width,
+        height: mb.height,
+        children: [{ text: "" }],
+      } as PlateNode;
+    }
+
+    case "table": {
+      const tb = node as WikiTableBlock;
+      return {
+        type: "table",
+        caption: tb.caption,
+        attributes: tb.attributes,
+        rawWikitext: tb.rawWikitext,
+        children: tb.children?.map((row) => ({
+          type: "tr",
+          attributes: row.attributes,
+          children: row.children?.map((cell) => ({
+            type: cell.isHeader ? "th" : "td",
+            attributes: cell.attributes,
+            children: ensureSlateInlineSurroundings(
+              astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
+            ),
+          })),
+        })) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
+      } as PlateNode;
+    }
+
+    case "list":
+    case "ul":
+    case "ol": {
+      const lb = node as ListBlock;
+      return {
+        type: lb.ordered ? "ol" : "ul",
+        children: lb.children?.map((li) => ({
+          type: "li",
+          level: li.level || 1,
+          prefix: li.prefix,
+          children: ensureSlateInlineSurroundings(
+            astInlinesToPlateLeaves(li.children as WikiInlineNode[])
+          ),
+        })) || [{ type: "li", children: [{ text: "" }] }],
+      } as PlateNode;
+    }
+
+    case "divider":
+    case "hr":
+      return { type: "hr", children: [{ text: "" }] };
+
+    case "quote":
+    case "blockquote": {
+      const qb = node as QuoteBlock;
+      let inlines: any[] = [];
+      if (Array.isArray(qb.children)) {
+        if (qb.children.length > 0 && typeof qb.children[0] === "object" && "type" in qb.children[0] && (qb.children[0] as any).type === "p") {
+          inlines = (qb.children as any[]).flatMap((p) => p.children || []);
+        } else {
+          inlines = qb.children as any[];
+        }
+      }
+      return {
+        type: "blockquote",
+        author: qb.author,
+        source: qb.source,
+        children: astInlinesToPlateLeaves(inlines),
+      } as PlateNode;
+    }
+
+    case "code-block": {
+      const cb = node as CodeBlock;
+      return { type: "code-block", code: cb.code, children: [{ text: cb.code || "" }] } as PlateNode;
+    }
+
+    default:
+      return null;
+  }
+}
+
+/**
+ * Converts a WikiAST Document into Slate/Plate compatible node trees. Every element that came from
+ * parsed source carries its provenance (`wikiRaw`, `wikiSep`, `wikiFp`, …) so that an untouched
+ * block is saved back byte for byte.
  */
 export function astToPlateNodes(doc: WikiDocument): any[] {
   if (!doc.nodes || doc.nodes.length === 0) {
     return [{ type: "p", children: [{ text: "" }] }];
   }
 
-  const plateNodes: any[] = [];
-
-  for (const node of doc.nodes) {
-    switch (node.type) {
-      case "heading":
-      case "h2":
-      case "h3":
-      case "h4": {
-        const hNode = node as WikiHeadingBlock;
-        const level = hNode.level ?? 2;
-        plateNodes.push({
-          type: `h${level}`,
-          children: astInlinesToPlateLeaves(hNode.children),
-        });
-        break;
-      }
-
-      case "paragraph":
-      case "p": {
-        plateNodes.push({
-          type: "p",
-          children: astInlinesToPlateLeaves(node.children),
-        });
-        break;
-      }
-
-      case "infobox": {
-        const ib = node as WikiInfoboxBlock;
-        plateNodes.push({
-          type: "infobox-block",
-          templateName: ib.templateName,
-          title: ib.title,
-          params: ib.params || {},
-          paramList: ib.paramList || [],
-          positional: ib.positional || [],
-          classification: "infobox",
-          rawWikitext: ib.raw || ib.rawWikitext,
-          parseState: ib.parseState,
-          children: [{ text: "" }],
-        });
-        break;
-      }
-
-      case "template": {
-        const tmpl = node as WikiTemplateNode;
-        plateNodes.push({
-          type: "template-block",
-          templateName: tmpl.templateName || tmpl.name,
-          name: tmpl.templateName || tmpl.name,
-          params: tmpl.params || {},
-          paramList: tmpl.paramList || [],
-          positional: tmpl.positional || [],
-          classification: tmpl.classification || "standard",
-          rawWikitext: tmpl.raw || tmpl.rawWikitext,
-          parseState: tmpl.parseState,
-          children: [{ text: "" }],
-        });
-        break;
-      }
-
-      case "parser-function": {
-        const pfn = node as WikiParserFunctionBlock;
-        plateNodes.push({
-          type: "template-block",
-          templateName: pfn.functionName,
-          name: pfn.functionName,
-          params: {},
-          positional: pfn.branches || [],
-          classification: "standard",
-          rawWikitext: pfn.raw || pfn.rawWikitext,
-          parseState: pfn.parseState,
-          children: [{ text: "" }],
-        });
-        break;
-      }
-
-      case "raw": {
-        const rawNode = node as WikiRawNode;
-        plateNodes.push({
-          type: "template-block",
-          templateName: "raw",
-          name: "raw",
-          params: {},
-          classification: "custom",
-          rawWikitext: rawNode.raw || rawNode.rawWikitext,
-          children: [{ text: "" }],
-        });
-        break;
-      }
-
-      case "media": {
-        const mb = node as MediaBlock;
-        plateNodes.push({
-          type: "media",
-          filename: mb.filename,
-          align: mb.align || "thumb",
-          caption: mb.caption,
-          width: mb.width,
-          height: mb.height,
-          children: [{ text: "" }],
-        });
-        break;
-      }
-
-      case "table": {
-        const tb = node as WikiTableBlock;
-        plateNodes.push({
-          type: "table",
-          caption: tb.caption,
-          attributes: tb.attributes,
-          rawWikitext: tb.rawWikitext,
-          children: tb.children?.map((row) => ({
-            type: "tr",
-            attributes: row.attributes,
-            children: row.children?.map((cell) => ({
-              type: cell.isHeader ? "th" : "td",
-              attributes: cell.attributes,
-              children: ensureSlateInlineSurroundings(
-                astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
-              ),
-            })),
-          })) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
-        });
-        break;
-      }
-
-      case "list":
-      case "ul":
-      case "ol": {
-        const lb = node as ListBlock;
-        plateNodes.push({
-          type: lb.ordered ? "ol" : "ul",
-          children: lb.children?.map((li) => ({
-            type: "li",
-            level: li.level || 1,
-            prefix: li.prefix,
-            children: ensureSlateInlineSurroundings(
-              astInlinesToPlateLeaves(li.children as WikiInlineNode[])
-            ),
-          })) || [{ type: "li", children: [{ text: "" }] }],
-        });
-        break;
-      }
-
-      case "divider":
-      case "hr": {
-        plateNodes.push({
-          type: "hr",
-          children: [{ text: "" }],
-        });
-        break;
-      }
-
-      case "quote":
-      case "blockquote": {
-        const qb = node as QuoteBlock;
-        let inlines: any[] = [];
-        if (Array.isArray(qb.children)) {
-          if (qb.children.length > 0 && typeof qb.children[0] === "object" && "type" in qb.children[0] && (qb.children[0] as any).type === "p") {
-            inlines = (qb.children as any[]).flatMap((p) => p.children || []);
-          } else {
-            inlines = qb.children as any[];
-          }
-        }
-        plateNodes.push({
-          type: "blockquote",
-          author: qb.author,
-          source: qb.source,
-          children: astInlinesToPlateLeaves(inlines),
-        });
-        break;
-      }
-
-      case "code-block": {
-        const cb = node as CodeBlock;
-        plateNodes.push({
-          type: "code-block",
-          code: cb.code,
-          children: [{ text: cb.code || "" }],
-        });
-        break;
-      }
-
-      default:
-        break;
-    }
-  }
+  const plateNodes: PlateNode[] = [];
+  doc.nodes.forEach((node, index) => {
+    const el = blockToPlate(node);
+    if (!el) return;
+    const last = index === doc.nodes.length - 1;
+    plateNodes.push(withProvenance(el, node, { first: plateNodes.length === 0, last }, doc.trailing));
+  });
 
   if (plateNodes.length === 0) {
     plateNodes.push({ type: "p", children: [{ text: "" }] });
@@ -354,11 +360,14 @@ export function plateNodesToAst(nodes: any[], title = "", slug = ""): WikiDocume
         break;
       }
 
-      case "raw-html": {
+      case "raw-html":
+      case "raw-wikitext": {
         astNodes.push({
           type: "raw",
           raw: node.wikitext || node.rawWikitext || "",
           rawWikitext: node.wikitext || node.rawWikitext,
+          construct: node.construct,
+          tag: node.tag,
           children: [{ text: "" }],
         });
         break;
@@ -470,6 +479,25 @@ export function plateNodesToAst(nodes: any[], title = "", slug = ""): WikiDocume
   };
 }
 
+/** The bold/italic state of an inline construct, as properties (none when it is off). */
+function inlineMarks(marks: WikiInlineMarks): { bold?: true; italic?: true } {
+  return { ...(marks.bold ? { bold: true as const } : {}), ...(marks.italic ? { italic: true as const } : {}) };
+}
+
+/** A text leaf carrying the bold/italic state of the inline construct it labels. */
+function markedText(text: string, marks: WikiInlineMarks): { text: string; bold?: true; italic?: true } {
+  return { text, ...inlineMarks(marks) };
+}
+
+/** Keeps the construct's source text on its element, valid while the element's content is unchanged. */
+function keepSource(el: PlateNode, raw: string | undefined): PlateNode {
+  if (raw !== undefined) {
+    el.wikiRaw = raw;
+    el.wikiFp = plateFingerprint(el);
+  }
+  return el;
+}
+
 function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
   if (!inlines || inlines.length === 0) {
     return [{ text: "" }];
@@ -492,13 +520,33 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
     } else {
       switch (inline.type) {
         case "wiki-link":
-          leaves.push({
-            type: "link",
-            url: `/wiki/${encodeURIComponent(inline.target)}`,
-            target: inline.target,
-            internal: true,
-            children: [{ text: inline.label || inline.target }],
-          });
+          leaves.push(
+            keepSource(
+              {
+                type: "link",
+                url: `/wiki/${encodeURIComponent(inline.target)}`,
+                target: inline.target,
+                internal: true,
+                children: [markedText(inline.label || inline.target, inline)],
+              },
+              inline.raw
+            )
+          );
+          break;
+        case "wiki-file":
+          leaves.push(
+            keepSource(
+              {
+                type: "wiki-file",
+                target: inline.target,
+                fileParams: inline.params,
+                caption: inline.caption,
+                ...inlineMarks(inline),
+                children: [{ text: "" }],
+              },
+              inline.raw
+            )
+          );
           break;
         case "external-link": {
           const firstChild = inline.children?.[0];
@@ -506,12 +554,17 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
             firstChild && "text" in firstChild && typeof firstChild.text === "string"
               ? firstChild.text
               : inline.url;
-          leaves.push({
-            type: "link",
-            url: inline.url,
-            internal: false,
-            children: [{ text: textVal }],
-          });
+          leaves.push(
+            keepSource(
+              {
+                type: "link",
+                url: inline.url,
+                internal: false,
+                children: [markedText(textVal, inline)],
+              },
+              inline.raw
+            )
+          );
           break;
         }
         case "chip-coord":
@@ -521,6 +574,7 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
             lng: inline.lng,
             label: inline.label,
             wikitext: inline.wikitext,
+            ...inlineMarks(inline),
             children: [{ text: "" }],
           });
           break;
@@ -531,6 +585,7 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
             slug: inline.slug,
             metric: inline.metric,
             wikitext: inline.wikitext,
+            ...inlineMarks(inline),
             children: [{ text: "" }],
           });
           break;
@@ -544,6 +599,7 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
             type: "citation-ref",
             name: inline.name,
             rawWikitext: inline.rawWikitext,
+            ...inlineMarks(inline),
             children: [{ text: textVal }],
           });
           break;
@@ -556,6 +612,7 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
             paramList: inline.paramList || [],
             positional: inline.positional || [],
             rawWikitext: inline.raw || inline.rawWikitext,
+            ...inlineMarks(inline),
             children: [{ text: "" }],
           });
           break;
@@ -599,20 +656,34 @@ function plateLeavesToAstInlines(leaves?: any[]): WikiInlineNode[] {
           ? decodeURIComponent(leaf.url.replace(/^\/wiki\//, "").replace(/_/g, " "))
           : "");
       const label = leaf.children?.[0]?.text || target;
+      const marks = { ...(leaf.bold ? { bold: true } : {}), ...(leaf.italic ? { italic: true } : {}) };
       if (isInternal && target) {
         inlines.push({
           type: "wiki-link",
           target,
           label: label !== target ? label : undefined,
+          ...marks,
           children: [{ text: label }],
         });
       } else {
         inlines.push({
           type: "external-link",
           url: leaf.url || "",
+          ...marks,
           children: [{ text: leaf.children?.[0]?.text || leaf.url || "" }],
         });
       }
+    } else if (leaf.type === "wiki-file") {
+      inlines.push({
+        type: "wiki-file",
+        target: leaf.target || "",
+        params: leaf.fileParams || [],
+        caption: leaf.caption || "",
+        raw: buildFileLink(leaf.target || "", leaf.fileParams || [], leaf.caption || ""),
+        ...(leaf.bold ? { bold: true } : {}),
+        ...(leaf.italic ? { italic: true } : {}),
+        children: [{ text: "" }],
+      });
     } else if (leaf.type === "chip-coord") {
       inlines.push({
         type: "chip-coord",

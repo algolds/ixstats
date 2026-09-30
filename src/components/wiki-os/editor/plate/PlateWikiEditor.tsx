@@ -36,6 +36,7 @@ import { PlateInteractiveTemplateElement } from "./elements/PlateInteractiveTemp
 import { PlateEngineChipElement } from "./elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "./elements/PlateCoordChipElement";
 import { PlateMediaElement } from "./elements/PlateMediaElement";
+import { PlateRawWikitextElement } from "./elements/PlateRawWikitextElement";
 
 
 export interface PlateWikiEditorProps {
@@ -224,6 +225,35 @@ function ElementRenderer(props: any) {
           <span>{element.templateName || (element as any).name || "template"}</span>
           <span className="text-wiki font-semibold">{"}}"}</span>
           {children}
+        </span>
+      );
+    case "raw-wikitext":
+      return <PlateRawWikitextElement {...props} />;
+    case "wiki-file":
+      return (
+        <span
+          {...attributes}
+          contentEditable={false}
+          className="inline-flex items-center gap-1 mx-0.5 px-1.5 py-0.5 rounded-md bg-secondary/80 border border-border/50 text-xs text-foreground select-none align-baseline hover:bg-secondary transition-colors"
+          title={(element as any).caption || undefined}
+        >
+          <span className="text-wiki font-semibold">File</span>
+          <span className="font-mono">{String((element as any).target ?? "").replace(/^[^:]*:/, "")}</span>
+          {(element as any).caption && (
+            <span className="max-w-[220px] truncate text-muted-foreground">{(element as any).caption}</span>
+          )}
+          {children}
+        </span>
+      );
+    case "citation-ref":
+      return (
+        <span
+          {...attributes}
+          contentEditable={false}
+          className="text-wiki align-super text-xs font-semibold select-none"
+          title={(element as any).name ? `Reference: ${(element as any).name}` : "Citation"}
+        >
+          [{(element as any).name || "ref"}]<span className="hidden">{children}</span>
         </span>
       );
     case "chip-engine":
