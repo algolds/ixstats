@@ -3,13 +3,23 @@
 
 import React from "react";
 import type { ReactNode } from "react";
-import { Group as Users, Shield, Activity, Heart, Eye } from "iconoir-react";
+import {
+  Group as Users,
+  Shield,
+  Activity,
+  Heart,
+  Eye,
+  StatUp,
+  StatDown,
+  Minus,
+} from "iconoir-react";
 import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
+import { getTrendDirection } from "~/hooks/useInternalStability";
 import { StabilityHelpDialog } from "./StabilityHelpDialog";
 
 interface StabilityMetrics {
@@ -34,11 +44,24 @@ interface StabilityMetrics {
 
 interface StabilityMetricsCardProps {
   metrics: StabilityMetrics | undefined;
-  /** Kept for API compatibility; the card maps the score to semantic status tones itself. */
-  getStabilityColor: (score: number) => string;
-  /** Kept for API compatibility; the card no longer tints its whole surface by score. */
-  getStabilityBg: (score: number) => string;
-  getTrendIcon: (trend: string) => ReactNode;
+}
+
+const TREND_GLYPH = {
+  up: { icon: StatUp, className: "text-emerald-600", label: "Improving" },
+  down: { icon: StatDown, className: "text-destructive", label: "Declining" },
+  flat: { icon: Minus, className: "text-muted-foreground", label: "Steady" },
+} as const;
+
+/** The stability trend as a semantic glyph with an accessible label. */
+function TrendGlyph({ trend }: { trend: string }) {
+  const glyph = TREND_GLYPH[getTrendDirection(trend)];
+  const Icon = glyph.icon;
+  return (
+    <span title={`Trend: ${glyph.label}`} className="inline-flex">
+      <Icon aria-hidden="true" className={cn("h-4 w-4", glyph.className)} />
+      <span className="sr-only">Trend: {glyph.label}</span>
+    </span>
+  );
 }
 
 /** Stability score → semantic status text colour (stable / strained / unstable). */
@@ -87,9 +110,6 @@ function MetricSection({
 
 export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
   metrics,
-  getStabilityColor: _getStabilityColor,
-  getStabilityBg: _getStabilityBg,
-  getTrendIcon,
 }: StabilityMetricsCardProps) {
   const score = metrics?.stabilityScore ?? 75;
 
@@ -103,7 +123,7 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
             <StabilityHelpDialog />
           </h3>
           <div className="flex items-center gap-2">
-            {metrics && getTrendIcon(metrics.stabilityTrend)}
+            {metrics && <TrendGlyph trend={metrics.stabilityTrend} />}
             <Badge variant="outline">
               <Activity aria-hidden="true" />
               Auto-generated events

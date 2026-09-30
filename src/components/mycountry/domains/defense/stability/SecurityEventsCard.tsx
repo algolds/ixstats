@@ -33,8 +33,6 @@ interface ResolveEventMutation {
 interface SecurityEventsCardProps {
   activeEvents: SecurityEvent[];
   resolveEvent: ResolveEventMutation;
-  /** Kept for API compatibility; severity maps to semantic outline badges below. */
-  getSeverityColor: (severity: string) => string;
 }
 
 /** Event severity → semantic outline-badge colour. */
@@ -47,7 +45,6 @@ const SEVERITY_TONE: Record<string, string> = {
 export const SecurityEventsCard = React.memo(function SecurityEventsCard({
   activeEvents,
   resolveEvent,
-  getSeverityColor: _getSeverityColor,
 }: SecurityEventsCardProps) {
   return (
     <FacetCard depth={1} surface="solid">

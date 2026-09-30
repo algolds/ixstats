@@ -328,7 +328,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   <HealthRing
                     value={known ? ring.value : 0}
                     size={40}
-                    color={known ? ring.color : "#94a3b8"}
+                    color={known ? ring.color : "var(--muted-foreground)"}
                     label={ring.label}
                   />
                   <div className="min-w-0 flex-1">

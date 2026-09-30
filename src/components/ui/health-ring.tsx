@@ -1,34 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { motion, useSpring, useTransform } from "motion/react";
 import { NumberFlowDisplay } from "./number-flow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./tooltip";
 
-function hexToRgb(hexInput?: string) {
-  let hex = hexInput || "#10b981";
-  hex = hex.replace(/^#/, "");
-  if (hex.length === 3) {
-    hex = hex
-      .split("")
-      .map((x) => x + x)
-      .join("");
-  }
-  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (result && result.length >= 4) {
-    return {
-      r: parseInt(result[1] ?? "0", 16),
-      g: parseInt(result[2] ?? "0", 16),
-      b: parseInt(result[3] ?? "0", 16),
-    };
-  }
-  return { r: 16, g: 185, b: 129 }; // Default green
-}
+/**
+ * A translucent tint of the ring colour. `color-mix()` with `transparent` in sRGB yields exactly
+ * `rgba(r, g, b, alpha)` for a hex input, and also accepts any CSS colour (`var(--color-*)`,
+ * `oklch()`, named colours), so callers can pass design tokens instead of hex literals.
+ */
+const tint = (alpha: number) =>
+  `color-mix(in srgb, var(--health-ring-color) ${Math.round(alpha * 100)}%, transparent)`;
 
 interface HealthRingProps {
   value: number; // 0-100
   size?: number; // px
-  color?: string; // tailwind or hex
+  /** Any CSS colour: a token such as `var(--color-emerald-500)`, or hex/rgb/oklch. */
+  color?: string;
   label?: string;
   target?: number; // target threshold value (default 100)
   tooltip?: string;
@@ -41,7 +30,7 @@ interface HealthRingProps {
 export const HealthRing: React.FC<HealthRingProps> = ({
   value,
   size = 110,
-  color = "#22d3ee",
+  color = "var(--color-cyan-400)",
   label,
   target = 100,
   tooltip = "",
@@ -62,8 +51,9 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   const offset = isNaN(circumference - progressRatio * circumference)
     ? circumference
     : circumference - progressRatio * circumference;
-  const rgb = hexToRgb(color);
   const [hovered, setHovered] = useState(false);
+  // Unique, selector-safe ids for the SVG gradients (labels may contain spaces or repeat).
+  const gradientId = `health-ring-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   // Framer Motion physics springs with safe values
   const springProgress = useSpring(progress, { stiffness: 100, damping: 15 });
@@ -73,19 +63,19 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   // Transform values for dynamic effects with safe calculations
   const _animatedOffset = useTransform(springProgress, [0, safeTarget], [circumference, 0]);
 
-  // Glassy border color
-  const _borderColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
-
   const ringContent = (
     <motion.div
       className={`group/healthring relative flex items-center justify-center ${
         isClickable ? "cursor-pointer" : ""
       } ${className}`}
-      style={{
-        width: validSize,
-        height: validSize,
-        scale: springScale,
-      }}
+      style={
+        {
+          width: validSize,
+          height: validSize,
+          scale: springScale,
+          "--health-ring-color": color,
+        } as React.ComponentProps<typeof motion.div>["style"]
+      }
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
@@ -104,13 +94,13 @@ export const HealthRing: React.FC<HealthRingProps> = ({
         style={{
           background: hideValue
             ? "transparent"
-            : `linear-gradient(135deg, rgba(${rgb.r},${rgb.g},${rgb.b},0.15), rgba(${rgb.r},${rgb.g},${rgb.b},0.05))`,
+            : `linear-gradient(135deg, ${tint(0.15)}, ${tint(0.05)})`,
           boxShadow: hideValue
-            ? `0 0 0 1.5px rgba(${rgb.r},${rgb.g},${rgb.b},0.5),
-               0 0 10px 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
-            : `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
-               0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
-               0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15),
+            ? `0 0 0 1.5px ${tint(0.5)},
+               0 0 10px 2px ${tint(0.2)}`
+            : `0 0 0 2px ${tint(0.6)},
+               0 0 20px 4px ${tint(0.3)},
+               0 0 40px 8px ${tint(0.15)},
                inset 0 1px 0 hsl(var(--accent) / 0.6)`,
           backdropFilter: hideValue ? "none" : "blur(12px) saturate(1.8)",
           WebkitBackdropFilter: hideValue ? "none" : "blur(12px) saturate(1.8)",
@@ -119,17 +109,17 @@ export const HealthRing: React.FC<HealthRingProps> = ({
         animate={{
           boxShadow: hovered
             ? hideValue
-              ? `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.7),
-                 0 0 15px 3px rgba(${rgb.r},${rgb.g},${rgb.b},0.3)`
-              : `0 0 0 3px rgba(${rgb.r},${rgb.g},${rgb.b},0.8),
-                 0 0 30px 6px rgba(${rgb.r},${rgb.g},${rgb.b},0.4),
-                 0 0 60px 12px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
+              ? `0 0 0 2px ${tint(0.7)},
+                 0 0 15px 3px ${tint(0.3)}`
+              : `0 0 0 3px ${tint(0.8)},
+                 0 0 30px 6px ${tint(0.4)},
+                 0 0 60px 12px ${tint(0.2)}`
             : hideValue
-              ? `0 0 0 1.5px rgba(${rgb.r},${rgb.g},${rgb.b},0.5),
-                 0 0 10px 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
-              : `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
-                 0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
-                 0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`,
+              ? `0 0 0 1.5px ${tint(0.5)},
+                 0 0 10px 2px ${tint(0.2)}`
+              : `0 0 0 2px ${tint(0.6)},
+                 0 0 20px 4px ${tint(0.3)},
+                 0 0 40px 8px ${tint(0.15)}`,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       />
@@ -138,7 +128,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
         <div
           className="pointer-events-none absolute inset-1 z-5 rounded-full"
           style={{
-            background: `radial-gradient(circle at 30% 30%, rgba(${rgb.r},${rgb.g},${rgb.b},0.2), transparent 70%)`,
+            background: `radial-gradient(circle at 30% 30%, ${tint(0.2)}, transparent 70%)`,
             opacity: hovered ? 0.8 : 0.4,
             transition: "opacity 0.3s",
           }}
@@ -151,13 +141,13 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           cy={validSize / 2}
           r={radius}
           fill="none"
-          stroke="hsl(var(--muted-foreground) / 0.2)"
+          style={{ stroke: "color-mix(in srgb, var(--muted-foreground) 20%, transparent)" }}
           strokeWidth={stroke}
         />
         {/* Animated liquid-like gradient progress circle */}
         <defs>
-          <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity="1">
+          <linearGradient id={`${gradientId}-stroke`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: color }} stopOpacity="1">
               <animate
                 attributeName="stop-opacity"
                 values="1;0.7;1"
@@ -173,7 +163,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
             </stop>
             <stop
               offset="30%"
-              stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`}
+              style={{ stopColor: tint(0.9) }}
               stopOpacity="0.9"
             >
               <animate
@@ -191,7 +181,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
             </stop>
             <stop
               offset="70%"
-              stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`}
+              style={{ stopColor: tint(0.7) }}
               stopOpacity="0.7"
             >
               <animate
@@ -209,7 +199,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
             </stop>
             <stop
               offset="100%"
-              stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`}
+              style={{ stopColor: tint(0.5) }}
               stopOpacity="0.5"
             >
               <animate
@@ -228,8 +218,8 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           </linearGradient>
 
           {/* Additional liquid wave effect */}
-          <radialGradient id={`wave-${label}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`}>
+          <radialGradient id={`${gradientId}-wave`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" style={{ stopColor: tint(0.3) }}>
               <animate
                 attributeName="stop-opacity"
                 values="0.3;0.6;0.3"
@@ -237,7 +227,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
                 repeatCount="indefinite"
               />
             </stop>
-            <stop offset="100%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`}>
+            <stop offset="100%" style={{ stopColor: tint(0.1) }}>
               <animate
                 attributeName="stop-opacity"
                 values="0.1;0.3;0.1"
@@ -253,7 +243,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
             cx={validSize / 2}
             cy={validSize / 2}
             r={radius - 2}
-            fill={`url(#wave-${label})`}
+            fill={`url(#${gradientId}-wave)`}
             opacity="0.4"
           >
             <animate
@@ -277,14 +267,14 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           cy={validSize / 2}
           r={radius}
           fill="none"
-          stroke={`url(#gradient-${label})`}
+          stroke={`url(#${gradientId}-stroke)`}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={_animatedOffset}
           style={{
             filter: hovered
-              ? `drop-shadow(0 0 16px ${color}) drop-shadow(0 0 32px rgba(${rgb.r},${rgb.g},${rgb.b},0.5))`
+              ? `drop-shadow(0 0 16px ${color}) drop-shadow(0 0 32px ${tint(0.5)})`
               : `drop-shadow(0 0 8px ${color})`,
             transition: "filter 0.3s",
           }}
@@ -303,7 +293,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           cy={validSize / 2}
           r={radius}
           fill="none"
-          stroke={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`}
+          style={{ stroke: tint(0.3) }}
           strokeWidth="2"
           strokeLinecap="round"
           strokeDasharray={circumference}

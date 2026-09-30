@@ -9,6 +9,7 @@
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Flash as Zap, WarningTriangle as AlertTriangle, StatUp as TrendingUp } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
@@ -38,99 +39,101 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
 
   if (!hasSynergies && !hasConflicts) {
     return (
-      <div className={cn("flex flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-muted/20 py-8 px-4 text-center", className)}>
-        <TrendingUp className="mx-auto mb-2 h-8 w-8 text-muted-foreground/60" />
-        <p className="text-xs font-semibold text-foreground">
+      <FacetCard
+        surface="solid"
+        className={cn(
+          "flex flex-col items-center justify-center rounded-xl border-dashed px-4 py-8 text-center",
+          className
+        )}
+      >
+        <TrendingUp aria-hidden="true" className="text-muted-foreground mb-2 h-6 w-6" />
+        <p className="text-foreground text-sm font-semibold">
           No synergies or conflicts detected yet
         </p>
-        <p className="mt-0.5 text-xs text-muted-foreground max-w-xs">
-          Select complementary components to unlock compounding synergies, and watch out for conflicting doctrines.
+        <p className="text-muted-foreground mt-0.5 max-w-xs text-xs">
+          Select complementary components to unlock compounding synergies, and watch out for
+          conflicting doctrines.
         </p>
-      </div>
+      </FacetCard>
     );
   }
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Active Synergies Section */}
       {hasSynergies && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-            <Zap className="h-4 w-4" />
-            <span>Active Synergies ({synergies.length})</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {synergies.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className="flex items-start gap-2.5 rounded-lg border border-emerald-500/25 bg-emerald-500/5 p-3 shadow-xs"
-              >
-                <div className="rounded-md bg-emerald-500/15 p-1.5 text-emerald-600 dark:text-emerald-400 shrink-0">
-                  <Zap className="h-3.5 w-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h5 className="truncate text-xs font-bold text-foreground">
-                      {item.comp1Name} + {item.comp2Name}
-                    </h5>
-                    {item.bonus && (
-                      <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-none text-xs px-1 py-0 font-semibold">
-                        +{item.bonus}%
-                      </Badge>
-                    )}
-                  </div>
-                  {item.description && (
-                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <InteractionSection
+          kind="synergy"
+          title={`Active synergies (${synergies.length})`}
+          items={synergies}
+        />
       )}
-
-      {/* Active Conflicts Section */}
       {hasConflicts && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Active Conflicts ({conflicts.length})</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {conflicts.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className="flex items-start gap-2.5 rounded-lg border border-red-500/25 bg-red-500/5 p-3 shadow-xs"
-              >
-                <div className="rounded-md bg-red-500/15 p-1.5 text-red-600 dark:text-red-400 shrink-0">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h5 className="truncate text-xs font-bold text-foreground">
-                      {item.comp1Name} ↔ {item.comp2Name}
-                    </h5>
-                    {item.penalty && (
-                      <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-none text-xs px-1 py-0 font-semibold">
-                        -{item.penalty}%
-                      </Badge>
-                    )}
-                  </div>
-                  {item.description && (
-                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <InteractionSection
+          kind="conflict"
+          title={`Active conflicts (${conflicts.length})`}
+          items={conflicts}
+        />
       )}
     </div>
   );
 });
+
+const SECTION_TONE = {
+  synergy: { icon: Zap, text: "text-emerald-600", joiner: "+" },
+  conflict: { icon: AlertTriangle, text: "text-destructive", joiner: "↔" },
+} as const;
+
+function InteractionSection({
+  kind,
+  title,
+  items,
+}: {
+  kind: keyof typeof SECTION_TONE;
+  title: string;
+  items: SynergyItem[];
+}) {
+  const tone = SECTION_TONE[kind];
+  const Icon = tone.icon;
+
+  return (
+    <section className="space-y-2">
+      <h3 className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
+        <Icon aria-hidden="true" className={cn("h-4 w-4", tone.text)} />
+        {title}
+      </h3>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {items.map((item, idx) => {
+          const delta =
+            kind === "synergy"
+              ? item.bonus
+                ? `+${item.bonus}%`
+                : null
+              : item.penalty
+                ? `-${item.penalty}%`
+                : null;
+
+          return (
+            <FacetCard key={item.id || idx} surface="solid" className="rounded-xl p-3">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-foreground truncate text-xs font-semibold">
+                  {item.comp1Name} {tone.joiner} {item.comp2Name}
+                </h4>
+                {delta && (
+                  <Badge variant="outline" className={cn("tabular-nums", tone.text)}>
+                    {delta}
+                  </Badge>
+                )}
+              </div>
+              {item.description && (
+                <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                  {item.description}
+                </p>
+              )}
+            </FacetCard>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

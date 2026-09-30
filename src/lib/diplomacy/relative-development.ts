@@ -14,6 +14,7 @@ export interface AsymmetryAnalysis {
   asymmetricMultiplier: number;
   tariffMultiplier: number;
   capitalFlowBonus: number;
+  /** Semantic text colour for an outline `<Badge>` (reads in both themes). */
   badgeColor: string;
 }
 
@@ -35,26 +36,26 @@ export function calculateRelativeDevelopment(
   const ratio = Number((partnerWeight / Math.max(1, selfWeight)).toFixed(2));
 
   let label: AsymmetryAnalysis["label"] = "Symmetrical Partner";
-  let badgeColor = "border-cyan-500/30 bg-cyan-500/10 text-cyan-400";
+  let badgeColor = "text-muted-foreground";
   let asymmetricMultiplier = 1.0;
   let tariffMultiplier = 1.0;
   let capitalFlowBonus = 0;
 
   if (tierDiff >= 2) {
     label = "Superpower Influence";
-    badgeColor = "border-purple-500/30 bg-purple-500/10 text-purple-400";
+    badgeColor = "text-orange-600";
     asymmetricMultiplier = 1.4;
     tariffMultiplier = 0.7;
     capitalFlowBonus = 0.25;
   } else if (tierDiff === 1) {
     label = "Capital Imbalance";
-    badgeColor = "border-amber-500/30 bg-amber-500/10 text-amber-400";
+    badgeColor = "text-foreground";
     asymmetricMultiplier = 1.2;
     tariffMultiplier = 0.85;
     capitalFlowBonus = 0.15;
   } else if (tierDiff <= -1) {
     label = "Resource Synergist";
-    badgeColor = "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
+    badgeColor = "text-emerald-600";
     asymmetricMultiplier = 1.15;
     tariffMultiplier = 1.1;
     capitalFlowBonus = 0.1;

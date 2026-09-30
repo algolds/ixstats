@@ -8,59 +8,61 @@ export type StandingBandKey = "aligned" | "cooperative" | "neutral" | "tense" | 
 export interface StandingBandInfo {
   key: StandingBandKey;
   label: string;
+  /**
+   * Classes for an outline `<Badge>` showing this band. A single semantic text colour that reads
+   * in both themes (the Badge supplies the border); identical to `textClass`.
+   */
   badgeClass: string;
-  bgClass: string;
+  /** Semantic text colour for the band label (success → foreground → muted → warning → destructive). */
   textClass: string;
-  borderClass: string;
   description: string;
 }
+
+/** Semantic text colour per band, shared by `badgeClass` and `textClass`. */
+const BAND_TEXT: Record<StandingBandKey, string> = {
+  aligned: "text-emerald-600",
+  cooperative: "text-foreground",
+  neutral: "text-muted-foreground",
+  tense: "text-orange-600",
+  hostile: "text-destructive",
+};
 
 export const STANDING_BANDS: Record<StandingBandKey, StandingBandInfo> = {
   aligned: {
     key: "aligned",
     label: "Aligned",
-    badgeClass: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
-    bgClass: "bg-emerald-500/10",
-    textClass: "text-emerald-400",
-    borderClass: "border-emerald-500/30",
+    badgeClass: BAND_TEXT.aligned,
+    textClass: BAND_TEXT.aligned,
     description:
       "Deep strategic alignment, shared diplomatic goals, and strong institutional ties.",
   },
   cooperative: {
     key: "cooperative",
     label: "Cooperative",
-    badgeClass: "bg-cyan-500/20 text-cyan-400 border-cyan-500/40",
-    bgClass: "bg-cyan-500/10",
-    textClass: "text-cyan-400",
-    borderClass: "border-cyan-500/30",
+    badgeClass: BAND_TEXT.cooperative,
+    textClass: BAND_TEXT.cooperative,
     description: "Constructive bilateral relations, active economic exchange, and mutual goodwill.",
   },
   neutral: {
     key: "neutral",
     label: "Neutral",
-    badgeClass: "bg-slate-500/20 text-slate-300 border-slate-500/40",
-    bgClass: "bg-slate-500/10",
-    textClass: "text-slate-300",
-    borderClass: "border-slate-500/30",
+    badgeClass: BAND_TEXT.neutral,
+    textClass: BAND_TEXT.neutral,
     description: "Standard formal contacts with balanced or non-aligned foreign policy posture.",
   },
   tense: {
     key: "tense",
     label: "Tense",
-    badgeClass: "bg-amber-500/20 text-amber-400 border-amber-500/40",
-    bgClass: "bg-amber-500/10",
-    textClass: "text-amber-400",
-    borderClass: "border-amber-500/30",
+    badgeClass: BAND_TEXT.tense,
+    textClass: BAND_TEXT.tense,
     description:
       "Friction on key diplomatic issues, heightened caution, and active dispute monitoring.",
   },
   hostile: {
     key: "hostile",
     label: "Hostile",
-    badgeClass: "bg-rose-500/20 text-rose-400 border-rose-500/40",
-    bgClass: "bg-rose-500/10",
-    textClass: "text-rose-400",
-    borderClass: "border-rose-500/30",
+    badgeClass: BAND_TEXT.hostile,
+    textClass: BAND_TEXT.hostile,
     description: "Severe diplomatic conflict, active sanctions, or military posture confrontation.",
   },
 };

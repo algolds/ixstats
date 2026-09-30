@@ -3,11 +3,11 @@
 /**
  * Atomic Filter Bar
  *
- * Search input with real-time filtering, embedded preset template dropdown,
- * and horizontal category filter pills with component count badges.
+ * Search input with real-time filtering, a preset template Select, and a horizontally
+ * scrolling row of category Toggles with component count badges.
  */
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Search,
   Xmark as X,
@@ -40,6 +40,8 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Input } from "~/components/ui/input";
+import { Toggle } from "~/components/ui/toggle";
 import {
   Select,
   SelectContent,
@@ -47,7 +49,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import type { AtomicTemplate } from "./types";
 
 export const DEFAULT_CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -195,136 +196,103 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
   searchPlaceholder = "Search components...",
   disabled = false,
 }: AtomicFilterBarProps<TType>) {
-  const [isFocused, setIsFocused] = useState(false);
-
   const totalCount = Object.values(categoryCounts).reduce((sum, count) => sum + count, 0);
+
+  const renderFilter = (
+    key: string,
+    value: string | null,
+    label: string,
+    Icon: React.ComponentType<{ className?: string }>,
+    count: number
+  ) => (
+    <Toggle
+      key={key}
+      variant="outline"
+      size="sm"
+      pressed={selectedCategory === value}
+      onPressedChange={() => onCategoryChange(value)}
+      disabled={disabled}
+      className="shrink-0 rounded-full px-3 text-xs max-sm:h-11"
+    >
+      <Icon aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+      <span className="capitalize">{label}</span>
+      <Badge variant="secondary" className="px-1.5 tabular-nums">
+        {count}
+      </Badge>
+    </Toggle>
+  );
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Top Search & Template Bar — Unified Inline Capsule */}
-      <div
-        className={cn(
-          "group relative flex w-full items-center rounded-xl border bg-card/60 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-          isFocused
-            ? "border-primary/60 ring-1 ring-primary/20 shadow-xs"
-            : "border-border/50 hover:border-border/80 hover:bg-card/80"
-        )}
-      >
-        <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder={searchPlaceholder}
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          disabled={disabled}
-          className="h-10 w-full min-w-0 bg-transparent px-2.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:opacity-50"
-        />
-        {searchQuery && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="mr-1.5 h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground active:scale-[0.92]"
-            onClick={() => onSearchChange("")}
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        )}
+      {/* Search and templates */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+          />
+          <Input
+            type="search"
+            aria-label={searchPlaceholder}
+            placeholder={searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            disabled={disabled}
+            className="facet-refraction-none h-10 pr-10 pl-9 [&::-webkit-search-cancel-button]:hidden"
+          />
+          {searchQuery && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
+              onClick={() => onSearchChange("")}
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
 
-        {/* Inline Templates Selector */}
         {templates && templates.length > 0 && onTemplateSelect && (
-          <>
-            <div className="h-5 w-px shrink-0 bg-border/50" />
-            <div className="shrink-0 pr-1.5 pl-1">
-              <Select onValueChange={onTemplateSelect} disabled={disabled}>
-                <SelectTrigger className="h-7 gap-1.5 border-none bg-transparent px-2 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground active:scale-[0.97] focus:ring-0 shadow-none">
-                  <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <SelectValue placeholder="Quick Templates..." />
-                </SelectTrigger>
-                <SelectContent align="end" className="max-h-64">
-                  {templates.map((tpl) => (
-                    <SelectItem key={tpl.id} value={tpl.id} className="text-xs">
-                      <div className="flex items-center justify-between gap-3 w-full">
-                        <span className="font-medium truncate">{tpl.name}</span>
-                        <span className="text-xs text-muted-foreground font-mono shrink-0">
-                          {tpl.components.length} comps
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </>
+          <Select onValueChange={onTemplateSelect} disabled={disabled}>
+            <SelectTrigger
+              aria-label="Quick templates"
+              className="w-full text-xs data-[size=default]:h-10 sm:w-56"
+            >
+              <FileText aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+              <SelectValue placeholder="Quick templates" />
+            </SelectTrigger>
+            <SelectContent align="end" className="max-h-64">
+              {templates.map((tpl) => (
+                <SelectItem key={tpl.id} value={tpl.id} className="text-xs">
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <span className="truncate font-medium">{tpl.name}</span>
+                    <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                      {tpl.components.length} comps
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </div>
 
-      {/* Category Pills Row */}
+      {/* Category filters */}
       <div
+        role="group"
+        aria-label="Filter by category"
         onWheel={(e) => {
           if (e.deltaY !== 0 && !e.deltaX) {
             e.currentTarget.scrollLeft += e.deltaY;
           }
         }}
-        className="flex items-center gap-1.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 scrollbar-track-transparent scroll-smooth touch-pan-x"
+        className="flex touch-pan-x items-center gap-1.5 overflow-x-auto pt-0.5 pb-2"
       >
-        <button
-          type="button"
-          onClick={() => onCategoryChange(null)}
-          disabled={disabled}
-          className={cn(
-            "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.96]",
-            selectedCategory === null
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "border border-border/50 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/70 hover:text-foreground"
-          )}
-        >
-          <Grid className="h-3.5 w-3.5 shrink-0 opacity-80" />
-          <span>All Categories</span>
-          <Badge
-            variant="secondary"
-            className={cn(
-              "px-1 py-0 text-xs leading-tight font-semibold border-none",
-              selectedCategory === null ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-            )}
-          >
-            {totalCount}
-          </Badge>
-        </button>
-
-        {categories.map((cat) => {
-          const count = categoryCounts[cat] ?? 0;
-          const isSelected = selectedCategory === cat;
-          const Icon = resolveCategoryIcon(cat, categoryIcons);
-
-          return (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => onCategoryChange(cat)}
-              disabled={disabled}
-              className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.96]",
-                isSelected
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border/50 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/70 hover:text-foreground"
-              )}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
-              <span className="capitalize">{cat}</span>
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "px-1 py-0 text-xs leading-tight font-semibold border-none",
-                  isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}
-              >
-                {count}
-              </Badge>
-            </button>
-          );
-        })}
+        {renderFilter("__all", null, "All categories", Grid, totalCount)}
+        {categories.map((cat) =>
+          renderFilter(cat, cat, cat, resolveCategoryIcon(cat, categoryIcons), categoryCounts[cat] ?? 0)
+        )}
       </div>
     </div>
   );

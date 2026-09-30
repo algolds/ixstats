@@ -59,7 +59,7 @@ interface EmbassyGridProps {
  * <EmbassyGrid
  *   embassies={embassiesWithSynergies}
  *   isOwner={true}
- *   onEmbassyClick={(id) => setShowSharedData(id)}
+ *   onEmbassyClick={(id) => setSelectedEmbassyId(id)}
  * />
  * ```
  */

@@ -16,7 +16,6 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { AnimatePresence } from "motion/react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 
 // Hooks
@@ -25,7 +24,6 @@ import { useNetworkMetrics } from "~/hooks/useNetworkMetrics";
 
 // Sub-components (embassy network)
 import { EmbassyGrid, EmptyState } from "./embassy-network";
-import { SharedDataModal } from "./SharedDataModal";
 import { DiplomaticRelationsList } from "./DiplomaticRelationsList";
 
 // Alliance sub-component
@@ -90,10 +88,6 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     refetch: refetchEmbassies,
   } = useEmbassyNetworkData(countryId, isOwner);
   const networkMetrics = useNetworkMetrics(embassiesWithSynergies);
-
-  // Shared data modal (embassy synergy detail — legacy)
-  const [showSharedData, setShowSharedData] = useState<string | null>(null);
-  const closeSharedDataModal = () => setShowSharedData(null);
 
   // Relations data
   const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
@@ -338,17 +332,6 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         onOpenChange={setShowAllianceCreator}
         onCreated={() => void refetchAlliances()}
       />
-
-      {/* Legacy shared data modal (embassy synergy detail) */}
-      <AnimatePresence>
-        {showSharedData && (
-          <SharedDataModal
-            embassyId={showSharedData}
-            onClose={closeSharedDataModal}
-            isOwner={isOwner}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

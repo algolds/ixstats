@@ -3,13 +3,14 @@
 /**
  * Institutional Foundation Ribbon
  *
- * Ambient Apple-style translucent capsule rendered in Economics Act I.
+ * A Facet card rendered in Economics Act I.
  * Displays the user's active Government structure from Step 3 and dynamically
  * highlights unlocked cross-builder synergies.
  */
 
 import React, { useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Bank as Landmark, Flash as Zap } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
@@ -105,39 +106,31 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
   }
 
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-xl border border-border/50 bg-card/40 p-3.5 sm:px-4 sm:py-3 backdrop-blur-md shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-amber-500/20 before:to-transparent",
-        className
-      )}
-    >
+    <FacetCard className={cn("rounded-2xl p-4", className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left: Institutional Foundations from Step 3 */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-500 dark:text-amber-400">
-            <Landmark className="h-4 w-4" />
-          </div>
+        {/* Left: institutional foundations from Step 3 */}
+        <div className="flex min-w-0 items-start gap-3">
+          <Landmark
+            aria-hidden="true"
+            className="mt-0.5 h-5 w-5 shrink-0 text-(--facet-mycountry)"
+          />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h4 className="text-xs font-semibold tracking-tight text-foreground">
-                Institutional Foundations
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="text-foreground text-sm font-semibold tracking-tight">
+                Institutional foundations
               </h4>
-              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase text-amber-600 dark:text-amber-400">
-                Step 3 Government
-              </span>
+              <Badge variant="outline" className="text-muted-foreground">
+                Step 3 · Government
+              </Badge>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {governmentComponents.slice(0, 5).map((comp) => (
-                <Badge
-                  key={comp}
-                  variant="outline"
-                  className="rounded-md border-border/60 bg-background/50 px-2 py-0.5 text-xs font-medium text-foreground/90 backdrop-blur-xs transition-colors hover:bg-muted/40 hover:border-border"
-                >
+                <Badge key={comp} variant="secondary">
                   {formatGovName(comp)}
                 </Badge>
               ))}
               {governmentComponents.length > 5 && (
-                <span className="text-xs font-medium text-muted-foreground/80 pl-0.5">
+                <span className="text-muted-foreground pl-0.5 text-xs font-medium">
                   +{governmentComponents.length - 5} more
                 </span>
               )}
@@ -145,31 +138,28 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
           </div>
         </div>
 
-        {/* Right: Active Synergies indicator */}
-        <div className="shrink-0 flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/30">
+        {/* Right: active cross-builder synergies */}
+        <div className="border-border/60 flex shrink-0 items-center gap-2 border-t pt-2 sm:border-t-0 sm:pt-0">
           {activeSynergies.length > 0 ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 shadow-xs">
-                <Zap className="h-3.5 w-3.5 fill-emerald-500/20" />
-                <span>
-                  {activeSynergies.length} Cross-{activeSynergies.length === 1 ? "Synergy" : "Synergies"} Active
-                </span>
-              </div>
-              <div className="hidden lg:flex items-center gap-1 text-xs font-medium text-emerald-600/90 dark:text-emerald-400/90">
-                ({activeSynergies[0]?.title}: {activeSynergies[0]?.effect})
-                {activeSynergies.length > 1 && (
-                  <span className="text-muted-foreground">+{activeSynergies.length - 1} more</span>
-                )}
-              </div>
-            </div>
+            <>
+              <Badge variant="outline" className="text-emerald-600">
+                <Zap aria-hidden="true" />
+                {activeSynergies.length} cross-
+                {activeSynergies.length === 1 ? "synergy" : "synergies"} active
+              </Badge>
+              <span className="text-muted-foreground hidden text-xs lg:inline">
+                <span className="text-foreground font-medium">{activeSynergies[0]?.title}</span>:{" "}
+                {activeSynergies[0]?.effect}
+                {activeSynergies.length > 1 && ` · +${activeSynergies.length - 1} more`}
+              </span>
+            </>
           ) : (
-            <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-              <span>Select economic models to unlock institutional synergies</span>
-            </div>
+            <p className="text-muted-foreground text-xs">
+              Select economic models to unlock institutional synergies
+            </p>
           )}
         </div>
       </div>
-    </div>
+    </FacetCard>
   );
 });

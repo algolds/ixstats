@@ -1,13 +1,52 @@
 "use client";
 // src/hooks/useInternalStability.ts
 
-import React from "react";
-import { StatUp as TrendingUp, StatDown as TrendingDown, Minus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
 interface UseInternalStabilityProps {
   countryId: string;
+}
+
+/** Semantic status tone for a stability reading; maps to text colours that read in both themes. */
+export type StabilityTone = "success" | "neutral" | "warning" | "critical";
+
+/** Direction of the stability trend, for the consumer to pick a glyph. */
+export type StabilityTrendDirection = "up" | "down" | "flat";
+
+export const STABILITY_TONE_TEXT: Record<StabilityTone, string> = {
+  success: "text-emerald-600",
+  neutral: "text-foreground",
+  warning: "text-orange-600",
+  critical: "text-destructive",
+};
+
+/** Stability score (0–100) → semantic tone. */
+export function getStabilityTone(score: number): StabilityTone {
+  if (score >= 80) return "success";
+  if (score >= 60) return "neutral";
+  if (score >= 20) return "warning";
+  return "critical";
+}
+
+/** Event severity → semantic tone. */
+export function getSeverityTone(severity: string): StabilityTone {
+  switch (severity) {
+    case "critical":
+    case "high":
+      return "critical";
+    case "moderate":
+      return "warning";
+    default:
+      return "neutral";
+  }
+}
+
+/** Trend label from the stability router → direction (and its tone: up is good, down is bad). */
+export function getTrendDirection(trend: string): StabilityTrendDirection {
+  if (trend === "improving") return "up";
+  if (trend === "declining" || trend === "critical") return "down";
+  return "flat";
 }
 
 export function useInternalStability({ countryId }: UseInternalStabilityProps) {
@@ -18,7 +57,7 @@ export function useInternalStability({ countryId }: UseInternalStabilityProps) {
   const resolveEvent = api.security.resolveSecurityEvent.useMutation({
     onSuccess: () => {
       notify.success("Event resolved");
-      refetchStability();
+      void refetchStability();
     },
     onError: (error) => {
       notify.error(`Failed to resolve event: ${error.message}`);
@@ -28,59 +67,15 @@ export function useInternalStability({ countryId }: UseInternalStabilityProps) {
   const metrics = stabilityData?.metrics;
   const activeEvents = stabilityData?.activeEvents ?? [];
 
-  const getStabilityColor = (score: number) => {
-    if (score >= 80) return "text-green-600";
-    if (score >= 60) return "text-blue-600";
-    if (score >= 40) return "text-yellow-600";
-    if (score >= 20) return "text-orange-600";
-    return "text-red-600";
-  };
-
-  const getStabilityBg = (score: number) => {
-    if (score >= 80) return "bg-green-50 border-green-200";
-    if (score >= 60) return "bg-blue-50 border-blue-200";
-    if (score >= 40) return "bg-yellow-50 border-yellow-200";
-    if (score >= 20) return "bg-orange-50 border-orange-200";
-    return "bg-red-50 border-red-200";
-  };
-
-  const getTrendIcon = (trend: string) => {
-    if (trend === "improving")
-      return React.createElement(TrendingUp, {
-        className: "h-4 w-4 text-green-600",
-      });
-    if (trend === "declining" || trend === "critical")
-      return React.createElement(TrendingDown, {
-        className: "h-4 w-4 text-red-600",
-      });
-    return React.createElement(Minus, {
-      className: "h-4 w-4 text-muted-foreground",
-    });
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "critical":
-        return "bg-red-600";
-      case "high":
-        return "bg-orange-600";
-      case "moderate":
-        return "bg-yellow-600";
-      case "low":
-        return "bg-blue-600";
-      default:
-        return "bg-muted";
-    }
-  };
-
   return {
     metrics,
     activeEvents,
     resolveEvent,
     refetchStability,
-    getStabilityColor,
-    getStabilityBg,
-    getTrendIcon,
-    getSeverityColor,
+    /** Semantic text colour for a stability score. */
+    getStabilityColor: (score: number) => STABILITY_TONE_TEXT[getStabilityTone(score)],
+    /** Semantic text colour for an event severity (use on an outline `<Badge>`). */
+    getSeverityColor: (severity: string) => STABILITY_TONE_TEXT[getSeverityTone(severity)],
+    getTrendDirection,
   };
 }

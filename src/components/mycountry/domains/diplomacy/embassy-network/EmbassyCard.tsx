@@ -81,7 +81,7 @@ interface EmbassyCardProps {
  * <EmbassyCard
  *   embassy={embassyData}
  *   isOwner={true}
- *   onClick={() => setShowSharedData(embassy.id)}
+ *   onClick={() => setSelectedEmbassyId(embassy.id)}
  * />
  * ```
  */

@@ -39,7 +39,7 @@ export const defaultVitalityRings: VitalityRing[] = [
     id: "economic",
     label: "Economic Vitality",
     value: 0,
-    color: "#F59E0B", // Amber
+    color: "var(--color-amber-500)",
     icon: DollarSign,
     description: "Economic health and performance",
   },
@@ -47,7 +47,7 @@ export const defaultVitalityRings: VitalityRing[] = [
     id: "population",
     label: "Population Wellbeing",
     value: 0,
-    color: "#06B6D4", // Cyan
+    color: "var(--color-cyan-500)",
     icon: Users,
     description: "Quality of life and development",
   },
@@ -55,7 +55,7 @@ export const defaultVitalityRings: VitalityRing[] = [
     id: "diplomatic",
     label: "Diplomatic Standing",
     value: 0,
-    color: "#8B5CF6", // Violet
+    color: "var(--color-violet-500)",
     icon: Globe,
     description: "International relations strength",
   },
@@ -63,7 +63,7 @@ export const defaultVitalityRings: VitalityRing[] = [
     id: "government",
     label: "Government Efficiency",
     value: 0,
-    color: "#EF4444", // Red
+    color: "var(--color-red-500)",
     icon: Building,
     description: "Governance effectiveness",
   },
@@ -284,10 +284,10 @@ export function QuickVitalityRings({
 }
 
 export function getAppleVitalityColor(score: number): string {
-  if (score >= 80) return "#10B981"; // Apple Emerald Green (Optimal)
-  if (score >= 65) return "#06B6D4"; // Apple Cyan Blue (Strong)
-  if (score >= 45) return "#F59E0B"; // Apple Amber Gold (Moderate)
-  return "#EF4444"; // Apple Rose Red (Strained)
+  if (score >= 80) return "var(--color-emerald-500)"; // Optimal
+  if (score >= 65) return "var(--color-cyan-500)"; // Strong
+  if (score >= 45) return "var(--color-amber-500)"; // Moderate
+  return "var(--color-red-500)"; // Strained
 }
 
 /**

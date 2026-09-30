@@ -3,9 +3,9 @@
 /**
  * Atomic Metrics Bar
  *
- * Glass-pill indicators displaying live component metrics: total components,
- * average effectiveness, implementation and maintenance costs, synergies, and conflicts.
- * Supports interactive dialog triggers.
+ * A row of solid Facet tiles showing live component metrics: total components, average
+ * effectiveness, implementation and maintenance costs, synergies, and conflicts. A tile with a
+ * click handler becomes a pressable Facet (opens that metric's detail dialog).
  */
 
 import React from "react";
@@ -17,6 +17,8 @@ import {
   Package,
   Archery as Target,
 } from "iconoir-react";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn, formatCurrency } from "~/lib/utils";
 import type { AtomicMetrics } from "./types";
 
@@ -31,6 +33,15 @@ export interface AtomicMetricsBarProps {
   onConflictsClick?: () => void;
 }
 
+interface MetricItem {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Semantic tone: only conflicts carry colour, and only when there are any. */
+  tone?: "destructive";
+  onClick?: () => void;
+}
+
 export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
   metrics,
   currencyFormatter = formatCurrency,
@@ -41,97 +52,95 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
   onSynergiesClick,
   onConflictsClick,
 }: AtomicMetricsBarProps) {
-  const metricItems = [
+  const metricItems: MetricItem[] = [
     {
       label: "Components",
       value: metrics.totalComponents,
       icon: Package,
-      color: "text-blue-500 dark:text-blue-400 border-blue-500/20 bg-blue-500/5 hover:border-blue-400/40",
-      iconColor: "text-blue-500 dark:text-blue-400",
       onClick: onComponentsClick,
     },
     {
       label: "Avg Effectiveness",
       value: `${metrics.totalEffectiveness}%`,
       icon: Target,
-      color: "text-emerald-500 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-400/40",
-      iconColor: "text-emerald-500 dark:text-emerald-400",
       onClick: onEffectivenessClick,
     },
     {
       label: "Implementation",
       value: currencyFormatter(metrics.implementationCost),
       icon: DollarSign,
-      color: "text-amber-500 dark:text-amber-400 border-amber-500/20 bg-amber-500/5 hover:border-amber-400/40",
-      iconColor: "text-amber-500 dark:text-amber-400",
       onClick: onImplementationClick,
     },
     {
       label: "Annual Maint.",
       value: `${currencyFormatter(metrics.maintenanceCost)}/yr`,
       icon: TrendingUp,
-      color: "text-indigo-500 dark:text-indigo-400 border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-400/40",
-      iconColor: "text-indigo-500 dark:text-indigo-400",
       onClick: onMaintenanceClick,
     },
     {
       label: "Synergies",
       value: metrics.synergyCount,
       icon: Zap,
-      color: "text-cyan-500 dark:text-cyan-400 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-400/40",
-      iconColor: "text-cyan-500 dark:text-cyan-400",
       onClick: onSynergiesClick,
     },
     {
       label: "Conflicts",
       value: metrics.conflictCount,
       icon: AlertTriangle,
-      color:
-        metrics.conflictCount > 0
-          ? "text-red-500 dark:text-red-400 border-red-500/30 bg-red-500/10 hover:border-red-400/50"
-          : "text-muted-foreground border-border/40 bg-muted/20 hover:border-border",
-      iconColor: metrics.conflictCount > 0 ? "text-red-500 dark:text-red-400" : "text-muted-foreground",
+      tone: metrics.conflictCount > 0 ? "destructive" : undefined,
       onClick: onConflictsClick,
     },
   ];
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-      {metricItems.map((item, index) => {
+      {metricItems.map((item) => {
         const Icon = item.icon;
-        const isClickable = Boolean(item.onClick);
+        const onClick = item.onClick;
+        const isDestructive = item.tone === "destructive";
 
         return (
-          <div
-            key={index}
-            role={isClickable ? "button" : undefined}
-            tabIndex={isClickable ? 0 : undefined}
-            onClick={item.onClick}
-            onKeyDown={(e) => {
-              if (isClickable && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                item.onClick?.();
-              }
-            }}
-            title={isClickable ? `Click to view details for ${item.label}` : undefined}
+          <FacetCard
+            key={item.label}
+            surface="solid"
+            onClick={onClick}
+            onKeyDown={
+              onClick
+                ? (e: React.KeyboardEvent<HTMLDivElement>) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onClick();
+                    }
+                  }
+                : undefined
+            }
+            aria-label={onClick ? `${item.label}: view details` : undefined}
+            data-cuelume-press={onClick ? "press" : undefined}
+            data-cuelume-hover={onClick ? "tick" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-xl border p-2.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
-              item.color,
-              isClickable && "cursor-pointer active:scale-[0.98] hover:shadow-xs"
+              "flex items-center gap-2.5 rounded-xl p-3 select-none",
+              onClick && "hover:border-foreground/20 focus-visible:ring-ring focus-visible:ring-1 focus-visible:outline-none"
             )}
           >
-            <div className="rounded-lg p-1.5 shrink-0 bg-current/10">
-              <Icon className={cn("h-4 w-4", item.iconColor)} />
-            </div>
+            <Icon
+              aria-hidden="true"
+              className={cn(
+                "h-4 w-4 shrink-0",
+                isDestructive ? "text-destructive" : "text-muted-foreground"
+              )}
+            />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-medium tracking-wide uppercase text-muted-foreground">
-                {item.label}
-              </div>
-              <div className="truncate text-xs font-bold leading-tight tracking-tight text-foreground">
+              <Eyebrow className="block truncate">{item.label}</Eyebrow>
+              <div
+                className={cn(
+                  "truncate text-sm leading-tight font-semibold tabular-nums",
+                  isDestructive ? "text-destructive" : "text-foreground"
+                )}
+              >
                 {item.value}
               </div>
             </div>
-          </div>
+          </FacetCard>
         );
       })}
     </div>

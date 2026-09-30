@@ -12,29 +12,12 @@ export interface StabilityPanelProps {
 }
 
 export function StabilityPanel({ countryId }: StabilityPanelProps) {
-  const {
-    metrics,
-    activeEvents,
-    resolveEvent,
-    getStabilityColor,
-    getStabilityBg,
-    getTrendIcon,
-    getSeverityColor,
-  } = useInternalStability({ countryId });
+  const { metrics, activeEvents, resolveEvent } = useInternalStability({ countryId });
 
   return (
     <div className="space-y-4">
-      <StabilityMetricsCard
-        metrics={metrics}
-        getStabilityColor={getStabilityColor}
-        getStabilityBg={getStabilityBg}
-        getTrendIcon={getTrendIcon}
-      />
-      <SecurityEventsCard
-        activeEvents={activeEvents}
-        resolveEvent={resolveEvent}
-        getSeverityColor={getSeverityColor}
-      />
+      <StabilityMetricsCard metrics={metrics} />
+      <SecurityEventsCard activeEvents={activeEvents} resolveEvent={resolveEvent} />
     </div>
   );
 }
