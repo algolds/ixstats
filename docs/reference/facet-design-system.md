@@ -149,8 +149,8 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 | `Eyebrow` | Uppercase data label (`text-eyebrow`). |
 | `TextureOverlay` | Decorative only; sanctioned textures are `dots`, `grid`, `paperGrain` (`SANCTIONED_TEXTURES`). |
 
-Hero identity (e.g. MyCountry's `FlagBackdrop`) may add a faded image, a tint glow and a tint hairline behind a card's
-content; it must be `aria-hidden`, not printed, and sit behind the content.
+Hero identity (e.g. MyCountry's `FlagWatermark` corner flag and `TintHairline`) may add a small corner image watermark, a
+tint glow and a tint hairline behind a card's content — never a full-width image wash; it must be `aria-hidden`, not printed, and sit behind the content.
 
 ## 4. Controls
 

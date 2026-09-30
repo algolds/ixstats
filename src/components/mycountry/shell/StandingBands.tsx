@@ -30,7 +30,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
-import { FlagBackdrop } from "./FlagBackdrop";
+import { FlagWatermark } from "./FlagWatermark";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -209,8 +209,9 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
         aria-labelledby="national-standing-title"
         role="region"
       >
-        <FlagBackdrop src={flagUrl} intensity="subtle" side="left" tintGlow={false} />
-        <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
+        {/* The country's flag as a circular watermark off the top-right corner (as in c5c6b382). */}
+        <FlagWatermark src={flagUrl} />
+        <FacetCardHeader className="relative flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
           <div className="min-w-0">
             <h2
               id="national-standing-title"
@@ -240,7 +241,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
           </Button>
         </FacetCardHeader>
 
-        <FacetCardContent className="flex flex-col gap-4 p-4 sm:p-5">
+        <FacetCardContent className="relative flex flex-col gap-4 p-4 sm:p-5">
           {/* Vitals: opaque depth-3 tiles (no stacked blur) with tabular figures */}
           {country && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">

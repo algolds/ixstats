@@ -19,6 +19,12 @@ import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import type { StatusTone } from "./status-tone";
+import {
+  DiplomacyGraphic,
+  DefenseGraphic,
+  PoliticsGraphic,
+  EconomyGraphic,
+} from "./ActionCardGraphics";
 
 /**
  * Canon-feed category → label, glyph and status tone. Domains are neutral (glyph + label);
@@ -65,6 +71,8 @@ export const DOMAIN_TILES: {
   title: string;
   drillKind: Exclude<V2Drill, { kind: "intent" } | null>;
   icon: React.ComponentType<{ className?: string }>;
+  /** Fine-stroke watermark behind the tile (`ActionCardGraphics.tsx`). */
+  graphic: React.ComponentType<{ className?: string }>;
   getPeek: (country: CountryPeekData | null | undefined) => string;
 }[] = [
   {
@@ -72,6 +80,7 @@ export const DOMAIN_TILES: {
     title: "Diplomacy",
     drillKind: { kind: "relations" },
     icon: Globe,
+    graphic: DiplomacyGraphic,
     getPeek: () => "Relations, embassies and alliances",
   },
   {
@@ -79,6 +88,7 @@ export const DOMAIN_TILES: {
     title: "Defense",
     drillKind: { kind: "defense" },
     icon: HistoricShieldAlt,
+    graphic: DefenseGraphic,
     getPeek: () => "Forces, readiness and threats",
   },
   {
@@ -86,6 +96,7 @@ export const DOMAIN_TILES: {
     title: "Politics",
     drillKind: { kind: "politics" },
     icon: Scale,
+    graphic: PoliticsGraphic,
     getPeek: (c) => {
       const score = c?.stabilityMetrics?.stabilityScore;
       return typeof score === "number" && Number.isFinite(score)
@@ -98,6 +109,7 @@ export const DOMAIN_TILES: {
     title: "Economy & Budget",
     drillKind: { kind: "economy" },
     icon: TrendingUp,
+    graphic: EconomyGraphic,
     getPeek: (c) => {
       const growth = formatGrowthPeek(c);
       return growth ? `GDP growth ${growth}` : "Budget, tax and trade";
@@ -106,9 +118,9 @@ export const DOMAIN_TILES: {
 ];
 
 /**
- * One domain destination: a plain glyph, title, a real-data peek and a disclosure chevron.
- * An outline `<Button>` is the interactive (depth-3) row: opaque, so it never stacks blur on
- * the glass shell it sits in.
+ * One domain destination: a plain glyph, title, a real-data peek and a disclosure chevron, over
+ * a fine-stroke architectural watermark (restored from c5c6b382). An outline `<Button>` is the
+ * interactive (depth-3) row: opaque, so it never stacks blur on the glass shell it sits in.
  */
 export function DomainTileButton({
   tile,
@@ -122,15 +134,17 @@ export function DomainTileButton({
   onSelect: () => void;
 }) {
   const Icon = tile.icon;
+  const Graphic = tile.graphic;
   return (
     <Button
       type="button"
       variant="outline"
       onClick={onSelect}
-      className="group h-auto min-h-14 w-full justify-start gap-3 rounded-xl p-3 text-left whitespace-normal"
+      className="group h-auto min-h-14 w-full justify-start gap-3 overflow-hidden rounded-xl p-3 text-left whitespace-normal"
     >
-      <Icon aria-hidden="true" className="text-muted-foreground size-5 shrink-0" />
-      <span className="flex min-w-0 flex-1 flex-col">
+      <Graphic />
+      <Icon aria-hidden="true" className="text-muted-foreground relative size-5 shrink-0" />
+      <span className="relative flex min-w-0 flex-1 flex-col">
         <span className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
           <span className="truncate">{tile.title}</span>
           {badge}
@@ -141,7 +155,7 @@ export function DomainTileButton({
       </span>
       <NavArrowRight
         aria-hidden="true"
-        className="text-muted-foreground/60 group-hover:text-muted-foreground size-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+        className="text-muted-foreground/60 group-hover:text-muted-foreground relative size-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
       />
     </Button>
   );

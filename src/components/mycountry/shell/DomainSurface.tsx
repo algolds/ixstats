@@ -15,6 +15,7 @@ import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
 import { STATUS_TEXT } from "./status-tone";
+import { WatermarkGlyph } from "./FlagWatermark";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -70,8 +71,21 @@ function DomainSurfaceComponent({
   return (
     <div className="space-y-6">
       {/* Domain header: domain glyph, title, one-line purpose and a domain-scoped directive */}
-      <FacetCard depth={1} interactive="none" className="rounded-3xl p-4 sm:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <FacetCard
+        depth={1}
+        interactive="none"
+        className="relative overflow-hidden rounded-3xl p-4 sm:p-5"
+      >
+        {/* Ambient glow (app tint, top-right) + the domain's glyph as a fine-stroke watermark
+            (bottom-right), restored from c5c6b382. Decorative only. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit] print:hidden"
+        >
+          <div className="bg-tint absolute -top-10 -right-10 size-40 rounded-full opacity-15 blur-3xl" />
+        </div>
+        <WatermarkGlyph icon={meta.icon} className="-right-3 -bottom-4 size-24 opacity-[0.06]" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <meta.icon aria-hidden="true" className="text-muted-foreground mt-1 h-6 w-6 shrink-0" />
             <div className="min-w-0">

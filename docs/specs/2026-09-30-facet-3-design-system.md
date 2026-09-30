@@ -353,7 +353,7 @@ values on hover or tap.
    content inside them; (c) `FacetCard`/`FacetContainer` still accept `depth`, `theme`, `variant` and
    `enableRefraction` as ignored props because callers pass them; (d) IxMaps and the map editor keep glass on their
    floating panels via `material="regular"|"thick"`; (e) `appearance.ts` still writes `data-typography` (the picker is
-   gone); (f) hero surfaces may carry identity imagery (MyCountry's `FlagBackdrop`: faded flag, tint glow, hairline).
+   gone); (f) hero surfaces may carry identity imagery (MyCountry's `FlagWatermark`: circular corner flag, plus `TintHairline`; no full-width wash).
 3. **Navigation shell** behind a flag: `AppSidebar`, `TabBar`, `PageHeader`, Halo as island; flip the flag once every
    app has a section map.
 4. **Apps, worst-first:** dashboard, achievements, passport/settings, ThinkPages, WikiOS, labs chrome, Halo views,

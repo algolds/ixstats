@@ -1,48 +1,74 @@
-import type { Calendar } from "iconoir-react";
+import type { ComponentType } from "react";
 import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { StatusTone } from "../status-tone";
 
-export interface AgendaEvent {
+/** Where an inbox item comes from — also the item's mailbox. */
+export type AgendaItemKind = "issue" | "directive" | "election";
+
+/**
+ * How pressing an item is, relative to its deadline. Never a calendar date: an item is either
+ * past its deadline, close to it, or simply scheduled.
+ */
+export type AgendaUrgency = "overdue" | "due-soon" | "upcoming";
+
+/** One inbox item, derived from live game state (never stored or invented). */
+export interface AgendaItem {
+  /** Stable across refetches: `<kind>:<source id>`. */
   id: string;
-  dayOffset: number; // 0 = Today, 1 = Tomorrow, etc.
-  timeLabel: string;
+  kind: AgendaItemKind;
   title: string;
-  category: "defense" | "diplomacy" | "politics" | "economy" | "directive";
+  /** One-line snippet under the title. */
+  preview: string;
+  /** Full text for the item's detail dialog. */
   description: string;
-  directiveGoal: string;
-  /** Sentence-case status, e.g. "Priority issue". */
+  /** Sentence-case source label, e.g. "Priority issue", "Moderate directive", "Election". */
   statusLabel: string;
-  icon: typeof Calendar;
-  /** Status tone for the row's glyph and status label (colour only when it means something). */
+  icon: ComponentType<{ className?: string }>;
+  /** Status tone for the glyph and source label (colour only when it means something). */
   tone: StatusTone;
-  /** Higher sorts first within a day (priority issue 4, open issue 3, directive 2, event 1). */
-  priority: number;
+  /** When the item arrived (real time, ms) — shown as "2h ago". */
+  receivedAt: number | null;
+  /** Deadline pressure, when the item has a deadline or a scheduled time. */
+  urgency: AgendaUrgency | null;
+  /** Urgent: shown with a flag and listed under "Needs action". */
+  flagged: boolean;
+  /**
+   * Fingerprint of the underlying state that should bring a read, done or snoozed item back
+   * (an escalated severity, a moved deadline). Inbox state stored for another version is ignored.
+   */
+  version: string;
+  /** Already seen elsewhere (an issue the player has viewed): starts read. */
+  seen: boolean;
+  directiveGoal: string;
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
   intentId?: string;
-  rawIxTime?: number;
 }
 
-export interface DayHorizonItem {
-  offset: number;
-  dayName: string;
-  dayNum: number;
-  isToday: boolean;
-}
+/** The inbox's mailboxes, in display order. */
+export type AgendaMailbox = "all" | "action" | "issues" | "directives" | "elections";
 
-export function seasonFor(month: number): { name: string } {
-  if (month <= 1 || month === 11) return { name: "Winter" };
-  if (month <= 4) return { name: "Spring" };
-  if (month <= 7) return { name: "Summer" };
-  return { name: "Autumn" };
-}
-
-export const AGENDA_CATEGORY_LABEL: Record<AgendaEvent["category"], string> = {
-  directive: "Directives",
-  politics: "Politics",
-  diplomacy: "Diplomacy",
-  defense: "Defense",
-  economy: "Economy",
+export const AGENDA_MAILBOX_LABEL: Record<AgendaMailbox, string> = {
+  all: "All",
+  action: "Needs action",
+  issues: "Issues",
+  directives: "Directives",
+  elections: "Elections",
 };
+
+export function inMailbox(item: AgendaItem, mailbox: AgendaMailbox): boolean {
+  switch (mailbox) {
+    case "all":
+      return true;
+    case "action":
+      return item.flagged;
+    case "issues":
+      return item.kind === "issue";
+    case "directives":
+      return item.kind === "directive";
+    case "elections":
+      return item.kind === "election";
+  }
+}
 
 export function getSeverityRank(s: string): number {
   const sev = String(s ?? "").toLowerCase();

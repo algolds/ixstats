@@ -18,7 +18,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { FlagBackdrop } from "../FlagBackdrop";
+import { TintHairline } from "../FlagWatermark";
 import { assetUrl } from "~/lib/base-path";
 import { DOMAIN_TILES, DomainTileButton } from "../ExecutiveActionCards";
 import { CooldownTimer } from "../ExecutiveHome";
@@ -121,7 +121,7 @@ export function UnifiedGlassCommandBar({
       textureOpacity={0.035}
       className="relative flex w-full flex-col gap-4 overflow-hidden rounded-3xl p-4 sm:gap-5 sm:p-5"
     >
-      <FlagBackdrop src={flagUrl} />
+      <TintHairline />
       <header className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Large title: flag + country name, with a calm identity footnote */}
         <div className="flex min-w-0 items-center gap-3.5">

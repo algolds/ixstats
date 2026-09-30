@@ -23,8 +23,7 @@ import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/Drill
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
 import { STATUS_TEXT, type StatusTone } from "./status-tone";
-import { FlagBackdrop } from "./FlagBackdrop";
-import { assetUrl } from "~/lib/base-path";
+import { WatermarkGlyph } from "./FlagWatermark";
 
 interface Opportunity {
   id: string;
@@ -75,7 +74,6 @@ function ExecutiveOpportunityHeroComponent({
   onOpenIntent,
 }: ExecutiveOpportunityHeroProps): React.JSX.Element | null {
   const { country } = useCountryData();
-  const heroImageUrl = assetUrl(country?.headerImageUrl || country?.flagUrl || country?.flag);
   const storageKey = countryId ? `ixstats:dismissedHero:${countryId}` : null;
 
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
@@ -317,7 +315,8 @@ function ExecutiveOpportunityHeroComponent({
           interactive="none"
           className="relative overflow-hidden rounded-3xl p-4 sm:p-6"
         >
-          <FlagBackdrop src={heroImageUrl} intensity="subtle" tintGlow={false} />
+          {/* Ambient watermark: the priority's own glyph, fine stroke, bottom-right (c5c6b382). */}
+          <WatermarkGlyph icon={Icon} />
           <Button
             type="button"
             variant="ghost"
