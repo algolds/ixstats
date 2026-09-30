@@ -5,8 +5,19 @@
  * Behavior preserved exactly.
  */
 
-import { Clock, Shield, Landmark, Globe2, Scroll, Users, BookOpen } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import {
+  Clock,
+  Shield,
+  Bank as Landmark,
+  Globe as Globe2,
+  OpenBook as Scroll,
+  Group as Users,
+  OpenBook as BookOpen,
+} from "iconoir-react";
+import type { ComponentType, SVGProps } from "react";
+import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
+
+export type WikiSectionIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 // ─── Wiki intro parsing ──────────────────────────────────────────────────────
 
@@ -96,15 +107,9 @@ export function extractWikiSectionRawContent(sectionContent: unknown): string | 
  * no raw content.
  */
 export function cleanWikiSectionContent(rawContent: string | null): string | null {
-  return rawContent
-    ? rawContent
-        .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1")
-        .replace(/\{\{[^}]*\}\}/g, "")
-        .replace(/<[^>]*>/g, "")
-        .replace(/'{2,3}/g, "")
-        .trim()
-        .slice(0, 600)
-    : null;
+  if (!rawContent) return null;
+  const cleaned = cleanWikiMarkup(rawContent, 600);
+  return cleaned || null;
 }
 
 // ─── Wiki section classification ─────────────────────────────────────────────
@@ -112,7 +117,7 @@ export function cleanWikiSectionContent(rawContent: string | null): string | nul
 export const WIKI_SECTION_TYPES: Array<{
   pattern: RegExp;
   label: string;
-  icon: LucideIcon;
+  icon: WikiSectionIcon;
   color: string;
 }> = [
   {
@@ -165,7 +170,7 @@ export const WIKI_SECTION_TYPES: Array<{
  */
 export function classifyWikiSection(title: string): {
   label: string;
-  icon: LucideIcon;
+  icon: WikiSectionIcon;
   color: string;
 } {
   for (const type of WIKI_SECTION_TYPES) {

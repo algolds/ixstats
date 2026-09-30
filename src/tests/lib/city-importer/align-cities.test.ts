@@ -1,6 +1,10 @@
 import { describe, it, expect } from "@jest/globals";
 import { deriveCityAffine, applyCityAffine } from "~/lib/city-importer/align-cities";
-import type { SvgProvinceRef, DbSubdivisionRef, SvgCityPoint } from "~/lib/city-importer/align-cities";
+import type {
+  SvgProvinceRef,
+  DbSubdivisionRef,
+  SvgCityPoint,
+} from "~/lib/city-importer/align-cities";
 
 describe("deriveCityAffine", () => {
   it("recovers a known affine transform from matched province centroids", () => {

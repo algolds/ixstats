@@ -1,17 +1,10 @@
 "use client";
 
+import { NavArrowDown, Check, Globe, Group, MapPin, StatsReport, Trophy } from "iconoir-react";
+
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
-import {
-  RiGlobalLine,
-  RiGroupLine,
-  RiBarChartLine,
-  RiTrophyLine,
-  RiArrowDownSLine,
-  RiCheckLine,
-  RiMapPinLine,
-} from "react-icons/ri";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 
@@ -79,17 +72,18 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
   );
 
   const formatShort = (n: number) => {
-    if (n >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+    if (n >= 1e12) return `$${(n / 1e12).toFixed(1)} trillion`;
+    if (n >= 1e9) return `$${(n / 1e9).toFixed(1)} billion`;
+    if (n >= 1e6) return `$${(n / 1e6).toFixed(1)} million`;
     return `$${n.toLocaleString()}`;
   };
 
   const formatPop = (n: number) => {
-    if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
-    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-    if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
-    return n.toString();
+    if (n >= 1e12) return `${(n / 1e12).toFixed(1)} trillion`;
+    if (n >= 1e9) return `${(n / 1e9).toFixed(1)} billion`;
+    if (n >= 1e6) return `${(n / 1e6).toFixed(1)} million`;
+    if (n >= 1e3) return `${(n / 1e3).toFixed(1)} thousand`;
+    return n.toLocaleString();
   };
 
   return (
@@ -102,29 +96,30 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
       >
         <Popover>
           <PopoverTrigger
+            data-cuelume-press="tick"
             className={cn(
-              "glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left transition-all",
+              "facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
               continentFilter && "ring-1 ring-blue-400/40"
             )}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-blue-500/10 p-2">
-                  <RiGlobalLine className="h-5 w-5 text-blue-400" />
+                  <Globe className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">{continentFilter || "Countries"}</p>
-                  <p className="text-foreground text-lg font-semibold">
+                  <p className="text-muted-foreground text-xs font-medium">{continentFilter || "Countries"}</p>
+                  <p className="text-foreground text-lg font-bold">
                     {totalCountries.toLocaleString()}
                   </p>
                 </div>
               </div>
-              <RiArrowDownSLine className="text-muted-foreground h-4 w-4" />
+              <NavArrowDown className="text-muted-foreground h-4 w-4" />
             </div>
           </PopoverTrigger>
           <PopoverContent className="!glass-none bg-popover border-border w-64 rounded-xl border p-0 shadow-xl">
             <div className="p-3">
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Filter by Continent
               </p>
               <button
@@ -137,7 +132,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                 )}
               >
                 <span>All Continents</span>
-                {!continentFilter && <RiCheckLine className="h-3.5 w-3.5" />}
+                {!continentFilter && <Check className="h-3.5 w-3.5" />}
               </button>
               <div className="border-border my-1.5 border-t" />
               <div className="max-h-48 space-y-0.5 overflow-y-auto">
@@ -155,7 +150,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <RiMapPinLine className="h-3 w-3 text-blue-400/60" />
+                      <MapPin className="h-3 w-3 text-blue-400/60" />
                       <span>{continent}</span>
                     </div>
                     <span className="text-muted-foreground text-xs">{count}</span>
@@ -174,20 +169,23 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         transition={{ delay: 0.1, duration: 0.4 }}
       >
         <Popover>
-          <PopoverTrigger className="glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left">
+          <PopoverTrigger
+            data-cuelume-press="tick"
+            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-green-500/10 p-2">
-                  <RiGroupLine className="h-5 w-5 text-green-400" />
+                  <Group className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">Total Population</p>
-                  <p className="text-foreground text-lg font-semibold">
+                  <p className="text-muted-foreground text-xs font-medium">Total Population</p>
+                  <p className="text-foreground text-lg font-bold">
                     {formatPop(totalPopulation)}
                   </p>
                 </div>
               </div>
-              <RiArrowDownSLine className="text-muted-foreground h-4 w-4" />
+              <NavArrowDown className="text-muted-foreground h-4 w-4" />
             </div>
           </PopoverTrigger>
           <PopoverContent className="!glass-none bg-popover border-border w-72 rounded-xl border p-0 shadow-xl">
@@ -196,7 +194,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 {Math.round(totalPopulation).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Top 5 by Population
               </p>
               <div className="space-y-1">
@@ -204,7 +202,8 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                   <button
                     key={c.id}
                     onClick={() => onCountryClick(c.id, c.name)}
-                    className="text-foreground hover:bg-muted flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm transition-colors"
+                    data-cuelume-press="tick"
+                    className="text-foreground hover:bg-muted flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm transition-colors active:scale-[0.99]"
                   >
                     <span className="flex items-center gap-2">
                       <span className="text-muted-foreground w-4 text-xs">{i + 1}.</span>
@@ -228,18 +227,21 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         transition={{ delay: 0.2, duration: 0.4 }}
       >
         <Popover>
-          <PopoverTrigger className="glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left">
+          <PopoverTrigger
+            data-cuelume-press="tick"
+            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-purple-500/10 p-2">
-                  <RiBarChartLine className="h-5 w-5 text-purple-400" />
+                  <StatsReport className="h-5 w-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">Combined GDP</p>
-                  <p className="text-foreground text-lg font-semibold">{formatShort(totalGDP)}</p>
+                  <p className="text-muted-foreground text-xs font-medium">Combined GDP</p>
+                  <p className="text-foreground text-lg font-bold">{formatShort(totalGDP)}</p>
                 </div>
               </div>
-              <RiArrowDownSLine className="text-muted-foreground h-4 w-4" />
+              <NavArrowDown className="text-muted-foreground h-4 w-4" />
             </div>
           </PopoverTrigger>
           <PopoverContent className="!glass-none bg-popover border-border w-72 rounded-xl border p-0 shadow-xl">
@@ -248,7 +250,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 ${Math.round(totalGDP).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Top 5 by Total GDP
               </p>
               <div className="space-y-1">
@@ -256,7 +258,8 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                   <button
                     key={c.id}
                     onClick={() => onCountryClick(c.id, c.name)}
-                    className="text-foreground hover:bg-muted flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm transition-colors"
+                    data-cuelume-press="tick"
+                    className="text-foreground hover:bg-muted flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm transition-colors active:scale-[0.99]"
                   >
                     <span className="flex items-center gap-2">
                       <span className="text-muted-foreground w-4 text-xs">{i + 1}.</span>
@@ -280,20 +283,23 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         transition={{ delay: 0.3, duration: 0.4 }}
       >
         <Popover>
-          <PopoverTrigger className="glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left">
+          <PopoverTrigger
+            data-cuelume-press="tick"
+            className="facet-surface facet-interactive w-full cursor-pointer rounded-xl p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-orange-500/10 p-2">
-                  <RiTrophyLine className="h-5 w-5 text-orange-400" />
+                  <Trophy className="h-5 w-5 text-orange-400" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">Avg GDP/Capita</p>
-                  <p className="text-foreground text-lg font-semibold">
+                  <p className="text-muted-foreground text-xs font-medium">Avg GDP/Capita</p>
+                  <p className="text-foreground text-lg font-bold">
                     {formatShort(avgGDPPerCapita)}
                   </p>
                 </div>
               </div>
-              <RiArrowDownSLine className="text-muted-foreground h-4 w-4" />
+              <NavArrowDown className="text-muted-foreground h-4 w-4" />
             </div>
           </PopoverTrigger>
           <PopoverContent className="!glass-none bg-popover border-border w-72 rounded-xl border p-0 shadow-xl">
@@ -302,7 +308,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 ${Math.round(avgGDPPerCapita).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Top 5 Highest
               </p>
               <div className="space-y-1">

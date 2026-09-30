@@ -3,7 +3,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "motion/react";
 
-import { Users, Rss, BookOpen, Settings, Globe } from "lucide-react";
+import {
+  Group as Users,
+  RssFeed as Rss,
+  OpenBook as BookOpen,
+  Settings,
+  Globe,
+} from "iconoir-react";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -16,16 +22,43 @@ import {
   staggerItem,
 } from "~/components/mycountry/shared/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 
-import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
-import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
-import { AccountManagerModal } from "~/components/thinkpages/AccountManagerModal";
-import { RepostModal } from "~/components/thinkpages/RepostModal";
-import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
+type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
+
+import dynamic from "next/dynamic";
 import { useNotify } from "~/hooks/useNotify";
+import { soundEffects } from "~/lib/sound/cuelume";
+
+const GlassCanvasComposer = dynamic(
+  () => import("~/components/thinkpages/GlassCanvasComposer").then((m) => m.GlassCanvasComposer),
+  {
+    loading: () => <div className="h-36 animate-pulse rounded-2xl bg-white/5" />,
+    ssr: false,
+  }
+);
+
+const AccountCreationModal = dynamic(
+  () => import("~/components/thinkpages/AccountCreationModal").then((m) => m.AccountCreationModal),
+  { ssr: false }
+);
+
+const AccountSettingsModal = dynamic(
+  () => import("~/components/thinkpages/AccountSettingsModal").then((m) => m.AccountSettingsModal),
+  { ssr: false }
+);
+
+const AccountManagerModal = dynamic(
+  () => import("~/components/thinkpages/AccountManagerModal").then((m) => m.AccountManagerModal),
+  { ssr: false }
+);
+
+const RepostModal = dynamic(
+  () => import("~/components/thinkpages/RepostModal").then((m) => m.RepostModal),
+  { ssr: false }
+);
 
 import { UnifiedFeedContent, FollowingFeedContent } from "./UnifiedFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";
@@ -67,10 +100,10 @@ export function UnifiedDashboardSection({
 
   // ── Feed state ──
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
-  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [selectedAccount, setSelectedAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
-  const [settingsAccount, setSettingsAccount] = useState<any>(null);
+  const [settingsAccount, setSettingsAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
@@ -107,6 +140,7 @@ export function UnifiedDashboardSection({
 
   // ── Auto-select account ──
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!selectedAccount && accounts.length > 0) setSelectedAccount(accounts[0]);
   }, [accounts, selectedAccount]);
 
@@ -146,10 +180,15 @@ export function UnifiedDashboardSection({
   const handleReply = useCallback(
     (_postId: string) => {
       if (!selectedAccount) {
-        notify.error("Please select an account first");
+        if (accounts.length === 0 && isCountryDataReady) {
+          setShowAccountCreation(true);
+        } else {
+          setIsAccountModalOpen(true);
+        }
+        notify.error("Please select or create an account first to reply");
       }
     },
-    [selectedAccount, notify]
+    [selectedAccount, accounts.length, isCountryDataReady, notify]
   );
 
   const handleShare = useCallback(
@@ -177,19 +216,22 @@ export function UnifiedDashboardSection({
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="space-y-5 md:space-y-7"
+      className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
     >
       {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
         <div className="facet-layout-grid-3">
           {/* Feed stream (left 2/3) */}
           <div className="facet-layout-main-span-2 space-y-5">
-            {/* Feed Tab Bar */}
+            {/* Feed Tab Bar - ticks on change incl Community */}
             <motion.div variants={staggerItem} className="flex items-center gap-2">
               <FacetTabs
                 tabs={TABS}
                 activeTab={activeTab}
-                onChange={(tabId) => setActiveTab(tabId as FeedTab)}
+                onChange={(tabId) => {
+                  soundEffects.press();
+                  setActiveTab(tabId as FeedTab);
+                }}
                 tone="accent"
                 size="md"
                 className="flex-1"
@@ -199,7 +241,8 @@ export function UnifiedDashboardSection({
               {isSignedIn && (
                 <button
                   onClick={() => setIsAccountModalOpen(true)}
-                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] shadow-sm transition-all duration-300 hover:bg-black/[0.08] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.08]"
+                  data-cuelume-press="soft"
+                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-black/[0.08] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.08]"
                   title="Feed & Account Settings"
                 >
                   <Settings className="h-3.5 w-3.5" />
@@ -229,17 +272,17 @@ export function UnifiedDashboardSection({
                   onCreateAccount={() => setIsAccountModalOpen(true)}
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
-                  <div className="flex items-center gap-2 px-1 text-[11px]">
+                  <div className="flex items-center gap-2 px-1 text-xs">
                     <span className="text-muted-foreground font-normal">Posting as:</span>
                     <div className="text-foreground flex items-center gap-1.5 font-medium">
                       <span>@{selectedAccount.username}</span>
-                      <span className="text-muted-foreground text-[10px] font-normal">
+                      <span className="text-muted-foreground text-xs font-normal">
                         ({selectedAccount.accountType})
                       </span>
                     </div>
                     <button
                       onClick={() => setIsAccountModalOpen(true)}
-                      className="ml-2 cursor-pointer text-[11px] font-semibold text-purple-600 underline hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                      className="ml-2 cursor-pointer text-xs font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       Switch Account
                     </button>
@@ -289,7 +332,7 @@ export function UnifiedDashboardSection({
           </div>
 
           {/* Sidebar (right 1/3): Community widgets */}
-          <div className="facet-layout-sidebar-span-1 space-y-5 md:sticky md:top-6 md:self-start">
+          <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-20 md:self-start">
             {/* Trending Now — Compact */}
             <TrendingSectionWidget />
 
@@ -325,10 +368,10 @@ export function UnifiedDashboardSection({
                           key={tier}
                           className="bg-muted/50 flex items-center gap-1 rounded px-2 py-0.5"
                         >
-                          <span className="text-[10px] font-medium">{tier}</span>
+                          <span className="text-xs font-medium">{tier}</span>
                           <Badge
                             variant="secondary"
-                            className="bg-background text-foreground border-border border px-1 py-0 text-[9px] font-semibold tabular-nums"
+                            className="bg-background text-foreground border-border border px-1 py-0 text-xs font-semibold tabular-nums"
                           >
                             {count as number}
                           </Badge>

@@ -11,6 +11,8 @@ The pack opening system provides an immersive, cinematic experience for opening 
 - GPU-accelerated animations (60fps target)
 - Full tRPC integration with existing card-packs API
 
+> **Verified September 2026.** Production integration: `src/components/vault/sections/marketplace/VaultStoreTab.tsx` (Vault Shop at `/vault/marketplace?tab=store`) buys packs with `cardPacks.purchasePack` and lazy-loads `PackOpeningSequence`. There is no barrel `index.ts` and no `PackPurchaseModal` — import components from their own files.
+
 ## Components
 
 ### PackOpeningSequence (Main Orchestrator)
@@ -19,12 +21,12 @@ The pack opening system provides an immersive, cinematic experience for opening 
 Main component that coordinates the entire pack opening flow.
 
 ```tsx
-import { PackOpeningSequence } from "~/components/cards/pack-opening";
+import { PackOpeningSequence } from "~/components/cards/pack-opening/PackOpeningSequence";
 
 <PackOpeningSequence
   userPackId="clx123..." // UserPack ID from database
   packType="PREMIUM"
-  packArtwork="/images/packs/premium.png"
+  packArtwork="/images/packs/pack_s1_veteran.svg" // CardPack.artwork
   onComplete={() => {
     // Handle completion (redirect, show rewards, etc.)
   }}
@@ -47,46 +49,17 @@ import { PackOpeningSequence } from "~/components/cards/pack-opening";
 - Error handling with user-friendly messages
 - Loading states during API calls
 
-### PackPurchaseModal
-**File**: `PackPurchaseModal.tsx`
+### Pack purchase (no dedicated modal)
 
-Pre-purchase confirmation modal with balance checking.
+`PackPurchaseModal` no longer exists in this directory. Purchasing is handled in `VaultStoreTab.tsx`: each pack renders as a `PackHolographicCard` (`src/components/vault/sections/marketplace/store/`), the buy button calls `api.cardPacks.purchasePack.mutate({ packId })`, and the resulting `userPackId` is passed to `PackOpeningSequence`. Balance/insufficient-funds errors come back from the ledger (`INSUFFICIENT_CREDITS`).
 
-```tsx
-import { PackPurchaseModal } from "~/components/cards/pack-opening";
+### PackHolographicCover
+**File**: `PackHolographicCover.tsx`
 
-<PackPurchaseModal
-  packId="clx456..."
-  packType="PREMIUM"
-  packName="Premium Pack"
-  packDescription="Better odds for rare cards"
-  priceCredits={500}
-  cardCount={5}
-  isOpen={showModal}
-  onPurchase={(userPackId) => {
-    // Open pack opening sequence with userPackId
-  }}
-  onCancel={() => setShowModal(false)}
-/>
-```
+Layered holographic pack face used by Stage 1 and the store cards. Renders `packArtwork` as the base layer (plus an optional `<name>_foil.svg` overlay for SVG artwork); when no artwork URL is given it falls back to a pack-type gradient.
 
-**Props**:
-- `packId` - CardPack ID from database
-- `packType` - Type of pack
-- `packName` - Display name
-- `packDescription` - Optional description
-- `packArtwork` - Optional artwork URL
-- `priceCredits` - Price in IxCredits
-- `cardCount` - Number of cards in pack
-- `isOpen` - Modal visibility control
-- `onPurchase` - Callback with userPackId after purchase
-- `onCancel` - Callback to close modal
-
-**Features**:
-- Real-time balance checking (vault API)
-- Insufficient funds warning
-- Purchase confirmation with balance preview
-- Error handling for failed purchases
+### GlassSplashEffect
+**File**: `GlassSplashEffect.tsx` — glass shard/splash effect used during the reveal.
 
 ### Individual Stage Components
 
@@ -127,7 +100,7 @@ Post-reveal action interface.
 
 **Duration**: User-controlled
 **Features**:
-- Junk/Keep/List buttons per card
+- Junk/Keep/List buttons per card (only **Junk** is wired — to `cards.junkCards` with ownership IDs; Keep/List just log)
 - Bulk selection mode
 - Quick sell estimates (IC value)
 - "Collect All" auto-option
@@ -136,12 +109,12 @@ Post-reveal action interface.
 ## Service Layer
 
 ### PackOpeningService
-**File**: `src/lib/pack-opening-service.ts`
+**File**: `src/lib/cards/pack-opening-service.ts`
 
 Utility service for sound, haptic, and particle generation.
 
 ```typescript
-import { getPackOpeningService } from "~/lib/pack-opening-service";
+import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 
 const service = getPackOpeningService();
 
@@ -183,6 +156,7 @@ type PackOpeningStage = "reveal" | "explosion" | "cardReveal" | "actions";
 // Card instance (minimal data for animation)
 interface CardInstance {
   id: string;
+  ownershipId?: string;
   name?: string;
   title?: string;
   rarity: CardRarity;
@@ -196,7 +170,8 @@ type QuickActionType = "junk" | "keep" | "list" | "collect";
 
 // Action event
 interface QuickActionEvent {
-  cardId: string;
+  cardId?: string;
+  cardIds?: string[];
   action: QuickActionType;
 }
 
@@ -219,68 +194,42 @@ interface Particle {
 
 ### Step 1: Install in Pack Store Page
 
+See `src/components/vault/sections/marketplace/VaultStoreTab.tsx` for the live integration. Minimal pattern:
+
 ```tsx
-// app/myvault/packs/page.tsx
 "use client";
 
 import { useState } from "react";
-import { PackPurchaseModal, PackOpeningSequence } from "~/components/cards/pack-opening";
+import { PackOpeningSequence } from "~/components/cards/pack-opening/PackOpeningSequence";
 import { api } from "~/trpc/react";
 
-export default function PackStorePage() {
-  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
-  const [selectedPack, setSelectedPack] = useState<PackData | null>(null);
-  const [openingPack, setOpeningPack] = useState<string | null>(null);
-
-  const { data } = api.cardPacks.getAvailablePacks.useQuery();
+export function PackStore() {
+  const [opening, setOpening] = useState<{ userPackId: string; packType: string; artwork?: string } | null>(null);
+  const { data } = api.cardPacks.getAvailablePacks.useQuery(); // { success, packs }
+  const purchase = api.cardPacks.purchasePack.useMutation();
 
   return (
     <div>
-      {/* Pack grid */}
       {data?.packs.map((pack) => (
         <button
           key={pack.id}
-          onClick={() => {
-            setSelectedPack(pack);
-            setPurchaseModalOpen(true);
+          onClick={async () => {
+            const res = await purchase.mutateAsync({ packId: pack.id });
+            setOpening({ userPackId: res.userPack.id, packType: pack.packType, artwork: pack.artwork ?? undefined });
           }}
         >
-          {pack.name}
+          {pack.name} — {pack.priceCredits} IxC
         </button>
       ))}
 
-      {/* Purchase modal */}
-      {selectedPack && (
-        <PackPurchaseModal
-          packId={selectedPack.id}
-          packType={selectedPack.packType}
-          packName={selectedPack.name}
-          packDescription={selectedPack.description}
-          priceCredits={selectedPack.priceCredits}
-          cardCount={selectedPack.cardCount}
-          isOpen={purchaseModalOpen}
-          onPurchase={(userPackId) => {
-            setPurchaseModalOpen(false);
-            setOpeningPack(userPackId);
-          }}
-          onCancel={() => setPurchaseModalOpen(false)}
-        />
-      )}
-
-      {/* Pack opening sequence (fullscreen) */}
-      {openingPack && selectedPack && (
+      {opening && (
         <div className="fixed inset-0 z-50">
           <PackOpeningSequence
-            userPackId={openingPack}
-            packType={selectedPack.packType}
-            packArtwork={selectedPack.artwork}
-            onComplete={() => {
-              setOpeningPack(null);
-              // Optional: Show success message, refresh pack list
-            }}
-            onCancel={() => {
-              setOpeningPack(null);
-            }}
+            userPackId={opening.userPackId}
+            packType={opening.packType as any}
+            packArtwork={opening.artwork}
+            onComplete={() => setOpening(null)}
+            onCancel={() => setOpening(null)}
           />
         </div>
       )}
@@ -289,9 +238,11 @@ export default function PackStorePage() {
 }
 ```
 
+`purchasePack` returns `{ success, message, userPack }`; see `src/server/api/routers/card-packs/` for full shapes.
+
 ### Step 2: Sound Assets
 
-Place sound files in `public/sounds/`:
+Place sound files in `public/sounds/` (none are committed; `public/*` assets are largely git-ignored):
 - `pack-open.mp3` - Explosion sound
 - `common-reveal.mp3` - Common/uncommon card reveal
 - `rare-reveal.mp3` - Rare/ultra-rare card reveal
@@ -301,15 +252,9 @@ Place sound files in `public/sounds/`:
 
 ### Step 3: Pack Artwork
 
-Place pack artwork in `public/images/packs/`:
-- `basic-pack.png`
-- `premium-pack.png`
-- `elite-pack.png`
-- `themed-pack.png`
-- `seasonal-pack.png`
-- `event-pack.png`
+Pack artwork comes from `CardPack.artwork`. The seed (`prisma/seeds/data/card-packs.json`) points at `/images/packs/pack_<id>.svg` (e.g. `pack_s1_recruit.svg`, `pack_lore_master.svg`), with optional `pack_<id>_foil.svg` overlays. These files are **not in the repository** and must be deployed to `public/images/packs/`; see `public/images/packs/README.md`.
 
-**Fallback**: Components show pack type text if artwork missing.
+**Fallback**: `PackHolographicCover` shows a pack-type gradient only when `artwork` is empty; a set-but-missing URL renders a blank base layer.
 
 ## API Integration
 
@@ -323,17 +268,18 @@ const cards = await api.cardPacks.openPack.mutate({
 });
 ```
 
-**Response**:
+**Response** (card entries; see `src/server/api/routers/card-packs/user.ts`):
 ```typescript
 {
   success: true,
   message: "Opened pack and received 5 cards!",
   cards: [
     {
-      id: "clx789...",
+      id: "clx789...",          // Card definition ID
+      ownershipId: "co_...",   // CardOwnership ID (use for junking)
       name: "Ancient Artifact",
       rarity: "LEGENDARY",
-      cardType: "ARTIFACT",
+      cardType: "LORE",
       artwork: "https://...",
       season: 1
     },
@@ -342,10 +288,10 @@ const cards = await api.cardPacks.openPack.mutate({
 }
 ```
 
-### vault.getVaultBalance
+### vault.getBalance
 ```typescript
-// Called by PackPurchaseModal
-const balance = await api.vault.getVaultBalance.query();
+// Used by the Vault Shop to display the balance (there is no getVaultBalance procedure)
+const balance = await api.vault.getBalance.query();
 ```
 
 ## Performance Optimizations
@@ -376,35 +322,26 @@ const balance = await api.vault.getVaultBalance.query();
 ## Future Enhancements
 
 ### Quick Actions Integration
-Currently, quick actions log to console. Integrate with:
+Junk is wired (`cards.junkCards({ ownershipIds })`). Keep and List still only log in `PackOpeningSequence.handleQuickAction`. Candidate integrations:
 ```typescript
-// In Stage4_QuickActions
-const handleQuickAction = (event: QuickActionEvent) => {
-  switch (event.action) {
-    case "junk":
-      api.cards.markAsJunk.mutate({ cardId: event.cardId });
-      break;
-    case "keep":
-      api.cards.addToCollection.mutate({ cardId: event.cardId });
-      break;
-    case "list":
-      api.marketplace.createListing.mutate({ cardId: event.cardId });
-      break;
-  }
-};
+// In PackOpeningSequence.handleQuickAction
+switch (event.action) {
+  case "keep":
+    // e.g. cards.addToCollection (needs a collectionId)
+    break;
+  case "list":
+    // open CreateAuctionModal → cardMarket.createAuction
+    break;
+}
 ```
 
 ### Card Display Component
-Integrate with Agent 1's CardDisplay component:
+Stages render their own card faces; to reuse the shared component:
 ```tsx
-import { CardDisplay } from "~/components/cards/display";
+import { CardDisplay } from "~/components/cards/display/CardDisplay";
 
-// In Stage3_CardReveal or Stage4_QuickActions
-<CardDisplay
-  card={card}
-  showStats={true}
-  interactive={false}
-/>
+// In Stage3_CardReveal or Stage4_QuickActions (map the pack card to CardInstance first)
+<CardDisplay card={card} size="medium" enable3D={false} />
 ```
 
 ## Troubleshooting
@@ -447,14 +384,16 @@ import { CardDisplay } from "~/components/cards/display";
 src/
 ├── components/cards/pack-opening/
 │   ├── PackOpeningSequence.tsx     # Main orchestrator
-│   ├── PackPurchaseModal.tsx       # Purchase confirmation
+│   ├── PackHolographicCover.tsx    # Layered pack face
+│   ├── GlassSplashEffect.tsx       # Reveal effect
 │   ├── Stage1_PackReveal.tsx       # Pack appearance
 │   ├── Stage2_PackExplosion.tsx    # Explosion effect
 │   ├── Stage3_CardReveal.tsx       # Card flip sequence
 │   ├── Stage4_QuickActions.tsx     # Post-reveal actions
-│   ├── index.ts                    # Barrel export
+│   ├── QUICK_START.md
 │   └── README.md                   # This file
-├── lib/
+├── components/vault/sections/marketplace/VaultStoreTab.tsx  # Purchase + opening integration
+├── lib/cards/
 │   └── pack-opening-service.ts     # Service layer
 └── types/
     └── pack-opening.ts             # Type definitions
@@ -462,10 +401,10 @@ src/
 
 ## Dependencies
 
-- `framer-motion` - Animation library (already in project)
+- `motion` (`motion/react`) - Animation library (already in project)
 - `@prisma/client` - Database types
 - `@trpc/client` - API client
 - React 18+ - Hooks and concurrent features
-- Next.js 15 - App Router
+- Next.js App Router
 
 All dependencies already present in IxStats project.

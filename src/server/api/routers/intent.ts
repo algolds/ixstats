@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
@@ -22,6 +23,7 @@ import {
 } from "~/lib/intent/assemble";
 import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
+import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 
@@ -32,18 +34,14 @@ const WEEKLY_CAP = 3; // safety ceiling on intents resolved per IxTime-week
 const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
 
 /** Load active Power Brokers for a country (mirrors elections.getPowerBrokers). */
-async function loadBrokers(db: any, countryId: string): Promise<ActiveBroker[]> {
+async function loadBrokers(db: PrismaClient, countryId: string): Promise<ActiveBroker[]> {
   const [components, allocations] = await Promise.all([
     db.governmentComponent.findMany({
       where: { countryId, isActive: true },
       take: 100,
       select: { componentType: true },
     }),
-    db.budgetAllocation.findMany({
-      where: { governmentStructure: { countryId }, budgetYear: new Date().getFullYear() },
-      take: 50,
-      include: { department: { select: { category: true } } },
-    }),
+    loadEffectiveBudget(db, countryId, { take: 50 }).then((budget) => budget.allocations),
   ]);
 
   const spendByCategory: Record<string, number> = {};
@@ -62,7 +60,7 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
   return id ? brokers.find((b) => b.id === id) : undefined;
 }
 
-async function cooldownStatus(db: any, countryId: string) {
+async function cooldownStatus(db: PrismaClient, countryId: string) {
   const now = IxTime.getCurrentIxTime();
   const weekAgo = now - WEEK_MS;
   const recent = await db.intent.findMany({
@@ -134,13 +132,6 @@ export const intentRouter = createTRPCRouter({
   getStatus: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => cooldownStatus(ctx.db, input.countryId)),
-
-  /** Get a single intent by ID. */
-  getIntent: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    return await ctx.db.intent.findUnique({
-      where: { id: input.id },
-    });
-  }),
 
   /** Update status of an intent (e.g. mark completed, abandoned). */
   updateStatus: protectedProcedure

@@ -1,13 +1,8 @@
+"use client";
 // src/components/shared/editor/GlassPlateEditor.tsx
 // Unified PlateJS Glass Editor supporting full mode, compact mode, and BBCode serialization.
 
-"use client";
-
-import React, {
-  useCallback,
-  useImperativeHandle,
-  forwardRef,
-} from "react";
+import React, { useCallback, useImperativeHandle, forwardRef } from "react";
 import { Plate, PlateContent } from "platejs/react";
 import { Transforms, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
@@ -48,6 +43,8 @@ export interface GlassPlateEditorProps {
   className?: string;
   contentClassName?: string;
   hideToolbar?: boolean;
+  variant?: "default" | "seamless";
+  actionRight?: React.ReactNode;
 }
 
 export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditorProps>(
@@ -67,12 +64,15 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       className,
       contentClassName,
       hideToolbar = false,
+      variant = "default",
+      actionRight,
     },
     ref
   ) => {
     const handleValueChange = useCallback(
       (html: string, plainText: string) => {
         if (onChange) {
+          // oxlint-disable-next-line
           const bbcode = slateNodesToBbcode(editor.children || []);
           onChange(html, plainText, bbcode);
         }
@@ -99,7 +99,9 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       setSelectedWikiSource,
       selectedWikiImageUrl,
       setSelectedWikiImageUrl,
+      // oxlint-disable-next-line eslint/no-unused-vars
       wikiSearchQuery,
+      // oxlint-disable-next-line eslint/no-unused-vars
       setWikiSearchQuery,
       wikiSearch,
       wikiIntroQuery,
@@ -187,11 +189,14 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
 
     const handleInsertLink = useCallback(
       (url: string) => {
-        Transforms.insertNodes(editor as any, {
-          type: "link",
-          url,
-          children: [{ text: url }],
-        } as any);
+        Transforms.insertNodes(
+          editor as any,
+          {
+            type: "link",
+            url,
+            children: [{ text: url }],
+          } as any
+        );
       },
       [editor]
     );
@@ -199,8 +204,11 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
     return (
       <div
         className={cn(
-          "group relative flex flex-col rounded-2xl border border-black/10 bg-black/[0.02] backdrop-blur-xl transition-all duration-200 dark:border-white/10 dark:bg-white/[0.03]",
-          isFocused &&
+          variant === "seamless"
+            ? "group relative flex flex-col bg-transparent"
+            : "group relative flex flex-col rounded-2xl border border-black/10 bg-black/[0.02] backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/10 dark:bg-white/[0.03]",
+          variant !== "seamless" &&
+            isFocused &&
             "border-black/20 bg-black/[0.04] shadow-lg ring-1 ring-black/10 dark:border-white/20 dark:bg-white/[0.06] dark:ring-white/10",
           disabled && "cursor-not-allowed opacity-50",
           className
@@ -208,7 +216,10 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       >
         <Plate editor={editor} onChange={handleEditorChange}>
           <div
-            className="flex-1 overflow-y-auto px-4 py-3"
+            className={cn(
+              "flex-1 overflow-y-auto",
+              variant === "seamless" ? "px-0 py-1" : "px-4 py-3"
+            )}
             style={{
               minHeight: minHeight ?? 80,
               maxHeight: maxHeight ?? 280,
@@ -236,7 +247,14 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
 
           {/* Bottom Toolbar & Action Bar */}
           {!hideToolbar && (
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/5 bg-black/[0.01] px-3 py-2 dark:border-white/5 dark:bg-white/[0.01]">
+            <div
+              className={cn(
+                "flex flex-wrap items-center justify-between gap-2",
+                variant === "seamless"
+                  ? "border-t border-white/5 bg-transparent px-0 pt-2"
+                  : "border-t border-black/5 bg-black/[0.01] px-3 py-2 dark:border-white/5 dark:bg-white/[0.01]"
+              )}
+            >
               <EditorToolbar
                 onToggleMark={handleToggleMark}
                 onToggleList={handleToggleList}
@@ -245,38 +263,42 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
                 className="border-transparent bg-transparent p-0 shadow-none"
               />
 
-              <WikiAndStashPopovers
-                disabled={disabled}
-                isWikiOpen={isWikiOpen}
-                setIsWikiOpen={setIsWikiOpen}
-                wikiInsertMode={wikiInsertMode}
-                setWikiInsertMode={setWikiInsertMode}
-                wikiSource={selectedWikiSource}
-                setWikiSource={setSelectedWikiSource}
-                wikiTarget={wikiTarget}
-                setWikiTarget={setWikiTarget}
-                wikiLabel={wikiText}
-                setWikiLabel={setWikiText}
-                wikiSearchResults={wikiSearch.data || []}
-                isSearchingWiki={wikiSearch.isLoading}
-                wikiIntroQuery={wikiIntroQuery}
-                wikiImagesQuery={wikiImagesQuery}
-                selectedWikiImageUrl={selectedWikiImageUrl}
-                setSelectedWikiImageUrl={setSelectedWikiImageUrl}
-                insertWikiLink={insertWikiLink}
-                isStashesOpen={isStashesOpen}
-                setIsStashesOpen={setIsStashesOpen}
-                stashes={stashes}
-                activeStashId={activeStashId}
-                setSelectedStashId={setSelectedStashId}
-                stashesQuery={stashesQuery}
-                stashItemsQuery={stashItemsQuery}
-                imageItems={imageItems}
-                resolvedImages={resolvedImages}
-                insertStashedImage={insertStashedImage}
-                handleSelectEmoji={handleSelectEmoji}
-                setIsEmojiOpen={setIsEmojiOpen}
-              />
+              <div className="flex items-center gap-2">
+                <WikiAndStashPopovers
+                  disabled={disabled}
+                  isWikiOpen={isWikiOpen}
+                  setIsWikiOpen={setIsWikiOpen}
+                  wikiInsertMode={wikiInsertMode}
+                  setWikiInsertMode={setWikiInsertMode}
+                  wikiSource={selectedWikiSource}
+                  setWikiSource={setSelectedWikiSource}
+                  wikiTarget={wikiTarget}
+                  setWikiTarget={setWikiTarget}
+                  wikiLabel={wikiText}
+                  setWikiLabel={setWikiText}
+                  wikiSearchResults={wikiSearch.data || []}
+                  isSearchingWiki={wikiSearch.isLoading}
+                  wikiIntroQuery={wikiIntroQuery}
+                  wikiImagesQuery={wikiImagesQuery}
+                  selectedWikiImageUrl={selectedWikiImageUrl}
+                  setSelectedWikiImageUrl={setSelectedWikiImageUrl}
+                  insertWikiLink={insertWikiLink}
+                  isStashesOpen={isStashesOpen}
+                  setIsStashesOpen={setIsStashesOpen}
+                  stashes={stashes}
+                  activeStashId={activeStashId}
+                  setSelectedStashId={setSelectedStashId}
+                  stashesQuery={stashesQuery}
+                  stashItemsQuery={stashItemsQuery}
+                  imageItems={imageItems}
+                  resolvedImages={resolvedImages}
+                  insertStashedImage={insertStashedImage}
+                  handleSelectEmoji={handleSelectEmoji}
+                  setIsEmojiOpen={setIsEmojiOpen}
+                />
+
+                {actionRight}
+              </div>
             </div>
           )}
         </Plate>

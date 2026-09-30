@@ -29,22 +29,6 @@ function getTimeRangeDate(range: string): Date {
 }
 
 /**
- * Get granularity interval in milliseconds
- */
-function getGranularityInterval(granularity: string): number {
-  switch (granularity) {
-    case "minute":
-      return 60 * 1000;
-    case "hour":
-      return 60 * 60 * 1000;
-    case "day":
-      return 24 * 60 * 60 * 1000;
-    default:
-      return 60 * 60 * 1000; // Default to hour
-  }
-}
-
-/**
  * Group timestamp by granularity
  */
 function groupByGranularity(timestamp: Date, granularity: string): string {
@@ -105,7 +89,6 @@ export const autosaveMonitoringRouter = createTRPCRouter({
           details: true,
         },
       });
-
 
       // Calculate statistics
       const totalAutosaves = autosaves.length;
@@ -425,7 +408,6 @@ export const autosaveMonitoringRouter = createTRPCRouter({
         details: true,
       },
     });
-
 
     const autosavesLast5Min = recentAutosaves.length;
     const failuresLast5Min = recentAutosaves.filter((a) => !a.success).length;

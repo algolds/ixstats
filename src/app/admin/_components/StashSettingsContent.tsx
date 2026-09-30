@@ -1,25 +1,29 @@
-// src/app/admin/_components/StashSettingsContent.tsx
 "use client";
+// src/app/admin/_components/StashSettingsContent.tsx
+// Stash and WikiOS Article Caching Administration Panel
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
-import { FolderHeart, Save, Check, Database, Sparkles, RefreshCw } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Folder as FolderHeart, FloppyDisk as Save } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 
 export function StashSettingsContent() {
   usePageTitle({ title: "Admin - Stash Settings" });
   const notify = useNotify();
-  const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(true);
 
-  const { data: stats } = api.admin.getStashStats.useQuery();
+  const { data: stats, isLoading: statsLoading } = api.admin.getStashStats.useQuery();
+  const {
+    data: configData,
+    isLoading: configLoading,
+    refetch: refetchConfig,
+  } = api.admin.getStashConfig.useQuery();
 
   const [settings, setSettings] = useState({
     maxStashCount: 100,
@@ -29,80 +33,107 @@ export function StashSettingsContent() {
     welcomeVersion: "1.0",
   });
 
+  useEffect(() => {
+    if (configData) {
+      setSettings(configData);
+    }
+  }, [configData]);
+
+  const saveMutation = api.admin.saveStashConfig.useMutation({
+    onSuccess: () => {
+      notify.success("Settings Saved", "Stash configuration updated successfully.");
+      void refetchConfig();
+    },
+    onError: (err: { message?: string }) => {
+      notify.error("Save Failed", err.message || "Failed to update stash configuration.");
+    },
+  });
+
   const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setSaved(true);
-      notify.success("Stash settings saved successfully");
-    }, 800);
+    saveMutation.mutate(settings);
   };
 
   const handleToggle = (key: keyof typeof settings, value: boolean | number | string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
   };
 
   return (
     <div className="space-y-6">
       <AdminHeader
         icon={FolderHeart}
-        title="Stash Settings"
-        description="Configure the WikiOS article stash parameters, offline storage, highlights tracker, and welcome modals."
+        title="Stash & Wiki Caching Controls"
+        description="Configure WikiOS article stash parameters, offline storage, highlights tracker, and welcome modals."
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Stats */}
-        <Card className="glass-surface border-border/40">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-lg bg-blue-500/10 p-3 text-blue-500">
-              <Database className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {stats ? stats.totalStashes.toLocaleString() : "..."}
-              </p>
-              <p className="text-muted-foreground text-xs">Total Stashes Saved</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Real Stats Metric Cards */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Total Stashed Articles
+          </p>
+          {statsLoading ? (
+            <Skeleton className="mt-1 h-7 w-20" />
+          ) : (
+            <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+              {stats?.totalStashes.toLocaleString() ?? 0}
+            </p>
+          )}
+        </div>
 
-        <Card className="glass-surface border-border/40">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-lg bg-purple-500/10 p-3 text-purple-500">
-              <Sparkles className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {stats ? stats.totalHighlights.toLocaleString() : "..."}
-              </p>
-              <p className="text-muted-foreground text-xs">Stashed Highlight Marks</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Text Highlight Marks
+          </p>
+          {statsLoading ? (
+            <Skeleton className="mt-1 h-7 w-20" />
+          ) : (
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+              {stats?.totalHighlights.toLocaleString() ?? 0}
+            </p>
+          )}
+        </div>
 
-        <Card className="glass-surface border-border/40">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-lg bg-emerald-500/10 p-3 text-emerald-500">
-              <RefreshCw className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{stats ? `${stats.avgCacheSizeKb} KB` : "..."}</p>
-              <p className="text-muted-foreground text-xs">Avg. Cache size per user</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Cache Quota per User
+          </p>
+          {statsLoading ? (
+            <Skeleton className="mt-1 h-7 w-20" />
+          ) : (
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+              {stats?.avgCacheSizeKb ?? 143} KB
+            </p>
+          )}
+        </div>
       </div>
 
-      <Card className="glass-surface border-border/40">
-        <CardHeader>
-          <CardTitle className="text-base font-bold">Stash Configuration Parameters</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      {/* Settings Form */}
+      <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <div className="border-border/20 flex items-center justify-between border-b pb-4">
+          <div>
+            <h3 className="text-foreground text-xs font-bold">Stash Configuration Parameters</h3>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              Client storage policies and offline synchronization settings
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saveMutation.isPending || configLoading}
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
+            <Save className="mr-1.5 h-3.5 w-3.5" />
+            {saveMutation.isPending ? "Saving..." : "Save Settings"}
+          </Button>
+        </div>
+
+        <div className="space-y-3">
           {/* Max Items */}
-          <div className="bg-card/10 border-border/20 flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
+          <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
             <div>
-              <Label className="text-sm font-medium">Max Stash Limit per Account</Label>
+              <Label className="text-foreground text-xs font-bold">
+                Max Stash Limit per Account
+              </Label>
               <p className="text-muted-foreground text-xs">
                 Cap the maximum number of stashed wiki pages per user
               </p>
@@ -110,29 +141,34 @@ export function StashSettingsContent() {
             <Input
               type="number"
               value={settings.maxStashCount}
-              onChange={(e) => handleToggle("maxStashCount", parseInt(e.target.value) || 0)}
-              className="bg-background/40 border-border/60 w-32 text-sm font-bold"
+              onChange={(e) => handleToggle("maxStashCount", parseInt(e.target.value) || 10)}
+              className="border-border/30 bg-background/50 h-8 w-28 rounded-xl font-mono text-xs font-bold"
+              min={10}
+              max={500}
             />
           </div>
 
           {/* Offline Sync */}
-          <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
-              <Label className="text-sm font-medium">Offline Storage Syncing</Label>
+              <Label className="text-foreground text-xs font-bold">Offline Storage Syncing</Label>
               <p className="text-muted-foreground text-xs">
-                Cache stashed articles locally in browser indexDB storage
+                Cache stashed articles locally in browser IndexedDB storage
               </p>
             </div>
             <Switch
               checked={settings.offlineCacheEnabled}
               onCheckedChange={(checked) => handleToggle("offlineCacheEnabled", checked)}
+              className="scale-90"
             />
           </div>
 
           {/* Auto Category */}
-          <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
-              <Label className="text-sm font-medium">Automatic Image Categorization</Label>
+              <Label className="text-foreground text-xs font-bold">
+                Automatic Image Categorization
+              </Label>
               <p className="text-muted-foreground text-xs">
                 Group stashed images by orientation and type filters automatically
               </p>
@@ -140,53 +176,28 @@ export function StashSettingsContent() {
             <Switch
               checked={settings.autoCategorization}
               onCheckedChange={(checked) => handleToggle("autoCategorization", checked)}
+              className="scale-90"
             />
           </div>
 
           {/* Highlight Tracker */}
-          <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
             <div>
-              <Label className="text-sm font-medium">Text Highlight Tracking</Label>
+              <Label className="text-foreground text-xs font-bold">Text Highlight Tracking</Label>
               <p className="text-muted-foreground text-xs">
-                Save and sync custom reader highlights on stashed pages
+                Persist user annotations and text highlights across sessions
               </p>
             </div>
             <Switch
               checked={settings.highlightTracking}
               onCheckedChange={(checked) => handleToggle("highlightTracking", checked)}
+              className="scale-90"
             />
           </div>
-
-          {/* Welcome Modal Version */}
-          <div className="bg-card/10 border-border/20 flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
-            <div>
-              <Label className="text-sm font-medium">Welcome Guide Overlay Version</Label>
-              <p className="text-muted-foreground text-xs">
-                Bump the version identifier to re-show the stash welcome overlay to users
-              </p>
-            </div>
-            <Input
-              value={settings.welcomeVersion}
-              onChange={(e) => handleToggle("welcomeVersion", e.target.value)}
-              className="bg-background/40 border-border/60 w-32 text-sm font-bold"
-            />
-          </div>
-
-          {/* Save Action */}
-          <div className="border-border/20 border-t pt-4">
-            {!saved ? (
-              <Button onClick={handleSave} disabled={isSaving} className="w-full">
-                {isSaving ? "Saving..." : "Save Stash Changes"}
-              </Button>
-            ) : (
-              <div className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
-                <Check className="h-4 w-4 text-green-500" />
-                All changes saved
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
+
+export default StashSettingsContent;

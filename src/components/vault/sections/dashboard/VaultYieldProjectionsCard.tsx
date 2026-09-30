@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, Flame, Gift, Loader2 } from "lucide-react";
+import {
+  StatUp as TrendingUp,
+  FireFlame as Flame,
+  Gift,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
@@ -47,7 +52,7 @@ export function VaultYieldProjectionsCard({
       depth={2}
       interactive="hover"
       className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-blue-500/30 hover:shadow-blue-500/10"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-blue-500/30 hover:shadow-blue-500/10"
       )}
     >
       <TextureOverlay texture="horizontalLines" opacity={0.04} />
@@ -66,7 +71,7 @@ export function VaultYieldProjectionsCard({
             size="sm"
             onClick={onClaimDailyBonus}
             disabled={isClaimPending}
-            className="h-8 rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 px-4 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 backdrop-blur-md transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+            className="h-8 rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 px-4 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:brightness-110 active:scale-95 disabled:opacity-50"
           >
             {isClaimPending ? (
               <>
@@ -93,7 +98,7 @@ export function VaultYieldProjectionsCard({
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Projections */}
             <div className="space-y-3">
-              <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
                 Treasury Revenue Forecasts
               </span>
               <div className="space-y-2.5">
@@ -129,7 +134,7 @@ export function VaultYieldProjectionsCard({
 
             {/* active multipliers */}
             <div className="md:border-border/40 space-y-3 md:border-l md:pl-6">
-              <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+              <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
                 Active Multipliers & Streaks
               </span>
               <div className="space-y-2.5">
@@ -150,7 +155,7 @@ export function VaultYieldProjectionsCard({
                       budgetMultiplierPercent > 0
                         ? "text-emerald-600 dark:text-emerald-400"
                         : budgetMultiplierPercent < 0
-                          ? "text-rose-600 dark:text-rose-400"
+                          ? "text-red-600 dark:text-red-400"
                           : "text-muted-foreground"
                     )}
                   >
@@ -160,7 +165,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground font-medium">Tier Bonus</span>
-                  <span className="font-mono font-bold text-purple-600 tabular-nums dark:text-purple-400">
+                  <span className="font-mono font-bold text-amber-600 tabular-nums dark:text-amber-400">
                     1.{vaultLevel * 5}x
                   </span>
                 </div>
@@ -170,15 +175,15 @@ export function VaultYieldProjectionsCard({
 
           {/* Daily Allowances (Earning Caps) */}
           <div className="border-border/40 mt-5 space-y-3 border-t pt-5">
-            <span className="text-muted-foreground block text-[10px] font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
               Daily Allowance Progress
             </span>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {/* Active Gameplay Cap */}
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] font-semibold">
+                <div className="flex justify-between text-xs font-semibold">
                   <span className="text-muted-foreground">Active Gameplay</span>
-                  <span className="text-foreground flex items-center gap-0.5 font-mono text-[11px] font-bold">
+                  <span className="text-foreground flex items-center gap-0.5 font-mono text-xs font-bold">
                     {activeCapLoading ? (
                       "..."
                     ) : (
@@ -194,7 +199,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_8px_rgba(16,185,129,0.5)] transition-all duration-500"
+                    className="h-full rounded-full bg-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                     style={{
                       width: `${activeCapData ? ((activeCapData.cap - activeCapData.remaining) / activeCapData.cap) * 100 : 0}%`,
                     }}
@@ -204,9 +209,9 @@ export function VaultYieldProjectionsCard({
 
               {/* Social Earning Cap */}
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] font-semibold">
+                <div className="flex justify-between text-xs font-semibold">
                   <span className="text-muted-foreground">Social Engagement</span>
-                  <span className="text-foreground flex items-center gap-0.5 font-mono text-[11px] font-bold">
+                  <span className="text-foreground flex items-center gap-0.5 font-mono text-xs font-bold">
                     {socialCapLoading ? (
                       "..."
                     ) : (
@@ -220,7 +225,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-400 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-500"
+                    className="h-full rounded-full bg-indigo-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                     style={{
                       width: `${socialCapData ? ((socialCapData.cap - socialCapData.remaining) / socialCapData.cap) * 100 : 0}%`,
                     }}

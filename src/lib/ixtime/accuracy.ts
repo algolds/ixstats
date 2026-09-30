@@ -43,8 +43,8 @@ export class IxTimeAccuracyVerifier {
 
   // Critical time points for testing
   private static readonly TEST_POINTS = {
-    REAL_WORLD_EPOCH: new Date(2020, 9, 4, 0, 0, 0, 0).getTime(),
-    IN_GAME_EPOCH: new Date(2028, 0, 1, 0, 0, 0, 0).getTime(),
+    REAL_WORLD_EPOCH: Date.UTC(2020, 9, 4, 0, 0, 0, 0),
+    IN_GAME_EPOCH: Date.UTC(2028, 0, 1, 0, 0, 0, 0),
     SPEED_CHANGE_REAL: new Date("2025-07-27T00:00:00.000Z").getTime(),
     SPEED_CHANGE_IXTIME: new Date("2040-01-01T00:00:00.000Z").getTime(),
     CURRENT_TIME: Date.now(),
@@ -203,11 +203,13 @@ export class IxTimeAccuracyVerifier {
     const startTime = performance.now();
 
     // Test that July 27, 2025 00:00:00 UTC real time = January 1, 2040 IxTime
+    // oxlint-disable-next-line typescript/no-unused-vars
     const transitionRealTime = this.TEST_POINTS.SPEED_CHANGE_REAL;
     const expectedIxTime = this.TEST_POINTS.SPEED_CHANGE_IXTIME;
 
     // According to IxTime implementation, the pivot points are hardcoded:
     // July 27, 2025 00:00:00 UTC should equal January 1, 2040 IxTime
+    // oxlint-disable-next-line typescript/no-unused-vars
     const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
 
@@ -353,22 +355,7 @@ export class IxTimeAccuracyVerifier {
 
   // Helper method to calculate expected IxTime for any real time
   private static calculateExpectedIxTime(realTime: number): number {
-    // Use the same pivot point logic as the actual IxTime implementation
-    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
-    const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
-
-    if (realTime >= PIVOT_POINT_REAL) {
-      // After July 27, 2025: Use 2x multiplier from the pivot point
-      const realTimeElapsed = (realTime - PIVOT_POINT_REAL) / 1000;
-      const ixTimeElapsed = realTimeElapsed * 2.0 * 1000; // 2x speed
-      return PIVOT_POINT_IXTIME + ixTimeElapsed;
-    } else {
-      // Before July 27, 2025: Use 4x multiplier to reach the pivot point
-      // Work backwards from the pivot point
-      const realTimeUntilPivot = (PIVOT_POINT_REAL - realTime) / 1000;
-      const ixTimeBeforePivot = realTimeUntilPivot * 4.0 * 1000; // 4x speed
-      return PIVOT_POINT_IXTIME - ixTimeBeforePivot;
-    }
+    return IxTime.convertToIxTime(realTime);
   }
 
   // Additional test implementations (simplified for brevity)
@@ -488,6 +475,7 @@ export class IxTimeAccuracyVerifier {
   }
 
   public static runAllTests(): TimeSimulationResult {
+    // oxlint-disable-next-line typescript/no-unused-vars
     const startTime = performance.now();
     const results: Array<{ test: TimeAccuracyTest; result: AccuracyResult }> = [];
     const categoryResults: Record<string, { passed: number; failed: number; accuracy: number }> =
@@ -557,6 +545,7 @@ export class IxTimeAccuracyVerifier {
     return new Promise((resolve) => {
       const startTime = Date.now();
       const results: Array<{ test: TimeAccuracyTest; result: AccuracyResult }> = [];
+      // oxlint-disable-next-line typescript/no-unused-vars
       let iterations = 0;
 
       const runIteration = () => {

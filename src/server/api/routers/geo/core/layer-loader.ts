@@ -13,9 +13,17 @@ import {
   getSovereigntyColor,
   DEMOTED_COUNTRY_NAMES,
 } from "~/lib/maps/map-config";
-import { getCached, setCache, getCompressionForLayer, type ZoomBucket } from "./cache";
+import {
+  getCached,
+  setCache,
+  getCompressionForLayer,
+  layerInflight,
+  type ZoomBucket,
+} from "./cache";
 import { computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
+/** Warms IxWorld's layers only — other realms build on first request. */
 export async function warmGeoCache(db: any): Promise<void> {
   const start = Date.now();
   const layers = [
@@ -38,7 +46,7 @@ export async function warmGeoCache(db: any): Promise<void> {
     console.log(`[GeoCache]   Zoom Bucket ${zoomBucket}:`);
     for (const layerType of layers) {
       try {
-        const result = await loadLayerFromDB(db, layerType, zoomBucket);
+        const result = await loadLayerFromDB(db, layerType, zoomBucket, DEFAULT_REALM_ID);
         if (result) {
           warmed++;
           const bytes = JSON.stringify(result).length;
@@ -75,7 +83,7 @@ export async function warmGeoCacheDev(db: any): Promise<void> {
   await Promise.all(
     criticalLayers.map(async (layerType) => {
       try {
-        const result = await loadLayerFromDB(db, layerType, defaultZoom);
+        const result = await loadLayerFromDB(db, layerType, defaultZoom, DEFAULT_REALM_ID);
         if (result) {
           console.log(`[GeoCache]   ${layerType}: ${result.features.length} features`);
         }
@@ -121,19 +129,61 @@ export async function loadGeoJSONFromFile(layerType: string): Promise<FeatureCol
   return split;
 }
 
+/**
+ * The realm's layer from the DB, else — for IxWorld only — the static GeoJSON file
+ * (null when that file is missing too). Another realm with no DB layer gets an empty
+ * collection: IxWorld's files are never drawn on another realm's map.
+ */
+export async function loadLayerWithFallback(
+  db: Parameters<typeof loadLayerFromDB>[0],
+  layerType: string,
+  zoomBucket: ZoomBucket = 1,
+  realmId: string = DEFAULT_REALM_ID
+): Promise<FeatureCollection | null> {
+  const fromDb = await loadLayerFromDB(db, layerType, zoomBucket, realmId);
+  if (fromDb) return fromDb;
+  if (realmId !== DEFAULT_REALM_ID) return { type: "FeatureCollection", features: [] };
+  return loadGeoJSONFromFile(layerType).catch(() => null);
+}
+
 export async function loadLayerFromDB(
   db: any,
   layerType: string,
-  zoomBucket: ZoomBucket = 1
+  zoomBucket: ZoomBucket = 1,
+  realmId: string = DEFAULT_REALM_ID
 ): Promise<FeatureCollection | null> {
-  // Check cache with zoom-aware key
-  const cacheKey = `${layerType}:z${zoomBucket}`;
+  // Check cache with a zoom- and realm-aware key (layer type stays first: TTLs and clearLayerCache key on it)
+  const cacheKey = `${layerType}:z${zoomBucket}:${realmId}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  // Virtual layer: country_labels is derived from the political layer
+  // Share one build between concurrent callers (political is huge and requested in parallel)
+  const existing = layerInflight.get(cacheKey);
+  if (existing) return existing;
+  const promise: Promise<FeatureCollection | null> = buildLayerFromDB(
+    db,
+    layerType,
+    zoomBucket,
+    realmId,
+    cacheKey
+  ).finally(() => {
+    // Identity check: a clearLayerCache() may have replaced this entry with a newer build
+    if (layerInflight.get(cacheKey) === promise) layerInflight.delete(cacheKey);
+  });
+  layerInflight.set(cacheKey, promise);
+  return promise;
+}
+
+async function buildLayerFromDB(
+  db: Parameters<typeof loadLayerFromDB>[0],
+  layerType: string,
+  zoomBucket: ZoomBucket,
+  realmId: string,
+  cacheKey: string
+): Promise<FeatureCollection | null> {
+  // Virtual layer: country_labels is derived from the same realm's political layer
   if (layerType === "country_labels") {
-    const politicalFC = await loadLayerFromDB(db, "political", zoomBucket);
+    const politicalFC = await loadLayerFromDB(db, "political", zoomBucket, realmId);
     if (!politicalFC) return null;
 
     // Build deduplicated point source: one centroid per unique country name
@@ -216,7 +266,7 @@ export async function loadLayerFromDB(
   }
 
   const layers = await db.mapLayer.findMany({
-    where: { layerType, isActive: true },
+    where: { layerType, isActive: true, realmId },
     // Explicit take bypasses global findMany guard (db.ts caps at 1000 by default).
     // Map layers like altitudes have 4000+ features that must all be loaded.
     take: 50000,

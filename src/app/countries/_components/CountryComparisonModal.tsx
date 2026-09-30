@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { X, Plus, BarChart3 } from "lucide-react";
+import { Xmark as X, Plus, StatsReport as BarChart3 } from "iconoir-react";
 import { ComparisonCharts } from "./charts/ComparisonCharts";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -19,23 +19,8 @@ import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
 import type { CountryWithEconomicData } from "~/types/ixstats";
 
-// Define the type for countries that can be compared
-export interface ComparisonCountry {
-  id: string;
-  name: string;
-  currentPopulation: number;
-  currentGdpPerCapita: number;
-  currentTotalGdp: number;
-  populationGrowthRate: number;
-  adjustedGdpGrowth: number;
-  economicTier: string;
-  populationTier: string;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
-  landArea?: number | null;
-  continent?: string | null;
-  color: string;
-}
+import type { ComparisonCountry } from "~/types/country-comparison";
+export type { ComparisonCountry };
 
 interface CountryComparisonModalProps {
   isOpen: boolean;

@@ -53,6 +53,7 @@ export function AbilityProvider({ children }: AbilityProviderProps) {
   // Re-build abilities when data changes
   useEffect(() => {
     if (user && data) {
+      // oxlint-disable-next-line
       setAbility(
         defineAbilityFor(data.role, data.permissions, data.membershipTier, data.unlockedTools)
       );

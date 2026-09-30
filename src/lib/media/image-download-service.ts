@@ -1,8 +1,5 @@
 import { withBasePath } from "~/lib/base-path";
-import {
-  isWikimediaCommonsUrl,
-  getCommonsProxyUrl,
-} from "~/lib/wiki-os/transformers/image-url";
+import { isWikimediaCommonsUrl, getCommonsProxyUrl } from "~/lib/wiki-os/transformers/image-url";
 
 export { isWikimediaCommonsUrl, getCommonsProxyUrl };
 
@@ -169,6 +166,12 @@ export async function processImageSelection(
       const proxyUrl = getCommonsProxyUrl(imageUrl);
       options?.onProgress?.("Routed from image repository successfully");
       return proxyUrl;
+    }
+
+    // SVGs are never copied to our origin (they can carry script); hotlink them instead.
+    // An SVG rendered through <img> cannot run script.
+    if (isExternalImageUrl(imageUrl) && new URL(imageUrl).pathname.toLowerCase().endsWith(".svg")) {
+      return imageUrl;
     }
 
     // Check if URL needs downloading

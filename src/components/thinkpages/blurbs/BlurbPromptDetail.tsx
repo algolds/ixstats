@@ -54,7 +54,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
   return (
     <div className="space-y-6">
       {/* Prompt header */}
-      <div className="glass-hierarchy-child rounded-xl border border-white/10 p-5 sm:p-6">
+      <div className="facet-hierarchy-child rounded-xl border border-white/10 p-5 sm:p-6">
         <h1 className="text-lg font-bold text-[var(--wikios-text)] sm:text-xl">{prompt.title}</h1>
         <p className="mt-2 text-sm text-[var(--wikios-text-muted)] sm:text-base">
           {prompt.question}
@@ -77,7 +77,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
       )}
 
       {myResponse && (
-        <div className="glass-hierarchy-child rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+        <div className="facet-hierarchy-child rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
           <p className="mb-2 text-xs font-medium text-emerald-400">Your response</p>
           <p className="text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
             {myResponse.content}
@@ -86,7 +86,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
       )}
 
       {!isSignedIn && prompt.status === "ACTIVE" && (
-        <div className="glass-hierarchy-child rounded-xl border border-white/10 p-4 text-center">
+        <div className="facet-hierarchy-child rounded-xl border border-white/10 p-4 text-center">
           <p className="text-sm text-[var(--wikios-text-muted)]">
             Sign in to submit your response.
           </p>
@@ -108,7 +108,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
         {responses.map((r) => (
           <div
             key={r.id}
-            className={`glass-hierarchy-child rounded-xl border p-4 ${
+            className={`facet-hierarchy-child rounded-xl border p-4 ${
               r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-white/10"
             }`}
           >
@@ -213,7 +213,7 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
   };
 
   return (
-    <div className="glass-hierarchy-child rounded-xl border border-white/10 p-4 sm:p-5">
+    <div className="facet-hierarchy-child rounded-xl border border-white/10 p-4 sm:p-5">
       <h3 className="mb-3 text-sm font-semibold text-[var(--wikios-text-muted)]">Your response</h3>
       <textarea
         value={content}

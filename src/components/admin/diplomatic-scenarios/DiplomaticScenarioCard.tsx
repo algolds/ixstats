@@ -3,17 +3,8 @@
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  Globe,
-  Pencil,
-  Copy,
-  Trash2,
-  AlertTriangle,
-} from "lucide-react";
-import {
-  SCENARIO_TYPES,
-  RELATIONSHIP_LEVELS,
-} from "~/lib/admin/diplomatic-scenario-transforms";
+import { Globe, EditPencil as Pencil, Copy, Trash as Trash2 } from "iconoir-react";
+import { SCENARIO_TYPES, RELATIONSHIP_LEVELS } from "~/lib/admin/diplomatic-scenario-transforms";
 
 interface DiplomaticScenarioCardProps {
   scenario: any;
@@ -49,7 +40,7 @@ export function DiplomaticScenarioCard({
     : 0;
 
   return (
-    <Card className="glass-card-child p-4 transition-all hover:border-[--intel-gold]/50 flex flex-col justify-between">
+    <Card className="facet-card-child flex flex-col justify-between p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-[--intel-gold]/50">
       <div>
         {/* Header */}
         <div className="mb-3 flex items-start justify-between">
@@ -64,7 +55,9 @@ export function DiplomaticScenarioCard({
                 <span className="rounded bg-white/5 px-2 py-0.5 text-xs text-[--intel-silver]">
                   {typeConfig?.label || scenario.type}
                 </span>
-                <span className={`rounded bg-white/5 px-2 py-0.5 text-xs ${relConfig?.color || ""}`}>
+                <span
+                  className={`rounded bg-white/5 px-2 py-0.5 text-xs ${relConfig?.color || ""}`}
+                >
                   {relConfig?.label || scenario.relationshipState}
                 </span>
                 {difficulty && (
@@ -73,7 +66,7 @@ export function DiplomaticScenarioCard({
                   </span>
                 )}
                 {timeFrame && (
-                  <span className="rounded bg-purple-500/10 px-2 py-0.5 text-xs text-purple-400">
+                  <span className="rounded bg-cyan-500/10 px-2 py-0.5 text-xs text-cyan-400">
                     {timeFrame.replace("_", " ")}
                   </span>
                 )}

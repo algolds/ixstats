@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault/vault-service";
 import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/cards/season";
 
@@ -79,7 +79,7 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         return { success: true, message: "Vault configuration saved successfully" };
       } catch (error) {
         console.error("[Vault Router] adminSaveVaultConfig error:", error);
-        throw new Error("Failed to save vault configuration");
+        throw new Error("Failed to save vault configuration", { cause: error });
       }
     }),
 
@@ -94,7 +94,7 @@ export const vaultAdminStoreRouter = createTRPCRouter({
       return items;
     } catch (error) {
       console.error("[Vault Router] adminListStoreItemsAll error:", error);
-      throw new Error("Failed to retrieve admin store items");
+      throw new Error("Failed to retrieve admin store items", { cause: error });
     }
   }),
 
@@ -148,7 +148,7 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         return { success: true, item: newItem };
       } catch (error) {
         console.error("[Vault Router] adminCreateStoreItem error:", error);
-        throw new Error("Failed to create store item");
+        throw new Error("Failed to create store item", { cause: error });
       }
     }),
 
@@ -215,7 +215,7 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         return { success: true, item: updated };
       } catch (error) {
         console.error("[Vault Router] adminUpdateStoreItem error:", error);
-        throw new Error("Failed to update store item");
+        throw new Error("Failed to update store item", { cause: error });
       }
     }),
 
@@ -244,7 +244,7 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         return { success: true };
       } catch (error) {
         console.error("[Vault Router] adminDeleteStoreItem error:", error);
-        throw new Error("Failed to delete store item");
+        throw new Error("Failed to delete store item", { cause: error });
       }
     }),
 
@@ -261,16 +261,9 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         });
       } catch (error) {
         console.error("[Vault Router] adminGetPriceHistory error:", error);
-        throw new Error("Failed to retrieve price history");
+        throw new Error("Failed to retrieve price history", { cause: error });
       }
     }),
-
-  /**
-   * Admin: Get all storefront purchase transactions.
-   */
-  getIxCardSeason: protectedProcedure.query(async ({ ctx }) => {
-    return getCurrentIxCardSeason(ctx.db);
-  }),
 
   adminGetIxCardSeason: adminProcedure.query(async ({ ctx }) => {
     return getCurrentIxCardSeason(ctx.db);

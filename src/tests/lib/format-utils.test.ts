@@ -29,18 +29,18 @@ describe("Currency Formatting", () => {
   describe("Custom Currency Support", () => {
     test("formats Taler correctly", () => {
       expect(formatCurrency(1234, "Taler")).toBe("₮1.2K");
-      expect(formatCurrency(1234567, "Taler")).toBe("₮1.2M");
-      expect(formatCurrency(1234567890, "Taler")).toBe("₮1.2B");
+      expect(formatCurrency(1234567, "Taler")).toBe("₮1.23M");
+      expect(formatCurrency(1234567890, "Taler")).toBe("₮1.23B");
     });
 
     test("formats Crown correctly", () => {
       expect(formatCurrency(1234, "Crown")).toBe("©1.2K");
-      expect(formatCurrency(1234567, "Crown")).toBe("©1.2M");
+      expect(formatCurrency(1234567, "Crown")).toBe("©1.23M");
     });
 
     test("formats unknown custom currency with fallback", () => {
-      expect(formatCurrency(1234, "CustomCoin")).toBe("CustomCoin 1,234");
-      expect(formatCurrency(1234567, "CustomCoin")).toBe("CustomCoin 1,234,567");
+      expect(formatCurrency(1234, "CustomCoin")).toBe("CustomCoin 1.2K");
+      expect(formatCurrency(1234567, "CustomCoin")).toBe("CustomCoin 1.23M");
     });
   });
 

@@ -1,13 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { BatchActionsBar } from "~/components/maps/editor/BatchActionsBar";
+import { useNotify } from "~/hooks/useNotify";
+import { BatchActionsBar, type EditableField } from "~/components/maps/editor/BatchActionsBar";
 import { EditorDialogs } from "./EditorDialogs";
 import { EditorContextMenuWrapper } from "./EditorContextMenuWrapper";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
-import type { EditorFeature } from "~/hooks/useMapEditor";
+import type { MapEditorOverlayReturnState } from "./MapEditorSidebarPanels";
+import type { EditorContextMenuData, EditorFeature } from "../types/editor-state";
 
 const MobileEditorSheet = dynamic(
   () => import("~/components/maps/editor/MobileEditorSheet").then((m) => m.MobileEditorSheet),
@@ -15,7 +17,8 @@ const MobileEditorSheet = dynamic(
 );
 
 const KeyboardShortcutSheet = dynamic(
-  () => import("~/components/maps/editor/KeyboardShortcutSheet").then((m) => m.KeyboardShortcutSheet),
+  () =>
+    import("~/components/maps/editor/KeyboardShortcutSheet").then((m) => m.KeyboardShortcutSheet),
   { ssr: false }
 );
 
@@ -35,19 +38,19 @@ const MapEditorWelcomeModal = dynamic(
 );
 
 interface MapEditorAuxiliaryOverlaysProps {
-  state: any;
+  state: MapEditorOverlayReturnState;
   onExit: () => void;
   showWelcomeModal: boolean;
   setShowWelcomeModal: (show: boolean) => void;
   showShortcuts: boolean;
   setShowShortcuts: (show: boolean) => void;
-  contextMenu: any;
-  setContextMenu: any;
+  contextMenu: EditorContextMenuData | null;
+  setContextMenu: React.Dispatch<React.SetStateAction<EditorContextMenuData | null>>;
   brushTargetId: string | null;
   setBrushTargetId: (id: string | null) => void;
 }
 
-export function MapEditorAuxiliaryOverlays({
+export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliaryOverlays({
   state,
   onExit,
   showWelcomeModal,
@@ -59,17 +62,50 @@ export function MapEditorAuxiliaryOverlays({
   brushTargetId,
   setBrushTargetId,
 }: MapEditorAuxiliaryOverlaysProps) {
+  const notify = useNotify();
   const { editor, importer } = state;
 
-  const handleSelectFeature = (feat: any) => {
+  const handleSelectFeature = useCallback((feat: EditorFeature | null) => {
     state.handleSelectFeature?.(feat);
-  };
-  const handleEditFeature = (feat: any) => {
+  }, [state.handleSelectFeature]);
+
+  const handleEditFeature = useCallback((feat: EditorFeature) => {
     state.handleEditFeature?.(feat);
-  };
-  const handleDeleteFeature = (feat: any) => {
+  }, [state.handleEditFeature]);
+
+  const handleDeleteFeature = useCallback((feat: EditorFeature) => {
     state.handleDeleteFeature?.(feat);
-  };
+  }, [state.handleDeleteFeature]);
+
+  const subdivisionCount = useMemo(
+    () =>
+      editor.allFeatures.filter(
+        (f) => editor.selectedIds.has(f.id) && f.type === "subdivision"
+      ).length,
+    [editor.allFeatures, editor.selectedIds]
+  );
+
+  const handleBatchDelete = useCallback(async () => {
+    const count = editor.selectedIds.size;
+    try {
+      await editor.bulkDeleteSelected();
+      notify.success(`Deleted ${count} features`);
+    } catch {
+      notify.error("Failed to delete selected features");
+    }
+  }, [editor, notify]);
+
+  const handleBulkEdit = useCallback(async (field: EditableField, value: string | number) => {
+    const result = await editor.bulkEditSelected(field, value);
+    if (result.failCount > 0) {
+      notify.error(
+        `Bulk edit: ${result.successCount} updated, ${result.failCount} failed.`
+      );
+    } else if (result.successCount > 0) {
+      notify.success(`Updated ${result.successCount} features`);
+    }
+    return result;
+  }, [editor, notify]);
 
   const renderRightPanelContent = () => (
     <PropertiesPanelContent
@@ -111,25 +147,10 @@ export function MapEditorAuxiliaryOverlays({
       {editor.selectedIds.size > 1 && (
         <BatchActionsBar
           selectedCount={editor.selectedIds.size}
-          subdivisionCount={
-            editor.allFeatures.filter(
-              (f: any) => editor.selectedIds.has(f.id) && f.type === "subdivision"
-            ).length
-          }
-          onBatchDelete={async () => {
-            if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
-            await editor.bulkDeleteSelected();
-          }}
+          subdivisionCount={subdivisionCount}
+          onBatchDelete={handleBatchDelete}
           onDeselectAll={editor.clearMultiSelect}
-          onBulkEdit={async (field, value) => {
-            const result = await editor.bulkEditSelected(field, value);
-            if (result.failCount > 0) {
-              alert(
-                `Bulk edit: ${result.successCount} updated, ${result.failCount} failed. Check console for details.`
-              );
-            }
-            return result;
-          }}
+          onBulkEdit={handleBulkEdit}
           isMutating={editor.isMutating}
         />
       )}
@@ -174,4 +195,4 @@ export function MapEditorAuxiliaryOverlays({
       <MapEditorWelcomeModal isOpen={showWelcomeModal} onClose={() => setShowWelcomeModal(false)} />
     </>
   );
-}
+});

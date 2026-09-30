@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { withBasePath } from "~/lib/base-path";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";

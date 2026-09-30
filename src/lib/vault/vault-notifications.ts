@@ -1,3 +1,4 @@
+"use client";
 /**
  * Vault & Card System Notification Helpers
  *
@@ -5,9 +6,7 @@
  * Uses notifyFromStore() for non-hook contexts (callable from any function).
  */
 
-"use client";
-
-import { notifyFromStore } from "~/hooks/useNotify";
+import { notifyFromStore } from "~/lib/notifications/notify-store";
 import type { NotificationCategory } from "~/types/unified-notifications";
 
 type ToastType = "success" | "error" | "warning" | "info";

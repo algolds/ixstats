@@ -1,15 +1,14 @@
 import {
   Trophy,
   Star,
-  Medal,
   Crown,
-  Sparkles,
-  TrendingUp,
+  Sparks as Sparkles,
+  StatUp as TrendingUp,
   Shield,
-  Landmark,
-  BookOpen,
+  Bank as Landmark,
+  OpenBook as BookOpen,
   Globe,
-} from "lucide-react";
+} from "iconoir-react";
 
 export const QUEST_PATHS = [
   {
@@ -94,22 +93,22 @@ export const QUEST_PATHS = [
     name: "Sovereign Path",
     description: "Develop atomic governance structures",
     icon: Landmark,
-    badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-    glowColor: "shadow-purple-500/20 shadow-lg",
-    lineColor: "bg-purple-500/30",
-    activeLineColor: "bg-purple-500",
-    nodeColor: "purple",
+    badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+    glowColor: "shadow-indigo-500/20 shadow-lg",
+    lineColor: "bg-indigo-500/30",
+    activeLineColor: "bg-indigo-500",
+    nodeColor: "indigo",
     keys: ["gov-first-component", "gov-building-blocks", "gov-sophisticated", "gov-complex-system"],
   },
   {
     name: "Thinker Path",
     description: "Influence public discourse on ThinkPages",
     icon: BookOpen,
-    badgeColor: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20",
-    glowColor: "shadow-pink-500/20 shadow-lg",
-    lineColor: "bg-pink-500/30",
-    activeLineColor: "bg-pink-500",
-    nodeColor: "pink",
+    badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    glowColor: "shadow-blue-500/20 shadow-lg",
+    lineColor: "bg-blue-500/30",
+    activeLineColor: "bg-blue-500",
+    nodeColor: "blue",
     keys: [
       "social-first-thinkpage",
       "social-thinkpage-author",
@@ -137,7 +136,7 @@ export const QUEST_PATHS = [
     glowColor: "shadow-indigo-500/20 shadow-lg",
     lineColor: "bg-indigo-500/30",
     activeLineColor: "bg-indigo-500",
-    nodeColor: "purple",
+    nodeColor: "indigo",
     keys: [
       "meme-stonks",
       "meme-1337",
@@ -177,50 +176,50 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Military: {
     name: "Military",
     icon: Shield,
-    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25",
+    badge: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/25",
     pedestal:
-      "border-rose-500/30 bg-gradient-to-b from-rose-500/15 to-rose-500/5 text-rose-600 dark:text-rose-400",
-    cardGlow: "from-rose-500/10 via-rose-500/5 to-transparent",
-    cardBorderHover: "hover:border-rose-500/40",
-    accentColor: "rose",
-    iconGradient: "from-rose-300 via-orange-200 to-rose-600",
-    auroraGradient: "from-rose-500/15 via-amber-500/10 to-transparent",
+      "border-red-500/30 bg-gradient-to-b from-red-500/15 to-red-500/5 text-red-600 dark:text-red-400",
+    cardGlow: "from-red-500/10 via-red-500/5 to-transparent",
+    cardBorderHover: "hover:border-red-500/40",
+    accentColor: "red",
+    iconGradient: "from-red-400 via-amber-200 to-red-600",
+    auroraGradient: "from-red-500/15 via-amber-500/10 to-transparent",
   },
   Diplomatic: {
     name: "Diplomatic",
     icon: Globe,
-    badge: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/25",
+    badge: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/25",
     pedestal:
-      "border-sky-500/30 bg-gradient-to-b from-sky-500/15 to-sky-500/5 text-sky-600 dark:text-sky-400",
-    cardGlow: "from-sky-500/10 via-sky-500/5 to-transparent",
-    cardBorderHover: "hover:border-sky-500/40",
-    accentColor: "sky",
-    iconGradient: "from-sky-300 via-cyan-100 to-blue-500",
-    auroraGradient: "from-sky-500/15 via-blue-500/10 to-transparent",
+      "border-cyan-500/30 bg-gradient-to-b from-cyan-500/15 to-cyan-500/5 text-cyan-600 dark:text-cyan-400",
+    cardGlow: "from-cyan-500/10 via-cyan-500/5 to-transparent",
+    cardBorderHover: "hover:border-cyan-500/40",
+    accentColor: "cyan",
+    iconGradient: "from-cyan-300 via-cyan-100 to-blue-500",
+    auroraGradient: "from-cyan-500/15 via-blue-500/10 to-transparent",
   },
   Government: {
     name: "Government",
     icon: Landmark,
-    badge: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25",
+    badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/25",
     pedestal:
-      "border-purple-500/30 bg-gradient-to-b from-purple-500/15 to-purple-500/5 text-purple-600 dark:text-purple-400",
-    cardGlow: "from-purple-500/10 via-purple-500/5 to-transparent",
-    cardBorderHover: "hover:border-purple-500/40",
-    accentColor: "purple",
-    iconGradient: "from-purple-300 via-fuchsia-100 to-indigo-500",
-    auroraGradient: "from-purple-500/15 via-indigo-500/10 to-transparent",
+      "border-indigo-500/30 bg-gradient-to-b from-indigo-500/15 to-indigo-500/5 text-indigo-600 dark:text-indigo-400",
+    cardGlow: "from-indigo-500/10 via-indigo-500/5 to-transparent",
+    cardBorderHover: "hover:border-indigo-500/40",
+    accentColor: "indigo",
+    iconGradient: "from-indigo-300 via-cyan-100 to-indigo-600",
+    auroraGradient: "from-indigo-500/15 via-cyan-500/10 to-transparent",
   },
   Social: {
     name: "Social",
     icon: BookOpen,
-    badge: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/25",
+    badge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25",
     pedestal:
-      "border-pink-500/30 bg-gradient-to-b from-pink-500/15 to-pink-500/5 text-pink-600 dark:text-pink-400",
-    cardGlow: "from-pink-500/10 via-pink-500/5 to-transparent",
-    cardBorderHover: "hover:border-pink-500/40",
-    accentColor: "pink",
-    iconGradient: "from-pink-300 via-rose-100 to-pink-500",
-    auroraGradient: "from-pink-500/15 via-purple-500/10 to-transparent",
+      "border-blue-500/30 bg-gradient-to-b from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400",
+    cardGlow: "from-blue-500/10 via-blue-500/5 to-transparent",
+    cardBorderHover: "hover:border-blue-500/40",
+    accentColor: "blue",
+    iconGradient: "from-blue-300 via-cyan-100 to-blue-600",
+    auroraGradient: "from-blue-500/15 via-cyan-500/10 to-transparent",
   },
   General: {
     name: "General",
@@ -232,7 +231,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     cardBorderHover: "hover:border-amber-500/40",
     accentColor: "amber",
     iconGradient: "from-amber-300 via-yellow-100 to-amber-500",
-    auroraGradient: "from-amber-500/15 via-purple-500/10 to-transparent",
+    auroraGradient: "from-amber-500/15 via-orange-500/10 to-transparent",
   },
 };
 
@@ -316,15 +315,18 @@ export const getTrophyTier = (rarity: string): TrophyTier => {
 export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
   // Economic GDP Series
   "econ-first-million": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/coins.svg",
-  "econ-millionaire-nation": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/money-stack.svg",
+  "econ-millionaire-nation":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/money-stack.svg",
   "econ-economic-powerhouse": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/bank.svg",
   "econ-trillion-club": "/icons/game-icons/icons/ffffff/transparent/1x1/willdabeast/gold-bar.svg",
   "econ-global-titan": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/crown.svg",
 
   // Economic GDP Per Capita Series
   "econ-wealthy-citizens": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/buy-card.svg",
-  "econ-prosperity-nation": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
-  "econ-first-world-status": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/sparkles.svg",
+  "econ-prosperity-nation":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
+  "econ-first-world-status":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/sparkles.svg",
   "econ-ultra-prosperity": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/profit.svg",
 
   // Economic Growth & General
@@ -337,13 +339,16 @@ export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
 
   // Military Branches
   "mil-first-branch": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/crossed-swords.svg",
-  "mil-armed-forces": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/spartan-helmet.svg",
+  "mil-armed-forces":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/spartan-helmet.svg",
   "mil-full-spectrum": "/icons/game-icons/icons/ffffff/transparent/1x1/sbed/shield.svg",
 
   // Military Defense Spending
-  "mil-defense-commitment": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/police-officer-head.svg",
+  "mil-defense-commitment":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/police-officer-head.svg",
   "mil-strong-defense": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/castle.svg",
-  "mil-military-superpower": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/lightning-branches.svg",
+  "mil-military-superpower":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/lightning-branches.svg",
 
   // Military Personnel
   "mil-standing-army": "/icons/game-icons/icons/ffffff/transparent/1x1/skoll/rank-3.svg",
@@ -355,7 +360,8 @@ export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
   "dip-first-embassy": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/capitol.svg",
   "dip-diplomatic-network": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/globe.svg",
   "dip-global-presence": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/treasure-map.svg",
-  "dip-embassy-network": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
+  "dip-embassy-network":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
 
   // Diplomatic Treaties & Trade
   "dip-first-treaty": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/tied-scroll.svg",
@@ -369,12 +375,14 @@ export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
   "gov-first-component": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/stone-block.svg",
   "gov-building-blocks": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/brick-wall.svg",
   "gov-sophisticated": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/capitol.svg",
-  "gov-complex-system": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/gear-stick-pattern.svg",
+  "gov-complex-system":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/gear-stick-pattern.svg",
 
   // Social & Thinkpages
   "social-first-thinkpage": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/quill.svg",
   "social-thinkpage-author": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/book-cover.svg",
-  "social-prolific-author": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/bookshelf.svg",
+  "social-prolific-author":
+    "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/bookshelf.svg",
   "social-popular": "/icons/game-icons/icons/ffffff/transparent/1x1/carl-olsen/flame.svg",
   "social-trending": "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/lightning-storm.svg",
 
@@ -528,12 +536,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     category: "Government",
     description: "Configure modular atomic government branches and statecraft systems.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/brick-wall.svg",
-    keys: [
-      "gov-first-component",
-      "gov-building-blocks",
-      "gov-sophisticated",
-      "gov-complex-system",
-    ],
+    keys: ["gov-first-component", "gov-building-blocks", "gov-sophisticated", "gov-complex-system"],
   },
   {
     id: "series-social-thinkpages",
@@ -709,4 +712,3 @@ export const FORUM_RIBBONS: ForumRibbon[] = [
     badgeLabel: "CANON",
   },
 ];
-

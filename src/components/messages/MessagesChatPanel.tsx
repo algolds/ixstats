@@ -11,7 +11,16 @@ import type { MessagesSettings } from "./MessagesFolderNav";
 import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
-import { Crown, Shield, ShieldAlert, TrendingUp, Radio, Sparkles, X, ExternalLink, BellRing, BookOpen } from "lucide-react";
+// oxlint-disable-next-line eslint/no-unused-vars
+import {
+  Crown,
+  Shield,
+  StatUp as TrendingUp,
+  AntennaSignal as Radio,
+  Xmark as X,
+  OpenNewWindow as ExternalLink,
+  BellNotification as BellRing,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
@@ -54,31 +63,27 @@ function getSystemAlertStyle(content: string, type?: string) {
   }
   return {
     icon: Radio,
-    iconColor: "text-purple-500 bg-purple-500/10 ring-purple-500/20",
-    badgeClass: "text-purple-500 bg-purple-500/10",
+    iconColor: "text-indigo-500 bg-indigo-500/10 ring-indigo-500/20",
+    badgeClass: "text-indigo-500 bg-indigo-500/10",
     label: "System",
   };
 }
 
-function SystemBroadcastCard({
-  item,
-  onDismiss,
-}: {
-  item: any;
-  onDismiss?: () => void;
-}) {
+function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () => void }) {
   const content = item.description || item.message || item.content || "";
   const title = item.title || item.subject || "System Notification";
-  const { icon: Icon, iconColor, badgeClass, label } = getSystemAlertStyle(
-    title + " " + content,
-    item.type || item.category
-  );
+  const {
+    icon: Icon,
+    iconColor,
+    badgeClass,
+    label,
+  } = getSystemAlertStyle(title + " " + content, item.type || item.category);
 
   return (
-    <div className="relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border border-border/50 bg-card/60 p-4 shadow-2xs backdrop-blur-md transition-all duration-150 hover:border-border/80 hover:bg-card/90">
+    <div className="border-border/50 bg-card/60 hover:border-border/80 hover:bg-card/90 relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border p-4 shadow-2xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150">
       <div
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl ring-1 shadow-2xs",
+          "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl shadow-2xs ring-1",
           iconColor
         )}
       >
@@ -89,27 +94,27 @@ function SystemBroadcastCard({
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                "rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-tight",
+                "rounded-md px-1.5 py-0.5 text-xs font-semibold tracking-tight",
                 badgeClass
               )}
             >
               {label}
             </span>
             {item.priority && (
-              <span className="text-[10px] font-medium text-muted-foreground/70">
+              <span className="text-muted-foreground/70 text-xs font-medium">
                 • {item.priority}
               </span>
             )}
           </div>
-          <span className="text-muted-foreground/60 text-[11px] font-normal tabular-nums">
+          <span className="text-muted-foreground/60 text-xs font-normal tabular-nums">
             {formatTimestamp(item.createdAt ?? item.ixTimeTimestamp)}
           </span>
         </div>
 
-        <h4 className="mb-1 text-[13px] font-semibold tracking-tight text-foreground">{title}</h4>
+        <h4 className="text-foreground mb-1 text-[13px] font-semibold tracking-tight">{title}</h4>
 
         <div
-          className="text-muted-foreground text-[12px] leading-relaxed [&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>p]:mb-0"
+          className="text-muted-foreground [&>a]:text-primary [&>a]:hover:text-primary/80 text-[12px] leading-relaxed [&>a]:underline [&>p]:mb-0"
           dangerouslySetInnerHTML={{ __html: sanitizeUserContent(content) }}
         />
 
@@ -117,7 +122,7 @@ function SystemBroadcastCard({
           <div className="mt-2.5 flex items-center gap-2">
             <Link
               href={item.href}
-              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-2xs transition-all hover:bg-primary/90 active:scale-95"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             >
               <span>Open Details</span>
               <ExternalLink className="h-3 w-3" />
@@ -263,7 +268,12 @@ export function MessagesChatPanel({
   });
 
   useEffect(() => {
-    if (!isSystemThread && conversation.id && currentUserId && (conversation as any).unreadCount > 0) {
+    if (
+      !isSystemThread &&
+      conversation.id &&
+      currentUserId &&
+      (conversation as any).unreadCount > 0
+    ) {
       markAsRead.mutate({
         conversationId: conversation.id,
         userId: currentUserId,
@@ -324,7 +334,9 @@ export function MessagesChatPanel({
       if (context?.previousMessages) {
         utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
       }
-      notify.error(error.message?.includes("content") ? "Invalid content" : "Failed to send message");
+      notify.error(
+        error.message?.includes("content") ? "Invalid content" : "Failed to send message"
+      );
     },
     onSettled: (_data, error) => {
       if (error) {
@@ -547,7 +559,7 @@ export function MessagesChatPanel({
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center p-6 text-center">
                 <BellRing className="text-muted-foreground/40 mb-2 h-10 w-10" />
                 <h4 className="text-foreground text-xs font-semibold">No system broadcasts</h4>
-                <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {searchQuery
                     ? `No bulletins match "${searchQuery}"`
                     : "Platform announcements and simulation updates will appear here."}
@@ -599,7 +611,7 @@ export function MessagesChatPanel({
       {isSystemThread || isLoreBotThread ? (
         <div className="border-border/40 bg-card/60 text-muted-foreground flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3 text-xs backdrop-blur-md">
           <Shield className="h-3.5 w-3.5 text-amber-500" />
-          <span className="text-[11px] font-medium">
+          <span className="text-xs font-medium">
             System Messages is an official broadcast channel. Messages are read-only.
           </span>
         </div>

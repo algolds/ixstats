@@ -1,14 +1,17 @@
-# Crisis Events Management System
+# ⚙️ Dynamic Crisis Events Engine
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of Concord Living-World Engine (`CONCORD_ENGINE_VERSION = 2`) & MyCountry.
+**Parent Engine:** Concord Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
+**Subsystem:** Incident Triage & Emergency Response Loop  
+**Primary Action:** `RESOLVE` | **Domain Accent:** Crimson Rose (`#F43F5E` / `--color-rose-500`)  
+**Route:** read-only, surfaced in the `/dashboard` player widget | **Status:** 🚧 Partial — read-only feed; generation & response engine not built  
 
-The Crisis Events Management System generates natural disasters, economic crises, diplomatic incidents, social unrest, and security threats with realistic progression, compounding escalation, and player response choices.
+The Crisis Events Engine is designed to generate algorithmic natural disasters, economic crises, diplomatic incidents, social unrest, and security threats with realistic progression, compounding escalation, and player response choices.
+
+> **Implementation status (2026-09):** Only the read side exists. `CrisisEvent` rows (`prisma/schema/diplomacy.prisma`: type, title, severity, affected countries, casualties, economic impact, `responseStatus`) are written only by the demo seed (`src/lib/demo-seed/domains/seed-security.ts`). The `crisisEvents` router exposes `getActive` and `getStatistics`, which the dashboard player widget reads for the active-crisis count. The taxonomy, lifecycle state machine, response postures, and consequence wiring below are **design targets** and are not implemented. There is no `/admin/crisis-events` page and no generator, response mutation, or spine integration. Player-facing "crises" today are urgent National Issues (see [MyCountry](./mycountry.md)).
 
 ---
 
-## Event Taxonomy
+## Event Taxonomy (planned)
 
 1. **Natural Disasters**: Earthquakes, riverine/coastal floods, hurricanes/typhoons, wildfires, droughts, volcanic eruptions. Triggered by geography, climate biomes, and random environmental events.
 2. **Economic Crises**: Market crashes, hyperinflation, banking solvency failures, sovereign debt defaults, commodity trade shocks.
@@ -18,7 +21,7 @@ The Crisis Events Management System generates natural disasters, economic crises
 
 ---
 
-## Event Lifecycle State Machine
+## Event Lifecycle State Machine (planned)
 
 ```mermaid
 stateDiagram-v2
@@ -40,9 +43,9 @@ stateDiagram-v2
 
 ---
 
-## Response Options & Mechanics
+## Response Options & Mechanics (planned)
 
-Players select from 4 response postures in the Issue Detail Brief:
+Players would select from 4 response postures:
 
 | Response Mode | Speed / Window | Upfront Cost | Outcomes & Risks |
 | :--- | :--- | :--- | :--- |
@@ -55,10 +58,10 @@ Players select from 4 response postures in the Issue Detail Brief:
 
 ## API & Backend Integration
 
-- **Router**: `src/server/api/routers/crisis-events.ts`
-- **Queries**: `getActiveCrises`, `getHistory`, `getStatistics`
-- **Mutations**: `submitResponse`, `requestAid`, `adminTrigger`
-- **Consequences**: Applied atomically via `CountryEventSpine` to update GDP growth, public approval, stability, and post news to ThinkPages.
+- **Router**: `src/server/api/routers/crisis-events.ts` (`crisisEvents`)
+- **Queries (built)**: `getActive` (pending / in-progress / monitoring events), `getStatistics` (counts by timeframe)
+- **Mutations (planned, not built)**: `submitResponse`, `requestAid`, `adminTrigger`
+- **Consequences (planned)**: Would apply through `CountryEventSpine` to update GDP growth, public approval, stability, and post news to ThinkPages.
 
 ---
 
@@ -67,4 +70,4 @@ Players select from 4 response postures in the Issue Detail Brief:
 - [Economic Calculations Guide](./calculations.md)
 - [Diplomacy System Guide](./diplomacy.md)
 - [Intelligence System Guide](./intelligence.md)
-- [API Reference: Crisis Events](../reference/api-complete.md#crisis-events-router)
+- [API Reference: Crisis Events](../reference/api-complete.md#defense--security)

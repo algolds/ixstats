@@ -9,7 +9,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Compass, CloudSun, TrendingUp, Waves, Globe2, Trophy } from "lucide-react";
+import {
+  Compass,
+  CloudSunny as CloudSun,
+  StatUp as TrendingUp,
+  SeaWaves as Waves,
+  Globe as Globe2,
+  Trophy,
+} from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
 
 // Derived from the tRPC output so the type can't drift from the actual data shape.
@@ -77,7 +84,7 @@ export function GeographyReportModal({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-all ${
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   isActive
                     ? "bg-background text-foreground ring-border shadow-sm ring-1"
                     : "text-muted-foreground hover:text-foreground hover:bg-background/20"
@@ -98,30 +105,30 @@ export function GeographyReportModal({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Spatial Metrics
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="text-muted-foreground text-[10px]">Total Area</span>
+                      <span className="text-muted-foreground text-xs">Total Area</span>
                       <div className="text-foreground font-semibold">
                         {geoProfile.area.areaKm2.toLocaleString()} km²
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-[10px]">Border Perimeter</span>
+                      <span className="text-muted-foreground text-xs">Border Perimeter</span>
                       <div className="text-foreground font-semibold">
                         {geoProfile.area.perimeterKm.toLocaleString()} km
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-[10px]">North-South Span</span>
+                      <span className="text-muted-foreground text-xs">North-South Span</span>
                       <div className="text-foreground font-semibold">
                         {geoProfile.area.nsSpanKm.toLocaleString()} km
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-[10px]">East-West Span</span>
+                      <span className="text-muted-foreground text-xs">East-West Span</span>
                       <div className="text-foreground font-semibold">
                         {geoProfile.area.ewSpanKm.toLocaleString()} km
                       </div>
@@ -130,12 +137,12 @@ export function GeographyReportModal({
                 </div>
 
                 <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Biogeographic Overview
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="text-muted-foreground text-[10px]">Dominant Climate</span>
+                      <span className="text-muted-foreground text-xs">Dominant Climate</span>
                       <div
                         className="text-foreground truncate font-semibold"
                         title={geoProfile.climate.dominant ?? undefined}
@@ -144,19 +151,19 @@ export function GeographyReportModal({
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-[10px]">Mean Elevation</span>
+                      <span className="text-muted-foreground text-xs">Mean Elevation</span>
                       <div className="text-foreground font-semibold">
                         {Math.round(geoProfile.elevation.meanElev).toLocaleString()} m
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-[10px]">Arable Land</span>
+                      <span className="text-muted-foreground text-xs">Arable Land</span>
                       <div className="text-foreground font-semibold">
                         {geoProfile.derived.arableLandPercent.toFixed(1)}%
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-[10px]">Terrain Class</span>
+                      <span className="text-muted-foreground text-xs">Terrain Class</span>
                       <div className="text-foreground truncate font-semibold">
                         {geoProfile.elevation.terrainRoughness}
                       </div>
@@ -166,7 +173,7 @@ export function GeographyReportModal({
               </div>
 
               <div className="border-border/60 bg-muted/10 space-y-2 rounded-xl border p-3">
-                <div className="text-muted-foreground flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase">
+                <div className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
                   <Globe2 className="text-primary h-3.5 w-3.5" />
                   Geographic Classification
                 </div>
@@ -186,7 +193,7 @@ export function GeographyReportModal({
                       Coastline: {Math.round(geoProfile.derived.coastlineKm).toLocaleString()} km
                     </span>
                   )}
-                  <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 font-medium text-purple-500">
+                  <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-medium text-cyan-500">
                     Borders: {geoProfile.derived.neighborCount} Neighboring Countries
                   </span>
                   <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-500">
@@ -202,8 +209,8 @@ export function GeographyReportModal({
             <div className="space-y-4">
               {/* Climate Zones Table */}
               <div className="space-y-1.5">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
-                  <CloudSun className="h-3.5 w-3.5 text-sky-500" />
+                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
+                  <CloudSun className="h-3.5 w-3.5 text-cyan-500" />
                   Climate Zone Distribution
                 </div>
                 <div className="border-border overflow-hidden rounded-lg border">
@@ -248,7 +255,7 @@ export function GeographyReportModal({
 
               {/* Elevation Zones Table */}
               <div className="space-y-1.5">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
                   <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
                   Altitude Profile Breakdown
                 </div>
@@ -295,7 +302,7 @@ export function GeographyReportModal({
               {/* Hydrography Summary Card */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     River Networks
                   </div>
                   <div className="space-y-1.5 text-xs">
@@ -315,7 +322,7 @@ export function GeographyReportModal({
                 </div>
 
                 <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
-                  <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Lakes & Reservoirs
                   </div>
                   <div className="space-y-1.5 text-xs">
@@ -337,7 +344,7 @@ export function GeographyReportModal({
 
               {/* Neighbors border table */}
               <div className="space-y-1.5">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
                   <Globe2 className="text-primary h-3.5 w-3.5" />
                   International Border Adjacency
                 </div>
@@ -456,7 +463,7 @@ function SuperlativeCard({
   return (
     <div className="border-border/60 bg-muted/10 space-y-1 rounded-xl border p-3">
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {title}
         </span>
       </div>
@@ -464,14 +471,14 @@ function SuperlativeCard({
         <div className="flex items-end justify-between">
           <div>
             <div className="text-foreground text-sm font-bold">{item.name}</div>
-            <div className="text-muted-foreground text-[10px]">
+            <div className="text-muted-foreground text-xs">
               {subdivision && `Region: ${subdivision}`}
               {subdivision && description && " · "}
               {description}
             </div>
           </div>
           <div className="text-right">
-            <span className="text-muted-foreground block text-[9px] uppercase">{metricLabel}</span>
+            <span className="text-muted-foreground block text-xs uppercase">{metricLabel}</span>
             <span className="text-foreground font-mono text-sm font-bold">{metricVal}</span>
           </div>
         </div>

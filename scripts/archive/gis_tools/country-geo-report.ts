@@ -13,10 +13,11 @@
  * Output is always saved to scripts/reports/<country-slug>-geo-report.md (or .json)
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import * as turf from "@turf/turf";
 import type {
+  BBox,
   Feature,
   FeatureCollection,
   Polygon,
@@ -246,7 +247,9 @@ const CLIMATE_METADATA: Record<
 // GeoJSON Loading
 // ─────────────────────────────────────────────
 
-const GEOJSON_DIR = join(process.cwd(), "scripts", "geojson_fixed");
+const GEOJSON_DIR = existsSync(join(process.cwd(), "scripts", "geojson_fixed"))
+  ? join(process.cwd(), "scripts", "geojson_fixed")
+  : join(process.cwd(), "scripts", "archive", "geojson_dumps", "geojson_sanitized");
 
 function loadGeoJSON(filename: string): FeatureCollection {
   const raw = readFileSync(join(GEOJSON_DIR, filename), "utf-8");
@@ -344,7 +347,7 @@ function getClimateType(fillColor: string): string | null {
   return CLIMATE_COLOR_MAP[norm] ?? null;
 }
 
-function bboxOverlaps(a: turf.BBox, b: turf.BBox): boolean {
+function bboxOverlaps(a: BBox, b: BBox): boolean {
   return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
 }
 
@@ -406,7 +409,7 @@ function getPolygonCount(feature: Feature): number {
 interface AreaResult {
   areaKm2: number;
   areaSqMi: number;
-  bbox: turf.BBox;
+  bbox: BBox;
   nsSpanKm: number;
   ewSpanKm: number;
   centroid: [number, number]; // [lng, lat]
@@ -486,7 +489,7 @@ interface ElevationResult {
 function analyzeElevation(
   country: PolyFeature,
   altitudeFeatures: Feature[],
-  countryBbox: turf.BBox,
+  countryBbox: BBox,
   countryAreaKm2: number
 ): ElevationResult {
   const zoneAreas = new Map<string, number>();
@@ -589,9 +592,9 @@ interface ClimateResult {
 function analyzeClimate(
   country: PolyFeature,
   climateFeatures: Feature[],
-  countryBbox: turf.BBox,
+  countryBbox: BBox,
   centroidLat: number,
-  meanElevation: number,
+  meanElevationM: number,
   countryAreaKm2: number
 ): ClimateResult {
   const typeAreas = new Map<string, number>();
@@ -599,7 +602,7 @@ function analyzeClimate(
 
   for (const climFeat of climateFeatures) {
     const climBbox = turf.bbox(climFeat);
-    if (!bboxOverlaps(countryBbox, climBbox)) continue;
+    if (!bboxOverlaps(countryBbox, climBbox as BBox)) continue;
 
     const fillColor = (climFeat.properties?.fill as string) ?? "";
     const climType = getClimateType(fillColor);
@@ -627,7 +630,7 @@ function analyzeClimate(
     );
   }
 
-  const totalMappedArea = Array.from(typeAreas.values()).reduce((s, a) => s + a, 0);
+  const totalMappedArea = Array.from(typeAreas.values()).reduce((s: number, a: number) => s + a, 0);
   // Normalize zone areas to sum to actual country area (GeoJSON intersections can inflate totals)
   const climNormFactor = totalMappedArea > 0 ? countryAreaKm2 / totalMappedArea : 1;
   const zones: ClimateZoneResult[] = Array.from(typeAreas.entries())
@@ -655,7 +658,7 @@ function analyzeClimate(
   let baseTempC = 28 - 0.45 * absLat;
 
   // Elevation lapse rate: -6.5°C per 1000m (standard atmospheric lapse rate)
-  baseTempC -= 6.5 * (meanElevation / 1000);
+  baseTempC -= 6.5 * (meanElevationM / 1000);
 
   // Climate type modifier (area-weighted)
   let climateModifier = 0;
@@ -684,7 +687,7 @@ function analyzeClimate(
   }
 
   // Orographic adjustment: +15% per 1000m mean elevation for windward, -10% for leeward
-  estAnnualPrecipMm *= 1 + 0.05 * (meanElevation / 1000);
+  estAnnualPrecipMm *= 1 + 0.05 * (meanElevationM / 1000);
 
   return {
     zones,
@@ -716,7 +719,7 @@ function analyzeHydrography(
   country: PolyFeature,
   riverFeatures: Feature[],
   lakeFeatures: Feature[],
-  countryBbox: turf.BBox,
+  countryBbox: BBox,
   countryAreaKm2: number
 ): HydrographyResult {
   let riverCount = 0;
@@ -724,7 +727,7 @@ function analyzeHydrography(
 
   for (const river of riverFeatures) {
     const riverBbox = turf.bbox(river);
-    if (!bboxOverlaps(countryBbox, riverBbox)) continue;
+    if (!bboxOverlaps(countryBbox, riverBbox as BBox)) continue;
 
     try {
       if (!turf.booleanIntersects(country, river)) continue;
@@ -762,7 +765,7 @@ function analyzeHydrography(
 
   for (const lake of lakeFeatures) {
     const lakeBbox = turf.bbox(lake);
-    if (!bboxOverlaps(countryBbox, lakeBbox)) continue;
+    if (!bboxOverlaps(countryBbox, lakeBbox as BBox)) continue;
 
     try {
       if (!turf.booleanIntersects(country, lake)) continue;
@@ -912,11 +915,11 @@ function analyzeNeighbors(
   const countryBbox = turf.bbox(country);
 
   // Expand bbox slightly for neighbor detection
-  const expandedBbox: turf.BBox = [
-    countryBbox[0] - 1,
-    countryBbox[1] - 1,
-    countryBbox[2] + 1,
-    countryBbox[3] + 1,
+  const expandedBbox: BBox = [
+    countryBbox[0] - 1.0,
+    countryBbox[1] - 1.0,
+    countryBbox[2] + 1.0,
+    countryBbox[3] + 1.0,
   ];
 
   for (const other of allPolitical) {
@@ -1073,7 +1076,7 @@ interface IcecapResult {
 function analyzeIcecaps(
   country: PolyFeature,
   icecapFeatures: Feature[],
-  countryBbox: turf.BBox,
+  countryBbox: BBox,
   countryAreaKm2: number
 ): IcecapResult {
   let icecapAreaKm2 = 0;
@@ -1567,7 +1570,7 @@ function printReport(
     { name: "Luxembourg", area: 2586 },
   ];
   const closest = realCountries.reduce(
-    (best, c) => {
+    (best: { name: string; area: number; ratio: number }, c) => {
       const ratio = Math.abs(Math.log(c.area / area.areaKm2));
       return ratio < best.ratio ? { name: c.name, area: c.area, ratio } : best;
     },
@@ -1920,7 +1923,7 @@ function generateMarkdown(
     { name: "Luxembourg", area: 2586 },
   ];
   const closest = realCountries.reduce(
-    (best, c) => {
+    (best: { name: string; area: number; ratio: number }, c) => {
       const ratio = Math.abs(Math.log(c.area / area.areaKm2));
       return ratio < best.ratio ? { name: c.name, area: c.area, ratio } : best;
     },

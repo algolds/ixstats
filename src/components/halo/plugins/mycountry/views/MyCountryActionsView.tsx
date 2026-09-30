@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { Crown, Briefcase, Globe, Shield, X, Gavel } from "lucide-react";
+import {
+  Crown,
+  Suitcase as Briefcase,
+  Globe,
+  Shield,
+  Xmark as X,
+  Hammer as Gavel,
+} from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl, cn } from "~/lib/utils";
 import { PreText } from "~/components/ui/pretext";
@@ -29,42 +36,42 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
   );
 
   const actionButtonClass = (colors: string) =>
-    `flex w-full items-center justify-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
+    `flex w-full items-center justify-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
 
   const quickActions = [
     {
       label: "Meetings",
       icon: Briefcase,
       colors:
-        "border-purple-500/20 bg-gradient-to-r from-purple-500/5 to-indigo-500/5 text-purple-400 hover:from-purple-500/15 hover:to-indigo-500/15",
+        "border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
       action: () => navigateToSection("executive"),
     },
     {
       label: "Embassies",
       icon: Globe,
       colors:
-        "border-teal-500/20 bg-gradient-to-r from-teal-500/5 to-emerald-500/5 text-teal-400 hover:from-teal-500/15 hover:to-emerald-500/15",
+        "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
       action: () => navigateToSection("diplomacy"),
     },
     {
       label: "Foreign Policy",
       icon: Globe,
       colors:
-        "border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 text-cyan-400 hover:from-cyan-500/15 hover:to-blue-500/15",
+        "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
       action: () => navigateToSection("diplomacy"),
     },
     {
       label: "Domestic Policy",
       icon: Gavel,
       colors:
-        "border-orange-500/20 bg-gradient-to-r from-orange-500/5 to-amber-500/5 text-orange-400 hover:from-orange-500/15 hover:to-amber-500/15",
+        "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15",
       action: () => navigateToSection("executive"),
     },
     {
       label: "Operations",
       icon: Shield,
       colors:
-        "border-red-500/20 bg-gradient-to-r from-red-500/5 to-rose-500/5 text-red-400 hover:from-red-500/15 hover:to-rose-500/15",
+        "border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15",
       action: () => navigateToSection("defense"),
       isPremium: true,
     },
@@ -80,8 +87,8 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
     >
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-bold text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.25)]">
-          <Crown className="h-4 w-4 animate-pulse" />
+        <div className="flex items-center gap-2 text-sm font-bold text-amber-500">
+          <Crown className="h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
             MyCountry® Quick Actions
           </PreText>
@@ -115,7 +122,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1 truncate text-left">{item.label}</span>
               {item.isPremium && (
-                <span className="flex shrink-0 items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-amber-500 uppercase shadow-[0_0_8px_rgba(245,158,11,0.05)]">
+                <span className="flex shrink-0 items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs font-bold tracking-wider text-amber-500 uppercase shadow-xs">
                   <Crown className="h-2.5 w-2.5 text-amber-400" />
                   Premium
                 </span>

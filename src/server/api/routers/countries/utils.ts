@@ -1,20 +1,41 @@
-import { z } from "zod";
-import { globalCache } from "~/lib/cache";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { getArticleIntro } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { IxTime } from "~/lib/ixtime";
-import type { BaseCountryData } from "~/types/ixstats";
+
+/**
+ * A public country reference — id, slug or display name. Ids and slugs are globally unique; a name is
+ * unique only within a realm (`@@unique([realmId, name])`), so it matches in `realmId` only (ruling E-p).
+ * Query with `take: 3` and pick the row with `pickCountryRef`.
+ */
+export function countryRefWhere(ref: string, realmId: string): Prisma.CountryWhereInput {
+  return { OR: [{ id: ref }, { slug: ref.toLowerCase() }, { name: ref, realmId }] };
+}
+
+/** The row a reference means when it matched several: an id beats a slug beats a name. */
+export function pickCountryRef<T extends { id: string; slug: string | null }>(
+  rows: readonly T[],
+  ref: string
+): T | null {
+  const slug = ref.toLowerCase();
+  return rows.find((r) => r.id === ref) ?? rows.find((r) => r.slug === slug) ?? rows[0] ?? null;
+}
+
+/** The id a public country reference means within `realmId`, or null (see `countryRefWhere`). */
+export async function resolveCountryRefId(
+  db: Pick<PrismaClient, "country">,
+  ref: string,
+  realmId: string
+): Promise<string | null> {
+  const rows = await db.country.findMany({
+    where: countryRefWhere(ref, realmId),
+    take: 3,
+    select: { id: true, slug: true },
+  });
+  return pickCountryRef(rows, ref)?.id ?? null;
+}
 
 // Cache helpers
 export function getCacheKey(operation: string, params: any): string {
   return `countries:${operation}:${JSON.stringify(params)}`;
-}
-
-export async function getCachedData<T = unknown>(key: string): Promise<T | null> {
-  return globalCache.get<T>(key);
-}
-
-export async function setCachedData(key: string, data: unknown, ttlMs = 30000): Promise<void> {
-  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000) });
 }
 
 export {
@@ -24,71 +45,20 @@ export {
   getCountryComponentsStatsData,
 } from "~/server/shared/country-helpers";
 
-// Helper function to safely include relations that may not exist
-let _cachedRelations: Record<string, boolean> | null = null;
-
-export const safelyIncludeRelations = async (db: any) => {
-  if (_cachedRelations !== null) return _cachedRelations;
-
-  const availableRelations: Record<string, boolean> = {};
-  const modelNames = [
-    "economicProfile",
-    "laborMarket",
-    "fiscalSystem",
-    "incomeDistribution",
-    "governmentBudget",
-    "demographics",
-    "nationalIdentity",
-  ];
-
-  for (const name of modelNames) {
-    try {
-      await (db as any)[name].findFirst({ take: 1 });
-      availableRelations[name] = true;
-    } catch {
-      availableRelations[name] = false;
-    }
-  }
-
-  _cachedRelations = availableRelations;
-  return availableRelations;
+// Static relation inclusion definition (PostgreSQL schema is consolidated)
+const STATIC_RELATIONS: Record<string, boolean> = {
+  economicProfile: true,
+  laborMarket: true,
+  fiscalSystem: true,
+  incomeDistribution: true,
+  governmentBudget: true,
+  demographics: true,
+  nationalIdentity: true,
 };
 
-// Economic data schema with all optional fields
-export const economicDataSchema = z.object({
-  nominalGDP: z.number().optional(),
-  realGDPGrowthRate: z.number().optional(),
-  inflationRate: z.number().optional(),
-  currencyExchangeRate: z.number().optional(),
-  laborForceParticipationRate: z.number().optional(),
-  employmentRate: z.number().optional(),
-  unemploymentRate: z.number().optional(),
-  totalWorkforce: z.number().optional(),
-  averageWorkweekHours: z.number().optional(),
-  minimumWage: z.number().optional(),
-  averageAnnualIncome: z.number().optional(),
-  taxRevenueGDPPercent: z.number().optional(),
-  governmentRevenueTotal: z.number().optional(),
-  taxRevenuePerCapita: z.number().optional(),
-  governmentBudgetGDPPercent: z.number().optional(),
-  budgetDeficitSurplus: z.number().optional(),
-  internalDebtGDPPercent: z.number().optional(),
-  externalDebtGDPPercent: z.number().optional(),
-  totalDebtGDPRatio: z.number().optional(),
-  debtPerCapita: z.number().optional(),
-  interestRates: z.number().optional(),
-  debtServiceCosts: z.number().optional(),
-  povertyRate: z.number().optional(),
-  incomeInequalityGini: z.number().optional(),
-  socialMobilityIndex: z.number().optional(),
-  totalGovernmentSpending: z.number().optional(),
-  spendingGDPPercent: z.number().optional(),
-  spendingPerCapita: z.number().optional(),
-  lifeExpectancy: z.number().optional(),
-  urbanPopulationPercent: z.number().optional(),
-  ruralPopulationPercent: z.number().optional(),
-  literacyRate: z.number().optional(),
-});
+export const safelyIncludeRelations = async (_db?: any) => {
+  return STATIC_RELATIONS;
+};
 
 /** Fetch a single wiki intro from ixwiki or iiwiki fallback. */
 export async function fetchWikiIntro(

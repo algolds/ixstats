@@ -9,7 +9,7 @@
  */
 
 import { memo } from "react";
-import { X } from "lucide-react";
+import { Xmark as X } from "iconoir-react";
 import type { SelectedCountry } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
@@ -23,12 +23,15 @@ import { useCountryInfoPanelState } from "~/components/maps/core/hooks/useCountr
 import { ImageLightbox } from "~/components/maps/core/components/ImageLightbox";
 
 const GdpDetailsModal = dynamic(
-  () => import("~/components/ui/modals/GdpDetailsModal").then((m) => ({ default: m.GdpDetailsModal })),
+  () =>
+    import("~/components/mycountry/shared/modals/metric-details/GdpDetailsModal").then((m) => ({
+      default: m.GdpDetailsModal,
+    })),
   { ssr: false }
 );
 const PopulationDetailsModal = dynamic(
   () =>
-    import("~/components/ui/modals/PopulationDetailsModal").then((m) => ({
+    import("~/components/mycountry/shared/modals/metric-details/PopulationDetailsModal").then((m) => ({
       default: m.PopulationDetailsModal,
     })),
   { ssr: false }

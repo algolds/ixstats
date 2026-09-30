@@ -1,15 +1,26 @@
 "use client";
 
-import { useMemo } from "react";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { WarningTriangle as AlertTriangle, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IssueCard } from "~/components/executive/issues";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
+import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
 
 interface LegislativeIssuesProps {
   countryId: string;
+  onSelectIssue?: (issueId: string) => void;
 }
 
-export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
+export function LegislativeIssues({ countryId, onSelectIssue }: LegislativeIssuesProps) {
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+
   const { data: issueData } = api.nationalIssues.getMyIssues.useQuery(
     { countryId, status: "active", limit: 50 },
     { enabled: !!countryId }
@@ -36,8 +47,16 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
       .slice(0, 5);
   }, [issueData]);
 
+  const handleView = (id: string) => {
+    if (onSelectIssue) {
+      onSelectIssue(id);
+    } else {
+      setSelectedIssueId(id);
+    }
+  };
+
   return (
-    <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-4">
+    <div className="facet-hierarchy-child border-border space-y-3 rounded-xl border p-4">
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 text-amber-600" />
         <span className="text-sm font-semibold">Governance Issues</span>
@@ -55,9 +74,7 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
               key={issue.id}
               issue={issue}
               variant="compact"
-              onView={() => {
-                /* Respond via the main issues inbox */
-              }}
+              onView={() => handleView(issue.id)}
             />
           ))}
         </div>
@@ -68,6 +85,19 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
           <p className="text-xs">Your legislative agenda is clear.</p>
         </div>
       )}
+
+      {/* Slide-over sheet for issue resolution */}
+      <Sheet open={!!selectedIssueId} onOpenChange={(open) => !open && setSelectedIssueId(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Governance Issue Resolution</SheetTitle>
+            <SheetDescription>Deliberate and resolve national legislative issue</SheetDescription>
+          </SheetHeader>
+          {selectedIssueId && (
+            <IssueDetailBrief issueId={selectedIssueId} onClose={() => setSelectedIssueId(null)} />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -1,9 +1,9 @@
-// src/components/defense/stability/SecurityEventsCard.tsx
 "use client";
+// src/components/defense/stability/SecurityEventsCard.tsx
 
 import React from "react";
 import { motion } from "motion/react";
-import { AlertTriangle, CheckCircle } from "lucide-react";
+import { WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -12,7 +12,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 interface SecurityEvent {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   severity: string;
   casualties: number;
   arrested: number;
@@ -22,7 +22,7 @@ interface SecurityEvent {
 }
 
 interface ResolveEventMutation {
-  mutate: (input: { id: string; resolutionNotes: string }) => void;
+  mutate: (input: { id: string; resolutionNotes?: string }) => void;
 }
 
 interface SecurityEventsCardProps {
@@ -37,7 +37,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
   getSeverityColor,
 }: SecurityEventsCardProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
@@ -54,9 +54,9 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-card rounded-lg border p-3"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-2 flex items-center gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       <Badge className={getSeverityColor(event.severity)}>
                         {event.severity.toUpperCase()}
                       </Badge>
@@ -64,7 +64,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                     </div>
                     <p className="text-muted-foreground mb-3 text-sm">{event.description}</p>
 
-                    <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
                       {event.casualties > 0 && (
                         <div>
                           <span className="text-muted-foreground">Casualties:</span>
@@ -102,6 +102,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                   <Button
                     size="sm"
                     variant="outline"
+                    className="shrink-0 self-start"
                     onClick={() =>
                       resolveEvent.mutate({
                         id: event.id,

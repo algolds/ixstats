@@ -1,25 +1,18 @@
+"use client";
 // src/app/(forum)/forum/bookmarks/page.tsx
 // Forum stashes — shows threads saved via the LoreStash system.
 
-"use client";
-
 import Link from "next/link";
-import { Bookmark, MessageSquare, Clock, ExternalLink } from "lucide-react";
+import {
+  Bookmark,
+  ChatBubble as MessageSquare,
+  Clock,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
-
-function formatTimeAgo(date: Date | string): string {
-  const d = new Date(date);
-  const now = Date.now();
-  const diff = (now - d.getTime()) / 1000;
-
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return d.toLocaleDateString();
-}
+import { timeAgo as formatTimeAgo } from "~/lib/format/compact";
 
 export default function ForumStashesPage() {
   const { data, isLoading, error } = api.forum.getStashedThreads.useQuery(

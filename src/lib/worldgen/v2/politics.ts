@@ -10,13 +10,7 @@
  * 6. Markov naming: names states and cultures using language families
  */
 
-import type {
-  WorldGraph,
-  WorldGenParams,
-  PoliticalState,
-  CulturalRegion,
-  Settlement,
-} from "./types";
+import type { WorldGraph, WorldGenParams, PoliticalState, Settlement } from "./types";
 import { QUALITY_THRESHOLDS } from "./config";
 import { makeRng, hslToHex } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
@@ -198,7 +192,7 @@ function generateSettlements(
     let score = 0.5;
 
     // Coastal bonus
-    if (cells.coastDist[c]! === 0) score += 0.25;
+    if (cells.coastDist[c] === 0) score += 0.25;
     // River bonus
     if (cells.river[c]! > 0) score += 0.2;
     // Temperate climate bonus
@@ -234,7 +228,7 @@ function generateSettlements(
     }
 
     const isCapital = i < 80; // Top 80 are capital candidates
-    const isPort = cells.coastDist[cell]! === 0;
+    const isPort = cells.coastDist[cell] === 0;
     const population = Math.round(10000 + score * 500000 + rng() * 50000);
 
     graph.settlements.push({

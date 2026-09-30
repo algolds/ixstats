@@ -1,9 +1,6 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { compositionSchema } from "~/lib/heraldry/composition-schema";
-import { validateComposition } from "~/lib/heraldry/validation";
-import { generateBlazon } from "~/lib/heraldry/blazon";
 import { generateRandomComposition } from "~/lib/heraldry/generator";
 
 export const heraldryQueriesRouter = createTRPCRouter({
@@ -20,23 +17,6 @@ export const heraldryQueriesRouter = createTRPCRouter({
         });
       }
       return achievement;
-    }),
-
-  getAchievementsBySubject: publicProcedure
-    .input(
-      z.object({
-        subjectType: z.enum(["COUNTRY", "CHARACTER", "INSTITUTION", "DYNASTY"]),
-        subjectId: z.string().nullable(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return ctx.db.heraldryAchievement.findMany({
-        where: {
-          subjectType: input.subjectType,
-          subjectId: input.subjectId,
-        },
-        orderBy: { updatedAt: "desc" },
-      });
     }),
 
   getChargeLibrary: publicProcedure
@@ -113,19 +93,6 @@ export const heraldryQueriesRouter = createTRPCRouter({
       return charge;
     }),
 
-  getChargeCategories: publicProcedure.query(async ({ ctx }) => {
-    const counts = await ctx.db.heraldryCharge.groupBy({
-      by: ["category"],
-      _count: {
-        id: true,
-      },
-    });
-    return counts.map((c: any) => ({
-      category: c.category,
-      count: c._count.id,
-    }));
-  }),
-
   getRegistry: publicProcedure
     .input(
       z.object({
@@ -150,14 +117,6 @@ export const heraldryQueriesRouter = createTRPCRouter({
       ]);
       return { items, total };
     }),
-
-  generateBlazon: publicProcedure.input(compositionSchema).query(({ input }) => {
-    return generateBlazon(input);
-  }),
-
-  validateComposition: publicProcedure.input(compositionSchema).query(({ input }) => {
-    return validateComposition(input);
-  }),
 
   getRevisionHistory: protectedProcedure
     .input(z.object({ achievementId: z.string().uuid() }))

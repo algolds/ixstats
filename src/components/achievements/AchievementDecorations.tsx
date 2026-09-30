@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Lock } from "lucide-react";
+import { Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
@@ -29,7 +29,7 @@ export function JewelAchievementIcon({
           className="h-6 w-6 object-contain opacity-20 blur-[1.5px] filter"
           loading="lazy"
         />
-        <Lock className="absolute h-5 w-5 text-muted-foreground/80 drop-shadow-sm" />
+        <Lock className="text-muted-foreground/80 absolute h-5 w-5 drop-shadow-sm" />
       </div>
     );
   }
@@ -94,7 +94,7 @@ export function AchievementCardBackdrop({
 
       {/* Holographic foil sheen on epic/legendary */}
       {isLegendaryOrEpic && isUnlocked && (
-        <div className="pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr from-amber-500/15 via-transparent to-purple-500/15 opacity-60 blur-xl" />
+        <div className="pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr from-amber-500/15 via-transparent to-amber-500/10 opacity-60 blur-xl" />
       )}
 
       {/* 140px Ghost SVG Watermark in Bottom-Right Corner */}

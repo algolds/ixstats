@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Gavel, Plus, Check, X, Minus, ChevronRight } from "lucide-react";
+import {
+  Hammer as Gavel,
+  Plus,
+  Check,
+  Xmark as X,
+  Minus,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -55,7 +62,7 @@ function WhipCount({ billId }: { billId: string }) {
   const { data } = api.legislation.previewBillVote.useQuery({ billId }, { staleTime: 30_000 });
   if (!data) return null;
   if (!data.available) {
-    return <p className="text-muted-foreground/60 text-[11px] italic">{data.reason}</p>;
+    return <p className="text-muted-foreground/60 text-xs italic">{data.reason}</p>;
   }
   const w = data.whip;
   const color =
@@ -68,13 +75,13 @@ function WhipCount({ billId }: { billId: string }) {
           : "text-red-500";
   return (
     <div className="rounded-md border border-amber-500/15 bg-amber-500/[0.03] p-2">
-      <p className="flex items-center gap-1.5 text-[11px] font-semibold">
+      <p className="flex items-center gap-1.5 text-xs font-semibold">
         <Gavel className="h-3 w-3 text-amber-500" /> Whip Count
         <span className="text-muted-foreground/50 ml-auto font-normal">
           standing {data.standing}%
         </span>
       </p>
-      <p className={`mt-1 text-[11px] ${color}`}>
+      <p className={`mt-1 text-xs ${color}`}>
         {w.caption}
         {w.yesSeats != null ? ` (${w.yesSeats}–${w.noSeats})` : ""}
       </p>
@@ -117,7 +124,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
       {/* Trigger Card - Facet Compliant */}
       <button
         onClick={() => setIsOpen(true)}
-        className="glass-hierarchy-child border-border hover:bg-muted/10 flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-all hover:shadow-md active:scale-[0.99]"
+        className="facet-hierarchy-child border-border hover:bg-muted/10 flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:shadow-md active:scale-[0.99]"
       >
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-indigo-500/10 p-2.5">
@@ -134,7 +141,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
         </div>
         <div className="flex items-center gap-2">
           {committeeCount > 0 && (
-            <Badge className="border border-amber-500/20 bg-amber-500/10 text-[10px] font-semibold text-amber-500 hover:bg-amber-500/20">
+            <Badge className="border border-amber-500/20 bg-amber-500/10 text-xs font-semibold text-amber-500 hover:bg-amber-500/20">
               {committeeCount} Pending
             </Badge>
           )}
@@ -249,12 +256,12 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                         </button>
                         <div className="flex items-center gap-2">
                           {result && (
-                            <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-[11px] tabular-nums">
+                            <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs tabular-nums">
                               {result.yesSeats}–{result.noSeats}
                             </span>
                           )}
                           <Badge
-                            className={`px-2 py-0.5 text-[10px] font-semibold ${statusMeta.className}`}
+                            className={`px-2 py-0.5 text-xs font-semibold ${statusMeta.className}`}
                           >
                             {statusMeta.label}
                           </Badge>
@@ -262,7 +269,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-6 border-indigo-500/20 bg-indigo-500/5 px-2.5 text-[10px] text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
+                              className="h-6 border-indigo-500/20 bg-indigo-500/5 px-2.5 text-xs text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
                               disabled={holdVote.isPending}
                               onClick={() => holdVote.mutate({ billId: bill.id })}
                             >
@@ -283,7 +290,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                           {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
                             <div className="bg-muted/40 border-border/20 space-y-1 rounded-lg border p-2.5">
-                              <p className="text-foreground mb-1 text-[11px] font-medium">
+                              <p className="text-foreground mb-1 text-xs font-medium">
                                 Floor Vote Breakdown
                               </p>
                               {result.breakdown.map((pv) => (
@@ -297,7 +304,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                                       {pv.partyName}
                                     </span>
                                   </div>
-                                  <span className="text-muted-foreground text-[10px]">
+                                  <span className="text-muted-foreground text-xs">
                                     {pv.seats} seats
                                   </span>
                                 </div>

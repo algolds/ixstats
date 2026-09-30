@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { buildBaseStyle, getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { createStarImage } from "~/components/maps/core/utils/map-core-helpers";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 const EMBED_LAYER_IDS = [
   "world-political-fill",
@@ -100,7 +101,7 @@ export function useCountryMapEmbedLayers({
 
     let released = false;
 
-    const mod = await import("maplibre-gl");
+    const mod = await loadMaplibre();
     const maplibregl = ("Map" in mod ? mod : (mod as any).default) as any;
     if (released || !state.containerRef.current) return () => {};
 

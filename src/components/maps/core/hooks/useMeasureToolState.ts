@@ -28,7 +28,9 @@ export function useMeasureToolState({ mapRef, onActiveChange }: UseMeasureToolSt
   const pointsRef = useRef<[number, number][]>([]);
   const activeRef = useRef(false);
 
+  // oxlint-disable-next-line
   pointsRef.current = points;
+  // oxlint-disable-next-line
   activeRef.current = active;
 
   useEffect(() => {

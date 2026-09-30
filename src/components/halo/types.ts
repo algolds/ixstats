@@ -69,9 +69,10 @@ export interface DIPlugin<F = unknown, C = unknown> {
   id: string;
   priority?: number;
   center?: React.ReactNode;
-  actions?: DIAction[];
-  expandedViews?: Record<string, React.ComponentType<DIViewProps<F, C>>>;
+  // oxlint-disable-next-line typescript/no-explicit-any
+  expandedViews?: Record<string, React.ComponentType<DIViewProps<any, any>>>;
   badge?: DIBadge;
+  actions?: DIAction[];
   accentColor?: string;
   stickyLabel?: string;
   filter?: F;

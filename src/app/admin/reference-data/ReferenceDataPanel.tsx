@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/reference-data/page.tsx
 // Unified reference data hub with grouped categories and live record counts
-"use client";
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
@@ -11,23 +11,22 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import {
   Database,
-  Flag,
-  Drama,
+  WhiteFlag as Flag,
+  Emoji as Drama,
   Rocket,
-  UserCog,
-  Newspaper,
+  User as UserCog,
+  Journal as Newspaper,
   Building,
-  TrendingUp,
+  StatUp as TrendingUp,
   CreditCard,
-  BookOpen,
-  Layers,
-  FileText,
-  Swords,
+  OpenBook as BookOpen,
+  Component as Layers,
+  Page as FileText,
+  Tournament as Swords,
   Brain,
-  ExternalLink,
-  RefreshCw,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  OpenNewWindow as ExternalLink,
+  Refresh as RefreshCw,
+} from "iconoir-react";
 
 // ── Data Type Registry ───────────────────────────────────────────────────────
 
@@ -35,7 +34,7 @@ interface DataTypeConfig {
   key: string;
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
   category: "diplomacy" | "military" | "governance" | "economy" | "content" | "system";
   color: string;
@@ -284,20 +283,18 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="glass-card-child group border-border/50 hover:border-primary/30 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
+                      className="group border-border/30 bg-card/25 hover:border-border/60 block rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-colors transition-transform active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div
-                            className={`rounded-lg border border-${type.color}-500/20 bg-${type.color}-500/10 p-2`}
-                          >
-                            <Icon className={`h-5 w-5 text-${type.color}-500`} />
+                          <div className="border-border/40 bg-card/40 text-foreground rounded-xl border p-2">
+                            <Icon className="text-primary h-4 w-4" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-foreground group-hover:text-primary text-sm font-medium transition-colors">
+                            <h3 className="text-foreground group-hover:text-primary text-xs font-semibold tracking-tight transition-colors">
                               {type.label}
                             </h3>
-                            <p className="text-muted-foreground mt-0.5 text-xs">
+                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
                               {type.description}
                             </p>
                           </div>
@@ -307,16 +304,16 @@ export default function ReferenceDataPage() {
 
                       {/* Count badge */}
                       {count != null ? (
-                        <div className="border-border/30 mt-3 flex items-center justify-between border-t pt-2">
-                          <span className="text-muted-foreground text-xs">Records</span>
-                          <span className="text-foreground font-mono text-sm font-medium">
+                        <div className="border-border/20 mt-3 flex items-center justify-between border-t pt-2 text-xs">
+                          <span className="text-muted-foreground">Records</span>
+                          <span className="text-foreground font-mono font-bold">
                             {count.toLocaleString()}
                           </span>
                         </div>
                       ) : count === undefined &&
                         (govComponents.isLoading || econComponents.isLoading) ? (
-                        <div className="border-border/30 mt-3 border-t pt-2">
-                          <Skeleton className="ml-auto h-4 w-16" />
+                        <div className="border-border/20 mt-3 border-t pt-2">
+                          <Skeleton className="ml-auto h-3.5 w-12" />
                         </div>
                       ) : null}
                     </Link>

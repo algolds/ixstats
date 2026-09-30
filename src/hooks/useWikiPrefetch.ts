@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
+import { articleHtmlInput, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 
 const PREFETCH_DEBOUNCE_MS = 50;
 const prefetchedSet = new Set<string>();
@@ -15,30 +16,27 @@ export function useWikiPrefetch() {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const prefetchArticle = useCallback(
-    async (rawTitle: string, prefetchWikitext = false) => {
+    async (rawTitle: string, prefetchWikitext = false, source: WikiSource = "ixwiki") => {
       const title = decodeURIComponent(rawTitle).trim().replace(/_/g, " ");
       if (!title || title.startsWith("Special:") || title.startsWith("Category:")) {
         return;
       }
 
-      const cacheKey = title.toLowerCase();
+      const cacheKey = `${source}:${title.toLowerCase()}`;
       if (prefetchedSet.has(cacheKey)) {
         return;
       }
       prefetchedSet.add(cacheKey);
 
       try {
-        // Warm up tRPC / React Query cache directly
-        await utils.wikios.getArticleHtml.prefetch(
-          { title },
-          { staleTime: 10 * 60 * 1000 }
-        );
+        // Warm up tRPC / React Query cache directly, under the reader's key for this wiki
+        await utils.wikios.getArticleHtml.prefetch(articleHtmlInput(title, source), {
+          staleTime: 10 * 60 * 1000,
+        });
 
-        if (prefetchWikitext) {
-          await utils.wikios.getWikitext.prefetch(
-            { title },
-            { staleTime: 10 * 60 * 1000 }
-          );
+        // The editor's wikitext exists only for IxWiki pages
+        if (prefetchWikitext && source === "ixwiki") {
+          await utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
         }
       } catch {
         // Prefetch is speculative and best-effort; silently ignore errors
@@ -58,11 +56,12 @@ export function useWikiPrefetch() {
         const match = url.pathname.match(/^\/wiki\/([^/?#]+)$/);
         if (match && match[1]) {
           const rawSlug = match[1];
+          const source = parseWikiSource(url.searchParams.get("source"));
           if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
           }
           debounceTimerRef.current = setTimeout(() => {
-            void prefetchArticle(rawSlug);
+            void prefetchArticle(rawSlug, false, source);
           }, PREFETCH_DEBOUNCE_MS);
         }
       } catch {

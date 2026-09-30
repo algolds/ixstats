@@ -1,7 +1,13 @@
 "use client";
 
 import React from "react";
-import { Search, X, Calendar, Sparkles, BookOpen } from "lucide-react";
+import {
+  Search,
+  Xmark as X,
+  Calendar,
+  Sparks as Sparkles,
+  OpenBook as BookOpen,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { NationStatesLogo } from "~/components/cards/display/NationStatesLogo";
@@ -52,7 +58,7 @@ export function GallerySidebarContent({
     <div className="space-y-3">
       {/* Source Toggle */}
       <div>
-        <p className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
           Source
         </p>
         <div className="flex gap-1">
@@ -61,9 +67,9 @@ export function GallerySidebarContent({
               key={s}
               onClick={() => setSource(s)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold transition-all",
+                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 source === s
-                  ? "bg-purple-500/20 font-bold text-purple-600 shadow-xs dark:text-purple-400"
+                  ? "bg-amber-500/15 font-bold text-amber-600 shadow-xs dark:text-amber-400"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
@@ -110,7 +116,7 @@ export function GallerySidebarContent({
           className={cn(
             "h-7 w-full px-2 text-xs",
             season !== "all" &&
-              "border-purple-500/30 bg-purple-500/20 font-bold text-purple-600 dark:text-purple-300"
+              "border-amber-500/30 bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400"
           )}
         >
           <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
@@ -173,7 +179,7 @@ export function GallerySidebarContent({
 
       {/* Sort */}
       <div>
-        <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
           Sort By
         </p>
         <Select value={sortBy} onValueChange={setSortBy}>
@@ -195,10 +201,10 @@ export function GallerySidebarContent({
           size="sm"
           variant="outline"
           onClick={onRequestLoreCard}
-          className="h-8 w-full border-purple-500/30 text-xs text-purple-600 hover:bg-purple-500/10 dark:text-purple-400"
+          className="h-8 w-full border-wiki/30 text-xs text-wiki hover:bg-wiki/10"
         >
           <BookOpen className="mr-1.5 h-3 w-3" /> Request Lore Card
-          <span className="ml-1.5 flex items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0 text-[9px] font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+          <span className="ml-1.5 flex items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0 text-xs font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
             <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
             50
           </span>

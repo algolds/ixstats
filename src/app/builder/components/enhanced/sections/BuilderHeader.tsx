@@ -2,8 +2,16 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Settings, AlertTriangle, Zap, Save, Loader2, History } from "lucide-react";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import {
+  ArrowLeft,
+  Settings,
+  WarningTriangle as AlertTriangle,
+  Flash as Zap,
+  FloppyDisk as Save,
+  SystemRestart as Loader2,
+  ClockRotateRight as History,
+} from "iconoir-react";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { useBuilderContext } from "../context/BuilderStateContext";
@@ -39,6 +47,7 @@ export function BuilderHeader({
   isSaving = false,
   countryId,
 }: BuilderHeaderProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { builderState, setBuilderState, lastSaved, isAutoSaving } = useBuilderContext();
   const isEditMode = mode === "edit";
   const [showHistory, setShowHistory] = useState(false);

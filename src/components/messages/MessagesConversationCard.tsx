@@ -2,25 +2,15 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Users, BellOff, Globe, Shield, Radio, Pin } from "lucide-react";
+// oxlint-disable-next-line eslint/no-unused-vars
+import { Group as Users, BellOff, Globe, AntennaSignal as Radio } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { MessageFolder } from "~/types/messages";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { timeAgo } from "~/lib/format/compact";
 
-function formatRelativeTime(date: Date | string): string {
-  const now = new Date();
-  const d = new Date(date);
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "now";
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+const formatRelativeTime = (date: Date | string) => timeAgo(date, { suffix: false });
 
 interface MessagesConversationCardProps {
   conversation: any;
@@ -37,6 +27,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
   isSelected,
   onClick,
   currentUserId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   activeFolder,
   settings,
   isMuted = false,
@@ -65,7 +56,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
       : (otherParticipant?.account?.displayName ?? conversation.name ?? "Unknown");
 
   const displayName = isDiplomatic
-    ? (participantCountryName || rawName)
+    ? participantCountryName || rawName
     : isGroup
       ? (conversation.name ?? "Group Chat")
       : rawName;
@@ -85,23 +76,23 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
     <button
       onClick={onClick}
       className={cn(
-        "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.985] select-none",
+        "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
         isSelected
-          ? "bg-accent/80 text-accent-foreground shadow-2xs ring-1 ring-border/50"
+          ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
           : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
       )}
     >
       {/* Avatar / Flag */}
       <div className="relative shrink-0">
         {isGroup ? (
-          <Avatar className="h-10 w-10 ring-1 ring-border/30">
+          <Avatar className="ring-border/30 h-10 w-10 ring-1">
             <AvatarImage src={conversation.avatar ?? undefined} alt={displayName} />
             <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
               <Users className="h-4 w-4 opacity-80" />
             </AvatarFallback>
           </Avatar>
         ) : isDiplomatic && participantCountryFlag ? (
-          <div className="h-7 w-10 overflow-hidden rounded-md ring-1 ring-border/30 shadow-2xs">
+          <div className="ring-border/30 h-7 w-10 overflow-hidden rounded-md shadow-2xs ring-1">
             <UnifiedCountryFlag
               countryName={participantCountryName || displayName}
               flagUrl={normalizeFlagUrl(participantCountryFlag)}
@@ -110,7 +101,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             />
           </div>
         ) : (
-          <Avatar className="h-10 w-10 ring-1 ring-border/25">
+          <Avatar className="ring-border/25 h-10 w-10 ring-1">
             <AvatarImage src={participantAvatar ?? undefined} alt={displayName} />
             <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
               {initials || "?"}
@@ -120,7 +111,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
 
         {/* Crisp unread indicator dot */}
         {hasUnread && (
-          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
+          <span className="bg-primary ring-background absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2" />
         )}
       </div>
 
@@ -143,11 +134,9 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             </span>
 
             {/* Subtle contextual glyph for official / community channels */}
-            {isDiplomatic && (
-              <Globe className="h-3 w-3 shrink-0 text-amber-500/80" />
-            )}
+            {isDiplomatic && <Globe className="h-3 w-3 shrink-0 text-amber-500/80" />}
             {isCommunity && (
-              <span className="text-muted-foreground/60 text-[10.5px] font-normal">
+              <span className="text-muted-foreground/60 text-xs font-normal">
                 • Community
               </span>
             )}
@@ -156,7 +145,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           <div className="flex shrink-0 items-center gap-1.5">
             {isMuted && <BellOff className="text-muted-foreground/50 h-3 w-3 shrink-0" />}
             {lastMessage && (
-              <span className="text-muted-foreground/60 text-[11px] font-normal tabular-nums">
+              <span className="text-muted-foreground/60 text-xs font-normal tabular-nums">
                 {formatRelativeTime(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp)}
               </span>
             )}
@@ -168,9 +157,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           <p
             className={cn(
               "line-clamp-1 text-[12px] leading-normal",
-              hasUnread
-                ? "text-foreground font-medium"
-                : "text-muted-foreground font-normal"
+              hasUnread ? "text-foreground font-medium" : "text-muted-foreground font-normal"
             )}
           >
             {lastMessage ? (
@@ -184,7 +171,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           </p>
 
           {hasUnread && conversation.unreadCount > 0 && (
-            <span className="flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums shadow-2xs">
+            <span className="bg-primary text-primary-foreground flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums shadow-2xs">
               {conversation.unreadCount}
             </span>
           )}

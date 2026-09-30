@@ -7,65 +7,9 @@ import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import { vaultService } from "~/lib/vault/vault-service";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-
-// Helper functions for cultural exchange <-> embassy mission integration
-
-/**
- * Calculate cultural exchange bonus from completed embassy missions
- * Returns percentage boost based on number of completed missions
- * @param completedMissionCount - Number of completed cultural_outreach missions
- * @returns Object with cultural impact and diplomatic value bonus percentages
- */
-function _calculateMissionCulturalBonus(completedMissionCount: number) {
-  // 20% cultural impact bonus per mission (max 60%)
-  const culturalImpactBonus = Math.min(completedMissionCount * 20, 60);
-
-  // 15% diplomatic value bonus per mission (max 45%)
-  const diplomaticValueBonus = Math.min(completedMissionCount * 15, 45);
-
-  return {
-    culturalImpactBonus,
-    diplomaticValueBonus,
-    reasoning:
-      completedMissionCount > 0
-        ? `Embassy mission support provides +${culturalImpactBonus}% cultural impact and +${diplomaticValueBonus}% diplomatic value`
-        : "No embassy mission support",
-  };
-}
-
-/**
- * Apply cultural exchange boost when completing a cultural_outreach mission
- * Increases cultural impact and diplomatic value of linked exchange
- * @param culturalImpact - Base cultural impact boost amount (default: 15)
- * @param diplomaticValue - Base diplomatic value boost amount (default: 10)
- */
-function _getCulturalExchangeBoostValues(culturalImpact = 15, diplomaticValue = 10) {
-  return {
-    culturalImpactBoost: culturalImpact,
-    diplomaticValueBoost: diplomaticValue,
-    reasoning: `Completed embassy mission boosts exchange by +${culturalImpact} cultural impact and +${diplomaticValue} diplomatic value`,
-  };
-}
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
-  // Get diplomatic relationships for a country
-
-  // Get recent diplomatic changes
-
-  // Update diplomatic relationship
-
-  // Create a new diplomatic relationship
-
-  // Delete/terminate a diplomatic relationship
-
-  // Embassy Network Operations
-
-  // Diplomatic messaging has been unified into ThinkShare (/messages).
-  // Use api.messages.getConversationsByFolder with folder="diplomatic" instead.
-  // Use api.messages.sendMessage with conversationType="diplomatic" instead.
-
-  // Cultural Exchanges
-
   createCulturalExchange: protectedProcedure
     .input(
       z.object({
@@ -320,9 +264,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId || ctx.user.countryId !== input.countryId) {
-        throw new Error("You can only join cultural exchanges with your own country.");
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Get exchange details for tracking
       const exchange = await ctx.db.culturalExchange.findUnique({
@@ -369,76 +311,4 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
 
       return participant;
     }),
-
-  // Link existing cultural exchange to an embassy mission
-
-  // Embassy Game System Endpoints
-
-  // Embassy Management
-
-  // Embassy Upgrades
-
-  // Embassy Missions
-
-  // Embassy Economics
-
-  // Influence and Relationship Management Procedures
-
-  // Follow/Unfollow system for countries
-
-  // Embassy Shared Data System
-
-  // Embassy Profile Management
-
-  // Get cultural compatibility scores for a country with all other countries
-
-  // Get recommended diplomatic partners based on cultural compatibility
-
-  // Update cultural exchange (only title and description)
-
-  // Cancel cultural exchange (with diplomatic penalties)
-
-  // Get NPC responses for cultural exchange using diplomatic AI
-
-  // ============================================================
-  // Foreign Policy Actions (Phase 2)
-  // ============================================================
-
-  // Get active foreign policies for a country (as initiator or target)
-
-  // Get bilateral trade data between two countries
-
-  // Preview the economic impact of a foreign policy action before confirming
-
-  // Propose / enact a foreign policy action
-
-  // Lift / end an active foreign policy action
-
-  // ============================================================
-  // Alliance / Bloc System (Phase 3)
-  // ============================================================
-
-  // Get alliances a country belongs to
-
-  // Get a single alliance dashboard
-
-  // Create a new alliance
-
-  // Invite a country to join an alliance
-
-  // Leave an alliance
-
-  // Propose an alliance action (collective sanction, shared defense, etc.)
-
-  // Vote on an alliance action
-
-  // Create an alliance document
-
-  // Get documents for an alliance
-
-  // Get active embassy missions for a country
 });
-
-// Helper function to determine category from option value
-// Helper functions for embassy game mechanics
-// Influence and Relationship Mechanics

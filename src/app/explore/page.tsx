@@ -10,7 +10,6 @@ import type {
   TierFilter,
   PopulationRange,
 } from "../countries/_components/CountriesSearch";
-import { api } from "~/trpc/react";
 import CountriesFilterSidebar from "../countries/_components/CountriesFilterSidebar";
 import CountriesSortBar from "../countries/_components/CountriesSortBar";
 import { CountryComparisonModal } from "../countries/_components/CountryComparisonModal";
@@ -37,11 +36,16 @@ export default function ExplorePage() {
   // Comparison functionality
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const {
+    // oxlint-disable-next-line eslint/no-unused-vars
     comparisonCountries,
+    // oxlint-disable-next-line eslint/no-unused-vars
     addCountryToComparison,
+    // oxlint-disable-next-line eslint/no-unused-vars
     removeCountryFromComparison,
+    // oxlint-disable-next-line eslint/no-unused-vars
     clearComparison,
     getAvailableCountries,
+    // oxlint-disable-next-line eslint/no-unused-vars
     isLoading: isLoadingComparison,
   } = useCountryComparison();
 
@@ -185,6 +189,7 @@ export default function ExplorePage() {
   useEffect(() => {
     setPage(1);
   }, [
+    // oxlint-disable-next-line
     searchTerm,
     tierFilter,
     continentFilter,

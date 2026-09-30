@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import { ExternalLink, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
+import {
+  OpenNewWindow as ExternalLink,
+  ShieldCheck,
+  ArrowLeft,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -31,7 +36,7 @@ export function ImportVerifyStep({
         <h2 className="text-foreground text-xl font-bold tracking-tight">Verify Ownership</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           Prove you own{" "}
-          <span className="font-semibold text-rose-600 dark:text-rose-400">{nationName}</span> via
+          <span className="font-semibold text-amber-600 dark:text-amber-400">{nationName}</span> via
           NationStates login verification
         </p>
       </div>
@@ -41,7 +46,7 @@ export function ImportVerifyStep({
         <h4 className="text-foreground text-sm font-bold">Instructions</h4>
         <ol className="text-muted-foreground list-inside space-y-2.5 text-sm">
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               1
             </span>
             <span>
@@ -50,13 +55,13 @@ export function ImportVerifyStep({
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               2
             </span>
             NationStates will display a verification code
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               3
             </span>
             Copy that code and paste it in the field below
@@ -106,7 +111,7 @@ export function ImportVerifyStep({
         <Button
           onClick={onVerify}
           disabled={!checksum.trim() || isPending}
-          className="flex-1 bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
+          className="flex-1 bg-amber-500 font-bold text-black shadow-xs hover:bg-amber-400 active:scale-[0.98] dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300"
         >
           {isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

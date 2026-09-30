@@ -3,9 +3,9 @@
 import * as React from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useAnimation, type PanInfo } from "motion/react";
-import { CheckIcon, ExternalLinkIcon } from "lucide-react";
+import { Check as CheckIcon, OpenNewWindow as ExternalLinkIcon } from "iconoir-react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 // AspectRatio removed - using CSS aspect-video class instead
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -18,6 +18,7 @@ function useMediaQuery(query: string) {
 
   React.useEffect(() => {
     const media = window.matchMedia(query);
+    // oxlint-disable-next-line
     setMatches(media.matches);
 
     const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
@@ -33,6 +34,7 @@ function useFeatureVisibility(featureId: string) {
 
   React.useEffect(() => {
     const storedValue = localStorage.getItem(`feature_${featureId}`);
+    // oxlint-disable-next-line
     setIsVisible(storedValue ? JSON.parse(storedValue) : true);
   }, [featureId]);
 
@@ -85,6 +87,7 @@ function StepPreview({ step, direction }: { step: Step; direction: 1 | -1 }) {
       y: 0,
       transition: { delay: 0.2, duration: 0.3 },
     });
+    // oxlint-disable-next-line
   }, [controls, step]);
 
   return (
@@ -423,6 +426,7 @@ export function IntroDisclosure({
     if (open && stepRef.current) {
       stepRef.current.focus();
     }
+    // oxlint-disable-next-line
   }, [open, currentStep]);
 
   // Early return if feature should be hidden
@@ -611,6 +615,7 @@ export function IntroDisclosure({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="skipNextTime"
+                  // oxlint-disable-next-line eslint/no-unused-vars
                   onCheckedChange={(checked) => {
                     hideFeature();
                   }}

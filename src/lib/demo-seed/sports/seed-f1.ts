@@ -148,7 +148,13 @@ export async function seedF1League(prisma: Prisma, userId: string, ixNow: number
         circuitName,
         raceIxTime,
         status: "completed",
-        grid: JSON.stringify(allDrivers.map((d, idx) => ({ driverId: d.driverId, teamId: d.teamId, gridPosition: idx + 1 }))),
+        grid: JSON.stringify(
+          allDrivers.map((d, idx) => ({
+            driverId: d.driverId,
+            teamId: d.teamId,
+            gridPosition: idx + 1,
+          }))
+        ),
         results: JSON.stringify(result.positions),
         weather: isWet ? "wet" : "dry",
       },

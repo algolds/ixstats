@@ -3,28 +3,47 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Flame,
-  ExternalLink,
-  Rss,
-  Newspaper,
-  MessageCircle,
-  BookOpen,
-  Users,
+  FireFlame as Flame,
+  RssFeed as Rss,
+  Journal as Newspaper,
+  OpenBook as BookOpen,
+  Group as Users,
   Eye,
-  MessageSquare,
-  AlertTriangle,
+  ChatBubble as MessageSquare,
+  WarningTriangle as AlertTriangle,
   Heart,
   Activity,
-} from "lucide-react";
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import {
+  normalizeWikiImageUrl,
+  extractLeadImageFromWikitext,
+  extractLeadImageFromHtml,
+  isNoticeOrUtilityIcon,
+} from "~/lib/wiki-os/transformers/image-url";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
-const TRENDING_LIMIT = 5;
+const TRENDING_DEFAULT_LIMIT = 4;
+const TRENDING_FILTER_LIMIT = 10;
 
 type FilterTab = "all" | "forum" | "wiki";
+
+const DEFAULT_SOURCE = {
+  icon: Activity,
+  color: "text-amber-700 dark:text-amber-300",
+  bg: "bg-amber-500/15 border-amber-500/30",
+  label: "Live Activity",
+};
 
 const TRENDING_SOURCE: Record<
   string,
@@ -32,23 +51,29 @@ const TRENDING_SOURCE: Record<
 > = {
   thinkpages: {
     icon: Newspaper,
-    color: "text-purple-700 dark:text-purple-300",
-    bg: "bg-purple-500/15 border-purple-500/30",
-    label: "Social",
+    color: "text-blue-700 dark:text-blue-300",
+    bg: "bg-blue-500/15 border-blue-500/30",
+    label: "ThinkPages",
   },
   forum: {
-    icon: MessageCircle,
-    color: "text-indigo-700 dark:text-indigo-300",
-    bg: "bg-indigo-500/15 border-indigo-500/30",
+    icon: MessageSquare,
+    color: "text-orange-600 dark:text-orange-400",
+    bg: "bg-orange-500/15 border-orange-500/30",
     label: "Forum",
   },
   wiki: {
     icon: BookOpen,
-    color: "text-teal-700 dark:text-teal-300",
-    bg: "bg-teal-500/15 border-teal-500/30",
+    color: "text-wiki",
+    bg: "bg-wiki/15 border-wiki/30",
     label: "Wiki",
   },
   ixstats: {
+    icon: Activity,
+    color: "text-amber-700 dark:text-amber-300",
+    bg: "bg-amber-500/15 border-amber-500/30",
+    label: "Live Activity",
+  },
+  general: {
     icon: Activity,
     color: "text-amber-700 dark:text-amber-300",
     bg: "bg-amber-500/15 border-amber-500/30",
@@ -64,23 +89,81 @@ const TRENDING_SOURCE: Record<
 
 export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
+  const { data: pageImages } = api.wikios.getPageImages.useQuery(
+    { title },
+    { enabled: !!title, staleTime: 30 * 60_000 }
+  );
+
+  const leadImage = useMemo(() => {
+    if (pageImages && Array.isArray(pageImages) && pageImages.length > 0) {
+      const eligible =
+        pageImages.find(
+          (img: any) =>
+            img &&
+            (img.thumbUrl || img.url) &&
+            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl) &&
+            !img.title?.toLowerCase().endsWith(".svg") &&
+            !img.title?.toLowerCase().includes("flag") &&
+            !img.title?.toLowerCase().includes("icon")
+        ) ||
+        pageImages.find(
+          (img: any) =>
+            img &&
+            (img.thumbUrl || img.url) &&
+            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl)
+        ) ||
+        pageImages[0];
+
+      const rawUrl = eligible?.thumbUrl || eligible?.url || null;
+      if (rawUrl) {
+        const normalized = normalizeWikiImageUrl(rawUrl);
+        if (normalized) return normalized;
+      }
+    }
+
+    const rawText = intro?.text || intro?.intro || "";
+    if (rawText) {
+      const fromWikitext = extractLeadImageFromWikitext(rawText);
+      if (fromWikitext) {
+        const normalized = normalizeWikiImageUrl(fromWikitext);
+        if (normalized) return normalized;
+      }
+      const fromHtml = extractLeadImageFromHtml(rawText);
+      if (fromHtml) {
+        const normalized = normalizeWikiImageUrl(fromHtml);
+        if (normalized) return normalized;
+      }
+    }
+
+    return null;
+  }, [pageImages, intro?.text, intro?.intro]);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+        <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
         <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium">
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
-      {intro?.text ? (
-        <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
-          {intro.text.substring(0, 300)}
-          {intro.text.length > 300 ? "…" : ""}
-        </p>
-      ) : (
-        <div className="bg-muted h-10 animate-pulse rounded" />
-      )}
+      <div className="flex items-start gap-2.5">
+        <div className="min-w-0 flex-1">
+          {intro?.text ? (
+            <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+              {intro.text.substring(0, 300)}
+              {intro.text.length > 300 ? "…" : ""}
+            </p>
+          ) : (
+            <div className="bg-muted h-10 animate-pulse rounded" />
+          )}
+        </div>
+        {leadImage && (
+          <div className="border-border/40 relative h-14 w-18 shrink-0 overflow-hidden rounded-lg border bg-black/5 dark:border-white/10">
+            <img src={leadImage} alt={title} className="h-full w-full object-cover" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -94,7 +177,7 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
           <span className="text-foreground text-sm font-medium">Loading thread...</span>
         </div>
         <div className="bg-muted h-10 animate-pulse rounded" />
@@ -104,11 +187,11 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
         <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
+        <span className="inline-block rounded-md bg-orange-500/10 px-1.5 py-0.5 text-xs font-medium text-orange-400">
           {thread.forumName}
         </span>
       )}
@@ -118,7 +201,7 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
           {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
+      <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <span className="flex items-center gap-0.5">
           <Users className="h-2.5 w-2.5" />
           {thread.author}
@@ -148,6 +231,7 @@ export function TrendingSectionWidget() {
     const rawItems = trendingData?.items ?? [];
     if (rawItems.length === 0) return [];
 
+    // oxlint-disable-next-line
     const nowMs = Date.now();
 
     const scored = rawItems.map((item: any) => {
@@ -183,7 +267,9 @@ export function TrendingSectionWidget() {
     const sorted = scored.sort((a: any, b: any) => b.computedScore - a.computedScore);
 
     if (activeFilter !== "all") {
-      return sorted.filter((item: any) => item.source === activeFilter).slice(0, TRENDING_LIMIT);
+      return sorted
+        .filter((item: any) => item.source === activeFilter)
+        .slice(0, TRENDING_FILTER_LIMIT);
     }
 
     const result: any[] = [];
@@ -199,7 +285,7 @@ export function TrendingSectionWidget() {
     }
 
     for (const item of sorted) {
-      if (result.length >= TRENDING_LIMIT) break;
+      if (result.length >= TRENDING_DEFAULT_LIMIT) break;
       if (!usedIds.has(item.id)) {
         result.push(item);
         usedIds.add(item.id);
@@ -210,183 +296,185 @@ export function TrendingSectionWidget() {
   }, [trendingData, activeFilter]);
 
   return (
-    <div
-      className={cn(
-        "no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-3 shadow-xs backdrop-blur-xl"
-      )}
+    <CutoutCard
+      className={cn(cutoutCardSurfaceClassName, "no-wiki-tooltip overflow-hidden rounded-xl")}
+      trackPointerHover={false}
     >
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-foreground text-xs font-semibold tracking-tight">
-            Trending Topics
-          </span>
+      {/* Cutout tab header */}
+      <div className="relative bg-amber-500/10 px-4 pt-3 pb-5">
+        <div className="text-card-foreground flex items-center gap-2 text-xs font-semibold tracking-tight">
+          <Flame className="h-4 w-4 text-amber-500" />
+          <span>Trending Topics</span>
         </div>
+        <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
+        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={20} />
+      </div>
 
+      <CutoutCardContent className="space-y-3 px-4 pt-0 pb-4">
         {/* Category Segment Control Bar */}
-        <div className="grid grid-cols-3 gap-1 rounded-xl border border-border/40 bg-accent/10 p-1 backdrop-blur-md">
+        <div className="border-border/40 bg-accent/10 grid grid-cols-3 gap-1 rounded-xl border p-1 backdrop-blur-md">
           {(["all", "forum", "wiki"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveFilter(tab)}
               className={cn(
-                "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150",
+                "cursor-pointer rounded-lg py-1 text-center text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
                 activeFilter === tab
-                  ? "border border-border/60 bg-card font-semibold text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground font-medium hover:bg-accent/15"
+                  ? "border-border/60 bg-card text-foreground border font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/15 font-medium"
               )}
             >
               {tab}
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="space-y-2 pt-1">
-        {isLoading && (
-          <div className="space-y-2 py-4">
-            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-          </div>
-        )}
+        <div className="space-y-2 pt-1">
+          {isLoading && (
+            <div className="space-y-2 py-4">
+              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
+              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
+              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
+            </div>
+          )}
 
-        {!isLoading && trendingItems.length === 0 && (
-          <p className="text-muted-foreground py-6 text-center text-[11px] font-medium">
-            No trending content found
-          </p>
-        )}
+          {!isLoading && trendingItems.length === 0 && (
+            <p className="text-muted-foreground py-6 text-center text-xs font-medium">
+              No trending content found
+            </p>
+          )}
 
-        {!isLoading &&
-          trendingItems.map((item: any) => {
-            const src = TRENDING_SOURCE[item.source as string] ?? TRENDING_SOURCE.ixstats!;
-            const SrcIcon = src.icon;
-            const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-            const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-            const wikiTitle = wikiMatch
-              ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
-              : null;
-            const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
+          {!isLoading &&
+            trendingItems.map((item: any) => {
+              const src = (item.source && TRENDING_SOURCE[item.source as string]) ?? DEFAULT_SOURCE;
+              const SrcIcon = src.icon;
+              const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
+              const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
+              const wikiTitle = wikiMatch
+                ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
+                : null;
+              const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
 
-            const isWiki = !!wikiTitle;
-            const isForum = !!forumThreadId;
-            const wikiHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : undefined;
+              const isWiki = !!wikiTitle;
+              const isForum = !!forumThreadId;
 
-            let displayTitle = item.title;
-            if (displayTitle.includes("sports-bulletin:") || displayTitle.includes("<!--")) {
-              const match = displayTitle.match(/<!--\s*sports-bulletin:([\s\S]*?)-->/i);
-              if (match && match[1]) {
-                try {
-                  const data = JSON.parse(match[1].trim());
-                  displayTitle = `${data.sportEmoji || "⚽"} ${data.league?.name || "League"} Matchday ${data.matchDay || ""}`;
-                } catch (_e) {
-                  displayTitle = "⚽ Sports Bulletin";
+              let displayTitle = item.title;
+              if (displayTitle.includes("sports-bulletin:") || displayTitle.includes("<!--")) {
+                const match = displayTitle.match(/<!--\s*sports-bulletin:([\s\S]*?)-->/i);
+                if (match && match[1]) {
+                  try {
+                    const data = JSON.parse(match[1].trim());
+                    displayTitle = `${data.sportEmoji || "⚽"} ${data.league?.name || "League"} Matchday ${data.matchDay || ""}`;
+                  } catch (_e) {
+                    displayTitle = "⚽ Sports Bulletin";
+                  }
+                } else {
+                  displayTitle = item.author ? `@${item.author}` : "⚽ Sports Bulletin";
                 }
-              } else {
-                displayTitle = item.author ? `@${item.author}` : "⚽ Sports Bulletin";
               }
-            }
 
-            let displayExcerpt = (item.excerpt || "")
-              .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
-              .trim();
-            if (!displayExcerpt && item.source === "thinkpages") {
-              displayExcerpt = "Sports News & Matchday Bulletin";
-            }
+              let displayExcerpt = (item.excerpt || "")
+                .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
+                .trim();
+              if (!displayExcerpt && item.source === "thinkpages") {
+                displayExcerpt = "Sports News & Matchday Bulletin";
+              }
 
-            const itemHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url;
-            const isInternal = !!itemHref && itemHref.startsWith("/");
-            const W = isInternal ? Link : itemHref ? "a" : "div";
-            const linkProps = isInternal
-              ? { href: itemHref }
-              : itemHref
-                ? { href: itemHref, target: "_blank", rel: "noopener noreferrer" }
-                : {};
+              const itemHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url;
+              const isInternal = !!itemHref && itemHref.startsWith("/");
+              const W = isInternal ? Link : itemHref ? "a" : "div";
+              const linkProps = isInternal
+                ? { href: itemHref }
+                : itemHref
+                  ? { href: itemHref, target: "_blank", rel: "noopener noreferrer" }
+                  : {};
 
-            const el = (
-              <W
-                key={item.id}
-                {...(linkProps as any)}
-                className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-border/40 bg-card/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-card/80 active:scale-[0.98]"
-              >
-                <div
-                  className={cn(
-                    "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border shadow-xs backdrop-blur-md transition-transform duration-200 group-hover/item:scale-110",
-                    src.bg
-                  )}
+              const el = (
+                <W
+                  key={item.id}
+                  {...(linkProps as any)}
+                  className="group/item border-border/40 bg-card/40 hover:bg-card/80 flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/40 active:scale-[0.98]"
                 >
-                  <SrcIcon className={cn("h-3 w-3", src.color)} />
-                </div>
+                  <div
+                    className={cn(
+                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border shadow-xs backdrop-blur-md transition-transform duration-200 group-hover/item:scale-110",
+                      src.bg
+                    )}
+                  >
+                    <SrcIcon className={cn("h-3 w-3", src.color)} />
+                  </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-foreground truncate text-[11px] font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
-                      {displayTitle}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "shrink-0 border px-1.5 py-0 text-[8px] font-semibold tracking-wider uppercase",
-                        src.color,
-                        src.bg
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-foreground truncate text-xs font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
+                        {displayTitle}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 border px-1.5 py-0 text-xs font-semibold tracking-wider uppercase",
+                          src.color,
+                          src.bg
+                        )}
+                      >
+                        {src.label}
+                      </Badge>
+                    </div>
+
+                    {displayExcerpt && (
+                      <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-xs leading-snug font-normal">
+                        {displayExcerpt}
+                      </p>
+                    )}
+
+                    <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-xs font-medium tabular-nums">
+                      {item.engagement?.likes > 0 && (
+                        <span className="flex items-center gap-0.5 text-red-500">
+                          <Heart className="h-2.5 w-2.5 fill-current" />
+                          {item.engagement.likes}
+                        </span>
                       )}
-                    >
-                      {src.label}
-                    </Badge>
+                      {item.engagement?.replies > 0 && (
+                        <span className="flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400">
+                          <MessageSquare className="h-2.5 w-2.5" />
+                          {item.engagement.replies}
+                        </span>
+                      )}
+                      {item.engagement?.views > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <Eye className="h-2.5 w-2.5" />
+                          {item.engagement.views}
+                        </span>
+                      )}
+                    </div>
                   </div>
-
-                  {displayExcerpt && (
-                    <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[10px] leading-snug font-normal">
-                      {displayExcerpt}
-                    </p>
-                  )}
-
-                  <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-[9px] font-medium tabular-nums">
-                    {item.engagement?.likes > 0 && (
-                      <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400">
-                        <Heart className="h-2.5 w-2.5 fill-current" />
-                        {item.engagement.likes}
-                      </span>
-                    )}
-                    {item.engagement?.replies > 0 && (
-                      <span className="flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400">
-                        <MessageSquare className="h-2.5 w-2.5" />
-                        {item.engagement.replies}
-                      </span>
-                    )}
-                    {item.engagement?.views > 0 && (
-                      <span className="flex items-center gap-0.5">
-                        <Eye className="h-2.5 w-2.5" />
-                        {item.engagement.views}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </W>
-            );
-
-            if (isWiki)
-              return (
-                <Tooltip
-                  key={item.id}
-                  content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />}
-                  containerClassName="block"
-                >
-                  {el}
-                </Tooltip>
+                </W>
               );
-            if (isForum)
-              return (
-                <Tooltip
-                  key={item.id}
-                  content={<ForumPreviewContent threadId={forumThreadId!} />}
-                  containerClassName="block"
-                >
-                  {el}
-                </Tooltip>
-              );
-            return el;
-          })}
-      </div>
-    </div>
+
+              if (isWiki)
+                return (
+                  <Tooltip
+                    key={item.id}
+                    content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />}
+                    containerClassName="block"
+                  >
+                    {el}
+                  </Tooltip>
+                );
+              if (isForum)
+                return (
+                  <Tooltip
+                    key={item.id}
+                    content={<ForumPreviewContent threadId={forumThreadId!} />}
+                    containerClassName="block"
+                  >
+                    {el}
+                  </Tooltip>
+                );
+              return el;
+            })}
+        </div>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

@@ -14,7 +14,14 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
-import { Building2, MapPin, User, DollarSign, Loader2, ChevronDown } from "lucide-react";
+import {
+  City as Building2,
+  MapPin,
+  User,
+  Dollar as DollarSign,
+  SystemRestart as Loader2,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
 
 interface EmbassyCreatorSheetProps {
   countryId: string;
@@ -39,20 +46,20 @@ function CountrySelector({
   );
 
   const countries = (countriesData?.countries ?? [])
-    .filter((c: any) => c.id !== excludeCountryId)
-    .sort((a: any, b: any) => a.name.localeCompare(b.name));
+    .filter((c) => c.id !== excludeCountryId)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <select
       value={selectedCountryId}
       onChange={(e) => {
-        const country = countries.find((c: any) => c.id === e.target.value);
+        const country = countries.find((c) => c.id === e.target.value);
         if (country) onSelect(country.id, country.name);
       }}
       className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
     >
       <option value="">Select a country...</option>
-      {countries.map((c: any) => (
+      {countries.map((c) => (
         <option key={c.id} value={c.id}>
           {c.name}
         </option>

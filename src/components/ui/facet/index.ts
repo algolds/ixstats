@@ -2,13 +2,8 @@ export { FacetTabs } from "./tabs";
 export type { FacetTabItem, FacetTabsProps } from "./tabs";
 
 // Re-export all swipeable components
-export {
-  SwipeableRow,
-  SwipeableGroup,
-  SwipeActionButton,
-  useSwipePhysics,
-  useSwipeableDI,
-} from "./swipeable";
+export { SwipeableRow, SwipeableGroup, SwipeActionButton } from "./swipeable/SwipeableRow";
+export { useSwipePhysics } from "./swipeable/useSwipePhysics";
 export type {
   SwipeableRowProps,
   SwipeAction,
@@ -17,7 +12,7 @@ export type {
   SwipeState,
   SwipeSide,
   SpringPreset,
-} from "./swipeable";
+} from "./swipeable/types";
 
 // Export shared slider physics hook
 export { useSliderPhysics } from "./hooks/useSliderPhysics";

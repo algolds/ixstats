@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
-import type { ProjectionMode, MapLayerType } from "~/lib/maps/map-config";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 import type { OverlayVisibility } from "../IxWorldMap";
 import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/maps/overlay-registry";
 
@@ -21,9 +21,11 @@ interface UseMapStateProps {
 
 export function useMapState({
   userCountryId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isAdmin,
   onCountrySelect,
   mapRef,
+  // oxlint-disable-next-line eslint/no-unused-vars
   measureToolRef,
   mapLayers,
   layerDataMap,
@@ -95,8 +97,10 @@ export function useMapState({
   }, []);
 
   const measuringRef = useRef(false);
+  // oxlint-disable-next-line
   measuringRef.current = isMeasuring;
   const pinToolRef = useRef(false);
+  // oxlint-disable-next-line
   pinToolRef.current = isPinToolActive;
 
   const handleFeatureClick = useCallback(

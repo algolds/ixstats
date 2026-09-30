@@ -21,36 +21,16 @@ import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
-import {
-  type ParsedEconomicComponent,
-  transformDatabaseComponent,
-} from "./serializer";
+import { type ParsedEconomicComponent } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
 // ============================================================================
 
 const economicComponentTypeSchema = z.nativeEnum(EconomicComponentType);
-
-const getAllComponentsSchema = z
-  .object({
-    category: z.string().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .optional();
-
-const getComponentByTypeSchema = z.object({
-  componentType: economicComponentTypeSchema,
-});
-
-const incrementUsageSchema = z.object({
-  componentType: economicComponentTypeSchema,
-});
-
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
 
 /**
  * Get fallback component data from ATOMIC_ECONOMIC_COMPONENTS library
@@ -80,82 +60,6 @@ function getFallbackComponents(): ParsedEconomicComponent[] {
       usageCount: 0,
       isActive: true,
     }));
-}
-
-/**
- * Get fallback component by type
- */
-function getFallbackComponentByType(
-  componentType: EconomicComponentType
-): ParsedEconomicComponent | null {
-  const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
-  if (!component) return null;
-
-  return {
-    id: component.id,
-    type: component.type,
-    name: component.name,
-    description: component.description,
-    effectiveness: component.effectiveness,
-    synergies: component.synergies,
-    conflicts: component.conflicts,
-    governmentSynergies: component.governmentSynergies,
-    governmentConflicts: component.governmentConflicts,
-    taxImpact: component.taxImpact,
-    sectorImpact: component.sectorImpact,
-    employmentImpact: component.employmentImpact,
-    implementationCost: component.implementationCost,
-    maintenanceCost: component.maintenanceCost,
-    requiredCapacity: component.requiredCapacity,
-    category: component.category,
-    color: component.color,
-    metadata: component.metadata,
-    usageCount: 0,
-    isActive: true,
-  };
-}
-
-/**
- * Ensure database is seeded with economic component reference data
- */
-async function ensureSeeded(db: any) {
-  try {
-    const count = await db.economicComponentData.count();
-    if (count === 0) {
-      console.info("[economicComponents] Reference database is empty. Seeding components...");
-      const components = getFallbackComponents();
-      const dataToInsert = components.map((comp) => ({
-        componentType: comp.type,
-        name: comp.name,
-        description: comp.description,
-        category: comp.category,
-        effectiveness: comp.effectiveness,
-        synergies: JSON.stringify(comp.synergies),
-        conflicts: JSON.stringify(comp.conflicts),
-        governmentSynergies: JSON.stringify(comp.governmentSynergies),
-        governmentConflicts: JSON.stringify(comp.governmentConflicts),
-        taxImpact: JSON.stringify(comp.taxImpact),
-        sectorImpact: JSON.stringify(comp.sectorImpact),
-        employmentImpact: JSON.stringify(comp.employmentImpact),
-        implementationCost: comp.implementationCost,
-        maintenanceCost: comp.maintenanceCost,
-        requiredCapacity: comp.requiredCapacity,
-        color: comp.color,
-        iconName: comp.type.toLowerCase(),
-        metadata: JSON.stringify(comp.metadata),
-        isActive: true,
-        usageCount: 0,
-      }));
-
-      await db.economicComponentData.createMany({
-        data: dataToInsert,
-        skipDuplicates: true,
-      });
-      console.info(`[economicComponents] Successfully seeded ${dataToInsert.length} components.`);
-    }
-  } catch (error) {
-    console.error("[economicComponents] Failed to self-seed reference database:", error);
-  }
 }
 
 // ============================================================================
@@ -280,75 +184,6 @@ export const economicComponentsAdminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to create synergy between ${input.component1} and ${input.component2}. Please try again or contact support if the issue persists.`,
-        });
-      }
-    }),
-
-  /**
-   * Create a template (admin only)
-   */
-  createTemplate: adminProcedure
-    .input(
-      z.object({
-        key: z.string().min(1),
-        name: z.string().min(1),
-        description: z.string().min(1),
-        components: z.array(economicComponentTypeSchema),
-        iconName: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Create template with stringified components array
-        const template = await ctx.db.economicTemplate.create({
-          data: {
-            key: input.key,
-            name: input.name,
-            description: input.description,
-            components: JSON.stringify(input.components),
-            iconName: input.iconName,
-          },
-        });
-
-        // Log the admin action
-        await ctx.db.adminAuditLog.create({
-          data: {
-            action: "ECONOMIC_TEMPLATE_CREATED",
-            targetType: "economic_template",
-            targetId: template.id,
-            targetName: input.name,
-            changes: JSON.stringify(input),
-            adminId: ctx.user?.id || "system",
-            adminName: ctx.user?.clerkUserId || "System",
-            timestamp: new Date(),
-            ipAddress:
-              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
-          },
-        });
-
-        return {
-          success: true,
-          template: {
-            ...template,
-            components: JSON.parse(template.components) as EconomicComponentType[],
-          },
-          message: "Template created successfully",
-        };
-      } catch (error) {
-        console.error(`[economicComponents] Error creating template ${input.name}:`, {
-          error: error instanceof Error ? error.message : String(error),
-          userId: ctx.auth?.userId || "anonymous",
-          adminUser: ctx.user
-            ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
-            : "NO_USER",
-          templateKey: input.key,
-          templateName: input.name,
-          componentCount: input.components.length,
-          stack: error instanceof Error ? error.stack : undefined,
-        });
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to create template "${input.name}". Please try again or contact support if the issue persists.`,
         });
       }
     }),

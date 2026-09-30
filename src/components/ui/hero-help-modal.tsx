@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { HelpCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  HelpCircle,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Xmark as X,
+} from "iconoir-react";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 export interface HeroHelpStep {
   title: string;
@@ -93,7 +98,7 @@ export function HeroHelpModal({
                 <span
                   key={i}
                   className={cn(
-                    "h-1.5 rounded-full transition-all",
+                    "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     i === index ? cn("w-4 bg-current", accentClass) : "bg-muted-foreground/30 w-1.5"
                   )}
                 />

@@ -13,7 +13,7 @@ import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { ATOMIC_COMPONENTS, type AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import type { ComponentType } from "@prisma/client";
-import { Shield } from "lucide-react";
+import { Shield } from "iconoir-react";
 
 /**
  * useGovernmentComponentsData - Fetch government component reference data

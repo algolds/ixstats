@@ -50,7 +50,7 @@ export const vaultAdminUsersRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error listing user transactions:", error);
-        throw new Error("Failed to list user transactions");
+        throw new Error("Failed to list user transactions", { cause: error });
       }
     }),
 
@@ -113,7 +113,7 @@ export const vaultAdminUsersRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] adminListVaults error:", error);
-        throw new Error("Failed to list vaults");
+        throw new Error("Failed to list vaults", { cause: error });
       }
     }),
 
@@ -190,7 +190,7 @@ export const vaultAdminUsersRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Vault Router] adminAdjustCredits error:", error);
         if (error instanceof Error) throw error;
-        throw new Error("Failed to adjust credits");
+        throw new Error("Failed to adjust credits", { cause: error });
       }
     }),
 });

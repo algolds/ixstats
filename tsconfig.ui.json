@@ -1,0 +1,35 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "plugins": [{ "name": "next" }],
+    "tsBuildInfoFile": ".next/cache/tsbuildinfo.ui",
+    "incremental": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/app",
+    "src/components",
+    "src/hooks",
+    "src/types",
+    "src/shared",
+    "src/stores",
+    "src/contexts",
+    "src/context",
+    "src/schemas",
+    "src/styles",
+    "src/trpc",
+    "src/env.ts",
+    "src/setupTests.ts"
+  ],
+  "exclude": [
+    "src/server",
+    "**/node_modules",
+    "**/.*",
+    ".next",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}

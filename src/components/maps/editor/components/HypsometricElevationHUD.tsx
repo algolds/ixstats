@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Mountain, Waves, Wind, Compass, X } from "lucide-react";
+import { ModernTv as Mountain, Wind, Compass, Xmark as X } from "iconoir-react";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 
 interface HypsometricElevationHUDProps {
@@ -16,6 +16,7 @@ export function HypsometricElevationHUD({
   onClose,
 }: HypsometricElevationHUDProps) {
   const liveTerrain = useTransientMapStore((s) => s.terrainInfo);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const cursorCoords = useTransientMapStore((s) => s.cursorCoords);
 
   // Generate synthetic hypsometric elevation profile between active ruler points
@@ -30,14 +31,22 @@ export function HypsometricElevationHUD({
     const points: Array<{ distKm: number; elevM: number; biome: string }> = [];
     for (let i = 0; i <= samples; i++) {
       const t = i / samples;
+      // oxlint-disable-next-line eslint/no-unused-vars
       const lng = p1[0] + (p2[0] - p1[0]) * t;
+      // oxlint-disable-next-line eslint/no-unused-vars
       const lat = p1[1] + (p2[1] - p1[1]) * t;
 
       // Synthetic elevation curve with realistic mountain pass and valley
       const baseElev = 250 + Math.sin(t * Math.PI) * 1800 + Math.cos(t * Math.PI * 3) * 400;
       const elev = Math.max(10, Math.round(baseElev));
       const biome =
-        elev > 2500 ? "Alpine Glacial" : elev > 1200 ? "Highland Pine" : elev > 400 ? "Temperate Forest" : "Lowland Basin";
+        elev > 2500
+          ? "Alpine Glacial"
+          : elev > 1200
+            ? "Highland Pine"
+            : elev > 400
+              ? "Temperate Forest"
+              : "Lowland Basin";
 
       points.push({
         distKm: Math.round(t * dist),
@@ -55,7 +64,7 @@ export function HypsometricElevationHUD({
   if (!profileData && !liveTerrain) return null;
 
   return (
-    <div className="border-border bg-card/90 text-foreground ring-border/50 animate-in fade-in slide-in-from-bottom-2 absolute bottom-9 left-1/2 z-40 flex -translate-x-1/2 flex-col rounded-xl border p-3 shadow-2xl backdrop-blur-xl ring-1">
+    <div className="border-border bg-card/90 text-foreground ring-border/50 animate-in fade-in slide-in-from-bottom-2 absolute bottom-9 left-1/2 z-40 flex -translate-x-1/2 flex-col rounded-xl border p-3 shadow-2xl ring-1 backdrop-blur-xl">
       {/* Top Header */}
       <div className="flex items-center justify-between gap-6 pb-2">
         <div className="flex items-center gap-2">
@@ -63,20 +72,24 @@ export function HypsometricElevationHUD({
             <Mountain className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h4 className="text-xs font-semibold tracking-tight">Hypsometric Elevation Cross-Section</h4>
-            <p className="text-muted-foreground text-[10px]">Terrain Slice & Hydrological Slope Gradient</p>
+            <h4 className="text-xs font-semibold tracking-tight">
+              Hypsometric Elevation Cross-Section
+            </h4>
+            <p className="text-muted-foreground text-xs">
+              Terrain Slice & Hydrological Slope Gradient
+            </p>
           </div>
         </div>
 
         {/* Live Cursor Altitude Badge */}
         <div className="flex items-center gap-2">
           {liveTerrain?.elevation && (
-            <span className="border-border bg-muted/60 text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-[10px]">
+            <span className="border-border bg-muted/60 text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
               {liveTerrain.elevation}
             </span>
           )}
           {liveTerrain?.climate && (
-            <span className="rounded-md bg-cyan-500/10 px-2 py-0.5 font-mono text-[10px] text-cyan-600 dark:text-cyan-400">
+            <span className="rounded-md bg-cyan-500/10 px-2 py-0.5 font-mono text-xs text-cyan-600 dark:text-cyan-400">
               {liveTerrain.climate}
             </span>
           )}
@@ -94,7 +107,11 @@ export function HypsometricElevationHUD({
       {/* SVG Elevation Cross-Section Chart */}
       {profileData && (
         <div className="relative mt-1 h-20 w-[380px] sm:w-[460px]">
-          <svg className="h-full w-full overflow-visible" viewBox="0 0 460 80" preserveAspectRatio="none">
+          <svg
+            className="h-full w-full overflow-visible"
+            viewBox="0 0 460 80"
+            preserveAspectRatio="none"
+          >
             <defs>
               <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="rgba(16, 185, 129, 0.4)" />
@@ -104,8 +121,24 @@ export function HypsometricElevationHUD({
             </defs>
 
             {/* Grid baseline */}
-            <line x1="0" y1="75" x2="460" y2="75" stroke="currentColor" strokeOpacity="0.15" strokeDasharray="3 3" />
-            <line x1="0" y1="40" x2="460" y2="40" stroke="currentColor" strokeOpacity="0.1" strokeDasharray="3 3" />
+            <line
+              x1="0"
+              y1="75"
+              x2="460"
+              y2="75"
+              stroke="currentColor"
+              strokeOpacity="0.15"
+              strokeDasharray="3 3"
+            />
+            <line
+              x1="0"
+              y1="40"
+              x2="460"
+              y2="40"
+              stroke="currentColor"
+              strokeOpacity="0.1"
+              strokeDasharray="3 3"
+            />
 
             {/* Elevation Area Fill */}
             <path
@@ -143,7 +176,7 @@ export function HypsometricElevationHUD({
           </svg>
 
           {/* Elevation Labels */}
-          <div className="text-muted-foreground pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 text-[9px] font-mono">
+          <div className="text-muted-foreground pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 font-mono text-xs">
             <span>0 km (Start)</span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               Peak: {profileData.maxElev.toLocaleString()}m
@@ -154,7 +187,7 @@ export function HypsometricElevationHUD({
       )}
 
       {/* Environmental Slopes Indicator */}
-      <div className="border-border text-muted-foreground mt-2 flex items-center justify-between border-t pt-1.5 text-[10px]">
+      <div className="border-border text-muted-foreground mt-2 flex items-center justify-between border-t pt-1.5 text-xs">
         <div className="flex items-center gap-1">
           <Wind className="h-3 w-3 text-cyan-500" />
           <span>Windward (Precipitation Slope)</span>

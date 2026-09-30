@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
-import type { FeatureCollection, Feature, Geometry } from "geojson";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { computeCrisisRiskFactors } from "~/lib/maps/geo-analytics";
 import {
   deriveNationalHealthScore,
   deriveNetTradeBalance,
   type HealthInput,
 } from "~/lib/maps/overlay-metrics";
+import { parseAffectedCountries } from "~/lib/maps/crisis-affected-countries";
 
 /**
  * Weighted canon sources used by the Canon Density overlay. Each source is
@@ -54,17 +55,21 @@ function normalizeCountMap(records: { id: string; _count: number }[]): Record<st
   return map;
 }
 
+/** Overlays that take no other input: the listing is scoped to the viewer's realm (?realm= overrides). */
+const realmScopedOverlayProcedure = cachedPublicProcedure.input(realmScopeInput.optional());
+
 export const overlayProcedures = {
   getRegionalChoropleth: cachedPublicProcedure
     .input(
       z.object({
         metric: z.enum(["gdpPerCapita", "population", "vitality", "health", "tradeBalance"]),
         groupBy: z.enum(["country", "region", "continent"]).default("country"),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: { geometry: { not: null } as any },
+        where: { geometry: { not: null } as any, realmId: await viewerRealmId(ctx, input.realm) },
         select: {
           id: true,
           name: true,
@@ -249,9 +254,9 @@ export const overlayProcedures = {
    * with source-specific weights. The returned `value` is a percentile rank
    * (0–1) so colors distribute evenly across the active range.
    */
-  getCanonDensity: cachedPublicProcedure.query(async ({ ctx }) => {
+  getCanonDensity: realmScopedOverlayProcedure.query(async ({ ctx, input }) => {
     const countries = await ctx.db.country.findMany({
-      where: { geometry: { not: null } as any },
+      where: { geometry: { not: null } as any, realmId: await viewerRealmId(ctx, input?.realm) },
       select: {
         id: true,
         name: true,
@@ -378,14 +383,25 @@ export const overlayProcedures = {
           riskType: z
             .enum(["hurricane", "earthquake", "drought", "flood", "wildfire", "pandemic", "famine"])
             .optional(),
+          ...realmScopeInput.shape,
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input?.realm);
       // Get pre-computed geo profiles with crisis risk data
       const profiles = await ctx.db.countryGeoProfile.findMany({
+        where: { country: { realmId } },
         select: {
           countryId: true,
+          climateDistribution: true,
+          elevationProfile: true,
+          arableLandPercent: true,
+          coastlineKm: true,
+          isLandlocked: true,
+          neighborCount: true,
+          terrainRoughness: true,
+          meanElevation: true,
           country: {
             select: { name: true, slug: true, geometry: true },
           },
@@ -412,31 +428,15 @@ export const overlayProcedures = {
         if (!p.country.geometry) continue;
 
         // Re-compute risk factors from the stored profile data
-        const geoProfile = await ctx.db.countryGeoProfile.findUnique({
-          where: { countryId: p.countryId },
-          select: {
-            climateDistribution: true,
-            elevationProfile: true,
-            arableLandPercent: true,
-            coastlineKm: true,
-            isLandlocked: true,
-            neighborCount: true,
-            terrainRoughness: true,
-            meanElevation: true,
-          },
-        });
-
-        if (!geoProfile) continue;
-
         const risk = computeCrisisRiskFactors({
-          coastlineKm: geoProfile.coastlineKm ?? 0,
-          isLandlocked: geoProfile.isLandlocked ?? false,
+          coastlineKm: p.coastlineKm ?? 0,
+          isLandlocked: p.isLandlocked ?? false,
           isIsland: false,
-          arableLandPercent: geoProfile.arableLandPercent ?? 50,
+          arableLandPercent: p.arableLandPercent ?? 50,
           climateDiversity: 0.5,
-          terrainRoughness: geoProfile.terrainRoughness ?? 0,
-          meanElevation: geoProfile.meanElevation ?? 200,
-          neighborCount: geoProfile.neighborCount ?? 0,
+          terrainRoughness: p.terrainRoughness ?? 0,
+          meanElevation: p.meanElevation ?? 200,
+          neighborCount: p.neighborCount ?? 0,
           dominantClimate: "",
           dominantElevation: "",
           drainageDensity: 0,
@@ -459,30 +459,42 @@ export const overlayProcedures = {
         });
       }
 
-      // Crisis event points (using affected country centroids as fallback locations)
+      // Crisis event points (using affected country centroids as fallback locations).
+      // affectedCountries holds country IDs (JSON array; legacy rows comma-separated);
+      // names are matched too in case older rows stored names.
+      const refsByCrisis = activeCrises.map((ce) => parseAffectedCountries(ce.affectedCountries));
+      const allRefs = [...new Set(refsByCrisis.flat())];
+      const refCountries =
+        allRefs.length > 0
+          ? await ctx.db.country.findMany({
+              where: { realmId, OR: [{ id: { in: allRefs } }, { name: { in: allRefs } }] },
+              select: { id: true, name: true, centroid: true },
+            })
+          : [];
+      const countryByRef = new Map<string, (typeof refCountries)[number]>();
+      for (const c of refCountries) {
+        countryByRef.set(c.id, c);
+        countryByRef.set(c.name, c);
+      }
+
       const crisisPoints = [];
-      for (const ce of activeCrises) {
-        const affected = ce.affectedCountries as string[] | null;
-        if (affected && affected.length > 0) {
-          const country = await ctx.db.country.findFirst({
-            where: { name: { in: affected } },
-            select: { centroid: true, name: true },
-          });
-          if (country?.centroid) {
-            const coords = (country.centroid as { coordinates: [number, number] }).coordinates;
-            crisisPoints.push({
-              type: "Feature" as const,
-              geometry: { type: "Point" as const, coordinates: coords },
-              properties: {
-                id: ce.id,
-                title: ce.title,
-                type: ce.type,
-                severity: ce.severity,
-                countryName: country.name,
-              },
-            });
-          }
-        }
+      for (const [i, ce] of activeCrises.entries()) {
+        const country = (refsByCrisis[i] ?? [])
+          .map((ref) => countryByRef.get(ref))
+          .find((c) => c?.centroid);
+        if (!country?.centroid) continue;
+        const coords = (country.centroid as { coordinates: [number, number] }).coordinates;
+        crisisPoints.push({
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: coords },
+          properties: {
+            id: ce.id,
+            title: ce.title,
+            type: ce.type,
+            severity: ce.severity,
+            countryName: country.name,
+          },
+        });
       }
 
       return {
@@ -492,80 +504,11 @@ export const overlayProcedures = {
     }),
 
   /**
-   * 4.2 — Trade Routes: Return bilateral trade data as GeoJSON LineStrings
-   * connecting country centroids, styled by volume and balance.
-   */
-  getTradeRouteGeoJSON: cachedPublicProcedure
-    .input(
-      z
-        .object({
-          minVolume: z.number().optional(),
-          limit: z.number().min(1).max(200).default(50),
-        })
-        .optional()
-    )
-    .query(async ({ ctx, input }) => {
-      const trades = await ctx.db.bilateralTrade.findMany({
-        where: input?.minVolume ? { tradeVolume: { gte: input.minVolume } } : undefined,
-        orderBy: { tradeVolume: "desc" },
-        take: input?.limit ?? 50,
-        select: {
-          id: true,
-          tradeVolume: true,
-          exportsFrom1: true,
-          exportsFrom2: true,
-          tradeBalance1: true,
-          commodities: true,
-          country1: { select: { id: true, name: true, slug: true, centroid: true } },
-          country2: { select: { id: true, name: true, slug: true, centroid: true } },
-        },
-      });
-
-      const features = [];
-      for (const t of trades) {
-        const c1 = t.country1.centroid as { coordinates: [number, number] } | null;
-        const c2 = t.country2.centroid as { coordinates: [number, number] } | null;
-        if (!c1 || !c2) continue;
-
-        const balance = t.tradeBalance1 ?? 0;
-        features.push({
-          type: "Feature" as const,
-          geometry: {
-            type: "LineString" as const,
-            coordinates: [c1.coordinates, c2.coordinates],
-          },
-          properties: {
-            id: t.id,
-            volume: t.tradeVolume ?? 0,
-            balance,
-            // Color hint: positive = country1 surplus (green), negative = deficit (red), near zero = balanced (blue)
-            balanceColor: Math.abs(balance) < 1e6 ? "#3b82f6" : balance > 0 ? "#22c55e" : "#ef4444",
-            commodities: t.commodities,
-            country1Name: t.country1.name,
-            country2Name: t.country2.name,
-            country1Slug: t.country1.slug,
-            country2Slug: t.country2.slug,
-          },
-        });
-      }
-
-      const volumes = features.map((f) => f.properties.volume);
-      return {
-        type: "FeatureCollection" as const,
-        features,
-        metadata: {
-          count: features.length,
-          maxVolume: Math.max(0, ...volumes),
-          minVolume: Math.min(Infinity, ...volumes),
-        },
-      };
-    }),
-
-  /**
    * 4.4 — Geopolitical Overlay: Alliance groups, diplomatic relations, and conflicts
    * as GeoJSON for network-style map visualization.
    */
-  getGeopoliticalOverlay: cachedPublicProcedure.query(async ({ ctx }) => {
+  getGeopoliticalOverlay: realmScopedOverlayProcedure.query(async ({ ctx, input }) => {
+    const realmId = await viewerRealmId(ctx, input?.realm);
     // 1. Alliance groups
     const alliances = await ctx.db.alliance.findMany({
       where: { visibility: "public" },
@@ -611,7 +554,7 @@ export const overlayProcedures = {
     );
 
     const relationCountries = await ctx.db.country.findMany({
-      where: { id: { in: uniqueCountryIds } },
+      where: { id: { in: uniqueCountryIds }, realmId },
       select: { id: true, name: true, centroid: true },
     });
 
@@ -650,7 +593,7 @@ export const overlayProcedures = {
 
     // 3. Active military conflicts as point markers
     const conflicts = await ctx.db.militaryConflict.findMany({
-      where: { status: { in: ["active", "proposed", "accepted"] } },
+      where: { status: { in: ["active", "proposed", "accepted"] }, initiator: { realmId } },
       select: {
         id: true,
         type: true,

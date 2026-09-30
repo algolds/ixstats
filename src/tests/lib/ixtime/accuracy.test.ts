@@ -1,5 +1,4 @@
-import { IxTimeAccuracyVerifier } from "../../../lib/ixtime";
-
+import { IxTimeAccuracyVerifier } from "~/lib/ixtime";
 
 describe("IxTime Accuracy & Verification Suites", () => {
   it("should run all accuracy test suites with 100% pass rate", () => {

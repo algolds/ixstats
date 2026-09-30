@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, X } from "lucide-react";
+import { Menu, Xmark as X } from "iconoir-react";
 import { CommandPalette } from "~/components/halo";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -25,20 +25,22 @@ export function Navigation() {
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "/");
   const isWikiPage =
-    normalizedPathname.startsWith("/wiki") ||
-    normalizedPathname.startsWith("/blurbs");
+    normalizedPathname.startsWith("/wiki") || normalizedPathname.startsWith("/blurbs");
 
   const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
   const isImmersionPage =
-    isWikiPage ||
-    normalizedPathname.startsWith("/messages") ||
     normalizedPathname.startsWith("/builder") ||
-    normalizedPathname.startsWith("/mycountry");
+    normalizedPathname.startsWith("/mycountry/builder") ||
+    normalizedPathname.startsWith("/mycountry/editor") ||
+    normalizedPathname.startsWith("/messages") ||
+    isWikiPage;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const { scrollY, isSticky, isNavVisible } = useNavigationScroll({
-    mode: isImmersionPage ? "hidden" : "default",
-  });
+  const { scrollY, isSticky, isNavVisible, onNavMouseEnter, onNavMouseLeave } = useNavigationScroll(
+    {
+      mode: isImmersionPage ? "hidden" : "default",
+    }
+  );
 
   const [isWriterMode, setIsWriterMode] = useState(false);
 
@@ -113,30 +115,27 @@ export function Navigation() {
   const contextMenu = contextualMenus[contextKey] ?? contextualMenus.default;
 
   // Hide the global navigation entirely on maps pages since MapDynamicIsland handles it
-  if (pathname?.startsWith("/maps")) return null;
+  if (normalizedPathname.startsWith("/maps")) return null;
 
   return (
     <>
       <nav
-        className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
+        onMouseEnter={onNavMouseEnter}
+        onMouseLeave={onNavMouseLeave}
+        className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-200 ${
           isWikiPage
-            ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
-            : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
+            ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-sm"
+            : "border-border/40 bg-background/80 shadow-xs"
         }`}
         style={{
+          visibility: isNavVisible ? "visible" : "hidden",
           opacity: isNavVisible ? 1 : 0,
           transform: isNavVisible ? "translateY(0)" : "translateY(-100%)",
           pointerEvents: isNavVisible ? "auto" : "none",
-          transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out, background-color 0.3s ease",
+          transition:
+            "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out, visibility 0.22s, background-color 0.2s ease",
         }}
       >
-        {!isWikiPage && (
-          <div
-            className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent"
-            style={{ opacity: isNavVisible ? 1 : 0 }}
-          />
-        )}
-
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
           <NavigationBar
             visibleNavItems={visibleNavItems}
@@ -147,7 +146,7 @@ export function Navigation() {
           {/* Mobile Title Bar — DI pill replaces hamburger */}
           <div className="flex h-14 w-full items-center justify-between py-2 lg:hidden">
             <div className="flex min-w-0 flex-1 flex-col pr-3">
-              <span className="text-muted-foreground/80 text-[10px] tracking-wide uppercase sm:text-[11px]">
+              <span className="text-muted-foreground/80 text-xs tracking-wide uppercase sm:text-xs">
                 IxStats
               </span>
               <span className="text-foreground line-clamp-1 text-sm font-semibold sm:text-base">
@@ -219,6 +218,8 @@ export function Navigation() {
 
       {!isMobile && (
         <motion.div
+          onMouseEnter={!isImmersionPage ? onNavMouseEnter : undefined}
+          onMouseLeave={!isImmersionPage ? onNavMouseLeave : undefined}
           className="pointer-events-none fixed top-0 right-0 left-0 z-[var(--z-command)] flex justify-center"
           animate={{
             y: activeIsSticky ? 8 : 10,
@@ -234,14 +235,9 @@ export function Navigation() {
             maxWidth: "100%",
           }}
         >
-          {/* Ambient glow around DI when navbar is visible, fading cleanly to 0 on scroll */}
-          <div
-            className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl transition-opacity duration-300"
-            style={{
-              opacity: isNavVisible && !activeIsSticky ? 0.6 : 0,
-            }}
-          />
-          <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />
+          <div className="pointer-events-auto">
+            <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />
+          </div>
         </motion.div>
       )}
     </>

@@ -172,7 +172,7 @@ function checkContinentShapeDiversity(
 ): QualityCheckResult {
   const continents = graph.features.filter((f) => f.type === "continent");
 
-  let aspectRatios: number[] = [];
+  const aspectRatios: number[] = [];
   for (const cont of continents) {
     let minLng = Infinity,
       maxLng = -Infinity,
@@ -397,6 +397,7 @@ function checkClimateCoherence(graph: WorldGraph): QualityCheckResult {
 
 function checkLakePlacement(graph: WorldGraph): QualityCheckResult {
   const lakes = graph.features.filter((f) => f.type === "lake");
+  // oxlint-disable-next-line typescript/no-unused-vars
   const passed = true; // All flood-filled lakes are inside landmasses by construction
 
   return {
@@ -421,6 +422,7 @@ function checkCoastlineComplexity(graph: WorldGraph, _params: WorldGenParams): Q
     }
   }
 
+  // oxlint-disable-next-line typescript/no-unused-vars
   const passed = coastalLandCount > 50;
 
   return {

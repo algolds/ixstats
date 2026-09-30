@@ -4,7 +4,7 @@
  */
 
 import { notificationAPI } from "./api";
-import { isNotificationEventEnabled, guardNotificationEvent } from "./guard";
+import { guardNotificationEvent } from "./guard";
 
 /**
  * Economic Data Change Hook
@@ -302,7 +302,7 @@ export async function onSocialActivity(params: {
 
 /**
  * Intelligence Alert Hook
- * Triggers notifications for intelligence/SDI alerts
+ * Triggers notifications for intelligence alerts
  */
 export async function onIntelligenceAlert(params: {
   userId?: string;
@@ -356,6 +356,7 @@ export async function onTradeEvent(params: {
 }) {
   if (!(await guardNotificationEvent("onTradeEvent"))) return;
   const priority = params.eventType === "embargo" ? "high" : "medium";
+  // oxlint-disable-next-line typescript/no-unused-vars
   const type =
     params.impact === "positive" ? "success" : params.impact === "negative" ? "warning" : "info";
 

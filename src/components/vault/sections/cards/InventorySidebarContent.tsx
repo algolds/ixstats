@@ -2,17 +2,17 @@
 
 import React from "react";
 import {
-  Layers,
+  Component as Layers,
   Search,
-  X,
-  Sparkles,
-  FileText,
+  Xmark as X,
+  Sparks as Sparkles,
+  Page as FileText,
   Calendar,
-  Grid3x3,
+  ViewGrid as Grid3x3,
   List,
-  Maximize2,
+  Expand as Maximize2,
   Copy,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { Input } from "~/components/ui/input";
@@ -69,7 +69,7 @@ export function InventorySidebarContent({
         className="border-border rounded-xl bg-cyan-500/10 p-3 dark:bg-cyan-500/10"
       >
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             My Cards
           </span>
           <Layers className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
@@ -78,7 +78,7 @@ export function InventorySidebarContent({
           <span className="text-xl font-bold tracking-tight text-cyan-600 tabular-nums dark:text-cyan-400">
             {totalCards} / {150 + capacityBoost}
           </span>
-          <span className="text-muted-foreground text-[10px]">cards</span>
+          <span className="text-muted-foreground text-xs">cards</span>
         </div>
         <div className="mt-1.5 flex items-center gap-3 text-xs">
           <div className="flex items-center gap-1">
@@ -88,8 +88,8 @@ export function InventorySidebarContent({
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <Copy className="h-3 w-3 shrink-0 text-purple-600 dark:text-purple-400" />
-            <span className="font-bold text-purple-600 dark:text-purple-400">0</span>
+            <Copy className="h-3 w-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <span className="font-bold text-indigo-600 dark:text-indigo-400">0</span>
           </div>
         </div>
       </FacetCard>
@@ -177,7 +177,7 @@ export function InventorySidebarContent({
           className={cn(
             "h-7 w-full px-2 text-xs",
             filters.season !== "all" &&
-              "border-purple-500/30 bg-purple-500/20 font-bold text-purple-600 dark:text-purple-300"
+              "border-amber-500/30 bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400"
           )}
         >
           <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
@@ -194,7 +194,7 @@ export function InventorySidebarContent({
       <div className="border-border/40 space-y-3 border-t pt-3">
         {/* Sort */}
         <div>
-          <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
             Sort By
           </p>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -212,7 +212,7 @@ export function InventorySidebarContent({
 
         {/* View Mode */}
         <div>
-          <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
             View
           </p>
           <div className="flex gap-1">
@@ -222,7 +222,7 @@ export function InventorySidebarContent({
                 variant={viewMode === mode ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode(mode)}
-                className="h-6 flex-1 text-[10px] font-semibold"
+                className="h-6 flex-1 text-xs font-semibold"
               >
                 {mode === "grid" ? (
                   <>

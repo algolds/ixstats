@@ -1,20 +1,19 @@
+"use client";
 // src/components/wiki-os/reader/StashButton.tsx
 // Lore Stash button — one-click save with color-coded stash popover.
 // Glass physics animated with shine, pulse, ripple, and color-shift.
 
-"use client";
-
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Bookmark,
-  BookmarkCheck,
+  Bookmark as BookmarkCheck,
   Check,
   Plus,
-  X,
-  ChevronRight,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+  Xmark as X,
+  NavArrowRight as ChevronRight,
+  WarningCircle as AlertCircle,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
@@ -144,7 +143,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
           onMouseLeave={handleMouseLeave}
           disabled={isPending}
           className={cn(
-            "wikios-sidebar-icon-box flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95",
+            "wikios-sidebar-icon-box flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             isStashed
               ? "rail-glow-amber rail-animate-pulse border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15"
               : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
@@ -157,11 +156,11 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
           type="button"
         >
           {isPending ? (
-            <Loader2 size={16} className="animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : isStashed ? (
-            <BookmarkCheck size={16} />
+            <BookmarkCheck className="h-4 w-4" />
           ) : (
-            <Bookmark size={16} />
+            <Bookmark className="h-4 w-4" />
           )}
           {animState === "ripple" && (
             <span className="wikios-stash-ring" style={{ borderColor: primaryColor }} />
@@ -204,7 +203,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                         title={s.name}
                         type="button"
                       >
-                        {active && <Check size={10} className="wikios-stash-check" />}
+                        {active && <Check className="wikios-stash-check h-2.5 w-2.5" />}
                       </button>
                       <span className="wikios-stash-circle-label">{s.name}</span>
                     </div>
@@ -220,7 +219,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                     title="All stashes"
                     type="button"
                   >
-                    <Plus size={10} />
+                    <Plus className="h-2.5 w-2.5" />
                   </button>
                   <span className="wikios-stash-circle-label">More</span>
                 </div>
@@ -237,9 +236,9 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                   type="button"
                 >
                   {unstashMutation.isPending ? (
-                    <Loader2 size={12} className="animate-spin" />
+                    <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
-                    <X size={12} />
+                    <X className="h-3 w-3" />
                   )}
                   Remove from all
                 </button>
@@ -248,7 +247,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                   className="wikios-stash-popover-action"
                   onClick={() => setShowPopover(false)}
                 >
-                  <ChevronRight size={12} />
+                  <ChevronRight className="h-3 w-3" />
                   My Stashes
                 </Link>
               </div>
@@ -294,11 +293,11 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
         <span className="wikios-stash-glass-bg" />
         <span className="wikios-stash-glass-shine" />
         {isPending ? (
-          <Loader2 size={13} className="animate-spin" />
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : isStashed ? (
-          <BookmarkCheck size={13} />
+          <BookmarkCheck className="h-3.5 w-3.5" />
         ) : (
-          <Bookmark size={13} />
+          <Bookmark className="h-3.5 w-3.5" />
         )}
         <span className="wikios-stash-label-reveal">
           {isPending ? "Saving..." : isStashed ? "Stashed" : "Stash"}
@@ -319,7 +318,11 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
       {/* Inline feedback toast */}
       {feedback && (
         <div className={cn("wikios-stash-feedback", `wikios-stash-feedback-${feedback.type}`)}>
-          {feedback.type === "success" ? <Check size={12} /> : <AlertCircle size={12} />}
+          {feedback.type === "success" ? (
+            <Check className="h-3 w-3" />
+          ) : (
+            <AlertCircle className="h-3 w-3" />
+          )}
           {feedback.text}
         </div>
       )}
@@ -355,7 +358,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                       title={s.name}
                       type="button"
                     >
-                      {active && <Check size={10} className="wikios-stash-check" />}
+                      {active && <Check className="wikios-stash-check h-2.5 w-2.5" />}
                     </button>
                     <span className="wikios-stash-circle-label">{s.name}</span>
                   </div>
@@ -371,7 +374,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                   title="All stashes"
                   type="button"
                 >
-                  <Plus size={10} />
+                  <Plus className="h-2.5 w-2.5" />
                 </button>
                 <span className="wikios-stash-circle-label">More</span>
               </div>
@@ -388,9 +391,9 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                 type="button"
               >
                 {unstashMutation.isPending ? (
-                  <Loader2 size={12} className="animate-spin" />
+                  <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
-                  <X size={12} />
+                  <X className="h-3 w-3" />
                 )}
                 Remove from all
               </button>
@@ -399,7 +402,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                 className="wikios-stash-popover-action"
                 onClick={() => setShowPopover(false)}
               >
-                <ChevronRight size={12} />
+                <ChevronRight className="h-3 w-3" />
                 My Stashes
               </Link>
             </div>

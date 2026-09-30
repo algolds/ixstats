@@ -4,21 +4,19 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  X,
+  Xmark as X,
   Globe,
   Database,
-  SlidersHorizontal,
+  ControlSlider as SlidersHorizontal,
   Bookmark,
   Copy,
-  Download,
-  ExternalLink,
-  BookOpen,
-  Sparkles,
-  Info,
-  Smile,
-  HelpCircle,
+  // oxlint-disable-next-line eslint/no-unused-vars
+  OpenNewWindow as ExternalLink,
+  Sparks as Sparkles,
+  InfoCircle as Info,
+  Emoji as Smile,
   Eye,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 
@@ -35,16 +33,16 @@ const MAIN_STEPS = [
   },
   {
     icon: Database,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
     title: "2. IxWiki Database",
     description:
       "Switch to the IxWiki tab to search and browse local images uploaded by players directly on our wiki platform.",
   },
   {
     icon: SlidersHorizontal,
-    color: "text-teal-400",
-    bg: "bg-teal-500/10",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
     title: "3. Advanced Filters",
     description:
       "Instantly narrow search results by file type (JPEG, PNG, SVG) and aspect ratio orientation (Landscape, Portrait, Square).",
@@ -83,7 +81,7 @@ const ADVANCED_TIPS = [
   },
   {
     icon: Smile,
-    color: "text-pink-400",
+    color: "text-blue-400",
     title: "Keyboard Shortcuts",
     description:
       "Close the detail panel by pressing 'Escape'. Use the standard search inputs to instantly filter categories dynamically.",
@@ -102,11 +100,13 @@ export function RepositoryWelcomeModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (open !== undefined) {
+      // oxlint-disable-next-line
       setShow(open);
       if (open) {
         setActiveTab(0);
@@ -134,7 +134,9 @@ export function RepositoryWelcomeModal({
     onOpenChangeAction?.(false);
     try {
       localStorage.setItem(STORAGE_KEY, WIKIOS_VERSION);
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onOpenChangeAction]);
 
   const TABS = ["Getting Started", "Features", "Tips", "FAQ Guide"];
@@ -190,7 +192,7 @@ export function RepositoryWelcomeModal({
                       </p>
                     </div>
                   </div>
-                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-[10px]">
+                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
                     v{WIKIOS_VERSION}
                   </span>
                 </div>
@@ -203,7 +205,7 @@ export function RepositoryWelcomeModal({
                     key={tab}
                     onClick={() => setActiveTab(i)}
                     className={cn(
-                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-all",
+                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       activeTab === i
                         ? "text-blue-550 border-blue-500 font-bold dark:text-blue-400"
                         : "text-muted-foreground hover:text-foreground border-transparent"
@@ -242,7 +244,7 @@ export function RepositoryWelcomeModal({
                       </div>
 
                       <div
-                        className="force-gpu relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] p-3 shadow-lg transition-all duration-300 dark:border-white/20 dark:from-white/15 dark:to-white/5"
+                        className="force-gpu relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] p-3 shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-white/20 dark:from-white/15 dark:to-white/5"
                         style={{
                           backdropFilter: "blur(20px) saturate(145%)",
                           WebkitBackdropFilter: "blur(20px) saturate(145%)",
@@ -255,13 +257,6 @@ export function RepositoryWelcomeModal({
                           <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/10 to-transparent dark:via-white/25" />
                           <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-black/15 to-transparent dark:via-white/35" />
                           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/10 to-transparent dark:via-white/25" />
-                          <div
-                            className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10"
-                            style={{
-                              animationDuration: "3s",
-                              animationTimingFunction: "ease-in-out",
-                            }}
-                          />
                         </div>
 
                         {/* Content */}
@@ -272,7 +267,7 @@ export function RepositoryWelcomeModal({
                               Visual-First Discovery
                             </span>
                           </div>
-                          <p className="text-muted-foreground text-[11px] leading-relaxed">
+                          <p className="text-muted-foreground text-xs leading-relaxed">
                             A visual media explorer is vastly superior to blind markup guessing.
                             Browse images interactively, filter by size or orientation, and inspect
                             layouts in real-time before you publish.
@@ -304,7 +299,7 @@ export function RepositoryWelcomeModal({
                                 {step.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {step.description}
                             </p>
                           </div>
@@ -337,7 +332,7 @@ export function RepositoryWelcomeModal({
                                 <h4 className="text-foreground/90 text-xs font-semibold">
                                   {item.title}
                                 </h4>
-                                <p className="text-muted-foreground text-[10px] leading-normal">
+                                <p className="text-muted-foreground text-xs leading-normal">
                                   {item.description}
                                 </p>
                               </div>
@@ -381,7 +376,7 @@ export function RepositoryWelcomeModal({
                               <span className="font-bold text-blue-500">Q:</span>
                               {faq.q}
                             </h4>
-                            <p className="text-muted-foreground pl-4 text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground pl-4 text-xs leading-relaxed">
                               {faq.a}
                             </p>
                           </div>

@@ -1,6 +1,6 @@
 import { describe, it, expect, jest } from "@jest/globals";
-import { processAging } from "../../lib/sports/aging";
-import { transitionSeasonAction } from "../../lib/sports/transition";
+import { processAging } from "~/lib/sports/aging";
+import { transitionSeasonAction } from "~/lib/sports/transition";
 
 describe("MyLeague Off-Season & Transition Logic", () => {
   describe("processAging logic", () => {
@@ -150,48 +150,48 @@ describe("MyLeague Off-Season & Transition Logic", () => {
         },
       };
 
-      const mockPrisma: any = {
+      const mockPrisma = {
         sportSeason: {
-          findUnique: jest.fn().mockResolvedValue(mockSeason as any),
-          create: jest.fn().mockResolvedValue({ id: "s2", seasonNumber: 2 } as any),
-          update: jest.fn().mockResolvedValue({} as any),
+          findUnique: jest.fn(async () => mockSeason),
+          create: jest.fn(async () => ({ id: "s2", seasonNumber: 2 })),
+          update: jest.fn(async () => ({})),
         },
         sportPlayer: {
-          update: jest.fn().mockResolvedValue({} as any),
-          create: jest.fn().mockResolvedValue({ id: "new_p" } as any),
+          update: jest.fn(async () => ({})),
+          create: jest.fn(async () => ({ id: "new_p" })),
         },
         sportCoach: {
-          update: jest.fn().mockResolvedValue({} as any),
-          create: jest.fn().mockResolvedValue({} as any),
+          update: jest.fn(async () => ({})),
+          create: jest.fn(async () => ({})),
         },
         sportTeam: {
-          findMany: jest.fn().mockResolvedValue(mockSeason.league.teams as any),
-          update: jest.fn().mockResolvedValue({} as any),
+          findMany: jest.fn(async () => mockSeason.league.teams),
+          update: jest.fn(async () => ({})),
         },
         sportMatchStat: {
-          findMany: jest.fn().mockResolvedValue([] as any),
+          findMany: jest.fn(async () => []),
         },
         sportSeasonRecord: {
-          deleteMany: jest.fn().mockResolvedValue({} as any),
-          createMany: jest.fn().mockResolvedValue({} as any),
+          deleteMany: jest.fn(async () => ({})),
+          createMany: jest.fn(async () => ({})),
         },
         sportStanding: {
-          findMany: jest.fn().mockResolvedValue([] as any),
-          createMany: jest.fn().mockResolvedValue({} as any),
+          findMany: jest.fn(async () => []),
+          createMany: jest.fn(async () => ({})),
         },
         sportTeamSeason: {
-          createMany: jest.fn().mockResolvedValue({} as any),
+          createMany: jest.fn(async () => ({})),
         },
         sportRookieClass: {
-          create: jest.fn().mockResolvedValue({} as any),
+          create: jest.fn(async () => ({})),
         },
         sportDraftPick: {
-          createMany: jest.fn().mockResolvedValue({} as any),
+          createMany: jest.fn(async () => ({})),
         },
         sportMatch: {
-          create: jest.fn().mockResolvedValue({} as any),
+          create: jest.fn(async () => ({})),
         },
-      };
+      } as unknown as Parameters<typeof transitionSeasonAction>[0];
 
       const result = await transitionSeasonAction(mockPrisma, "s1");
 

@@ -1,5 +1,4 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { useTheme } from "~/context/theme-context";
@@ -10,26 +9,26 @@ import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
+// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Settings,
-  X,
-  Moon,
-  Sun,
+  Xmark as X,
+  HalfMoon as Moon,
+  SunLight as Sun,
   User,
-  Layout,
-  RefreshCw,
+  ViewGrid as Layout,
+  Refresh as RefreshCw,
   LogOut,
-  ChevronRight,
-  BookOpen,
-  MessageSquare,
+  NavArrowRight as ChevronRight,
+  OpenBook as BookOpen,
+  ChatBubble as MessageSquare,
   List,
-  ExternalLink,
+  OpenNewWindow as ExternalLink,
   Search,
-  Volume2,
-  VolumeX,
-  SunMoon,
+  SoundOff as VolumeX,
+  HalfMoon as SunMoon,
   Square,
-} from "lucide-react";
+} from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
 import { useIsAdmin } from "~/hooks/usePermissions";
@@ -37,163 +36,13 @@ import { PreText } from "~/components/ui/pretext";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
-import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
-
-// ─── Local toggle hook ───────────────────────────────────────────────────────
-
-function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => void] {
-  const [value, setValue] = useState(defaultValue);
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored !== null) setValue(stored === "true");
-    } catch {
-      /* SSR */
-    }
-  }, [key]);
-  const toggle = useCallback(() => {
-    setValue((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(key, String(next));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("wikios-settings-changed"));
-        }
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, [key]);
-  return [value, toggle];
-}
-
-function useLocalPref(key: string, defaultValue: boolean): [boolean, (checked: boolean) => void] {
-  const [val, setVal] = useState(defaultValue);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored !== null) setVal(stored === "true");
-    } catch {
-      /* SSR */
-    }
-  }, [key]);
-
-  const update = useCallback(
-    (checked: boolean) => {
-      setVal(checked);
-      try {
-        localStorage.setItem(key, String(checked));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("wikios-settings-changed"));
-        }
-      } catch {
-        /* ignore */
-      }
-    },
-    [key]
-  );
-
-  return [val, update];
-}
-
-// ─── Toggle Switch ───────────────────────────────────────────────────────────
-
-function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
-  return <Switch checked={enabled} onCheckedChange={onToggle} />;
-}
-
-// ─── Section label ───────────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
-      {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
-    </div>
-  );
-}
-
-// ─── Animated Volume Icon (Apple SF Symbols Wave Radiation) ──────────────────
-
-function AnimatedVolumeIcon({
-  enabled,
-  isHovered = false,
-  className = "h-3.5 w-3.5",
-}: {
-  enabled: boolean;
-  isHovered?: boolean;
-  className?: string;
-}) {
-  if (!enabled) {
-    return <VolumeX className={cn("text-muted-foreground", className)} />;
-  }
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={cn("text-emerald-600 dark:text-emerald-400 overflow-visible", className)}
-    >
-      {/* Speaker Cone (Static stable anchor) */}
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-
-      {/* Inner Sound Wave Arc — radiates smoothly on hover */}
-      <motion.path
-        d="M15.54 8.46a5 5 0 0 1 0 7.07"
-        className="origin-[11px_12px]"
-        initial={{ opacity: 1, scale: 1 }}
-        animate={
-          isHovered
-            ? {
-                opacity: [0.35, 1, 0.35],
-                scale: [0.95, 1.08, 0.95],
-              }
-            : { opacity: 1, scale: 1 }
-        }
-        transition={
-          isHovered
-            ? {
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }
-            : { duration: 0.2 }
-        }
-      />
-
-      {/* Outer Sound Wave Arc — radiates sequentially after inner wave */}
-      <motion.path
-        d="M19.07 4.93a10 10 0 0 1 0 14.14"
-        className="origin-[11px_12px]"
-        initial={{ opacity: 1, scale: 1 }}
-        animate={
-          isHovered
-            ? {
-                opacity: [0.2, 1, 0.2],
-                scale: [0.9, 1.15, 0.9],
-              }
-            : { opacity: 1, scale: 1 }
-        }
-        transition={
-          isHovered
-            ? {
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.16,
-              }
-            : { duration: 0.2 }
-        }
-      />
-    </svg>
-  );
-}
+import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
+import {
+  useLocalPref,
+  ToggleSwitch,
+  SectionLabel,
+  AnimatedVolumeIcon,
+} from "./settings/SettingsControls";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -287,7 +136,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   }
 
   return (
-    <div className="p-4 transition-all duration-300">
+    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
       <SettingsHeader
         onClose={onClose}
         isOnWikiPage={isOnWikiPage}
@@ -297,17 +146,17 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
       <div
         className={cn(
-          "grid gap-4 transition-all duration-300",
+          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
         {/* ── Primary Left Column (Always persistent in the same place) ── */}
-        <div className="space-y-1 min-w-0">
+        <div className="min-w-0 space-y-1">
           {/* Appearance */}
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="hover:bg-accent/10 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
             <div className="bg-primary/15 shrink-0 rounded-md p-1.5">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-primary h-3.5 w-3.5" />
@@ -326,14 +175,25 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             <AnimatedThemeToggler className="h-8 w-8" />
           </div>
 
+          {/* Compact Mode */}
+          <SettingsRow
+            icon={<Layout className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
+            iconBg="bg-indigo-500/15"
+            label="Compact Mode"
+            description="Denser UI layout"
+          >
+            <ToggleSwitch
+              enabled={compactMode}
+              onToggle={() => {
+                soundEffects.toggle();
+                toggleCompactMode();
+              }}
+            />
+          </SettingsRow>
+
           {/* Sound */}
           <SettingsRow
-            icon={
-              <AnimatedVolumeIcon
-                enabled={soundEnabled}
-                isHovered={soundIconHovered}
-              />
-            }
+            icon={<AnimatedVolumeIcon enabled={soundEnabled} isHovered={soundIconHovered} />}
             iconBg={soundEnabled ? "bg-emerald-500/15" : "bg-muted/15"}
             label="Sound"
             description={soundEnabled ? "Enabled" : "Muted"}
@@ -356,12 +216,12 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             <SettingsRow
               icon={
                 mediaThemeMode === "plinth" ? (
-                  <Square className="text-emerald-500 h-3.5 w-3.5" />
+                  <Square className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
-                  <SunMoon className="text-sky-500 h-3.5 w-3.5" />
+                  <SunMoon className="h-3.5 w-3.5 text-cyan-500" />
                 )
               }
-              iconBg={mediaThemeMode === "plinth" ? "bg-emerald-500/15" : "bg-sky-500/15"}
+              iconBg={mediaThemeMode === "plinth" ? "bg-emerald-500/15" : "bg-cyan-500/15"}
               label="Image Appearance"
               description={mediaThemeMode === "plinth" ? "Light Backplate" : "Adaptive Dark"}
             >
@@ -375,38 +235,26 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             </SettingsRow>
           )}
 
-          {/* Compact Mode (Non-Wiki) */}
-          {!isOnWikiPage && (
-            <SettingsRow
-              icon={<Layout className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
-              iconBg="bg-purple-500/15"
-              label="Compact Mode"
-              description="Denser UI layout"
-            >
-              <ToggleSwitch enabled={compactMode} onToggle={toggleCompactMode} />
-            </SettingsRow>
-          )}
-
           {/* More Preferences Trigger Row (Wiki) — smoothly toggles the side panel */}
           {isOnWikiPage && (
             <button
               type="button"
               onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
               className={cn(
-                "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer group",
+                "group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
                 morePrefsExpanded
-                  ? "bg-blue-500/10 border border-blue-500/20 text-blue-400"
-                  : "hover:bg-accent/10"
+                  ? "border border-blue-500/25 bg-blue-500/10 text-blue-400 shadow-xs"
+                  : "border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
               )}
             >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <div
                   className={cn(
                     "shrink-0 rounded-md p-1.5",
                     morePrefsExpanded ? "bg-blue-500/20" : "bg-blue-500/15"
                   )}
                 >
-                  <BookOpen className="text-blue-500 h-3.5 w-3.5" />
+                  <BookOpen className="h-3.5 w-3.5 text-blue-500" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <PreText
@@ -440,13 +288,16 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <SectionLabel>Account</SectionLabel>
               <button
                 onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-                className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer"
+                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
               >
                 <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
                   <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+                  <PreText
+                    className="text-foreground block text-sm font-medium"
+                    whiteSpace="nowrap"
+                  >
                     Account Settings
                   </PreText>
                   <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
@@ -457,13 +308,13 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               </button>
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
-              <div className="border-border mt-1 border-t pt-2 flex items-center justify-between">
+              <div className="border-border/40 mt-1 flex items-center justify-between border-t pt-2 dark:border-white/10">
                 {isAdmin ? (
                   <Button
                     asChild
                     size="sm"
                     variant="ghost"
-                    className="text-muted-foreground hover:text-red-500 hover:bg-red-500/10 h-7 text-xs px-2.5"
+                    className="text-muted-foreground h-7 px-2.5 text-xs hover:bg-red-500/10 hover:text-red-500"
                   >
                     <button
                       type="button"
@@ -471,7 +322,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                         onClose();
                         window.location.href = createAbsoluteUrl("/admin");
                       }}
-                      className="flex items-center gap-1.5 cursor-pointer"
+                      className="flex cursor-pointer items-center gap-1.5"
                     >
                       <Settings className="h-3 w-3 text-red-500" />
                       <span>Admin</span>
@@ -485,10 +336,10 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   asChild
                   size="sm"
                   variant="ghost"
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-7 text-xs px-2.5"
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-7 px-2.5 text-xs"
                 >
                   <SignOutButton>
-                    <div className="flex items-center gap-1.5 cursor-pointer">
+                    <div className="flex cursor-pointer items-center gap-1.5">
                       <LogOut className="h-3 w-3" />
                       <PreText className="text-xs" whiteSpace="nowrap">
                         Sign Out
@@ -516,13 +367,13 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
         {/* ── Additive 2nd Column (Smoothly reveals alongside on More Preferences) ── */}
         {morePrefsExpanded && (
-          <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-white/10 sm:pl-4 pt-2 sm:pt-0 animate-in fade-in slide-in-from-right-4 duration-200 min-w-0">
+          <div className="animate-in fade-in slide-in-from-right-4 min-w-0 space-y-1 border-t border-white/10 pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader Preferences</SectionLabel>
 
             {/* Citations */}
             <SettingsRow
-              icon={<MessageSquare className="h-3.5 w-3.5 text-purple-400" />}
-              iconBg="bg-purple-500/15"
+              icon={<MessageSquare className="h-3.5 w-3.5 text-wiki" />}
+              iconBg="bg-wiki/15"
               label="Citation Tooltips"
               description="Hover source preview cards"
             >
@@ -591,17 +442,17 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   onClose();
                   router.push(withBasePath("/settings#wiki-settings"));
                 }}
-                className="hover:bg-accent/10 flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer group border border-white/5 bg-white/[0.02]"
+                className="hover:bg-accent/10 group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 text-left transition-colors"
               >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="bg-indigo-500/15 shrink-0 rounded-md p-1.5">
-                    <BookOpen className="text-indigo-400 h-3.5 w-3.5" />
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <div className="shrink-0 rounded-md bg-indigo-500/15 p-1.5">
+                    <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-xs font-semibold text-foreground block truncate">
+                    <span className="text-foreground block truncate text-xs font-semibold">
                       Wiki System Settings
                     </span>
-                    <span className="text-[10px] text-muted-foreground block truncate">
+                    <span className="text-muted-foreground block truncate text-xs">
                       Autonomous lore scanner &amp; sources
                     </span>
                   </div>
@@ -687,7 +538,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="hover:bg-accent/10 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
+    <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
       {onIconClick ? (
         <button
           type="button"
@@ -699,7 +550,7 @@ function SettingsRow({
           onMouseLeave={() => onIconHover?.(false)}
           title={iconTitle}
           className={cn(
-            "shrink-0 rounded-md p-1.5 transition-colors cursor-pointer active:scale-95",
+            "shrink-0 cursor-pointer rounded-md p-1.5 transition-colors active:scale-95",
             iconBg
           )}
         >

@@ -7,11 +7,11 @@ import {
   Star,
   Crown,
   Shield,
-  Award,
-  Users,
+  Trophy as Award,
+  Group as Users,
   Check,
-  Sparkles,
-} from "lucide-react";
+  Sparks as Sparkles,
+} from "iconoir-react";
 
 export type FilterTab = "all" | "linked" | "unlinked";
 

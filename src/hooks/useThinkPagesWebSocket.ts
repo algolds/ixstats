@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
+import { useAuth } from "~/context/auth-context";
 import type {
-  ThinkPagesWebSocketEvent,
   ThinkPagesClientState,
   ThinkPagesWebSocketHookOptions,
   PresenceUpdate,
@@ -33,11 +33,16 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const socket = useRef<Socket | null>(null);
   const optionsRef = useRef(options);
+  const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
 
-  // Update ref when options change
+  // Update refs when options / token source change
   useEffect(() => {
     optionsRef.current = options;
   }, [options]);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
 
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const retryCount = useRef(0);
@@ -78,6 +83,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       return;
     }
 
+    // The server requires a Clerk session token; no token source means signed out
+    if (!getTokenRef.current) return;
+
     // Stop retrying after max attempts
     if (retryCount.current >= maxRetries) {
       console.warn("WebSocket: Max retry attempts reached, disabling real-time features");
@@ -99,16 +107,16 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       transports: ["websocket", "polling"],
       reconnectionAttempts: maxRetries,
       reconnectionDelay: 2000,
+      // Callback form: re-invoked on every (re)connect so each handshake gets a fresh token
+      auth: (cb) => {
+        const pending: Promise<string | null> = getTokenRef.current?.() ?? Promise.resolve(null);
+        void pending.catch(() => null).then((token) => cb({ token: token ?? "" }));
+      },
     });
 
     socket.current.on("connect", () => {
       retryCount.current = 0;
       setClientState((prev) => ({ ...prev, connected: true }));
-
-      if (optionsRef.current.accountId) {
-        socket.current?.emit("auth", { accountId: optionsRef.current.accountId });
-      }
-
       updatePresence("online");
       optionsRef.current.onConnect?.();
     });

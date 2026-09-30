@@ -2,10 +2,10 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { OpenBook as BookOpen } from "iconoir-react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
@@ -53,13 +53,13 @@ export function PostBody({
     <div className={className}>
       {/* Blurb Header Badge */}
       {blurbMeta?.isBlurb && (
-        <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-purple-400">
+        <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-blue-400">
           <BookOpen className="h-3.5 w-3.5" />
           <span className="tracking-tight">{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
             <Link
               href={`/thinkpages/topic/${blurbMeta.promptSlug}`}
-              className="text-purple-400/80 hover:text-purple-300 hover:underline"
+              className="text-blue-400/80 hover:text-blue-300 hover:underline"
             >
               View Topic →
             </Link>

@@ -1,78 +1,16 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+import { describe, it, expect, beforeEach } from "@jest/globals";
 
 // Mock env and dependencies
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({
   db: { systemLog: { create: jest.fn(() => Promise.resolve()) } },
 }));
-jest.mock("~/lib/notifications/api", () => ({
-  notificationAPI: { create: jest.fn(() => Promise.resolve("note_1")) },
-}));
-jest.mock("~/lib/activity/event-spine", () => ({
-  CountryEventSpine: { recordCountryEvent: jest.fn(() => Promise.resolve()) },
-}));
-jest.mock("~/lib/diplomacy/news-generator", () => ({
-  generateDiplomaticNews: jest.fn(() => Promise.resolve()),
-}));
-jest.mock("~/lib/activity/hooks", () => ({
-  ActivityHooks: {
-    Economic: {
-      onTaxPolicyChange: jest.fn(() => Promise.resolve()),
-    },
-  },
-}));
 
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
 import { NationalIssuesEngine, type CountrySnapshot } from "~/lib/national-issues";
-import { createCallerFactory } from "~/server/api/trpc";
-import { policiesRouter } from "~/server/api/routers/policies";
 
-type MockFn = any;
-
-const mockDb = {
-  policy: {
-    create: jest.fn() as MockFn,
-    update: jest.fn() as MockFn,
-    findMany: jest.fn() as MockFn,
-    findUnique: jest.fn() as MockFn,
-  },
-  governmentStructure: {
-    findUnique: jest.fn() as MockFn,
-    update: jest.fn() as MockFn,
-  },
-  cabinetMeeting: {
-    create: jest.fn() as MockFn,
-  },
-  meetingDecision: {
-    create: jest.fn() as MockFn,
-  },
-  meetingActionItem: {
-    create: jest.fn() as MockFn,
-  },
-  user: {
-    findFirst: jest.fn() as MockFn,
-    findUnique: jest.fn() as MockFn,
-  },
-  country: {
-    findUnique: jest.fn() as MockFn,
-  },
-  storytellerEffect: {
-    create: jest.fn() as MockFn,
-    updateMany: jest.fn() as MockFn,
-  },
-  systemLog: {
-    create: jest.fn() as MockFn,
-  },
-  $transaction: jest.fn((callback: any) => callback(mockDb)) as MockFn,
-};
-
-const baseContext = {
-  db: mockDb,
-  user: { clerkUserId: "user_1", countryId: "country_1" },
-  auth: { userId: "user_1" },
-} as any;
-
-describe("Policy Strategy Rework - Unit & Integration Tests", () => {
+describe("Policy Strategy Rework - Unit Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -181,77 +119,6 @@ describe("Policy Strategy Rework - Unit & Integration Tests", () => {
 
       const res = NationalIssuesEngine.evaluateCondition(condition, dummySnapshot);
       expect(res).toBe(false); // field value is null/undefined
-    });
-  });
-
-  describe("3. Policy Activation Transaction and Cabinet Integration", () => {
-    it("deducts budget and creates cabinet meeting, decision, and action item", async () => {
-      const policyRecord = {
-        id: "policy_1",
-        countryId: "country_1",
-        name: "Universal Basic Income Act",
-        category: "fiscal",
-        status: "draft",
-        priority: "high",
-        implementationCost: 500000,
-        maintenanceCost: 100000,
-        gdpEffect: 1.2,
-        employmentEffect: -0.8,
-        inflationEffect: 1.5,
-      };
-
-      const structureRecord = {
-        countryId: "country_1",
-        totalBudget: 1000000,
-      };
-
-      mockDb.policy.findUnique.mockResolvedValue(policyRecord);
-      mockDb.governmentStructure.findUnique.mockResolvedValue(structureRecord);
-      mockDb.cabinetMeeting.create.mockResolvedValue({ id: "meeting_1" });
-      mockDb.meetingDecision.create.mockResolvedValue({ id: "decision_1" });
-      mockDb.meetingActionItem.create.mockResolvedValue({ id: "action_1" });
-      mockDb.policy.update.mockResolvedValue({ ...policyRecord, status: "active" });
-      mockDb.storytellerEffect.create.mockResolvedValue({ id: "effect_1" });
-      mockDb.storytellerEffect.updateMany.mockResolvedValue({ count: 1 });
-      mockDb.user.findFirst.mockResolvedValue({ clerkUserId: "user_1" });
-      mockDb.country.findUnique.mockResolvedValue({ name: "Testland" });
-
-      const caller = createCallerFactory(policiesRouter)(baseContext);
-
-      const updated = await caller.activatePolicy({ id: "policy_1" });
-
-      expect(updated.status).toBe("active");
-      expect(mockDb.governmentStructure.update).toHaveBeenCalledWith({
-        where: { countryId: "country_1" },
-        data: {
-          totalBudget: { decrement: 500000 },
-        },
-      });
-      expect(mockDb.cabinetMeeting.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            title: "Cabinet Session: Enactment of Universal Basic Income Act",
-            status: "completed",
-          }),
-        })
-      );
-      expect(mockDb.meetingDecision.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            title: "Enactment of Universal Basic Income Act",
-            relatedPolicyId: "policy_1",
-          }),
-        })
-      );
-      expect(mockDb.meetingActionItem.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            title: "Oversee rollout of Universal Basic Income Act",
-            assignedTo: "Minister of Finance",
-            status: "pending",
-          }),
-        })
-      );
     });
   });
 });

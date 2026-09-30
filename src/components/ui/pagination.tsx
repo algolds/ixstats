@@ -11,7 +11,7 @@ interface PaginationProps {
 export function Pagination({ totalPages, currentPage, onPageChangeAction }: PaginationProps) {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return (
-    <nav aria-label="Pagination" className="flex items-center space-x-1">
+    <nav aria-label="Pagination" className="flex items-center gap-1">
       <Button
         variant="outline"
         size="sm"

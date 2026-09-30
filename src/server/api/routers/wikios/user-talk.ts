@@ -6,20 +6,17 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getWikiAuth } from "~/lib/wiki-os/auth";
-import { getArticleHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import {
   getUserContribs,
   getUserInfo,
   getBacklinks,
-  getNamespacedWikitext,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 
 import { db } from "~/server/db";
-import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
-import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
+import { LinkGraphService } from "~/lib/wiki-os/core";
+import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 
 export const wikiosUserTalkRouter = createTRPCRouter({
   /**
@@ -46,37 +43,36 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         return null;
       }
 
-      if (!internalUser?.id && wikiName) {
-        internalUser = await db.user.findFirst({
-          where: {
-            OR: [
-              { wikiUsername: wikiName },
-              { clerkUserId: ctx.auth?.userId ?? undefined },
-            ],
-          },
-          select: {
-            id: true,
-            clerkUserId: true,
-            countryId: true,
-            roleId: true,
-            membershipTier: true,
-            wikiUsername: true,
-            wikiUserId: true,
-            createdAt: true,
-            updatedAt: true,
-            country: { select: { id: true, name: true, flag: true } },
-            role: { select: { id: true, name: true, level: true } },
-          },
-        });
-      }
+      const userPromise = !internalUser?.id
+        ? db.user.findFirst({
+            where: {
+              OR: [{ wikiUsername: wikiName }, { clerkUserId: ctx.auth?.userId ?? undefined }],
+            },
+            select: {
+              id: true,
+              clerkUserId: true,
+              countryId: true,
+              roleId: true,
+              membershipTier: true,
+              wikiUsername: true,
+              wikiUserId: true,
+              createdAt: true,
+              updatedAt: true,
+              country: { select: { id: true, name: true, flag: true } },
+              role: { select: { id: true, name: true, level: true } },
+            },
+          })
+        : Promise.resolve(internalUser);
 
-      // Parallel fetch MySQL user info + Loreward stats
-      const [mwInfo, loreStatsRecord] = await Promise.all([
+      // Parallel fetch User + Action API user info + Loreward stats
+      const [resolvedUser, mwInfo, loreStatsRecord] = await Promise.all([
+        userPromise,
         getUserInfo(wikiName),
         db.lorewardUserStats.findUnique({
           where: { username: wikiName },
         }),
       ]);
+      internalUser = resolvedUser;
 
       // Calculate rank if loreStatsRecord exists
       let rank: number | null = null;
@@ -95,10 +91,10 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       return {
         username: wikiName,
         displayName: wikiName,
-        existsInMediaWiki: mwInfo.exists,
-        editCount: mwInfo.exists ? mwInfo.editCount : 0,
-        registration: mwInfo.exists ? mwInfo.registration : null,
-        groups: mwInfo.exists ? mwInfo.groups : [],
+        existsInMediaWiki: Boolean(mwInfo),
+        editCount: mwInfo?.user_editcount ?? 0,
+        registration: mwInfo?.user_registration ?? null,
+        groups: [] as string[],
         loreScore: loreStatsRecord?.totalScore ?? 0,
         loreStreak: loreStatsRecord?.currentStreak ?? 0,
         longestStreak: loreStatsRecord?.longestStreak ?? 0,
@@ -136,17 +132,24 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       }
 
       // 2. Fallback: MySQL bridge
-      const result = await getBacklinks(
+      const result: any = await getBacklinks(
         input.title,
         input.limit,
         input.offset ? parseInt(input.offset, 10) : undefined
       );
+
+      const links = Array.isArray(result)
+        ? result.map((r: any) => ({
+            title: r.page_title || r.title || "Unknown",
+            ns: r.page_namespace ?? r.ns ?? 0,
+          }))
+        : (result?.links ?? []);
+
+      const hasMore = Array.isArray(result) ? false : !!result?.hasMore;
+
       return {
-        links: result.links,
-        continueToken:
-          result.hasMore && result.links.length > 0
-            ? String(result.links.length)
-            : null,
+        links,
+        continueToken: hasMore && links.length > 0 ? String(links.length) : null,
       };
     }),
 
@@ -159,21 +162,70 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         user: z.string().min(1).max(200),
         limit: z.number().min(1).max(100).default(50),
         offset: z.string().optional(),
+        namespace: z.number().optional().default(0),
       })
     )
-    .query(async ({ input }) => {
-      // Direct MySQL — ~40ms vs ~400ms via API
-      const result = await getUserContribs(
+    .query(async ({ ctx, input }) => {
+      const ns = input.namespace ?? 0;
+      // 1. Direct PostgreSQL + Action API fast path
+      const contribs = await getUserContribs(
         input.user,
         input.limit,
-        input.offset ? parseInt(input.offset, 10) : undefined
-      );
+        input.offset ? parseInt(input.offset, 10) : undefined,
+        ns
+      ).catch(() => []);
+
+      if (contribs && contribs.length > 0) {
+        return {
+          contribs: contribs.map((c: any) => ({
+            revid: c.rev_id || c.revid || 0,
+            title: c.page_title || c.title || "",
+            timestamp: c.rev_timestamp || c.timestamp || new Date().toISOString(),
+            size: c.rev_len || c.size || 0,
+            comment: c.rev_comment ?? c.comment ?? "",
+            minor: Boolean(c.rev_minor_edit ?? c.minor),
+            diff: c.diff ?? 0,
+            isNew: Boolean(c.is_new ?? c.isNew),
+          })),
+          continueToken:
+            contribs.length >= input.limit && contribs.length > 0
+              ? String(contribs[contribs.length - 1]?.rev_id || "")
+              : null,
+        };
+      }
+
+      // 2. PostgreSQL native revisions fallback (case-insensitive)
+      const cleanUser = input.user.trim();
+      const nativeRevisions = await ctx.db.wikiRevision
+        .findMany({
+          where: {
+            author: { equals: cleanUser, mode: "insensitive" },
+            article: { namespace: ns },
+          },
+          include: {
+            article: { select: { title: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: input.limit + 1,
+        })
+        .catch(() => []);
+
+      const hasMore = nativeRevisions.length > input.limit;
+      const sliced = hasMore ? nativeRevisions.slice(0, input.limit) : nativeRevisions;
+
+      const fallbackContribs = sliced.map((rev) => ({
+        revid: toRevisionRef(rev),
+        title: rev.article?.title ?? "Untitled",
+        timestamp: rev.createdAt.toISOString(),
+        comment: rev.summary ?? "",
+        size: rev.byteSize,
+        minor: rev.minor,
+        isNew: !rev.parentRevisionId,
+      }));
+
       return {
-        contribs: result.contribs,
-        continueToken:
-          result.hasMore && result.contribs.length > 0
-            ? String(result.contribs[result.contribs.length - 1]!.revid)
-            : null,
+        contribs: fallbackContribs,
+        continueToken: null,
       };
     }),
 
@@ -184,164 +236,4 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       // Direct MySQL — ~20ms vs ~300ms via API
       return getUserInfo(input.username);
     }),
-
-  /**
-   * Get the rendered talk page for an article.
-   * Talk pages live in namespace 1 (Talk:) in MediaWiki.
-   */
-  getTalkPage: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      const talkTitle = input.title.startsWith("Talk:") ? input.title : `Talk:${input.title}`;
-      try {
-        const article = await getArticleHtml(talkTitle);
-        const transformed = transformArticleHtml(stripConflictingStyles(article.html), "");
-        return {
-          exists: true,
-          contentHtml: transformed.contentHtml,
-          toc: transformed.toc,
-          title: talkTitle,
-          lastModified: article.lastModified,
-        };
-      } catch {
-        return {
-          exists: false,
-          contentHtml: "",
-          toc: [],
-          title: talkTitle,
-          lastModified: null,
-        };
-      }
-    }),
-
-  /**
-   * Add a new discussion section to a talk page.
-   * Uses MediaWiki's section=new API which appends without edit conflicts.
-   */
-  addTalkSection: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        sectionTitle: z.string().min(1).max(500),
-        content: z.string().min(1).max(50000),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const talkTitle = input.title.startsWith("Talk:") ? input.title : `Talk:${input.title}`;
-      const signedContent = `${input.content}\n\n~~~~`;
-
-      const result = await executeMediaWikiWrite(
-        {
-          action: "edit",
-          title: talkTitle,
-          section: "new",
-          sectiontitle: input.sectionTitle,
-          text: signedContent,
-          summary: `/* ${input.sectionTitle} */ new section (via WikiOS)`,
-        },
-        ctx
-      );
-
-      return {
-        success: result.success,
-        revisionId: result.revisionId,
-      };
-    }),
-
-  /**
-   * Reply to an existing talk page section.
-   * Appends content to the specified section number.
-   */
-  replyToTalkSection: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        sectionIndex: z.number().min(0),
-        content: z.string().min(1).max(50000),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-      const talkTitle = input.title.startsWith("Talk:") ? input.title : `Talk:${input.title}`;
-
-      // Get current section content
-      const sectionRes = await fetch(
-        `${apiBase}?action=parse&page=${encodeURIComponent(talkTitle)}&prop=wikitext&section=${input.sectionIndex}&formatversion=2&format=json`,
-        { signal: AbortSignal.timeout(10000) }
-      );
-      const sectionData = (await sectionRes.json()) as {
-        parse?: { wikitext?: string };
-        error?: { code: string; info: string };
-      };
-
-      if (sectionData.error) throw new Error(`Failed to fetch section: ${sectionData.error.info}`);
-      const currentText = sectionData.parse?.wikitext ?? "";
-
-      const signedContent = `${input.content}\n\n~~~~`;
-      const newText = `${currentText.trimEnd()}\n\n${signedContent}`;
-
-      const result = await executeMediaWikiWrite(
-        {
-          action: "edit",
-          title: talkTitle,
-          section: String(input.sectionIndex),
-          text: newText,
-          summary: `Reply (via WikiOS)`,
-        },
-        ctx
-      );
-
-      return {
-        success: result.success,
-        revisionId: result.revisionId,
-      };
-    }),
-
-  /**
-   * Get talk page sections (for reply targeting).
-   */
-  getTalkSections: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      // Direct MySQL + regex — parses wikitext headings directly
-      const talkTitle = input.title.startsWith("Talk:") ? input.title.slice(5) : input.title;
-      const article = await getNamespacedWikitext(talkTitle, 1);
-      if (!article) return { sections: [] };
-
-      const sections: Array<{ level: number; title: string; index: number; number: string }> = [];
-      const headingRegex = /^(={2,6})\s*(.+?)\s*\1$/gm;
-      let match;
-      let idx = 1;
-      while ((match = headingRegex.exec(article.wikitext)) !== null) {
-        sections.push({
-          level: match[1]!.length,
-          title: match[2]!.trim(),
-          index: idx,
-          number: String(idx),
-        });
-        idx++;
-      }
-      return { sections };
-    }),
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
-  // ---------------------------------------------------------------------------
 });
-

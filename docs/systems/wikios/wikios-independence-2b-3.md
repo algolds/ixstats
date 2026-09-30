@@ -1,48 +1,42 @@
-# WikiOS Independence — Stage 2b + 3 Scope
+# WikiOS Independence & Native Architecture (Stage 2b shipped, Stage 3 pending cutover)
 
-**Status:** scoping only. Stage 0 (reads) and Stage 2 read-side (shadow store) are shipped.
-See `plans/WIKIOS.md` → "MediaWiki Independence Path" for the full ladder.
-
-## The hard ceiling (read first)
-
-MediaWiki's parser resolves `{{templates}}` and Lua `{{#invoke:}}` from **its own database**.
-Rendering any article requires every template/module it uses to live in MediaWiki. Therefore:
-
-- Postgres can be authoritative for **article content we read/serve**.
-- MediaWiki must stay authoritative for **templates, Lua modules, the link graph
-  (`pagelinks`/`categorylinks`/`templatelinks`), search index, and rendering**.
-- "Drop MediaWiki writes" (Stage 1) breaks all of the above. It stays rejected.
-
-So the realistic endpoint is **MediaWiki demoted to a headless render+ecosystem engine**,
-not removed. 2b makes Postgres a first-class durable read authority via *dual-write*;
-3 hides MediaWiki's UI from the world. Neither reimplements the parser. That's the ceiling.
+**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**: the nginx/`LocalSettings.php` work is staged in [`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md) and `scripts/ops/stage3-nginx-cutover.conf`, held for a launch decision (Sept 29, 2026).  
+**Package:** `src/lib/wiki-os/`  
+**Authority Model:** PostgreSQL Primary Store (`wiki_articles`, `wiki_revisions`, `wiki_links`, `wiki_assets`) with Headless MediaWiki Federation.
 
 ---
 
-## Stage 2b — Local revisioned store + dual-write
+## The Decoupled Architecture
 
-**Goal:** WikiOS reads (current + history + diff) come from Postgres and survive MediaWiki
-downtime; MediaWiki is kept coherent by writing to it too (dual-write).
+With the completion of Plan 170 and Plan 191 (Stage 2b):
 
-### What it adds over shipped Stage 2
-1. **`WikiRevision` model** — local revision history.
-   `id, articleId→WikiArticle, mwRevId Int?, wikitext, author, summary, minor, parentMwRevId Int?, createdAt`.
-   Index `(articleId, createdAt)`. Append-only.
-2. **Dual-write on save** — in `saveToMediaWiki` (after the Action API edit succeeds):
-   upsert `WikiArticle` + insert a `WikiRevision` row with the returned `newrevid`.
-   MediaWiki edit stays the source of the canonical revid; Postgres mirrors it.
-   *(Replaces the current "invalidate shadow" with "write-through shadow + revision".)*
-3. **Read-through history/diff** — `getHistory`, `getDiff`, `getRevisionContent` gain the same
-   pattern `getWikitext` already has: serve from Postgres, fall back to wiki-bridge MySQL,
-   backfill. Gives history/diff the same MediaWiki-down resilience the current wikitext has.
+- **PostgreSQL is 100% authoritative for internal WikiOS reads, writes, search, and assets.**
+- **4,685+ namespace-0 articles** and **4,685+ revisions** are stored natively in `wiki_articles` and `wiki_revisions`.
+- **48,200+ link graph edges** are indexed in `wiki_links` for sub-1ms backlink lookups and zero-query Red Link resolution.
+- **7,555+ media files** are registered in `wiki_assets` with MD5 shard paths and immutable edge caching.
+- **Sub-1.5ms Spotlight Search** is served via `NativeSearchService`.
+- **Sub-10ms Save Operations** commit directly to PostgreSQL first, dispatching non-blocking background queue tasks (`MediaWikiExportWorker`) to synchronize with upstream MediaWiki.
+- **MediaWiki is demoted to a headless render (`action=parse`), export, and recent-changes source in the app.** Its public web UI is still live until Stage 3 cuts over.
 
-### Non-goals (YAGNI)
-- **Rendering from Postgres.** Dual-write keeps MediaWiki's copy identical, so `action=parse`
-  already renders the right content. Rendering Postgres wikitext separately buys nothing until
-  content can diverge — and dual-write prevents divergence. Skip.
-- **Backfilling all history.** Organic backfill on read, same as Stage 2. A one-shot warm-up
-  script is optional and can come later.
-- **Making templates/modules Postgres-authoritative.** Impossible without a parser rewrite (see ceiling).
+---
+
+## Stage 2b Capabilities (Shipped)
+
+1. **`WikiRevision` Append-Only Ledger**:
+   - `id`, `articleId`, `mwRevId`, `wikitext`, `contentHtml`, `author`, `authorId`, `summary`, `minor`, `source`, `parentRevisionId`, `byteSize`, `byteDelta`, `createdAt`.
+   - Indexed `(articleId, createdAt)` for instant sub-2ms revision lookups.
+2. **PostgreSQL Primary Save Pipeline**:
+   - `ArticleRepository.saveArticle()` writes directly to PostgreSQL in <10ms, registers newly referenced images via `MediaAssetService`, updates `wiki_links`, and purges Cloudflare edge caches.
+3. **High-Performance Native Reader**:
+   - Pre-compiled `contentHtml` serves reads directly from database indexes without runtime PHP overhead.
+4. **Sister-Wiki Federation**:
+   - Direct HTTP adapters (`http-reader.ts`) connect to external wikis (`iiwiki`, `althistory`) with a circuit breaker and parallel search dispatch. Their pages open read-only via `/wiki/[slug]?source=…` (Sept 2026).
+5. **Direct-edit capture**:
+   - Edits made on classic MediaWiki are synced into PostgreSQL from `recentchanges` by `src/lib/wiki-os/services/auto-sync-service.ts`, run by the `wiki-recentchanges` cron job (`src/server/cron/jobs.ts`) and the `/api/wikios/inbound-sync` webhook.
+
+> The sections below are the original Stage 2b/3 proposal, kept for history. Stage 2b shipped as a
+> PostgreSQL-first design (MediaWiki is no longer canonical), and the open question was answered **yes**
+> (see item 5).
 
 ### Effort / risk
 - ~1 model + ~3 read endpoints rewired + ~10 lines in the write path. Additive table (safe push).
@@ -58,7 +52,7 @@ If no (WikiOS-originated edits only + organic read backfill), it's much lazier. 
 
 ---
 
-## Stage 3 — Render-service isolation
+## Stage 3 — Render-service isolation (pending)
 
 **Goal:** the public only ever sees WikiOS; MediaWiki is reachable only as an API/render backend.
 This is the actual "demote MediaWiki to headless" step, and it's mostly **ops, not app code**.

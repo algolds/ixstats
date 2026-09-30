@@ -37,6 +37,7 @@ model VaultTransaction {
   source       String
   metadata     Json?
   createdAt    DateTime @default(now())
+  idempotencyKey String?  @unique // e.g. "passive:<userId>:<YYYY-MM-DD>"; NULL for ordinary rows
   vault        MyVault  @relation(fields: [vaultId], references: [id], onDelete: Cascade, map: "VaultTransaction_vaultId_fkey")
 
   @@index([vaultId, createdAt])

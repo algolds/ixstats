@@ -10,23 +10,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Badge } from "~/components/ui/badge";
 import type { ToastType, ToastPriority } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
 import {
   Shield,
-  DollarSign,
+  Dollar as DollarSign,
   Globe,
   Trophy,
-  Zap,
-  Sparkles,
-  AlertTriangle,
+  Flash as Zap,
+  Sparks as Sparkles,
+  WarningTriangle as AlertTriangle,
   ShieldAlert,
-  Award,
+  Trophy as Award,
   Play,
   Bell,
-  FlaskConical,
-} from "lucide-react";
+  Flask as FlaskConical,
+} from "iconoir-react";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },
@@ -356,7 +355,7 @@ export function TestSuitePanel() {
               <Shield className="mr-2 h-5 w-5 text-red-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Intelligence</div>
-                <div className="text-[10px] opacity-70">Critical alert</div>
+                <div className="text-xs opacity-70">Critical alert</div>
               </div>
             </Button>
             <Button
@@ -366,7 +365,7 @@ export function TestSuitePanel() {
               <DollarSign className="mr-2 h-5 w-5 text-green-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Economic</div>
-                <div className="text-[10px] opacity-70">GDP update</div>
+                <div className="text-xs opacity-70">GDP update</div>
               </div>
             </Button>
             <Button
@@ -376,7 +375,7 @@ export function TestSuitePanel() {
               <Globe className="mr-2 h-5 w-5 text-blue-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Diplomatic</div>
-                <div className="text-[10px] opacity-70">Treaty event</div>
+                <div className="text-xs opacity-70">Treaty event</div>
               </div>
             </Button>
             <Button
@@ -386,7 +385,7 @@ export function TestSuitePanel() {
               <Trophy className="mr-2 h-5 w-5 text-yellow-400" />
               <div className="text-left">
                 <div className="text-sm font-medium">Achievement</div>
-                <div className="text-[10px] opacity-70">Unlock test</div>
+                <div className="text-xs opacity-70">Unlock test</div>
               </div>
             </Button>
           </div>
@@ -434,11 +433,11 @@ export function TestSuitePanel() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Type</Label>
+                  <Label className="text-xs">Type</Label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as ToastType)}
-                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                   >
                     {TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -448,11 +447,11 @@ export function TestSuitePanel() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Priority</Label>
+                  <Label className="text-xs">Priority</Label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                   >
                     {PRIORITIES.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -463,11 +462,11 @@ export function TestSuitePanel() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Category</Label>
+                <Label className="text-xs">Category</Label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                  className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>

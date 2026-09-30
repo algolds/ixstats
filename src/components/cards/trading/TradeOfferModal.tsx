@@ -2,9 +2,15 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { motion } from "motion/react";
 import Image from "next/image";
-import { X, ArrowRightLeft, Coins, Send, AlertCircle, Search, User } from "lucide-react";
+import {
+  Xmark as X,
+  ArrowSeparate as ArrowRightLeft,
+  Coins,
+  Send,
+  WarningCircle as AlertCircle,
+  Search,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
   Dialog,
@@ -19,7 +25,7 @@ import { Textarea } from "~/components/ui/textarea";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 
 export interface TradeOfferModalProps {
@@ -208,6 +214,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
         prev.includes(cardId) ? prev.filter((id) => id !== cardId) : [...prev, cardId]
       );
     };
+    // oxlint-disable-next-line eslint/no-unused-vars
     const resetForm = () => {
       setStep(recipientId ? "cards" : "partner");
       setSelectedYourCards([]);
@@ -270,7 +277,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       setStep(s);
                     }}
                     className={cn(
-                      "rounded-full px-4 py-1.5 text-xs font-medium transition-all",
+                      "rounded-full px-4 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       step === s
                         ? "border border-blue-500/30 bg-blue-500/10 font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
                         : "text-slate-500 hover:bg-slate-100 dark:text-white/50 dark:hover:bg-white/5"
@@ -325,9 +332,9 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                           <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
                             {user.countryName || "Unknown"}
                           </p>
-                          <p className="truncate text-[10px] text-slate-400">{user.leader}</p>
+                          <p className="truncate text-xs text-slate-400">{user.leader}</p>
                         </div>
-                        <span className="shrink-0 rounded border border-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
+                        <span className="shrink-0 rounded border border-amber-500/20 px-1.5 py-0.5 text-xs font-bold text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
                           {user.economicTier}
                         </span>
                       </button>
@@ -368,7 +375,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       <button
                         type="button"
                         onClick={() => setStep("partner")}
-                        className="text-[10px] text-blue-500 hover:text-blue-600"
+                        className="text-xs text-blue-500 hover:text-blue-600"
                       >
                         Change
                       </button>
@@ -395,7 +402,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               type="button"
                               onClick={() => toggleYourCard(card.id)}
                               className={cn(
-                                "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-all",
+                                "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                                 selected
                                   ? "bg-blue-50 dark:bg-blue-500/10"
                                   : "hover:bg-slate-50 dark:hover:bg-white/5"
@@ -438,7 +445,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
                                 {card.title}
                               </span>
-                              <span className="shrink-0 font-mono text-[9px] text-slate-400">
+                              <span className="shrink-0 font-mono text-xs text-slate-400">
                                 {card.marketValue.toLocaleString()}
                               </span>
                             </button>
@@ -471,7 +478,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                 type="button"
                                 onClick={() => toggleTheirCard(card.id)}
                                 className={cn(
-                                  "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-all",
+                                  "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                                   selected
                                     ? "bg-green-50 dark:bg-green-500/10"
                                     : "hover:bg-slate-50 dark:hover:bg-white/5"
@@ -514,7 +521,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                 <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
                                   {card.title}
                                 </span>
-                                <span className="shrink-0 font-mono text-[9px] text-slate-400">
+                                <span className="shrink-0 font-mono text-xs text-slate-400">
                                   {card.marketValue.toLocaleString()}
                                 </span>
                               </button>
@@ -616,7 +623,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
                   {message && (
                     <div className="rounded-lg border border-slate-200 p-2 dark:border-white/10">
-                      <p className="text-[10px] text-slate-400">Message</p>
+                      <p className="text-xs text-slate-400">Message</p>
                       <p className="text-xs text-slate-800 dark:text-white/80">{message}</p>
                     </div>
                   )}

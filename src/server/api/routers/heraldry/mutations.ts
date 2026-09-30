@@ -142,32 +142,6 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
     }),
 
-  deleteAchievement: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.id} not found`,
-        });
-      }
-
-      if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to delete this achievement.",
-        });
-      }
-
-      return ctx.db.heraldryAchievement.delete({
-        where: { id: input.id },
-      });
-    }),
-
   importCommonsCharge: protectedProcedure
     .input(
       z.object({

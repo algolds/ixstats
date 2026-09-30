@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, Newspaper, Users } from "lucide-react";
+import { Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export type AccountType = "government" | "media" | "citizen";
@@ -72,9 +72,9 @@ export function AccountTypeSelector({
               key={typeKey}
               onClick={() => onSelectType(typeKey)}
               className={cn(
-                "flex items-start gap-3.5 rounded-2xl border p-4 text-left transition-all duration-150 active:scale-[0.98]",
+                "flex items-start gap-3.5 rounded-2xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                 isSelected
-                  ? "border-purple-500/50 bg-purple-500/10 shadow-lg shadow-purple-500/10"
+                  ? "border-blue-500/50 bg-blue-500/10 shadow-md"
                   : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"
               )}
             >
@@ -93,7 +93,7 @@ export function AccountTypeSelector({
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold tracking-tight text-white">{type.label}</span>
-                  <span className="text-[10px] font-semibold text-slate-400">
+                  <span className="text-xs font-semibold text-slate-400">
                     Max {type.maxAccounts} accounts
                   </span>
                 </div>
@@ -102,7 +102,7 @@ export function AccountTypeSelector({
                   {type.examples.map((ex, i) => (
                     <span
                       key={i}
-                      className="rounded-md border border-white/10 bg-black/40 px-2 py-0.5 text-[9px] font-medium text-slate-300"
+                      className="rounded-md border border-white/10 bg-black/40 px-2 py-0.5 text-xs font-medium text-slate-300"
                     >
                       {ex}
                     </span>
@@ -117,7 +117,8 @@ export function AccountTypeSelector({
       <div className="flex justify-end pt-2">
         <button
           onClick={onContinue}
-          className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-lg transition-all duration-150 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.96]"
+          data-cuelume-press="tick"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5 py-2 text-xs font-semibold shadow-xs transition-colors active:scale-[0.97]"
         >
           Next: Account Details →
         </button>

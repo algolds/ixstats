@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
-import { Sun, Moon, Sparkles, Bug } from "lucide-react";
+import { SunLight as Sun, HalfMoon as Moon, Sparks as Sparkles, Bug } from "iconoir-react";
 import { type LabConfig, type BgStyleType } from "./types";
 import { LabTemplates } from "./LabTemplates";
 
@@ -33,7 +33,7 @@ function getBgClasses(style: BgStyleType, theme: "light" | "dark") {
 }
 
 function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor: string) {
-  const gridColor = theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+  const _gridColor = theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
   const textColor = theme === "dark" ? "opacity-25" : "opacity-20";
 
   switch (style) {
@@ -56,7 +56,7 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
 
             <div
               className={cn(
-                "absolute inset-0 flex flex-col items-center justify-between px-6 py-12 font-mono text-[9px] tracking-widest uppercase",
+                "absolute inset-0 flex flex-col items-center justify-between px-6 py-12 font-mono text-xs tracking-widest uppercase",
                 textColor
               )}
             >
@@ -198,6 +198,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       element.removeEventListener("pointermove", handlePointerMove);
       element.removeEventListener("pointerleave", handlePointerLeave);
     };
+    // oxlint-disable-next-line
   }, [lightInteraction, template]);
 
   // Poll computed styles for debug panel
@@ -232,6 +233,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
     return () => cancelAnimationFrame(rafRef.current);
   }, [
     showDebug,
+    // oxlint-disable-next-line
     template,
     depth,
     material,
@@ -273,7 +275,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <button
             onClick={() => onChange({ simulatedTheme: "light" })}
             className={cn(
-              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-all",
+              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               simulatedTheme === "light"
                 ? "bg-background text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -285,7 +287,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <button
             onClick={() => onChange({ simulatedTheme: "dark" })}
             className={cn(
-              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-all",
+              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               simulatedTheme === "dark"
                 ? "bg-background text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -300,7 +302,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       {/* Live Interactive Rendering Canvas */}
       <div
         className={cn(
-          "relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-xl border p-12 transition-all duration-350",
+          "relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-xl border p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-350",
           getBgClasses(bgStyle, simulatedTheme)
         )}
         style={
@@ -317,7 +319,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <>
             {/* Background element — shifts backward with depth */}
             <div
-              className="pointer-events-none absolute z-[2] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[2] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${15 - dofStrength * 0.08}%`,
                 left: `${10 - dofStrength * 0.05}%`,
@@ -333,7 +335,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[2] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[2] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 bottom: `${12 - dofStrength * 0.06}%`,
                 right: `${8 - dofStrength * 0.04}%`,
@@ -351,7 +353,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
             {/* Foreground element — shifts forward with depth */}
             <div
-              className="pointer-events-none absolute z-[15] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[15] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${75 + dofStrength * 0.05}%`,
                 left: `${80 + dofStrength * 0.08}%`,
@@ -367,7 +369,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[15] transition-all duration-500 select-none"
+              className="pointer-events-none absolute z-[15] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${20 - dofStrength * 0.03}%`,
                 right: `${5 + dofStrength * 0.06}%`,
@@ -398,7 +400,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       <button
         onClick={() => setShowDebug(!showDebug)}
         className={cn(
-          "flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold transition-all",
+          "flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
           showDebug
             ? "bg-primary border-primary text-primary-foreground"
             : "bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground"
@@ -410,8 +412,8 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
       {/* Debug panel */}
       {showDebug && (
-        <div className="bg-background/80 border-border/20 space-y-2 rounded-xl border p-4 font-mono text-[10px] leading-relaxed backdrop-blur-sm">
-          <div className="text-muted-foreground mb-1.5 flex items-center gap-2 border-b pb-1.5 text-[9px] font-bold tracking-wider uppercase">
+        <div className="bg-background/80 border-border/20 space-y-2 rounded-xl border p-4 font-mono text-xs leading-relaxed backdrop-blur-sm">
+          <div className="text-muted-foreground mb-1.5 flex items-center gap-2 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
             <Bug className="h-3 w-3" />
             Computed CSS
             <span className="text-muted-foreground/50 ml-auto font-normal normal-case">live</span>
@@ -431,7 +433,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
             ))}
           </div>
           <div className="border-border/10 border-t pt-1.5">
-            <div className="text-muted-foreground mb-1 text-[9px] font-semibold tracking-wider uppercase">
+            <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
               Computed Styles
             </div>
             <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">

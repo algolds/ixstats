@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -35,36 +34,21 @@ import {
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+// oxlint-disable-next-line eslint/no-unused-vars
 import {
-  ChevronDown,
+  NavArrowDown as ChevronDown,
   Plus,
-  Edit2,
-  Trash2,
-  History,
-  Sparkles,
-  Cpu,
-  Crown,
-  BookOpen,
+  EditPencil as Edit2,
+  ClockRotateRight as History,
+  Sparks as Sparkles,
   Database,
-  TrendingUp,
-  Award,
-  Flame,
   Shield,
-  Star,
-  Zap,
-  Gift,
   Coins,
-  Heart,
-  Palette,
-  Wrench,
-  Gauge,
-  Lock,
-  Compass,
-  Trophy,
-  Loader2,
-  ToggleLeft,
-  ToggleRight,
-} from "lucide-react";
+  Dashboard as Gauge,
+  SystemRestart as Loader2,
+  SwitchOff as ToggleLeft,
+  SwitchOn as ToggleRight,
+} from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
 export function VaultStoreControl() {
@@ -72,7 +56,7 @@ export function VaultStoreControl() {
   const utils = api.useUtils();
 
   // Queries
-  const { data: items, isLoading, refetch } = api.vault.adminListStoreItemsAll.useQuery();
+  const { data: items, isLoading, refetch: _refetch } = api.vault.adminListStoreItemsAll.useQuery();
 
   // Dialog States
   const [isOpen, setIsOpen] = useState(false);
@@ -324,12 +308,12 @@ export function VaultStoreControl() {
                     </TableCell>
                     <TableCell>
                       <div className="text-foreground font-semibold">{item.name}</div>
-                      <div className="text-muted-foreground max-w-sm truncate text-[10px]">
+                      <div className="text-muted-foreground max-w-sm truncate text-xs">
                         {item.description || "No description provided."}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[10px] capitalize">
+                      <Badge variant="secondary" className="text-xs capitalize">
                         {item.category}
                       </Badge>
                     </TableCell>
@@ -337,7 +321,7 @@ export function VaultStoreControl() {
                       <div className="flex gap-1.5">
                         <Badge
                           variant="outline"
-                          className={`px-1.5 py-0 text-[9px] uppercase ${getQualityBadge(
+                          className={`px-1.5 py-0 text-xs uppercase ${getQualityBadge(
                             item.quality
                           )}`}
                         >
@@ -346,7 +330,7 @@ export function VaultStoreControl() {
                         {item.badgeText && (
                           <Badge
                             variant="outline"
-                            className="bg-slate-550/10 text-muted-foreground border-slate-500/20 px-1.5 py-0 text-[9px]"
+                            className="bg-slate-550/10 text-muted-foreground border-slate-500/20 px-1.5 py-0 text-xs"
                           >
                             {item.badgeText}
                           </Badge>
@@ -359,7 +343,7 @@ export function VaultStoreControl() {
                     <TableCell className="text-center">
                       <Badge
                         variant={item.isActive ? "default" : "secondary"}
-                        className={`text-[9px] ${
+                        className={`text-xs ${
                           item.isActive
                             ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/15"
                             : "border-slate-500/20 bg-slate-500/10 text-slate-400 hover:bg-slate-500/15"
@@ -555,7 +539,7 @@ export function VaultStoreControl() {
                                   setIconSearch("");
                                 }}
                                 className={cn(
-                                  "border-border/30 text-foreground hover:bg-muted/50 flex h-9 w-9 items-center justify-center rounded-lg border p-0 transition-all duration-150 hover:scale-105",
+                                  "border-border/30 text-foreground hover:bg-muted/50 flex h-9 w-9 items-center justify-center rounded-lg border p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105",
                                   isSelected
                                     ? "border-amber-500/50 bg-amber-500/15 text-amber-500"
                                     : "bg-background/20"
@@ -736,13 +720,13 @@ export function VaultStoreControl() {
                   <TableBody>
                     {priceHistory.map((hist: any) => (
                       <TableRow key={hist.id}>
-                        <TableCell className="text-muted-foreground text-[10px]">
+                        <TableCell className="text-muted-foreground text-xs">
                           {new Date(hist.changedAt).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs font-bold text-amber-500">
                           {hist.price.toLocaleString()} IxC
                         </TableCell>
-                        <TableCell className="text-muted-foreground max-w-[100px] truncate text-right text-[10px]">
+                        <TableCell className="text-muted-foreground max-w-[100px] truncate text-right text-xs">
                           {hist.adminId.substring(0, 8)}...
                         </TableCell>
                       </TableRow>

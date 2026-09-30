@@ -16,22 +16,22 @@
 
 import { lazy } from "react";
 import {
-  Building2,
+  City as Building2,
   MapPin,
-  LandPlot,
-  BookOpen,
-  Tag,
-  TrendingUp,
-  Users,
+  Map as LandPlot,
+  OpenBook as BookOpen,
+  Label as Tag,
+  StatUp as TrendingUp,
+  Group as Users,
   Network,
-  AlertTriangle,
-  Truck,
+  WarningTriangle as AlertTriangle,
+  DeliveryTruck as Truck,
   Activity,
-  Gauge,
+  Dashboard as Gauge,
   Heart,
-  Scale,
-  Flame,
-} from "lucide-react";
+  ScaleFrameEnlarge as Scale,
+  FireFlame as Flame,
+} from "iconoir-react";
 import type { FeatureCollection } from "geojson";
 import type {
   OverlayLegend,
@@ -354,6 +354,7 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
         routeData: data as FeatureCollection,
         visible,
         onRouteClick: onRouteClick ? (id: string) => onRouteClick(id) : undefined,
+        enableDeckGl: true,
       };
     },
     legend: TRANSPORT_LEGEND,

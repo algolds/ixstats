@@ -24,8 +24,7 @@ interface XFConversation {
   is_unread: boolean;
   recipient_count?: number;
   recipients?:
-    | Record<string, { user_id: number; username: string }>
-    | { user_id: number; username: string }[];
+    Record<string, { user_id: number; username: string }> | { user_id: number; username: string }[];
 }
 
 interface XFConversationMessage {

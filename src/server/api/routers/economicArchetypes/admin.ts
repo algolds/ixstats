@@ -7,10 +7,6 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
 
-// Import hardcoded fallback data
-import { modernArchetypes } from "~/lib/economy/archetypes/modern";
-import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
-
 /**
  * Parse JSON string fields back to objects
  * Transforms database representation to TypeScript interface
@@ -56,21 +52,6 @@ function parseArchetypeJSON(archetype: PrismaArchetype) {
 }
 
 /**
- * Get fallback archetypes from hardcoded data
- * Used when database is empty for graceful degradation
- */
-function getFallbackArchetypes(era: "modern" | "historical" | "all") {
-  console.warn("[economicArchetypes.ts] Database empty, using fallback hardcoded archetypes");
-
-  const modern = Array.from(modernArchetypes.values());
-  const historical = Array.from(historicalArchetypes.values());
-
-  if (era === "modern") return modern;
-  if (era === "historical") return historical;
-  return [...modern, ...historical];
-}
-
-/**
  * Zod schema for archetype creation/update
  * Validates input data structure
  */
@@ -111,10 +92,6 @@ const archetypeInputSchema = z.object({
 });
 
 export const economicArchetypesAdminRouter = createTRPCRouter({
-  // ============================================================================
-  // PUBLIC ENDPOINTS
-  // ============================================================================
-
   // ============================================================================
   // ADMIN ENDPOINTS
   // ============================================================================

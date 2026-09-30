@@ -146,15 +146,18 @@ export function useNationalIdentityState(
 
   // Event handlers - use refs to prevent recreation when inputs change
   const handleIdentityChange = useCallback(
-    (fieldOrFields: string | number | symbol | Record<string, any>, value?: any) => {
+    <K extends keyof NationalIdentityData>(
+      fieldOrFields: K | Partial<NationalIdentityData>,
+      value?: NationalIdentityData[K]
+    ) => {
       const currentInputs = inputsRef.current;
       const currentIdentity = currentInputs.nationalIdentity || identity;
 
-      let updatedFields: Record<string, any> = {};
+      let updatedFields: Partial<NationalIdentityData> = {};
       if (typeof fieldOrFields === "object" && fieldOrFields !== null) {
         updatedFields = fieldOrFields;
       } else {
-        updatedFields = { [fieldOrFields as string]: value };
+        updatedFields = { [fieldOrFields as K]: value } as Partial<NationalIdentityData>;
       }
 
       const newIdentity: NationalIdentityData = {
@@ -165,7 +168,7 @@ export function useNationalIdentityState(
       if ("drivingSide" in updatedFields) {
         newIdentity.drivingSide = updatedFields.drivingSide as "left" | "right";
       } else {
-        newIdentity.drivingSide = currentIdentity.drivingSide ?? ("right" as "left" | "right");
+        newIdentity.drivingSide = currentIdentity.drivingSide ?? "right";
       }
 
       if ("countryName" in updatedFields && updatedFields.countryName && !newIdentity.demonym) {
@@ -181,7 +184,9 @@ export function useNationalIdentityState(
         ...currentInputs,
         nationalIdentity: newIdentity,
         countryName:
-          "countryName" in updatedFields ? updatedFields.countryName : currentInputs.countryName,
+          "countryName" in updatedFields && updatedFields.countryName
+            ? updatedFields.countryName
+            : currentInputs.countryName,
       });
     },
     [identity]

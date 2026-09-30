@@ -3,8 +3,9 @@
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { buttonVariants } from "~/components/ui/button";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 function AlertDialog({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
@@ -41,13 +42,17 @@ function AlertDialogContent({
   children,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  React.useEffect(() => {
+    soundEffects.bloom();
+  }, []);
+
   return (
     <AlertDialogPortal>
       <AlertDialogBackdrop />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "bg-background fixed top-[50%] left-[50%] z-[100011] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg transition-all duration-150 ease-out outline-none sm:max-w-lg",
+          "bg-background fixed top-[50%] left-[50%] z-[100011] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out outline-none sm:max-w-lg",
           "data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
           className
         )}
@@ -126,12 +131,15 @@ function AlertDialogClose({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
+      data-cuelume-press="droplet"
       data-slot="alert-dialog-close"
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />
   );
 }
+
+const AlertDialogCancel = AlertDialogClose;
 
 export {
   AlertDialog,
@@ -145,4 +153,5 @@ export {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogClose,
+  AlertDialogCancel,
 };

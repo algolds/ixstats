@@ -1,9 +1,9 @@
-// src/components/media-search/UploadTab.tsx
 "use client";
+// src/components/media-search/UploadTab.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "~/lib/utils";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
@@ -141,7 +141,7 @@ export function UploadTab({
           onDrop={handleDrop}
           onClick={() => document.getElementById("drag-upload-input")?.click()}
           className={cn(
-            "flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-slate-100/50 p-10 text-center backdrop-blur-md transition-all dark:bg-white/5",
+            "flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-slate-100/50 p-10 text-center backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:bg-white/5",
             isDragging
               ? "border-blue-500 bg-blue-500/5 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
               : "border-border/40 hover:border-blue-400/50 hover:bg-slate-200/50 dark:hover:bg-white/10"
@@ -191,7 +191,7 @@ export function UploadTab({
       </div>
 
       {/* Requirements low-contrast subtle footer */}
-      <div className="border-border/5 text-muted-foreground mt-6 flex justify-between border-t pt-4 text-[10px]">
+      <div className="border-border/5 text-muted-foreground mt-6 flex justify-between border-t pt-4 text-xs">
         <span>Maximum size: 5MB</span>
         <span>Formats: PNG, JPG, GIF, WEBP, SVG</span>
         <span>Directly embeds in your content</span>

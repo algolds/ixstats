@@ -1,6 +1,7 @@
 import type { Country } from "@prisma/client";
 
-export type CountryWithEditorFields = Country & {
+// The editor query omits the heavy geo columns (countries/economy.ts HEAVY_COUNTRY_GEO_OMIT).
+export type CountryWithEditorFields = Omit<Country, "geometry" | "centroid" | "boundingBox"> & {
   nationalIdentity?: any;
   calculatedStats?: {
     currentPopulation: number;

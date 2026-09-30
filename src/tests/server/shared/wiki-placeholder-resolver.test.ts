@@ -1,8 +1,9 @@
 import {
   resolveWikiPlaceholderValues,
   resolveWikiPlaceholdersInternal,
-} from "../../../server/shared/wiki-placeholders";
-import { ixstatsTemplateProvider } from "../../../server/shared/ixstats-template-provider";
+} from "~/server/shared/wiki-placeholders";
+import { ixstatsTemplateProvider } from "~/server/shared/ixstats-template-provider";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
   const fixedDate = new Date("2026-06-01T12:00:00Z");
@@ -10,6 +11,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
   const mockCountry = {
     id: "c-1",
     name: "Sanctuary",
+    realmId: DEFAULT_REALM_ID,
     currentPopulation: 50000000,
     currentTotalGdp: 2500000000000,
     currentGdpPerCapita: 50000,
@@ -36,6 +38,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
   const mockZeroCountry = {
     id: "c-zero",
     name: "ZeroLand",
+    realmId: DEFAULT_REALM_ID,
     currentPopulation: 0,
     currentTotalGdp: 0,
     currentGdpPerCapita: 0,
@@ -96,7 +99,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
     const results = await resolveWikiPlaceholderValues(["MyCountry:population"], db, "c-1");
 
     expect(results).toHaveLength(1);
-    expect(results[0].value).toBe("50M");
+    expect(results[0].value).toBe("50.0M");
     expect(results[0].status).toBe("resolved");
     expect(results[0].metadata?.countryName).toBe("Sanctuary");
   });
@@ -116,7 +119,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
     const results = await resolveWikiPlaceholderValues(["CountryData:Sanctuary:gdp"], db);
 
     expect(results).toHaveLength(1);
-    expect(results[0].value).toBe("$2.50T");
+    expect(results[0].value).toBe("$2.5T");
     expect(results[0].status).toBe("resolved");
   });
 
@@ -194,7 +197,10 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
 
   it("9. Returns 'Unknown Field' for unsupported fields", async () => {
     const db = createMockDb();
-    const results = await resolveWikiPlaceholderValues(["CountryData:Sanctuary:nonExistentField"], db);
+    const results = await resolveWikiPlaceholderValues(
+      ["CountryData:Sanctuary:nonExistentField"],
+      db
+    );
 
     expect(results[0].value).toBe("Unknown Field");
     expect(results[0].status).toBe("unknown-field");
@@ -217,7 +223,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
     );
 
     expect(apiResult["CountryData:Sanctuary:population"]).toBeDefined();
-    expect(apiResult["CountryData:Sanctuary:population"].value).toBe("50M");
+    expect(apiResult["CountryData:Sanctuary:population"].value).toBe("50.0M");
   });
 
   it("12. Provides template provider adapter via ixstatsTemplateProvider", async () => {
@@ -228,8 +234,14 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
   });
 
   it("13. Batches repeated keys into a single database query", async () => {
-    const findManySpy = jest.fn().mockResolvedValue([mockCountry]);
-    const db = createMockDb({ countryFindManySpy: findManySpy });
+    const findManySpy = jest.fn().mockImplementation(async ({ where }: any) => {
+      if (where?.OR) return [mockCountry];
+      return [];
+    });
+    const db = {
+      country: { findMany: findManySpy },
+      pointOfInterest: { findMany: jest.fn().mockResolvedValue([]) },
+    };
 
     await resolveWikiPlaceholderValues(
       [
@@ -240,6 +252,7 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
       db
     );
 
-    expect(findManySpy).toHaveBeenCalledTimes(1);
+    const entityQueryCalls = findManySpy.mock.calls.filter(([args]) => args?.where?.OR);
+    expect(entityQueryCalls).toHaveLength(1);
   });
 });

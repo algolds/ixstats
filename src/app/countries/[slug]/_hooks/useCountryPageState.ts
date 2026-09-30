@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { unsplashService } from "~/lib/media";
-import type { CountryInfobox } from "~/types/dossier";
 import type { BannerMode, ProfileTabType, BaseCountryData } from "../_types";
 
 export type { BannerMode, ProfileTabType as TabType };
 
-function getBannerPref(countryId: string): { mode: BannerMode; customUrl?: string } {
-  if (typeof window === "undefined") return { mode: "dynamic" };
+function getBannerPref(countryId?: string): { mode: BannerMode; customUrl?: string } {
+  if (typeof window === "undefined" || !countryId) return { mode: "dynamic" };
   try {
     const raw = localStorage.getItem(`banner-pref-${countryId}`);
     if (raw) return JSON.parse(raw) as { mode: BannerMode; customUrl?: string };
@@ -19,7 +18,7 @@ function getBannerPref(countryId: string): { mode: BannerMode; customUrl?: strin
 }
 
 function saveBannerPref(countryId: string, pref: { mode: BannerMode; customUrl?: string }): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !countryId) return;
   try {
     localStorage.setItem(`banner-pref-${countryId}`, JSON.stringify(pref));
   } catch {
@@ -30,15 +29,12 @@ function saveBannerPref(countryId: string, pref: { mode: BannerMode; customUrl?:
 export interface UseCountryPageStateReturn {
   activeTab: ProfileTabType;
   setActiveTab: (tab: ProfileTabType) => void;
-  isMounted: boolean;
   showGdpPerCapita: boolean;
   showFullPopulation: boolean;
   showCountryActions: boolean;
   setShowCountryActions: React.Dispatch<React.SetStateAction<boolean>>;
   toggleGdpDisplay: () => void;
   togglePopulationDisplay: () => void;
-  wikiInfobox: CountryInfobox | null;
-  wikiIntro: string[];
   unsplashImageUrl: string | undefined;
   bannerMode: BannerMode;
   customBannerUrl: string | undefined;
@@ -53,30 +49,22 @@ export function useCountryPageState(
 ): UseCountryPageStateReturn {
   // Tab management
   const [activeTab, setActiveTab] = useState<ProfileTabType>("overview");
-  const [isMounted, setIsMounted] = useState(false);
 
   // Display toggles
   const [showGdpPerCapita, setShowGdpPerCapita] = useState(true);
   const [showFullPopulation, setShowFullPopulation] = useState(true);
   const [showCountryActions, setShowCountryActions] = useState(false);
 
-  // Wiki data — managed directly by useMyCountryMetrics via api.wikiCache.getCountryProfile
-  const wikiInfobox: CountryInfobox | null = null;
-  const wikiIntro: string[] = [];
-
   // Image data
   const [unsplashImageUrl, setUnsplashImageUrl] = useState<string | undefined>();
 
-  // Banner mode
-  const [bannerMode, setBannerModeState] = useState<BannerMode>("dynamic");
-  const [customBannerUrl, setCustomBannerUrl] = useState<string | undefined>();
+  // Banner mode with lazy init
+  const [bannerMode, setBannerModeState] = useState<BannerMode>(() => getBannerPref(country?.id).mode);
+  const [customBannerUrl, setCustomBannerUrl] = useState<string | undefined>(
+    () => getBannerPref(country?.id).customUrl
+  );
 
-  // Prevent hydration issues
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Load banner preference from localStorage
+  // Sync preference if country changes
   useEffect(() => {
     if (country?.id) {
       const pref = getBannerPref(country.id);
@@ -95,9 +83,9 @@ export function useCountryPageState(
     [country?.id]
   );
 
-  // Load Unsplash header image
+  // Optional contextual header image loading with graceful fallback
   useEffect(() => {
-    if (country && !unsplashImageUrl) {
+    if (country && !unsplashImageUrl && typeof window !== "undefined") {
       unsplashService
         .getCountryHeaderImage(
           country.economicTier,
@@ -106,13 +94,14 @@ export function useCountryPageState(
           country.continent || undefined
         )
         .then((imageData) => {
-          setUnsplashImageUrl(imageData.url);
-          if (imageData.downloadUrl) {
-            void unsplashService.trackDownload(imageData.downloadUrl);
+          if (imageData?.url) {
+            setUnsplashImageUrl(imageData.url);
+            if (imageData.downloadUrl) {
+              void unsplashService.trackDownload(imageData.downloadUrl);
+            }
           }
         })
-        .catch((error) => {
-          console.warn("Failed to load Unsplash image:", error);
+        .catch(() => {
           setUnsplashImageUrl(undefined);
         });
     }
@@ -130,7 +119,6 @@ export function useCountryPageState(
     // Tab state
     activeTab,
     setActiveTab,
-    isMounted,
 
     // Display toggles
     showGdpPerCapita,
@@ -139,10 +127,6 @@ export function useCountryPageState(
     setShowCountryActions,
     toggleGdpDisplay,
     togglePopulationDisplay,
-
-    // Wiki data
-    wikiInfobox,
-    wikiIntro,
 
     // Image data
     unsplashImageUrl,

@@ -9,7 +9,10 @@
  * Runs as a cron job in production.
  */
 
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { db as sharedDb } from "~/server/db";
+import { withJobLock } from "~/lib/system/job-lock";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 import { DOMParser } from "@xmldom/xmldom";
@@ -217,7 +220,7 @@ function getDiscordAvatarUrl(author: DiscordMessage["author"]): string | null {
 function formatPostContent(message: DiscordMessage): string {
   let content = message.content.trim();
   // Match a bold block at the start of the message: **header**
-  const headerMatch = content.match(/^\*\*([^\*]+?)\*\*/);
+  const headerMatch = content.match(/^\*\*([^*]+?)\*\*/);
   if (headerMatch) {
     const headerText = headerMatch[1] || "";
     // If it looks like a profile header (contains @ or :verified:)
@@ -231,8 +234,9 @@ function formatPostContent(message: DiscordMessage): string {
 
 async function loadCountryIdCache(db: PrismaClient) {
   const countryNames = Array.from(new Set(Object.values(DISCORD_COUNTRY_MAP)));
+  // The Discord map names IxWorld nations; names repeat across realms (ruling E-p).
   const countries = await db.country.findMany({
-    where: { name: { in: countryNames } },
+    where: { realmId: DEFAULT_REALM_ID, name: { in: countryNames } },
     select: { name: true, id: true },
   });
   for (const c of countries) {
@@ -364,6 +368,7 @@ async function getOrCreateHandleAccount(
   }
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 async function getOrCreateBotAccount(db: PrismaClient) {
   let botAccount = await db.thinkpagesAccount.findUnique({
     where: { username: "ixtwitter_bot" },
@@ -631,8 +636,15 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
     return { posted: 0, skipped: 0 };
   }
 
-  const db = new PrismaClient();
+  // Cross-process single-flight (plan 328): the poller ticks every 5 min with no
+  // guard of its own, so a slow sync must skip rather than overlap the next tick.
+  const outcome = await withJobLock(sharedDb, "ixtwitter-sync", () => runIxTwitterSync(sharedDb), {
+    timeoutMs: 10 * 60_000,
+  });
+  return outcome.ran ? outcome.result : { posted: 0, skipped: 0 };
+}
 
+async function runIxTwitterSync(db: PrismaClient): Promise<{ posted: number; skipped: number }> {
   try {
     await loadCountryIdCache(db);
 
@@ -697,8 +709,6 @@ export async function syncIxTwitterToThinkPages(): Promise<{ posted: number; ski
   } catch (error) {
     console.error("[DiscordPoster] Sync failed:", error);
     return { posted: 0, skipped: 0 };
-  } finally {
-    await db.$disconnect();
   }
 }
 
@@ -712,7 +722,7 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
     return { posted: 0, skipped: 0, alreadyPosted: 0 };
   }
 
-  const db = new PrismaClient();
+  const db = sharedDb;
 
   try {
     await loadCountryIdCache(db);
@@ -724,6 +734,7 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
     const postedIds = await getPostedMessageIds(db);
     console.log(`[DiscordPoster] Found ${postedIds.size} already-posted message IDs`);
 
+    // oxlint-disable-next-line typescript/no-unused-vars
     const validMessages = allMessages
       .filter((m) => !m.author.bot && m.content.trim().length > 0 && !postedIds.has(m.id))
       .reverse();
@@ -787,8 +798,6 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
   } catch (error) {
     console.error("[DiscordPoster] Backfill failed:", error);
     return { posted: 0, skipped: 0, alreadyPosted: 0 };
-  } finally {
-    await db.$disconnect();
   }
 }
 
@@ -1266,12 +1275,10 @@ export function htmlToDiscordMarkdown(html: string): string {
 
   try {
     const parser = new DOMParser({
-      errorHandler: {
-        warning: () => {},
-        error: () => {},
-        fatalError: (err) => {
-          throw err;
-        },
+      onError: (level, message) => {
+        if (level === "fatalError") {
+          throw new Error(message);
+        }
       },
     });
 

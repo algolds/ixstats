@@ -16,6 +16,7 @@ import { IxTime } from "~/lib/ixtime";
 import { NationalIssuesEngine } from "~/lib/national-issues";
 import { getNationalIssuesConfig } from "~/lib/national-issues";
 import type { Category } from "~/lib/intent/assemble";
+import type { PrismaClient } from "@prisma/client";
 
 const IX_TIME_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -34,7 +35,7 @@ export const INTENT_CATEGORY_TO_TEMPLATE: Record<Category, string[]> = {
 };
 
 export interface SpawnIntentResistanceParams {
-  db: any;
+  db: PrismaClient;
   countryId: string;
   intent: {
     id: string;
@@ -64,10 +65,18 @@ export async function spawnResistanceForIntent({
 }: SpawnResistanceForIntentParams): Promise<string | null> {
   if (!tokens || tokens.length === 0) return null;
 
+  const validCategoryEnums = tokens.filter((t): t is any =>
+    ["economic", "diplomatic", "social", "governance", "security", "infrastructure"].includes(t)
+  );
+  const orConditions: any[] = [{ domain: { in: tokens } }];
+  if (validCategoryEnums.length > 0) {
+    orConditions.push({ category: { in: validCategoryEnums } });
+  }
+
   const templates = await db.nationalIssueTemplate.findMany({
     where: {
       isActive: true,
-      OR: [{ domain: { in: tokens } }, { category: { in: tokens } }],
+      OR: orConditions,
     },
     orderBy: { baseUrgency: "desc" },
   });

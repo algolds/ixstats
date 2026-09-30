@@ -6,33 +6,13 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { parseRosterFile } from "~/lib/wiki-os/adapters/ixstates/roster-parser";
+import { parseRosterFile } from "~/lib/admin/roster-parser";
 import type { ImportAnalysis, BaseCountryData } from "~/types/ixstats";
 import { generateSlug } from "~/lib/utils";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
 export const adminCountriesImportRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
-  // Get bot status with health check
-
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
-  // Bot control operations
-
-  // Get calculation logs
-
   // Analyze import file
   analyzeImport: adminProcedure
     .input(
@@ -50,9 +30,10 @@ export const adminCountriesImportRouter = createTRPCRouter({
           throw new Error("No valid countries found in the file");
         }
 
-        // Check for existing countries
+        // Check for existing countries (the roster is IxWorld's; names repeat across realms)
         const existingCountries = await ctx.db.country.findMany({
           where: {
+            realmId: DEFAULT_REALM_ID,
             name: { in: countries.map((c) => c.country) },
           },
           select: {
@@ -180,7 +161,9 @@ export const adminCountriesImportRouter = createTRPCRouter({
         return analysis;
       } catch (error) {
         console.error("Failed to analyze import:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file");
+        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file", {
+          cause: error,
+        });
       }
     }),
 
@@ -215,9 +198,10 @@ export const adminCountriesImportRouter = createTRPCRouter({
         if (countries.length === 0) {
           throw new Error("No valid countries found in the file");
         }
-        // Get all existing countries by name
+        // Get all existing IxWorld countries by name (never another realm's same-name nation)
         const existingCountries = await ctx.db.country.findMany({
           where: {
+            realmId: DEFAULT_REALM_ID,
             name: { in: countries.map((c) => c.country) },
           },
         });
@@ -388,51 +372,4 @@ export const adminCountriesImportRouter = createTRPCRouter({
         });
       }
     }),
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
-  // Event Chains
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
 });
-
-// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"

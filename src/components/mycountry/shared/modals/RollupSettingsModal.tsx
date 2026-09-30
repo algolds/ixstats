@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { BarChart3, Loader2, RefreshCw, Settings } from "lucide-react";
+import {
+  StatsReport as BarChart3,
+  SystemRestart as Loader2,
+  Refresh as RefreshCw,
+  Settings,
+} from "iconoir-react";
 import {
   Dialog,
   DialogContent,
@@ -74,14 +79,14 @@ export function RollupSettingsModal({
               </div>
               <div>
                 <div className="text-foreground text-xs font-semibold">Geographic Rollups</div>
-                <div className="text-muted-foreground text-[10px]">
+                <div className="text-muted-foreground text-xs">
                   Mode: {geoRollupMode} · Pop {popPct}% · GDP {gdpPct}%
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               <span
-                className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] font-medium ${coverageTone}`}
+                className={`rounded-full px-1.5 py-0.5 font-mono text-xs font-medium ${coverageTone}`}
               >
                 {worst}%
               </span>
@@ -96,7 +101,7 @@ export function RollupSettingsModal({
             <BarChart3 className="h-4 w-4" />
             Geographic Rollups & Reconciliation
           </DialogTitle>
-          <DialogDescription className="text-[11px]">
+          <DialogDescription className="text-xs">
             Choose how city + subdivision data should reconcile against national totals.
           </DialogDescription>
         </DialogHeader>
@@ -173,12 +178,12 @@ function RollupBody({
       <div className="space-y-2">
         <CoverageMeter label="Population coverage" percent={popPct} />
         <CoverageMeter label="GDP coverage" percent={gdpPct} />
-        <div className="text-muted-foreground/70 text-[10px]">
+        <div className="text-muted-foreground/70 text-xs">
           City pop: {rollups.cityPopulationSum.toLocaleString()} · Sub pop:{" "}
           {rollups.subdivisionPopulationSum.toLocaleString()} · National:{" "}
           {nationalPopulation.toLocaleString()}
         </div>
-        <div className="text-muted-foreground/70 text-[10px]">
+        <div className="text-muted-foreground/70 text-xs">
           City GDP: {Math.round(rollups.cityGdpContributionSum).toLocaleString()} · Sub GDP:{" "}
           {Math.round(rollups.subdivisionGdpContributionSum).toLocaleString()} · National:{" "}
           {Math.round(nationalGdp).toLocaleString()}
@@ -187,7 +192,7 @@ function RollupBody({
 
       {/* Rollup mode selector */}
       <div className="space-y-1.5">
-        <label className="text-muted-foreground text-[10px] font-medium uppercase">
+        <label className="text-muted-foreground text-xs font-medium uppercase">
           Rollup Mode
         </label>
         <div className="bg-accent/50 flex rounded-lg p-0.5">
@@ -196,7 +201,7 @@ function RollupBody({
               key={m}
               onClick={() => handleModeChange(m)}
               disabled={updateMode.isPending}
-              className={`flex-1 rounded-md px-2 py-1.5 text-[10px] font-medium transition-colors ${
+              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                 mode === m
                   ? "bg-background text-foreground ring-border shadow-sm ring-1"
                   : "text-muted-foreground hover:text-foreground"
@@ -213,7 +218,7 @@ function RollupBody({
             </button>
           ))}
         </div>
-        <p className="text-muted-foreground/60 text-[10px]">
+        <p className="text-muted-foreground/60 text-xs">
           {mode === "hybrid"
             ? "Sim baseline; geography rolls up as-is."
             : mode === "top-down"
@@ -238,11 +243,11 @@ function RollupBody({
 
       {/* Demographic Redistribution */}
       <div className="border-border/60 my-2 space-y-3 border-t pt-3">
-        <div className="text-foreground flex items-center gap-1 text-[11px] font-semibold">
+        <div className="text-foreground flex items-center gap-1 text-xs font-semibold">
           <Settings className="h-3.5 w-3.5" />
           Demographic Redistribution
         </div>
-        <p className="text-muted-foreground/60 text-[10px]">
+        <p className="text-muted-foreground/60 text-xs">
           Auto-assign populations and GDP to cities within each subdivision based on their
           province's totals and weights.
         </p>
@@ -257,7 +262,7 @@ function RollupBody({
           />
           <label
             htmlFor="scaleExisting"
-            className="text-muted-foreground cursor-pointer text-[10px] font-medium select-none"
+            className="text-muted-foreground cursor-pointer text-xs font-medium select-none"
           >
             Scale existing populations proportionally (if non-zero)
           </label>
@@ -286,12 +291,12 @@ function CoverageMeter({ label, percent }: { label: string; percent: number }) {
   const color = clamped >= 100 ? "bg-emerald-500" : clamped >= 50 ? "bg-amber-500" : "bg-red-500";
   return (
     <div>
-      <div className="text-muted-foreground flex items-center justify-between text-[10px]">
+      <div className="text-muted-foreground flex items-center justify-between text-xs">
         <span>{label}</span>
         <span className="text-foreground/80 font-mono">{clamped}%</span>
       </div>
       <div className="bg-muted/30 mt-0.5 h-1.5 overflow-hidden rounded-full">
-        <div className={`${color} h-full transition-all`} style={{ width: `${clamped}%` }} />
+        <div className={`${color} h-full transition-[color,background-color,border-color,box-shadow,opacity,transform]`} style={{ width: `${clamped}%` }} />
       </div>
     </div>
   );

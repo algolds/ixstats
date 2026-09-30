@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { adminProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
-import type { Geometry } from "geojson";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import {
   buildGeoProfile,
@@ -16,10 +16,14 @@ import { estimateBboxOverlap } from "./geometry";
 
 export const adminOpsProcedures = {
   recalculateArea: adminProcedure
-    .input(z.object({ featureId: z.string() }))
+    .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
       const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId },
+        where: {
+          layerType: "political",
+          featureId: input.featureId,
+          realmId: await viewerRealmId(ctx, input.realm),
+        },
       });
 
       if (!mapLayer) {
@@ -62,26 +66,6 @@ export const adminOpsProcedures = {
       });
     }),
 
-  /**
-   * Admin: Bulk recalculate areas for all political features.
-   */
-  recalculateAllAreas: adminProcedure.mutation(async ({ ctx }) => {
-    try {
-      const result = await ctx.db.$executeRawUnsafe(`
-        UPDATE map_layers
-        SET "areaSqKm" = ST_Area(geom_postgis::geography) / 1000000.0
-        WHERE "layerType" = 'political'
-          AND geom_postgis IS NOT NULL
-      `);
-      return { updated: result };
-    } catch {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "PostGIS bulk area recalculation failed",
-      });
-    }
-  }),
-
   // ──────────────────────────────────────────────
   // User map editor endpoints (country owners)
   // ──────────────────────────────────────────────
@@ -116,6 +100,7 @@ export const adminOpsProcedures = {
               geometry: true,
               centroid: true,
               boundingBox: true,
+              realmId: true,
             },
           });
 
@@ -131,10 +116,11 @@ export const adminOpsProcedures = {
             (profileResult.areaSqMi ? profileResult.areaSqMi / 0.386102 : 0);
           const bbox = profileResult.boundingBox as [number, number, number, number] | null;
 
-          // Get climate/altitude layers for this country's bbox
+          // Get climate/altitude layers (the country's own realm's) for this country's bbox
+          const realmId = profileResult.realmId;
           const [climateLayers, altitudeLayers] = await Promise.all([
             ctx.db.mapLayer.findMany({
-              where: { layerType: "climate", isActive: true },
+              where: { layerType: "climate", isActive: true, realmId },
               select: {
                 featureId: true,
                 geometry: true,
@@ -144,7 +130,7 @@ export const adminOpsProcedures = {
               },
             }),
             ctx.db.mapLayer.findMany({
-              where: { layerType: "altitudes", isActive: true },
+              where: { layerType: "altitudes", isActive: true, realmId },
               select: { featureId: true, geometry: true, properties: true, areaSqKm: true },
             }),
           ]);
@@ -182,7 +168,9 @@ export const adminOpsProcedures = {
               agricultureFactor: getAgricultureFactor(climateName),
             });
           }
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           const totalClimateArea = climateDistribution.reduce((s, z) => s + z.areaSqKm, 0);
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           for (const z of climateDistribution) {
             z.percentArea =
               totalClimateArea > 0
@@ -227,7 +215,9 @@ export const adminOpsProcedures = {
               });
             }
           }
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           const totalElevArea = elevationProfile.reduce((s, z) => s + z.areaSqKm, 0);
+          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
           for (const z of elevationProfile) {
             z.percentArea =
               totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
@@ -295,11 +285,4 @@ export const adminOpsProcedures = {
 
       return { processed, failed, total: countries.length, errors: errors.slice(0, 20) };
     }),
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
-
-  /**
-   * 4.5 — Choropleth: Return per-country metric values with geometries
-   * for data-driven fill coloring on the map.
-   */
 };

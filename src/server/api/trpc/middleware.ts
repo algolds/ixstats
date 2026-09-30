@@ -8,6 +8,7 @@ import { rateLimiter } from "~/lib/cache";
 import { db, isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
+import { touchLastSeen } from "./last-seen";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -17,6 +18,7 @@ import {
   SecurityError,
 } from "~/lib/app-error";
 import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/cache";
+import { ALL_REALMS, DEFAULT_REALM_ID, realmScopeInput } from "~/lib/realms/realm-ids";
 
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 
@@ -57,6 +59,8 @@ export const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
     );
   }
 
+  touchLastSeen(ctx.db, ctx.user);
+
   return next({
     ctx: {
       ...ctx,
@@ -74,6 +78,10 @@ export const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) =
     throw new Error("UNAUTHORIZED: Authentication required");
   }
 
+  // No impersonation-specific handling needed here: while playing as another user this
+  // evaluates the *target* (the intended play-as behavior), `ctx.auth.userId` is the target's ID
+  // (impersonation.ts rebuilds `auth` without spreading), and decidePlayAs already guarantees the
+  // target cannot outrank the impersonator or carry the impersonator's session claims.
   const userRole = getRoleName(ctx.user, (ctx.auth as any)?.sessionClaims);
   const isAdmin = isPrivilegedCountryWriter(ctx.auth.userId, userRole);
   if (isAdmin) {
@@ -138,7 +146,10 @@ export const createRateLimitMiddleware = (options: RateLimitOptions) => {
     const identifier = ctx.rateLimitIdentifier;
     const namespace = options.namespace || "default";
 
-    const result = await rateLimiter.check(identifier, namespace);
+    const result = await rateLimiter.check(identifier, namespace, {
+      maxRequests: options.max,
+      windowMs: options.windowMs,
+    });
 
     if (!result.success) {
       console.warn(
@@ -167,15 +178,25 @@ export const rateLimitMiddleware = createRateLimitMiddleware({
   namespace: "default",
 });
 
-export const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+/**
+ * Audit log for admin procedures (applied in `adminProcedure`, after the admin check).
+ *
+ * tRPC v11 `next()` resolves `{ ok: false, error }` instead of throwing when the procedure fails,
+ * so the outcome is read from the result; a throw is still handled for safety. Every admin
+ * mutation, every failed call and every HIGH-sensitivity path is written to `AuditLog`
+ * (skipped in read-only mode). The IP comes from trusted headers only (see
+ * resolveRateLimitIdentifier), never the client-controlled `x-forwarded-for`.
+ */
+export const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input, type }) => {
   const startTime = Date.now();
-  let result;
-  let error = null;
+  let result: Awaited<ReturnType<typeof next>> | undefined;
+  let thrown: unknown = null;
 
   try {
     result = await next();
+    return result;
   } catch (err) {
-    error = err as Error;
+    thrown = err;
     throw err;
   } finally {
     const endTime = Date.now();
@@ -184,71 +205,85 @@ export const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }
       console.log(`[TRPC] ${path} took ${duration}ms to execute`);
     }
 
-    const shouldAudit =
-      path.includes("execute") ||
-      path.includes("Action") ||
-      path.includes("executive") ||
-      path.includes("Intelligence") ||
-      path.includes("sensitive") ||
-      error;
+    const failure: unknown = thrown ?? (result && !result.ok ? result.error : null);
+    const failed = failure !== null && failure !== undefined;
+    const errorMessage = failed
+      ? failure instanceof Error
+        ? failure.message
+        : String(failure)
+      : null;
+    const isMutation = type === "mutation";
 
-    if (shouldAudit) {
-      const auditEntry = {
-        timestamp: new Date().toISOString(),
-        userId: ctx.auth?.userId || "anonymous",
-        action: path,
-        method: "tRPC",
-        success: !error,
-        duration: endTime - startTime,
-        errorMessage: error?.message || null,
-        countryId: (input as any)?.countryId || ctx.user?.countryId || null,
-        userAgent: ctx.headers?.get("user-agent")?.slice(0, 200) || null,
-        ip: ctx.headers?.get("x-forwarded-for") || ctx.headers?.get("x-real-ip") || null,
-        inputSummary: input ? Object.keys(input as object).join(",") : null,
-        securityLevel: path.includes("execute")
-          ? "HIGH"
-          : path.includes("Intelligence")
-            ? "MEDIUM"
-            : "LOW",
-        impersonatorId: (ctx as any).impersonatorId || null,
-      };
+    const securityLevel = path.includes("execute")
+      ? "HIGH"
+      : isMutation
+        ? "MEDIUM"
+        : path.includes("Intelligence")
+          ? "MEDIUM"
+          : "LOW";
 
-      if (auditEntry.securityLevel === "HIGH" || error) {
+    const shouldPersist = isMutation || failed || securityLevel === "HIGH";
+
+    const auditEntry = {
+      timestamp: new Date().toISOString(),
+      userId: ctx.auth?.userId || "anonymous",
+      action: path,
+      method: "tRPC",
+      type,
+      success: !failed,
+      duration,
+      errorMessage,
+      countryId: (input as any)?.countryId || ctx.user?.countryId || null,
+      userAgent: ctx.headers?.get("user-agent")?.slice(0, 200) || null,
+      ip: ctx.headers?.get("cf-connecting-ip") || ctx.headers?.get("x-real-ip") || null,
+      inputSummary:
+        input && typeof input === "object" ? Object.keys(input as object).join(",") : null,
+      securityLevel,
+      impersonatorId: (ctx as any).impersonatorId || null,
+    };
+
+    if (shouldPersist) {
+      if (failed || securityLevel === "HIGH") {
         console.error("[SECURITY_AUDIT]", auditEntry);
-
-        if (!isDatabaseReadOnly) {
-          try {
-            await ctx.db.auditLog.create({
-              data: {
-                userId: auditEntry.userId || "anonymous",
-                action: auditEntry.action,
-                details: JSON.stringify({
-                  method: auditEntry.method,
-                  duration: auditEntry.duration,
-                  securityLevel: auditEntry.securityLevel,
-                  ip: auditEntry.ip,
-                  userAgent: auditEntry.userAgent,
-                  inputSummary: auditEntry.inputSummary,
-                  impersonatorId: auditEntry.impersonatorId,
-                }),
-                success: auditEntry.success,
-                error: auditEntry.errorMessage,
-                timestamp: new Date(),
-              },
-            });
-          } catch (dbError) {
-            console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
-          }
-        } else if (VERBOSE) {
-          console.log("[AUDIT_DB] Skipping database write (read-only mode)");
-        }
       } else if (VERBOSE) {
         console.log("[AUDIT]", auditEntry);
       }
+
+      if (!isDatabaseReadOnly) {
+        try {
+          await ctx.db.auditLog.create({
+            data: {
+              userId: auditEntry.userId,
+              action: auditEntry.action,
+              entityType: "trpc_admin",
+              ipAddress: auditEntry.ip,
+              userAgent: auditEntry.userAgent,
+              details: JSON.stringify({
+                method: auditEntry.method,
+                type: auditEntry.type,
+                duration: auditEntry.duration,
+                securityLevel: auditEntry.securityLevel,
+                ip: auditEntry.ip,
+                userAgent: auditEntry.userAgent,
+                countryId: auditEntry.countryId,
+                inputSummary: auditEntry.inputSummary,
+                impersonatorId: auditEntry.impersonatorId,
+              }),
+              success: auditEntry.success,
+              error: auditEntry.errorMessage,
+              timestamp: new Date(),
+            },
+          });
+        } catch (dbError) {
+          console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
+        }
+      } else if (VERBOSE) {
+        console.log("[AUDIT_DB] Skipping database write (read-only mode)");
+      }
+    } else if (VERBOSE) {
+      console.log("[AUDIT]", auditEntry);
     }
   }
-
-  return result;
 });
 
 export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
@@ -283,6 +318,15 @@ export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
 export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   if (!ctx.auth?.userId || !ctx.user) {
     throw new UnauthorizedError("Authentication required");
+  }
+
+  // Admin rights are dropped while impersonating another user (play-as mode). The impersonated
+  // user's own role/permissions are still evaluated normally by everything below this check —
+  // only *admin*-gated procedures are blocked outright. See src/server/api/trpc/impersonation.ts.
+  if (ctx.impersonatorId) {
+    throw new ForbiddenError(
+      "Admin actions are disabled while playing as another user. Exit play-as mode first."
+    );
   }
 
   let user = ctx.user;
@@ -364,18 +408,6 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   });
 });
 
-export const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
-  const result = await next();
-  if (path.includes("Intelligence") || path.includes("executive")) {
-    if (VERBOSE) {
-      console.log(
-        `[DATA_PRIVACY] User ${ctx.auth?.userId} accessed ${path} at ${new Date().toISOString()}`
-      );
-    }
-  }
-  return result;
-});
-
 export const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }) => {
   if (!path.includes("execute") && !path.includes("Action")) {
     return next();
@@ -425,26 +457,34 @@ export const readOnlyRateLimit = createRateLimitMiddleware({
   namespace: "queries",
 });
 
+// Until plan 340 the limiter ignored per-procedure limits and every namespace got the env default
+// (100/min). Keep that effective ceiling for the 49 public procedures on this tier rather than
+// silently tightening it to the 30/min that was declared but never enforced.
 export const publicRateLimit = createRateLimitMiddleware({
-  max: 30,
+  max: 100,
   windowMs: 60000,
   namespace: "public",
 });
 
-export const standardCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
-  const rawInput = await getRawInput();
-  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.standard);
-  return cacheFactory({ ctx, path, input: rawInput, next });
-});
+/**
+ * Cached reads. The key carries the viewer's realm unless it is IxWorld (ruling E-q), because realm-scoped
+ * listings fall back to it when the input names none. An all-realms read ("*") is never cached: whether
+ * "*" applies depends on the caller being a site admin (ruling E-o).
+ */
+function realmAwareCacheMiddleware(config: keyof typeof cacheConfigs) {
+  return t.middleware(async ({ ctx, next, path, type, getRawInput }) => {
+    const rawInput = await getRawInput();
+    const scope = realmScopeInput.safeParse(rawInput);
+    if (scope.success && scope.data.realm === ALL_REALMS) return next();
+    const activeRealmId: string | undefined = ctx.user?.country?.realmId ?? undefined;
+    const realmKey = activeRealmId === DEFAULT_REALM_ID ? undefined : activeRealmId;
+    const cacheFactory = createCacheMiddlewareFactory(cacheConfigs[config]);
+    return cacheFactory({ ctx, path, type, input: rawInput, next, realmKey });
+  });
+}
 
-export const staticCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
-  const rawInput = await getRawInput();
-  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.static);
-  return cacheFactory({ ctx, path, input: rawInput, next });
-});
+export const standardCacheMiddleware = realmAwareCacheMiddleware("standard");
 
-export const userCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
-  const rawInput = await getRawInput();
-  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.userSpecific);
-  return cacheFactory({ ctx, path, input: rawInput, next });
-});
+export const staticCacheMiddleware = realmAwareCacheMiddleware("static");
+
+export const userCacheMiddleware = realmAwareCacheMiddleware("userSpecific");

@@ -1,6 +1,15 @@
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Play, Pause, ChevronRight, ChevronLeft, X, MapPin, Users, TrendingUp } from "lucide-react";
+import {
+  Play,
+  Pause,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Xmark as X,
+  MapPin,
+  Group as Users,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { TourStep, TourState } from "../hooks/useMapTour";
 
@@ -17,19 +26,7 @@ interface TourHUDProps {
   totalSteps: number;
 }
 
-function formatPopulation(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  return value.toLocaleString();
-}
-
-function formatGDP(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-  return `$${value.toLocaleString()}`;
-}
+import { formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
 
 export function TourHUD({
   tourState,
@@ -115,7 +112,7 @@ export function TourHUD({
                 <h3 className="dark:text-foreground text-base font-bold text-slate-900">
                   {currentStepData.name}
                 </h3>
-                <span className="text-[10px] font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                <span className="text-xs font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
                   Step {currentStepIndex + 1} of {totalSteps}
                 </span>
               </div>
@@ -146,7 +143,7 @@ export function TourHUD({
           {/* Quick Stats Grid */}
           <div className="dark:border-border/60 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
             <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-xs tracking-wider text-slate-500 uppercase">
                 <MapPin className="h-2.5 w-2.5 text-blue-500 dark:text-blue-400" />
                 Capital
               </span>
@@ -159,7 +156,7 @@ export function TourHUD({
               )}
             </div>
             <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-xs tracking-wider text-slate-500 uppercase">
                 <Users className="h-2.5 w-2.5 text-cyan-500 dark:text-cyan-400" />
                 Population
               </span>
@@ -172,7 +169,7 @@ export function TourHUD({
               )}
             </div>
             <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-xs tracking-wider text-slate-500 uppercase">
                 <TrendingUp className="h-2.5 w-2.5 text-emerald-500 dark:text-emerald-400" />
                 GDP (Total)
               </span>
@@ -180,7 +177,7 @@ export function TourHUD({
                 <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
               ) : (
                 <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
-                  {formatGDP(stats?.totalGdp)}
+                  {formatCurrency(stats?.totalGdp ?? 0)}
                 </p>
               )}
             </div>
@@ -222,7 +219,7 @@ export function TourHUD({
         {/* Progress Bar indicator */}
         <div className="relative h-1 w-full bg-slate-100 dark:bg-white/5">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-400 transition-all duration-100"
+            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100"
             style={{ width: `${tourState === "paused_at_step" ? progress : 0}%` }}
           />
         </div>

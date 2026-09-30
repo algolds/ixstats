@@ -1,7 +1,7 @@
-// src/app/admin/_components/FileUpload.tsx
 "use client";
+// src/app/admin/_components/FileUpload.tsx
 
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;

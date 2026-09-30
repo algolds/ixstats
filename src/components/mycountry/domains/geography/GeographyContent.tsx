@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Building2, Pin, Save, Loader2, Tag } from "lucide-react";
+import {
+  MapPin,
+  City as Building2,
+  Pin,
+  FloppyDisk as Save,
+  SystemRestart as Loader2,
+  Label as Tag,
+} from "iconoir-react";
+import type { City, PointOfInterest, Subdivision } from "@prisma/client";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { SearchableList } from "~/components/mycountry/shared/primitives";
@@ -9,6 +17,7 @@ import { RollupSettingsModal } from "~/components/mycountry/shared/modals/Rollup
 import { PopulateFromWikiButton } from "~/components/mycountry/shell/PopulateFromWikiButton";
 import { GeoCompliancePanel } from "./GeoCompliancePanel";
 import { GeographyReportModal } from "./GeographyReportModal";
+import { TransitMobilityCard } from "./TransitMobilityCard";
 import { Card, CardContent } from "~/components/ui/card";
 
 /**
@@ -57,12 +66,16 @@ export function GeographyContent() {
     return <p className="text-muted-foreground text-sm">No geographic data found.</p>;
   }
 
-  const { cities, subdivisions, pois, rollups, country: countryData } = bundle;
+  // The bundle builder queries through an untyped client; rows are these Prisma models.
+  const cities: City[] = bundle.cities;
+  const subdivisions: Subdivision[] = bundle.subdivisions;
+  const pois: PointOfInterest[] = bundle.pois;
+  const { rollups, country: countryData } = bundle;
 
   if (!bundle.geometry) {
     return (
       <div className="space-y-4">
-        <Card className="glass-surface border-border overflow-hidden">
+        <Card className="facet-surface border-border overflow-hidden">
           <CardContent className="flex flex-col items-center justify-center p-8 text-center">
             <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
               <MapPin className="text-muted-foreground/60 h-8 w-8" />
@@ -94,15 +107,15 @@ export function GeographyContent() {
 
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
-          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold tracking-wider uppercase">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-extrabold tracking-wider uppercase">
             <Building2 className="h-3 w-3 text-[var(--flag-primary)]" />
             Cities
           </div>
           <div className="text-foreground text-lg font-bold tracking-tight">{cities.length}</div>
         </div>
-        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
-          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold tracking-wider uppercase">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-extrabold tracking-wider uppercase">
             <MapPin className="h-3 w-3 text-[var(--flag-secondary)]" />
             Subdivisions
           </div>
@@ -110,8 +123,8 @@ export function GeographyContent() {
             {subdivisions.length}
           </div>
         </div>
-        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
-          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold tracking-wider uppercase">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-extrabold tracking-wider uppercase">
             <Pin className="h-3 w-3 text-[var(--flag-accent)]" />
             POIs
           </div>
@@ -128,9 +141,9 @@ export function GeographyContent() {
             </div>
             <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
           </div>
-          <div className="text-muted-foreground grid grid-cols-2 gap-3 text-[10px] sm:grid-cols-4">
+          <div className="text-muted-foreground grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-              <span className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+              <span className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                 Land Area
               </span>
               <div className="text-foreground font-mono text-xs font-bold tracking-tight">
@@ -138,7 +151,7 @@ export function GeographyContent() {
               </div>
             </div>
             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-              <span className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+              <span className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                 Climate Model
               </span>
               <div
@@ -149,13 +162,13 @@ export function GeographyContent() {
               </div>
             </div>
             <div>
-              <span className="text-[9px] uppercase">Mean Elevation</span>
+              <span className="text-xs uppercase">Mean Elevation</span>
               <div className="text-foreground/80 font-mono text-xs font-semibold">
                 {Math.round(geoProfile.elevation.meanElev).toLocaleString()} m
               </div>
             </div>
             <div>
-              <span className="text-[9px] uppercase">Hydrology</span>
+              <span className="text-xs uppercase">Hydrology</span>
               <div className="text-foreground/80 font-mono text-xs font-semibold">
                 {geoProfile.hydro.riverCount} Rivers / {geoProfile.hydro.lakeCount} Lakes
               </div>
@@ -170,6 +183,9 @@ export function GeographyContent() {
         <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />
       )}
 
+      {/* National Transit & Mobility Index Card */}
+      <TransitMobilityCard countryId={countryId} countryName={country?.name} />
+
       {/* Cities editor */}
       <SearchableList
         title="Cities"
@@ -180,7 +196,7 @@ export function GeographyContent() {
         searchPlaceholder="Search cities, mayors, specializations…"
         emptyMessage="No cities yet. Use the map editor to place some."
         noMatchMessage="No cities match your search."
-        renderItem={(city: any) => (
+        renderItem={(city) => (
           <CityEditor city={city} countryId={countryId} onSaved={() => refetch()} />
         )}
       />
@@ -195,7 +211,7 @@ export function GeographyContent() {
         searchPlaceholder="Search subdivisions, governors, government…"
         emptyMessage="No subdivisions yet. Generate some from the action buttons above."
         noMatchMessage="No subdivisions match your search."
-        renderItem={(sub: any) => (
+        renderItem={(sub) => (
           <SubdivisionEditor subdivision={sub} countryId={countryId} onSaved={() => refetch()} />
         )}
       />
@@ -210,7 +226,7 @@ export function GeographyContent() {
         searchPlaceholder="Search POIs, categories…"
         emptyMessage="No points of interest yet."
         noMatchMessage="No POIs match your search."
-        renderItem={(poi: any) => (
+        renderItem={(poi) => (
           <PoiCard poi={poi} countryId={countryId} onApplied={() => refetch()} />
         )}
       />
@@ -219,7 +235,7 @@ export function GeographyContent() {
 }
 
 interface CityEditorProps {
-  city: any;
+  city: City;
   countryId: string;
   onSaved: () => void;
 }
@@ -256,7 +272,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
       <div className="mb-2 flex items-center justify-between">
         <div>
           <div className="text-foreground text-xs font-semibold">{city.name}</div>
-          <div className="text-muted-foreground text-[10px]">
+          <div className="text-muted-foreground text-xs">
             {city.isNationalCapital ? "★ National Capital" : city.type}
             {city.wikiPageTitle ? ` · wiki: ${city.wikiPageTitle}` : ""}
           </div>
@@ -266,7 +282,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             <button
               onClick={handleSave}
               disabled={upsert.isPending}
-              className="rounded bg-emerald-600/20 px-2 py-0.5 text-[10px] font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50"
+              className="rounded bg-emerald-600/20 px-2 py-0.5 text-xs font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50"
             >
               {upsert.isPending ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -276,7 +292,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             </button>
             <button
               onClick={() => setEditing(false)}
-              className="text-muted-foreground text-[10px] underline"
+              className="text-muted-foreground text-xs underline"
             >
               Cancel
             </button>
@@ -293,7 +309,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
               />
               <button
                 onClick={() => setEditing(true)}
-                className="text-muted-foreground text-[10px] underline"
+                className="text-muted-foreground text-xs underline"
               >
                 Edit
               </button>
@@ -325,22 +341,22 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
           />
         </div>
       ) : (
-        <div className="text-muted-foreground grid grid-cols-2 gap-2 text-[10px]">
+        <div className="text-muted-foreground grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span className="text-[9px] uppercase">Pop</span>
+            <span className="text-xs uppercase">Pop</span>
             <div className="text-foreground/80 text-xs">
               {(city.population ?? 0).toLocaleString()}
             </div>
           </div>
           <div>
-            <span className="text-[9px] uppercase">GDP</span>
+            <span className="text-xs uppercase">GDP</span>
             <div className="text-foreground/80 text-xs">
               {Math.round(city.gdpContribution ?? 0).toLocaleString()}
             </div>
           </div>
           {city.mayorName && (
             <div className="col-span-2">
-              <span className="text-[9px] uppercase">Mayor</span>
+              <span className="text-xs uppercase">Mayor</span>
               <div className="text-foreground/80 text-xs">{city.mayorName}</div>
             </div>
           )}
@@ -351,7 +367,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
 }
 
 interface SubdivisionEditorProps {
-  subdivision: any;
+  subdivision: Subdivision;
   countryId: string;
   onSaved: () => void;
 }
@@ -388,17 +404,14 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
       <div className="mb-2 flex items-center justify-between">
         <div>
           <div className="text-foreground text-xs font-semibold">{subdivision.name}</div>
-          <div className="text-muted-foreground text-[10px]">
-            {subdivision.type}
-            {subdivision.wikiPageTitle ? ` · wiki: ${subdivision.wikiPageTitle}` : ""}
-          </div>
+          <div className="text-muted-foreground text-xs">{subdivision.type}</div>
         </div>
         {editing && !isPublicReadOnly ? (
           <div className="flex gap-1">
             <button
               onClick={handleSave}
               disabled={upsert.isPending}
-              className="rounded bg-emerald-600/20 px-2 py-0.5 text-[10px] font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50"
+              className="rounded bg-emerald-600/20 px-2 py-0.5 text-xs font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50"
             >
               {upsert.isPending ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -408,7 +421,7 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
             </button>
             <button
               onClick={() => setEditing(false)}
-              className="text-muted-foreground text-[10px] underline"
+              className="text-muted-foreground text-xs underline"
             >
               Cancel
             </button>
@@ -420,12 +433,11 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
                 countryId={countryId}
                 kind="subdivision"
                 id={subdivision.id}
-                wikiTitle={subdivision.wikiPageTitle}
                 onApplied={onSaved}
               />
               <button
                 onClick={() => setEditing(true)}
-                className="text-muted-foreground text-[10px] underline"
+                className="text-muted-foreground text-xs underline"
               >
                 Edit
               </button>
@@ -462,22 +474,22 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
           />
         </div>
       ) : (
-        <div className="text-muted-foreground grid grid-cols-2 gap-2 text-[10px]">
+        <div className="text-muted-foreground grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span className="text-[9px] uppercase">Pop</span>
+            <span className="text-xs uppercase">Pop</span>
             <div className="text-foreground/80 text-xs">
               {(subdivision.population ?? 0).toLocaleString()}
             </div>
           </div>
           <div>
-            <span className="text-[9px] uppercase">GDP</span>
+            <span className="text-xs uppercase">GDP</span>
             <div className="text-foreground/80 text-xs">
               {Math.round(subdivision.gdpContribution ?? 0).toLocaleString()}
             </div>
           </div>
           {subdivision.governorName && (
             <div className="col-span-2">
-              <span className="text-[9px] uppercase">Governor</span>
+              <span className="text-xs uppercase">Governor</span>
               <div className="text-foreground/80 text-xs">{subdivision.governorName}</div>
             </div>
           )}
@@ -492,7 +504,7 @@ function PoiCard({
   countryId,
   onApplied,
 }: {
-  poi: any;
+  poi: PointOfInterest;
   countryId: string;
   onApplied?: () => void;
 }) {
@@ -515,14 +527,14 @@ function PoiCard({
           />
         )}
       </div>
-      <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
+      <div className="text-muted-foreground mb-1 flex items-center gap-1 text-xs">
         <span className="bg-accent/60 rounded px-1.5 py-0.5 font-mono uppercase">
           {poi.category}
         </span>
         {poi.wikiPageTitle ? <span>· wiki: {poi.wikiPageTitle}</span> : null}
       </div>
       {poi.description && (
-        <p className="text-foreground/80 text-[11px] leading-snug">{poi.description}</p>
+        <p className="text-foreground/80 text-xs leading-snug">{poi.description}</p>
       )}
     </div>
   );
@@ -541,7 +553,7 @@ function FieldInput({
 }) {
   return (
     <div>
-      <label className="text-muted-foreground text-[10px] font-medium uppercase">{label}</label>
+      <label className="text-muted-foreground text-xs font-medium uppercase">{label}</label>
       <input
         type={type}
         value={value}

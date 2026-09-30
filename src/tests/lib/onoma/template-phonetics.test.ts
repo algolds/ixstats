@@ -1,11 +1,7 @@
 // src/lib/onoma/template-phonetics.test.ts
 // Benchmark test suite for IRL cultures, templates, and "Hello World" phonetic derivation
 
-import {
-  translateToIPA,
-  resolveNamePhonetics,
-  getCultureRules,
-} from "~/lib/onoma/phonology";
+import { translateToIPA, resolveNamePhonetics, getCultureRules } from "~/lib/onoma/phonology";
 import {
   TEMPLATE_PHONETIC_PROFILES,
   getTemplateLinguisticProfile,

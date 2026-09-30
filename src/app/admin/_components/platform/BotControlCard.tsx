@@ -1,28 +1,28 @@
+"use client";
 // src/app/admin/_components/platform/BotControlCard.tsx
 // Redesigned with PM2 process grid, role permits, live logs, and command testing console.
-"use client";
 
 import { useState, useEffect } from "react";
 import {
-  Bot,
+  Cpu as Bot,
   Pause,
   Play,
-  RotateCcw,
-  AlertTriangle,
-  RefreshCw,
-  Loader2,
+  Undo as RotateCcw,
+  WarningTriangle as AlertTriangle,
+  Refresh as RefreshCw,
+  SystemRestart as Loader2,
   Terminal,
-  Sliders,
+  ControlSlider as Sliders,
   Shield,
   Activity,
   Cpu,
-  Layers,
-  ChevronRight,
-  Info,
-  CheckCircle2,
-  XCircle,
-  FileCode,
-} from "lucide-react";
+  Component as Layers,
+  NavArrowRight as ChevronRight,
+  InfoCircle as Info,
+  CheckCircle as CheckCircle2,
+  XmarkCircle as XCircle,
+  Code as FileCode,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -122,6 +122,7 @@ export function BotControlCard({
   useEffect(() => {
     setOptionValues({});
     setSimulationResult(null);
+    // oxlint-disable-next-line
   }, [selectedCommandName]);
 
   const handleSimulate = async () => {
@@ -212,7 +213,7 @@ export function BotControlCard({
         <div key={opt.name} className="space-y-1.5">
           <Label
             htmlFor={`opt-${opt.name}`}
-            className="text-muted-foreground flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase"
+            className="text-muted-foreground flex items-center gap-1 text-xs font-bold tracking-wider uppercase"
           >
             {opt.name} {isRequired && <span className="text-red-500">*</span>}
           </Label>
@@ -220,7 +221,7 @@ export function BotControlCard({
             id={`opt-${opt.name}`}
             value={value}
             onChange={(e) => setOptionValues((prev) => ({ ...prev, [opt.name]: e.target.value }))}
-            className="bg-card/20 border-border/30 text-foreground focus:border-primary/50 w-full rounded-md border px-2.5 py-1.5 text-xs focus:outline-none"
+            className="bg-background border-border/40 text-foreground focus:border-primary/50 w-full rounded-xl border px-3 py-2 text-xs focus:outline-none"
           >
             <option value="" className="bg-background text-foreground">
               Select option...
@@ -231,7 +232,7 @@ export function BotControlCard({
               </option>
             ))}
           </select>
-          <span className="text-muted-foreground block text-[10px] leading-tight font-medium">
+          <span className="text-muted-foreground block text-xs leading-tight font-medium">
             {opt.description}
           </span>
         </div>
@@ -248,11 +249,11 @@ export function BotControlCard({
           <div className="space-y-0.5">
             <Label
               htmlFor={`opt-${opt.name}`}
-              className="text-muted-foreground flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase"
+              className="text-muted-foreground flex items-center gap-1 text-xs font-bold tracking-wider uppercase"
             >
               {opt.name} {isRequired && <span className="text-red-500">*</span>}
             </Label>
-            <span className="text-muted-foreground block text-[10px] leading-tight font-medium">
+            <span className="text-muted-foreground block text-xs leading-tight font-medium">
               {opt.description}
             </span>
           </div>
@@ -273,7 +274,7 @@ export function BotControlCard({
       <div key={opt.name} className="space-y-1.5">
         <Label
           htmlFor={`opt-${opt.name}`}
-          className="text-muted-foreground flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase"
+          className="text-muted-foreground flex items-center gap-1 text-xs font-bold tracking-wider uppercase"
         >
           {opt.name} {isRequired && <span className="text-red-500">*</span>}
         </Label>
@@ -290,7 +291,7 @@ export function BotControlCard({
           placeholder={`Enter ${opt.name}...`}
           className="bg-card/20 border-border/30 focus:border-primary/50 h-9 text-xs focus:ring-0"
         />
-        <span className="text-muted-foreground block text-[10px] leading-tight font-medium">
+        <span className="text-muted-foreground block text-xs leading-tight font-medium">
           {opt.description}
         </span>
       </div>
@@ -300,7 +301,7 @@ export function BotControlCard({
   const isAvailable = botStatus?.botHealth?.available;
 
   return (
-    <Card className="glass-surface border-border/40 flex h-full flex-col">
+    <Card className="facet-surface border-border/40 flex h-full flex-col">
       <CardHeader className="shrink-0 pb-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
@@ -319,14 +320,14 @@ export function BotControlCard({
               <Loader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
             )}
             {isAvailable ? (
-              <Badge className="border-green-500/20 bg-green-500/10 text-[10px] font-semibold tracking-wide text-green-500 uppercase dark:text-green-400">
-                <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+              <Badge className="border-green-500/20 bg-green-500/10 text-xs font-semibold tracking-wide text-green-500 uppercase dark:text-green-400">
+                <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-500" />
                 Daemon Active
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="border-border/30 bg-muted/20 text-muted-foreground text-[10px] font-semibold tracking-wide uppercase"
+                className="border-border/30 bg-muted/20 text-muted-foreground text-xs font-semibold tracking-wide uppercase"
               >
                 Offline
               </Badge>
@@ -349,7 +350,7 @@ export function BotControlCard({
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id as any)}
                 className={cn(
-                  "-mb-[2px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-all select-none",
+                  "-mb-[2px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                   active
                     ? "border-primary text-foreground bg-primary/5 rounded-t-md"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/5 border-transparent"
@@ -393,7 +394,7 @@ export function BotControlCard({
                 return (
                   <div
                     key={proc.name}
-                    className="border-border/20 bg-card/15 hover:border-border/30 flex flex-col justify-between space-y-3 rounded-lg border p-3.5 transition-all"
+                    className="border-border/20 bg-card/15 hover:border-border/30 flex flex-col justify-between space-y-3 rounded-lg border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -403,7 +404,7 @@ export function BotControlCard({
                         <Badge
                           variant={isOnline ? "default" : "destructive"}
                           className={cn(
-                            "px-1.5 py-0 text-[8px] font-bold tracking-wider uppercase",
+                            "px-1.5 py-0 text-xs font-bold tracking-wider uppercase",
                             isOnline
                               ? "border-green-500/20 bg-green-500/10 text-green-500"
                               : "border-red-500/20 bg-red-500/10 text-red-500"
@@ -414,7 +415,7 @@ export function BotControlCard({
                       </div>
 
                       {/* Process Metrics Grid */}
-                      <div className="text-muted-foreground border-border/10 mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-2.5 text-[10px] font-medium">
+                      <div className="text-muted-foreground border-border/10 mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-2.5 text-xs font-medium">
                         <div className="flex items-center gap-1.5">
                           <Activity className="text-muted-foreground h-3 w-3" />
                           <span>
@@ -442,7 +443,7 @@ export function BotControlCard({
                             </span>
                           </span>
                         </div>
-                        <div className="col-span-2 flex items-center gap-1.5 text-[9px]">
+                        <div className="col-span-2 flex items-center gap-1.5 text-xs">
                           <RotateCcw className="text-muted-foreground h-3 w-3" />
                           <span>
                             Restarts:{" "}
@@ -461,7 +462,7 @@ export function BotControlCard({
                         size="sm"
                         disabled={isOnline || actionPending[`${proc.name}-start`]}
                         onClick={() => handleControlProcess(proc.name as any, "start")}
-                        className="flex h-7 items-center justify-center p-0 text-[10px] font-semibold"
+                        className="flex h-7 items-center justify-center p-0 text-xs font-semibold"
                       >
                         {actionPending[`${proc.name}-start`] ? (
                           <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
@@ -475,7 +476,7 @@ export function BotControlCard({
                         size="sm"
                         disabled={!isOnline || actionPending[`${proc.name}-stop`]}
                         onClick={() => handleControlProcess(proc.name as any, "stop")}
-                        className="flex h-7 items-center justify-center p-0 text-[10px] font-semibold"
+                        className="flex h-7 items-center justify-center p-0 text-xs font-semibold"
                       >
                         {actionPending[`${proc.name}-stop`] ? (
                           <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
@@ -489,7 +490,7 @@ export function BotControlCard({
                         size="sm"
                         disabled={actionPending[`${proc.name}-restart`]}
                         onClick={() => handleControlProcess(proc.name as any, "restart")}
-                        className="flex h-7 items-center justify-center p-0 text-[10px] font-semibold"
+                        className="flex h-7 items-center justify-center p-0 text-xs font-semibold"
                       >
                         {actionPending[`${proc.name}-restart`] ? (
                           <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
@@ -509,7 +510,7 @@ export function BotControlCard({
               {botStatus?.botStatus?.hasTimeOverride && (
                 <Alert className="flex items-start gap-2.5 rounded-lg border-amber-500/20 bg-amber-500/5 py-2.5">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  <AlertDescription className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                  <AlertDescription className="text-xs leading-relaxed text-amber-600 dark:text-amber-400">
                     Bot has an active time override. Use <strong>Clear Overrides</strong> to return
                     to natural time progression.
                   </AlertDescription>
@@ -517,9 +518,9 @@ export function BotControlCard({
               )}
 
               {/* Grid matching details */}
-              <div className="border-border/10 grid grid-cols-2 gap-3 border-b pb-3 text-[11px] font-medium">
+              <div className="border-border/10 grid grid-cols-2 gap-3 border-b pb-3 text-xs font-medium">
                 <div className="space-y-0.5">
-                  <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+                  <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                     Health Status
                   </span>
                   <span className="text-foreground block truncate font-semibold">
@@ -527,7 +528,7 @@ export function BotControlCard({
                   </span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+                  <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                     Sync Time
                   </span>
                   <span className="text-foreground block font-semibold">
@@ -538,7 +539,7 @@ export function BotControlCard({
 
               {/* Execution Overrides */}
               <div className="space-y-2">
-                <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+                <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                   Execution Override Controls
                 </span>
                 <div className="grid grid-cols-3 gap-2">
@@ -589,7 +590,7 @@ export function BotControlCard({
 
               {/* Synchronization actions */}
               <div className="space-y-2">
-                <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+                <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                   Time Synchronization
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -639,7 +640,7 @@ export function BotControlCard({
               <div className="text-muted-foreground border-border/10 bg-card/5 flex flex-col items-center justify-center rounded-lg border p-6 py-12 text-center text-xs">
                 <Info className="text-muted-foreground/60 mb-2 h-6 w-6" />
                 <span>No commands returned by Discord bot.</span>
-                <span className="mt-1 text-[10px]">
+                <span className="mt-1 text-xs">
                   Make sure the ixwiki-discord-bot is online and running.
                 </span>
               </div>
@@ -647,7 +648,7 @@ export function BotControlCard({
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
                 {/* Commands list */}
                 <div className="border-border/20 bg-card/10 max-h-[450px] space-y-1 overflow-y-auto rounded-lg border p-2 lg:col-span-2">
-                  <span className="text-muted-foreground border-border/10 block border-b px-2 pb-1.5 text-[9px] font-bold tracking-wider uppercase">
+                  <span className="text-muted-foreground border-border/10 block border-b px-2 pb-1.5 text-xs font-bold tracking-wider uppercase">
                     Commands Registry
                   </span>
                   {commands.map((cmd: any) => (
@@ -676,7 +677,7 @@ export function BotControlCard({
                         <div className="text-foreground font-mono text-sm font-bold">
                           /{selectedCommand.name}
                         </div>
-                        <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        <p className="text-muted-foreground text-xs leading-relaxed">
                           {selectedCommand.description}
                         </p>
                       </div>
@@ -685,14 +686,14 @@ export function BotControlCard({
 
                       {/* Mock Author settings */}
                       <div className="bg-muted/10 border-border/10 space-y-3 rounded-lg border p-3">
-                        <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+                        <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                           Mock User Settings
                         </span>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1">
                             <Label
                               htmlFor="mock-user"
-                              className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase"
+                              className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
                             >
                               Username
                             </Label>
@@ -706,7 +707,7 @@ export function BotControlCard({
                           <div className="space-y-1">
                             <Label
                               htmlFor="mock-disp"
-                              className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase"
+                              className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
                             >
                               Display Name
                             </Label>
@@ -721,11 +722,11 @@ export function BotControlCard({
                             <div className="space-y-0.5">
                               <Label
                                 htmlFor="mock-admin"
-                                className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase"
+                                className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
                               >
                                 Admin Status (Roles Permission)
                               </Label>
-                              <span className="text-muted-foreground block text-[9px]">
+                              <span className="text-muted-foreground block text-xs">
                                 Allows execution of admin-locked commands
                               </span>
                             </div>
@@ -741,7 +742,7 @@ export function BotControlCard({
                       {/* Options fields */}
                       {selectedCommand.options && selectedCommand.options.length > 0 && (
                         <div className="border-border/10 space-y-3.5 border-t pt-3.5">
-                          <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+                          <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                             Command Options
                           </span>
                           <div className="space-y-3">
@@ -773,11 +774,11 @@ export function BotControlCard({
                       {simulationResult && (
                         <div className="border-border/15 animate-in fade-in space-y-3.5 border-t pt-3.5 duration-200">
                           <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
+                            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                               Output Console Preview
                             </span>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground text-[10px] font-semibold">
+                              <span className="text-muted-foreground text-xs font-semibold">
                                 Raw JSON
                               </span>
                               <Switch checked={showRawJson} onCheckedChange={setShowRawJson} />
@@ -785,7 +786,7 @@ export function BotControlCard({
                           </div>
 
                           {showRawJson ? (
-                            <pre className="border-border/15 max-h-[250px] overflow-x-auto rounded-lg border bg-black/45 p-3 font-mono text-[10px] leading-tight text-emerald-400 select-all">
+                            <pre className="border-border/15 max-h-[250px] overflow-x-auto rounded-lg border bg-black/45 p-3 font-mono text-xs leading-tight text-emerald-400 select-all">
                               {JSON.stringify(simulationResult, null, 2)}
                             </pre>
                           ) : (
@@ -798,7 +799,7 @@ export function BotControlCard({
                               ) : simulationResult.payload ? (
                                 <div className="space-y-2.5">
                                   {/* Discord mockup window */}
-                                  <div className="space-y-4 rounded-lg border border-black/20 bg-[#313338] p-4 font-sans text-xs text-[#dbdee1] md:text-sm">
+                                  <div className="space-y-4 rounded-lg border border-black/20 bg-zinc-800 p-4 font-sans text-xs text-zinc-300 md:text-sm">
                                     {/* Message */}
                                     <div className="flex items-start gap-3">
                                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 font-sans text-xs font-bold text-white uppercase shadow-sm select-none">
@@ -806,13 +807,13 @@ export function BotControlCard({
                                       </div>
                                       <div className="min-w-0 flex-1 space-y-1">
                                         <div className="flex flex-wrap items-center">
-                                          <span className="cursor-pointer font-bold text-[#f2f3f5] hover:underline">
+                                          <span className="cursor-pointer font-bold text-zinc-100 hover:underline">
                                             IxTimeBot
                                           </span>
-                                          <span className="ml-1.5 rounded bg-[#5865F2] px-1 py-0.5 text-[8px] leading-none font-bold text-white uppercase select-none">
+                                          <span className="bg-discord ml-1.5 rounded px-1 py-0.5 text-xs leading-none font-bold text-white uppercase select-none">
                                             BOT
                                           </span>
-                                          <span className="ml-2 text-[10px] text-[#949ba4] select-none">
+                                          <span className="ml-2 text-xs text-zinc-400 select-none">
                                             Today at{" "}
                                             {new Date().toLocaleTimeString([], {
                                               hour: "2-digit",
@@ -823,13 +824,13 @@ export function BotControlCard({
 
                                         {/* Message Content */}
                                         {typeof simulationResult.payload === "string" ? (
-                                          <div className="break-words whitespace-pre-wrap text-[#dbdee1]">
+                                          <div className="break-words whitespace-pre-wrap text-zinc-300">
                                             {simulationResult.payload}
                                           </div>
                                         ) : (
                                           <>
                                             {simulationResult.payload.content && (
-                                              <div className="mb-1 break-words whitespace-pre-wrap text-[#dbdee1]">
+                                              <div className="mb-1 break-words whitespace-pre-wrap text-zinc-300">
                                                 {simulationResult.payload.content}
                                               </div>
                                             )}
@@ -840,7 +841,7 @@ export function BotControlCard({
                                                 (embed: any, idx: number) => (
                                                   <div
                                                     key={idx}
-                                                    className="mt-1.5 max-w-[520px] space-y-2 rounded-r border-l-4 bg-[#2b2d31] p-3 shadow-sm"
+                                                    className="mt-1.5 max-w-[520px] space-y-2 rounded-r border-l-4 bg-zinc-900 p-3 shadow-sm"
                                                     style={{
                                                       borderLeftColor: getEmbedColor(embed.color),
                                                     }}
@@ -854,7 +855,7 @@ export function BotControlCard({
                                                             className="h-5 w-5 rounded-full select-none"
                                                           />
                                                         )}
-                                                        <span className="cursor-pointer text-[11px] font-bold text-white hover:underline">
+                                                        <span className="cursor-pointer text-xs font-bold text-white hover:underline">
                                                           {embed.author.name}
                                                         </span>
                                                       </div>
@@ -867,7 +868,7 @@ export function BotControlCard({
                                                     )}
 
                                                     {embed.description && (
-                                                      <div className="text-[11px] leading-relaxed break-words whitespace-pre-wrap text-[#dbdee1]">
+                                                      <div className="text-xs leading-relaxed break-words whitespace-pre-wrap text-zinc-300">
                                                         {embed.description}
                                                       </div>
                                                     )}
@@ -883,10 +884,10 @@ export function BotControlCard({
                                                                 f.inline ? "" : "col-span-full"
                                                               )}
                                                             >
-                                                              <div className="text-[10px] font-bold tracking-wide text-white uppercase opacity-90">
+                                                              <div className="text-xs font-bold tracking-wide text-white uppercase opacity-90">
                                                                 {f.name}
                                                               </div>
-                                                              <div className="text-[11px] break-words whitespace-pre-wrap text-[#dbdee1]">
+                                                              <div className="text-xs break-words whitespace-pre-wrap text-zinc-300">
                                                                 {f.value}
                                                               </div>
                                                             </div>
@@ -896,7 +897,7 @@ export function BotControlCard({
                                                     )}
 
                                                     {embed.footer && (
-                                                      <div className="flex items-center gap-1 pt-1 text-[9px] text-[#949ba4] select-none">
+                                                      <div className="flex items-center gap-1 pt-1 text-xs text-zinc-400 select-none">
                                                         {embed.footer.icon_url && (
                                                           <img
                                                             src={embed.footer.icon_url}
@@ -956,7 +957,7 @@ export function BotControlCard({
               <div className="text-muted-foreground border-border/10 bg-card/5 flex flex-col items-center justify-center rounded-lg border p-6 py-12 text-center text-xs">
                 <Info className="text-muted-foreground/60 mb-2 h-6 w-6" />
                 <span>No roles fetched from Discord API.</span>
-                <span className="mt-1 text-[10px]">
+                <span className="mt-1 text-xs">
                   Ensure correct guild credentials and bot online status.
                 </span>
               </div>
@@ -965,16 +966,16 @@ export function BotControlCard({
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-border/20 bg-muted/20 border-b">
-                      <th className="text-muted-foreground px-4 py-2.5 text-[9px] font-bold tracking-wider uppercase">
+                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
                         Position
                       </th>
-                      <th className="text-muted-foreground px-4 py-2.5 text-[9px] font-bold tracking-wider uppercase">
+                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
                         Role Name
                       </th>
-                      <th className="text-muted-foreground px-4 py-2.5 text-[9px] font-bold tracking-wider uppercase">
+                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
                         Role ID
                       </th>
-                      <th className="text-muted-foreground px-4 py-2.5 text-[9px] font-bold tracking-wider uppercase">
+                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
                         Permit Level
                       </th>
                     </tr>
@@ -990,7 +991,7 @@ export function BotControlCard({
                             isAdm ? "bg-amber-500/5 text-amber-500/90" : ""
                           )}
                         >
-                          <td className="text-muted-foreground px-4 py-2 font-mono text-[10px]">
+                          <td className="text-muted-foreground px-4 py-2 font-mono text-xs">
                             #{role.position}
                           </td>
                           <td className="px-4 py-2">
@@ -1002,18 +1003,18 @@ export function BotControlCard({
                               <span className="font-semibold">{role.name}</span>
                             </div>
                           </td>
-                          <td className="text-muted-foreground px-4 py-2 font-mono text-[10px]">
+                          <td className="text-muted-foreground px-4 py-2 font-mono text-xs">
                             {role.id}
                           </td>
                           <td className="px-4 py-2">
                             {isAdm ? (
-                              <Badge className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[8px] font-bold tracking-wide text-amber-500 uppercase">
+                              <Badge className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-xs font-bold tracking-wide text-amber-500 uppercase">
                                 Admin Permit
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="border-border/20 bg-muted/10 text-muted-foreground px-1.5 py-0 text-[8px] font-bold tracking-wide uppercase"
+                                className="border-border/20 bg-muted/10 text-muted-foreground px-1.5 py-0 text-xs font-bold tracking-wide uppercase"
                               >
                                 Default
                               </Badge>
@@ -1039,7 +1040,7 @@ export function BotControlCard({
                 <div className="space-y-1">
                   <Label
                     htmlFor="log-proc-select"
-                    className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase"
+                    className="text-muted-foreground block text-xs font-bold tracking-wider uppercase"
                   >
                     Daemon Process
                   </Label>
@@ -1047,7 +1048,7 @@ export function BotControlCard({
                     id="log-proc-select"
                     value={logProcess}
                     onChange={(e) => setLogProcess(e.target.value as any)}
-                    className="bg-card/20 border-border/30 text-foreground focus:border-primary/50 rounded border px-2 py-1 text-xs font-semibold focus:outline-none"
+                    className="bg-background border-border/40 text-foreground focus:border-primary/50 rounded-xl border px-3 py-1.5 text-xs font-semibold focus:outline-none"
                   >
                     <option value="ixwiki-discord-bot" className="bg-background text-foreground">
                       ixwiki-discord-bot
@@ -1062,7 +1063,7 @@ export function BotControlCard({
                 <div className="space-y-1">
                   <Label
                     htmlFor="log-type-select"
-                    className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase"
+                    className="text-muted-foreground block text-xs font-bold tracking-wider uppercase"
                   >
                     Stream Type
                   </Label>
@@ -1070,7 +1071,7 @@ export function BotControlCard({
                     id="log-type-select"
                     value={logType}
                     onChange={(e) => setLogType(e.target.value as any)}
-                    className="bg-card/20 border-border/30 text-foreground focus:border-primary/50 rounded border px-2 py-1 text-xs font-semibold focus:outline-none"
+                    className="bg-background border-border/40 text-foreground focus:border-primary/50 rounded-xl border px-3 py-1.5 text-xs font-semibold focus:outline-none"
                   >
                     <option value="out" className="bg-background text-foreground">
                       stdout (Logs)
@@ -1087,7 +1088,7 @@ export function BotControlCard({
                 <div className="border-border/10 bg-card/10 flex items-center gap-1.5 rounded-lg border px-2 py-1.5">
                   <Label
                     htmlFor="auto-refresh-logs-switch"
-                    className="text-muted-foreground cursor-pointer text-[9px] font-bold tracking-wider uppercase select-none"
+                    className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
                   >
                     Auto-Refresh
                   </Label>
@@ -1115,11 +1116,11 @@ export function BotControlCard({
 
             {/* Console output window */}
             <div className="relative">
-              <div className="text-muted-foreground border-border/10 absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded border bg-black/50 px-2 py-0.5 font-mono text-[9px] select-none">
+              <div className="text-muted-foreground border-border/10 absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded border bg-black/50 px-2 py-0.5 font-mono text-xs select-none">
                 <FileCode className="h-3 w-3" />
                 <span>50 lines</span>
               </div>
-              <div className="max-h-[450px] min-h-[280px] w-full overflow-x-auto rounded-lg border border-[#2b2d31] bg-[#1e1e24] p-4 font-mono text-[10px] leading-relaxed text-zinc-300 md:text-[11px]">
+              <div className="border-border/60 max-h-[450px] min-h-[280px] w-full overflow-x-auto rounded-lg border bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-300 md:text-xs">
                 {logs && logs.length > 0 ? (
                   <pre className="flex flex-col gap-0.5 whitespace-pre select-text">
                     {logs.map((line, idx) => (
@@ -1139,9 +1140,9 @@ export function BotControlCard({
                   </pre>
                 ) : (
                   <div className="text-muted-foreground/60 flex flex-col items-center justify-center py-20 select-none">
-                    <Terminal className="mb-2 h-6 w-6 animate-pulse opacity-40" />
+                    <Terminal className="mb-2 h-6 w-6 opacity-40" />
                     <span>No process logs output recorded.</span>
-                    <span className="mt-0.5 text-[9px]">
+                    <span className="mt-0.5 text-xs">
                       Ensure process is started and writing output logs.
                     </span>
                   </div>

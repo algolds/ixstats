@@ -504,7 +504,7 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Quotes — glass-depth-1 styled */
+/* Quotes — facet-depth-1 styled */
 .forum-quote {
   border-left: 3px solid var(--forum-accent);
   backdrop-filter: blur(var(--blur-subtle));
@@ -671,7 +671,7 @@
   color: var(--forum-text);
 }
 
-/* Tables — glass-hierarchy-child */
+/* Tables — facet-hierarchy-child */
 .forum-table {
   width: 100%;
   border-collapse: collapse;
@@ -788,7 +788,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Reply Composer — glass-floating surface
+   Reply Composer — facet-floating surface
    --------------------------------------------------------------------------- */
 .forum-composer {
   position: sticky;
@@ -946,7 +946,7 @@
 
 .forum-badge-locked {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--color-error);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
@@ -982,4 +982,13 @@
 @keyframes forum-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Reduced motion accessibility guard */
+@media (prefers-reduced-motion: reduce) {
+  .forum-skeleton,
+  .forum-fade-in {
+    animation: none !important;
+    transition: none !important;
+  }
 }

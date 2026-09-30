@@ -1,70 +1,10 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/worldEvents.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
 export const adminWorldEventsRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
-  // Get bot status with health check
-
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
-  // Bot control operations
-
-  // Get calculation logs
-
-  // Analyze import file
-
-  // Import roster data
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
   /**
    * Get all diplomatic options (with optional filtering)
    */
@@ -265,61 +205,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
     }),
 
   /**
-   * Bulk toggle active status for diplomatic options
-   */
-  bulkToggleDiplomaticOptions: adminProcedure
-    .input(
-      z.object({
-        ids: z.array(z.string()),
-        isActive: z.boolean(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const result = await ctx.db.diplomaticOption.updateMany({
-          where: {
-            id: { in: input.ids },
-          },
-          data: {
-            isActive: input.isActive,
-          },
-        });
-
-        // Log the bulk operation
-        await ctx.db.adminAuditLog.create({
-          data: {
-            action: "DIPLOMATIC_OPTIONS_BULK_TOGGLE",
-            targetType: "diplomatic_option",
-            targetId: "bulk",
-            targetName: `${input.ids.length} options`,
-            changes: JSON.stringify({ ids: input.ids, isActive: input.isActive }),
-            adminId: ctx.user?.id || "system",
-            adminName: ctx.user?.clerkUserId || "System",
-            timestamp: new Date(),
-            ipAddress:
-              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
-          },
-        });
-
-        return {
-          success: true,
-          message: `Successfully ${input.isActive ? "activated" : "deactivated"} ${result.count} diplomatic options`,
-          count: result.count,
-        };
-      } catch (error) {
-        console.error("Failed to bulk toggle diplomatic options:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to bulk toggle diplomatic options",
-        });
-      }
-    }),
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  /**
    * Get upcoming events across all systems for the timeline widget.
    * Aggregates StorytellerEffects (future), Elections (upcoming), Policies (expiring), and CrisisEvents.
    */
@@ -460,10 +345,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
       };
     }),
 
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
   getWorldEvents: adminProcedure
     .input(
       z.object({
@@ -496,37 +377,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
       ]);
 
       return { events, total };
-    }),
-
-  getWorldEventDetail: adminProcedure
-    .input(z.object({ eventId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const event = await ctx.db.worldEvent.findUnique({
-        where: { id: input.eventId },
-        include: {
-          affectedCountries: {
-            include: {
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  flag: true,
-                  currentTotalGdp: true,
-                  currentPopulation: true,
-                  economicTier: true,
-                },
-              },
-            },
-          },
-          storytellerEffects: {
-            include: { country: { select: { id: true, name: true } } },
-            orderBy: { createdAt: "desc" },
-          },
-          chain: true,
-        },
-      });
-      if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "World event not found" });
-      return event;
     }),
 
   createWorldEvent: adminProcedure
@@ -658,19 +508,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
       return event;
     }),
 
-  deleteWorldEvent: adminProcedure
-    .input(z.object({ eventId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // Deactivate linked StorytellerEffects (don't delete - keep history)
-      await ctx.db.storytellerEffect.updateMany({
-        where: { worldEventId: input.eventId },
-        data: { isActive: false, worldEventId: null },
-      });
-
-      await ctx.db.worldEvent.delete({ where: { id: input.eventId } });
-      return { success: true };
-    }),
-
   simulateWorldEvent: adminProcedure
     .input(
       z.object({
@@ -771,43 +608,4 @@ export const adminWorldEventsRouter = createTRPCRouter({
         },
       };
     }),
-
-  // Event Chains
-  getEventChains: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.eventChain.findMany({
-      include: {
-        events: {
-          orderBy: { chainOrder: "asc" },
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            severity: true,
-            chainOrder: true,
-            isActive: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-  }),
-
-  createEventChain: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        description: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user?.id;
-      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return ctx.db.eventChain.create({
-        data: { name: input.name, description: input.description, createdBy: userId },
-      });
-    }),
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
 });
-
-// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"

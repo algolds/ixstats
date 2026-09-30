@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -11,12 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  ArrowLeft,
-  Globe,
-  Plus,
-  Search,
-} from "lucide-react";
+// oxlint-disable-next-line eslint/no-unused-vars
+import { Globe, Plus, Search } from "iconoir-react";
 import {
   SCENARIO_TYPES,
   RELATIONSHIP_LEVELS,
@@ -56,82 +51,58 @@ export function DiplomaticScenariosHeader({
   onOpenAddDialog,
 }: DiplomaticScenariosHeaderProps) {
   return (
-    <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/admin">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Admin
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-[--intel-gold]/20 bg-[--intel-gold]/10 p-3">
-              <Globe className="h-6 w-6 text-[--intel-gold]" />
-            </div>
-            <div>
-              <h1 className="text-foreground text-2xl font-bold md:text-3xl">
-                Diplomatic Scenarios
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Manage dynamic scenario templates with branching player choices and outcomes
-              </p>
-            </div>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          <div className="relative max-w-sm min-w-[200px] flex-1">
+            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Input
+              placeholder="Search scenarios..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+            />
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={onOpenAddDialog}
-            className="bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
-            size="sm"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Scenario
-          </Button>
-        </div>
-      </div>
 
-      {/* Filter Bar */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <div className="relative sm:col-span-2">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-          <Input
-            placeholder="Search scenarios by title or narrative..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Scenario Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {SCENARIO_TYPES.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                {t.label}
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
+              <SelectValue placeholder="Scenario Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">
+                All Types
               </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              {SCENARIO_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value} className="text-xs">
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="showInactive"
-            checked={showInactive}
-            onCheckedChange={(checked) => setShowInactive(checked as boolean)}
-          />
-          <label htmlFor="showInactive" className="text-foreground cursor-pointer text-sm">
-            Show inactive & expired
+          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
+            <Checkbox
+              id="showInactive"
+              checked={showInactive}
+              onCheckedChange={(checked) => setShowInactive(checked as boolean)}
+              className="h-3.5 w-3.5"
+            />
+            <span>Show inactive</span>
           </label>
         </div>
+
+        <Button
+          onClick={onOpenAddDialog}
+          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Create Scenario
+        </Button>
       </div>
 
       {/* Advanced Tag Filter Pills */}
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-4">
-        <span className="text-xs text-[--intel-silver] self-center mr-2">Filter by:</span>
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <span className="text-muted-foreground mr-1 text-xs font-medium">Filter by:</span>
 
         {/* Relationship filters */}
         {RELATIONSHIP_LEVELS.map((rel) => {
@@ -170,7 +141,7 @@ export function DiplomaticScenariosHeader({
               }}
               className={`rounded-full px-3 py-1 text-xs transition-colors ${
                 isSelected
-                  ? "bg-yellow-500 text-black font-medium"
+                  ? "bg-yellow-500 font-medium text-black"
                   : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
               }`}
             >
@@ -193,7 +164,7 @@ export function DiplomaticScenariosHeader({
               }}
               className={`rounded-full px-3 py-1 text-xs transition-colors ${
                 isSelected
-                  ? "bg-purple-500 text-white"
+                  ? "bg-cyan-500 text-white"
                   : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
               }`}
             >

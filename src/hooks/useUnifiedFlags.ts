@@ -1,9 +1,8 @@
+"use client";
 // Unified Flag Hooks - Consolidates all flag loading approaches (Plan 164)
 // Replaces useFlag, useBulkFlagCache, useBatchFlags, etc.
 
-"use client";
-
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 
@@ -42,7 +41,11 @@ export function useFlag(countryName?: string): UseFlagResult {
   const cleanName = countryName?.replace(/ \(Demo\)$/, "").trim();
   const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
 
-  const { data: batchResult, isLoading, isError } = api.countries.flags.resolveBatch.useQuery(
+  const {
+    data: batchResult,
+    isLoading,
+    isError,
+  } = api.countries.flags.resolveBatch.useQuery(
     { countryNames: cleanName ? [cleanName] : [] },
     {
       enabled: Boolean(cleanName),
@@ -70,8 +73,9 @@ export function useFlag(countryName?: string): UseFlagResult {
  */
 export function useBulkFlags(
   countryNames: readonly string[],
-  _source: "irl" | "wiki" = "wiki"
+  source: "irl" | "wiki" = "wiki"
 ): UseBulkFlagsResult {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
 
   // Safe copied sort for dependency key without mutating input
@@ -84,15 +88,26 @@ export function useBulkFlags(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryNamesKey]);
 
-  const { data: batchResult, isLoading, error: trpcError, refetch: trpcRefetch } =
-    api.countries.flags.resolveBatch.useQuery(
-      { countryNames: memoizedCountryNames },
-      {
-        enabled: memoizedCountryNames.length > 0,
-        staleTime: 1000 * 60 * 60, // 1 hour
-        retry: 1,
-      }
-    );
+  const fallbackPolicy = useMemo(() => {
+    return source === "irl" ? ("commons-only" as const) : undefined;
+  }, [source]);
+
+  const {
+    data: batchResult,
+    isLoading,
+    error: trpcError,
+    refetch: trpcRefetch,
+  } = api.countries.flags.resolveBatch.useQuery(
+    {
+      countryNames: memoizedCountryNames,
+      ...(fallbackPolicy ? { fallbackPolicy } : {}),
+    },
+    {
+      enabled: memoizedCountryNames.length > 0,
+      staleTime: 1000 * 60 * 60, // 1 hour
+      retry: 1,
+    }
+  );
 
   const flagUrls = useMemo(() => {
     const result: Record<string, string | null> = {};
@@ -104,9 +119,7 @@ export function useBulkFlags(
   }, [memoizedCountryNames, batchResult]);
 
   const placeholderCount = useMemo(() => {
-    return Object.values(flagUrls).filter(
-      (url) => !url || url.includes("placeholder")
-    ).length;
+    return Object.values(flagUrls).filter((url) => !url || url.includes("placeholder")).length;
   }, [flagUrls]);
 
   const refetch = useCallback(async () => {

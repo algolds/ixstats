@@ -9,7 +9,16 @@ import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { Database, RefreshCw, Trash2, Sparkles, Activity, Layers, Cpu, Trophy } from "lucide-react";
+import {
+  Database,
+  Refresh as RefreshCw,
+  Trash as Trash2,
+  Sparks as Sparkles,
+  Activity,
+  Component as Layers,
+  Cpu,
+  Trophy,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export default function SportsSeederPanel() {
@@ -156,12 +165,12 @@ export default function SportsSeederPanel() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-indigo-400">
-              <Database className="h-6 w-6 animate-pulse" />
+              <Database className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-foreground flex items-center gap-2 text-2xl font-bold">
                 Data Lab & Seeder
-                <Badge className="border-indigo-500/20 bg-indigo-500/10 text-[9px] font-bold text-indigo-400">
+                <Badge className="border-indigo-500/20 bg-indigo-500/10 text-xs font-bold text-indigo-400">
                   ADMIN TOOLS
                 </Badge>
               </h1>
@@ -221,7 +230,7 @@ export default function SportsSeederPanel() {
                       key={preset.key}
                       onClick={() => preset.setter(!preset.state)}
                       className={cn(
-                        "flex cursor-pointer gap-3 rounded-xl border p-4 transition-all duration-300 select-none",
+                        "flex cursor-pointer gap-3 rounded-xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
                         preset.state
                           ? "border-indigo-500/30 bg-indigo-500/5 hover:border-indigo-500/50"
                           : "bg-card/25 border-border/50 opacity-60 hover:opacity-85"
@@ -243,15 +252,15 @@ export default function SportsSeederPanel() {
                           </span>
                           <Badge
                             variant="outline"
-                            className="border-indigo-500/20 text-[9px] text-indigo-400 uppercase"
+                            className="border-indigo-500/20 text-xs text-indigo-400 uppercase"
                           >
                             {preset.teams} teams
                           </Badge>
                         </div>
-                        <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        <p className="text-muted-foreground text-xs leading-relaxed">
                           {preset.description}
                         </p>
-                        <div className="text-muted-foreground/60 flex gap-2 text-[10px]">
+                        <div className="text-muted-foreground/60 flex gap-2 text-xs">
                           <span className="font-semibold">{preset.archetype}</span>
                         </div>
                       </div>
@@ -341,7 +350,7 @@ export default function SportsSeederPanel() {
                 </span>
                 <Badge
                   variant="outline"
-                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-400 uppercase"
                 >
                   Operational
                 </Badge>
@@ -353,7 +362,7 @@ export default function SportsSeederPanel() {
                 </span>
                 <Badge
                   variant="outline"
-                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-400 uppercase"
                 >
                   Connected
                 </Badge>
@@ -365,7 +374,7 @@ export default function SportsSeederPanel() {
                 </span>
                 <Badge
                   variant="outline"
-                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-400 uppercase"
                 >
                   Online
                 </Badge>
@@ -377,7 +386,7 @@ export default function SportsSeederPanel() {
                 </span>
                 <Badge
                   variant="outline"
-                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-400 uppercase"
                 >
                   Active Loop
                 </Badge>

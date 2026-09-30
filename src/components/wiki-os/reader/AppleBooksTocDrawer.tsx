@@ -1,10 +1,10 @@
-// src/components/wiki-os/reader/AppleBooksTocDrawer.tsx
 "use client";
+// src/components/wiki-os/reader/AppleBooksTocDrawer.tsx
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { Xmark as X } from "iconoir-react";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { cn } from "~/lib/utils";
 
@@ -29,6 +29,7 @@ export function AppleBooksTocDrawer({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
@@ -124,10 +125,10 @@ export function AppleBooksTocDrawer({
               </div>
               <button
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground cursor-pointer rounded-full p-1.5 transition-all duration-200 hover:bg-white/10 active:scale-90"
+                className="text-muted-foreground hover:text-foreground cursor-pointer rounded-full p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-90"
                 aria-label="Close Table of Contents"
               >
-                <X size={16} />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -140,7 +141,7 @@ export function AppleBooksTocDrawer({
                     key={item.id}
                     onClick={() => handleNavigate(item.id)}
                     className={cn(
-                      "flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all duration-200 select-none",
+                      "flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
                       isActive
                         ? "bg-white/10 text-white"
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5",

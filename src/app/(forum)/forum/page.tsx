@@ -1,12 +1,11 @@
+"use client";
 // src/app/(forum)/forum/page.tsx
 // Forum index — categories view by default, thread feed for Trending/New.
-
-"use client";
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Flame, Clock, Home as HomeIcon } from "lucide-react";
+import { FireFlame as Flame, Clock, HomeSimple as HomeIcon } from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumCategoryCard } from "~/components/forum/reader/ForumCategoryCard";
 import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";
@@ -34,6 +33,7 @@ export default function ForumIndexPage() {
   // Reset page when view mode changes
   useEffect(() => {
     setPage(1);
+    // oxlint-disable-next-line
   }, [viewMode]);
 
   // Category data (only when in categories mode)

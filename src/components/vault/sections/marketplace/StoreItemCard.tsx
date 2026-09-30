@@ -3,7 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { ShoppingCart } from "lucide-react";
+import { Cart as ShoppingCart } from "iconoir-react";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 
 export interface StoreItem {
@@ -106,7 +106,7 @@ export function StoreItemCard({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "glass-surface relative flex h-auto min-h-[280px] w-44 flex-col justify-between rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)]",
+          "facet-surface relative flex h-auto min-h-[280px] w-44 flex-col justify-between rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)]",
           colors.border,
           isPreviewing && "border-cyan-500/60 shadow-[0_0_15px_var(--glow)]"
         )}
@@ -132,14 +132,14 @@ export function StoreItemCard({
         <div className="flex items-center justify-between">
           <Badge
             variant="outline"
-            className={cn("px-1 py-0 text-[8px] font-bold uppercase", colors.text, colors.border)}
+            className={cn("px-1 py-0 text-xs font-bold uppercase", colors.text, colors.border)}
           >
             {item.badgeText}
           </Badge>
           {isOwned ? (
             <Badge
               variant="outline"
-              className="border-emerald-500/35 bg-emerald-500/20 px-1 py-0 text-[8px] font-bold text-emerald-600 uppercase dark:text-emerald-400"
+              className="border-emerald-500/35 bg-emerald-500/20 px-1 py-0 text-xs font-bold text-emerald-600 uppercase dark:text-emerald-400"
             >
               {maxPurchases > 1 ? "Maxed Out" : "Owned"}
             </Badge>
@@ -147,7 +147,7 @@ export function StoreItemCard({
             purchaseCount > 0 && (
               <Badge
                 variant="outline"
-                className="border-amber-500/35 bg-amber-500/20 px-1 py-0 text-[8px] font-bold text-amber-600 uppercase dark:text-emerald-400"
+                className="border-amber-500/35 bg-amber-500/20 px-1 py-0 text-xs font-bold text-amber-600 uppercase dark:text-emerald-400"
               >
                 Owned x{purchaseCount}
               </Badge>
@@ -168,7 +168,7 @@ export function StoreItemCard({
           <h4 className="text-center text-xs font-semibold tracking-tight text-slate-900 dark:text-white/95">
             {item.name}
           </h4>
-          <p className="text-muted-foreground mt-1 text-center text-[9px] leading-tight">
+          <p className="text-muted-foreground mt-1 text-center text-xs leading-tight">
             {item.description}
           </p>
         </div>
@@ -181,7 +181,7 @@ export function StoreItemCard({
               size="sm"
               onClick={() => onPreview(item)}
               className={cn(
-                "h-7 w-full border text-[10px] font-bold transition-all duration-200",
+                "h-7 w-full border text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 isPreviewing
                   ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-600 shadow-[0_0_8px_rgba(6,182,212,0.25)] dark:text-cyan-400"
                   : "border-border/40 hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
@@ -194,7 +194,7 @@ export function StoreItemCard({
             onClick={() => onPurchase(item)}
             disabled={isPurchasing || isOwned}
             className={cn(
-              "h-8 w-full border-none py-2 text-xs font-bold text-white transition-all duration-200",
+              "h-8 w-full border-none py-2 text-xs font-bold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isOwned
                 ? "bg-secondary text-muted-foreground border-border/50 cursor-not-allowed border"
                 : isPurchasing
@@ -218,7 +218,7 @@ export function StoreItemCard({
               <span className="flex items-center justify-center gap-1">
                 <ShoppingCart className="h-3 w-3 text-white" />
                 <span>Buy</span>
-                <span className="ml-0.5 inline-flex items-center gap-0.5 align-middle font-mono text-[9px] opacity-90">
+                <span className="ml-0.5 inline-flex items-center gap-0.5 align-middle font-mono text-xs opacity-90">
                   <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0 text-white" />
                   {item.price.toLocaleString()}
                 </span>

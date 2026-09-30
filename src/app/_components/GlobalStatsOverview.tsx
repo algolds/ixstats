@@ -6,15 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
-  Users,
-  DollarSign,
-  TrendingUp,
+  Group as Users,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
   Globe,
-  Building2,
+  City as Building2,
   MapPin,
   Activity,
-  Target,
-} from "lucide-react";
+  Archery as Target,
+} from "iconoir-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
 
 interface GlobalStatsOverviewProps {

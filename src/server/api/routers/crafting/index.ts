@@ -6,16 +6,8 @@
  *
  * Domains:
  *  - recipes: recipe browsing, detail lookup, and the craft-card mutation (fusion/evolution)
- *  - history: per-user crafting history and aggregate stats
- *  - admin:   admin recipe CRUD (create / update / list all)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { craftingRecipesRouter } from "./recipes";
-import { craftingHistoryRouter } from "./history";
-import { craftingAdminRouter } from "./admin";
 
-export const craftingRouter = mergeRouters(
-  craftingRecipesRouter,
-  craftingHistoryRouter,
-  craftingAdminRouter
-);
+export const craftingRouter = mergeRouters(craftingRecipesRouter);

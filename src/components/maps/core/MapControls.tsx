@@ -10,7 +10,17 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool, EyeOff, Eye, Globe } from "lucide-react";
+import {
+  Component as Layers,
+  StatsReport as BarChart3,
+  Label as Tag,
+  Ruler,
+  MapPin,
+  EditPencil as PenTool,
+  EyeClosed as EyeOff,
+  Eye,
+  Globe,
+} from "iconoir-react";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/map-config";
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
 import type { OverlayVisibility } from "./IxWorldMap";
@@ -220,7 +230,7 @@ export function MapControls({
                       className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-black/10"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-foreground text-[11px]">{entry.label}</span>
+                    <span className="text-foreground text-xs">{entry.label}</span>
                   </div>
                 ))}
               </div>
@@ -266,7 +276,7 @@ function IconButton({
   onClick: () => void;
 }) {
   const base =
-    "relative flex items-center justify-center rounded-lg shadow-md transition-all duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
+    "relative flex items-center justify-center rounded-lg shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
   const colors =
     variant === "active-tool"
       ? "bg-blue-500 text-white hover:bg-blue-600"
@@ -295,7 +305,7 @@ function DropdownPanel({ children }: { children: React.ReactNode }) {
 function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="[&+&]:border-border [&+&]:mt-1.5 [&+&]:border-t [&+&]:pt-1.5">
-      <div className="text-muted-foreground px-1.5 pb-0.5 text-[10px] font-semibold tracking-wider uppercase">
+      <div className="text-muted-foreground px-1.5 pb-0.5 text-xs font-semibold tracking-wider uppercase">
         {title}
       </div>
       {children}

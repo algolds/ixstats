@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, RefreshCw, Layers } from "lucide-react";
+import { ArrowLeft, Refresh as RefreshCw, Component as Layers } from "iconoir-react";
 
 type ThemeType = "standard" | "dark" | "paper";
 
@@ -50,7 +50,7 @@ export function StyleEditorRouter() {
             <button
               key={theme}
               onClick={() => handleThemeChange(theme)}
-              className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-all ${
+              className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 selectedTheme === theme
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
@@ -71,7 +71,7 @@ export function StyleEditorRouter() {
             <RefreshCw className="h-4 w-4" />
           </button>
 
-          <div className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+          <div className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-400">
             Maputnik v1.7.0
           </div>
         </div>
@@ -79,9 +79,11 @@ export function StyleEditorRouter() {
 
       {/* Embedded Maputnik Iframe */}
       <div className="relative w-full flex-1 bg-slate-900">
+        {/* oxlint-disable-next-line -- Maputnik admin editor requires scripts + same-origin for style-store API, trusted same-origin iframe */}
         <iframe
           key={key}
           src={iframeUrl}
+          sandbox="allow-scripts allow-same-origin"
           className="absolute inset-0 h-full w-full border-none bg-slate-900"
           title="Maputnik Visual Style Editor"
         />

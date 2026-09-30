@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { X, ChevronDown, Check } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { Xmark as X, NavArrowDown as ChevronDown, Check } from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
 import { Badge } from "~/components/ui/badge";
 import {
   Command,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Users, Plus, ArrowRight } from "lucide-react";
+import { Group as Users, Plus, ArrowRight } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { useUser } from "~/context/auth-context";
@@ -11,9 +11,13 @@ import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
 import { AccountCreationModal } from "./AccountCreationModal";
 import { AccountSettingsModal } from "./AccountSettingsModal";
-import { createUrl } from "~/lib/utils";
 
-function ThinkPagesAccountHubInner() {
+interface ThinkPagesAccountHubProps {
+  /** Country id resolved on the server, used until getProfile loads so the country query runs in parallel. */
+  initialCountryId?: string;
+}
+
+function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountHubProps) {
   const { user } = useUser();
 
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
@@ -26,10 +30,13 @@ function ThinkPagesAccountHubInner() {
     staleTime: 5 * 60_000,
   });
 
+  const effectiveCountryId: string =
+    (userProfile ? userProfile.countryId : initialCountryId) || "";
+
   const { data: countryData } = api.countries.getMapSummary.useQuery(
-    { countryId: userProfile?.countryId || "" },
+    { countryId: effectiveCountryId },
     {
-      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "",
+      enabled: !!effectiveCountryId && effectiveCountryId.trim() !== "",
       staleTime: 5 * 60_000,
       retry: false,
     }
@@ -42,6 +49,7 @@ function ThinkPagesAccountHubInner() {
   const accounts = useMemo(() => accountsData || [], [accountsData]);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!selectedAccount && accounts.length > 0) setSelectedAccount(accounts[0]);
   }, [accounts, selectedAccount]);
 
@@ -55,7 +63,7 @@ function ThinkPagesAccountHubInner() {
   if (!isCountryReady) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-        <Card className="glass-hierarchy-parent">
+        <Card className="facet-hierarchy-parent">
           <CardContent className="p-8 text-center">
             <Users className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <h3 className="mb-2 text-lg font-semibold">Country Setup Required</h3>
@@ -107,7 +115,7 @@ function ThinkPagesAccountHubInner() {
             e.stopPropagation();
             setShowAccountCreation(true);
           }}
-          className="gap-1.5 bg-gradient-to-r from-purple-600 to-violet-600 text-white hover:from-purple-700 hover:to-violet-700"
+          className="gap-1.5"
           type="button"
         >
           <Plus className="h-4 w-4" />
@@ -158,10 +166,10 @@ function ThinkPagesAccountHubInner() {
   );
 }
 
-export function ThinkPagesAccountHub() {
+export function ThinkPagesAccountHub({ initialCountryId }: ThinkPagesAccountHubProps) {
   return (
     <AuthenticationGuard redirectPath="/thinkpages">
-      <ThinkPagesAccountHubInner />
+      <ThinkPagesAccountHubInner initialCountryId={initialCountryId} />
     </AuthenticationGuard>
   );
 }

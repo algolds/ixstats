@@ -1,5 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
-
 export interface DecretalSliderOption {
   label: string;
   value: number; // multiplier or baseline factor
@@ -156,6 +154,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         ],
       },
     ],
+    // oxlint-disable-next-line typescript/no-unused-vars
     calculate: (settings, countryMetrics) => {
       const rate = settings.tariffRate ?? 0;
       const exceptions = settings.exceptions ?? 0;
@@ -227,6 +226,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         ],
       },
     ],
+    // oxlint-disable-next-line typescript/no-unused-vars
     calculate: (settings, countryMetrics) => {
       const level = settings.surveillance ?? 0;
 
@@ -234,8 +234,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       const maintenanceCost = level * 2000000;
 
       let gdpEffect = 0;
-      let employmentEffect = 0;
-      let inflationEffect = 0;
+      const employmentEffect = 0;
+      const inflationEffect = 0;
       let taxRevenueEffect = 0;
       let stabilityEffect = 0;
 
@@ -275,7 +275,9 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
       if (template.defaultSettings) {
         try {
           parsedSettings = JSON.parse(template.defaultSettings);
-        } catch {}
+        } catch (err) {
+          console.warn("[Registry] Malformed defaultSettings on template", template.id, err);
+        }
       }
 
       const costMult = parsedSettings.costMultiplier ?? 1.0;

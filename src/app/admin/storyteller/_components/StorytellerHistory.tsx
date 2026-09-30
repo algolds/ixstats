@@ -1,13 +1,13 @@
+"use client";
 // src/app/admin/storyteller/_components/StorytellerHistory.tsx
 // Audit log of admin storyteller actions
-"use client";
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { Clock, User, FileText } from "lucide-react";
+import { Clock, User, Page as FileText } from "iconoir-react";
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE_WORLD_EVENT: "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300",
@@ -71,42 +71,41 @@ export function StorytellerHistory() {
               // ignore parse errors
             }
 
-              return (
-                <div
-                  key={log.id}
-                  className="glass-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={`text-xs ${colorClass}`}>
-                        {log.action.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
-                    <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                      <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
-                    </span>
+            return (
+              <div
+                key={log.id}
+                className="facet-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={`text-xs ${colorClass}`}>
+                      {log.action.replace(/_/g, " ")}
+                    </Badge>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-2 text-xs">
-                    <User className="text-muted-foreground h-3 w-3" />
-                    <span className="text-muted-foreground">{log.adminName}</span>
-                  </div>
-                  {details && (
-                    <div className="text-muted-foreground mt-1 text-xs">
-                      {Object.entries(details)
-                        .filter(([k]) => k !== "eventId" && k !== "countryId")
-                        .map(([k, v]) => (
-                          <span key={k} className="mr-3">
-                            <span className="font-medium">{k}:</span>{" "}
-                            {typeof v === "number" ? v.toLocaleString() : String(v)}
-                          </span>
-                        ))}
-                    </div>
-                  )}
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <Clock className="h-3 w-3" />
+                    {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                  </span>
                 </div>
-              );
-            }
-          )}
+                <div className="mt-1.5 flex items-center gap-2 text-xs">
+                  <User className="text-muted-foreground h-3 w-3" />
+                  <span className="text-muted-foreground">{log.adminName}</span>
+                </div>
+                {details && (
+                  <div className="text-muted-foreground mt-1 text-xs">
+                    {Object.entries(details)
+                      .filter(([k]) => k !== "eventId" && k !== "countryId")
+                      .map(([k, v]) => (
+                        <span key={k} className="mr-3">
+                          <span className="font-medium">{k}:</span>{" "}
+                          {typeof v === "number" ? v.toLocaleString() : String(v)}
+                        </span>
+                      ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

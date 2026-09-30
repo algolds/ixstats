@@ -4,7 +4,7 @@ import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { MessageCircle, Send } from "lucide-react";
+import { ChatBubble as MessageCircle, Send } from "iconoir-react";
 
 export interface CommentItem {
   id: string;
@@ -31,7 +31,7 @@ export function CollectionCommentsTab({
   return (
     <div className="space-y-4">
       {/* Add comment */}
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-4">
           <h3 className="mb-3 text-lg font-semibold text-white">Add a Comment</h3>
           <div className="flex gap-2">
@@ -39,13 +39,13 @@ export function CollectionCommentsTab({
               placeholder="Share your thoughts..."
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              className="glass-hierarchy-child flex-1"
+              className="facet-hierarchy-child flex-1"
               maxLength={500}
             />
             <Button
               onClick={onAddComment}
               disabled={!commentText.trim() || isPending}
-              className="bg-gradient-to-r from-blue-500 to-purple-500"
+              className="bg-blue-600 hover:bg-blue-500 text-white"
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -58,7 +58,7 @@ export function CollectionCommentsTab({
       {comments && comments.length > 0 ? (
         <div className="space-y-3">
           {comments.map((comment) => (
-            <Card key={comment.id} className="glass-hierarchy-child">
+            <Card key={comment.id} className="facet-hierarchy-child">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-1">
@@ -76,7 +76,7 @@ export function CollectionCommentsTab({
           ))}
         </div>
       ) : (
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="p-12 text-center">
             <MessageCircle className="mx-auto mb-3 h-12 w-12 text-white/20" />
             <p className="text-white/70">No comments yet</p>

@@ -2,8 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
-import { Tooltip } from "~/components/ui/tooltip-card";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+  HoverCardArrow,
+} from "~/components/ui/hover-card";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 // ──────────────────────────────────────────────
 // WikiLinkPreview — for React element wrapping
@@ -69,7 +74,74 @@ const parseStyleString = (styleStr: string): Record<string, string> => {
   return styles;
 };
 
-function domNodeToReact(node: Node, index: number): React.ReactNode {
+// HTML elements that cannot contain whitespace text nodes in React / DOM validation
+const STRICT_TABLE_ELEMENTS = new Set([
+  "table",
+  "thead",
+  "tbody",
+  "tfoot",
+  "tr",
+  "colgroup",
+  "select",
+]);
+
+const NO_MISSING_PAGES: ReadonlySet<string> = new Set();
+const RED_LINK_CLASS =
+  "text-destructive underline decoration-destructive/30 transition-colors hover:decoration-destructive";
+
+/** Article title a `/wiki/...` href points at; null for namespaced (File:, Category:…) targets. */
+function wikiLinkTitle(href: string): string | null {
+  const path = href.slice("/wiki/".length).split(/[?#]/)[0] ?? "";
+  try {
+    const title = decodeURIComponent(path).replace(/_/g, " ").trim();
+    return title && title.length <= 255 && !title.includes(":") ? title : null;
+  } catch {
+    return null;
+  }
+}
+
+function collectWikiLinkTitles(root: Element): string[] {
+  const titles = new Set<string>();
+  root.querySelectorAll('a[href^="/wiki/"]').forEach((link) => {
+    const title = wikiLinkTitle(link.getAttribute("href") ?? "");
+    if (title) titles.add(title);
+  });
+  return Array.from(titles).slice(0, 200);
+}
+
+/** Wiki link; links to pages that do not exist render as red links. */
+function renderWikiLink(
+  element: HTMLElement,
+  index: number,
+  missing: ReadonlySet<string>
+): React.ReactNode {
+  const href = element.getAttribute("href") || "";
+  const title = wikiLinkTitle(href);
+  const isRedLink = title !== null && missing.has(title);
+  const className = isRedLink
+    ? RED_LINK_CLASS
+    : element.className ||
+      "text-wiki hover:text-wiki-hover font-semibold underline transition-colors";
+
+  return (
+    <a
+      key={index}
+      href={href}
+      className={className}
+      title={isRedLink ? `${title} (page does not exist)` : undefined}
+    >
+      {Array.from(element.childNodes).map((child, childIdx) =>
+        domNodeToReact(child, childIdx, missing)
+      )}
+    </a>
+  );
+}
+
+function domNodeToReact(
+  node: Node,
+  index: number,
+  missing: ReadonlySet<string> = NO_MISSING_PAGES
+): React.ReactNode {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent;
   }
@@ -98,21 +170,12 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-slate-500/[0.03] p-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
+          className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-slate-500/[0.03] p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
         >
           <div className="min-w-0 flex-1 text-left">
             <div className="mb-1 flex items-center gap-1.5">
-              <img
-                src="https://cdn.simpleicons.org/wikipedia/1d4e89"
-                className="h-3 w-3 dark:hidden"
-                alt=""
-              />
-              <img
-                src="https://cdn.simpleicons.org/wikipedia/38bdf8"
-                className="hidden h-3 w-3 dark:block"
-                alt=""
-              />
-              <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+              <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
+              <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
               </span>
             </div>
@@ -137,16 +200,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
 
   // Custom Handler: Wiki Link
   if (tagName === "a" && element.getAttribute("href")?.startsWith("/wiki/")) {
-    const href = element.getAttribute("href") || "";
-    const className =
-      element.className ||
-      "text-purple-600 dark:text-purple-400 font-semibold underline hover:text-purple-700 dark:hover:text-purple-300 transition-colors";
-
-    return (
-      <a key={index} href={href} className={className}>
-        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
-      </a>
-    );
+    return renderWikiLink(element, index, missing);
   }
 
   // Custom Handler: Hashtag Link
@@ -157,7 +211,9 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
 
     return (
       <Link key={index} href={withBasePath(href)} className={className}>
-        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
+        {Array.from(element.childNodes).map((child, childIdx) =>
+          domNodeToReact(child, childIdx, missing)
+        )}
       </Link>
     );
   }
@@ -187,7 +243,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
 
       // Determine style classes: Minimalist Glass Pills with default light and dark mode classes
       let badgeStyle =
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold select-none transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 backdrop-blur-[2px] border ";
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.03] hover:-translate-y-0.5 backdrop-blur-[2px] border ";
       if (isLeague) {
         badgeStyle +=
           "bg-amber-600/[0.06] border-amber-600/20 text-amber-700 hover:bg-amber-600/[0.1] hover:border-amber-600/30 dark:bg-amber-500/[0.04] dark:border-amber-500/15 dark:text-amber-400/90 dark:hover:bg-amber-500/[0.08] dark:hover:border-amber-500/25";
@@ -199,7 +255,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
           "bg-emerald-600/[0.06] border-emerald-600/20 text-emerald-700 hover:bg-emerald-600/[0.1] hover:border-emerald-600/30 dark:bg-emerald-500/[0.04] dark:border-emerald-500/15 dark:text-emerald-400/90 dark:hover:bg-emerald-500/[0.08] dark:hover:border-emerald-500/25";
       } else {
         badgeStyle +=
-          "bg-purple-600/[0.06] border-purple-600/20 text-purple-700 hover:bg-purple-600/[0.1] hover:border-purple-600/30 dark:bg-purple-500/[0.04] dark:border-purple-500/15 dark:text-purple-400/90 dark:hover:bg-purple-500/[0.08] dark:hover:border-purple-500/25";
+          "bg-wiki/10 border-wiki/30 text-wiki hover:bg-wiki/20 hover:text-wiki-hover";
       }
 
       return (
@@ -224,15 +280,25 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
     const cleanHref = href.replace(/^\/projects\/ixstates/, "");
     return (
       <Link key={index} href={withBasePath(cleanHref)} className={element.className}>
-        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
+        {Array.from(element.childNodes).map((child, childIdx) =>
+          domNodeToReact(child, childIdx, missing)
+        )}
       </Link>
     );
   }
 
-  // Standard HTML elements mapping
-  const children = Array.from(element.childNodes).map((child, childIdx) =>
-    domNodeToReact(child, childIdx)
-  );
+  // Filter out whitespace-only text nodes in strict table/form containers to prevent React hydration/DOM nesting errors
+  const childNodes = Array.from(element.childNodes).filter((child) => {
+    if (STRICT_TABLE_ELEMENTS.has(tagName) && child.nodeType === Node.TEXT_NODE) {
+      return Boolean(child.textContent && child.textContent.trim().length > 0);
+    }
+    return true;
+  });
+
+  const children = childNodes
+    .map((child, childIdx) => domNodeToReact(child, childIdx, missing))
+    .filter((child) => child !== null && child !== undefined);
+
   const props: any = { key: index };
 
   if (element.className) props.className = element.className;
@@ -241,6 +307,14 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
   if (element.getAttribute("rel")) props.rel = element.getAttribute("rel");
   if (element.getAttribute("src")) props.src = element.getAttribute("src");
   if (element.getAttribute("alt")) props.alt = element.getAttribute("alt");
+  if (element.getAttribute("title")) props.title = element.getAttribute("title");
+  if (element.getAttribute("scope")) props.scope = element.getAttribute("scope");
+  if (element.getAttribute("colspan")) {
+    props.colSpan = Number(element.getAttribute("colspan")) || element.getAttribute("colspan");
+  }
+  if (element.getAttribute("rowspan")) {
+    props.rowSpan = Number(element.getAttribute("rowspan")) || element.getAttribute("rowspan");
+  }
 
   if (element.getAttribute("style")) {
     props.style = parseStyleString(element.getAttribute("style") || "");
@@ -250,7 +324,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
     return React.createElement(tagName, props);
   }
 
-  return React.createElement(tagName, props, children);
+  return React.createElement(tagName, props, ...children);
 }
 
 function getEntityIcon(
@@ -340,170 +414,164 @@ export function MentionPopover({
   const isLoading = leagueLoading || teamLoading || countryLoading || authorLoading;
 
   return (
-    <HoverCardPrimitive.Root open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
-      <HoverCardPrimitive.Trigger asChild>
+    <HoverCard open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
+      <HoverCardTrigger asChild>
         <Link href={withBasePath(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
           {icon && <span className="shrink-0 text-[12px] leading-none">{icon}</span>}
           <span>{label}</span>
         </Link>
-      </HoverCardPrimitive.Trigger>
-      <HoverCardPrimitive.Portal>
-        <HoverCardPrimitive.Content
-          side="top"
-          align="center"
-          sideOffset={6}
-          className="animate-in fade-in-0 zoom-in-95 border-border bg-popover/95 text-popover-foreground z-50 w-64 rounded-xl border p-4 shadow-xl backdrop-blur-md"
-        >
-          {isLoading ? (
-            <div className="flex flex-col gap-2 py-1">
-              <div className="h-4 w-24 animate-pulse rounded bg-neutral-200 dark:bg-white/10" />
-              <div className="h-3 w-40 animate-pulse rounded bg-neutral-100 dark:bg-white/5" />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {/* League Popover content */}
-              {isLeague && leagueData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🏆</span>
-                    <div>
-                      <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                        {leagueData.name}
-                      </h4>
-                      <p className="text-[10px] text-neutral-500 capitalize dark:text-slate-400">
-                        {leagueData.sportPreset} · {leagueData.archetype}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/myleague/${entityId}`)}
-                      className="flex-1 rounded bg-amber-500/10 py-1 text-center text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-200 dark:hover:bg-amber-500/30"
-                    >
-                      View Workspace
-                    </Link>
+      </HoverCardTrigger>
+      <HoverCardContent side="top" align="center" sideOffset={6} className="w-64 p-4">
+        {isLoading ? (
+          <div className="flex flex-col gap-2 py-1">
+            <div className="h-4 w-24 animate-pulse rounded bg-neutral-200 dark:bg-white/10" />
+            <div className="h-3 w-40 animate-pulse rounded bg-neutral-100 dark:bg-white/5" />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {/* League Popover content */}
+            {isLeague && leagueData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🏆</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                      {leagueData.name}
+                    </h4>
+                    <p className="text-xs text-neutral-500 capitalize dark:text-slate-400">
+                      {leagueData.sportPreset} · {leagueData.archetype}
+                    </p>
                   </div>
                 </div>
-              )}
-
-              {/* Club/Team Popover content */}
-              {isClub && teamData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg" style={{ color: teamData.color || "#eab308" }}>
-                      🛡️
-                    </span>
-                    <div>
-                      <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                        {teamData.name}
-                      </h4>
-                      <p className="text-[10px] text-neutral-500 dark:text-slate-400">
-                        Stadium Cap: {teamData.stadiumCapacity}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/myclub/${entityId}`)}
-                      className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
-                    >
-                      View Roster & Stats
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Country Popover content */}
-              {isCountry && countryData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🌍</span>
-                    <div>
-                      <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                        {(countryData as any)?.title ?? entityId}
-                      </h4>
-                      <p className="line-clamp-2 text-[10px] text-neutral-500 dark:text-slate-400">
-                        {countryData.paragraphs?.[0] || "Explore country details."}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/countries/${entityId}`)}
-                      className="flex-1 rounded bg-emerald-500/10 py-1 text-center text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-200 dark:hover:bg-emerald-500/30"
-                    >
-                      View Profile
-                    </Link>
-                    <Link
-                      href={withBasePath(`/mycountry/diplomacy`)}
-                      className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                      Open Embassy
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* ThinkPages User / Account Popover content */}
-              {isUser && authorData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/10">
-                      <span className="text-sm font-bold text-purple-600 dark:text-purple-300">
-                        👤
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-purple-700 dark:text-purple-300">
-                        @{entityId}
-                      </h4>
-                      {authorData.country && (
-                        <p className="text-[10px] text-neutral-500 dark:text-slate-400">
-                          From {authorData.country.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-1 flex gap-2">
-                    <Link
-                      href={withBasePath(`/dashboard`)}
-                      className="flex-1 rounded bg-purple-500/10 py-1 text-center text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:bg-purple-500/20 dark:text-purple-200 dark:hover:bg-purple-500/30"
-                    >
-                      View Feed
-                    </Link>
-                    <Link
-                      href={withBasePath(`/messages`)}
-                      className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                      Message
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Fallback if no data was found or loaded */}
-              {!isLoading && !leagueData && !teamData && !countryData && !authorData && (
-                <div className="flex flex-col gap-2 text-left">
-                  <h4 className="text-xs font-bold text-neutral-600 dark:text-slate-300">
-                    {label}
-                  </h4>
-                  <p className="text-[10px] text-neutral-500 dark:text-slate-400">
-                    Explore page profile.
-                  </p>
+                <div className="mt-1 flex gap-2">
                   <Link
-                    href={withBasePath(href)}
-                    className="mt-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    href={withBasePath(`/myleague/${entityId}`)}
+                    className="flex-1 rounded bg-amber-500/10 py-1 text-center text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-200 dark:hover:bg-amber-500/30"
                   >
-                    Go to Page
+                    View Workspace
                   </Link>
                 </div>
-              )}
-            </div>
-          )}
-          <HoverCardPrimitive.Arrow className="fill-popover" />
-        </HoverCardPrimitive.Content>
-      </HoverCardPrimitive.Portal>
-    </HoverCardPrimitive.Root>
+              </div>
+            )}
+
+            {/* Club/Team Popover content */}
+            {isClub && teamData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-lg"
+                    style={{ color: teamData.color || "var(--color-warning-light)" }}
+                  >
+                    🛡️
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                      {teamData.name}
+                    </h4>
+                    <p className="text-xs text-neutral-500 dark:text-slate-400">
+                      Stadium Cap: {teamData.stadiumCapacity}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <Link
+                    href={withBasePath(`/myclub/${entityId}`)}
+                    className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
+                  >
+                    View Roster & Stats
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Country Popover content */}
+            {isCountry && countryData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🌍</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                      {(countryData as any)?.title ?? entityId}
+                    </h4>
+                    <p className="line-clamp-2 text-xs text-neutral-500 dark:text-slate-400">
+                      {countryData.paragraphs?.[0] || "Explore country details."}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <Link
+                    href={withBasePath(`/countries/${entityId}`)}
+                    className="flex-1 rounded bg-emerald-500/10 py-1 text-center text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-200 dark:hover:bg-emerald-500/30"
+                  >
+                    View Profile
+                  </Link>
+                  <Link
+                    href={withBasePath(`/mycountry/diplomacy`)}
+                    className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    Open Embassy
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* ThinkPages User / Account Popover content */}
+            {isUser && authorData && (
+              <div className="flex flex-col gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10">
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-300">
+                      👤
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                      @{entityId}
+                    </h4>
+                    {authorData.country && (
+                      <p className="text-xs text-neutral-500 dark:text-slate-400">
+                        From {authorData.country.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <Link
+                    href={withBasePath(`/dashboard`)}
+                    className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
+                  >
+                    View Feed
+                  </Link>
+                  <Link
+                    href={withBasePath(`/messages`)}
+                    className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    Message
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Fallback if no data was found or loaded */}
+            {!isLoading && !leagueData && !teamData && !countryData && !authorData && (
+              <div className="flex flex-col gap-2 text-left">
+                <h4 className="text-xs font-bold text-neutral-600 dark:text-slate-300">{label}</h4>
+                <p className="text-xs text-neutral-500 dark:text-slate-400">
+                  Explore page profile.
+                </p>
+                <Link
+                  href={withBasePath(href)}
+                  className="mt-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  Go to Page
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+        <HoverCardArrow className="fill-popover" />
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -511,22 +579,43 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setIsMounted(true);
   }, []);
 
-  const parsedContent = useMemo(() => {
+  const root = useMemo(() => {
     if (!isMounted || typeof window === "undefined" || !html) return null;
     try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
-      const root = doc.body.firstElementChild;
-      if (!root) return null;
-      return Array.from(root.childNodes).map((node, idx) => domNodeToReact(node, idx));
+      const doc = new DOMParser().parseFromString(`<div>${html}</div>`, "text/html");
+      return doc.body.firstElementChild;
     } catch (err) {
       console.warn("Failed to parse HTML in WikiHtmlContent:", err);
       return null;
     }
   }, [html, isMounted]);
+
+  // One batched existence check per rendered content marks links to missing pages red.
+  const linkTitles = useMemo(() => (root ? collectWikiLinkTitles(root) : []), [root]);
+  const { data: missingTitles } = api.wikios.getMissingPages.useQuery(
+    { titles: linkTitles },
+    { enabled: linkTitles.length > 0, staleTime: 5 * 60_000, retry: false }
+  );
+  const missing = useMemo(
+    () => (missingTitles ? new Set(missingTitles) : NO_MISSING_PAGES),
+    [missingTitles]
+  );
+
+  const parsedContent = useMemo(() => {
+    if (!root) return null;
+    try {
+      return Array.from(root.childNodes)
+        .map((node, idx) => domNodeToReact(node, idx, missing))
+        .filter((node) => node !== null && node !== undefined);
+    } catch (err) {
+      console.warn("Failed to render HTML in WikiHtmlContent:", err);
+      return null;
+    }
+  }, [root, missing]);
 
   if (!isMounted || !parsedContent) {
     return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;

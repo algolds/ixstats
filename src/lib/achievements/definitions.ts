@@ -645,6 +645,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     rarity: "Common",
     points: 5,
     iconUrl: "👋",
+    // oxlint-disable-next-line typescript/no-unused-vars
     condition: (data) => true, // Auto-unlocked on account creation
   },
   {

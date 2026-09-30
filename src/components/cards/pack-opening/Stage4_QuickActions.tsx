@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/Stage4_QuickActions.tsx
 // Stage 4: Post-reveal quick actions for cards
-
-"use client";
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -9,6 +8,16 @@ import type { CardInstance, QuickActionType, QuickActionEvent } from "~/types/pa
 import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+
+/** Placeholder quick-sell estimate per rarity, in IxCredits. */
+const RARITY_ESTIMATED_VALUE: Record<string, number> = {
+  COMMON: 10,
+  UNCOMMON: 25,
+  RARE: 75,
+  ULTRA_RARE: 200,
+  EPIC: 500,
+  LEGENDARY: 1500,
+};
 
 interface Stage4_QuickActionsProps {
   cards: CardInstance[];
@@ -35,18 +44,8 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
 
     // Calculate estimated value
     const estimatedValue = useMemo(() => {
-      // Rarity value multipliers (placeholder)
-      const rarityValues: Record<string, number> = {
-        COMMON: 10,
-        UNCOMMON: 25,
-        RARE: 75,
-        ULTRA_RARE: 200,
-        EPIC: 500,
-        LEGENDARY: 1500,
-      };
-
       return cards.reduce((total, card) => {
-        return total + (rarityValues[card.rarity] ?? 10);
+        return total + (RARITY_ESTIMATED_VALUE[card.rarity] ?? 10);
       }, 0);
     }, [cards]);
 
@@ -138,7 +137,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
             </button>
 
             {bulkMode && selectedCards.size > 0 && (
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex gap-2">
+              <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1 }} className="flex gap-2">
                 <button
                   onClick={() => handleBulkAction("junk")}
                   className="rounded-lg bg-red-500/20 px-3 py-1 text-sm font-medium text-red-300 hover:bg-red-500/30"
@@ -235,20 +234,11 @@ const CardActionItem = React.memo<CardActionItemProps>(
   ({ card, index, isSelected, bulkMode, action, onToggleSelect, onAction, service }) => {
     const rarityColor = service.getRarityColor(card.rarity);
 
-    // Rarity value estimates
-    const rarityValues: Record<string, number> = {
-      COMMON: 10,
-      UNCOMMON: 25,
-      RARE: 75,
-      ULTRA_RARE: 200,
-      EPIC: 500,
-      LEGENDARY: 1500,
-    };
-    const estimatedValue = rarityValues[card.rarity] ?? 10;
+    const estimatedValue = RARITY_ESTIMATED_VALUE[card.rarity] ?? 10;
 
     return (
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
+        initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{
           delay: index * 0.05,
@@ -256,7 +246,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
           stiffness: 300,
           damping: 25,
         }}
-        className={`relative rounded-xl transition-all ${
+        className={`relative rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
           isSelected ? "ring-2 ring-blue-400" : ""
         } ${action ? "opacity-50" : ""}`}
       >

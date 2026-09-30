@@ -1,0 +1,295 @@
+/* ==========================================================================
+   UTILITIES ENGINE — COMMON HELPERS, COMPACT MODE, PERFORMANCE & ACCESSIBILITY
+   ========================================================================== */
+
+/* ─── 1. Common Status & Tier Badges ───────────────────────────────────── */
+
+.tier-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid;
+}
+
+.tier-advanced {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: var(--color-tier-advanced);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.tier-developed {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--color-tier-developed);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.tier-emerging {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--color-tier-emerging);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.tier-developing {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-tier-developing);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.status-online {
+  color: var(--color-success);
+}
+
+.status-offline {
+  color: var(--color-error);
+}
+
+.status-warning {
+  color: var(--color-warning);
+}
+
+.status-info {
+  color: var(--color-info);
+}
+
+/* ─── 2. Compact Mode Calibration ──────────────────────────────────────── */
+
+.compact-mode {
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.25rem;
+  --font-size-xs: 0.65rem;
+  --font-size-sm: 0.75rem;
+  --font-size-base: 0.8rem;
+  --font-size-lg: 0.9rem;
+  --font-size-xl: 1rem;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.4;
+}
+
+.compact-mode .navigation-bar {
+  height: 3rem;
+}
+
+.compact-mode .marquee-container {
+  height: 2.5rem;
+}
+
+.compact-mode .marquee-item {
+  padding: 0.25rem 0.5rem;
+  font-size: var(--font-size-sm);
+}
+
+.compact-mode .dynamic-island {
+  transform: scale(0.9);
+}
+
+/* ─── 3. Hardware & Render Performance Optimizations ────────────────────── */
+
+
+.dynamic-island {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  contain: layout style paint;
+}
+
+.command-palette-dropdown {
+  will-change: transform, opacity;
+  contain: layout style paint;
+  transform: translateZ(0);
+}
+
+.hover-optimized {
+  transition-property: background-color, border-color, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: background-color, border-color, opacity;
+}
+
+.performance-optimized {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  contain: layout style paint;
+}
+
+.btn-optimized {
+  transition: background-color 0.15s ease-in-out, 
+              border-color 0.15s ease-in-out, 
+              opacity 0.15s ease-in-out;
+  will-change: background-color, border-color, opacity;
+}
+
+.scroll-optimized {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  contain: layout style paint;
+}
+
+/* ─── 4. Shared Loading & Animation States ──────────────────────────────── */
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(1rem); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  color: var(--color-brand-primary);
+}
+
+.loading-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-secondary) 25%,
+    var(--color-bg-tertiary) 50%,
+    var(--color-bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+.chart-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 0.375rem;
+}
+
+.dark .chart-skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s infinite;
+}
+
+/* ─── 5. Theme Overrides & Accessibility ───────────────────────────────── */
+
+html,
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.light .glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.focus\:ring-2:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-brand-primary);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tier-badge {
+    border-width: 2px;
+  }
+
+  .light {
+    --color-text-primary: #000000;
+    --color-text-secondary: #18181b;
+    --color-border-primary: #27272a;
+    --color-bg-primary: #ffffff;
+  }
+  
+  .dark {
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #f4f4f5;
+    --color-border-primary: #d4d4d8;
+    --color-bg-primary: #000000;
+  }
+}
+
+/* Reduced motion accessibility guard */
+@media (prefers-reduced-motion: reduce) {
+  .loading-skeleton,
+  .chart-skeleton,
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-pulse-slow,
+  .loading-spinner {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Print layout overrides */
+@media print {
+  .aurora-bg,
+  .animate-spin,
+  .animate-pulse {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .card {
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+  
+  .text-muted {
+    color: #666 !important;
+  }
+  
+  .btn {
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: black !important;
+  }
+}

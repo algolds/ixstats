@@ -510,6 +510,7 @@ export function monitorThresholds(
 export function detectOpportunities(
   country: Country,
   trends: TrendAnalysis[],
+  // oxlint-disable-next-line typescript/no-unused-vars
   peerAverages: Record<string, number>
 ): IntelligenceAlert[] {
   const opportunities: IntelligenceAlert[] = [];

@@ -10,15 +10,14 @@ import type { SectorConfiguration } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import {
-  Factory,
+  Industry as Factory,
   Leaf,
-  Users,
-  Zap,
-  DollarSign,
-  Building2,
-  Pickaxe,
-  type LucideIcon,
-} from "lucide-react";
+  Group as Users,
+  Flash as Zap,
+  Dollar as DollarSign,
+  City as Building2,
+  Hammer as Pickaxe,
+} from "iconoir-react";
 
 /**
  * Template defining default properties for an economic sector
@@ -27,7 +26,7 @@ export interface SectorTemplate {
   /** Display name of the sector */
   name: string;
   /** Lucide icon component for UI representation */
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   /** Tailwind color identifier */
   color: string;
   /** Base GDP contribution percentage */

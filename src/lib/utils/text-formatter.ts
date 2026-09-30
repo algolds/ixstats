@@ -74,7 +74,7 @@ export function formatContentEnhanced(content: string): string {
   // Parse Inline Code: `text`
   formattedContent = formattedContent.replace(
     /`([^`]+)`/g,
-    '<code class="bg-black/30 px-1 py-0.5 rounded text-[11px] font-mono text-pink-400">$1</code>'
+    '<code class="bg-black/30 px-1 py-0.5 rounded text-xs font-mono text-pink-400">$1</code>'
   );
 
   // Parse Blockquotes: > text

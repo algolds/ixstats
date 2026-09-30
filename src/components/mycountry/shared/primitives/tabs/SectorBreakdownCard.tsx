@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { formatCompactCurrency } from "~/lib/utils";
+import { formatCompactCurrency, formatPopulation } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { useCountryImage } from "~/hooks/useCountryImage";
 import { useCountryData } from "../CountryDataProvider";
@@ -23,7 +23,7 @@ export interface SectorData {
   color: string; // Tailwind color name (e.g., "green", "blue")
   trend?: "up" | "down" | "stable";
   trendValue?: number;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   description?: string;
   /** ImageContext key for contextual background image (e.g., "sector_agriculture") */
   imageKeyword?: string;
@@ -58,60 +58,56 @@ function formatCurrency(
   return formatCompactCurrency(value, "N/A", currency);
 }
 
-// Format people/population counts without decimals
-function formatPeopleCount(value: number | undefined | null): string {
-  if (value == null || !isFinite(value) || value === 0) return "0";
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `${Math.round(value / 1_000_000_000)}B`;
-  if (abs >= 1_000_000) return `${Math.round(value / 1_000_000)}M`;
-  if (abs >= 1_000) return `${Math.round(value / 1_000)}K`;
-  return Math.round(value).toLocaleString();
-}
-
 // Get color classes for a given color name
 function getColorClasses(color: string) {
   const colorMap: Record<string, { bg: string; text: string; progress: string; border: string }> = {
-    green: {
-      bg: "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20",
-      text: "text-green-600 dark:text-green-400",
-      progress: "bg-green-500 dark:bg-green-400",
-      border: "border-green-200 dark:border-green-700/40",
-    },
-    blue: {
-      bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20",
-      text: "text-blue-600 dark:text-blue-400",
-      progress: "bg-blue-500 dark:bg-blue-400",
-      border: "border-blue-200 dark:border-blue-700/40",
-    },
-    purple: {
-      bg: "bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20",
-      text: "text-purple-600 dark:text-purple-400",
-      progress: "bg-purple-500 dark:bg-purple-400",
-      border: "border-purple-200 dark:border-purple-700/40",
-    },
     emerald: {
-      bg: "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20",
+      bg: "bg-emerald-500/10",
       text: "text-emerald-600 dark:text-emerald-400",
-      progress: "bg-emerald-500 dark:bg-emerald-400",
-      border: "border-emerald-200 dark:border-emerald-700/40",
+      progress: "bg-emerald-500",
+      border: "border-emerald-500/20",
+    },
+    green: {
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-600 dark:text-emerald-400",
+      progress: "bg-emerald-500",
+      border: "border-emerald-500/20",
     },
     cyan: {
-      bg: "bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20",
+      bg: "bg-cyan-500/10",
       text: "text-cyan-600 dark:text-cyan-400",
-      progress: "bg-cyan-500 dark:bg-cyan-400",
-      border: "border-cyan-200 dark:border-cyan-700/40",
+      progress: "bg-cyan-500",
+      border: "border-cyan-500/20",
+    },
+    indigo: {
+      bg: "bg-indigo-500/10",
+      text: "text-indigo-600 dark:text-indigo-400",
+      progress: "bg-indigo-500",
+      border: "border-indigo-500/20",
+    },
+    purple: {
+      bg: "bg-indigo-500/10",
+      text: "text-indigo-600 dark:text-indigo-400",
+      progress: "bg-indigo-500",
+      border: "border-indigo-500/20",
     },
     amber: {
-      bg: "bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20",
+      bg: "bg-amber-500/10",
       text: "text-amber-600 dark:text-amber-400",
-      progress: "bg-amber-500 dark:bg-amber-400",
-      border: "border-amber-200 dark:border-amber-700/40",
+      progress: "bg-amber-500",
+      border: "border-amber-500/20",
     },
     red: {
-      bg: "bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20",
+      bg: "bg-red-500/10",
       text: "text-red-600 dark:text-red-400",
-      progress: "bg-red-500 dark:bg-red-400",
-      border: "border-red-200 dark:border-red-700/40",
+      progress: "bg-red-500",
+      border: "border-red-500/20",
+    },
+    blue: {
+      bg: "bg-blue-500/10",
+      text: "text-blue-600 dark:text-blue-400",
+      progress: "bg-blue-500",
+      border: "border-blue-500/20",
     },
   };
 
@@ -198,9 +194,9 @@ export function SectorBreakdownCard({
       stable: Minus,
     };
     const colors = {
-      up: "text-green-500",
+      up: "text-emerald-500",
       down: "text-red-500",
-      stable: "text-gray-500",
+      stable: "text-muted-foreground",
     };
 
     const Icon = icons[trend];
@@ -240,7 +236,7 @@ export function SectorBreakdownCard({
                 <ItemWrapper key={sector.id} {...itemProps}>
                   <div
                     className={cn(
-                      "relative rounded-xl p-3 text-center transition-all hover:scale-[1.02]",
+                      "relative rounded-xl p-3 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02]",
                       hasImage ? "overflow-hidden" : "",
                       hasImage ? "" : colors.bg,
                       colors.border,
@@ -262,7 +258,7 @@ export function SectorBreakdownCard({
                           className={cn("text-lg font-bold", hasImage ? "text-white" : colors.text)}
                         >
                           {valueAsPeople
-                            ? formatPeopleCount(sector.value)
+                            ? formatPopulation(sector.value, "0")
                             : formatCurrency(sector.value, "compact", _currency)}
                         </div>
                       )}
@@ -321,7 +317,7 @@ export function SectorBreakdownCard({
                           <span className="text-muted-foreground text-sm">•</span>
                           <span className={cn("text-sm font-medium", colors.text)}>
                             {valueAsPeople
-                              ? formatPeopleCount(sector.value)
+                              ? formatPopulation(sector.value, "0")
                               : formatCurrency(sector.value, "compact", _currency)}
                           </span>
                         </>
@@ -352,7 +348,7 @@ export function SectorBreakdownCard({
             <span className="text-muted-foreground text-sm font-medium">Total</span>
             <span className="text-lg font-bold">
               {valueAsPeople
-                ? formatPeopleCount(totalValue)
+                ? formatPopulation(totalValue, "0")
                 : formatCurrency(totalValue, "compact", _currency)}
             </span>
           </div>
@@ -382,7 +378,7 @@ export function SectorBreakdownCard({
     );
   }
 
-  return <Card className={cn("glass-hierarchy-child", className)}>{cardInner}</Card>;
+  return <Card className={cn("facet-hierarchy-child", className)}>{cardInner}</Card>;
 }
 
 /**

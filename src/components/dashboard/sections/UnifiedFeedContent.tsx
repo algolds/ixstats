@@ -3,8 +3,7 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Rss, Users } from "lucide-react";
-import { Card, CardContent } from "~/components/ui/card";
+import { RssFeed as Rss, Group as Users } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
@@ -197,15 +196,15 @@ export function UnifiedFeedContent({
             source: "ixwiki",
             pageTitle: rc.title,
             wikiUrl: titleToWikiOSPath(rc.title),
+            blurb: rc.blurb || null,
+            thumbnail: rc.thumbnail || null,
           },
         },
         engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
-        timestamp: new Date(
-          rc.timestamp?.replace(
-            /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
-            "$1-$2-$3T$4:$5:$6Z"
-          ) ?? 0
-        ),
+        timestamp: (() => {
+          const d = new Date(rc.timestamp);
+          return isNaN(d.getTime()) ? new Date() : d;
+        })(),
         priority: isNewPage ? "medium" : "low",
         visibility: "public",
       };
@@ -267,13 +266,11 @@ export function UnifiedFeedContent({
   if (filteredFeed.length === 0) {
     const label = activeTab === "community" ? "community updates" : "activity";
     return (
-      <Card className="glass-surface glass-refraction border-border/40">
-        <CardContent className="p-8 text-center">
-          <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-          <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
-          <p className="text-muted-foreground text-xs">Check back later for updates.</p>
-        </CardContent>
-      </Card>
+      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+        <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+        <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
+        <p className="text-muted-foreground text-xs">Check back later for updates.</p>
+      </div>
     );
   }
 
@@ -369,32 +366,28 @@ export function FollowingFeedContent({
 
   if (followingCount === 0) {
     return (
-      <Card className="glass-surface glass-refraction border-border/40">
-        <CardContent className="p-8 text-center">
-          <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-          <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
-          <p className="text-muted-foreground text-xs">
-            Follow countries to see their activity here.
-          </p>
-          <Link href={"/countries"}>
-            <Button size="sm" variant="outline" className="mt-3 text-xs">
-              Explore Countries
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+        <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+        <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
+        <p className="text-muted-foreground text-xs">
+          Follow countries to see their activity here.
+        </p>
+        <Link href={"/countries"}>
+          <Button size="sm" variant="outline" className="mt-3 text-xs">
+            Explore Countries
+          </Button>
+        </Link>
+      </div>
     );
   }
 
   if (processedActivities.length === 0) {
     return (
-      <Card className="glass-surface glass-refraction border-border/40">
-        <CardContent className="p-8 text-center">
-          <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-          <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
-          <p className="text-muted-foreground text-xs">Countries you follow haven't posted yet.</p>
-        </CardContent>
-      </Card>
+      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+        <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+        <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
+        <p className="text-muted-foreground text-xs">Countries you follow haven't posted yet.</p>
+      </div>
     );
   }
 

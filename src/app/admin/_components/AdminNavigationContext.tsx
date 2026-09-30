@@ -1,5 +1,5 @@
-// src/app/admin/_components/AdminNavigationContext.tsx
 "use client";
+// src/app/admin/_components/AdminNavigationContext.tsx
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";

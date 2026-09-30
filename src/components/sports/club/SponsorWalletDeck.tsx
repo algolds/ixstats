@@ -6,18 +6,45 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
-import { Landmark, ArrowUpRight, Trophy, Sparkles, Check, HelpCircle } from "lucide-react";
+// oxlint-disable-next-line eslint/no-unused-vars
+import {
+  Bank as Landmark,
+  ArrowUpRight,
+  Trophy,
+  Sparks as Sparkles,
+  HelpCircle,
+} from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 
+export interface ClubSponsor {
+  type?: string | null;
+  name?: string | null;
+  baseFee?: number | null;
+  winBonus?: number | null;
+  payoutBase?: number | null;
+  payoutBonus?: number | null;
+}
+
+export interface ClubTeamWallet {
+  id: string;
+  name: string;
+  color?: string | null;
+  budget?: number | null;
+  stadiumCapacity?: number | null;
+  ticketPrice?: number | null;
+  sponsor?: ClubSponsor | null;
+  patronSaint?: string | null;
+}
+
 interface SponsorWalletDeckProps {
-  team: any;
+  team: ClubTeamWallet;
   refetchTeam: () => void;
 }
 
 export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps) {
   const [activeCard, setActiveCard] = useState<number | null>(null);
-  const [newPrice, setNewPrice] = useState<number>((team as any).ticketPrice ?? 15);
+  const [newPrice, setNewPrice] = useState<number>(team.ticketPrice ?? 15);
   const [updatingPrice, setUpdatingPrice] = useState(false);
 
   const upgradeStadium = api.sports.upgradeStadium.useMutation({
@@ -51,7 +78,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
     },
   });
 
-  const currentSponsor = (team as any).sponsor as any;
+  const currentSponsor = team.sponsor;
 
   const cards = [
     {
@@ -65,7 +92,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
         <div className="space-y-4 pt-2">
           <div className="border-border bg-muted/40 flex items-center justify-between rounded-xl border p-4">
             <div>
-              <p className="text-muted-foreground text-[10px] font-bold uppercase">
+              <p className="text-muted-foreground text-xs font-bold uppercase">
                 Current Ticket Price
               </p>
               <p className="text-foreground text-2xl font-bold">₷{team.ticketPrice}</p>
@@ -86,14 +113,14 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   setTicketPrice.mutate({ teamId: team.id, price: newPrice });
                 }}
                 disabled={updatingPrice || setTicketPrice.isPending}
-                style={{ backgroundColor: team.color, color: "#ffffff" }}
-                className="font-semibold transition-all hover:opacity-90"
+                style={{ backgroundColor: team.color || "#3b82f6" }}
+                className="font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
               >
                 {setTicketPrice.isPending ? "..." : "Save"}
               </Button>
             </div>
           </div>
-          <p className="text-muted-foreground text-[10px] leading-relaxed">
+          <p className="text-muted-foreground text-xs leading-relaxed">
             Ticket pricing scales attendance dynamically. Setting prices too high (above ₷30) will
             reduce seat sales, while lower pricing guarantees sold-out crowds but reduces matchday
             ticketing margins.
@@ -106,13 +133,13 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       title: "Stadium & Expansion Vouchers",
       description: "Expand seating capacity to maximize ticketing limits",
       color:
-        "from-emerald-500/10 to-emerald-600/5 border-emerald-500/30 dark:from-emerald-950 dark:to-teal-900 dark:border-emerald-800/40",
+        "from-emerald-500/10 to-emerald-600/5 border-emerald-500/30 dark:from-emerald-950 dark:to-emerald-900 dark:border-emerald-800/40",
       icon: ArrowUpRight,
       content: (
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
             <div>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase dark:text-emerald-400">
+              <p className="text-xs font-bold text-emerald-600 uppercase dark:text-emerald-400">
                 Current Capacity
               </p>
               <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
@@ -129,7 +156,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               {upgradeStadium.isPending ? "Upgrading..." : "Expand (+1k seats)"}
             </Button>
           </div>
-          <p className="text-[10px] leading-relaxed text-emerald-800/80 dark:text-emerald-300/80">
+          <p className="text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-300/80">
             Stadium expansions cost a flat ₷1,000 Sovereigns and instantly add 1,000 additional
             seats, allowing you to generate more matchday revenue during high-popularity matches.
           </p>
@@ -147,7 +174,10 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
         <div className="space-y-4 pt-2">
           {currentSponsor ? (
             <div className="mb-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <Badge className="mb-1 font-bold text-white" style={{ backgroundColor: team.color }}>
+              <Badge
+                className="mb-1 font-bold text-white"
+                style={{ backgroundColor: team.color || "#3b82f6" }}
+              >
                 Active Partner
               </Badge>
               <h5 className="font-bold text-amber-900 dark:text-amber-200">
@@ -155,13 +185,13 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               </h5>
               <div className="mt-2 grid grid-cols-2 gap-2 border-t border-amber-500/20 pt-2 text-xs">
                 <div>
-                  <span className="text-muted-foreground block text-[9px] uppercase">Base Fee</span>
+                  <span className="text-muted-foreground block text-xs uppercase">Base Fee</span>
                   <span className="text-foreground font-semibold">
                     ₷{currentSponsor.baseFee} / season
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[9px] uppercase">
+                  <span className="text-muted-foreground block text-xs uppercase">
                     Win Bonus
                   </span>
                   <span className="text-foreground font-semibold">
@@ -200,16 +230,19 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               <button
                 key={s.type}
                 onClick={() =>
-                  selectSponsor.mutate({ teamId: team.id, sponsorType: s.type as any })
+                  selectSponsor.mutate({
+                    teamId: team.id,
+                    sponsorType: s.type as "Conservative" | "Aggressive" | "Corporate",
+                  })
                 }
                 disabled={selectSponsor.isPending}
                 style={
-                  currentSponsor?.name === s.name
+                  currentSponsor?.name === s.name && team.color
                     ? { borderColor: team.color, backgroundColor: `${team.color}20` }
-                    : {}
+                    : undefined
                 }
                 className={cn(
-                  "flex items-center justify-between rounded-lg border p-3 text-left transition-all",
+                  "flex items-center justify-between rounded-lg border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   currentSponsor?.name === s.name
                     ? ""
                     : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
@@ -217,11 +250,11 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               >
                 <div>
                   <p className="text-xs font-bold">{s.name}</p>
-                  <p className="text-muted-foreground text-[10px]">{s.desc}</p>
+                  <p className="text-muted-foreground text-xs">{s.desc}</p>
                 </div>
                 <Badge
                   variant="outline"
-                  className="border-amber-500/30 text-[10px] text-amber-600 dark:text-amber-400"
+                  className="border-amber-500/30 text-xs text-amber-600 dark:text-amber-400"
                 >
                   {s.payout}
                 </Badge>
@@ -258,7 +291,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   if (!isExpanded) setActiveCard(card.id);
                 }}
                 className={cn(
-                  "flex cursor-pointer flex-col rounded-2xl border bg-gradient-to-br p-4 transition-all",
+                  "flex cursor-pointer flex-col rounded-2xl border bg-gradient-to-br p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   card.color,
                   isExpanded
                     ? "z-10 flex-1 scale-[1.01] shadow-2xl"
@@ -273,7 +306,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                     <div>
                       <h4 className="text-sm leading-none font-bold">{card.title}</h4>
                       {!isExpanded && (
-                        <p className="text-muted-foreground mt-1 text-[10px] leading-none">
+                        <p className="text-muted-foreground mt-1 text-xs leading-none">
                           {card.description}
                         </p>
                       )}

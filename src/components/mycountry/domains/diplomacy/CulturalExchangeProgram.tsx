@@ -13,10 +13,15 @@ import { ExchangeFilters } from "./ExchangeFilters";
 import { ExchangeCard } from "./ExchangeCard";
 import { ExchangeDetailsModal } from "./ExchangeDetailsModal";
 import { EditExchangeModal } from "./EditExchangeModal";
-import { ScenarioModal } from "./ScenarioModal";
+import { ScenarioModal, type ResponseOption, type Scenario } from "./ScenarioModal";
 import { ImpactVisualizationModal } from "./ImpactVisualizationModal";
 import { ArtifactUploadModal } from "./ArtifactUploadModal";
+import type { ArtifactUploadData } from "./ArtifactUploadForm";
+import { uploadImageFile } from "~/lib/media/upload-image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+
+const isExchangeStatus = (value: string): value is keyof typeof STATUS_STYLES =>
+  value in STATUS_STYLES;
 
 const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> = ({
   primaryCountry,
@@ -30,10 +35,11 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showArtifactUpload, setShowArtifactUpload] = useState(false);
+  const [isUploadingArtifactFile, setIsUploadingArtifactFile] = useState(false);
   const [votedExchanges, setVotedExchanges] = useState<Set<string>>(new Set());
   const [showScenarioModal, setShowScenarioModal] = useState(false);
   const [showImpactVisualization, setShowImpactVisualization] = useState(false);
-  const [selectedScenario, setSelectedScenario] = useState<any>(null);
+  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [editFormData, setEditFormData] = useState({ title: "", description: "" });
 
   // Fetch live cultural exchanges
@@ -44,7 +50,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   } = api.diplomaticCultural.getCulturalExchanges.useQuery(
     {
       countryId: primaryCountry.id,
-      status: filterStatus !== "all" ? (filterStatus as any) : undefined,
+      status: isExchangeStatus(filterStatus) ? filterStatus : undefined,
       type: filterType !== "all" ? filterType : undefined,
     },
     {
@@ -102,7 +108,11 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Generate cultural scenario mutation
   const generateScenarioMutation = api.diplomaticCultural.generateCulturalScenario.useMutation({
     onSuccess: (data) => {
-      setSelectedScenario(data);
+      setSelectedScenario({
+        title: data.scenario.title,
+        narrative: data.scenario.narrative,
+        responseOptions: data.responseOptions,
+      });
       setShowScenarioModal(true);
       notify.success("Cultural scenario generated!");
     },
@@ -329,17 +339,34 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     [votedExchanges, voteExchangeMutation]
   );
 
+  // Store the file via /api/upload/image first, then record the artifact with its URL.
+  // `contributor` is the display attribution; the server derives countryId from the session.
   const handleUploadArtifact = useCallback(
-    (artifactData: any) => {
+    async (artifact: ArtifactUploadData) => {
       if (!selectedExchange) return;
+      setIsUploadingArtifactFile(true);
+      let fileUrl: string;
+      try {
+        fileUrl = await uploadImageFile(artifact.file);
+      } catch (error) {
+        notify.error(
+          `Failed to upload artifact: ${error instanceof Error ? error.message : "Upload failed"}`
+        );
+        return;
+      } finally {
+        setIsUploadingArtifactFile(false);
+      }
       uploadArtifactMutation.mutate({
         exchangeId: selectedExchange.id,
-        countryId: primaryCountry.id,
-        countryName: primaryCountry.name,
-        ...artifactData,
+        type: artifact.type,
+        title: artifact.title,
+        description: artifact.description,
+        fileUrl,
+        thumbnailUrl: fileUrl,
+        contributor: primaryCountry.name,
       });
     },
-    [selectedExchange, primaryCountry, uploadArtifactMutation]
+    [selectedExchange, primaryCountry.name, uploadArtifactMutation, notify]
   );
 
   // Calculate participation metrics
@@ -501,7 +528,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     }
   }, [selectedExchange, primaryCountry.id, cancelExchangeMutation]);
 
-  const handleSelectScenarioResponse = useCallback((option: any) => {
+  const handleSelectScenarioResponse = useCallback((option: ResponseOption) => {
     console.log("Selected scenario response:", option);
     notify.success(`Selected: ${option.label}`);
     setShowScenarioModal(false);
@@ -554,20 +581,20 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-hierarchy-child rounded-lg p-12 text-center"
+          className="facet-hierarchy-child rounded-lg p-12 text-center"
         >
           <div className="mb-4 text-5xl">🌍</div>
           <h4 className="text-foreground mb-2 text-lg font-semibold">
             No Cultural Exchanges Found
           </h4>
-          <p className="mb-6 text-[--intel-silver]">
+          <p className="mb-6 text-muted-foreground">
             {filterType !== "all" || filterStatus !== "all"
               ? "Try adjusting your filters or create a new exchange to get started."
               : "Be the first to create a cultural exchange and connect nations!"}
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="rounded-lg bg-[--intel-gold]/20 px-6 py-3 font-medium text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/30"
+            className="rounded-lg bg-cyan-500/20 px-6 py-3 font-medium text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-500/30"
           >
             Create Your First Exchange
           </button>
@@ -644,6 +671,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
         onOpenChange={setShowArtifactUpload}
         selectedExchange={selectedExchange}
         onSubmit={handleUploadArtifact}
+        isSubmitting={isUploadingArtifactFile || uploadArtifactMutation.isPending}
       />
     </div>
   );

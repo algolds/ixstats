@@ -11,17 +11,17 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  X,
+  Xmark as X,
   Globe,
-  Layers,
+  Component as Layers,
   Ruler,
   MapPin,
-  Keyboard,
-  ChevronRight,
-  ChevronLeft,
+  Keyframe as Keyboard,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
   Compass,
-  Navigation,
-} from "lucide-react";
+  Navigator as Navigation,
+} from "iconoir-react";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
@@ -48,8 +48,8 @@ const TIPS = [
   },
   {
     icon: Layers,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
     title: "Examine the Geography",
     description:
       "Use the layer panel to switch between political borders, climate zones, elevation, and river systems.",
@@ -91,6 +91,7 @@ export function MapWelcomeModal({
   // Sync parent isOpen control
   useEffect(() => {
     if (isOpen !== undefined) {
+      // oxlint-disable-next-line
       setShow(isOpen);
     }
   }, [isOpen]);
@@ -126,7 +127,9 @@ export function MapWelcomeModal({
     onClose?.();
     try {
       localStorage.setItem(STORAGE_KEY, IXWORLD_VERSION);
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onClose]);
 
   const totalPages = 2; // Tips page + Shortcuts page
@@ -168,10 +171,6 @@ export function MapWelcomeModal({
 
               {/* Header */}
               <div className="relative px-6 pt-6 pb-4">
-                {/* Decorative gradient orbs */}
-                <div className="pointer-events-none absolute -top-20 -left-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
-                <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
-
                 <div className="relative flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/20">
@@ -184,7 +183,7 @@ export function MapWelcomeModal({
                       </p>
                     </div>
                   </div>
-                  <span className="bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5 font-mono text-[10px] dark:bg-white/5">
+                  <span className="bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5 font-mono text-xs dark:bg-white/5">
                     v{IXWORLD_VERSION}
                   </span>
                 </div>
@@ -215,7 +214,7 @@ export function MapWelcomeModal({
                                 {tip.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[11px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {tip.description}
                             </p>
                           </div>
@@ -247,7 +246,7 @@ export function MapWelcomeModal({
                               {s.keys.map((k) => (
                                 <kbd
                                   key={k}
-                                  className="bg-muted text-foreground/80 border-border/50 inline-flex h-5 min-w-[22px] items-center justify-center rounded border px-1.5 font-mono text-[10px] dark:border-white/10 dark:bg-white/10"
+                                  className="bg-muted text-foreground/80 border-border/50 inline-flex h-5 min-w-[22px] items-center justify-center rounded border px-1.5 font-mono text-xs dark:border-white/10 dark:bg-white/10"
                                 >
                                   {k}
                                 </kbd>
@@ -257,12 +256,12 @@ export function MapWelcomeModal({
                         ))}
                       </div>
 
-                      <div className="border-border/30 mt-4 rounded-xl border bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-3 dark:border-white/5">
+                      <div className="border-border/30 mt-4 rounded-xl border bg-blue-500/10 p-3 dark:border-white/5">
                         <div className="mb-1 flex items-center gap-2">
                           <Compass className="h-3.5 w-3.5 text-blue-400" />
                           <span className="text-foreground/90 text-xs font-medium">Tip</span>
                         </div>
-                        <p className="text-muted-foreground text-[11px]">
+                        <p className="text-muted-foreground text-xs">
                           Everything on this map connects to a living wiki. Hover any country or
                           place name for an instant preview, or click through to read the full
                           article.
@@ -275,7 +274,7 @@ export function MapWelcomeModal({
 
               {/* World notes */}
               <div className="px-6 pb-2">
-                <div className="text-muted-foreground/80 space-y-1.5 text-[10px] leading-relaxed">
+                <div className="text-muted-foreground/80 space-y-1.5 text-xs leading-relaxed">
                   <div>
                     IxWorld runs on{" "}
                     <Tooltip
@@ -302,29 +301,29 @@ export function MapWelcomeModal({
                       content={
                         <div className="space-y-1.5 text-xs">
                           <p className="font-semibold">Trewartha Climate System</p>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#990000]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-700" />
                               Tropical Wet (Ar)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#FF9933]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />
                               Steppe (Bs)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#00FF99]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-400" />
                               Temperate Oceanic (Do)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#0099FF]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-cyan-500" />
                               Continental (Dc)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#FFCCFF]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-stone-300 dark:bg-stone-400" />
                               Highland (H)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#0066CC]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-600" />
                               Boreal (E)
                             </span>
                           </div>
@@ -376,7 +375,7 @@ export function MapWelcomeModal({
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i)}
-                      className={`h-1.5 rounded-full transition-all ${
+                      className={`h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         i === currentPage
                           ? "w-5 bg-blue-400"
                           : "bg-muted-foreground/20 hover:bg-muted-foreground/40 w-1.5"

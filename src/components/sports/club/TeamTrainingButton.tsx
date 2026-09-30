@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Dumbbell, Users } from "lucide-react";
+import { SystemRestart as Loader2, Gym as Dumbbell, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 
@@ -14,6 +14,7 @@ export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrain
   const utils = api.useUtils();
 
   const teamTraining = api.sports.teamTraining.useMutation({
+    // oxlint-disable-next-line eslint/no-unused-vars
     onSuccess: (data) => {
       utils.sports.getMyClubOverview.invalidate({ teamId });
       onTrained?.();

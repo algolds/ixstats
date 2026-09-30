@@ -27,7 +27,9 @@ export function parseBlurbMeta(post: {
   } else if (typeof post.hashtags === "string") {
     try {
       hashtags = JSON.parse(post.hashtags);
-    } catch {}
+    } catch {
+      // malformed hashtags JSON — show no hashtags
+    }
   }
 
   if (!hashtags.includes("blurb")) {
@@ -101,7 +103,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
 
   const mediaAttachments = useMemo(() => {
     const raw = [
-      ...(post.mediaAttachments ?? []),
+      ...(Array.isArray(post.mediaAttachments) ? post.mediaAttachments : []),
       ...rawImageUrls.map((url, i) => ({
         id: `raw_${i}`,
         url,
@@ -120,7 +122,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     if (!c) return "";
     rawImageUrls.forEach((url: any) => {
       const stringUrl = String(url);
-      const escapedUrl = stringUrl.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedUrl = stringUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
       const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
       c = c.replace(reg, " ");
     });
@@ -138,7 +140,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
 
   const repostMediaAttachments = useMemo(() => {
     const raw = [
-      ...(post.repostOf?.mediaAttachments ?? []),
+      ...(Array.isArray(post.repostOf?.mediaAttachments) ? post.repostOf.mediaAttachments : []),
       ...repostImageUrls.map((url, i) => ({
         id: `repost_raw_${i}`,
         url,
@@ -157,7 +159,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     if (!c) return "";
     repostImageUrls.forEach((url: any) => {
       const stringUrl = String(url);
-      const escapedUrl = stringUrl.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedUrl = stringUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
       const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
       c = c.replace(reg, " ");
     });
@@ -212,6 +214,8 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
       void utils.thinkpages.getFeed.invalidate();
+      void utils.activities.getGlobalFeed.invalidate();
+      void utils.activities.getFollowingFeed.invalidate();
       if (post.account?.clerkUserId) {
         void utils.thinkpages.getPostsByClerkUserId.invalidate({
           clerkUserId: post.account.clerkUserId,
@@ -373,35 +377,40 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     if (!showReplyComposer) {
       const mentionText = `@${post.account?.username} `;
       setReplyText(mentionText);
-      setTimeout(() => {
-        const replyInput = document.querySelector("[data-reply-input]") as HTMLTextAreaElement;
-        if (replyInput) {
-          replyInput.focus();
-          replyInput.setSelectionRange(mentionText.length, mentionText.length);
-        }
-      }, 100);
     }
   }, [showReplyComposer, post.account?.username]);
 
-  const handleSubmitReply = useCallback(async () => {
-    if (!replyText.trim() || !currentUserAccountId) return;
+  const handleSubmitReply = useCallback(
+    async (mediaUrls: string[] = []) => {
+      if (!currentUserAccountId) {
+        notify.error("Please select or create an account first to reply.");
+        return;
+      }
+      if (!replyText.trim() && mediaUrls.length === 0) {
+        notify.error("Please enter a reply or attach media.");
+        return;
+      }
 
-    try {
-      await createPostMutation.mutateAsync({
-        accountId: currentUserAccountId,
-        content: replyText,
-        parentPostId: post.id,
-        visibility: "public",
-        hashtags: extractHashtags(replyText),
-        mentions: extractMentions(replyText),
-      });
-      notify.success("Reply posted!");
-      setReplyText("");
-      setShowReplyComposer(false);
-    } catch (error: any) {
-      notify.error(error.message || "Failed to post reply");
-    }
-  }, [createPostMutation, replyText, currentUserAccountId, post.id, notify]);
+      try {
+        await createPostMutation.mutateAsync({
+          accountId: currentUserAccountId,
+          content: replyText.trim(),
+          parentPostId: post.id,
+          visibility: "public",
+          hashtags: extractHashtags(replyText),
+          mentions: extractMentions(replyText),
+          mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+        });
+        notify.success("Reply posted!");
+        setReplyText("");
+        setShowReplyComposer(false);
+        setShowReplies(true);
+      } catch (error: any) {
+        notify.error(error.message || "Failed to post reply");
+      }
+    },
+    [createPostMutation, replyText, currentUserAccountId, post.id, notify]
+  );
 
   return {
     blurbMeta,

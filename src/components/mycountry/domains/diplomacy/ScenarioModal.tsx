@@ -1,5 +1,7 @@
 "use client";
 
+import { Flash } from "iconoir-react";
+
 import React from "react";
 import {
   Dialog,
@@ -8,9 +10,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { RiFlashlightLine } from "react-icons/ri";
 
-interface ResponseOption {
+export interface ResponseOption {
   id?: string;
   label: string;
   description: string;
@@ -27,7 +28,7 @@ interface ResponseOption {
   };
 }
 
-interface Scenario {
+export interface Scenario {
   title: string;
   narrative: string;
   responseOptions?: ResponseOption[];
@@ -49,7 +50,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <RiFlashlightLine className="h-6 w-6 text-cyan-400" />
+              <Flash className="h-6 w-6 text-cyan-400" />
               Cultural Exchange Scenario
             </DialogTitle>
             <DialogDescription>
@@ -59,10 +60,10 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
 
           <div className="space-y-6">
             {/* Scenario Details */}
-            <div className="glass-hierarchy-child rounded-lg p-6">
+            <div className="facet-hierarchy-child rounded-lg p-6">
               <h4 className="text-foreground mb-4 text-lg font-bold">{scenario.title}</h4>
               <div className="prose prose-invert max-w-none">
-                <p className="whitespace-pre-line text-[--intel-silver]">{scenario.narrative}</p>
+                <p className="whitespace-pre-line text-muted-foreground">{scenario.narrative}</p>
               </div>
             </div>
 
@@ -73,12 +74,12 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                 {scenario.responseOptions.map((option: ResponseOption, index: number) => (
                   <div
                     key={option.id || index}
-                    className="glass-hierarchy-child cursor-pointer rounded-lg border border-white/10 p-4 transition-colors hover:border-cyan-500/30"
+                    className="facet-hierarchy-child cursor-pointer rounded-lg border border-white/10 p-4 transition-colors hover:border-cyan-500/30"
                   >
                     <div className="mb-3 flex items-start justify-between">
                       <div>
                         <h6 className="text-foreground font-medium">{option.label}</h6>
-                        <p className="mt-1 text-sm text-[--intel-silver]">{option.description}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
                       </div>
                       <button
                         onClick={() => onSelectResponse?.(option)}
@@ -94,7 +95,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                         {option.requirements.map((req, reqIdx: number) => (
                           <span
                             key={reqIdx}
-                            className="rounded bg-purple-500/20 px-2 py-1 text-xs text-purple-400"
+                            className="rounded bg-indigo-500/20 px-2 py-1 text-xs text-indigo-400"
                           >
                             {req.skill} {req.level}+
                           </span>
@@ -106,28 +107,28 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                     {option.predictedOutcomes?.immediate && (
                       <div className="grid grid-cols-3 gap-3 text-center">
                         <div className="rounded bg-white/5 p-2">
-                          <div className="text-lg font-bold text-[--intel-gold]">
+                          <div className="text-lg font-bold text-amber-500 dark:text-amber-400">
                             {(option.predictedOutcomes.immediate.culturalImpact ?? 0) > 0
                               ? "+"
                               : ""}
                             {option.predictedOutcomes.immediate.culturalImpact ?? 0}
                           </div>
-                          <div className="text-xs text-[--intel-silver]">Cultural</div>
+                          <div className="text-xs text-muted-foreground">Cultural</div>
                         </div>
                         <div className="rounded bg-white/5 p-2">
-                          <div className="text-lg font-bold text-blue-400">
+                          <div className="text-lg font-bold text-cyan-500 dark:text-cyan-400">
                             {(option.predictedOutcomes.immediate.diplomaticChange ?? 0) > 0
                               ? "+"
                               : ""}
                             {option.predictedOutcomes.immediate.diplomaticChange ?? 0}
                           </div>
-                          <div className="text-xs text-[--intel-silver]">Diplomatic</div>
+                          <div className="text-xs text-muted-foreground">Diplomatic</div>
                         </div>
                         <div className="rounded bg-white/5 p-2">
-                          <div className="text-lg font-bold text-orange-400">
+                          <div className="text-lg font-bold text-amber-500 dark:text-amber-400">
                             {option.predictedOutcomes.immediate.economicCost ?? 0}
                           </div>
-                          <div className="text-xs text-[--intel-silver]">Cost</div>
+                          <div className="text-xs text-muted-foreground">Cost</div>
                         </div>
                       </div>
                     )}

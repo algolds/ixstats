@@ -2,7 +2,12 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
+import {
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Minus,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useFormattedAnimatedValue, MOTION_VARIANTS } from "./animation-utils";
@@ -67,14 +72,14 @@ export function MetricCard({
     <motion.div
       {...MOTION_VARIANTS.scaleIn}
       className={cn(
-        "relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:shadow-lg",
+        "relative overflow-hidden rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-lg",
         getGlassClasses("base", resolvedTheme, sectionId),
         className
       )}
       style={cssVars as React.CSSProperties}
     >
       {texture && texture !== "none" && (
-        <TextureOverlay texture={texture as any} opacity={textureOpacity ?? 0.03} />
+        <TextureOverlay texture={texture} opacity={textureOpacity ?? 0.03} />
       )}
 
       {/* Header with Icon and Label */}

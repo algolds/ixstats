@@ -6,7 +6,7 @@ import {
   hasDraft,
   listDrafts,
   type WikiEditorDraft,
-} from "../../../lib/wiki-os/editor/draft-store";
+} from "~/lib/wiki-os/editor/draft-store";
 
 // Mock localStorage for non-browser test runner
 const storageMap = new Map<string, string>();

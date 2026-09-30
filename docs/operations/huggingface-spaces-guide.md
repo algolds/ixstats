@@ -53,7 +53,7 @@ Hugging Face Spaces provides a **CPU Basic** hardware tier that is **16 GB RAM /
 
 ## 2. Other AI Workloads to Offload to Hugging Face Spaces
 
-You can repeat the same process to offload other heavy machine learning tasks from your local VPS:
+You can repeat the same process to offload other heavy machine learning tasks from your local VPS. These are options, not current integrations: nothing in IxStates calls a Whisper endpoint today, and the only LLM clients are the narrator and sports commentary (`NARRATOR_LLM_*` / `SPORTS_LLM_*` env vars; an OpenAI-compatible Space could be used by setting `NARRATOR_LLM_PROVIDER=openai` and `NARRATOR_LLM_API_URL` to the Space URL).
 
 ### A. Whisper (Speech-to-Text / Transcription)
 
@@ -112,7 +112,7 @@ docker rm ixstats-kokoro
 
 ### Step 3: Remove Kokoro from `docker-compose.yml`
 
-Open `docker-compose.yml` and delete the `kokoro` service definition block completely (lines 58 to 85):
+Open `docker-compose.yml` (gitignored; it lives only on the server) and delete the `kokoro` service definition block completely:
 
 ```yaml
 # DELETE THIS ENTIRE BLOCK:

@@ -1,14 +1,14 @@
+"use client";
 // src/app/admin/storyteller/_components/ActiveInterventions.tsx
 // Manage running storyteller effect interventions across all countries
-"use client";
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
-import { Zap, Clock, AlertTriangle } from "lucide-react";
+import { Flash as Zap, Clock, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useState } from "react";
 
 export function ActiveInterventions() {
@@ -90,7 +90,7 @@ function CountryInterventionRow({
     detail?.country?.storytellerEffects?.filter((d: { isActive: boolean }) => d.isActive) ?? [];
 
   return (
-    <div className="glass-surface border-border/30 hover:border-border/60 rounded-xl border shadow-sm transition-all duration-200">
+    <div className="facet-surface border-border/30 hover:border-border/60 rounded-xl border shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between p-3 text-left"
@@ -126,7 +126,7 @@ function CountryInterventionRow({
               }) => (
                 <div
                   key={dm.id}
-                  className="glass-hierarchy-child border-border/20 flex items-center justify-between rounded-lg border px-3 py-2"
+                  className="facet-hierarchy-child border-border/20 flex items-center justify-between rounded-lg border px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

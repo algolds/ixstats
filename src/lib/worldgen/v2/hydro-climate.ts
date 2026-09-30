@@ -12,8 +12,9 @@
  * 8. Trewartha Biome Classification (12 Biomes)
  */
 
-import type { WorldGraph, WorldGenParams, RiverNetwork, Watershed } from "./types";
-import { CLIMATE_CONSTANTS, TREWARTHA_BIOMES, getElevationZone } from "./config";
+// oxlint-disable-next-line typescript/no-unused-vars
+import type { WorldGraph, WorldGenParams, Watershed } from "./types";
+import { CLIMATE_CONSTANTS, getElevationZone } from "./config";
 import { makeRng } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
 
@@ -370,6 +371,7 @@ function fillDepressionsAndRouteFlow(graph: WorldGraph): Float32Array {
 // Pass 6: Rivers & Flux Accumulation
 // ──────────────────────────────────────────────
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams, rng: () => number): void {
   const { cells } = graph;
   const n = cells.n;

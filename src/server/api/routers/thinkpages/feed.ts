@@ -1,22 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
 // Import the wiki search service
-import { validateNoXSS } from "~/lib/utils";
 import { globalCache } from "~/lib/cache";
-
-const invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
 
 interface PostDateFields {
   createdAt?: string | Date | null;
@@ -59,34 +45,6 @@ export function hydratePostDates<T extends PostDateFields | null | undefined>(po
       : undefined,
   } as T;
 }
-
-const SearchUnsplashImagesSchema = z.object({
-  query: z.string().min(1),
-  page: z.number().min(1).default(1),
-  per_page: z.number().min(1).max(30).default(10),
-  orientation: z.enum(["landscape", "portrait", "squarish"]).optional(),
-  color: z.string().optional(), // Unsplash API supports specific color names or hex codes
-});
-
-// Base schema for ThinkPages accounts
-const thinkpagesAccountBaseSchema = z.object({
-  countryId: z.string(),
-  accountType: z.enum(["government", "media", "citizen"]),
-  username: z
-    .string()
-    .min(3)
-    .max(20)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  firstName: z.string().min(1).max(50),
-  lastName: z.string().max(50).optional().default(""),
-  bio: z.string().max(500).optional().default(""),
-  verified: z.boolean().default(false),
-  postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
-  politicalLean: z.enum(["left", "center", "right"]).default("center"),
-  personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
-  profileImageUrl: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
-});
 
 function formatPollForClient(poll: any) {
   if (!poll) return null;
@@ -133,95 +91,6 @@ const pollInclude = {
   },
 };
 
-// Create schema - all required fields with defaults
-const CreateAccountSchema = thinkpagesAccountBaseSchema;
-
-// Update schema - all fields optional
-const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
-
-const CreatePostSchema = z.object({
-  accountId: z.string(), // ThinkpagesAccount ID for feed posts
-  content: z
-    .string()
-    .max(10000)
-    .optional()
-    .default("")
-    .refine(
-      (content) => {
-        if (!content) return true;
-        const validation = validateNoXSS(content);
-        return validation.valid;
-      },
-      {
-        message:
-          "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
-      }
-    ),
-  hashtags: z.array(z.string()).optional(),
-  mentions: z.array(z.string()).optional(),
-  visibility: z.enum(["public", "private", "unlisted"]).default("public"),
-  parentPostId: z.string().optional(), // For replies
-  repostOfId: z.string().optional(), // For reposts
-  visualizations: z
-    .array(
-      z.object({
-        type: z.enum([
-          "economic_chart",
-          "diplomatic_map",
-          "trade_flow",
-          "gdp_growth",
-          "demographics",
-          "budget_debt",
-          "labor_market",
-          "national_vitality",
-        ]),
-        title: z.string(),
-        config: z
-          .object({
-            chartType: z.string().optional(),
-            dataSource: z.string().optional(),
-            timeRange: z
-              .union([
-                z.string(),
-                z.object({
-                  start: z.string().optional(),
-                  end: z.string().optional(),
-                }),
-              ])
-              .optional(),
-            metrics: z.array(z.string()).optional(),
-            countries: z.array(z.string()).optional(),
-            colors: z.array(z.string()).optional(),
-            displayOptions: z
-              .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
-              .optional(),
-          })
-          .passthrough(), // Allow additional custom properties
-      })
-    )
-    .optional(), // Data visualizations embedded in post
-  mediaUrls: z.array(z.string()).max(4).optional(), // Up to 4 images per post
-  postToDiscord: z.boolean().optional().default(true),
-  poll: z
-    .object({
-      question: z.string().min(1).max(500),
-      description: z.string().max(2000).optional(),
-      pollType: z.enum(["choice", "feature-poll"]).default("choice"),
-      multiple: z.boolean().default(false),
-      options: z.array(z.string().min(1).max(200)).min(2, "At least 2 options are required"),
-    })
-    .optional(),
-});
-
-const AddReactionSchema = z.object({
-  postId: z.string(),
-  accountId: z.string(), // ThinkpagesAccount ID for reactions
-  reactionType: z.union([
-    z.enum(["like", "laugh", "angry", "sad", "fire", "thumbsup", "thumbsdown"]),
-    z.string().startsWith("discord:"), // Support Discord emoji reactions like "discord:ixnay"
-  ]),
-});
-
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
   hashtag: z.string().optional(),
@@ -230,8 +99,6 @@ const GetFeedSchema = z.object({
   cursor: z.string().optional(),
 });
 export const thinkpagesFeedRouter = createTRPCRouter({
-  // Search Unsplash images
-
   // Fetch Discord Channel Topic (Easter Egg)
   getDiscordChannelTopic: publicProcedure.query(async () => {
     const discordBotToken = process.env.DISCORD_BOT_TOKEN;
@@ -259,88 +126,6 @@ export const thinkpagesFeedRouter = createTRPCRouter({
       return null;
     }
   }),
-
-  // Search Wiki Commons images
-
-  // Calculate trending topics
-  calculateTrendingTopics: publicProcedure.mutation(async ({ ctx }) => {
-    const { db } = ctx;
-
-    const posts = await db.thinkpagesPost.findMany({
-      where: {
-        ixTimeTimestamp: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        },
-      },
-      select: {
-        hashtags: true,
-        likeCount: true,
-        repostCount: true,
-        replyCount: true,
-      },
-      take: 500,
-    });
-
-    const hashtagCounts: Record<string, { count: number; engagement: number }> = {};
-
-    for (const post of posts) {
-      const hashtags = post.hashtags ? JSON.parse(post.hashtags) : [];
-      for (const hashtag of hashtags) {
-        if (!hashtagCounts[hashtag]) {
-          hashtagCounts[hashtag] = { count: 0, engagement: 0 };
-        }
-        hashtagCounts[hashtag].count++;
-        hashtagCounts[hashtag].engagement +=
-          (post.likeCount ?? 0) + (post.repostCount ?? 0) + (post.replyCount ?? 0);
-      }
-    }
-
-    await Promise.all(
-      Object.entries(hashtagCounts).map(([hashtag, hashtagData]) =>
-        db.trendingTopic.upsert({
-          where: { hashtag },
-          create: {
-            hashtag,
-            postCount: hashtagData.count,
-            engagement: hashtagData.engagement,
-            peakTimestamp: new Date(),
-          },
-          update: {
-            postCount: hashtagData.count,
-            engagement: hashtagData.engagement,
-            peakTimestamp: new Date(),
-          },
-        })
-      )
-    );
-
-    return { success: true };
-  }),
-
-  // Search users globally for ThinkTanks/ThinkShare
-
-  // Update ThinkPages Feed Account
-  // Username availability check for ThinkPages Feed Accounts
-
-  // Generate random profile picture
-
-  // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
-
-  // Get ThinkPages Feed Accounts by Country - For Feed only
-
-  // Get current user's ThinkPages accounts
-
-  // Get Account Counts by Type - For Feed only
-
-  // Post creation
-
-  // Update post content (edit post)
-
-  // Delete post (soft delete)
-
-  // Add reaction to post
-
-  // Remove reaction
 
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
@@ -510,179 +295,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
     }
   }),
 
-  // Get trending topics
-
-  // Get account details
-
-  // Get Thinkpages account by Clerk User ID
-
-  // Get post details with replies
-
-  // Get posts by Clerk User ID - shows all posts from all accounts owned by this user
-
-  // Trigger citizen reaction to a post
-  triggerCitizenReaction: publicProcedure
-    .input(z.object({ postId: z.string() }))
-    .mutation(async ({ input }) => {
-      const { generateAndPostCitizenReaction } = await import("~/lib/activity");
-      await generateAndPostCitizenReaction(input.postId);
-      return { success: true, message: "Citizen reaction triggered" };
-    }),
-
-  // Calculate and store country mood metrics
-  calculateCountryMoodMetrics: publicProcedure.mutation(async ({ ctx }) => {
-    const { db } = ctx;
-    const { analyzePostSentiment } = await import("~/lib/ai");
-    const currentIxTime = IxTime.getCurrentIxTime();
-    const twentyFourHoursAgo = new Date(currentIxTime - 24 * 60 * 60 * 1000);
-
-    const countries = await db.country.findMany({
-      take: 250,
-      select: { id: true, name: true },
-    });
-
-    // Batch-fetch all active users and recent posts in 2 queries instead of per-country
-    const allUsers = await db.user.findMany({
-      where: {
-        countryId: { in: countries.map((c: any) => c.id) },
-        isActive: true,
-      },
-      select: { id: true, countryId: true },
-    });
-
-    // Group users by countryId
-    const usersByCountry = new Map<string, string[]>();
-    for (const u of allUsers) {
-      if (!u.countryId) continue;
-      const existing = usersByCountry.get(u.countryId) ?? [];
-      existing.push(u.id);
-      usersByCountry.set(u.countryId, existing);
-    }
-
-    // Batch-fetch all recent posts for all active users
-    const allUserIds = allUsers.map((u: any) => u.id);
-    const allRecentPosts =
-      allUserIds.length > 0
-        ? await db.thinkpagesPost.findMany({
-            where: {
-              accountId: { in: allUserIds },
-              ixTimeTimestamp: { gte: twentyFourHoursAgo },
-            },
-            include: { reactions: true },
-          })
-        : [];
-
-    // Group posts by accountId for fast lookup
-    const postsByAccount = new Map<string, typeof allRecentPosts>();
-    for (const post of allRecentPosts) {
-      const existing = postsByAccount.get(post.accountId) ?? [];
-      existing.push(post);
-      postsByAccount.set(post.accountId, existing);
-    }
-
-    const dailyTimestamp = new Date(currentIxTime);
-    dailyTimestamp.setHours(0, 0, 0, 0);
-    const upsertPromises: Promise<any>[] = [];
-
-    for (const country of countries) {
-      const citizenIds = usersByCountry.get(country.id);
-      if (!citizenIds || citizenIds.length === 0) continue;
-
-      // Collect posts for this country's citizens
-      const countryPosts: typeof allRecentPosts = [];
-      for (const userId of citizenIds) {
-        const userPosts = postsByAccount.get(userId);
-        if (userPosts) countryPosts.push(...userPosts);
-      }
-
-      if (countryPosts.length === 0) continue;
-
-      let totalSentiment = 0;
-      for (const post of countryPosts) {
-        totalSentiment += analyzePostSentiment(post as any);
-      }
-      const averageSentiment = totalSentiment / countryPosts.length;
-
-      upsertPromises.push(
-        db.countryMoodMetric.upsert({
-          where: {
-            countryId_timestamp: {
-              countryId: country.id,
-              timestamp: dailyTimestamp,
-            },
-          },
-          update: {
-            sentimentScore: averageSentiment,
-            postCount: countryPosts.length,
-            timestamp: dailyTimestamp,
-          },
-          create: {
-            countryId: country.id,
-            sentimentScore: averageSentiment,
-            postCount: countryPosts.length,
-            timestamp: dailyTimestamp,
-          },
-        })
-      );
-    }
-
-    // Execute all upserts in parallel
-    await Promise.allSettled(upsertPromises);
-
-    return { success: true, message: "Country mood metrics calculated" };
-  }),
-
-  // ===== THINKTANKS (GROUPS) ENDPOINTS =====
-
-  // Create a new ThinkTank group
-
-  // Get ThinkTanks globally (no country restriction)
-
-  // Join a ThinkTank group
-
-  // Leave a ThinkTank group
-
-  // Get ThinkTank messages
-
-  // Send message to ThinkTank
-
-  // Update a ThinkTank group
-
-  // Invite users to a ThinkTank group
-
-  // Get collaborative documents for a ThinkTank
-
-  // Create a collaborative document
-
-  // Update a collaborative document
-
-  // Delete a collaborative document
-
-  // Get a single document
-
-  // Add reaction to a Thinkshare message
-
-  // Remove reaction from a Thinkshare message
-
-  // Edit a Thinkshare message
-
-  // Delete a Thinkshare message
-
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
-
-  // Create a new conversation
-
-  // Get conversations for a user
-
-  // Get messages for a conversation
-
-  // Send message to conversation
-
-  // Mark messages as read
-
-  // Update user presence/online status
-
-  // Get presence for multiple users
 
   // Get Discord server emojis
   getDiscordEmojis: publicProcedure

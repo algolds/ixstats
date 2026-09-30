@@ -385,7 +385,7 @@ export class WorldNamingSystem {
     }
     for (let i = 0; i < seedCount; i++) assignments.set(idx[i]!, this.familyIds[i % fc]!);
 
-    const queue = [...idx.slice(0, seedCount)];
+    const queue = idx.slice(0, seedCount);
     while (queue.length > 0) {
       const cur = queue.shift()!;
       const fam = assignments.get(cur);

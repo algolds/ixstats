@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/SearchModal.tsx
 // WikiOS Search Modal with incremental query debouncing and keyboard navigation.
-
-"use client";
 
 import {
   useState,
@@ -12,7 +11,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
@@ -46,6 +45,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   // Focus input on open
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setQuery("");
       setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -54,20 +54,10 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 
   // Reset selection on results change
   useEffect(() => {
+    // oxlint-disable-next-line
     setSelectedIndex(0);
+    // oxlint-disable-next-line
   }, [items.length]);
-
-  // Global Cmd+K listener
-  useEffect(() => {
-    const handleGlobal = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        if (open) onClose();
-      }
-    };
-    window.addEventListener("keydown", handleGlobal);
-    return () => window.removeEventListener("keydown", handleGlobal);
-  }, [open, onClose]);
 
   const navigate = useCallback(
     (title: string) => {
@@ -120,7 +110,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-[var(--wikios-text-dim)] sm:inline">
+          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs text-[var(--wikios-text-dim)] sm:inline">
             ESC
           </kbd>
         </div>
@@ -151,7 +141,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                   </span>
                   {item.snippet && (
                     <span
-                      className="mt-0.5 line-clamp-1 text-[11px] text-[var(--wikios-text-dim)] [&_.searchmatch]:font-semibold [&_.searchmatch]:text-[var(--wikios-text)]"
+                      className="mt-0.5 line-clamp-1 text-xs text-[var(--wikios-text-dim)] [&_.searchmatch]:font-semibold [&_.searchmatch]:text-[var(--wikios-text)]"
                       dangerouslySetInnerHTML={{ __html: item.snippet }}
                     />
                   )}

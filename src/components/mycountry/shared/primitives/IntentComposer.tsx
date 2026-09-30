@@ -2,27 +2,31 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Command,
+  KeyCommand as Command,
   Search,
-  CheckCircle2,
-  Zap,
-  AlertCircle,
+  CheckCircle as CheckCircle2,
+  Flash as Zap,
+  WarningCircle as AlertCircle,
   Check,
-  Building2,
-  Layers,
-  X,
-  Sparkles,
-} from "lucide-react";
+  City as Building2,
+  Component as Layers,
+  Xmark as X,
+  DiceSix as Dices,
+  Compass,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import { cn } from "~/lib/utils";
+import type { RouterOutputs } from "~/trpc/react";
 import { useCountryData } from "./CountryDataProvider";
 import { DirectivePresetsCatalog, DOMESTIC_SUGGESTIONS } from "./composer/DirectivePresetsCatalog";
+
+export type IntentCommitResult = RouterOutputs["intent"]["commit"];
 
 export interface IntentComposerProps {
   countryId: string;
   initialGoal?: string;
-  onCommitted?: (res: any) => void;
+  onCommitted?: (res: IntentCommitResult) => void;
 }
 
 export const IntentComposer = React.memo(function IntentComposer({
@@ -33,7 +37,9 @@ export const IntentComposer = React.memo(function IntentComposer({
   const { country } = useCountryData();
   const [goal, setGoal] = useState(initialGoal);
   const [queryInput, setQueryInput] = useState(initialGoal);
-  const [tier, setTier] = useState<"measured" | "moderate" | "extreme">("moderate");
+  const [tier, setTier] = useState<
+    "measured" | "moderate" | "extreme" | "broker_unlocked" | "structural_unlocked"
+  >("moderate");
   const [showPolicySheet, setShowPolicySheet] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [justCommitted, setJustCommitted] = useState<{ id: string; goal: string } | null>(null);
@@ -44,6 +50,7 @@ export const IntentComposer = React.memo(function IntentComposer({
   // Sync initialGoal prop when passed or changed
   useEffect(() => {
     if (initialGoal) {
+      // oxlint-disable-next-line
       setGoal(initialGoal);
       setQueryInput(initialGoal);
     }
@@ -88,7 +95,7 @@ export const IntentComposer = React.memo(function IntentComposer({
   const handleSurpriseMe = useCallback(() => {
     const crime = country?.crimeRate ?? 40;
     const approval = country?.approvalRating ?? 65;
-    const readiness = (country as any)?.militaryReadiness ?? 75;
+    const readiness = (country as { militaryReadiness?: number | null })?.militaryReadiness ?? 75;
 
     let candidates = DOMESTIC_SUGGESTIONS;
     if (crime > 50) {
@@ -118,7 +125,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             <h3 className="text-foreground text-sm font-extrabold tracking-tight">
               Executive Directives
             </h3>
-            <p className="text-muted-foreground text-[11px] font-medium">
+            <p className="text-muted-foreground text-xs font-medium">
               Issue executive decrees to drive national economic, social, and security policy.
             </p>
           </div>
@@ -126,14 +133,14 @@ export const IntentComposer = React.memo(function IntentComposer({
 
         <div className="flex items-center gap-2">
           {status && (
-            <span className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-mono text-[11px] font-extrabold text-amber-900 dark:text-amber-300">
+            <span className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-mono text-xs font-extrabold text-amber-900 dark:text-amber-300">
               Capacity: {status.usedThisWeek}/{status.cap} used
             </span>
           )}
           <button
             type="button"
             onClick={() => setShowPolicySheet(true)}
-            className="border-border/60 bg-card/60 text-foreground hover:bg-card flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-all active:scale-95"
+            className="border-border/60 bg-card/60 text-foreground hover:bg-card flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           >
             <span>+ Policy Sheet</span>
           </button>
@@ -153,7 +160,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             setGoal(e.target.value);
           }}
           placeholder="Search directive presets or type a custom goal..."
-          className="border-border/70 bg-card/70 text-foreground placeholder:text-muted-foreground/70 focus:bg-card w-full rounded-2xl border py-4 pr-32 pl-12 text-sm font-semibold tracking-tight shadow-md backdrop-blur-xl transition-all duration-200 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/40 focus:outline-hidden sm:text-base"
+          className="border-border/70 bg-card/70 text-foreground placeholder:text-muted-foreground/70 focus:bg-card w-full rounded-2xl border py-4 pr-32 pl-12 text-sm font-semibold tracking-tight shadow-md backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/40 focus:outline-hidden sm:text-base"
         />
 
         <div className="absolute top-1/2 right-3.5 flex -translate-y-1/2 items-center gap-1.5">
@@ -164,7 +171,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 setGoal("");
                 setQueryInput("");
               }}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl p-1.5 transition-all active:scale-90"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
               title="Clear active directive"
             >
               <X className="h-4 w-4" />
@@ -174,9 +181,10 @@ export const IntentComposer = React.memo(function IntentComposer({
           <button
             type="button"
             onClick={handleSurpriseMe}
-            className="flex cursor-pointer items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-900 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
+            data-cuelume-press="tick"
+            className="flex cursor-pointer items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Dices className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Surprise Me</span>
           </button>
         </div>
@@ -194,7 +202,7 @@ export const IntentComposer = React.memo(function IntentComposer({
               setParentId(justCommitted.id);
               setJustCommitted(null);
             }}
-            className="ml-auto cursor-pointer rounded-lg border border-emerald-500/40 px-3 py-1 font-bold transition-all hover:bg-emerald-500/20 active:scale-95"
+            className="ml-auto cursor-pointer rounded-lg border border-emerald-500/40 px-3 py-1 font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20 active:scale-95"
           >
             Chain Follow-Up →
           </button>
@@ -213,9 +221,9 @@ export const IntentComposer = React.memo(function IntentComposer({
       {hasActiveGoal && (
         <div className="animate-in fade-in slide-in-from-top-3 space-y-5 duration-200">
           {/* Active Directive Badge Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-900 backdrop-blur-md dark:text-amber-300">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-900 backdrop-blur-md dark:text-amber-300">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
+              <Compass className="h-4 w-4 shrink-0 text-amber-500" />
               <span>Selected Goal: &ldquo;{goal}&rdquo;</span>
             </div>
             <button
@@ -224,7 +232,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 setGoal("");
                 setQueryInput("");
               }}
-              className="text-muted-foreground hover:text-foreground text-[11px] font-extrabold underline transition-colors"
+              className="text-muted-foreground hover:text-foreground text-xs font-extrabold underline transition-colors"
             >
               Change Directive
             </button>
@@ -238,7 +246,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 <span>Executive Intensity Tier</span>
               </label>
               {status && (
-                <span className="text-muted-foreground font-mono text-[11px] font-semibold">
+                <span className="text-muted-foreground font-mono text-xs font-semibold">
                   Weekly Directives: {status.usedThisWeek}/{status.cap} used
                 </span>
               )}
@@ -249,7 +257,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {
                   id: "measured" as const,
                   label: "Measured",
-                  defaultCap: "-15 CivCap",
+                  defaultCap: "-5 CivCap",
                   defaultDesc: "Targeted administrative adjustment with low political friction.",
                   borderCls:
                     "border-emerald-500/50 bg-emerald-500/10 text-emerald-950 dark:text-emerald-300",
@@ -258,7 +266,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {
                   id: "moderate" as const,
                   label: "Moderate",
-                  defaultCap: "-35 CivCap",
+                  defaultCap: "-12 CivCap",
                   defaultDesc:
                     "Comprehensive structural reform carrying moderate stakeholder interest.",
                   borderCls:
@@ -268,11 +276,25 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {
                   id: "extreme" as const,
                   label: "Extreme",
-                  defaultCap: "-60 CivCap",
+                  defaultCap: "-25 CivCap",
                   defaultDesc: "Transformative executive decree reshaping statecraft baselines.",
                   borderCls: "border-red-500/50 bg-red-500/10 text-red-950 dark:text-red-300",
                   badgeCls: "bg-red-500/20 text-red-800 dark:text-red-300",
                 },
+                ...(suggestQuery.data?.broker?.unlocked
+                  ? [
+                      {
+                        id: "broker_unlocked" as const,
+                        label: "Broker Option",
+                        defaultCap: "-8 CivCap",
+                        defaultDesc:
+                          "Leverage aligned power broker network and private co-investment deal.",
+                        borderCls:
+                          "border-cyan-500/50 bg-cyan-500/10 text-cyan-950 dark:text-cyan-300",
+                        badgeCls: "bg-cyan-500/20 text-cyan-800 dark:text-cyan-300",
+                      },
+                    ]
+                  : []),
               ].map((tierItem) => {
                 const isSelected = tier === tierItem.id;
                 const pkg = suggestQuery.data?.packages.find((p) => p.tier === tierItem.id);
@@ -286,9 +308,9 @@ export const IntentComposer = React.memo(function IntentComposer({
                     type="button"
                     onClick={() => setTier(tierItem.id)}
                     className={cn(
-                      "relative flex cursor-pointer flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.98]",
+                      "relative flex cursor-pointer flex-col justify-between rounded-2xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                       isSelected
-                        ? cn(tierItem.borderCls, "shadow-lg ring-2 ring-amber-500/50")
+                        ? cn(tierItem.borderCls, "shadow-sm ring-1 ring-amber-500/50")
                         : "border-border/40 bg-card/40 text-muted-foreground hover:bg-card/80 hover:text-foreground"
                     )}
                   >
@@ -297,20 +319,20 @@ export const IntentComposer = React.memo(function IntentComposer({
                         <span className="text-xs font-extrabold">{tierItem.label}</span>
                         <span
                           className={cn(
-                            "rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold",
+                            "rounded-lg px-2 py-0.5 font-mono text-xs font-bold",
                             tierItem.badgeCls
                           )}
                         >
                           {civCapDisplay}
                         </span>
                       </div>
-                      <p className="mt-2 text-[11px] leading-relaxed font-medium opacity-90">
+                      <p className="mt-2 text-xs leading-relaxed font-medium opacity-90">
                         {pkg?.title ?? tierItem.defaultDesc}
                       </p>
                     </div>
 
                     {pkg?.risk && (
-                      <div className="mt-3 flex items-center justify-between font-mono text-[10px] font-bold uppercase opacity-80">
+                      <div className="mt-3 flex items-center justify-between font-mono text-xs font-bold uppercase opacity-80">
                         <span>Risk: {pkg.risk}</span>
                         <span>Acceptance: {pkg.acceptance}</span>
                       </div>
@@ -338,7 +360,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                     </h4>
                   </div>
                   {activePackage?.civCapCost && (
-                    <span className="font-mono text-[11px] font-extrabold text-amber-800 dark:text-amber-300">
+                    <span className="font-mono text-xs font-extrabold text-amber-800 dark:text-amber-300">
                       -{activePackage.civCapCost} CivCap Cost
                     </span>
                   )}
@@ -354,7 +376,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 {/* Specific Policy Levers & Changes */}
                 {activePackage?.changes && activePackage.changes.length > 0 && (
                   <div className="space-y-2">
-                    <span className="text-foreground text-[10px] font-extrabold tracking-wider uppercase">
+                    <span className="text-foreground text-xs font-extrabold tracking-wider uppercase">
                       Proposed Policy Levers & Budget Shifts
                     </span>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -366,7 +388,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                           <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
                           <div>
                             <strong className="text-foreground font-bold">{c.label}</strong>
-                            <p className="text-muted-foreground text-[11px] leading-snug">
+                            <p className="text-muted-foreground text-xs leading-snug">
                               {c.detail}
                             </p>
                           </div>
@@ -385,7 +407,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                         <span
                           key={idx}
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-extrabold",
+                            "inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-xs font-extrabold",
                             isPositive
                               ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-950 dark:text-emerald-300"
                               : "border-red-500/40 bg-red-500/15 text-red-950 dark:text-red-300"
@@ -423,7 +445,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                       parentId: parentId ?? undefined,
                     });
                   }}
-                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-gradient-to-r from-amber-500 to-yellow-600 px-4 py-3.5 text-xs font-bold tracking-tight text-slate-950 shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-500 hover:bg-amber-600 px-4 py-3.5 text-xs font-bold tracking-tight text-neutral-950 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {commitMutation.isPending
                     ? "Enacting Executive Order..."

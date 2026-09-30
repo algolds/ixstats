@@ -209,7 +209,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
   return (
     <div className="bg-background relative min-h-screen">
-      <div className="relative z-10 container mx-auto px-4 pb-8">
+      <div className="relative z-10 container mx-auto px-4 pt-16 pb-8 sm:pt-20">
         {/* Unified Apple Control Panel with Search Bar & 4 Stat Cards */}
         <CountriesHeader
           searchInput={searchInput}

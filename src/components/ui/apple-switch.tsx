@@ -2,7 +2,7 @@
 
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { forwardRef, useEffect, useId, useRef, useState } from "react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { clamp } from "~/lib/utils/math";
 
 const switchSizes = {
@@ -33,19 +33,19 @@ const switchTones = {
   neutral: {
     off: "color-mix(in srgb, var(--muted) 82%, transparent)",
     on: "#34c759",
-    thumb: "#ffffff",
+    thumb: "var(--color-white)",
     glow: "color-mix(in srgb, #34c759 32%, transparent)",
   },
   accent: {
     off: "color-mix(in srgb, var(--muted) 82%, transparent)",
     on: "var(--foreground)",
-    thumb: "#ffffff",
+    thumb: "var(--color-white)",
     glow: "var(--facet-halo-glow-color, color-mix(in srgb, var(--accent) 42%, transparent))",
   },
   discord: {
     off: "color-mix(in srgb, var(--muted) 82%, transparent)",
     on: "var(--color-discord, #5865F2)",
-    thumb: "#ffffff",
+    thumb: "var(--color-white)",
     glow: "color-mix(in srgb, var(--color-discord, #5865F2) 32%, transparent)",
   },
 } as const;

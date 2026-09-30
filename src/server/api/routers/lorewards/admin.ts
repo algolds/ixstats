@@ -17,7 +17,7 @@ import { scoreDailyWikiOS } from "~/lib/lorewards";
 
 export const lorewardsAdminRouter = createTRPCRouter({
   /** Admin: trigger full sync from state file + OOL page. */
-  triggerSync: protectedProcedure.mutation(async () => {
+  triggerSync: adminProcedure.mutation(async () => {
     const result = await fullSync();
     return result;
   }),
@@ -26,48 +26,8 @@ export const lorewardsAdminRouter = createTRPCRouter({
   // WikiOS Scoring Engine + Cross-Validation
   // ---------------------------------------------------------------------------
 
-  /** Run WikiOS scoring for a specific date. Returns full candidate breakdowns. */
-  scoreDay: adminProcedure
-    .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
-    .query(async ({ input }) => {
-      const result = await scoreDailyWikiOS(input.date);
-      return {
-        date: result.date,
-        editCount: result.editCount,
-        winner: result.winner
-          ? {
-              user: result.winner.user,
-              page: result.winner.page,
-              finalScore: result.winner.finalScore,
-              bytesAdded: result.winner.bytesAdded,
-              scoreBreakdown: result.winner.scoreBreakdown,
-              proseRatio: result.winner.proseRatio,
-              isCollaborative: result.winner.isCollaborative,
-              editDepth: result.winner.editDepth,
-              isNewArticle: result.winner.isNewArticle,
-              inlinkCount: result.winner.inlinkCount,
-            }
-          : null,
-        runnerUp: result.runnerUp
-          ? {
-              user: result.runnerUp.user,
-              page: result.runnerUp.page,
-              finalScore: result.runnerUp.finalScore,
-              scoreBreakdown: result.runnerUp.scoreBreakdown,
-            }
-          : null,
-        candidates: result.candidates.map((c) => ({
-          user: c.user,
-          page: c.page,
-          finalScore: c.finalScore,
-          bytesAdded: c.bytesAdded,
-          scoreBreakdown: c.scoreBreakdown,
-        })),
-      };
-    }),
-
   /** Cross-validate: compare bot picks vs WikiOS picks for a date. */
-  crossValidate: protectedProcedure
+  crossValidate: adminProcedure
     .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .mutation(async ({ input }) => {
       // Get bot result from database
@@ -184,7 +144,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
     }),
 
   /** Active Blacklist configuration */
-  getBlacklist: publicProcedure.query(async () => {
+  getBlacklist: protectedProcedure.query(async () => {
     try {
       const statePath = "/ixwiki/shared/bots/discord/lorewards-state.json";
       if (fs.existsSync(statePath)) {
@@ -219,7 +179,9 @@ export const lorewardsAdminRouter = createTRPCRouter({
         }
         return await res.json();
       } catch (err: any) {
-        throw new Error(`Failed to sync blacklist with Discord bot: ${err.message}`);
+        throw new Error(`Failed to sync blacklist with Discord bot: ${err.message}`, {
+          cause: err,
+        });
       }
     }),
 
@@ -279,7 +241,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
         }
         return { success: true };
       } catch (err: any) {
-        throw new Error(`Failed to sync override with Discord bot: ${err.message}`);
+        throw new Error(`Failed to sync override with Discord bot: ${err.message}`, { cause: err });
       }
     }),
 });

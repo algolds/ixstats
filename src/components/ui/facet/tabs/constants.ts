@@ -1,7 +1,7 @@
 export const sizeClasses = {
   sm: {
     container: "p-0.5 rounded-lg gap-0.5",
-    item: "px-2.5 py-1 text-[10px] gap-1 rounded-md font-medium active:scale-[0.97] transition-transform",
+    item: "px-2.5 py-1 text-xs gap-1 rounded-md font-medium active:scale-[0.97] transition-transform",
     icon: "h-3 w-3",
     indicator: "rounded-md",
     indicatorInset: "inset-y-0.5",

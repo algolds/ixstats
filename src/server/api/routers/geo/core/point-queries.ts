@@ -1,11 +1,11 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { rateLimitedPublicProcedure, countryOwnerProcedure } from "~/server/api/trpc";
+import { rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { CLIMATE_COLOR_MAP } from "./shared";
-import { getColorForFeature } from "./layer-loader";
 
 /**
  * Hard ceiling (ms) for point-in-polygon lookups. A slow/unindexed ST_Contains
@@ -37,54 +37,6 @@ async function withPointQueryTimeout<T>(
 }
 
 export const pointQueryProcedures = {
-  getCountryAtPoint: rateLimitedPublicProcedure
-    .input(
-      z.object({
-        lng: z.number().min(-180).max(180),
-        lat: z.number().min(-90).max(90),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      // Use PostGIS spatial query
-      try {
-        const results = await withPointQueryTimeout(ctx.db, (tx) =>
-          tx.$queryRawUnsafe<
-            Array<{
-              id: string;
-              featureId: string;
-              displayName: string | null;
-              countryId: string | null;
-              properties: unknown;
-            }>
-          >(
-            `SELECT id, "featureId", "displayName", "countryId", properties
-           FROM map_layers
-           WHERE "layerType" = 'political'
-             AND "isActive" = true
-             AND geom_postgis IS NOT NULL
-             AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))
-           LIMIT 1`,
-            input.lng,
-            input.lat
-          )
-        );
-
-        if (results.length > 0) {
-          const r = results[0];
-          return {
-            featureId: r.featureId,
-            displayName: r.displayName || featureIdToDisplayName(r.featureId),
-            countryId: r.countryId,
-            fillColor: getColorForFeature(r.featureId, r.properties as Record<string, unknown>),
-          };
-        }
-      } catch {
-        // PostGIS query failed, geometry may not be synced yet
-      }
-
-      return null;
-    }),
-
   /**
    * Get comprehensive info at a map point: elevation, climate, country, subdivision.
    * Queries all relevant layers via PostGIS ST_Contains in a single call.
@@ -94,11 +46,13 @@ export const pointQueryProcedures = {
       z.object({
         lng: z.number().min(-180).max(180),
         lat: z.number().min(-90).max(90),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Query altitude, climate, and political layers at this point
+        // Query the viewed realm's altitude, climate, and political layers at this point
+        const realmId = await viewerRealmId(ctx, input.realm);
         const layerResults = await withPointQueryTimeout(ctx.db, (tx) =>
           tx.$queryRawUnsafe<
             Array<{
@@ -114,9 +68,11 @@ export const pointQueryProcedures = {
            WHERE "isActive" = true
              AND geom_postgis IS NOT NULL
              AND "layerType" IN ('altitudes', 'climate', 'political')
+             AND "worldId" = $3
              AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))`,
             input.lng,
-            input.lat
+            input.lat,
+            realmId
           )
         );
 
@@ -224,56 +180,4 @@ export const pointQueryProcedures = {
         };
       }
     }),
-
-  /**
-   * List all political features with basic metadata (no geometry).
-   */
-  validatePointInCountry: countryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        lng: z.number(),
-        lat: z.number(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const result = await withPointQueryTimeout(ctx.db, (tx) =>
-          tx.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
-            `SELECT ST_Contains(
-             (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
-             ST_SetSRID(ST_MakePoint($2, $3), 4326)
-           ) as is_inside`,
-            input.countryId,
-            input.lng,
-            input.lat
-          )
-        );
-        return { isInside: result[0]?.is_inside ?? false };
-      } catch {
-        return { isInside: false };
-      }
-    }),
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  /** Get all approved cities, POIs, and subdivisions as GeoJSON for the world map overlays. */
 };

@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { isSystemOwner } from "~/lib/auth";
+import { protectedProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
@@ -8,8 +7,6 @@ import { assertCountryWriteAccess } from "~/server/shared/country-authorization"
 import { evaluateThresholds } from "~/server/shared/intelligence-alert-thresholds";
 
 export const managementLifecycleProcedures = {
-  // SECURITY: Admin-only endpoint for triggering system-wide economic narratives
-
   // General update mutation for country fields (used by editor)
   update: protectedProcedure
     .input(
@@ -47,7 +44,7 @@ export const managementLifecycleProcedures = {
         let targetUserId = userProfile?.id;
         if (!targetUserId) {
           const countryOwner = await ctx.db.user.findFirst({
-            where: { countryId: id },
+            where: { ownedCountries: { some: { id } } },
           });
           targetUserId = countryOwner?.id;
         }
@@ -64,104 +61,9 @@ export const managementLifecycleProcedures = {
       } catch (error) {
         console.error("[Countries API] Failed to update country:", error);
         throw new Error(
-          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),
-
-  getLiveEvents: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        limit: z.number().optional().default(10),
-        windowHours: z.number().optional().default(48),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const sinceWindow = new Date(Date.now() - input.windowHours * 60 * 60 * 1000);
-
-      const [
-        country,
-        crisisEvents,
-        diplomaticEvents,
-        embassyMissions,
-        cabinetMeetings,
-        securityThreats,
-      ] = await Promise.all([
-        ctx.db.country.findUnique({
-          where: { id: input.countryId },
-        }),
-        ctx.db.crisisEvent.findMany({
-          where: {
-            affectedCountries: { contains: input.countryId },
-            createdAt: { gte: sinceWindow },
-          },
-          orderBy: { createdAt: "desc" },
-          take: input.limit,
-        }),
-        ctx.db.diplomaticEvent.findMany({
-          where: {
-            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
-            createdAt: { gte: sinceWindow },
-          },
-          orderBy: { createdAt: "desc" },
-          take: input.limit,
-        }),
-        ctx.db.embassyMission.findMany({
-          where: {
-            embassy: {
-              OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
-            },
-            OR: [{ updatedAt: { gte: sinceWindow } }, { completesAt: { gte: sinceWindow } }],
-          },
-          include: {
-            embassy: {
-              include: {
-                hostCountry: { select: { name: true, id: true } },
-                guestCountry: { select: { name: true, id: true } },
-              },
-            },
-          },
-          orderBy: { updatedAt: "desc" },
-          take: input.limit,
-        }),
-        ctx.db.cabinetMeeting.findMany({
-          where: {
-            countryId: input.countryId,
-            OR: [
-              { status: { in: ["scheduled", "in_progress"] } },
-              { status: "completed", completedAt: { gte: sinceWindow } },
-            ],
-          },
-          orderBy: [{ scheduledDate: "asc" }, { createdAt: "desc" }],
-          take: input.limit,
-        }),
-        ctx.db.securityThreat.findMany({
-          where: {
-            countryId: input.countryId,
-            isActive: true,
-            OR: [{ updatedAt: { gte: sinceWindow } }, { createdAt: { gte: sinceWindow } }],
-          },
-          orderBy: { updatedAt: "desc" },
-          take: input.limit,
-        }),
-      ]);
-
-      return {
-        country,
-        crisisEvents,
-        diplomaticEvents,
-        embassyMissions,
-        cabinetMeetings,
-        securityThreats,
-      };
-    }),
-
-  // Toggle atomic government mode for a country
-
-  // Recalculate atomic effectiveness
-
-  // Create a new country from builder
-
-  // Storyteller effects endpoints
 };

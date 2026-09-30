@@ -6,7 +6,7 @@ import {
   layoutWithLines,
   type PreparedTextWithSegments,
 } from "@chenglou/pretext";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface PreTextProps {
   children: React.ReactNode;
@@ -33,6 +33,7 @@ export function PreText({
 
   // Set mounted flag on client
   useEffect(() => {
+    // oxlint-disable-next-line
     setIsMounted(true);
   }, []);
 

@@ -3,23 +3,24 @@
 import React, { useState, useCallback, useMemo } from "react";
 import {
   Eye,
-  EyeOff,
+  EyeClosed as EyeOff,
   Lock,
-  Unlock,
-  ChevronDown,
-  ChevronRight,
+  LockSlash as Unlock,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
   Crown,
-  Pencil,
-  Trash2,
+  EditPencil as Pencil,
+  Trash as Trash2,
   MapPin,
   Hexagon,
-  Landmark,
-  BookMarked,
+  Bank as Landmark,
+  Bookmark as BookMarked,
   Type,
-  Route,
+  PathArrow as Route,
   Ruler,
-} from "lucide-react";
+} from "iconoir-react";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
+import type { EditorFeature } from "./types/editor-state";
 
 export interface LayerState {
   id: string;
@@ -33,11 +34,11 @@ export interface LayerState {
 
 interface LayerPanelProps {
   layers?: LayerState[];
-  features?: any[];
-  selectedFeature?: any;
-  onSelectFeature?: (feature: any) => void;
-  onEditFeature?: (feature: any) => void;
-  onDeleteFeature?: (feature: any) => void;
+  features?: EditorFeature[];
+  selectedFeature?: EditorFeature | null;
+  onSelectFeature?: (feature: EditorFeature) => void;
+  onEditFeature?: (feature: EditorFeature) => void;
+  onDeleteFeature?: (feature: EditorFeature) => void;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
   onToggleVisibility?: (layerId: string) => void;
@@ -65,7 +66,7 @@ const TYPE_ICONS = {
 
 const TYPE_COLORS = {
   city: "text-blue-500",
-  subdivision: "text-purple-500",
+  subdivision: "text-indigo-500",
   poi: "text-amber-500",
   storyPin: "text-amber-500",
   mapLabel: "text-slate-500",
@@ -91,6 +92,7 @@ export const LayerPanel = React.memo(function LayerPanel({
   onToggleGuidesVisibility,
   onDeleteGuide,
   minimal = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isLoading = false,
 }: LayerPanelProps) {
   // Pre-expand regions and cities by default
@@ -109,47 +111,56 @@ export const LayerPanel = React.memo(function LayerPanel({
   }, []);
 
   const groupedFeatures = useMemo(() => {
-    const groups = {
-      regions: [] as any[],
-      cities: [] as any[],
-      pois: [] as any[],
-      stories: [] as any[],
-      labels: [] as any[],
-      routes: [] as any[],
+    const groups: Record<string, EditorFeature[]> = {
+      regions: [],
+      cities: [],
+      pois: [],
+      stories: [],
+      storyPins: [],
+      labels: [],
+      mapLabels: [],
+      routes: [],
     };
 
     for (const f of features) {
-      if (f.type === "subdivision") groups.regions.push(f);
-      else if (f.type === "city") groups.cities.push(f);
-      else if (f.type === "poi") groups.pois.push(f);
-      else if (f.type === "storyPin") groups.stories.push(f);
-      else if (f.type === "mapLabel") groups.labels.push(f);
-      else if (f.type === "route") groups.routes.push(f);
+      if (f.type === "subdivision") groups.regions?.push(f);
+      else if (f.type === "city") groups.cities?.push(f);
+      else if (f.type === "poi") groups.pois?.push(f);
+      else if (f.type === "storyPin") {
+        groups.stories?.push(f);
+        groups.storyPins?.push(f);
+      } else if (f.type === "mapLabel") {
+        groups.labels?.push(f);
+        groups.mapLabels?.push(f);
+      } else if (f.type === "route") groups.routes?.push(f);
     }
 
     return groups;
   }, [features]);
 
-  const renderFeatureRow = (feature: any) => {
+  const renderFeatureRow = useCallback((feature: EditorFeature) => {
     const featureType = feature.type as keyof typeof TYPE_ICONS;
     const Icon = (featureType in TYPE_ICONS ? TYPE_ICONS[featureType] : null) || MapPin;
     const colorClass =
       (featureType in TYPE_COLORS ? TYPE_COLORS[featureType as keyof typeof TYPE_COLORS] : null) ||
-      "text-neutral-500";
+      "text-muted-foreground";
     const isSelected = selectedFeature?.id === feature.id;
     const isMultiSelected = selectedIds?.has(feature.id) ?? false;
     const isCapital = Boolean(feature.properties?.isNationalCapital);
-    const wikiTitle = feature.properties?.wikiPageTitle;
+    const wikiTitle =
+      typeof feature.properties?.wikiPageTitle === "string"
+        ? feature.properties.wikiPageTitle
+        : undefined;
 
     const row = (
       <div
         key={feature.id}
-        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-all duration-100 ease-out active:scale-[0.99] select-none ${
+        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out select-none active:scale-[0.99] ${
           isSelected
-            ? "bg-primary/10 ring-primary/30 font-semibold ring-1 shadow-xs"
+            ? "bg-primary/10 ring-primary/30 font-semibold shadow-xs ring-1"
             : isMultiSelected
-              ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
-              : "hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
+              ? "bg-primary/15 ring-primary/40 ring-1"
+              : "hover:bg-accent/50"
         }`}
       >
         <button
@@ -163,7 +174,7 @@ export const LayerPanel = React.memo(function LayerPanel({
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
           <Icon className={`h-3 w-3 shrink-0 ${colorClass}`} />
-          <span className="text-foreground truncate text-[11px]">{feature.name}</span>
+          <span className="text-foreground truncate text-xs">{feature.name}</span>
           {isCapital && (
             <span title="National Capital">
               <Crown className="h-2.5 w-2.5 shrink-0 text-amber-500" />
@@ -181,7 +192,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onEditFeature(feature);
               }}
-              className="rounded p-0.5 text-neutral-500 transition-all duration-100 active:scale-90 hover:bg-neutral-200 hover:text-blue-600 dark:hover:bg-neutral-700 dark:hover:text-blue-400"
+              className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 hover:bg-accent hover:text-foreground active:scale-[0.98]"
               title="Edit"
             >
               <Pencil className="h-3 w-3" />
@@ -193,7 +204,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onDeleteFeature(feature);
               }}
-              className="rounded p-0.5 text-neutral-500 transition-all duration-100 active:scale-90 hover:bg-neutral-200 hover:text-red-500 dark:hover:bg-neutral-700 dark:hover:text-red-400"
+              className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
               title="Delete"
             >
               <Trash2 className="h-3 w-3" />
@@ -210,7 +221,7 @@ export const LayerPanel = React.memo(function LayerPanel({
     ) : (
       row
     );
-  };
+  }, [selectedFeature?.id, selectedIds, onToggleSelect, onSelectFeature, onEditFeature, onDeleteFeature]);
 
   if (minimal || layers.length === 0) {
     const defaultFeatureGroups = [
@@ -223,34 +234,34 @@ export const LayerPanel = React.memo(function LayerPanel({
     ];
 
     return (
-      <div className="flex flex-col text-xs text-foreground select-none">
+      <div className="text-foreground flex flex-col text-xs select-none">
         <div className="flex flex-col">
           {defaultFeatureGroups.map((group) => {
             const Icon = group.icon;
-            const groupFeats = (groupedFeatures as any)[group.id] ?? [];
+            const groupFeats = groupedFeatures[group.id] ?? [];
             if (groupFeats.length === 0 && !featureCounts[group.id]) return null;
             const isExpanded = expandedLayers.has(group.id);
 
             return (
-              <div key={group.id} className="border-b border-border/40">
+              <div key={group.id} className="border-border/40 border-b">
                 <button
                   onClick={() => toggleLayerExpanded(group.id)}
-                  className="flex h-8 w-full items-center gap-1.5 px-2 hover:bg-accent/50 text-left transition-colors"
+                  className="hover:bg-accent/50 flex h-8 w-full items-center gap-1.5 px-2 text-left transition-colors"
                 >
                   {isExpanded ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
                   ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
                   )}
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="flex-1 truncate font-medium text-[11px]">{group.name}</span>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+                  <Icon className="text-muted-foreground h-3.5 w-3.5" />
+                  <span className="flex-1 truncate text-xs font-medium">{group.name}</span>
+                  <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs">
                     {groupFeats.length}
                   </span>
                 </button>
                 {isExpanded && (
-                  <div className="flex flex-col gap-0.5 pb-1 px-1">
-                    {groupFeats.map((feat: any) => renderFeatureRow(feat))}
+                  <div className="flex flex-col gap-0.5 px-1 pb-1">
+                    {groupFeats.map((feat: EditorFeature) => renderFeatureRow(feat))}
                   </div>
                 )}
               </div>
@@ -262,14 +273,14 @@ export const LayerPanel = React.memo(function LayerPanel({
   }
 
   return (
-    <div className="flex flex-col bg-white text-xs text-neutral-800 select-none dark:bg-neutral-900 dark:text-neutral-200">
-      <div className="border-b border-neutral-200 px-2 py-1 text-[10px] font-semibold tracking-wider text-neutral-500 uppercase dark:border-neutral-700 dark:text-neutral-400">
+    <div className="flex flex-col bg-card text-xs text-foreground select-none">
+      <div className="border-b border-border/40 px-2 py-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
         Layers & Features
       </div>
       <div className="flex flex-col">
         {layers.map((layer) => {
           const Icon = layer.icon;
-          const layerFeatures = (groupedFeatures as any)[layer.id] ?? [];
+          const layerFeatures = groupedFeatures[layer.id] ?? [];
           const count =
             featureCounts?.[layer.id] ??
             (layer.id === "border" || layer.id === "climate" ? undefined : layerFeatures.length);
@@ -277,10 +288,10 @@ export const LayerPanel = React.memo(function LayerPanel({
           const showOpacity = layer.id === "regions";
 
           return (
-            <div key={layer.id} className="border-b border-neutral-100 dark:border-neutral-800/40">
+            <div key={layer.id} className="border-b border-border/40">
               {/* Layer Header Row */}
               <div
-                className={`group flex h-8 items-center gap-1 px-1 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 ${
+                className={`group flex h-8 items-center gap-1 px-1 hover:bg-accent/40 ${
                   !layer.visible ? "opacity-50" : ""
                 }`}
               >
@@ -288,7 +299,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 {layer.id !== "border" && layer.id !== "climate" ? (
                   <button
                     onClick={() => toggleLayerExpanded(layer.id)}
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98]"
                   >
                     {isExpanded ? (
                       <ChevronDown className="h-3.5 w-3.5" />
@@ -303,13 +314,13 @@ export const LayerPanel = React.memo(function LayerPanel({
                 {/* Visibility Toggle */}
                 <button
                   onClick={() => onToggleVisibility?.(layer.id)}
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-accent active:scale-[0.98]"
                   title={layer.visible ? "Hide layer" : "Show layer"}
                 >
                   {layer.visible ? (
-                    <Eye className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
+                    <Eye className="h-3.5 w-3.5 text-foreground" />
                   ) : (
-                    <EyeOff className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" />
+                    <EyeOff className="h-3.5 w-3.5 text-muted-foreground/60" />
                   )}
                 </button>
 
@@ -319,13 +330,13 @@ export const LayerPanel = React.memo(function LayerPanel({
                 layer.id !== "climate" ? (
                   <button
                     onClick={() => onToggleLock?.(layer.id)}
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-accent active:scale-[0.98]"
                     title={layer.locked ? "Unlock layer" : "Lock layer"}
                   >
                     {layer.locked ? (
-                      <Lock className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                      <Lock className="h-3.5 w-3.5 text-amber-500" />
                     ) : (
-                      <Unlock className="h-3.5 w-3.5 text-neutral-400 opacity-0 group-hover:opacity-100 dark:text-neutral-500" />
+                      <Unlock className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100" />
                     )}
                   </button>
                 ) : (
@@ -333,21 +344,21 @@ export const LayerPanel = React.memo(function LayerPanel({
                 )}
 
                 {/* Layer Icon */}
-                <Icon className="ml-0.5 h-4 w-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
+                <Icon className="ml-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
 
                 {/* Layer Name */}
                 <span
                   onClick={() =>
                     layer.id !== "border" && layer.id !== "climate" && toggleLayerExpanded(layer.id)
                   }
-                  className="ml-1 flex-1 cursor-pointer truncate text-[11px] leading-none font-medium"
+                  className="ml-1 flex-1 cursor-pointer truncate text-xs leading-none font-medium"
                 >
                   {layer.name}
                 </span>
 
                 {/* Badge Count */}
                 {count !== undefined && count > 0 && (
-                  <span className="dark:bg-neutral-750 mr-1.5 rounded bg-neutral-200 px-1 py-0.5 text-[9px] leading-none font-semibold text-neutral-500 dark:text-neutral-400">
+                  <span className="mr-1.5 rounded bg-muted px-1 py-0.5 text-xs leading-none font-semibold text-muted-foreground">
                     {count}
                   </span>
                 )}
@@ -355,11 +366,11 @@ export const LayerPanel = React.memo(function LayerPanel({
 
               {/* Layer Children (Opacity Slider and Features List) */}
               {isExpanded && (
-                <div className="space-y-0.5 bg-neutral-50/20 pb-1.5 dark:bg-neutral-900/10">
+                <div className="space-y-0.5 bg-muted/20 pb-1.5">
                   {/* Opacity slider for Regions */}
                   {showOpacity && (
-                    <div className="mr-1.5 mb-1 ml-8 flex items-center gap-2 rounded bg-neutral-100/30 px-3 py-1 text-[10px] dark:bg-neutral-800/20">
-                      <span className="text-neutral-500 dark:text-neutral-400">Opacity</span>
+                    <div className="mr-1.5 mb-1 ml-8 flex items-center gap-2 rounded bg-muted/30 px-3 py-1 text-xs">
+                      <span className="text-muted-foreground">Opacity</span>
                       <input
                         type="range"
                         min={0}
@@ -368,9 +379,9 @@ export const LayerPanel = React.memo(function LayerPanel({
                         onChange={(e) =>
                           onOpacityChange?.(layer.id, parseInt(e.target.value, 10) / 100)
                         }
-                        className="h-1 flex-1 cursor-pointer appearance-none rounded bg-neutral-300 accent-blue-500 dark:bg-neutral-700"
+                        className="h-1 flex-1 cursor-pointer appearance-none rounded bg-muted accent-primary"
                       />
-                      <span className="w-8 text-right text-neutral-500 dark:text-neutral-400">
+                      <span className="w-8 text-right text-muted-foreground">
                         {Math.round((layer.opacity ?? 1) * 100)}%
                       </span>
                     </div>
@@ -380,7 +391,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                   {layerFeatures.length > 0 ? (
                     layerFeatures.map(renderFeatureRow)
                   ) : (
-                    <div className="py-1 pl-8 text-[10px] text-neutral-400 italic dark:text-neutral-500">
+                    <div className="py-1 pl-8 text-xs text-muted-foreground/60 italic">
                       No features in this layer
                     </div>
                   )}
@@ -392,14 +403,14 @@ export const LayerPanel = React.memo(function LayerPanel({
 
         {/* Guides Section */}
         {guides !== undefined && (
-          <div className="border-b border-neutral-100 dark:border-neutral-800/40">
+          <div className="border-b border-border/40">
             <div
-              className={`group flex h-8 items-center gap-1 px-1 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 ${!showGuides ? "opacity-50" : ""}`}
+              className={`group flex h-8 items-center gap-1 px-1 hover:bg-accent/40 ${!showGuides ? "opacity-50" : ""}`}
             >
               {/* Expand Chevron */}
               <button
                 onClick={() => setGuidesExpanded((prev) => !prev)}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98]"
               >
                 {guidesExpanded ? (
                   <ChevronDown className="h-3.5 w-3.5" />
@@ -411,13 +422,13 @@ export const LayerPanel = React.memo(function LayerPanel({
               {/* Visibility Toggle */}
               <button
                 onClick={() => onToggleGuidesVisibility?.(!showGuides)}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-accent active:scale-[0.98]"
                 title={showGuides ? "Hide guides" : "Show guides"}
               >
                 {showGuides ? (
-                  <Eye className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
+                  <Eye className="h-3.5 w-3.5 text-foreground" />
                 ) : (
-                  <EyeOff className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" />
+                  <EyeOff className="h-3.5 w-3.5 text-muted-foreground/60" />
                 )}
               </button>
 
@@ -425,28 +436,28 @@ export const LayerPanel = React.memo(function LayerPanel({
               {guides.length > 0 && (
                 <button
                   onClick={() => onClearGuides?.()}
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 hover:text-red-500 dark:hover:bg-neutral-700"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
                   title="Clear all guides"
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-neutral-400 hover:text-red-500 dark:text-neutral-500" />
+                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                 </button>
               )}
               {guides.length === 0 && <span className="h-5 w-5 shrink-0" />}
 
               {/* Icon */}
-              <Ruler className="ml-0.5 h-4 w-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
+              <Ruler className="ml-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
 
               {/* Title */}
               <span
                 onClick={() => setGuidesExpanded((prev) => !prev)}
-                className="ml-1 flex-1 cursor-pointer truncate text-[11px] leading-none font-medium"
+                className="ml-1 flex-1 cursor-pointer truncate text-xs leading-none font-medium"
               >
                 Ruler Guides
               </span>
 
               {/* Count */}
               {guides.length > 0 && (
-                <span className="dark:bg-neutral-750 mr-1.5 rounded bg-neutral-200 px-1 py-0.5 text-[9px] leading-none font-semibold text-neutral-500 dark:text-neutral-400">
+                <span className="mr-1.5 rounded bg-muted px-1 py-0.5 text-xs leading-none font-semibold text-muted-foreground">
                   {guides.length}
                 </span>
               )}
@@ -454,18 +465,18 @@ export const LayerPanel = React.memo(function LayerPanel({
 
             {/* Guides Children */}
             {guidesExpanded && (
-              <div className="space-y-0.5 bg-neutral-50/20 pb-1.5 dark:bg-neutral-900/10">
+              <div className="space-y-0.5 bg-muted/20 pb-1.5">
                 {guides.length > 0 ? (
                   guides.map((guide) => (
                     <div
                       key={guide.id}
-                      className="group flex items-center gap-1.5 rounded px-2 py-1 pl-8 hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
+                      className="group flex items-center gap-1.5 rounded px-2 py-1 pl-8 hover:bg-accent/50"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                        <span className="shrink-0 text-[9px] font-bold text-neutral-400 uppercase dark:text-neutral-500">
+                        <span className="shrink-0 text-xs font-bold text-muted-foreground/70 uppercase">
                           {guide.type === "h" ? "Lat" : "Lng"}
                         </span>
-                        <span className="text-foreground truncate text-[11px]">
+                        <span className="text-foreground truncate text-xs">
                           {guide.type === "h" ? "Horizontal" : "Vertical"}: {guide.value.toFixed(5)}
                           °
                         </span>
@@ -475,7 +486,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                           e.stopPropagation();
                           onDeleteGuide?.(guide.id);
                         }}
-                        className="hover:text-red-650 rounded p-0.5 text-neutral-500 opacity-0 transition-colors group-hover:opacity-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-red-400"
+                        className="rounded p-0.5 text-muted-foreground opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
                         title="Delete Guide"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -483,7 +494,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                     </div>
                   ))
                 ) : (
-                  <div className="py-1 pl-8 text-[10px] text-neutral-400 italic dark:text-neutral-500">
+                  <div className="py-1 pl-8 text-xs text-muted-foreground/60 italic">
                     No guides (drag from rulers to add)
                   </div>
                 )}

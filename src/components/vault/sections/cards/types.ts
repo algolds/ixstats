@@ -1,4 +1,4 @@
-import { Layers, Folder, Globe } from "lucide-react";
+import { Component as Layers, Folder, Globe } from "iconoir-react";
 import type { CardRarity, CardType } from "@prisma/client";
 
 export type SubTab = "inventory" | "collections" | "gallery";

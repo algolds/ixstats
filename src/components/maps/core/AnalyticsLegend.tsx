@@ -31,7 +31,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
       onTouchStart={(e) => e.stopPropagation()}
       className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 absolute bottom-6 left-3 z-10 rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200 sm:bottom-8"
     >
-      <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+      <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         {legend.title}
       </div>
 
@@ -49,7 +49,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
             {legend.stops
               .filter((s) => s.label)
               .map((s, i) => (
-                <span key={i} className="text-muted-foreground text-[9px]">
+                <span key={i} className="text-muted-foreground text-xs">
                   {s.label}
                 </span>
               ))}
@@ -59,7 +59,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
               overlay and nothing recolored" without users having to read the
               data model. */}
           {"note" in legend && legend.note && (
-            <p className="text-muted-foreground/70 mt-1 text-[9px] leading-snug italic">
+            <p className="text-muted-foreground/70 mt-1 text-xs leading-snug italic">
               {legend.note}
             </p>
           )}
@@ -80,7 +80,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
                   height: line.style === "dashed" ? 0 : undefined,
                 }}
               />
-              <span className="text-foreground/80 text-[10px]">{line.label}</span>
+              <span className="text-foreground/80 text-xs">{line.label}</span>
             </div>
           ))}
         </div>

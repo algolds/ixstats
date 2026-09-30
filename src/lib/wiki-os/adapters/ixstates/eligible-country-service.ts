@@ -15,8 +15,7 @@
 import * as fs from "fs";
 import * as fsPromises from "fs/promises";
 import * as path from "path";
-import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-parser";
 import { withRetrySafe } from "~/lib/system/with-retry";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
@@ -69,7 +68,6 @@ interface MemoryCacheEntry {
 // Constants
 // ──────────────────────────────────────────────
 
-const IIWIKI_API = "https://iiwiki.com/api.php";
 const ALTHISTORY_API = "https://althistory.fandom.com/api.php";
 const USER_AGENT = DEFAULT_USER_AGENT;
 
@@ -78,12 +76,12 @@ const CACHE_DIR = path.join(process.cwd(), "data", "cache", "eligible-countries"
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS;
 
-const BATCH_SIZE = 10;
-
-const SITE_API_URLS: Record<"iiwiki" | "althistory", string> = {
-  iiwiki: IIWIKI_API,
-  althistory: ALTHISTORY_API,
-};
+function getSiteApiUrl(site: "iiwiki" | "althistory"): string {
+  if (site === "iiwiki") {
+    return getFullIiwikiApiUrl();
+  }
+  return ALTHISTORY_API;
+}
 
 const SITE_CATEGORIES: Record<"iiwiki" | "althistory", string[]> = {
   iiwiki: ["Countries", "Nations"],
@@ -119,6 +117,9 @@ async function readCacheFile(
     const filePath = getCacheFilePath(site);
     const content = await fsPromises.readFile(filePath, "utf-8");
     const parsed: FileCacheEntry = JSON.parse(content);
+    if (!Array.isArray(parsed.countries) || parsed.countries.length === 0) {
+      return null;
+    }
     return parsed.countries;
   } catch {
     return null;
@@ -129,6 +130,9 @@ async function writeCacheFile(
   site: "iiwiki" | "althistory",
   countries: EligibleCountryResult[]
 ): Promise<void> {
+  if (!countries || countries.length === 0) {
+    return;
+  }
   try {
     await ensureCacheDir();
     const filePath = getCacheFilePath(site);
@@ -150,7 +154,7 @@ async function fetchCategoryMembers(
   category: string,
   site: "iiwiki" | "althistory"
 ): Promise<string[]> {
-  const apiBase = SITE_API_URLS[site];
+  const apiBase = getSiteApiUrl(site);
   const allTitles: string[] = [];
   let cmcontinue: string | undefined;
   let iterations = 0;
@@ -241,91 +245,60 @@ async function getAllPageTitles(site: "iiwiki" | "althistory"): Promise<string[]
 // Completeness calculation
 // ──────────────────────────────────────────────
 
-function calculateCompleteness(data: UnifiedInfoboxData): {
+type CompletenessDetails = Omit<EligibleCountryResult, "pageName" | "displayName" | "completeness"> & {
   score: number;
-  flagUrl?: string;
-  population?: number;
-  gdp?: string;
-  capital?: string;
-  governmentType?: string;
-  leaderTitle?: string;
-  leaderName?: string;
-  currency?: string;
-  currencyCode?: string;
-  languages?: string;
-  areaKm2?: number;
-  demonym?: string;
-  lifeExpectancy?: number;
-  literacyRate?: number;
-  urbanization?: number;
-  internetTld?: string;
-  callingCode?: string;
-  anthem?: string;
-  motto?: string;
-  coordinates?: string;
-  largestCity?: string;
-  officialName?: string;
-} {
-  let count = 0;
+};
 
-  // 1. Flag
+function calculateCompleteness(data: UnifiedInfoboxData): CompletenessDetails {
   const hasFlag = !!(data.image_flag || data.flag || data.flagUrl);
-
-  // 2. Population
   const hasPopulation = !!(data.population || data.population_estimate || data.population_census);
-
-  // 3. GDP
   const hasGdp = !!(data.GDP_PPP || data.GDP_nominal || data.gdp || data.gdp_ppp);
-
-  // 4. Capital
   const hasCapital = !!(data.capital || data.largest_city);
-
-  // 5. Government type
   const hasGovernmentType = !!data.government_type;
-
-  // 6. Leaders
   const hasLeaders = !!(
     (data.leader_title1 && data.leader_name1) ||
     data.head_of_state ||
     data.head_of_government
   );
-
-  // 7. Language
   const hasLanguage = !!(data.official_languages || data.languages);
-
-  // 8. Currency
   const hasCurrency = !!(data.currency || data.currency_code);
-
-  // 9. Area
   const hasArea = !!(data.area_km2 || data.area_total);
-
-  // 10. Demonym
   const hasDemonym = !!data.demonym;
 
-  if (hasFlag) count++;
-  if (hasPopulation) count++;
-  if (hasGdp) count++;
-  if (hasCapital) count++;
-  if (hasGovernmentType) count++;
-  if (hasLeaders) count++;
-  if (hasLanguage) count++;
-  if (hasCurrency) count++;
-  if (hasArea) count++;
-  if (hasDemonym) count++;
-
+  const count = [
+    hasFlag,
+    hasPopulation,
+    hasGdp,
+    hasCapital,
+    hasGovernmentType,
+    hasLeaders,
+    hasLanguage,
+    hasCurrency,
+    hasArea,
+    hasDemonym,
+  ].filter(Boolean).length;
   const score = (count / 10) * 100;
 
   // Extract representative values
-  let population: number | undefined;
-  if (typeof data.population === "number") population = data.population;
-  else if (typeof data.population_estimate === "number") population = data.population_estimate;
-  else if (typeof data.population_census === "number") population = data.population_census;
+  const population =
+    typeof data.population === "number"
+      ? data.population
+      : typeof data.population_estimate === "number"
+        ? data.population_estimate
+        : typeof data.population_census === "number"
+          ? data.population_census
+          : undefined;
 
-  let gdp: string | undefined;
-  if (typeof data.GDP_PPP === "string") gdp = data.GDP_PPP;
-  else if (typeof data.GDP_nominal === "string") gdp = data.GDP_nominal;
-  else if (typeof data.gdp === "number") gdp = String(data.gdp);
-  else if (typeof data.gdp_ppp === "number") gdp = String(data.gdp_ppp);
+  const gdp =
+    typeof data.GDP_PPP === "string"
+      ? data.GDP_PPP
+      : typeof data.GDP_nominal === "string"
+        ? data.GDP_nominal
+        : typeof data.gdp === "number"
+          ? String(data.gdp)
+          : typeof data.gdp_ppp === "number"
+            ? String(data.gdp_ppp)
+            : undefined;
 
   let leaderTitle: string | undefined;
   let leaderName: string | undefined;
@@ -340,18 +313,12 @@ function calculateCompleteness(data: UnifiedInfoboxData): {
     leaderName = data.head_of_government;
   }
 
-  let areaKm2: number | undefined;
-  if (typeof data.area_km2 === "number") areaKm2 = data.area_km2;
-  else if (typeof data.area_total === "number") areaKm2 = data.area_total;
-
-  let lifeExpectancy: number | undefined;
-  if (typeof data.life_expectancy === "number") lifeExpectancy = data.life_expectancy;
-
-  let literacyRate: number | undefined;
-  if (typeof data.literacy_rate === "number") literacyRate = data.literacy_rate;
-
-  let urbanization: number | undefined;
-  if (typeof data.urbanization === "number") urbanization = data.urbanization;
+  const areaKm2 =
+    typeof data.area_km2 === "number"
+      ? data.area_km2
+      : typeof data.area_total === "string"
+        ? Number(data.area_total.replace(/[^0-9.]/g, "")) || undefined
+        : undefined;
 
   return {
     score,
@@ -372,28 +339,120 @@ function calculateCompleteness(data: UnifiedInfoboxData): {
           : undefined,
     areaKm2,
     demonym: typeof data.demonym === "string" ? data.demonym : undefined,
-    lifeExpectancy,
-    literacyRate,
-    urbanization,
+    lifeExpectancy: typeof data.life_expectancy === "number" ? data.life_expectancy : undefined,
+    literacyRate: typeof data.literacy_rate === "number" ? data.literacy_rate : undefined,
+    urbanization: typeof data.urbanization === "number" ? data.urbanization : undefined,
     internetTld: typeof data.internet_tld === "string" ? data.internet_tld : undefined,
     callingCode: typeof data.calling_code === "string" ? data.calling_code : undefined,
     anthem: typeof data.national_anthem === "string" ? data.national_anthem : undefined,
     motto: typeof data.national_motto === "string" ? data.national_motto : undefined,
-    coordinates: typeof data.coordinates === "string" ? data.coordinates : undefined,
+    coordinates: Array.isArray(data.coordinates) ? data.coordinates.join(", ") : undefined,
     largestCity: typeof data.largest_city === "string" ? data.largest_city : undefined,
     officialName: typeof data.official_name === "string" ? data.official_name : undefined,
   };
 }
 
 // ──────────────────────────────────────────────
-// Resolve image URLs via MediaWiki API (avoids CORS issues with Special:FilePath)
+// Batch Wikitext and Image Fetching
+// ──────────────────────────────────────────────
+
+interface MediaWikiQueryPage {
+  pageid?: number;
+  ns?: number;
+  title: string;
+  missing?: boolean;
+  revisions?: Array<{ slots?: { main?: { content?: string } }; content?: string; "*"?: string }>;
+}
+
+interface MediaWikiQueryResponse {
+  batchcomplete?: boolean;
+  query?: { pages?: MediaWikiQueryPage[] | Record<string, MediaWikiQueryPage> };
+}
+
+interface MediaWikiImageInfoPage {
+  title?: string;
+  missing?: boolean;
+  imageinfo?: Array<{ url?: string; thumburl?: string }>;
+}
+
+interface MediaWikiImageInfoResponse {
+  batchcomplete?: boolean;
+  query?: { pages?: MediaWikiImageInfoPage[] | Record<string, MediaWikiImageInfoPage> };
+}
+
+async function fetchBatchArticles(
+  titles: string[],
+  site: "iiwiki" | "althistory"
+): Promise<Array<{ title: string; wikitext: string }>> {
+  const apiBase = getSiteApiUrl(site);
+  const articles: Array<{ title: string; wikitext: string }> = [];
+  const WIKITEXT_CHUNK_SIZE = 50;
+
+  for (let i = 0; i < titles.length; i += WIKITEXT_CHUNK_SIZE) {
+    const chunk = titles.slice(i, i + WIKITEXT_CHUNK_SIZE);
+    const params = new URLSearchParams({
+      action: "query",
+      format: "json",
+      formatversion: "2",
+      prop: "revisions",
+      rvprop: "content",
+      rvslots: "main",
+      titles: chunk.join("|"),
+    });
+
+    const result = await withRetrySafe(
+      async (signal) => {
+        const response = await fetch(`${apiBase}?${params.toString()}`, {
+          headers: {
+            "User-Agent": USER_AGENT,
+            "Api-User-Agent": USER_AGENT,
+          },
+          signal,
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json() as Promise<MediaWikiQueryResponse>;
+      },
+      {
+        maxAttempts: 3,
+        strategy: "linear",
+        baseDelayMs: 1500,
+        timeoutMs: 15000,
+      }
+    );
+
+    if (!result.success || !result.value?.query) continue;
+
+    const rawPages = result.value.query.pages;
+    const pagesList: MediaWikiQueryPage[] = Array.isArray(rawPages)
+      ? rawPages
+      : rawPages
+        ? Object.values(rawPages)
+        : [];
+
+    for (const page of pagesList) {
+      if (page.missing || !page.title) continue;
+      const rev = page.revisions?.[0];
+      const wikitext = rev?.slots?.main?.content ?? rev?.content ?? rev?.["*"] ?? "";
+      if (wikitext) {
+        articles.push({ title: page.title, wikitext });
+      }
+    }
+  }
+
+  return articles;
+}
+
+// ──────────────────────────────────────────────
+// Resolve image URLs via MediaWiki API
 // ──────────────────────────────────────────────
 
 async function resolveImageUrls(
   filenames: string[],
   site: "iiwiki" | "althistory"
 ): Promise<Map<string, string>> {
-  const apiBase = SITE_API_URLS[site];
+  const apiBase = getSiteApiUrl(site);
   const urlMap = new Map<string, string>();
 
   const uniqueFilenames = Array.from(new Set(filenames)).filter(Boolean);
@@ -408,6 +467,7 @@ async function resolveImageUrls(
     const params = new URLSearchParams({
       action: "query",
       format: "json",
+      formatversion: "2",
       titles: titlesParam,
       prop: "imageinfo",
       iiprop: "url",
@@ -424,13 +484,17 @@ async function resolveImageUrls(
 
       if (!response.ok) continue;
 
-      const data = (await response.json()) as {
-        query?: { pages?: Record<string, { title?: string; imageinfo?: Array<{ url: string }> }> };
-      };
+      const data = (await response.json()) as MediaWikiImageInfoResponse;
+      const rawPages = data.query?.pages;
+      const pages: MediaWikiImageInfoPage[] = Array.isArray(rawPages)
+        ? rawPages
+        : rawPages
+          ? Object.values(rawPages)
+          : [];
 
-      const pages = data.query?.pages ?? {};
-      for (const page of Object.values(pages)) {
-        const directUrl = page?.imageinfo?.[0]?.url;
+      for (const page of pages) {
+        if (page.missing || !page.imageinfo?.[0]) continue;
+        const directUrl = page.imageinfo[0].url ?? page.imageinfo[0].thumburl;
         if (directUrl) {
           const urlFilename = directUrl.split("/").pop() ?? "";
           if (urlFilename) {
@@ -448,6 +512,7 @@ async function resolveImageUrls(
               .replace(/_/g, " ")
               .trim();
             urlMap.set(cleanTitle, directUrl);
+            urlMap.set(page.title.replace(/^(File|Image):/i, "").trim(), directUrl);
           }
         }
       }
@@ -457,64 +522,6 @@ async function resolveImageUrls(
   }
 
   return urlMap;
-}
-
-// ──────────────────────────────────────────────
-// Process a single page
-// ──────────────────────────────────────────────
-
-async function processPage(
-  pageName: string,
-  site: "iiwiki" | "althistory"
-): Promise<{ result: EligibleCountryResult; flagFilename: string } | null> {
-  try {
-    const wikiSource: WikiSource = site;
-    const article = await getArticleWikitext(pageName, wikiSource);
-    if (!article || !article.wikitext) return null;
-
-    const parsed = parseInfoboxWithTemplates(article.wikitext, pageName);
-    if (!parsed) return null;
-
-    const completeness = calculateCompleteness(parsed);
-    if (completeness.score < 80) return null;
-
-    const flagFilename = (parsed.image_flag || parsed.flag || "")
-      .replace(/^(File|Image):/i, "")
-      .trim();
-
-    return {
-      result: {
-        pageName,
-        displayName: parsed.name || pageName,
-        completeness: completeness.score,
-        flagUrl: undefined,
-        population: completeness.population,
-        gdp: completeness.gdp,
-        capital: completeness.capital,
-        governmentType: completeness.governmentType,
-        leaderTitle: completeness.leaderTitle,
-        leaderName: completeness.leaderName,
-        currency: completeness.currency,
-        currencyCode: completeness.currencyCode,
-        languages: completeness.languages,
-        areaKm2: completeness.areaKm2,
-        demonym: completeness.demonym,
-        lifeExpectancy: completeness.lifeExpectancy,
-        literacyRate: completeness.literacyRate,
-        urbanization: completeness.urbanization,
-        internetTld: completeness.internetTld,
-        callingCode: completeness.callingCode,
-        anthem: completeness.anthem,
-        motto: completeness.motto,
-        coordinates: completeness.coordinates,
-        largestCity: completeness.largestCity,
-        officialName: completeness.officialName,
-      },
-      flagFilename,
-    };
-  } catch {
-    return null;
-  }
 }
 
 // ──────────────────────────────────────────────
@@ -534,35 +541,62 @@ async function fetchEligibleCountriesRaw(
 
   console.log(`[EligibleCountries] Found ${pageTitles.length} pages to scan on ${site}`);
 
+  // 1. Batch fetch wikitext for all pages in chunks of 50
+  const articles = await fetchBatchArticles(pageTitles, site);
+
+  // 2. Parse infoboxes in-memory
   const allResults: { result: EligibleCountryResult; flagFilename: string }[] = [];
 
-  for (let i = 0; i < pageTitles.length; i += BATCH_SIZE) {
-    const batch = pageTitles.slice(i, i + BATCH_SIZE);
-    const results = await Promise.allSettled(batch.map((title) => processPage(title, site)));
+  for (const { title, wikitext } of articles) {
+    const parsed = parseInfoboxWithTemplates(wikitext, title);
+    if (!parsed) continue;
 
-    for (const result of results) {
-      if (result.status === "fulfilled" && result.value) {
-        allResults.push(result.value);
-      }
-    }
+    const completeness = calculateCompleteness(parsed);
+    if (completeness.score < 80) continue;
+
+    const flagFilename = (parsed.image_flag || parsed.flag || "")
+      .replace(/^(File|Image):/i, "")
+      .trim();
+
+    const { score, ...details } = completeness;
+    allResults.push({
+      result: {
+        pageName: title,
+        displayName: parsed.name || title,
+        completeness: score,
+        ...details,
+        flagUrl: undefined,
+      },
+      flagFilename,
+    });
   }
 
-  // Resolve all flag URLs in batch via MediaWiki API
+  // 3. Batch resolve image URLs via MediaWiki API
   const flagFilenames = allResults.map((r) => r.flagFilename).filter(Boolean);
   const urlMap = await resolveImageUrls(flagFilenames, site);
 
+  // 4. Map direct image URLs without Special:FilePath guessing
   const finalResults: EligibleCountryResult[] = allResults.map(({ result, flagFilename }) => {
     if (flagFilename) {
-      if (site === "iiwiki") {
-        result.flagUrl = withBasePath(
-          `/api/mediawiki/iiwiki/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`
-        );
-      } else {
-        const lookupKey = flagFilename.toLowerCase().replace(/_/g, " ").trim();
-        result.flagUrl = withBasePath(
-          urlMap.get(lookupKey) ||
-            `/api/mediawiki/althistory/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`
-        );
+      const cleanName = flagFilename.replace(/^(File|Image):/i, "").trim();
+      const lookupKey = cleanName.toLowerCase().replace(/_/g, " ").trim();
+      const directUrl =
+        urlMap.get(lookupKey) ||
+        urlMap.get(cleanName.toLowerCase()) ||
+        urlMap.get(cleanName) ||
+        urlMap.get(flagFilename);
+
+      if (directUrl) {
+        if (site === "iiwiki") {
+          const match = directUrl.match(/https?:\/\/(?:www\.)?iiwiki\.com\/(images\/.+)$/i);
+          if (match && match[1]) {
+            result.flagUrl = withBasePath(`/api/mediawiki/iiwiki/${match[1]}`);
+          } else {
+            result.flagUrl = directUrl;
+          }
+        } else {
+          result.flagUrl = directUrl;
+        }
       }
     }
     return result;
@@ -624,11 +658,13 @@ export async function getEligibleCountries(
   }
 
   const fileCached = await readCacheFile(site);
-  if (fileCached) {
+  if (fileCached && fileCached.length > 0) {
     const refreshPromise = fetchEligibleCountriesRaw(site)
       .then(async (data) => {
-        await writeCacheFile(site, data);
-        memoryCache.set(site, { data, cachedAt: new Date(), refreshPromise: null });
+        if (data && data.length > 0) {
+          await writeCacheFile(site, data);
+          memoryCache.set(site, { data, cachedAt: new Date(), refreshPromise: null });
+        }
         return data;
       })
       .catch(async () => {
@@ -641,7 +677,9 @@ export async function getEligibleCountries(
   }
 
   const data = await fetchEligibleCountriesRaw(site);
-  await writeCacheFile(site, data);
+  if (data && data.length > 0) {
+    await writeCacheFile(site, data);
+  }
   memoryCache.set(site, { data, cachedAt: new Date(), refreshPromise: null });
   return data;
 }

@@ -18,40 +18,58 @@ export interface QueryMetrics {
  * Performance monitoring for database queries
  */
 export class QueryPerformanceMonitor {
-  private metrics: QueryMetrics[] = [];
-  private readonly MAX_METRICS = 1000;
+  // Fixed-size ring buffer: recording is O(1) with no per-query array reallocation
+  private readonly buffer: QueryMetrics[] = [];
+  private readonly capacity: number;
+  private readonly slowThresholdMs: number;
+  private head = 0; // next write position
+  private count = 0;
+
+  constructor(capacity = 1000, slowThresholdMs = 100) {
+    this.capacity = capacity;
+    this.slowThresholdMs = slowThresholdMs;
+  }
 
   recordQuery(metrics: QueryMetrics): void {
-    this.metrics.push(metrics);
+    this.buffer[this.head] = metrics;
+    this.head = (this.head + 1) % this.capacity;
+    this.count = Math.min(this.count + 1, this.capacity);
 
-    // Keep only recent metrics
-    if (this.metrics.length > this.MAX_METRICS) {
-      this.metrics = this.metrics.slice(-this.MAX_METRICS);
-    }
-
-    // Log slow queries (>100ms)
-    if (metrics.duration > 100) {
+    if (metrics.duration > this.slowThresholdMs) {
       console.warn(`[SLOW QUERY] ${metrics.queryKey}: ${metrics.duration}ms`);
     }
   }
 
+  /** Recorded entries, oldest to newest. */
+  private snapshot(): QueryMetrics[] {
+    const start = (this.head - this.count + this.capacity) % this.capacity;
+    const out: QueryMetrics[] = [];
+    for (let i = 0; i < this.count; i++) {
+      const entry = this.buffer[(start + i) % this.capacity];
+      if (entry) out.push(entry);
+    }
+    return out;
+  }
+
   getMetrics(): QueryMetrics[] {
-    return [...this.metrics];
+    return this.snapshot();
   }
 
   getAverageDuration(queryKey: string): number {
-    const relevant = this.metrics.filter((m) => m.queryKey === queryKey && m.success);
+    const relevant = this.snapshot().filter((m) => m.queryKey === queryKey && m.success);
     if (relevant.length === 0) return 0;
 
     return relevant.reduce((sum, m) => sum + m.duration, 0) / relevant.length;
   }
 
   getSlowQueries(threshold = 100): QueryMetrics[] {
-    return this.metrics.filter((m) => m.duration > threshold && m.success);
+    return this.snapshot().filter((m) => m.duration > threshold && m.success);
   }
 
   clearMetrics(): void {
-    this.metrics = [];
+    this.buffer.length = 0;
+    this.head = 0;
+    this.count = 0;
   }
 
   getStats(): {
@@ -60,14 +78,15 @@ export class QueryPerformanceMonitor {
     avgDuration: number;
     cacheHitRate: number;
   } {
-    const total = this.metrics.length;
+    const metrics = this.snapshot();
+    const total = metrics.length;
     if (total === 0) {
       return { totalQueries: 0, slowQueries: 0, avgDuration: 0, cacheHitRate: 0 };
     }
 
-    const slow = this.metrics.filter((m) => m.duration > 100).length;
-    const avgDuration = this.metrics.reduce((sum, m) => sum + m.duration, 0) / total;
-    const cacheHits = this.metrics.filter((m) => m.cacheHit).length;
+    const slow = metrics.filter((m) => m.duration > this.slowThresholdMs).length;
+    const avgDuration = metrics.reduce((sum, m) => sum + m.duration, 0) / total;
+    const cacheHits = metrics.filter((m) => m.cacheHit).length;
 
     return {
       totalQueries: total,

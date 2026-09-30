@@ -27,6 +27,7 @@ export default function ShieldRenderer({
   onElementClick,
   customChargeSvgs = {},
 }: ShieldRendererProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { shield, charges, ordinaries } = computeLayout(composition);
   const clipId = `shield-clip-${composition.shield.shape}`;
 
@@ -91,7 +92,7 @@ export default function ShieldRenderer({
                     e.stopPropagation();
                     onElementClick?.(`shield.ordinaries[${i}]`);
                   }}
-                  className="cursor-pointer transition-all duration-150 hover:brightness-105 active:brightness-95"
+                  className="cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:brightness-105 active:brightness-95"
                 />
               );
             })}

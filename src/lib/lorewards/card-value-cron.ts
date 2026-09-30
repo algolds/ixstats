@@ -121,15 +121,23 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
     console.log(`[Card Value Cron] Found ${nationCards.length} nation cards to process`);
 
+    // One lookup for every linked country instead of a findUnique per card.
+    const countryIds = [
+      ...new Set(nationCards.map((c) => c.countryId).filter((id): id is string => !!id)),
+    ];
+    const countries = await db.country.findMany({
+      where: { id: { in: countryIds } },
+      select: { id: true, name: true, currentTotalGdp: true, adjustedGdpGrowth: true },
+      take: countryIds.length || 1,
+    });
+    const countryById = new Map(countries.map((c) => [c.id, c]));
+
     // Process each card
     for (const card of nationCards) {
       try {
         if (!card.countryId) continue;
 
-        // Fetch associated country data
-        const country = await db.country.findUnique({
-          where: { id: card.countryId },
-        });
+        const country = countryById.get(card.countryId);
 
         if (!country) {
           console.warn(`[Card Value Cron] Country not found for card ${card.id}`);
@@ -144,17 +152,20 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
           (ownership: any) => ownership.lastSalePrice !== null && ownership.lastSalePrice > 0
         );
 
+        // oxlint-disable-next-line typescript/no-unused-vars
         const avgSalePrice =
           recentSales.length > 0
             ? recentSales.reduce((sum: number, o: any) => sum + (o.lastSalePrice || 0), 0) /
               recentSales.length
             : null;
 
+        // oxlint-disable-next-line typescript/no-unused-vars
         const highestSale =
           recentSales.length > 0
             ? Math.max(...recentSales.map((o: any) => o.lastSalePrice || 0))
             : null;
 
+        // oxlint-disable-next-line typescript/no-unused-vars
         const lowestSale =
           recentSales.length > 0
             ? Math.min(
@@ -162,6 +173,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
               )
             : null;
 
+        // oxlint-disable-next-line typescript/no-unused-vars
         const ownedBy = card.CardOwnership.length;
 
         // Save value history entry
@@ -180,6 +192,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
           // Get corresponding GDP values for the same time periods
           // For simplicity, use current GDP as approximation (in production, would query GDP history)
+          // oxlint-disable-next-line typescript/no-unused-vars
           const gdpValues = cardValues.map(() => country.currentTotalGdp);
 
           // In a real implementation, we'd query GDP history at matching timestamps

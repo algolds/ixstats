@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MapPin, Globe, BookOpen } from "lucide-react";
+import { MapPin, Globe, OpenBook as BookOpen } from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -36,7 +36,7 @@ export function UnclaimedTerritoryView({
           {wikiRichIntro.paragraphs.length > 1 && (
             <button
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+              className="text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
             >
               {introExpanded ? "Show less" : "Read more..."}
             </button>

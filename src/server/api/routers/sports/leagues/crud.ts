@@ -3,11 +3,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getPreset,
@@ -18,6 +14,7 @@ import {
 } from "~/lib/sports";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
+import { viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
 
 export const leaguesCrudRouter = createTRPCRouter({
   getLeagues: publicProcedure
@@ -61,7 +58,7 @@ export const leaguesCrudRouter = createTRPCRouter({
     .input(z.object({ seasonId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        return await (ctx.db as any).sportDraftPick.findMany({
+        return await ctx.db.sportDraftPick.findMany({
           where: { seasonId: input.seasonId },
           orderBy: [{ round: "asc" }, { pickNumber: "asc" }],
           include: {
@@ -127,7 +124,7 @@ export const leaguesCrudRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
       }
 
-      return league;
+      return { ...league, viewerCanManage: viewerCanManageLeague(ctx, league) };
     } catch (error) {
       if (error instanceof TRPCError) throw error;
       throw new TRPCError({
@@ -400,7 +397,7 @@ export const leaguesCrudRouter = createTRPCRouter({
             sportPreset: l.sportPreset,
           })),
         };
-      } catch (error) {
+      } catch {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Search failed" });
       }
     }),
@@ -430,33 +427,6 @@ export const leaguesCrudRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to transfer team",
-        });
-      }
-    }),
-
-  exportLeagueData: publicProcedure
-    .input(z.object({ leagueId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const league = await ctx.db.sportLeague.findUnique({
-          where: { id: input.leagueId },
-          include: {
-            teams: true,
-            seasons: {
-              include: {
-                matches: true,
-                standings: true,
-              },
-            },
-          },
-        });
-        if (!league) throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
-        return league;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to export league data",
         });
       }
     }),

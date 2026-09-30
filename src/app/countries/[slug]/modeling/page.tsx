@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle } from "lucide-react";
+import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { createUrl } from "~/lib/utils";
 import type { EconomicYearData, StorytellerEffect } from "~/types/economics";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";

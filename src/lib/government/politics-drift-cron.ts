@@ -16,6 +16,7 @@ import { applyGovernmentComponentEffects } from "./component-effects";
 import { isNewsworthySwing } from "./approval";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
+import { loadEffectiveBudget } from "./budget-allocations";
 
 export interface PoliticsDriftResult {
   countriesProcessed: number;
@@ -32,13 +33,11 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
     metricsRecomputed: 0,
   };
 
-  const owners = await db.user.findMany({
-    where: { countryId: { not: null } },
-    select: { countryId: true },
+  const owned = await db.country.findMany({
+    where: { ownerUserId: { not: null } },
+    select: { id: true },
   });
-  const countryIds = [
-    ...new Set(owners.map((o) => o.countryId).filter((id): id is string => !!id)),
-  ];
+  const countryIds = owned.map((c) => c.id);
 
   for (const countryId of countryIds) {
     try {
@@ -48,14 +47,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
       const [parties, country, allocations, components] = await Promise.all([
         db.politicalParty.findMany({ where: { countryId, isActive: true } }),
         db.country.findUnique({ where: { id: countryId }, select: { adjustedGdpGrowth: true } }),
-        db.budgetAllocation.findMany({
-          where: {
-            governmentStructure: { countryId },
-            // budgetYear filtering uses the real-world calendar year due to database model constraints (validation maximum limits of 2030/2035)
-            budgetYear: new Date().getFullYear(),
-          },
-          include: { department: { select: { category: true } } },
-        }),
+        loadEffectiveBudget(db, countryId).then((budget) => budget.allocations),
         db.governmentComponent.findMany({
           where: { countryId, isActive: true },
           select: { componentType: true, effectivenessScore: true },

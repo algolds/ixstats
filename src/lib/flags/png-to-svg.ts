@@ -8,6 +8,8 @@
  */
 
 import { Buffer } from "node:buffer";
+import { hslToHex, hexToRgbArray } from "~/lib/color";
+import { MAX_PNG_PIXELS, PngDecodeError } from "~/lib/maps/png-realm-map";
 
 export interface PngToSvgConfig {
   /** Color map: hex color → feature ID. If not provided, auto-detects colors. */
@@ -30,6 +32,40 @@ export interface PngToSvgResult {
   log: string[];
 }
 
+const decodeFailure = (err: Error) => new PngDecodeError(err.message);
+
+/**
+ * Decode a map image to raw RGB. Images over MAX_PNG_PIXELS are refused before any pixel buffer is allocated;
+ * anything sharp cannot read is a PngDecodeError (bad input, not a server fault).
+ */
+async function decodeRgb(pngBuffer: Buffer) {
+  // Dynamic import to avoid bundling sharp in client code
+  const sharp = (await import("sharp")).default;
+  return sharp(pngBuffer, { limitInputPixels: MAX_PNG_PIXELS })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+    .catch((err: Error) => {
+      throw decodeFailure(err);
+    });
+}
+
+/** The image's dimensions from its header, refusing unreadable or over-limit images like decodeRgb. */
+async function imageSize(pngBuffer: Buffer): Promise<{ width: number; height: number }> {
+  const sharp = (await import("sharp")).default;
+  const metadata = await sharp(pngBuffer)
+    .metadata()
+    .catch((err: Error) => {
+      throw decodeFailure(err);
+    });
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  if (width * height > MAX_PNG_PIXELS) {
+    throw new PngDecodeError(`it is ${width}×${height} pixels`);
+  }
+  return { width, height };
+}
+
 /**
  * Extract distinct colors from a PNG image buffer.
  * Returns an array of { hex, count } sorted by pixel count descending.
@@ -40,11 +76,7 @@ export async function extractColors(
   pngBuffer: Buffer,
   options: { backgroundColor?: string; minPixels?: number } = {}
 ): Promise<Array<{ hex: string; pixelCount: number }>> {
-  // Dynamic import to avoid bundling sharp in client code
-  const sharp = (await import("sharp")).default;
-
-  const image = sharp(pngBuffer).removeAlpha().raw();
-  const { data, info } = await image.toBuffer({ resolveWithObject: true });
+  const { data, info } = await decodeRgb(pngBuffer);
 
   const colorCounts = new Map<string, number>();
   const bgHex = options.backgroundColor?.toLowerCase().replace("#", "");
@@ -80,9 +112,8 @@ export async function createColorMask(
 ): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
 
-  const target = hexToRgb(targetHex);
-  const image = sharp(pngBuffer).removeAlpha().raw();
-  const { data, info } = await image.toBuffer({ resolveWithObject: true });
+  const target = hexToRgbArray(targetHex);
+  const { data, info } = await decodeRgb(pngBuffer);
 
   // Create mask: white for matching pixels, black for others
   const mask = Buffer.alloc(info.width * info.height);
@@ -108,6 +139,104 @@ export async function createColorMask(
     .toBuffer();
 }
 
+/** The part of the `potrace` package (pure JS, no type definitions) this module uses. */
+interface PotraceModule {
+  trace(
+    image: Buffer,
+    options: { turdSize: number; optTolerance: number; threshold: number; blackOnWhite: boolean },
+    callback: (err: Error | null, svg: string) => void
+  ): void;
+}
+
+/**
+ * Load potrace from the project's node_modules at run time. A require created at run time (not a static
+ * import) keeps bundlers from pulling potrace and its image stack into the server bundle, and works under
+ * Node, Bun and Jest alike — unlike `eval("require")`, which is undefined in ES modules.
+ */
+async function loadPotrace(): Promise<PotraceModule> {
+  const [{ createRequire }, { join }] = await Promise.all([
+    import("node:module"),
+    import("node:path"),
+  ]);
+  return createRequire(join(process.cwd(), "package.json"))("potrace") as PotraceModule;
+}
+
+/** Trace a colour mask's white (matching) pixels into one SVG path `d`. */
+function traceMask(potrace: PotraceModule, mask: Buffer, config: PngToSvgConfig): Promise<string> {
+  const options = {
+    turdSize: config.minRegionSize ?? 10,
+    optTolerance: config.smoothing ?? 0.2,
+    threshold: 128,
+    blackOnWhite: false,
+  };
+  return new Promise((resolve, reject) => {
+    potrace.trace(mask, options, (err, svg) => {
+      if (err) reject(err);
+      else resolve(svg.match(/d="([^"]+)"/)?.[1] ?? "");
+    });
+  });
+}
+
+export interface PoliticalSvgPath {
+  featureId: string;
+  d: string;
+  fill: string;
+}
+
+/** One path per colour, named by its feature id; a colour that fails to trace is logged and skipped. */
+async function traceColours(
+  potrace: PotraceModule,
+  pngBuffer: Buffer,
+  colorEntries: PngToSvgResult["detectedColors"],
+  config: PngToSvgConfig,
+  log: string[]
+): Promise<PoliticalSvgPath[]> {
+  const svgPaths: PoliticalSvgPath[] = [];
+  for (const entry of colorEntries) {
+    try {
+      const mask = await createColorMask(pngBuffer, entry.hex);
+      const pathData = await traceMask(potrace, mask, config);
+      if (pathData) {
+        const featureId = entry.featureId ?? `feature_${svgPaths.length}`;
+        svgPaths.push({ featureId, d: pathData, fill: entry.hex });
+        log.push(`Vectorized: ${featureId} (${entry.hex}, ${entry.pixelCount}px)`);
+      }
+    } catch (err) {
+      log.push(`ERROR tracing ${entry.hex}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  return svgPaths;
+}
+
+/** Feature ids are nation names from the colour mapping (e.g. "Trinidad & Tobago"): escape them for XML. */
+function escapeXmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/** The political layer SVG the parser reads back: one path per region, its id the feature id. */
+export function assemblePoliticalSvg(
+  width: number,
+  height: number,
+  paths: readonly PoliticalSvgPath[]
+): string {
+  return [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"`,
+    `     viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
+    `  <g inkscape:label="political" inkscape:groupmode="layer">`,
+    ...paths.map(
+      (p) =>
+        `  <path id="${escapeXmlAttribute(p.featureId)}" d="${p.d}" fill="${p.fill}" stroke="none" />`
+    ),
+    `  </g>`,
+    `</svg>`,
+  ].join("\n");
+}
+
 /**
  * Convert a PNG political map to SVG.
  *
@@ -120,13 +249,10 @@ export async function convertPngToSvg(
   pngBuffer: Buffer,
   config: PngToSvgConfig = {}
 ): Promise<PngToSvgResult> {
-  const sharp = (await import("sharp")).default;
   const log: string[] = [];
 
   // Get image dimensions
-  const metadata = await sharp(pngBuffer).metadata();
-  const width = metadata.width ?? 0;
-  const height = metadata.height ?? 0;
+  const { width, height } = await imageSize(pngBuffer);
   log.push(`Image size: ${width}x${height}`);
 
   // Step 1: Detect or use provided colors
@@ -152,69 +278,14 @@ export async function convertPngToSvg(
   }
 
   // Step 2: For each color, create mask and vectorize
-  const svgPaths: string[] = [];
-
-  for (const entry of colorEntries) {
-    try {
-      const mask = await createColorMask(pngBuffer, entry.hex);
-
-      // Use potrace to vectorize the mask
-      let pathData: string;
-      try {
-        // Optional native dependency — use eval to hide from Webpack static analysis
-        const potrace = eval("require")("potrace") as {
-          trace: (
-            buf: Buffer,
-            opts: Record<string, unknown>,
-            cb: (err: Error | null, svg: string) => void
-          ) => void;
-        };
-        pathData = await new Promise<string>((resolve, reject) => {
-          potrace.trace(
-            mask,
-            {
-              turdSize: config.minRegionSize ?? 10,
-              optTolerance: config.smoothing ?? 0.2,
-            },
-            (err: Error | null, svg: string) => {
-              if (err) reject(err);
-              else {
-                // Extract path d attribute from potrace SVG output
-                const match = svg.match(/d="([^"]+)"/);
-                resolve(match?.[1] ?? "");
-              }
-            }
-          );
-        });
-      } catch {
-        log.push(`WARNING: potrace not available for ${entry.hex}, skipping`);
-        continue;
-      }
-
-      if (pathData) {
-        const featureId = entry.featureId ?? `feature_${svgPaths.length}`;
-        svgPaths.push(
-          `  <path id="${featureId}" d="${pathData}" fill="${entry.hex}" stroke="none" />`
-        );
-        log.push(`Vectorized: ${featureId} (${entry.hex}, ${entry.pixelCount}px)`);
-      }
-    } catch (err) {
-      log.push(
-        `ERROR processing ${entry.hex}: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
-  }
+  const potrace = await loadPotrace().catch((err: Error) => {
+    log.push(`ERROR potrace could not be loaded, no region was traced: ${err.message}`);
+    return null;
+  });
+  const svgPaths = potrace ? await traceColours(potrace, pngBuffer, colorEntries, config, log) : [];
 
   // Step 3: Assemble SVG
-  const svg = [
-    `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"`,
-    `     viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
-    `  <g inkscape:label="political" inkscape:groupmode="layer">`,
-    ...svgPaths,
-    `  </g>`,
-    `</svg>`,
-  ].join("\n");
+  const svg = assemblePoliticalSvg(width, height, svgPaths);
 
   log.push(`Generated SVG with ${svgPaths.length} features`);
 
@@ -590,27 +661,4 @@ function generatePalette(n: number): string[] {
     colors.push(hslToHex(hue, sat, lit));
   }
   return colors;
-}
-
-function hslToHex(h: number, s: number, l: number): string {
-  s /= 100;
-  l /= 100;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace("#", "").slice(0, 6);
-  return [
-    parseInt(h.substring(0, 2), 16),
-    parseInt(h.substring(2, 4), 16),
-    parseInt(h.substring(4, 6), 16),
-  ];
 }

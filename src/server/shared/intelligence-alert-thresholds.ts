@@ -68,7 +68,11 @@ export async function calculateRealTimeMetrics(db: any, countryId: string) {
 /**
  * Evaluate alert thresholds for a country and generate intelligence alerts if breached
  */
-export async function evaluateThresholds(db: any, countryId: string, userId: string): Promise<void> {
+export async function evaluateThresholds(
+  db: any,
+  countryId: string,
+  userId: string
+): Promise<void> {
   // Fetch active thresholds
   const thresholds = await db.intelligenceAlertThreshold.findMany({
     where: { countryId, userId, isActive: true },

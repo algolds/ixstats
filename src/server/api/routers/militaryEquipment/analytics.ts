@@ -16,14 +16,6 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
  */
 export const militaryEquipmentAnalyticsRouter = createTRPCRouter({
   // ==========================================
-  // PUBLIC ENDPOINTS
-  // ==========================================
-
-  // ==========================================
-  // ADMIN ENDPOINTS
-  // ==========================================
-
-  // ==========================================
   // ANALYTICS ENDPOINTS
   // ==========================================
 
@@ -106,8 +98,4 @@ export const militaryEquipmentAnalyticsRouter = createTRPCRouter({
       });
     }
   }),
-
-  // ==========================================
-  // IMAGE RESOLUTION ENDPOINTS
-  // ==========================================
 });

@@ -18,7 +18,14 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Loader2, Check, X, AlertCircle, Eye, Upload } from "lucide-react";
+import {
+  SystemRestart as Loader2,
+  Check,
+  Xmark as X,
+  WarningCircle as AlertCircle,
+  Eye,
+  Upload,
+} from "iconoir-react";
 import { SvgPreviewMap } from "./SvgPreviewMap";
 import type { FeatureCollection } from "geojson";
 
@@ -189,7 +196,7 @@ export function SvgProcessingDialog({
                       </div>
                       <div className="text-muted-foreground flex items-center gap-3 text-xs">
                         {f.countryMatch && (
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge variant="secondary" className="text-xs">
                             {f.countryMatch.matchType === "exact" ? "exact" : "fuzzy"} →{" "}
                             {f.countryMatch.countryName}
                           </Badge>

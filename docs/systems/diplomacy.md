@@ -1,30 +1,30 @@
-# Diplomacy System
+# 🏛️ MyCountry Diplomacy Domain
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`), powered by the **Concord Living-World Engine** (`CONCORD_ENGINE_VERSION = 2`).
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
+**Engine:** Concord Living-World Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
+**Primary Action:** `ALLIED` | **Domain Accent:** Cyan Blue (`#06B6D4` / `--color-cyan-500`)  
+**Route:** `/mycountry/diplomacy` (Diplomacy Domain) | **Status:** 📀 Gold Master (100% Ready)  
 
-The diplomacy domain handles international relations, embassy networks, missions, cultural exchanges, alliances, foreign policy, scenario generation, and autonomous NPC reactions.
-
-> **⚠️ IMPORTANT:** All diplomatic direct communications use the **ThinkShare unified messaging architecture** at `/messages` and embedded secure terminals.
+The diplomacy domain handles international relations, embassy networks, cultural exchanges, multilateral alliances, foreign policy actions, diplomatic scenarios, and NPC reactions to cultural exchanges. Direct diplomatic communications route through **ThinkShare** (`/messages`).
 
 ---
 
 ## Architecture & Surfaces
 
 ### UI Surfaces
-- `src/components/mycountry/DomainSurface.tsx` (Diplomacy Domain) – Full-screen diplomacy command view with relationship matrix, active missions, and embassy network
-- `src/components/mycountry/DrillSheets.tsx` – Slide-over relations sheet and foreign policy tuning drawer
-- `src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx` – Embassy reach, missions, and bilateral influence
-- `src/components/mycountry/domains/diplomacy/LiveDiplomaticFeed.tsx` – Real-time event ticker powered by Socket.IO
-- `src/components/diplomacy/alliances/` – Alliance creation, collective actions, and treaty dashboards
-- `src/components/diplomacy/ForeignPolicyPanel.tsx` – Foreign policy action management (sanctions, free trade, defense pacts)
+- `src/components/mycountry/shell/DomainSurface.tsx` (Diplomacy Domain) – Full-screen diplomacy view rendering `EmbassiesAndRelationsPanel`
+- `src/components/mycountry/shell/rails/RelationsRail.tsx` – Relations context rail with fogged foreign intel (`src/lib/statecraft/diplo-intel.ts`)
+- `src/components/mycountry/shell/DrillSheets.tsx` – Slide-over relations sheet
+- `src/components/mycountry/domains/diplomacy/` – Embassy network (`embassy-network/`, `EmbassyCreatorSheet`, `EmbassyDetailSheet`), relations list, cultural exchange wizard/program, `DiplomaticEventsHub`, `ScenarioModal`, shared data
+- `src/components/mycountry/domains/diplomacy/alliances/` – `AllianceDashboard`, `CollectiveActionsPanel` (alliance creation via `AllianceCreatorSheet`)
 
 ### Backend Routers
-- `src/server/api/routers/diplomacy/` (`index.ts`, `core.ts`, `embassies.ts`, `cultural.ts`, `policies.ts`, `inbox.ts`) – Embassies, bilateral missions, cultural programs, and policy enactments
-- `src/server/api/routers/diplomatic-intelligence/` – Executive intelligence briefings and relationship threat assessments
-- `src/server/api/routers/diplomaticScenarios/` – Dynamic scenario templates and player choices
-- `src/server/api/routers/npcPersonalities/` – Autonomous NPC personality traits, tone calculation, and response prediction
+- `src/server/api/routers/diplomacy/core/` (`diplomaticCore`) – Relationships, stances (`setDiplomaticGoal`), follows, shared data, diplomatic options
+- `src/server/api/routers/diplomacy/embassies/` (`diplomaticEmbassies`) – Establish, close, reopen, delete, profile, establishment cost
+- `src/server/api/routers/diplomacy/cultural/` (`diplomaticCultural`) – Cultural exchanges, artifacts, votes, scenarios, NPC responses
+- `src/server/api/routers/diplomacy/policies/` (`diplomaticPolicies`) – Foreign policy actions and alliances (create, invite, leave, collective actions, votes)
+- `src/server/api/routers/diplomaticScenarios/` – Scenario templates and player choices
+- `src/server/api/routers/npcPersonalities/` – NPC personality admin CRUD and assignment
 - `src/server/api/routers/thinkpages/` & `src/server/api/routers/messages/` – ThinkShare unified messaging
 
 ---
@@ -32,10 +32,11 @@ The diplomacy domain handles international relations, embassy networks, missions
 ## Data Models
 
 Defined in `prisma/schema/diplomacy.prisma`:
-- `DiplomaticRelation`: Bilateral relationship strength (0–100), state (ALLIED, FRIENDLY, NEUTRAL, TENSE, HOSTILE, WAR)
-- `Embassy`: Physical diplomatic mission with level, budget, and specialization (ECONOMIC, CULTURAL, SECURITY, GENERAL)
-- `EmbassyMission`: Active operations with duration, success probability, risk level, and reward yield
-- `CulturalExchange`: Bilateral cultural programs boosting soft power and synergy
+- `DiplomaticRelation`: Bilateral relationship (`relationship` label, `strength` 0–100, `status`, per-side goals/stances)
+- `Embassy`: Diplomatic mission with level, budget, influence, and reputation
+- `EmbassyMission`: Mission records (cost, influence/reputation rewards) — no player-facing mission procedure is currently exposed
+- `CulturalExchange` (+ participants, artifacts, scenarios, outcomes, votes): Bilateral cultural programs
+- `ForeignPolicyAction`, `BilateralTrade`, `Alliance` (+ members, actions, votes, documents)
 - `DiplomaticEvent`: Timestamped historical record of treaties, expulsions, summits, and sanctions
 
 ---
@@ -44,24 +45,21 @@ Defined in `prisma/schema/diplomacy.prisma`:
 
 ```mermaid
 graph TD
-    A[Player Declares Action / Proposes Treaty] --> B[Diplomatic Router Transaction]
-    B --> C[NPCPersonalitySystem Predicts Response]
-    C -->|Calculates Traits 0-100| D{Accept / Counter / Reject}
-    D -->|Accept| E[Update Relations & Bilateral Multipliers]
-    D -->|Reject / Counter| F[Log Incident & Relationship Strain]
-    E & F --> G[CountryEventSpine Dispatcher]
-    G --> H[ThinkPages Headline News Broadcast]
-    G --> I[Vault Dividend Multiplier Adjustment]
+    A[Player Action: Embassy / Foreign Policy / Alliance / Cultural Exchange] --> B[Diplomacy Router Mutation]
+    B --> C[Update Relations, Embassies & Bilateral Records]
+    B -->|Cultural exchanges| D[NPCPersonalitySystem Predicts NPC Participation]
+    C --> E[generateDiplomaticNews → ThinkPages Headline]
+    F[runDiplomaticDrift cron] -->|Stances / goals| C
 ```
 
-### 1. Diplomatic Response AI (`src/lib/diplomatic-response-ai.ts`)
-Generates emergent geopolitical events weighted by tension levels, economic competition, and past player choices. Features an **Event Fatigue Mechanic** to prevent overwhelming players with excessive concurrent incidents.
+### 1. Relation Drift & Stances (`src/lib/diplomacy/drift-cron.ts`)
+Each side can set a diplomatic goal ("stance") via `diplomaticCore.setDiplomaticGoal`; the scheduled `runDiplomaticDrift` job nudges relationship strength toward those goals. `src/lib/diplomacy/relation-bands.ts` maps raw strength to qualitative standing bands (shown on embassy cards), and `relative-development.ts` labels economic asymmetry between partners.
 
-### 2. NPC Personality-Driven Auto-Response (`src/lib/diplomatic-npc-personality.ts`)
-Computes 8 core traits (Assertiveness, Cooperativeness, Economic Focus, Cultural Openness, Risk Tolerance, Ideological Rigidity, Militarism, Isolationism) mapping to 6 behavioral archetypes. Predicts NPC reactions to player proposals with naturalistic drift over time.
+### 2. NPC Personality-Driven Auto-Response (`src/lib/diplomacy/npc-personality.ts`)
+Computes 8 core traits (Assertiveness, Cooperativeness, Economic Focus, Cultural Openness, Risk Tolerance, Ideological Rigidity, Militarism, Isolationism) mapping to 6 behavioral archetypes. Today it predicts NPC participation in cultural exchanges (`diplomaticCultural.getNPCCulturalResponses`, `src/lib/diplomacy/npc-cultural-participation.ts`). See [NPC AI](./npc-ai.md).
 
 ### 3. Unified Messaging (ThinkShare)
-Diplomatic channels are first-class `ThinkshareConversation` records with security classifications (`PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`), digital signatures, and end-to-end encryption.
+Diplomatic channels are `ThinkshareConversation` / `DiplomaticChannel` records carrying security classifications (`PUBLIC` → `TOP_SECRET`), message signatures, and encryption flags.
 
 ---
 
@@ -71,4 +69,4 @@ Diplomatic channels are first-class `ThinkshareConversation` records with securi
 - [Crisis Events Management](./crisis-events.md)
 - [Social & Collaboration System](./social.md)
 - [MyCountry Command Suite](./mycountry.md)
-- [API Reference: Diplomacy Routers](../reference/api-complete.md#diplomacy-routers)
+- [API Reference: Diplomacy Routers](../reference/api-complete.md#intelligence--diplomacy)

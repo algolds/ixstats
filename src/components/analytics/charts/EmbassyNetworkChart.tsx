@@ -16,7 +16,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Building } from "lucide-react";
+import { Building } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import type { EconomicChartDataPoint } from "~/lib/utils";
@@ -29,7 +29,7 @@ interface EmbassyNetworkChartProps {
 export const EmbassyNetworkChart = React.memo<EmbassyNetworkChartProps>(
   ({ data, GlassTooltip }) => {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building className="h-5 w-5 text-orange-600" />

@@ -9,8 +9,8 @@ import {
   UserButton as ClerkUserButton,
 } from "@clerk/nextjs";
 import type { GetTokenOptions, SignOutOptions } from "@clerk/types";
-import { Link2 } from "lucide-react";
-import { IxnayIDCard } from "~/app/settings/_components/IxnayIDCard";
+import { Link as Link2 } from "iconoir-react";
+import { IxnayIDCard } from "~/components/settings/IxnayIDCard";
 import { initConsoleCapture } from "~/lib/logging";
 
 if (typeof window !== "undefined") {
@@ -79,6 +79,17 @@ function ClerkAuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  if (process.env.NODE_ENV === "test") {
+    const testAuthValue: AuthContextType = {
+      user: { id: "admin_1", username: "admin", publicMetadata: { role: "admin" } } as any,
+      isLoaded: true,
+      isSignedIn: true,
+      signOut: async () => {},
+      getToken: async () => "mock-token",
+    };
+    return <AuthContext.Provider value={testAuthValue}>{children}</AuthContext.Provider>;
+  }
+
   assertClerkConfigured("AuthProvider");
   return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
 }

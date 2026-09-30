@@ -24,19 +24,19 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { MultiSelect } from "~/components/ui/multi-select";
 import {
   Settings,
-  DollarSign,
+  Dollar as DollarSign,
   Network,
-  TrendingUp,
-  Target,
-  Users,
-  Award,
+  StatUp as TrendingUp,
+  Archery as Target,
+  Group as Users,
+  Trophy as Award,
   Palette,
-  Briefcase,
-  Zap,
-  Factory,
+  Suitcase as Briefcase,
+  Flash as Zap,
+  Industry as Factory,
   Leaf,
-  Building2,
-} from "lucide-react";
+  City as Building2,
+} from "iconoir-react";
 import { EconomicComponentType, ComponentType } from "~/lib/enums";
 import {
   type ComponentFormData,
@@ -300,9 +300,7 @@ function CostsTab({
         </label>
         <Slider
           value={[formData.requiredCapacity]}
-          onValueChange={([value]) =>
-            setFormData((prev) => ({ ...prev, requiredCapacity: value }))
-          }
+          onValueChange={([value]) => setFormData((prev) => ({ ...prev, requiredCapacity: value }))}
           min={0}
           max={100}
         />
@@ -674,7 +672,7 @@ function AppearanceTab({
               key={color}
               type="button"
               onClick={() => setFormData((prev) => ({ ...prev, color }))}
-              className={`rounded-lg border-2 p-3 transition-all ${
+              className={`rounded-lg border-2 p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 formData.color === color
                   ? `border-${color}-400 bg-${color}-500/20`
                   : "border-white/10 hover:border-white/20"
@@ -693,7 +691,7 @@ function AppearanceTab({
           onChange={(e) => setFormData((prev) => ({ ...prev, icon: e.target.value }))}
           placeholder="e.g., Factory, Building2, Users"
         />
-        <p className="mt-1 text-xs text-[--intel-silver]">Icon name from lucide-react library</p>
+        <p className="mt-1 text-xs text-[--intel-silver]">Icon name from iconoir-react library</p>
       </div>
     </div>
   );

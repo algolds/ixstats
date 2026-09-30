@@ -3,7 +3,12 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { Loader2, Check, Image as ImageIcon, Trash2 } from "lucide-react";
+import {
+  SystemRestart as Loader2,
+  Check,
+  MediaImage as ImageIcon,
+  Trash as Trash2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -21,7 +26,8 @@ import { cn } from "~/lib/utils";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -277,7 +283,7 @@ export function CardImageUploadModal({
                   <motion.div
                     key={idx}
                     className={cn(
-                      "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
+                      "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       selectedImage === imageUrl
                         ? "border-primary ring-primary/50 ring-2"
                         : "hover:border-primary/50 border-transparent"

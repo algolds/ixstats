@@ -5,17 +5,17 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
   Crown,
-  Newspaper,
-  Users,
+  Journal as Newspaper,
+  Group as Users,
   Plus,
   Settings,
   Eye,
-  EyeOff,
+  EyeClosed as EyeOff,
   Star,
-  MoreHorizontal,
-  TrendingUp,
-  MessageSquare,
-} from "lucide-react";
+  MoreHoriz as MoreHorizontal,
+  StatUp as TrendingUp,
+  ChatBubble as MessageSquare,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -43,6 +43,7 @@ interface EnhancedAccountManagerProps {
 }
 
 export function EnhancedAccountManager({
+  // oxlint-disable-next-line eslint/no-unused-vars
   countryId,
   accounts,
   selectedAccount,
@@ -115,6 +116,7 @@ export function EnhancedAccountManager({
     };
   };
 
+  // oxlint-disable-next-line
   const AccountCard = ({ account, index }: { account: any; index: number }) => {
     const Icon = getAccountIcon(account.accountType);
     const colorClasses = getAccountTypeColor(account.accountType);
@@ -128,7 +130,7 @@ export function EnhancedAccountManager({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
         className={cn(
-          "rounded-lg border p-3 transition-all hover:scale-102",
+          "rounded-lg border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-102",
           isSelected
             ? "border-blue-500/50 bg-blue-500/20 shadow-lg shadow-blue-500/25"
             : "border-border/40 bg-muted/10 hover:bg-muted/20"
@@ -157,7 +159,7 @@ export function EnhancedAccountManager({
                   </span>
                 )}
                 {(account as any).bio?.startsWith("Former Nation") && (
-                  <span className="text-[9px] text-gray-400">[Former Nation]</span>
+                  <span className="text-xs text-gray-400">[Former Nation]</span>
                 )}
                 {isFavorite && <Star className="h-3 w-3 fill-current text-yellow-500" />}
               </div>
@@ -222,11 +224,11 @@ export function EnhancedAccountManager({
             <div className="text-muted-foreground">Posts</div>
           </div>
           <div className="text-center">
-            <div className="font-medium text-green-400">{metrics.reach}</div>
+            <div className="font-medium text-emerald-400">{metrics.reach}</div>
             <div className="text-muted-foreground">Reach</div>
           </div>
           <div className="text-center">
-            <div className="font-medium text-purple-400">{metrics.influence}%</div>
+            <div className="font-medium text-indigo-400">{metrics.influence}%</div>
             <div className="text-muted-foreground">Influence</div>
           </div>
         </div>
@@ -256,7 +258,7 @@ export function EnhancedAccountManager({
               type="button"
               onClick={() => setFilterType(type)}
               className={cn(
-                "flex flex-1 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all cursor-pointer",
+                "flex flex-1 cursor-pointer items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-xs tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 isActive
                   ? "border-primary bg-primary/10 font-bold shadow-xs"
                   : "border-transparent opacity-75 hover:opacity-100",
@@ -269,7 +271,7 @@ export function EnhancedAccountManager({
                   {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
                 </span>
               </span>
-              <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-[9px] font-semibold">
+              <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-xs font-semibold">
                 {count}/{limit}
               </span>
             </button>
@@ -342,7 +344,7 @@ export function EnhancedAccountManager({
   }
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Account Manager</CardTitle>

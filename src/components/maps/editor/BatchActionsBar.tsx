@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Trash2, X, Pencil, Check } from "lucide-react";
+import { Trash as Trash2, Xmark as X, EditPencil as Pencil, Check } from "iconoir-react";
 
 // Whitelisted editable attributes — intentionally excludes name, id, capital flags.
 const EDITABLE_FIELDS = [
@@ -11,7 +11,7 @@ const EDITABLE_FIELDS = [
   { value: "governmentType", label: "Gov. Type", inputType: "text" as const },
 ] as const;
 
-type EditableField = (typeof EDITABLE_FIELDS)[number]["value"];
+export type EditableField = (typeof EDITABLE_FIELDS)[number]["value"];
 
 const SUBDIVISION_TYPES = [
   { value: "province", label: "Province" },

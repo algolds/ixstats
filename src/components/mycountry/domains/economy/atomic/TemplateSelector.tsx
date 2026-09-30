@@ -1,3 +1,4 @@
+"use client";
 /**
  * Template Selector
  *
@@ -5,12 +6,10 @@
  * Optimized with React.memo for performance.
  */
 
-"use client";
-
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { FileText } from "lucide-react";
+import { Page as FileText } from "iconoir-react";
 import type { EconomicTemplate } from "~/lib/economy/atomic-data";
 
 export interface TemplateSelectorProps {

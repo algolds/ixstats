@@ -60,10 +60,7 @@ describe("diplomatic-scenario-transforms", () => {
       responseOptions: [{ id: "opt-1", label: "Sign" }],
     };
 
-    const { formData, responseOptions } = scenarioToCloneFormData(
-      raw,
-      (id) => `${id}_test_clone`
-    );
+    const { formData, responseOptions } = scenarioToCloneFormData(raw, (id) => `${id}_test_clone`);
 
     expect(formData.title).toBe("Treaty Negotiation (Copy)");
     expect(formData.status).toBe("active");
@@ -87,7 +84,9 @@ describe("diplomatic-scenario-transforms", () => {
     expect(filterDiplomaticScenarios(list, ["hostile"], [], [])).toHaveLength(1);
     expect(filterDiplomaticScenarios(list, [], ["critical"], [])).toHaveLength(1);
     expect(filterDiplomaticScenarios(list, [], [], ["strategic"])).toHaveLength(1);
-    expect(filterDiplomaticScenarios(list, ["friendly"], ["moderate"], ["strategic"])).toHaveLength(1);
+    expect(filterDiplomaticScenarios(list, ["friendly"], ["moderate"], ["strategic"])).toHaveLength(
+      1
+    );
     expect(filterDiplomaticScenarios(undefined, [], [], [])).toEqual([]);
   });
 });

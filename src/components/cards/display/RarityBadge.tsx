@@ -1,10 +1,9 @@
+"use client";
 /**
  * RarityBadge Component
  * Animated rarity indicator for trading cards
  * Phase 1: Card Display Components
  */
-
-"use client";
 
 import React from "react";
 import { motion } from "motion/react";
@@ -49,7 +48,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
 
     // Size-specific classes
     const sizeClasses = {
-      small: "px-2 py-0.5 text-[10px] gap-1",
+      small: "px-2 py-0.5 text-xs gap-1",
       medium: "px-2.5 py-1 text-xs gap-1.5",
       large: "px-3.5 py-1.5 text-sm gap-2",
     };

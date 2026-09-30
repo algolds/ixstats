@@ -1,313 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-// Import the wiki search service
-import { validateNoXSS } from "~/lib/utils";
-import { globalCache } from "~/lib/cache";
+import { env } from "~/env";
 
-const invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
-
-const hydratePostDates = (post: any) => {
-  if (!post) return post;
-  return {
-    ...post,
-    createdAt: post.createdAt ? new Date(post.createdAt) : undefined,
-    ixTimeTimestamp: post.ixTimeTimestamp ? new Date(post.ixTimeTimestamp) : undefined,
-    parentPost: post.parentPost
-      ? {
-          ...post.parentPost,
-          createdAt: post.parentPost.createdAt ? new Date(post.parentPost.createdAt) : undefined,
-          ixTimeTimestamp: post.parentPost.ixTimeTimestamp
-            ? new Date(post.parentPost.ixTimeTimestamp)
-            : undefined,
-        }
-      : undefined,
-    repostOf: post.repostOf
-      ? {
-          ...post.repostOf,
-          createdAt: post.repostOf.createdAt ? new Date(post.repostOf.createdAt) : undefined,
-          ixTimeTimestamp: post.repostOf.ixTimeTimestamp
-            ? new Date(post.repostOf.ixTimeTimestamp)
-            : undefined,
-        }
-      : undefined,
-    reactions: post.reactions
-      ? post.reactions.map((r: any) => ({
-          ...r,
-          createdAt: r.createdAt ? new Date(r.createdAt) : undefined,
-        }))
-      : undefined,
-  };
-};
-
-const SearchUnsplashImagesSchema = z.object({
-  query: z.string().min(1),
-  page: z.number().min(1).default(1),
-  per_page: z.number().min(1).max(30).default(10),
-  orientation: z.enum(["landscape", "portrait", "squarish"]).optional(),
-  color: z.string().optional(), // Unsplash API supports specific color names or hex codes
-});
-
-// Base schema for ThinkPages accounts
-const thinkpagesAccountBaseSchema = z.object({
-  countryId: z.string(),
-  accountType: z.enum(["government", "media", "citizen"]),
-  username: z
-    .string()
-    .min(3)
-    .max(20)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  firstName: z.string().min(1).max(50),
-  lastName: z.string().max(50).optional().default(""),
-  bio: z.string().max(500).optional().default(""),
-  verified: z.boolean().default(false),
-  postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
-  politicalLean: z.enum(["left", "center", "right"]).default("center"),
-  personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
-  profileImageUrl: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
-});
-const pollInclude = {
-  poll: {
-    include: {
-      options: {
-        include: {
-          _count: {
-            select: { votes: true },
-          },
-        },
-      },
-    },
-  },
-};
-
-// Create schema - all required fields with defaults
-const CreateAccountSchema = thinkpagesAccountBaseSchema;
-
-// Update schema - all fields optional
-const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
-
-const CreatePostSchema = z.object({
-  accountId: z.string(), // ThinkpagesAccount ID for feed posts
-  content: z
-    .string()
-    .max(10000)
-    .optional()
-    .default("")
-    .refine(
-      (content) => {
-        if (!content) return true;
-        const validation = validateNoXSS(content);
-        return validation.valid;
-      },
-      {
-        message:
-          "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
-      }
-    ),
-  hashtags: z.array(z.string()).optional(),
-  mentions: z.array(z.string()).optional(),
-  visibility: z.enum(["public", "private", "unlisted"]).default("public"),
-  parentPostId: z.string().optional(), // For replies
-  repostOfId: z.string().optional(), // For reposts
-  visualizations: z
-    .array(
-      z.object({
-        type: z.enum([
-          "economic_chart",
-          "diplomatic_map",
-          "trade_flow",
-          "gdp_growth",
-          "demographics",
-          "budget_debt",
-          "labor_market",
-          "national_vitality",
-        ]),
-        title: z.string(),
-        config: z
-          .object({
-            chartType: z.string().optional(),
-            dataSource: z.string().optional(),
-            timeRange: z
-              .union([
-                z.string(),
-                z.object({
-                  start: z.string().optional(),
-                  end: z.string().optional(),
-                }),
-              ])
-              .optional(),
-            metrics: z.array(z.string()).optional(),
-            countries: z.array(z.string()).optional(),
-            colors: z.array(z.string()).optional(),
-            displayOptions: z
-              .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
-              .optional(),
-          })
-          .passthrough(), // Allow additional custom properties
-      })
-    )
-    .optional(), // Data visualizations embedded in post
-  mediaUrls: z.array(z.string()).max(4).optional(), // Up to 4 images per post
-  postToDiscord: z.boolean().optional().default(true),
-  poll: z
-    .object({
-      question: z.string().min(1).max(500),
-      description: z.string().max(2000).optional(),
-      pollType: z.enum(["choice", "feature-poll"]).default("choice"),
-      multiple: z.boolean().default(false),
-      options: z.array(z.string().min(1).max(200)).min(2, "At least 2 options are required"),
-    })
-    .optional(),
-});
-
-const AddReactionSchema = z.object({
-  postId: z.string(),
-  accountId: z.string(), // ThinkpagesAccount ID for reactions
-  reactionType: z.union([
-    z.enum(["like", "laugh", "angry", "sad", "fire", "thumbsup", "thumbsdown"]),
-    z.string().startsWith("discord:"), // Support Discord emoji reactions like "discord:ixnay"
-  ]),
-});
-
-const GetFeedSchema = z.object({
-  countryId: z.string().optional(), // Feed filtered by country
-  hashtag: z.string().optional(),
-  filter: z.enum(["recent", "trending", "hot"]).default("recent"),
-  limit: z.number().min(1).max(50).default(20),
-  cursor: z.string().optional(),
-});
 export const thinkpagesPostsReactionsQueriesRouter = createTRPCRouter({
-  // Search Unsplash images
-
-  // Fetch Discord Channel Topic (Easter Egg)
-
-  // Search Wiki Commons images
-
-  // Calculate trending topics
-
-  // Search users globally for ThinkTanks/ThinkShare
-
-  // Update ThinkPages Feed Account
-  // Username availability check for ThinkPages Feed Accounts
-
-  // Generate random profile picture
-
-  // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
-
-  // Get ThinkPages Feed Accounts by Country - For Feed only
-
-  // Get current user's ThinkPages accounts
-
-  // Get Account Counts by Type - For Feed only
-
-  // Post creation
-
-  // Update post content (edit post)
-
-  // Delete post (soft delete)
-
-  // Add reaction to post
-
-  // Remove reaction
-
-  // Get feed
-
-  // Get trending topics
-
-  // Get account details
-
-  // Get Thinkpages account by Clerk User ID
-
-  // Get post details with replies
-
-  // Get posts by Clerk User ID - shows all posts from all accounts owned by this user
-
-  // Trigger citizen reaction to a post
-
-  // Calculate and store country mood metrics
-
-  // ===== THINKTANKS (GROUPS) ENDPOINTS =====
-
-  // Create a new ThinkTank group
-
-  // Get ThinkTanks globally (no country restriction)
-
-  // Join a ThinkTank group
-
-  // Leave a ThinkTank group
-
-  // Get ThinkTank messages
-
-  // Send message to ThinkTank
-
-  // Update a ThinkTank group
-
-  // Invite users to a ThinkTank group
-
-  // Get collaborative documents for a ThinkTank
-
-  // Create a collaborative document
-
-  // Update a collaborative document
-
-  // Delete a collaborative document
-
-  // Get a single document
-
-  // Add reaction to a Thinkshare message
-
-  // Remove reaction from a Thinkshare message
-
-  // Edit a Thinkshare message
-
-  // Delete a Thinkshare message
-
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
-
-  // Create a new conversation
-
-  // Get conversations for a user
-
-  // Get messages for a conversation
-
-  // Send message to conversation
-
-  // Mark messages as read
-
-  // Update user presence/online status
-
-  // Get presence for multiple users
-
-  // Get Discord server emojis
-
-  // Pin/unpin a post
-
-  // Bookmark/unbookmark a post
-  // Get user's bookmarked posts
-
-  // Check if a post is bookmarked by user
-
-  // Bookmark or unbookmark a post
-
-  // Get all flagged posts (admin only)
-
-  // Check if a post is flagged by user
-
-  // Flag a post for moderation
-
-  // Remove a flag (unflag post)
-
-  // Create a conversation between two countries' official accounts
 
   // Get post reactions with account details
   getPostReactions: publicProcedure
@@ -451,26 +147,30 @@ export const thinkpagesPostsReactionsQueriesRouter = createTRPCRouter({
 
                 let serverNickname = u.global_name || u.username;
 
-                try {
-                  const memberRes = await fetch(
-                    `https://discord.com/api/v10/guilds/552179975769161729/members/${u.id}`,
-                    {
-                      method: "GET",
-                      headers: {
-                        Authorization: `Bot ${discordBotToken}`,
-                        "User-Agent": "IxStats/1.0",
-                      },
-                      signal: AbortSignal.timeout(3000),
+                // Guild nicknames need the guild ID; without it the Discord name is shown.
+                const guildId = env.DISCORD_GUILD_ID;
+                if (guildId) {
+                  try {
+                    const memberRes = await fetch(
+                      `https://discord.com/api/v10/guilds/${guildId}/members/${u.id}`,
+                      {
+                        method: "GET",
+                        headers: {
+                          Authorization: `Bot ${discordBotToken}`,
+                          "User-Agent": "IxStats/1.0",
+                        },
+                        signal: AbortSignal.timeout(3000),
+                      }
+                    );
+                    if (memberRes.ok) {
+                      const memberData = (await memberRes.json()) as { nick?: string | null };
+                      if (memberData.nick) {
+                        serverNickname = memberData.nick;
+                      }
                     }
-                  );
-                  if (memberRes.ok) {
-                    const memberData = (await memberRes.json()) as { nick?: string | null };
-                    if (memberData.nick) {
-                      serverNickname = memberData.nick;
-                    }
+                  } catch (err) {
+                    console.warn(`Failed to fetch guild member nickname for ${u.id}:`, err);
                   }
-                } catch (err) {
-                  console.warn(`Failed to fetch guild member nickname for ${u.id}:`, err);
                 }
 
                 let localAcc = null;
@@ -560,129 +260,8 @@ export const thinkpagesPostsReactionsQueriesRouter = createTRPCRouter({
             }
           }
 
-          // Fallback to deterministic mock reactions if bot token is missing or if fetch returned nothing
-          if (discordReactions.length === 0) {
-            const MOCK_DISCORD_USERS = [
-              { username: "bourgondie", displayName: "Burgundie", avatarSeed: "bourgondie" },
-              { username: "urcea", displayName: "Urcea", avatarSeed: "urcea" },
-              { username: "radamancio", displayName: "Pelaxia", avatarSeed: "radamancio" },
-              { username: "masinstante", displayName: "Kiravia", avatarSeed: "masinstante" },
-              { username: "keaor", displayName: "Faneria", avatarSeed: "keaor" },
-              { username: "youngheroes", displayName: "Argyrea", avatarSeed: "youngheroes" },
-              { username: "bobbo3", displayName: "Daxia", avatarSeed: "bobbo3" },
-              {
-                username: "potatolover9566",
-                displayName: "Canespa",
-                avatarSeed: "potatolover9566",
-              },
-              { username: "jaded_outcast", displayName: "Kabasa", avatarSeed: "jaded_outcast" },
-              { username: "helvianir", displayName: "Maresteyn", avatarSeed: "helvianir" },
-              { username: "samuel_pw", displayName: "Olmeria", avatarSeed: "samuel_pw" },
-              { username: "extrudi", displayName: "Caphiria", avatarSeed: "extrudi" },
-              { username: "grisblanco", displayName: "Cartadania", avatarSeed: "grisblanco" },
-              {
-                username: "thatvillagerguy",
-                displayName: "Kostava",
-                avatarSeed: "thatvillagerguy",
-              },
-              { username: "iander", displayName: "Yonderre", avatarSeed: "iander" },
-              { username: "stealie_2", displayName: "Thervala", avatarSeed: "stealie_2" },
-              { username: "fabong1722", displayName: "Metzetta", avatarSeed: "fabong1722" },
-              { username: "glubert2004", displayName: "Nasastan", avatarSeed: "glubert2004" },
-              { username: "cdr_mustang", displayName: "Alstin", avatarSeed: "cdr_mustang" },
-              { username: "nelly", displayName: "Nelly", avatarSeed: "nelly" },
-              { username: "wumpus", displayName: "Wumpus", avatarSeed: "wumpus" },
-            ];
-
-            const activeTypes = input.reactionType ? [input.reactionType] : Object.keys(counts);
-            for (const type of activeTypes) {
-              const count = counts[type] || 0;
-              if (count <= 0) continue;
-
-              for (let i = 0; i < count; i++) {
-                const index =
-                  (input.postId.charCodeAt(0) + type.charCodeAt(0) + i) % MOCK_DISCORD_USERS.length;
-                const mockUser = MOCK_DISCORD_USERS[index]!;
-
-                let localAcc = null;
-
-                // 1. Look up User by Discord Username (IxnayID auth sync)
-                const linkedUser = await db.user.findFirst({
-                  where: {
-                    discordUsername: mockUser.username,
-                  },
-                  select: {
-                    clerkUserId: true,
-                  },
-                });
-
-                if (linkedUser) {
-                  localAcc = await db.thinkpagesAccount.findFirst({
-                    where: {
-                      clerkUserId: linkedUser.clerkUserId,
-                    },
-                    select: {
-                      id: true,
-                      username: true,
-                      displayName: true,
-                      profileImageUrl: true,
-                      accountType: true,
-                      verified: true,
-                    },
-                  });
-                }
-
-                // 2. Fallback to direct username or bio lookup
-                if (!localAcc) {
-                  localAcc = await db.thinkpagesAccount.findFirst({
-                    where: {
-                      OR: [
-                        { username: mockUser.username },
-                        { bio: { contains: `discord:${mockUser.username}` } },
-                      ],
-                    },
-                    select: {
-                      id: true,
-                      username: true,
-                      displayName: true,
-                      profileImageUrl: true,
-                      accountType: true,
-                      verified: true,
-                    },
-                  });
-                }
-
-                if (localAcc) {
-                  discordReactions.push({
-                    id: `mock_discord_react_${input.postId}_${type}_${i}`,
-                    postId: input.postId,
-                    reactionType: type,
-                    timestamp: new Date(post.createdAt),
-                    account: {
-                      ...localAcc,
-                      profileImageUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${mockUser.avatarSeed}`,
-                    },
-                  });
-                } else {
-                  discordReactions.push({
-                    id: `mock_discord_react_${input.postId}_${type}_${i}`,
-                    postId: input.postId,
-                    reactionType: type,
-                    timestamp: new Date(post.createdAt),
-                    account: {
-                      id: `mock_discord_user_${mockUser.username}`,
-                      username: mockUser.displayName,
-                      displayName: mockUser.displayName,
-                      profileImageUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${mockUser.avatarSeed}`,
-                      accountType: "citizen",
-                      verified: mockUser.username !== "nelly" && mockUser.username !== "wumpus",
-                      isDiscordUser: true,
-                    },
-                  });
-                }
-              }
-            }
-          }
+          // No fallback: when the Discord fetch fails or no bot token is set, only local
+          // reactors are listed. The post's reaction counts still come from reactionCounts.
         }
       }
 

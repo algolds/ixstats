@@ -30,13 +30,7 @@ export function useGenericAutoSync<TData extends object, TResult = unknown, TErr
   data: TData,
   options: AutoSyncOptions<TData, TResult, TError>
 ) {
-  const {
-    enabled = true,
-    debounceMs = 2000,
-    onSyncSuccess,
-    onSyncError,
-    syncFn,
-  } = options;
+  const { enabled = true, debounceMs = 2000, onSyncSuccess, onSyncError, syncFn } = options;
 
   const [syncState, setSyncState] = useState<AutoSyncState<TError>>({
     status: "idle",

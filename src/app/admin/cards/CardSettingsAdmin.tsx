@@ -1,10 +1,17 @@
+"use client";
 // src/app/admin/cards/CardSettingsAdmin.tsx
 // Unified Settings Studio for Card System Policies, Packs, Seasons, Valuation, Economy, and Takedowns
-"use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Sliders, Package, Calendar, Coins, ShieldAlert, Gavel } from "lucide-react";
+import {
+  ControlSlider as Sliders,
+  Package,
+  Calendar,
+  Coins,
+  ShieldAlert,
+  Hammer as Gavel,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
@@ -67,7 +74,7 @@ function SeedDemoAuctionsButton() {
         <Button
           onClick={() => setConfirmOpen(true)}
           disabled={seedMutation.isPending}
-          className="h-9 rounded-xl border border-amber-400/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
+          className="h-9 rounded-xl border border-amber-400/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
         >
           {seedMutation.isPending ? "Seeding..." : "Seed Demo Auctions"}
         </Button>
@@ -89,7 +96,7 @@ function SeedDemoAuctionsButton() {
             <Button
               onClick={() => seedMutation.mutate()}
               disabled={seedMutation.isPending}
-              className="bg-amber-500 font-semibold text-black transition-all hover:bg-amber-400 active:scale-95"
+              className="bg-amber-500 font-semibold text-black transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-400 active:scale-95"
             >
               {seedMutation.isPending ? "Seeding..." : "Confirm Seed"}
             </Button>
@@ -196,7 +203,7 @@ export function CardSettingsAdmin({
               <button
                 key={subtab.id}
                 onClick={() => setActiveSubtab(subtab.id)}
-                className={`group flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                className={`group flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95 ${
                   isActive
                     ? "border-primary/40 bg-primary/20 text-foreground scale-[1.02] border shadow-sm"
                     : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -210,7 +217,7 @@ export function CardSettingsAdmin({
                 <span>{subtab.label}</span>
                 {subtab.badge && (
                   <span
-                    className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold ${
                       subtab.badgeVariant === "destructive"
                         ? "border border-rose-500/30 bg-rose-500/20 text-rose-500"
                         : "bg-muted text-muted-foreground border-border border"

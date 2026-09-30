@@ -11,9 +11,6 @@ import {
   xfDelete,
   type XFPost,
   type XFThread,
-  type XFForum,
-  getXfApiKey,
-  getXfApiUrl,
   transformBBCode,
   invalidateThread,
   cacheInvalidate,
@@ -24,21 +21,6 @@ import { notificationAPI } from "~/lib/notifications/api";
 // ---------------------------------------------------------------------------
 // Normalized output types
 // ---------------------------------------------------------------------------
-
-interface ForumNode {
-  nodeId: number;
-  title: string;
-  description: string;
-  parentNodeId: number;
-  displayOrder: number;
-  threadCount: number;
-  messageCount: number;
-  lastPostDate: number | null;
-  lastPostUsername: string | null;
-  lastThreadTitle: string | null;
-  lastThreadId: number | null;
-  nodeType: string;
-}
 
 interface NormalizedThread {
   threadId: number;
@@ -211,39 +193,14 @@ function rewriteXFHtml(html: string): string {
   return result;
 }
 
-function normalizeNode(n: XFForum): ForumNode {
-  return {
-    nodeId: n.node_id,
-    title: n.title,
-    description: n.description,
-    parentNodeId: n.parent_node_id,
-    displayOrder: n.display_order,
-    threadCount: n.type_data?.discussion_count ?? 0,
-    messageCount: n.type_data?.message_count ?? 0,
-    lastPostDate: n.type_data?.last_post_date ?? null,
-    lastPostUsername: n.type_data?.last_post_username ?? null,
-    lastThreadTitle: n.type_data?.last_thread_title ?? null,
-    lastThreadId: n.type_data?.last_thread_id ?? null,
-    nodeType: n.node_type_id,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
 export const forumWritingRouter = createTRPCRouter({
-  // =========================================================================
-  // READ ENDPOINTS
-  // =========================================================================
-
   // NOTE: Forum alerts route through the global notification system (DynamicIsland).
   // Private messages are centralized in ThinkShare (/messages).
   // XenForo conversations and alerts are not exposed as separate endpoints.
-
-  // =========================================================================
-  // STASH ENDPOINTS (uses LoreStash system for forum content)
-  // =========================================================================
 
   // =========================================================================
   // WRITE ENDPOINTS (require linked forum account)
@@ -456,28 +413,6 @@ export const forumWritingRouter = createTRPCRouter({
     }),
 
   /**
-   * Bookmark a post.
-   */
-  bookmarkPost: protectedProcedure
-    .input(
-      z.object({
-        postId: z.number(),
-        message: z.string().max(500).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const xfUserId = await requireForumUser(ctx.user.id);
-
-      const result = await xfPostAsUser<{ success: boolean }>(
-        `/posts/${input.postId}/bookmark`,
-        input.message ? { message: input.message } : {},
-        xfUserId
-      );
-
-      return { success: result !== null };
-    }),
-
-  /**
    * Mark a forum/thread as read.
    */
   markForumRead: protectedProcedure
@@ -498,18 +433,4 @@ export const forumWritingRouter = createTRPCRouter({
 
       return { success: true };
     }),
-
-  // Conversations removed — all private messaging is centralized in ThinkShare.
-
-  // =========================================================================
-  // MODERATION ENDPOINTS (require admin / system owner)
-  // =========================================================================
-
-  // =========================================================================
-  // ALERT SYNC (surface XenForo alerts in IxStates UI)
-  // =========================================================================
-
-  // =========================================================================
-  // ACCOUNT LINKING (existing endpoints, kept intact)
-  // =========================================================================
 });

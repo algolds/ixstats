@@ -1,6 +1,6 @@
 # Testing & Type Safety Practices
 
-**Test Runner**: Jest 30.4.2 · TypeScript 7.0.0 · Bun 1.4 Runtime  
+**Test Runner**: Jest 30.4.2 (@swc/jest, jsdom) · TypeScript 7.0.2 · Bun 1.4 Runtime  
 **Coverage**: Unit Tests, Integration Tests, Wire Audits, Type Partition Gates, Architecture Guards
 
 ---
@@ -11,11 +11,14 @@
 # Run all Jest unit and integration tests
 bun run test
 
-# Run sub-second parallel unit tests using Bun's native runner
+# Run src/tests/lib in parallel using Bun's native runner
 bun run test:unit
 
+# CI entrypoint: Jest with the flaky-test quarantine list
+bun run test:ci
+
 # Run a single test file or pattern
-bun run test -- src/lib/wiki/roster-parser.test.ts
+bun run test -- src/tests/lib/onoma/markov-chain.test.ts
 
 # Run Jest in watch mode during development
 bun run test:watch
@@ -31,7 +34,7 @@ bun run test:coverage
 With **TypeScript 7.0**, `tsc` is a native Go binary featuring shared-memory parallel checking and multi-threading (`--checkers`), reducing memory footprint by ~80% and dropping typechecking time to ~2s:
 
 ```bash
-# Sequentially run all four sub-project typechecks (0 error gate)
+# Sequentially run all four sub-project typechecks (0 error gate; CI runs ui, server and trpc)
 bun run typecheck
 
 # Individual Sub-Project Checks:
@@ -52,7 +55,7 @@ bun run typecheck:file src/lib/onoma/language-families.ts
 # Verify all router files remain ≤700 lines and enforce zero cross-router imports
 bun run audit:arch
 
-# Validate that all tRPC procedures are wired to live implementations
+# Cross-reference Prisma models against tRPC router endpoints (coverage gaps, unused models)
 bun run audit:wiring
 
 # Verify CRUD endpoint health
@@ -66,18 +69,23 @@ bun run test:economics
 
 ## 4. Centralized Test Suite Layout (`src/tests/`)
 
-All Jest unit and integration test files are centralized in `src/tests/` organized by domain:
+Jest unit and integration test files are centralized in `src/tests/` (320+ files) organized by domain; a few legacy tests remain co-located (`src/app/builder/__tests__/`, `src/lib/sports/analysis.test.ts`):
 
 ```
 src/tests/
 ├── app/                  # Route handlers & builder component tests
+├── architecture/         # Entrypoint, Facet and import-boundary guard tests
 ├── auth/                 # Permissions, RBAC, and CASL abilities tests
 ├── components/           # UI components, modals, and panel tests
+├── content/ · context/   # Help-content rendering, React context tests
+├── fixtures/ · helpers/  # Shared fixtures and mock db / router-context helpers
 ├── hooks/                # Custom React hook tests
-├── lib/                  # Library & engine tests (core, onoma, maps, worldgen, statecraft, sports, wiki-os)
-├── security/             # XSS sanitization and rate-limiting tests
-├── server/               # tRPC routers, mutations, and query tests
-├── sports/               # Sports simulation, tactics, and wages integration tests
+├── lib/                  # Library & engine tests (core, onoma, maps, worldgen, statecraft, realms, wiki-os)
+├── scripts/              # Tests for audit/verification scripts (audit-arch, docs sync, quarantine)
+├── security/             # XSS and server-side sanitization tests
+├── server/               # tRPC routers, modules, realms, cron, and query tests
+├── sports/               # Sports simulation, tactics, and transfers integration tests
+├── trpc/                 # tRPC client transformer tests
 └── validators/           # Government and tax schema validators
 ```
 
@@ -94,4 +102,12 @@ describe("MarkovChain", () => {
   });
 });
 ```
+
+---
+
+## 5. Test Suite Invariants & Audit
+
+For the August 2026 audit of the test suite (122 files at the time), value stack rankings (Tiers 0–4), test runner environment notes, and candidates for pruning, see:
+- [**Test Suite Audit & Justification (August 2026)**](../audits/test-suite-audit-and-justification.md)
+
 

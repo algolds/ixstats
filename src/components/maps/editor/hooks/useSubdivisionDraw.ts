@@ -1,9 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import { snapToBorderEdge, snapPointToGeometries } from "~/lib/maps/border-editor";
-import { getSnapEnabled, getSnapTolerance } from "~/lib/maps/editor-prefs";
+import { snapPointToGeometries } from "~/lib/maps/border-editor";
+import {
+  getSnapEnabled,
+  getSnapTolerance,
+  withoutDisabledSnapLayers,
+} from "~/lib/maps/editor-prefs";
 import { clipGeometryToBorder } from "~/lib/maps/province-importer/topology";
 import {
   getGeoJSONSource,
@@ -11,7 +15,47 @@ import {
   EMPTY_FC,
   snapToLayerFeatures,
 } from "../utils/map-helpers";
+import { traceTerrainPath } from "../utils/terrain-trace";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
+import { isKeyboardInputTarget } from "./drag-utils";
+
+/** A click counts as "on" a river/coastline when within this fraction of the snap tolerance. */
+const TRACE_TOLERANCE_RATIO = 0.1;
+
+/** Country border plus every non-empty subdivision, for vertex/edge snapping. */
+function collectSnapGeometries(
+  countryGeometry: Polygon | MultiPolygon | null,
+  features: EditorFeature[]
+): (Polygon | MultiPolygon)[] {
+  const snapGeoms: (Polygon | MultiPolygon)[] = countryGeometry ? [countryGeometry] : [];
+  for (const feat of features) {
+    const geo = feat.geometry as Polygon | MultiPolygon | null;
+    if (feat.type === "subdivision" && geo && "coordinates" in geo && geo.coordinates.length > 0) {
+      snapGeoms.push(geo);
+    }
+  }
+  return snapGeoms;
+}
+
+/** River/lake shore/coastline vertices between the last drawn vertex and a new click. */
+function traceFromLastVertex(
+  vertices: [number, number][],
+  clickPoint: [number, number],
+  worldMapLayers: MapLayerData[] | undefined,
+  snapLayers: Set<string> | null,
+  snapTol: number
+): [number, number][] {
+  const prev = vertices[vertices.length - 1];
+  if (!prev || !worldMapLayers || !snapLayers) return [];
+  const traced = traceTerrainPath(
+    prev,
+    clickPoint,
+    worldMapLayers,
+    snapLayers,
+    snapTol * TRACE_TOLERANCE_RATIO
+  );
+  return traced.map((p): [number, number] => [p[0]!, p[1]!]);
+}
 
 interface UseSubdivisionDrawProps {
   map: MapLibreMap | null;
@@ -37,12 +81,15 @@ export function useSubdivisionDraw({
   onDrawComplete,
   worldMapLayers,
   editorVisibleLayers,
+  // oxlint-disable-next-line eslint/no-unused-vars
   guides,
   snapEnabled,
   snapTolerance,
   snapPoint,
 }: UseSubdivisionDrawProps) {
   const drawVerticesRef = useRef<[number, number][]>([]);
+  /** Vertices added per click (1, plus any traced terrain vertices) so undo removes a click. */
+  const clickSizesRef = useRef<number[]>([]);
   const [drawVertices, setDrawVertices] = useState<[number, number][]>([]);
 
   // Update draw polygon visualization
@@ -106,7 +153,8 @@ export function useSubdivisionDraw({
 
   const undoLastVertex = useCallback(() => {
     if (drawVerticesRef.current.length > 0) {
-      drawVerticesRef.current.pop();
+      const count = clickSizesRef.current.pop() ?? 1;
+      drawVerticesRef.current.splice(-count, count);
       updateDrawVisualization();
       setDrawVertices([...drawVerticesRef.current]);
     }
@@ -114,6 +162,7 @@ export function useSubdivisionDraw({
 
   const clearDraw = useCallback(() => {
     drawVerticesRef.current = [];
+    clickSizesRef.current = [];
     updateDrawVisualization();
     setDrawVertices([]);
   }, [updateDrawVisualization]);
@@ -139,34 +188,23 @@ export function useSubdivisionDraw({
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const onClick = (e: any) => {
+    const onClick = (e: MapLayerMouseEvent & { routeClicked?: boolean }) => {
       if (e.routeClicked || e.defaultPrevented) return;
       if (mode !== "add-subdivision" && mode !== "add-lake") return;
 
       let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
-      // Snap to visible background layers first
+      // Snap to visible background layers first (minus layers switched off in the toolbar)
       const snapOn = snapEnabled ?? getSnapEnabled();
       const snapTol = snapTolerance ?? getSnapTolerance();
-      if (snapOn && worldMapLayers && editorVisibleLayers) {
-        clickPoint = snapToLayerFeatures(clickPoint, worldMapLayers, editorVisibleLayers, snapTol);
+      const snapLayers =
+        snapOn && editorVisibleLayers ? withoutDisabledSnapLayers(editorVisibleLayers) : null;
+      if (snapLayers && worldMapLayers) {
+        clickPoint = snapToLayerFeatures(clickPoint, worldMapLayers, snapLayers, snapTol);
       }
 
       if (snapOn) {
-        const snapGeoms: (Polygon | MultiPolygon)[] = [];
-        if (countryGeometry) {
-          snapGeoms.push(countryGeometry);
-        }
-        for (const feat of features) {
-          if (
-            feat.type === "subdivision" &&
-            feat.geometry &&
-            (feat.geometry as any).coordinates &&
-            (feat.geometry as any).coordinates.length > 0
-          ) {
-            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
-          }
-        }
+        const snapGeoms = collectSnapGeometries(countryGeometry, features);
         clickPoint = snapPointToGeometries(clickPoint, snapGeoms, snapTol) as [number, number];
       }
 
@@ -175,12 +213,21 @@ export function useSubdivisionDraw({
         clickPoint = snapPoint(clickPoint);
       }
 
-      drawVerticesRef.current.push(clickPoint);
+      // Follow a river/lake shore/coastline when this and the previous click both sit on it
+      const traced = traceFromLastVertex(
+        drawVerticesRef.current,
+        clickPoint,
+        worldMapLayers,
+        snapLayers,
+        snapTol
+      );
+      drawVerticesRef.current.push(...traced, clickPoint);
+      clickSizesRef.current.push(traced.length + 1);
       updateDrawVisualization();
       setDrawVertices([...drawVerticesRef.current]);
     };
 
-    const onDblClick = (e: any) => {
+    const onDblClick = (e: MapLayerMouseEvent) => {
       if (mode !== "add-subdivision" && mode !== "add-lake") return;
       if (drawVerticesRef.current.length >= 3) {
         e.preventDefault();
@@ -210,12 +257,17 @@ export function useSubdivisionDraw({
     snapPoint,
   ]);
 
-  // Keyboard undo listener (Backspace/Delete/Ctrl+Z)
+  // Keyboard undo & cancel listener (Backspace/Delete/Ctrl+Z to undo vertex, Escape to cancel drawing)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (mode !== "add-subdivision" && mode !== "add-lake") return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) return;
+
+      if (e.key === "Escape" && drawVerticesRef.current.length > 0) {
+        e.preventDefault();
+        clearDraw();
+        return;
+      }
 
       const isUndo =
         e.key === "Backspace" || e.key === "Delete" || (e.key === "z" && (e.ctrlKey || e.metaKey));
@@ -227,11 +279,12 @@ export function useSubdivisionDraw({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [mode, undoLastVertex]);
+  }, [mode, undoLastVertex, clearDraw]);
 
   // Clear draw state when mode changes away from add-subdivision
   useEffect(() => {
     if (mode !== "add-subdivision" && mode !== "add-lake") {
+      // oxlint-disable-next-line
       clearDraw();
     }
   }, [mode, clearDraw]);

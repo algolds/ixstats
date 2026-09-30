@@ -37,6 +37,7 @@ export function usePremium(): PremiumStatus {
     enabled: shouldQueryMembership,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
     retry: (failureCount, error) => {
       // Retry once if user not found (user creation now handled by tRPC context)
       return failureCount < 1 && error.message?.includes("User not found in system");

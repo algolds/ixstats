@@ -1,8 +1,9 @@
 "use client";
 
-import { Globe } from "lucide-react";
+import { Globe } from "iconoir-react";
 import type { MessageFolder } from "~/types/messages";
 import type { ResolvedIdentity } from "~/types/messages";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface UserProfile {
   country?: {
@@ -76,9 +77,9 @@ export function MessagesIdentityBadge({ identity, size = "sm" }: MessagesIdentit
     <span className="inline-flex items-center gap-1">
       {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-muted-foreground"}`} />}
       {identity.sourceLabel && (
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Eyebrow>
           {identity.sourceLabel}
-        </span>
+        </Eyebrow>
       )}
     </span>
   );

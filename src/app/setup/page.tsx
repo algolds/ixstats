@@ -11,28 +11,29 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
-  Link,
+  Link as LinkIcon,
   ArrowRight,
-  Building2,
-  Users,
-  TrendingUp,
+  City as Building2,
+  Group as Users,
+  StatUp as TrendingUp,
   CheckCircle,
-  AlertCircle,
+  WarningCircle as AlertCircle,
   Crown,
   ArrowLeft,
   Search,
   MapPin,
   Star,
-} from "lucide-react";
+} from "iconoir-react";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 
 type SetupStep = "welcome" | "link-existing" | "create-new" | "complete";
 
+// oxlint-disable-next-line eslint/no-unused-vars
 interface CountryOption {
   id: string;
   name: string;
@@ -112,6 +113,8 @@ export default function SetupPage() {
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLinking, setIsLinking] = useState(false);
+  const [claimPending, setClaimPending] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,8 +125,7 @@ export default function SetupPage() {
   );
 
   // TRPC Mutations
-  const linkCountryMutation = api.users.linkCountry.useMutation();
-  const createCountryMutation = api.users.createCountry.useMutation();
+  const claimCountryMutation = api.realms.claimCountry.useMutation();
 
   // Check if user has already completed setup
   useEffect(() => {
@@ -160,17 +162,16 @@ export default function SetupPage() {
     setIsLinking(true);
     setError(null);
     try {
-      await linkCountryMutation.mutateAsync({
-        userId: user.id,
-        countryId: selectedCountryId,
-      });
-
-      // Refetch profile to get updated data
+      const result = await claimCountryMutation.mutateAsync({ countryId: selectedCountryId });
+      if (result.status === "pending") {
+        setClaimPending(true);
+        return;
+      }
       await refetchProfile();
       setCurrentStep("complete");
-    } catch (error) {
-      console.error("Failed to link country:", error);
-      setError(error instanceof Error ? error.message : "Failed to link country");
+    } catch (_error) {
+      console.error("Failed to claim country:", _error);
+      setError(_error instanceof Error ? _error.message : "Failed to claim country");
     } finally {
       setIsLinking(false);
     }
@@ -243,7 +244,7 @@ export default function SetupPage() {
               height={40}
               squares={[50, 40]}
               className="fixed inset-0 z-0 opacity-30 dark:opacity-20"
-              squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
+              squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
             />
 
             <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -259,7 +260,7 @@ export default function SetupPage() {
                     className="text-center"
                   >
                     <motion.div
-                      initial={{ scale: 0 }}
+                      initial={{ scale: 0.96, opacity: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                       className="mb-8"
@@ -281,7 +282,7 @@ export default function SetupPage() {
                     <div className="mx-auto mb-8 max-w-4xl">
                       <motion.button
                         onClick={() => setCurrentStep("create-new")}
-                        className="glass-hierarchy-parent group hover:glass-hierarchy-interactive relative w-full overflow-hidden rounded-2xl border border-amber-200/30 p-6 text-left transition-all duration-500 md:p-8 dark:border-amber-800/30"
+                        className="facet-hierarchy-parent group hover:glass-hierarchy-interactive relative w-full overflow-hidden rounded-2xl border border-amber-200/30 p-6 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 md:p-8 dark:border-amber-800/30"
                         whileHover={{
                           y: -12,
                           scale: 1.02,
@@ -299,17 +300,17 @@ export default function SetupPage() {
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-400/20 opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-100" />
 
                         {/* Floating particles effect */}
-                        <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-amber-400/60 opacity-0 transition-opacity duration-300 group-hover:animate-pulse group-hover:opacity-100" />
-                        <div className="absolute top-8 right-8 h-1 w-1 rounded-full bg-yellow-400/60 opacity-0 transition-opacity delay-100 duration-500 group-hover:animate-pulse group-hover:opacity-100" />
-                        <div className="absolute top-12 right-12 h-1.5 w-1.5 rounded-full bg-amber-300/60 opacity-0 transition-opacity delay-200 duration-700 group-hover:animate-pulse group-hover:opacity-100" />
+                        <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-amber-400/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                        <div className="absolute top-8 right-8 h-1 w-1 rounded-full bg-yellow-400/60 opacity-0 transition-opacity delay-100 duration-500 group-hover:opacity-100" />
+                        <div className="absolute top-12 right-12 h-1.5 w-1.5 rounded-full bg-amber-300/60 opacity-0 transition-opacity delay-200 duration-700 group-hover:opacity-100" />
 
                         <div className="relative z-10">
                           <div className="mb-8 flex items-center">
-                            <div className="glass-hierarchy-child mr-6 rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-100 to-yellow-100 p-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 dark:border-amber-700/50 dark:from-amber-900/50 dark:to-yellow-900/50">
+                            <div className="facet-hierarchy-child mr-6 rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-100 to-yellow-100 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:scale-110 group-hover:rotate-3 dark:border-amber-700/50 dark:from-amber-900/50 dark:to-yellow-900/50">
                               <MyCountryLogo size="lg" variant="icon-only" animated={true} />
                             </div>
                             <div>
-                              <h3 className="mb-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-2xl font-bold text-transparent transition-all duration-300 group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500 md:text-3xl">
+                              <h3 className="mb-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-2xl font-bold text-transparent transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500 md:text-3xl">
                                 Create New Country
                               </h3>
                               <div className="flex items-center">
@@ -327,11 +328,11 @@ export default function SetupPage() {
                             structure, economy, demographics, and policies to your liking.
                           </p>
 
-                          <div className="flex items-center text-base text-amber-600 transition-all duration-300 group-hover:text-amber-500 dark:text-amber-400 dark:group-hover:text-amber-300">
+                          <div className="flex items-center text-base text-amber-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:text-amber-500 dark:text-amber-400 dark:group-hover:text-amber-300">
                             <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text font-semibold text-transparent dark:from-amber-400 dark:to-yellow-400">
                               Get Started with MyCountry© Builder
                             </span>
-                            <ArrowRight className="ml-3 h-5 w-5 transition-all duration-300 group-hover:translate-x-3 group-hover:scale-110" />
+                            <ArrowRight className="ml-3 h-5 w-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:translate-x-3 group-hover:scale-110" />
                           </div>
                         </div>
                       </motion.button>
@@ -343,12 +344,12 @@ export default function SetupPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
-                        className="glass-hierarchy-child border-border rounded-2xl border p-6"
+                        className="facet-hierarchy-child border-border rounded-2xl border p-6"
                       >
                         <div className="mb-4 flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
-                              <Link className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
+                              <LinkIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <h4 className="text-foreground text-xl font-bold">
                               Link Existing Country
@@ -390,7 +391,7 @@ export default function SetupPage() {
                       <Button
                         variant="ghost"
                         onClick={() => setCurrentStep("welcome")}
-                        className="glass-hierarchy-child mb-8 rounded-xl px-6 py-3"
+                        className="facet-hierarchy-child mb-8 rounded-xl px-6 py-3"
                       >
                         <ArrowLeft className="mr-3 h-5 w-5" />
                         Back to options
@@ -405,10 +406,10 @@ export default function SetupPage() {
                       </p>
                     </div>
 
-                    <div className="glass-hierarchy-parent border-border rounded-3xl border p-8">
+                    <div className="facet-hierarchy-parent border-border rounded-3xl border p-8">
                       <div className="mb-8">
                         <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
-                          <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
+                          <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
                             <Search className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                           </div>
                           Search Countries
@@ -426,7 +427,7 @@ export default function SetupPage() {
                             placeholder="Search by name, continent, or region..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="glass-hierarchy-child border-border rounded-2xl py-4 pl-12 text-lg"
+                            className="facet-hierarchy-child border-border rounded-2xl py-4 pl-12 text-lg"
                           />
                         </div>
 
@@ -444,7 +445,7 @@ export default function SetupPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className={`glass-hierarchy-child w-full rounded-2xl p-6 text-left transition-all duration-500 ${
+                                className={`facet-hierarchy-child w-full rounded-2xl p-6 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ${
                                   selectedCountryId === country.id
                                     ? "glass-hierarchy-interactive border-primary scale-105 border-2"
                                     : "hover:glass-hierarchy-interactive border-border border hover:scale-102"
@@ -454,7 +455,7 @@ export default function SetupPage() {
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-4">
-                                    <div className="glass-hierarchy-child flex h-12 w-12 items-center justify-center rounded-xl">
+                                    <div className="facet-hierarchy-child flex h-12 w-12 items-center justify-center rounded-xl">
                                       <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                                     </div>
                                     <div>
@@ -492,7 +493,7 @@ export default function SetupPage() {
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="glass-hierarchy-child border-destructive rounded-2xl border p-6"
+                            className="facet-hierarchy-child border-destructive rounded-2xl border p-6"
                           >
                             <div className="flex items-center">
                               <AlertCircle className="text-destructive mr-4 h-6 w-6" />
@@ -501,7 +502,18 @@ export default function SetupPage() {
                           </motion.div>
                         )}
 
-                        {selectedCountryId && (
+                        {claimPending && (
+                          <div className="facet-hierarchy-child border-border rounded-2xl border p-6">
+                            <p className="text-foreground text-lg font-semibold">Claim submitted</p>
+                            <p className="text-muted-foreground mt-1 text-sm">
+                              A moderator will review it. Verify your wiki account under Settings →
+                              IxnayID & Passport → Linked Accounts to have claims for nations you
+                              created approved instantly.
+                            </p>
+                          </div>
+                        )}
+
+                        {selectedCountryId && !claimPending && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -516,12 +528,12 @@ export default function SetupPage() {
                               {isLinking ? (
                                 <>
                                   <div className="mr-4 h-6 w-6 animate-spin rounded-full border-b-2 border-current"></div>
-                                  Linking Country...
+                                  Submitting claim...
                                 </>
                               ) : (
                                 <>
-                                  <Link className="mr-4 h-6 w-6" />
-                                  Link Country
+                                  <LinkIcon className="mr-4 h-6 w-6" />
+                                  Claim Country
                                 </>
                               )}
                             </Button>
@@ -545,7 +557,7 @@ export default function SetupPage() {
                       <Button
                         variant="ghost"
                         onClick={() => setCurrentStep("welcome")}
-                        className="glass-hierarchy-child mb-8 rounded-xl px-6 py-3"
+                        className="facet-hierarchy-child mb-8 rounded-xl px-6 py-3"
                       >
                         <ArrowLeft className="mr-3 h-5 w-5" />
                         Back to options
@@ -556,10 +568,10 @@ export default function SetupPage() {
                       </h1>
                     </div>
 
-                    <div className="glass-hierarchy-parent border-border rounded-3xl border p-8">
+                    <div className="facet-hierarchy-parent border-border rounded-3xl border p-8">
                       <div className="mb-8">
                         <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
-                          <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
+                          <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
                             <Building2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           MyCountry® Builder
@@ -580,9 +592,9 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="glass-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
-                            <div className="glass-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
+                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <Building2 className="h-10 w-10 text-blue-600 dark:text-blue-400" />
                             </div>
                             <h3 className="text-foreground mb-3 text-xl font-bold">
@@ -598,9 +610,9 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="glass-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
-                            <div className="glass-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
+                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <Crown className="h-10 w-10 text-purple-600 dark:text-purple-400" />
                             </div>
                             <h3 className="text-foreground mb-3 text-xl font-bold">MyGovernment</h3>
@@ -613,9 +625,9 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="glass-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
-                            <div className="glass-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
+                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <TrendingUp className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <h3 className="text-foreground mb-3 text-xl font-bold">MyEconomy</h3>
@@ -629,9 +641,9 @@ export default function SetupPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="glass-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                            className="facet-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                           >
-                            <div className="glass-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
+                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                               <Users className="h-10 w-10 text-orange-600 dark:text-orange-400" />
                             </div>
                             <h3 className="text-foreground mb-3 text-xl font-bold">Tax Builder</h3>
@@ -643,9 +655,9 @@ export default function SetupPage() {
                           </motion.div>
                         </div>
 
-                        <div className="glass-hierarchy-child rounded-2xl p-8">
+                        <div className="facet-hierarchy-child rounded-2xl p-8">
                           <div className="mb-6 flex items-center">
-                            <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
+                            <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
                               <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                             </div>
                             <h3 className="text-foreground text-2xl font-bold">What You'll Get</h3>
@@ -698,7 +710,7 @@ export default function SetupPage() {
                             <li className="flex items-center">
                               <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
                               <strong>Image Repository: </strong> Use our image repository to
-                              natively search for images from Wiki Commons, Unsplash, and IIWiki.
+                              natively search for images from Wiki Commons, IxWiki, and IIWiki.
                             </li>
                           </ul>
                         </div>
@@ -707,7 +719,7 @@ export default function SetupPage() {
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="glass-hierarchy-child border-destructive rounded-2xl border p-6"
+                            className="facet-hierarchy-child border-destructive rounded-2xl border p-6"
                           >
                             <div className="flex items-center">
                               <AlertCircle className="text-destructive mr-4 h-6 w-6" />
@@ -751,10 +763,10 @@ export default function SetupPage() {
                   >
                     <div className="mb-12">
                       <motion.div
-                        initial={{ scale: 0 }}
+                        initial={{ scale: 0.96, opacity: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                        className="glass-hierarchy-parent mx-auto mb-10 flex h-40 w-40 items-center justify-center rounded-full"
+                        className="facet-hierarchy-parent mx-auto mb-10 flex h-40 w-40 items-center justify-center rounded-full"
                       >
                         <CheckCircle className="h-20 w-20 text-emerald-600 dark:text-emerald-400" />
                       </motion.div>
@@ -788,7 +800,7 @@ export default function SetupPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-hierarchy-parent rounded-2xl p-12 text-center"
+            className="facet-hierarchy-parent rounded-2xl p-12 text-center"
           >
             <IxStatsLogo size="lg" animated={true} className="mx-auto mb-6" />
             <h1 className="mb-4 text-3xl font-bold text-white">Welcome to IxStats</h1>

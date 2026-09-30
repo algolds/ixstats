@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/FisheyeRailItem.tsx
 // Fisheye magnification icon wrapper with physics-based spring glow.
-
-"use client";
 
 import { useRef } from "react";
 import { motion, useTransform, useSpring, type MotionValue } from "motion/react";
@@ -17,6 +16,8 @@ export const getGlowColor = (id: string): string => {
     case "recent":
     case "history":
       return "rgba(245, 158, 11, 0.45)";
+    case "margin":
+      return "var(--margin-accent-glow, rgba(254, 240, 54, 0.55))";
     case "random":
       return "rgba(99, 102, 241, 0.45)";
     case "stashes":
@@ -24,6 +25,10 @@ export const getGlowColor = (id: string): string => {
     case "images":
     case "talk":
       return "rgba(168, 85, 247, 0.45)";
+    case "utilities":
+      return "rgba(6, 182, 212, 0.55)";
+    case "admin":
+      return "rgba(168, 85, 247, 0.55)";
     case "lorewards":
       return "rgba(234, 179, 8, 0.45)";
     case "create-page":
@@ -37,24 +42,32 @@ export const getActiveColorClass = (itemId: string): string => {
   switch (itemId) {
     case "search":
     case "backlinks":
-      return "text-teal-400 border-teal-500/30 bg-teal-500/10";
+      return "text-cyan-600 dark:text-cyan-400 border-cyan-500/30 bg-cyan-500/10";
     case "main":
     case "edit":
-      return "text-blue-400 border-blue-500/30 bg-blue-500/10";
+      return "text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10";
     case "recent":
     case "history":
-      return "text-amber-400 border-amber-500/30 bg-amber-500/10";
+      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
+    case "margin":
+      return "text-stone-950 border-yellow-400/60 bg-margin-accent shadow-xs";
     case "random":
-      return "text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
+      return "text-indigo-600 dark:text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
+    case "stashes":
+      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
     case "images":
     case "talk":
-      return "text-purple-400 border-purple-500/30 bg-purple-500/10";
+      return "text-indigo-600 dark:text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
+    case "utilities":
+      return "text-cyan-600 dark:text-cyan-400 border-cyan-500/30 bg-cyan-500/10";
+    case "admin":
+      return "text-red-600 dark:text-red-400 border-red-500/30 bg-red-500/10";
     case "lorewards":
-      return "text-amber-400 border-amber-500/30 bg-amber-500/10";
+      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
     case "create-page":
-      return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
+      return "text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
     default:
-      return "text-blue-400 border-blue-500/30 bg-blue-500/10";
+      return "text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10";
   }
 };
 

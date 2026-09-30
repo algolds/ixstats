@@ -11,7 +11,8 @@ export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
     id: "species:elf",
     name: "Elven (Sindarin / Eldarin)",
     category: "template",
-    description: "Flowing Tolkien-inspired phonology with dental fricatives (dh, th) and voiceless liquids (lh, rh)",
+    description:
+      "Flowing Tolkien-inspired phonology with dental fricatives (dh, th) and voiceless liquids (lh, rh)",
     rules: [
       ["dh", "ð"],
       ["th", "θ"],

@@ -31,16 +31,16 @@ import { useRouter } from "next/navigation";
 import {
   Trophy,
   Plus,
-  Trash2,
+  Trash as Trash2,
   Eye,
-  Loader2,
-  AlertTriangle,
+  SystemRestart as Loader2,
+  WarningTriangle as AlertTriangle,
   Shield,
   ArrowLeft,
-  Sparkles,
+  Sparks as Sparkles,
   Settings,
   Star,
-} from "lucide-react";
+} from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
 
@@ -202,7 +202,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
               <select
                 value={selectedMatchId}
                 onChange={(e) => setSelectedMatchId(e.target.value)}
-                className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 text-xs"
+                className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 text-xs focus:outline-none"
                 required
               >
                 <option value="">-- Choose Match --</option>
@@ -224,7 +224,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                   min="0"
                   value={homeScore}
                   onChange={(e) => setHomeScore(Number(e.target.value))}
-                  className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 font-mono text-xs"
+                  className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 font-mono text-xs focus:outline-none"
                   required
                 />
               </div>
@@ -237,7 +237,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                   min="0"
                   value={awayScore}
                   onChange={(e) => setAwayScore(Number(e.target.value))}
-                  className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 font-mono text-xs"
+                  className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 font-mono text-xs focus:outline-none"
                   required
                 />
               </div>
@@ -494,7 +494,7 @@ function AINarratorLab() {
               <select
                 value={sport}
                 onChange={(e) => handleLoadTemplate(e.target.value)}
-                className="text-foreground w-full rounded-xl border border-white/10 bg-slate-900 p-2.5 text-xs font-semibold"
+                className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2.5 text-xs font-semibold focus:outline-none"
               >
                 <option value="soccer">Soccer ⚽</option>
                 <option value="f1">Formula 1 🏎️</option>
@@ -511,7 +511,7 @@ function AINarratorLab() {
               <button
                 type="button"
                 onClick={() => setShowConfig(!showConfig)}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-[11px] font-bold transition select-none"
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-bold transition select-none active:scale-[0.98]"
               >
                 <Settings className="h-3.5 w-3.5" />
                 {showConfig ? "Hide Advanced Settings" : "Configure AI Settings"}
@@ -520,8 +520,8 @@ function AINarratorLab() {
 
             {/* Config Fields */}
             {showConfig && (
-              <div className="space-y-3.5 rounded-2xl border border-white/5 bg-white/5 p-4">
-                <div className="flex items-center gap-2 border-b border-white/5 pb-2.5 select-none">
+              <div className="border-border/30 bg-card/25 space-y-3.5 rounded-2xl border p-4 backdrop-blur-md">
+                <div className="border-border/20 flex items-center gap-2 border-b pb-2.5 select-none">
                   <input
                     type="checkbox"
                     id="applyGlobally"
@@ -531,11 +531,11 @@ function AINarratorLab() {
                       setApplyGlobally(v);
                       saveConfig("applyGlobally", v);
                     }}
-                    className="h-3.5 w-3.5 cursor-pointer rounded border-white/10 bg-slate-950 text-amber-400 accent-amber-400"
+                    className="border-border/40 bg-background text-primary accent-primary h-3.5 w-3.5 cursor-pointer rounded"
                   />
                   <label
                     htmlFor="applyGlobally"
-                    className="cursor-pointer text-[10px] font-bold tracking-wider text-white uppercase"
+                    className="text-foreground cursor-pointer text-xs font-bold tracking-wider uppercase"
                   >
                     Apply settings globally (Write to DB)
                   </label>
@@ -543,7 +543,7 @@ function AINarratorLab() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    <label className="text-muted-foreground block text-xs font-bold uppercase">
                       Provider
                     </label>
                     <select
@@ -552,7 +552,7 @@ function AINarratorLab() {
                         setProvider(e.target.value);
                         saveConfig("provider", e.target.value);
                       }}
-                      className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 text-xs font-semibold"
+                      className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 text-xs font-semibold focus:outline-none"
                     >
                       <option value="nvidia">Nvidia</option>
                       <option value="openrouter">OpenRouter</option>
@@ -561,7 +561,7 @@ function AINarratorLab() {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    <label className="text-muted-foreground block text-xs font-bold uppercase">
                       Temp ({temperature})
                     </label>
                     <input
@@ -582,10 +582,10 @@ function AINarratorLab() {
 
                 <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950 p-2">
                   <span>
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    <span className="text-muted-foreground block text-xs font-bold uppercase">
                       Reasoning Mode
                     </span>
-                    <span className="text-muted-foreground/70 block text-[10px]">
+                    <span className="text-muted-foreground/70 block text-xs">
                       Higher quality, much slower. Off = fast commentary.
                     </span>
                   </span>
@@ -601,7 +601,7 @@ function AINarratorLab() {
                 </label>
 
                 <div className="space-y-1.5">
-                  <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                  <label className="text-muted-foreground block text-xs font-bold uppercase">
                     API Key
                   </label>
                   <input
@@ -617,7 +617,7 @@ function AINarratorLab() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                  <label className="text-muted-foreground block text-xs font-bold uppercase">
                     Model Name
                   </label>
                   <input
@@ -633,7 +633,7 @@ function AINarratorLab() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                  <label className="text-muted-foreground block text-xs font-bold uppercase">
                     Base API URL
                   </label>
                   <input
@@ -649,7 +649,7 @@ function AINarratorLab() {
                 </div>
 
                 <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-2">
-                  <span className="text-muted-foreground text-[9px]">
+                  <span className="text-muted-foreground text-xs">
                     {applyGlobally ? "Settings will be written globally." : "Local storage only."}
                   </span>
                   <div className="flex gap-1.5">
@@ -657,7 +657,7 @@ function AINarratorLab() {
                       type="button"
                       variant="outline"
                       onClick={handleResetConfig}
-                      className="h-6 rounded-lg border-rose-500/30 bg-rose-500/5 px-2 text-[10px] font-bold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
+                      className="h-6 rounded-lg border-rose-500/30 bg-rose-500/5 px-2 text-xs font-bold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
                     >
                       Reset Defaults
                     </Button>
@@ -692,7 +692,7 @@ function AINarratorLab() {
                         );
                       }}
                       disabled={saveGlobalSettingsMutation.isPending}
-                      className="h-6 rounded-lg bg-amber-500 px-2.5 text-[10px] font-bold text-slate-950 hover:bg-amber-600"
+                      className="h-6 rounded-lg bg-amber-500 px-2.5 text-xs font-bold text-slate-950 hover:bg-amber-600"
                     >
                       {saveGlobalSettingsMutation.isPending ? "Saving..." : "Save Config"}
                     </Button>
@@ -711,7 +711,7 @@ function AINarratorLab() {
                   variant="outline"
                   size="sm"
                   onClick={handleAddEvent}
-                  className="h-6 rounded-full border-white/10 bg-white/5 px-2.5 text-[10px] font-bold text-white"
+                  className="h-6 rounded-full border-white/10 bg-white/5 px-2.5 text-xs font-bold text-white"
                 >
                   + Add Event
                 </Button>
@@ -728,14 +728,14 @@ function AINarratorLab() {
                       value={event}
                       onChange={(e) => handleEventChange(idx, e.target.value)}
                       placeholder="e.g. Referee blows whistle / Goal scored..."
-                      className="text-foreground flex-1 rounded-xl border border-white/10 bg-slate-900 p-2 text-xs"
+                      className="text-foreground border-border/40 bg-background flex-1 rounded-xl border p-2 text-xs focus:outline-none"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveEvent(idx)}
-                      className="h-8 w-8 rounded-full p-0 text-red-400 hover:text-red-300"
+                      className="h-8 w-8 rounded-full p-0 text-rose-400 hover:text-rose-300 active:scale-[0.98]"
                     >
                       ×
                     </Button>
@@ -748,7 +748,7 @@ function AINarratorLab() {
               type="button"
               onClick={handleRunTest}
               disabled={runTestMutation.isPending}
-              className="mt-2 w-full gap-2 rounded-xl bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+              className="mt-2 w-full gap-2 rounded-xl font-bold active:scale-[0.98]"
             >
               {runTestMutation.isPending ? (
                 <>
@@ -773,7 +773,7 @@ function AINarratorLab() {
               {latency != null && (
                 <Badge
                   variant="outline"
-                  className="border-cyan-500/30 bg-cyan-500/10 text-[9px] font-bold text-cyan-400"
+                  className="border-cyan-500/30 bg-cyan-500/10 text-xs font-bold text-cyan-400"
                 >
                   Latency: {latency.toLocaleString()}ms
                 </Badge>
@@ -788,7 +788,7 @@ function AINarratorLab() {
                     <p className="text-xs font-bold text-white">
                       Transmitting mock telemetry to LLM...
                     </p>
-                    <p className="mt-1 max-w-[280px] text-[10px] text-white/50">
+                    <p className="mt-1 max-w-[280px] text-xs text-white/50">
                       Generating immersive, custom-style commentary via the Nvidia Nemotron engine.
                     </p>
                   </div>
@@ -807,10 +807,10 @@ function AINarratorLab() {
                       className="border-b border-white/5 pb-3 text-xs leading-relaxed last:border-b-0 last:pb-0"
                     >
                       <div className="mb-1.5 flex items-center gap-2">
-                        <span className="rounded border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-amber-300">
+                        <span className="rounded border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-mono text-xs font-bold text-amber-300">
                           {idx * 10}' Event
                         </span>
-                        <span className="max-w-[200px] truncate text-[9px] text-white/40 italic">
+                        <span className="max-w-[200px] truncate text-xs text-white/40 italic">
                           "{events[idx]}"
                         </span>
                       </div>
@@ -896,7 +896,7 @@ function NotificationSettingsCard() {
           >
             <div>
               <div className="text-foreground text-sm font-medium">{t.label}</div>
-              <p className="text-muted-foreground mt-0.5 text-[11px] leading-snug">{t.hint}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs leading-snug">{t.hint}</p>
             </div>
             <Switch
               checked={data?.[t.key] ?? true}
@@ -1065,13 +1065,13 @@ export default function SportsOversightPanel() {
                   {league.sportPreset}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={cn("text-[10px]", archetype.className)}>
+                  <Badge variant="outline" className={cn("text-xs", archetype.className)}>
                     {archetype.label}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{league.teamCount}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={cn("text-[10px]", status.className)}>
+                  <Badge variant="outline" className={cn("text-xs", status.className)}>
                     {status.label}
                   </Badge>
                 </TableCell>
@@ -1079,13 +1079,13 @@ export default function SportsOversightPanel() {
                   {league.isCanonical ? (
                     <Badge
                       variant="outline"
-                      className="border-purple-500/30 bg-purple-500/10 text-[10px] text-purple-400"
+                      className="border-purple-500/30 bg-purple-500/10 text-xs text-purple-400"
                     >
                       <Shield className="mr-1 h-3 w-3" />
                       Canonical
                     </Badge>
                   ) : (
-                    <span className="text-muted-foreground text-[11px]">—</span>
+                    <span className="text-muted-foreground text-xs">—</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -1150,7 +1150,7 @@ export default function SportsOversightPanel() {
         {/* Global stats row */}
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-[11px] font-medium uppercase">
+            <span className="text-muted-foreground text-xs font-medium uppercase">
               Total Leagues
             </span>
             <div className="text-foreground mt-0.5 text-xl font-bold tabular-nums">
@@ -1158,7 +1158,7 @@ export default function SportsOversightPanel() {
             </div>
           </div>
           <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-[11px] font-medium uppercase">
+            <span className="text-muted-foreground text-xs font-medium uppercase">
               Simulated Matches
             </span>
             <div className="mt-0.5 text-xl font-bold text-purple-400 tabular-nums">
@@ -1166,7 +1166,7 @@ export default function SportsOversightPanel() {
             </div>
           </div>
           <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-[11px] font-medium uppercase">
+            <span className="text-muted-foreground text-xs font-medium uppercase">
               Total Players
             </span>
             <div className="mt-0.5 text-xl font-bold text-emerald-400 tabular-nums">
@@ -1174,7 +1174,7 @@ export default function SportsOversightPanel() {
             </div>
           </div>
           <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-[11px] font-medium uppercase">
+            <span className="text-muted-foreground text-xs font-medium uppercase">
               LLM News Auto-Posts
             </span>
             <div className="mt-0.5 text-xl font-bold text-amber-400 tabular-nums">
@@ -1234,7 +1234,7 @@ export default function SportsOversightPanel() {
                     ? "Featured on Lobby — Unset"
                     : "Set as Featured League"}
                 </Button>
-                <p className="text-muted-foreground mt-1.5 text-[11px]">
+                <p className="text-muted-foreground mt-1.5 text-xs">
                   The featured league is shown as the hero on the MyLeague lobby. Only one at a
                   time.
                 </p>
@@ -1255,7 +1255,7 @@ export default function SportsOversightPanel() {
               <TabsContent value="info" className="mt-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    <span className="text-muted-foreground block text-xs font-bold uppercase">
                       Archetype
                     </span>
                     <span className="text-foreground text-sm font-semibold capitalize">
@@ -1263,7 +1263,7 @@ export default function SportsOversightPanel() {
                     </span>
                   </div>
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    <span className="text-muted-foreground block text-xs font-bold uppercase">
                       Teams Count
                     </span>
                     <span className="text-foreground text-sm font-semibold">
@@ -1271,7 +1271,7 @@ export default function SportsOversightPanel() {
                     </span>
                   </div>
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    <span className="text-muted-foreground block text-xs font-bold uppercase">
                       promotion Zone
                     </span>
                     <span className="text-foreground text-sm font-semibold">
@@ -1279,7 +1279,7 @@ export default function SportsOversightPanel() {
                     </span>
                   </div>
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    <span className="text-muted-foreground block text-xs font-bold uppercase">
                       relegation Zone
                     </span>
                     <span className="text-foreground text-sm font-semibold">

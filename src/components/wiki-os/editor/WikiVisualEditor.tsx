@@ -1,189 +1,219 @@
-// src/components/wiki-os/editor/WikiVisualEditor.tsx
-// Hybrid visual editor — Parsoid HTML in contenteditable with React toolbar.
-// Templates render as live HTML with click-to-edit. Preserves data-mw for roundtrip.
-
 "use client";
+// src/components/wiki-os/editor/WikiVisualEditor.tsx
+// Visual editor on Plate (Slate).
+// Operates on native WikiAST blocks and lossless wikitext serialization.
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
-import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
-import { getDraft } from "~/lib/wiki-os/editor/draft-store";
+import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
+import { Editor, Transforms, type Descendant } from "slate";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { useWikiVisualFormatting } from "./hooks/useWikiVisualFormatting";
 import { WikiVisualToolbar } from "./components/WikiVisualToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
 import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
+import { EditorModalProvider } from "./context/EditorModalContext";
+import { PlateWikiEditor } from "./plate/PlateWikiEditor";
+import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
+import { serializePlateToWikitext } from "./plate/wiki-wikitext";
+import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
+import type { TSlateEditor } from "platejs";
 
 export interface WikiVisualEditorProps {
-  initialHtml: string;
+  initialHtml?: string;
+  initialWikitext?: string;
   title: string;
   onSave: (
-    html: string,
+    wikitextOrHtml: string,
     summary: string,
     minor: boolean,
     keepEditing?: boolean
   ) => Promise<void> | void;
   onCancel: () => void;
-  onSwitchToSource: (dirty: boolean, currentHtml: string) => void;
+  onSwitchToSource: (dirty: boolean, currentContent: string) => void;
+  /** Reports the client-side wikitext serialization after every change. */
+  onSerializedWikitext?: (result: WikitextSerializeResult) => void;
 }
+
+type PlateEditorLike = TSlateEditor;
 
 export function WikiVisualEditor({
   initialHtml,
+  initialWikitext,
   title,
   onSave,
   onCancel,
   onSwitchToSource,
+  onSerializedWikitext,
 }: WikiVisualEditorProps) {
-  const editableRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<PlateEditorLike | null>(null);
+  const htmlRef = useRef<string>(initialHtml || "");
+  const wtRef = useRef<WikitextSerializeResult>({
+    wikitext: initialWikitext || "",
+    complete: true,
+  });
   const { repulsionProgress } = useNavigationScroll();
 
   const state = useWikiEditorState({ title, onSave });
   const fmt = useWikiVisualFormatting({
     title,
-    editableRef,
+    editorRef: editorRef as unknown as React.MutableRefObject<PlateEditorLike | null>,
     setIsDirty: state.setIsDirty,
   });
 
-  // Load initial HTML into contenteditable div on mount
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (editableRef.current) {
-      const fixed = fixEditorImageUrls(initialHtml);
-      editableRef.current.innerHTML = fixed;
-      fmt.protectTemplatesAndImages(editableRef.current);
-      state.setWordCount(editableRef.current.innerText.split(/\s+/).filter(Boolean).length);
-
-      const existingDraft = getDraft(title, "ixwiki");
-      const draftContent = existingDraft?.html;
-      if (draftContent && draftContent !== fixed) {
-        timer = setTimeout(() => {
-          const restore = window.confirm(
-            `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
-          );
-          if (restore && editableRef.current) {
-            editableRef.current.innerHTML = draftContent;
-            fmt.protectTemplatesAndImages(editableRef.current);
-            state.setIsDirty(true);
-          }
-        }, 100);
-      }
+  // Draft restore prompt
+  const initialContent = React.useMemo(() => {
+    const existingDraft = getDraft(title, "ixwiki");
+    if (existingDraft?.wikitext) {
+      return { wikitext: existingDraft.wikitext };
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [title, initialHtml, fmt.protectTemplatesAndImages, state.setIsDirty, state.setWordCount]);
-
-  // Dirty tracking, word count
-  const handleInput = useCallback(() => {
-    state.setIsDirty(true);
-    if (editableRef.current) {
-      state.setWordCount(editableRef.current.innerText.split(/\s+/).filter(Boolean).length);
+    if (existingDraft?.html) {
+      return { html: fixEditorImageUrls(existingDraft.html) };
     }
-  }, [state.setIsDirty, state.setWordCount]);
+    if (initialWikitext !== undefined) {
+      return { wikitext: initialWikitext };
+    }
+    return { html: fixEditorImageUrls(initialHtml || "") };
+  }, [title, initialHtml, initialWikitext]);
 
-  // Save actions
+  const { setIsDirty, setWordCount } = state;
+  const onSerializedWikitextRef = useRef(onSerializedWikitext);
+  onSerializedWikitextRef.current = onSerializedWikitext;
+  const refreshActiveFormats = fmt.refreshActiveFormats;
+
+  const handleValueChange = useCallback(
+    (nodes: Descendant[], html: string, plainText: string) => {
+      htmlRef.current = html;
+      wtRef.current = serializePlateToWikitext(nodes);
+      onSerializedWikitextRef.current?.(wtRef.current);
+      setIsDirty(true);
+      setWordCount(plainText.split(/\s+/).filter(Boolean).length);
+      refreshActiveFormats();
+    },
+    [setIsDirty, setWordCount, refreshActiveFormats]
+  );
+
   const handleSave = useCallback(async () => {
-    await state.executeSave(() => editableRef.current?.innerHTML ?? "");
-  }, [state]);
+    // Never save leftover HTML: blocks without canonical wikitext must be fixed in source mode.
+    if (!wtRef.current.complete) {
+      state.notify.error(
+        "Save Blocked",
+        "Some content could not be converted to wikitext; switch to source mode to fix it."
+      );
+      return;
+    }
+    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
+    await state.executeSave(() => wikitextToSave);
+    saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
+  }, [state, title]);
 
   const handleSaveDraft = useCallback(() => {
-    state.executeSaveDraft(() => editableRef.current?.innerHTML ?? "", "visual");
+    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
+    state.executeSaveDraft(() => wikitextToSave, "visual");
   }, [state]);
 
-  // Keyboard shortcuts
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
-        switch (e.key.toLowerCase()) {
-          case "b":
-            e.preventDefault();
-            fmt.exec("bold");
-            break;
-          case "i":
-            e.preventDefault();
-            fmt.exec("italic");
-            break;
-          case "u":
-            e.preventDefault();
-            fmt.exec("underline");
-            break;
-          case "k":
-            e.preventDefault();
-            fmt.insertLink();
-            break;
-          case "s":
-            e.preventDefault();
-            handleSave();
-            break;
-          case "z":
-          case "y":
-            break;
-        }
-      }
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
-        if (e.key.toLowerCase() === "x") {
-          e.preventDefault();
-          fmt.exec("strikeThrough");
-        }
-      }
+  const handleSwitchToSource = useCallback(() => {
+    onSwitchToSource(state.isDirty, wtRef.current.wikitext || htmlRef.current);
+  }, [onSwitchToSource, state.isDirty]);
+
+  const handleOpenTemplateEditor = useCallback(
+    (id: string) => {
+      const editor = editorRef.current;
+      if (!editor || !fmt.setEditingTemplate) return;
+      const entries = Array.from(
+        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
+          at: [],
+          match: (n) => (n as unknown as { id?: string }).id === id,
+        })
+      );
+      if (entries.length === 0) return;
+      const node = entries[0]![0] as {
+        name?: string;
+        params?: Record<string, string>;
+      };
+      fmt.setEditingTemplate({
+        id,
+        name: node.name ?? "Template",
+        params: node.params ?? {},
+      });
     },
-    [fmt, handleSave]
+    [fmt]
+  );
+
+  const handleRemoveTemplate = useCallback(() => {
+    fmt.removeEditingNode();
+  }, [fmt]);
+
+  const handleUpdateTemplateRaw = useCallback(
+    (wikitext: string) => {
+      const editor = editorRef.current;
+      if (!editor || !fmt.editingTemplate) return;
+      const { id } = fmt.editingTemplate;
+      const entries = Array.from(
+        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
+          at: [],
+          match: (n) => (n as unknown as { id?: string }).id === id,
+        })
+      );
+      if (entries.length === 0) return;
+      const [, path] = entries[0]!;
+      Transforms.setNodes(
+        editor as unknown as import("slate").BaseEditor,
+        { rawWikitext: wikitext, wikitext } as unknown as Partial<import("slate").Descendant>,
+        { at: path }
+      );
+      fmt.setEditingTemplate(null);
+      setIsDirty(true);
+    },
+    [editorRef, fmt, setIsDirty]
+  );
+
+  const handleUpdateInfoboxFields = useCallback(
+    (id: string, fields: Array<{ label: string; value: string }>) => {
+      const editor = editorRef.current;
+      if (!editor) return;
+      const entries = Array.from(
+        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
+          at: [],
+          match: (n) => (n as unknown as { id?: string }).id === id,
+        })
+      );
+      if (entries.length === 0) return;
+      const [, path] = entries[0]!;
+      Transforms.setNodes(
+        editor as unknown as import("slate").BaseEditor,
+        { fields, edited: true } as unknown as Partial<import("slate").Descendant>,
+        { at: path }
+      );
+      setIsDirty(true);
+    },
+    [editorRef, setIsDirty]
   );
 
   // Template and Image Handlers
-  const handleInsertInfobox = useCallback(
-    (wikitext: string) => {
-      const clean = wikitext.trim().replace(/^\{\{/, "").replace(/\}\}$/, "");
-      const parts = clean.split("|");
-      const name = parts[0]?.trim() || "Infobox";
-      const params: Record<string, string> = {};
-      for (let i = 1; i < parts.length; i++) {
-        const p = parts[i]!;
-        const eq = p.indexOf("=");
-        if (eq !== -1) {
-          params[p.slice(0, eq).trim()] = p.slice(eq + 1).trim();
-        }
-      }
+  const handleInsertTemplateFromWikitext = useCallback(
+    (wikitext: string, defaultName = "Template") => {
+      const { name, params } = parseTemplateWikitext(wikitext, defaultName);
       fmt.handleInsertTemplate(name, params);
     },
     [fmt]
+  );
+
+  const handleInsertInfobox = useCallback(
+    (wikitext: string) => handleInsertTemplateFromWikitext(wikitext, "Infobox"),
+    [handleInsertTemplateFromWikitext]
   );
 
   const handleInsertCountryStats = useCallback(
-    (wikitext: string) => {
-      const clean = wikitext.trim().replace(/^\{\{/, "").replace(/\}\}$/, "");
-      const parts = clean.split("|");
-      const name = parts[0]?.trim() || "CountryData";
-      const params: Record<string, string> = {};
-      for (let i = 1; i < parts.length; i++) {
-        const p = parts[i]!;
-        const eq = p.indexOf("=");
-        if (eq !== -1) {
-          params[p.slice(0, eq).trim()] = p.slice(eq + 1).trim();
-        }
-      }
-      fmt.handleInsertTemplate(name, params);
-    },
-    [fmt]
+    (wikitext: string) => handleInsertTemplateFromWikitext(wikitext, "CountryData"),
+    [handleInsertTemplateFromWikitext]
   );
 
   const handleInsertBusinessStats = useCallback(
-    (wikitext: string) => {
-      const clean = wikitext.trim().replace(/^\{\{/, "").replace(/\}\}$/, "");
-      const parts = clean.split("|");
-      const name = parts[0]?.trim() || "BusinessData";
-      const params: Record<string, string> = {};
-      for (let i = 1; i < parts.length; i++) {
-        const p = parts[i]!;
-        const eq = p.indexOf("=");
-        if (eq !== -1) {
-          params[p.slice(0, eq).trim()] = p.slice(eq + 1).trim();
-        }
-      }
-      fmt.handleInsertTemplate(name, params);
-    },
-    [fmt]
+    (wikitext: string) => handleInsertTemplateFromWikitext(wikitext, "BusinessData"),
+    [handleInsertTemplateFromWikitext]
   );
 
   const handleInsertMapCoords = useCallback(
@@ -195,20 +225,27 @@ export function WikiVisualEditor({
       const colonIdx = head.indexOf(":");
       const type = colonIdx !== -1 ? head.slice(0, colonIdx) : head;
       const values = colonIdx !== -1 ? head.slice(colonIdx + 1) : "";
+      const href = `${type}:${values}`;
+      const titleAttr = `${type}:${values}`;
 
-      const anchor = document.createElement("a");
-      anchor.contentEditable = "false";
-      anchor.setAttribute("href", `${type}:${values}`);
-      anchor.setAttribute("title", `${type}:${values}`);
-
-      if (type.toLowerCase() === "coords") {
-        anchor.className = "wikios-ve-custom-chip chip-coords";
-        anchor.innerHTML = `<span class="opacity-70">📍</span> ${label || "Location"}`;
-      } else {
-        anchor.className = "wikios-ve-custom-chip chip-mapembed";
-        anchor.innerHTML = `<span class="opacity-70">🗺️</span> Map Embed`;
-      }
-      fmt.insertNodeAtCursor(anchor);
+      const chipNode =
+        type.toLowerCase() === "coords"
+          ? {
+              type: "chip-coord",
+              href,
+              title: titleAttr,
+              label: label || "Location",
+              wikitext: `[[${href}${label ? "|" + label : ""}]]`,
+              children: [{ text: "" }],
+            }
+          : {
+              type: "chip-mapembed",
+              href,
+              title: titleAttr,
+              wikitext: `[[${href}]]`,
+              children: [{ text: "" }],
+            };
+      fmt.insertChip(chipNode);
     },
     [fmt]
   );
@@ -220,127 +257,90 @@ export function WikiVisualEditor({
     [fmt]
   );
 
-  const handleRemoveTemplate = useCallback(() => {
-    if (fmt.editingTemplate) {
-      fmt.editingTemplate.element.remove();
-      fmt.setEditingTemplate(null);
-      state.setIsDirty(true);
-    }
-  }, [fmt, state.setIsDirty]);
+  const handleDeleteNode = useCallback(() => {
+    fmt.removeEditingNode();
+  }, [fmt]);
+
+  const handleEditorReady = useCallback(
+    (editor: unknown) => {
+      editorRef.current = editor as PlateEditorLike;
+      refreshActiveFormats();
+    },
+    [refreshActiveFormats]
+  );
 
   return (
-    <div className="wikios-ve-container">
-      <WikiVisualToolbar
-        title={title}
-        wordCount={state.wordCount}
-        isDirty={state.isDirty}
-        repulsionProgress={repulsionProgress}
-        onSwitchToSource={() => {
-          const currentHtml = editableRef.current?.innerHTML ?? "";
-          onSwitchToSource(state.isDirty, currentHtml);
-        }}
-        onCancel={onCancel}
-        onSave={handleSave}
-        handleSaveDraft={handleSaveDraft}
-        saving={state.saving}
-        saveDropdownOpen={state.saveDropdownOpen}
-        setSaveDropdownOpen={state.setSaveDropdownOpen}
-        saveActionType={state.saveActionType}
-        setSaveActionType={state.setSaveActionType}
-        setShowSavePanel={state.setShowSavePanel}
-        summary={state.summary}
-        setSummary={state.setSummary}
-        activeFormats={fmt.activeFormats}
-        exec={fmt.exec}
-        setHeading={fmt.setHeading}
-        setParagraph={fmt.setParagraph}
-        insertLink={fmt.insertLink}
-        removeLink={fmt.removeLink}
-        insertHR={fmt.insertHR}
-        insertTable={fmt.insertTable}
-        insertRef={fmt.insertRef}
-        clearFormatting={fmt.clearFormatting}
-        insertHtmlAtCursor={fmt.insertHtmlAtCursor}
-        saveSelection={fmt.saveSelection}
-        restoreSelection={fmt.restoreSelection}
-        setShowImageSearch={state.setShowImageSearch}
-        setShowInfoboxModal={state.setShowInfoboxModal}
-        setShowCountryStatsModal={state.setShowCountryStatsModal}
-        setShowBusinessStatsModal={state.setShowBusinessStatsModal}
-        setShowMapCoordsModal={state.setShowMapCoordsModal}
-        setShowTemplateInserter={state.setShowTemplateInserter}
-        stashesOpen={state.stashesOpen}
-        setStashesOpen={state.setStashesOpen}
-        templatesOpen={state.templatesOpen}
-        setTemplatesOpen={state.setTemplatesOpen}
-        settingsOpen={state.settingsOpen}
-        setSettingsOpen={state.setSettingsOpen}
-        enableAutocomplete={state.enableAutocomplete}
-        handleToggleAutocomplete={state.handleToggleAutocomplete}
-        stashes={state.stashes}
-        activeStashId={state.activeStashId}
-        setSelectedStashId={state.setSelectedStashId}
-        imageItems={state.imageItems}
-        imagesMap={state.imagesMap}
-        handleInsertStashedImage={handleInsertStashedImage}
-      />
+    <EditorModalProvider value={state.modalContextValue}>
+      <div className="wikios-ve-container">
+        <WikiVisualToolbar
+          title={title}
+          wordCount={state.wordCount}
+          isDirty={state.isDirty}
+          repulsionProgress={repulsionProgress}
+          onSwitchToSource={handleSwitchToSource}
+          onCancel={onCancel}
+          onSave={handleSave}
+          handleSaveDraft={handleSaveDraft}
+          activeFormats={fmt.activeFormats}
+          exec={fmt.exec}
+          setHeading={fmt.setHeading}
+          setParagraph={fmt.setParagraph}
+          insertLink={fmt.insertLink}
+          removeLink={fmt.removeLink}
+          insertHR={fmt.insertHR}
+          insertTable={fmt.insertTable}
+          insertRef={fmt.insertRef}
+          clearFormatting={fmt.clearFormatting}
+          insertHtmlAtCursor={fmt.insertHtmlAtCursor}
+          handleInsertStashedImage={handleInsertStashedImage}
+        />
 
-      <WikiEditorSavePanel
-        showSavePanel={state.showSavePanel}
-        summary={state.summary}
-        setSummary={state.setSummary}
-        minor={state.minor}
-        setMinor={state.setMinor}
-        saving={state.saving}
-        saveActionType={state.saveActionType}
-        onSave={handleSave}
-      />
+        <WikiEditorSavePanel
+          showSavePanel={state.showSavePanel}
+          summary={state.summary}
+          setSummary={state.setSummary}
+          minor={state.minor}
+          setMinor={state.setMinor}
+          saving={state.saving}
+          saveActionType={state.saveActionType}
+          onSave={handleSave}
+        />
 
-      {/* ─── ContentEditable Editor Canvas ─── */}
-      <div className="wikios-ve-editor-wrapper">
-        <div
-          ref={editableRef}
-          className="wikios-ve-content"
-          contentEditable
-          suppressContentEditableWarning
-          onInput={handleInput}
-          onKeyDown={handleKeyDown}
-          spellCheck
+        {/* ─── Plate Editor Canvas ─── */}
+        <div className="wikios-ve-editor-wrapper">
+          <PlateWikiEditor
+            initialHtml={initialContent.html}
+            initialWikitext={initialContent.wikitext}
+            onEditorReady={handleEditorReady}
+            onValueChange={handleValueChange}
+            onSelectionChange={refreshActiveFormats}
+            openTemplateEditor={handleOpenTemplateEditor}
+            deleteNode={handleDeleteNode}
+            updateInfoboxFields={handleUpdateInfoboxFields}
+          />
+        </div>
+
+        <WikiEditorStatusBar
+          cursorPos={{ line: 1, col: 1 }}
+          wordCount={state.wordCount}
+          lineCount={1}
+          formatName="Canvas Block AST"
+          encoding="UTF-8"
+        />
+
+        <WikiEditorModalHost
+          onInsertImage={fmt.handleInsertImage}
+          onInsertInfobox={handleInsertInfobox}
+          onInsertCountryStats={handleInsertCountryStats}
+          onInsertBusinessStats={handleInsertBusinessStats}
+          onInsertMapCoords={handleInsertMapCoords}
+          editingTemplate={fmt.editingTemplate}
+          setEditingTemplate={fmt.setEditingTemplate}
+          onUpdateTemplate={fmt.handleTemplateUpdate}
+          onUpdateTemplateRaw={handleUpdateTemplateRaw}
+          onRemoveTemplate={handleRemoveTemplate}
         />
       </div>
-
-      <WikiEditorStatusBar
-        cursorPos={{ line: 1, col: 1 }}
-        wordCount={state.wordCount}
-        lineCount={1}
-        formatName="Canvas Block AST"
-        encoding="UTF-8"
-      />
-
-      <WikiEditorModalHost
-        showImageSearch={state.showImageSearch}
-        setShowImageSearch={state.setShowImageSearch}
-        onInsertImage={fmt.handleInsertImage}
-        showTemplateInserter={state.showTemplateInserter}
-        setShowTemplateInserter={state.setShowTemplateInserter}
-        onInsertTemplate={fmt.handleInsertTemplate}
-        showInfoboxModal={state.showInfoboxModal}
-        setShowInfoboxModal={state.setShowInfoboxModal}
-        onInsertInfobox={handleInsertInfobox}
-        showCountryStatsModal={state.showCountryStatsModal}
-        setShowCountryStatsModal={state.setShowCountryStatsModal}
-        onInsertCountryStats={handleInsertCountryStats}
-        showBusinessStatsModal={state.showBusinessStatsModal}
-        setShowBusinessStatsModal={state.setShowBusinessStatsModal}
-        onInsertBusinessStats={handleInsertBusinessStats}
-        showMapCoordsModal={state.showMapCoordsModal}
-        setShowMapCoordsModal={state.setShowMapCoordsModal}
-        onInsertMapCoords={handleInsertMapCoords}
-        editingTemplate={fmt.editingTemplate}
-        setEditingTemplate={fmt.setEditingTemplate}
-        onUpdateTemplate={fmt.handleTemplateUpdate}
-        onRemoveTemplate={handleRemoveTemplate}
-      />
-    </div>
+    </EditorModalProvider>
   );
 }

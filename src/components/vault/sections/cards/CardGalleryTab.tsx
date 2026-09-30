@@ -2,12 +2,18 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Layers, Globe, MapPin, Loader2, ChevronDown } from "lucide-react";
+import {
+  Component as Layers,
+  Globe,
+  MapPin,
+  SystemRestart as Loader2,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { CardDisplay } from "~/components/cards/display";
+import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import NumberFlow from "~/components/ui/number-flow";
 import type { CardInstance } from "~/types/cards-display";
 import type { CardRarity } from "@prisma/client";
@@ -99,6 +105,7 @@ export function CardGalleryTab({
   useEffect(() => {
     if (nsCardsData) {
       if (offset === 0) {
+        // oxlint-disable-next-line
         setAllNsCards(nsCardsData.cards as unknown as CardInstance[]);
       } else {
         setAllNsCards((prev) => {
@@ -119,7 +126,9 @@ export function CardGalleryTab({
   }, []);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     handleFilterChange();
+    // oxlint-disable-next-line
   }, [search, season, rarity, sortBy, source, handleFilterChange]);
 
   // Build display cards based on source
@@ -181,18 +190,18 @@ export function CardGalleryTab({
     <div className="space-y-4">
       {/* Library stats banner (NS source) */}
       {(source === "all" || source === "ns") && libraryStats && libraryStats.totalCards > 0 && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-purple-400/20 bg-gradient-to-r from-purple-500/5 to-blue-500/5 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border/40 bg-muted/20 px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <Layers className="h-3.5 w-3.5 text-purple-400" />
-            <span className="text-xs font-bold text-purple-400">
+            <Layers className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+            <span className="text-xs font-bold text-foreground">
               <NumberFlow value={libraryStats.totalCards} />
             </span>
-            <span className="text-muted-foreground text-[0.65rem]">cards in library</span>
+            <span className="text-muted-foreground text-xs">cards in library</span>
           </div>
           {libraryStats.cardsByRegion?.length > 0 && (
             <div className="flex items-center gap-1.5">
               <MapPin className="text-muted-foreground h-3 w-3" />
-              <span className="text-muted-foreground text-[0.65rem]">
+              <span className="text-muted-foreground text-xs">
                 Top:{" "}
                 <span className="text-foreground/80 font-semibold">
                   {libraryStats.cardsByRegion[0]?.region}
@@ -211,7 +220,7 @@ export function CardGalleryTab({
           ))}
         </div>
       ) : displayCards.length === 0 ? (
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Globe className="text-muted-foreground/40 mb-3 h-10 w-10" />
             <p className="text-foreground/80 mb-1 text-sm font-bold">No Cards Found</p>

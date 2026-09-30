@@ -16,7 +16,7 @@
  * 3. Copy the whole file once per group (retains ALL imports + module-level
  *    helpers), rename the exported var, strip out-of-group procedures. The
  *    copy-whole-file strategy intentionally propagates module-level helpers
- *    so each group is self-contained — eslint --fix then trims the unused
+ *    so each group is self-contained — oxlint --fix (or eslint --fix fallback) then trims the unused
  *    ones (or they get the `_` prefix convention).
  * 4. Write a thin `index.ts` that re-exports the same router var via
  *    `mergeRouters(...)` (or object spread for procedure-bag).

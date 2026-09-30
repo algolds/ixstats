@@ -2,7 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, ChevronRight, ChevronLeft, Plus, PenTool } from "lucide-react";
+import {
+  Xmark as X,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Plus,
+  EditPencil as PenTool,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { generateWikitext } from "./create-page/WikitextTemplates";
@@ -76,6 +82,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setStep(1);
 
       // Try to read title and page type from URL search parameters
@@ -183,7 +190,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]" onClick={onClose}>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-[12px] dark:bg-black/60" />
       <div
-        className="facet-depth-4 facet-refraction relative z-10 w-full max-w-lg rounded-2xl p-6 text-[var(--wikios-text)] transition-all duration-300"
+        className="facet-depth-4 facet-refraction relative z-10 w-full max-w-lg rounded-2xl p-6 text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -198,7 +205,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
             onClick={onClose}
             className="hover:bg-foreground/[0.05] rounded-lg p-1 text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)]"
           >
-            <X size={18} />
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
@@ -249,7 +256,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
                 onClick={handleBack}
                 className="flex items-center gap-1 text-xs text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)]"
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft className="h-3.5 w-3.5" />
                 <span>Back</span>
               </button>
             )}
@@ -269,19 +276,19 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
                 step === 3 || (step === 2 && pageType === "blank") ? handleCreate : handleNext
               }
               disabled={!title.trim() || checkExists.isFetching}
-              className="flex items-center gap-1 rounded-xl bg-[var(--wikios-accent)] px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
+              className="flex items-center gap-1 rounded-xl bg-[var(--wikios-accent)] px-4 py-2 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
             >
               {checkExists.isFetching ? (
                 <span>Checking...</span>
               ) : step === 3 || (step === 2 && pageType === "blank") ? (
                 <>
-                  <Plus size={14} />
+                  <Plus className="h-3.5 w-3.5" />
                   <span>Create Page</span>
                 </>
               ) : (
                 <>
                   <span>Next</span>
-                  <ChevronRight size={14} />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </>
               )}
             </button>

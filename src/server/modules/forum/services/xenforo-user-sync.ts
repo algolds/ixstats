@@ -11,7 +11,6 @@
 
 import { db } from "~/server/db";
 import { getXfApiKey, getXfApiUrl, xfPost } from "./xenforo-service";
-import { isSystemOwner } from "~/lib/auth";
 
 // ─── Custom Field Definitions ────────────────────────────────────────────────
 
@@ -230,49 +229,4 @@ export async function syncUserToForum(userId: string): Promise<boolean> {
     console.error(`[XF Sync] Failed to sync user ${userId}:`, error);
     return false;
   }
-}
-
-/**
- * Link an IxStats user account to their XenForo forum account.
- * Looks up the forum user by username and stores the forumUserId.
- * Triggers an initial sync after linking.
- */
-export async function linkForumAccount(
-  userId: string,
-  forumUsername: string,
-  clerkUserId?: string
-): Promise<{ success: boolean; forumUserId?: number; error?: string }> {
-  // Look up XenForo user
-  const forumUser = await lookupForumUser(forumUsername);
-  if (!forumUser) {
-    return { success: false, error: `Forum user "${forumUsername}" not found` };
-  }
-
-  // System owners can link the same forum account to multiple IxStats users
-  if (!clerkUserId || !isSystemOwner(clerkUserId)) {
-    const existingLink = await db.user.findFirst({
-      where: { forumUserId: forumUser.userId, id: { not: userId } },
-      select: { id: true },
-    });
-    if (existingLink) {
-      return {
-        success: false,
-        error: "This forum account is already linked to another IxStats user",
-      };
-    }
-  }
-
-  // Store the link
-  await db.user.update({
-    where: { id: userId },
-    data: {
-      forumUserId: forumUser.userId,
-      forumUsername: forumUser.username,
-    },
-  });
-
-  // Trigger initial sync
-  await syncUserToForum(userId);
-
-  return { success: true, forumUserId: forumUser.userId };
 }

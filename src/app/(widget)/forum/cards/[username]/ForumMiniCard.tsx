@@ -3,7 +3,7 @@
  * Uses inline CSS for rarity-colored borders and glow effects.
  */
 
-import { getRarityColors, formatValue, resolveArtworkUrl } from "~/shared/forum-utils";
+import { getRarityColors, formatValue, resolveArtworkUrl } from "~/lib/forum/forum-utils";
 import { styles } from "./widget-styles";
 import { withBasePath } from "~/lib/base-path";
 
@@ -66,7 +66,7 @@ export function ForumMiniCard({
           {!compact && <span>{formatValue(card.marketValue)}</span>}
         </div>
         {serialNumber != null && !compact && (
-          <div style={{ fontSize: 9, color: "#6b7280", marginTop: 2 }}>#{serialNumber}</div>
+          <div className="text-muted-foreground mt-0.5 text-xs">#{serialNumber}</div>
         )}
       </div>
     </a>

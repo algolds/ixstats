@@ -4,7 +4,15 @@ import { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { Play, Pause, RotateCcw, Flame, Shield, Users, Activity, HelpCircle } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Undo as RotateCcw,
+  FireFlame as Flame,
+  Shield,
+  Group as Users,
+  Activity,
+} from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 
@@ -21,7 +29,9 @@ export function MatchTickerSim({
   homeTeam,
   awayTeam,
   trace,
+  // oxlint-disable-next-line eslint/no-unused-vars
   homeScoreFinal,
+  // oxlint-disable-next-line eslint/no-unused-vars
   awayScoreFinal,
   onFinished,
 }: MatchTickerSimProps) {
@@ -37,6 +47,7 @@ export function MatchTickerSim({
     if (!isPlaying) return;
 
     if (traceIndex >= trace.length) {
+      // oxlint-disable-next-line
       setIsPlaying(false);
       if (onFinished) onFinished();
       return;
@@ -90,7 +101,7 @@ export function MatchTickerSim({
       <CardContent className="relative z-10 space-y-6 p-6">
         {/* Header Live / Sim control panel */}
         <div className="flex items-center justify-between">
-          <Badge className="flex animate-pulse items-center gap-1 bg-red-600 px-2 py-0.5 font-bold text-white dark:bg-red-500">
+          <Badge className="flex items-center gap-1 bg-red-600 px-2 py-0.5 font-bold text-white dark:bg-red-500">
             <span className="h-1.5 w-1.5 rounded-full bg-white" />
             LIVE SIMULATOR
           </Badge>
@@ -129,7 +140,7 @@ export function MatchTickerSim({
                     : alertEvent.type === "card"
                       ? "border-yellow-500/30 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
                       : alertEvent.type === "injury"
-                        ? "border-rose-500/30 bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                        ? "border-red-500/30 bg-red-500/20 text-red-600 dark:text-red-400"
                         : "border-blue-500/30 bg-blue-500/20 text-blue-600 dark:text-blue-400"
                 )}
               >
@@ -138,7 +149,7 @@ export function MatchTickerSim({
                 )}
                 {alertEvent.type === "card" && <Shield className="h-4 w-4" />}
                 {alertEvent.type === "injury" && (
-                  <Activity className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                  <Activity className="h-4 w-4 text-red-600 dark:text-red-400" />
                 )}
                 {alertEvent.type === "tactic_shift" && <Users className="h-4 w-4" />}
                 <span>
@@ -200,7 +211,7 @@ export function MatchTickerSim({
 
         {/* Live commentary feeds banner */}
         <div className="border-border border-t pt-4">
-          <p className="text-muted-foreground mb-2 text-[10px] font-bold tracking-wider uppercase">
+          <p className="text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase">
             Live Commentary
           </p>
           <div className="relative h-12 overflow-hidden">

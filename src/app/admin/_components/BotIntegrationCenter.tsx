@@ -1,7 +1,6 @@
-// src/app/admin/_components/BotIntegrationCenter.tsx
 "use client";
+// src/app/admin/_components/BotIntegrationCenter.tsx
 
-import { useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";
 import { SystemCronScheduleWidget } from "./SystemCronScheduleWidget";
@@ -9,14 +8,14 @@ import { BotControlCard } from "./platform/BotControlCard";
 import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
-import { useBotSync } from "../_hooks/useBotSync";
-import { Cpu } from "lucide-react";
+import { Cpu } from "iconoir-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LorewardsBotSection } from "./platform/LorewardsBotSection";
 
 export function BotIntegrationCenter() {
   usePageTitle({ title: "Admin - Bot Settings" });
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { config, setConfig, timeState, importState, setImportState, actionState, setActionState } =
     useAdminState();
 
@@ -33,31 +32,8 @@ export function BotIntegrationCenter() {
     }
   );
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: configData, refetch: refetchConfig } = api.admin.getConfig.useQuery();
-
-  // tRPC mutations
-  const saveConfigMutation = api.admin.saveConfig.useMutation();
-  const forceCalculationMutation = api.admin.forceRecalculation.useMutation();
-  const setCustomTimeMutation = api.admin.setCustomTime.useMutation();
-  const analyzeImportMutation = api.admin.analyzeImport.useMutation();
-  const importDataMutation = api.admin.importRosterData.useMutation();
-  const syncEpochMutation = api.admin.syncEpochWithData.useMutation();
-  const syncBotMutation = api.admin.syncBot.useMutation();
-  const pauseBotMutation = api.admin.pauseBot.useMutation();
-  const resumeBotMutation = api.admin.resumeBot.useMutation();
-  const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation();
-
-  // Sync Bot
-  useBotSync({
-    botStatus,
-    timeMultiplier: config.timeMultiplier,
-    botSyncEnabled: config.botSyncEnabled,
-    autoSyncPending: actionState.autoSyncPending,
-    setActionState,
-    setTimeMultiplier: (value) => setConfig((prev) => ({ ...prev, timeMultiplier: value })),
-    refetchStatus,
-    refetchBotStatus,
-  });
 
   // Handlers
   const {
@@ -68,22 +44,8 @@ export function BotIntegrationCenter() {
     handleClearOverrides,
   } = useAdminHandlers({
     config,
-    timeState,
-    importState,
     setActionState,
     setConfig,
-    setImportState,
-    saveConfigMutation,
-    forceCalculationMutation,
-    setCustomTimeMutation,
-    analyzeImportMutation,
-    importDataMutation,
-    syncEpochMutation,
-    syncBotMutation,
-    pauseBotMutation,
-    resumeBotMutation,
-    clearBotOverridesMutation,
-    refetchConfig,
     refetchStatus,
     refetchBotStatus,
   });
@@ -97,9 +59,20 @@ export function BotIntegrationCenter() {
       />
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="general">General Controls</TabsTrigger>
-          <TabsTrigger value="lorewards">Lorewards Bot</TabsTrigger>
+        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+          <TabsTrigger
+            value="general"
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
+            <Cpu className="h-3.5 w-3.5" />
+            General Controls & Crons
+          </TabsTrigger>
+          <TabsTrigger
+            value="lorewards"
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
+            Lorewards Bot
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="general" className="mt-6 space-y-6">
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

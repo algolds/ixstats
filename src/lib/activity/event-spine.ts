@@ -194,7 +194,7 @@ export class CountryEventSpine {
         });
 
         // 2. Write to CountryChangeLog ledger
-        await (db as any).countryChangeLog.create({
+        await (db as any).countryChangeLog?.create?.({
           data: {
             countryId,
             sourceType,
@@ -216,7 +216,7 @@ export class CountryEventSpine {
     // Write a general entry to the ledger if no consequences were applied, just to document the event
     if (appliedConsequences.length === 0) {
       try {
-        await (db as any).countryChangeLog.create({
+        await (db as any).countryChangeLog?.create?.({
           data: {
             countryId,
             sourceType,

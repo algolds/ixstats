@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { DynamicContainer } from "~/components/ui/dynamic-island";
+import { DynamicContainer } from "../HaloPrimitives";
 import { Button } from "~/components/ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { Search, Bell, Settings } from "lucide-react";
+import { Search, Bell, Settings } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { useUser } from "~/context/auth-context";
 import { useIxTimeStore } from "~/stores/ixtime-store";
@@ -47,13 +47,8 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const {
-    activeSectionId,
-    tocEntries,
-    narratorState,
-    narratorActions,
-    themeColors,
-  } = useWikiContext();
+  const { activeSectionId, tocEntries, narratorState, narratorActions, themeColors } =
+    useWikiContext();
 
   const isNarratorActive = !!(
     narratorState &&
@@ -174,7 +169,7 @@ function CompactViewComponent({
       >
         <div className="h-full w-full">
           <DynamicContainer
-            className={`flex w-full items-center justify-center gap-1 transition-all duration-300 ${
+            className={`flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
               isSticky ? "px-3 py-1.5" : "px-4 py-2"
             } ${isFlashing ? "animate-flash-notification" : ""}`}
           >
@@ -189,8 +184,8 @@ function CompactViewComponent({
                   transition={{ type: "spring", stiffness: 420, damping: 38 }}
                   className="flex items-center gap-1.5 px-2 py-0.5"
                 >
-                  <Bell className="h-3 w-3 animate-pulse text-amber-400" />
-                  <span className="text-foreground/90 max-w-[160px] truncate text-[11px] font-medium whitespace-nowrap">
+                  <Bell className="h-3 w-3 text-amber-400" />
+                  <span className="text-foreground/90 max-w-[160px] truncate text-xs font-medium whitespace-nowrap">
                     <PreText whiteSpace="nowrap">{peekText}</PreText>
                   </span>
                 </motion.div>
@@ -222,7 +217,7 @@ function CompactViewComponent({
                       }
                     }
                   }}
-                  className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
+                  className={`flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-white/10 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                   title={`Open ${activePlugin.id} mode`}
@@ -231,7 +226,7 @@ function CompactViewComponent({
                 </div>
               ) : (
                 <div
-                  className={`flex items-center gap-1.5 px-1.5 py-0.5 transition-all duration-300 ${
+                  className={`flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                 >
@@ -251,7 +246,7 @@ function CompactViewComponent({
                     transition={{ type: "spring", stiffness: 420, damping: 38 }}
                     className="flex items-center gap-1.5 px-2 py-1"
                   >
-                    <Bell className="h-3 w-3 animate-pulse text-amber-400" />
+                    <Bell className="h-3 w-3 text-amber-400" />
                     <span className="text-foreground/90 max-w-[200px] truncate text-xs font-medium whitespace-nowrap">
                       <PreText whiteSpace="nowrap">{peekText}</PreText>
                     </span>
@@ -288,22 +283,20 @@ function CompactViewComponent({
                               }
                             }
                           }}
-                          className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 max-w-[160px] sm:max-w-[200px] min-w-0 overflow-hidden"
+                          className="flex max-w-[160px] min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-white/10 sm:max-w-[200px]"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
                         </div>
                       ) : (
-                        <div
-                          className="flex items-center gap-1.5 px-1.5 transition-all duration-300 max-w-[160px] sm:max-w-[200px] min-w-0 overflow-hidden"
-                        >
+                        <div className="flex max-w-[160px] min-w-0 items-center gap-1.5 overflow-hidden px-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]">
                           {pluginCenter}
                         </div>
                       )
                     ) : (
                       <button
                         onClick={() => onSwitchMode("mycountry")}
-                        className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors"
+                        className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors"
                       >
                         {user?.imageUrl ? (
                           <img
@@ -325,7 +318,7 @@ function CompactViewComponent({
             )}
 
             {/* ── Right-Side Action Icons Group with Optional Narrator Progress Underneath ── */}
-            <div className="flex flex-col items-center justify-center relative shrink-0">
+            <div className="relative flex shrink-0 flex-col items-center justify-center">
               <div className="flex items-center gap-0.5">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -337,7 +330,7 @@ function CompactViewComponent({
                         soundEffects.scan();
                         onSwitchMode("search");
                       }}
-                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
+                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -360,7 +353,7 @@ function CompactViewComponent({
                           soundEffects.bloom();
                           onSwitchMode("notifications");
                         }}
-                        className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
+                        className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                           isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                         }`}
                       >
@@ -377,11 +370,11 @@ function CompactViewComponent({
                           {totalUnreadCount > 0 && (
                             <motion.div
                               key={`total-${totalUnreadCount}`}
-                              initial={{ scale: 0, opacity: 0 }}
+                              initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                              className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-[10px] font-bold text-white shadow-lg ${
+                              className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-xs font-bold text-white shadow-lg ${
                                 isSticky
                                   ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
                                   : "-top-1 -right-1 h-3 w-3 p-0"
@@ -411,7 +404,7 @@ function CompactViewComponent({
                         soundEffects.bloom();
                         onSwitchMode("settings");
                       }}
-                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
+                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -433,7 +426,7 @@ function CompactViewComponent({
                           size="sm"
                           variant="ghost"
                           onClick={action.onClick}
-                          className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
+                          className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                             isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                           }`}
                         >
@@ -442,8 +435,10 @@ function CompactViewComponent({
                           />
                           {action.badge != null && action.badge > 0 && (
                             <span
-                              className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white ${
-                                isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
+                              className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white ${
+                                isSticky
+                                  ? "-top-0.5 -right-0.5 h-2.5 w-2.5"
+                                  : "-top-1 -right-1 h-3 w-3"
                               }`}
                             >
                               {action.badge > 9 ? "9+" : action.badge}
@@ -468,7 +463,7 @@ function CompactViewComponent({
               {/* Sleek Hairline Narrator Progress Track Underneath the Icons Group */}
               {isNarratorActive && narratorActions && (
                 <div
-                  className="group/narrator-progress relative w-full h-[2.5px] rounded-full bg-foreground/15 dark:bg-white/15 overflow-hidden cursor-pointer mt-0.5 flex items-center transition-all hover:h-[3.5px]"
+                  className="group/narrator-progress bg-foreground/15 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:h-[3.5px] dark:bg-white/15"
                   onClick={(e) => {
                     e.stopPropagation();
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -484,7 +479,7 @@ function CompactViewComponent({
                   title={`Narrator Progress: ${Math.round(narratorProgressPercent)}% · Click to scrub`}
                 >
                   <div
-                    className="h-full rounded-full transition-all duration-150"
+                    className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
                     style={{
                       width: `${narratorProgressPercent}%`,
                       backgroundColor: narratorAccent,

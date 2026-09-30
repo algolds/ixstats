@@ -1,10 +1,12 @@
 # Refactoring Best Practices
 
-**Last updated:** June 2026 (patch 1.0.6)
+**Last updated:** September 2026 (router recipe from patch 1.0.6)
 
 This guide documents the established patterns and best practices for refactoring large components and tRPC routers in the IxStats codebase. The component-level patterns (modular architecture, business-logic extraction, hooks, presentation components) are based on the October 2025 work. The **tRPC router-splitting recipe** was added in June 2026 (patch 1.0.6) and is documented at the bottom of this file.
 
 ## Overview
+
+> **Note:** Code samples in the component-level sections are illustrative sketches of the pattern, not excerpts. Several file names they use (e.g. `synergy-calculator.ts`, `useIntelligenceMetrics.ts`, `EnhancedIntelligenceBriefing.tsx`, `src/components/tax-system/`) do not exist in the current tree. Real examples of the layout: `src/lib/government/synergy.ts` and `src/lib/economy/tax-builder-validation.ts` (logic), `src/hooks/useTaxBuilderState.ts` (state), `src/components/mycountry/domains/diplomacy/embassy-network/` (presentation + barrel), `src/components/mycountry/shell/MyCountryRouter.tsx` (orchestration).
 
 The IxStats codebase follows a **modular architecture pattern** that separates complex components into distinct layers for maintainability, reusability, and performance. This guide provides concrete guidelines for applying these patterns when refactoring large or complex components.
 
@@ -33,7 +35,7 @@ Refactor if the component exhibits:
 
 ## Layer Separation Principles
 
-### 1. Business Logic Layer (`src/lib/*.ts`)
+### 1. Business Logic Layer (`src/lib/<domain>/*.ts`)
 
 **Purpose**: Pure, testable functions for calculations, transformations, and validations.
 
@@ -46,7 +48,7 @@ Refactor if the component exhibits:
 
 **Examples**:
 ```typescript
-// src/lib/synergy-calculator.ts
+// src/lib/government/synergy.ts (illustrative)
 /**
  * Calculates synergy bonuses between government components
  */
@@ -58,7 +60,7 @@ export function calculateComponentSynergy(
   return synergyScore;
 }
 
-// src/lib/tax-builder-validation.ts
+// src/lib/economy/tax-builder-validation.ts (illustrative — the real export is validateTaxBuilderState)
 /**
  * Validates tax bracket configuration
  */
@@ -102,7 +104,7 @@ export function formatValue(value: number) {
 
 **Examples**:
 ```typescript
-// src/hooks/useIntelligenceMetrics.ts
+// src/hooks/useIntelligenceMetrics.ts (illustrative)
 /**
  * Hook for fetching and computing intelligence metrics
  */
@@ -123,7 +125,7 @@ export function useIntelligenceMetrics(countryId: string) {
  */
 export function useTaxBuilderState(initialData?: TaxData) {
   const [state, setState] = useState(initialData ?? getDefaultTaxData());
-  const saveMutation = api.taxes.save.useMutation();
+  const saveMutation = api.taxSystem.update.useMutation();
 
   const updateBracket = useCallback((index: number, bracket: TaxBracket) => {
     setState(prev => updateBracketInState(prev, index, bracket));
@@ -259,7 +261,7 @@ export const ExpensiveCard = ({ item }) => {
 
 **Examples**:
 ```typescript
-// src/components/countries/EnhancedIntelligenceBriefing.tsx
+// src/components/<domain>/EnhancedIntelligenceBriefing.tsx (illustrative)
 import React from 'react';
 import { useIntelligenceMetrics } from '@/hooks/useIntelligenceMetrics';
 import { useWikiIntelligence } from '@/hooks/useWikiIntelligence';
@@ -339,31 +341,25 @@ export function MyComponent({ data }) {
 ### Directory Structure
 ```
 src/
-├── lib/                          # Business logic utilities
-│   ├── synergy-calculator.ts
-│   ├── tax-builder-validation.ts
-│   └── wiki-markup-parser.ts
-├── hooks/                        # Custom React hooks
-│   ├── useIntelligenceMetrics.ts
+├── lib/                          # Business logic, grouped by domain
+│   ├── government/synergy.ts
+│   └── economy/tax-builder-validation.ts
+├── hooks/                        # Shared custom React hooks
 │   ├── useTaxBuilderState.ts
-│   └── useWikiIntelligence.ts
+│   └── useDossier.ts             # exports useWikiIntelligence
 ├── components/
 │   ├── ui/                       # Design system primitives
-│   ├── diplomatic/
-│   │   ├── embassy-network/      # Feature module
-│   │   │   ├── index.ts
-│   │   │   ├── EmbassyCard.tsx
-│   │   │   └── EmbassyGrid.tsx
-│   │   └── EnhancedEmbassyNetwork.tsx  # Main orchestrator
-│   └── countries/
-│       ├── intelligence-briefing/
-│       │   ├── index.ts
-│       │   ├── MetricsOverview.tsx
-│       │   └── AnalyticsChart.tsx
-│       └── EnhancedIntelligenceBriefing.tsx
+│   └── mycountry/domains/diplomacy/
+│       └── embassy-network/      # Feature module
+│           ├── index.ts
+│           ├── EmbassyCard.tsx
+│           ├── EmbassyGrid.tsx
+│           ├── EmptyState.tsx
+│           └── NetworkOverviewCard.tsx
+├── tests/                        # Centralized Jest tests (mirrors src/)
 └── types/                        # TypeScript type definitions
     ├── diplomatic-network.ts
-    └── intelligence-briefing.ts
+    └── intelligence.ts
 ```
 
 ### File Naming Conventions
@@ -574,11 +570,11 @@ export const EmbassyCard = React.memo<EmbassyCardProps>(({ embassy, onSelect }) 
 ## Testing Strategies
 
 ### Business Logic Testing
-Business logic in `src/lib/` should have comprehensive unit tests:
+Business logic in `src/lib/` should have comprehensive unit tests. Tests live in the centralized `src/tests/` tree (mirroring the source path) and import via `~/`:
 
 ```typescript
-// src/lib/__tests__/synergy-calculator.test.ts
-import { calculateSynergyBonus } from '../synergy-calculator';
+// src/tests/lib/government/synergy.test.ts (illustrative)
+import { calculateSynergyBonus } from '~/lib/government/synergy';
 
 describe('calculateSynergyBonus', () => {
   it('should return 0 for components with no synergies', () => {
@@ -599,12 +595,12 @@ describe('calculateSynergyBonus', () => {
 ```
 
 ### Hook Testing
-Use `@testing-library/react-hooks` for hook tests:
+Use `renderHook` from `@testing-library/react` for hook tests (`@testing-library/react-hooks` is not installed):
 
 ```typescript
-// src/hooks/__tests__/useIntelligenceMetrics.test.ts
+// src/tests/hooks/useIntelligenceMetrics.test.ts (illustrative)
 import { renderHook, waitFor } from '@testing-library/react';
-import { useIntelligenceMetrics } from '../useIntelligenceMetrics';
+import { useIntelligenceMetrics } from '~/hooks/useIntelligenceMetrics';
 
 describe('useIntelligenceMetrics', () => {
   it('should fetch and compute metrics', async () => {
@@ -623,9 +619,9 @@ describe('useIntelligenceMetrics', () => {
 Use `@testing-library/react` for component tests:
 
 ```typescript
-// src/components/mycountry/domains/diplomacy/embassy-network/__tests__/EmbassyCard.test.tsx
+// src/tests/components/mycountry/EmbassyCard.test.tsx (illustrative)
 import { render, screen, fireEvent } from '@testing-library/react';
-import { EmbassyCard } from '../EmbassyCard';
+import { EmbassyCard } from '~/components/mycountry/domains/diplomacy/embassy-network';
 
 describe('EmbassyCard', () => {
   const mockEmbassy = {
@@ -662,7 +658,7 @@ describe('EmbassyCard', () => {
 1. **Create feature branch**: `refactor/component-name-modular-architecture`
 2. **Extract business logic**: Move pure functions to `src/lib/`
 3. **Extract state management**: Create custom hooks in `src/hooks/`
-4. **Extract UI components**: Create focused components in `src/components/domain/feature/`
+4. **Extract UI components**: Create focused components in `src/components/<domain>/<feature>/`
 5. **Update main component**: Refactor to orchestration pattern
 6. **Add documentation**: JSDoc on all new modules
 7. **Optimize performance**: Apply React.memo where appropriate
@@ -694,6 +690,8 @@ For large components, consider incremental refactoring:
 Each phase should be a separate commit, making it easy to review and roll back if needed.
 
 ## Code Examples
+
+> Illustrative only — the real logic lives in `src/lib/economy/tax-builder-validation.ts` (`validateTaxBuilderState`) and `src/components/tax-system/tax-builder/` does not exist; the real tax router is `api.taxSystem.*` (`getByCountryId`, `create`, `update`, `checkConflicts`).
 
 ### Before Refactoring (Anti-pattern)
 ```typescript
@@ -732,8 +730,8 @@ export function TaxBuilder({ countryId }: TaxBuilderProps) {
   };
 
   // tRPC calls directly in component
-  const { data: taxData } = api.taxes.getByCountryId.useQuery({ countryId });
-  const saveMutation = api.taxes.save.useMutation();
+  const { data: taxData } = api.taxSystem.getByCountryId.useQuery({ countryId });
+  const saveMutation = api.taxSystem.update.useMutation();
 
   // 1,500 more lines of complex JSX and logic
   return (
@@ -746,7 +744,7 @@ export function TaxBuilder({ countryId }: TaxBuilderProps) {
 
 ### After Refactoring (Best Practice)
 ```typescript
-// ✅ Business logic extracted (src/lib/tax-builder-validation.ts)
+// ✅ Business logic extracted (src/lib/economy/tax-builder-validation.ts — illustrative)
 /**
  * Validates tax bracket configuration
  */
@@ -777,8 +775,8 @@ export function calculateTaxRevenue(brackets: TaxBracket[]): number {
  * Hook for managing tax builder state and operations
  */
 export function useTaxBuilderState(countryId: string) {
-  const { data: taxData, isLoading } = api.taxes.getByCountryId.useQuery({ countryId });
-  const saveMutation = api.taxes.save.useMutation();
+  const { data: taxData, isLoading } = api.taxSystem.getByCountryId.useQuery({ countryId });
+  const saveMutation = api.taxSystem.update.useMutation();
 
   const [brackets, setBrackets] = useState<TaxBracket[]>([]);
 
@@ -961,9 +959,9 @@ When a tRPC router in `src/server/api/routers/` grows over **700 lines** (or 900
 
 ### The canonical splitter
 
-**`scripts/split-router-template.ts`** (~250 lines, with a 100-line header comment documenting all 6 lessons learned). It handles:
+**`scripts/split-router-template.ts`** (~370 lines, with a long header comment documenting the lessons learned). It handles:
 - Static + dynamic relative-import pre-flight (the bug pattern that broke wikios, intel/core, intel/alerts, geo/admin, geo/features, transport — all now fixed in the template)
-- Copy-whole-file strategy (retains module-level helpers per group, `eslint --fix` trims unused)
+- Copy-whole-file strategy (retains module-level helpers per group, `oxlint --fix` trims unused)
 - `mergeRouters` recombination in the new `index.ts` (or `--pattern=spread` for procedure-bag routers)
 - AST parity verification (mandatory, no separate verifier needed)
 
@@ -1004,8 +1002,8 @@ For procedure-bag routers (e.g. `countries/management` which exports `management
 ### The arch guard (enforcement)
 
 After 1.0.6, the architecture guard `bun run audit:arch` runs in CI and fails if:
-- Any file in `src/server/api/routers/**` is over 700 lines (or 900 for `RELAXED_FILES`)
-- A ratcheted file in `arch-baseline.json` has grown
+- A new file in `src/server/api/routers`, `src/types`, `src/app`, `src/components` or `src/lib` is over 700 lines (`src/hooks`: 500; `RELAXED_FILES` in `src/types`: 900)
+- A ratcheted file in `scripts/audit/arch-baseline.json` has grown
 - A new cross-router import appears (no router may import from another router)
 
 The guard is wired to `bun run audit:arch` and has a partner `bun run audit:arch:update` to re-ratchet the baseline after a successful split.
@@ -1013,14 +1011,14 @@ The guard is wired to `bun run audit:arch` and has a partner `bun run audit:arch
 ### Common gotchas
 
 - **Dynamic imports**: `await import("./foo")` doesn't match static-import regexes. The template checks BOTH, but if you find a missed one, use `perl -i -pe` rather than `sed` (parens confuse sed's replacement).
-- **Helper re-exports**: when a router exports a helper used by another router (e.g. `evaluateThresholds` from `intelligence/alerts` is imported by `intelligence/core/dashboard`), the new `<router>/index.ts` MUST re-export the helper. Otherwise external importers break. The template's pre-flight external-importer scan flags this.
+- **Helper re-exports**: when a router exports a helper used elsewhere, the new `<router>/index.ts` MUST re-export the helper or external importers break. The template's pre-flight external-importer scan flags this. Better still, move the helper to `src/server/shared/` (as was done with `evaluateThresholds` → `src/server/shared/intelligence-alert-thresholds.ts`).
 - **Procedure-bag pattern**: routers that export a plain object (e.g. `managementProcedures = {...}`) and get spread into a parent (rather than `createTRPCRouter({})` + `mergeRouters`) need `--pattern=spread` mode. Only `countries/management` uses this pattern in the current tree.
 - **Single-procedure monsters**: a procedure that is intrinsically 500+ lines (e.g. a complex simulation or import routine) cannot be fragmented by domain — it just goes into its own group file. Ratchet that file in the baseline.
 
 ### References
 
-- **`arch.md`** — the architecture rules (≤700 lines, no cross-router imports, no shared mega-types)
+- **[`docs/architecture/backend.md`](../architecture/backend.md)** — router rules (≤700 lines, no cross-router imports)
 - **`scripts/audit/audit-arch.ts`** — the architecture guard
 - **`scripts/split-router-template.ts`** — the canonical splitter (read its 100-line header comment)
-- **`docs/prevent_ts_graph_explosion.md`** — the broader TypeScript graph isolation context
-- **`docs/audits/AUDIT_2026-06-13.md`** — the audit that produced this work
+- **[`docs/architecture/ts-graph-isolation.md`](../architecture/ts-graph-isolation.md)** — the broader TypeScript graph isolation context
+- **[`docs/audits/AUDIT_2026-06-13.md`](../audits/AUDIT_2026-06-13.md)** — the audit that produced this work

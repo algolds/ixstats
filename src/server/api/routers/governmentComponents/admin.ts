@@ -14,35 +14,13 @@ import { TRPCError } from "@trpc/server";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/government/atomic-data";
 
-import {
-  type ParsedComponent,
-  transformDatabaseComponent,
-} from "./serializer";
+import { type ParsedComponent, transformDatabaseComponent } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
 // ============================================================================
 
 const componentTypeSchema = z.nativeEnum(ComponentType);
-
-const getAllComponentsSchema = z
-  .object({
-    category: z.string().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .optional();
-
-const getComponentByTypeSchema = z.object({
-  componentType: componentTypeSchema,
-});
-
-const getSynergiesSchema = z.object({
-  componentType: componentTypeSchema,
-});
-
-const incrementUsageSchema = z.object({
-  componentType: componentTypeSchema,
-});
 
 const createSynergySchema = z.object({
   component1: componentTypeSchema,
@@ -55,7 +33,6 @@ const createSynergySchema = z.object({
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
 
 /**
  * Ensure database is seeded with government component reference data
@@ -147,31 +124,6 @@ function getFallbackComponentByType(componentType: ComponentType): ParsedCompone
     usageCount: 0,
     isActive: true,
   };
-}
-
-/**
- * Get components grouped by category
- */
-function getComponentsByCategory(): Record<string, ParsedComponent[]> {
-  const fallbackComponents = getFallbackComponents();
-  const grouped: Record<string, ParsedComponent[]> = {};
-
-  // Initialize all categories
-  Object.keys(COMPONENT_CATEGORIES).forEach((category) => {
-    grouped[category] = [];
-  });
-
-  // Group components by category
-  fallbackComponents.forEach((component) => {
-    for (const [categoryName, componentTypes] of Object.entries(COMPONENT_CATEGORIES)) {
-      if ((componentTypes as ComponentType[]).includes(component.type)) {
-        grouped[categoryName].push(component);
-        break;
-      }
-    }
-  });
-
-  return grouped;
 }
 
 // ============================================================================

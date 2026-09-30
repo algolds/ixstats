@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type { Position, Polygon, MultiPolygon, Feature, FeatureCollection } from "geojson";
 import type { VertexRef } from "~/lib/maps/border-editor";
 import { getVertices, getAllRings } from "~/lib/maps/border-editor";
@@ -62,7 +62,7 @@ export interface UseBorderEditorLayersProps {
   map: MapLibreMap | null;
   isActive: boolean;
   geometry: Polygon | MultiPolygon | null;
-  neighborGeometries?: Array<{ featureId: string; geometry: unknown }>;
+  neighborGeometries?: Array<{ featureId: string; geometry: Polygon | MultiPolygon | null | undefined }>;
   mode: string;
   splitLine: Position[];
   mergeTargets: string[];
@@ -268,7 +268,7 @@ export function useBorderEditorLayers({
     else map.once("styledata", onStyle);
 
     // ── Interaction handlers (named, so detach can map.off them) ──
-    const handleClick = (e: any) => {
+    const handleClick = (e: MapLayerMouseEvent) => {
       if (modeRef.current === "brush") return;
       if (modeRef.current === "merge") {
         const hits = map.queryRenderedFeatures(e.point, { layers: ["neighbors-fill"] });
@@ -283,7 +283,7 @@ export function useBorderEditorLayers({
       onMapClickRef.current(e.lngLat.lng, e.lngLat.lat);
     };
 
-    const handleVertexMousedown = (e: any) => {
+    const handleVertexMousedown = (e: MapLayerMouseEvent) => {
       if (modeRef.current !== "vertex_edit") return;
       e.preventDefault();
       const feat = e.features?.[0];
@@ -296,7 +296,7 @@ export function useBorderEditorLayers({
       map.getCanvas().style.cursor = "grabbing";
     };
 
-    const handleBrushMousedown = (e: any) => {
+    const handleBrushMousedown = (e: MapLayerMouseEvent) => {
       if (modeRef.current === "brush" && brushTargetIdRef.current) {
         isBrushing.current = true;
         brushStrokePoints.current = [[e.lngLat.lng, e.lngLat.lat]];
@@ -304,7 +304,7 @@ export function useBorderEditorLayers({
       }
     };
 
-    const handleMousemove = (e: any) => {
+    const handleMousemove = (e: MapLayerMouseEvent) => {
       if (draggingVertex.current) {
         let to: Position = [e.lngLat.lng, e.lngLat.lat];
         const neighbors = neighborGeometriesRef.current;
@@ -393,12 +393,18 @@ export function useBorderEditorLayers({
       if (!draggingVertex.current) map.getCanvas().style.cursor = "";
     };
 
+    // MapLibre 6 requires a layer id for the "mouseenter"/"mouseleave" map
+    // events (they are layer-hover events, not canvas-hover events); this
+    // handler tracks the cursor leaving the whole map canvas, so it's wired
+    // to the container's native DOM "mouseleave" instead.
+    const mapContainer = map.getContainer();
+
     map.on("click", handleClick);
     map.on("mousedown", "vertices-circles", handleVertexMousedown);
     map.on("mousedown", handleBrushMousedown);
     map.on("mousemove", handleMousemove);
     map.on("mouseup", handleMouseup);
-    map.on("mouseleave", handleMouseleave);
+    mapContainer.addEventListener("mouseleave", handleMouseleave);
     map.on("mouseenter", "vertices-circles", handleVertexEnter);
     map.on("mouseleave", "vertices-circles", handleVertexLeave);
 
@@ -409,7 +415,7 @@ export function useBorderEditorLayers({
       map.off("mousedown", handleBrushMousedown);
       map.off("mousemove", handleMousemove);
       map.off("mouseup", handleMouseup);
-      map.off("mouseleave", handleMouseleave);
+      mapContainer.removeEventListener("mouseleave", handleMouseleave);
       map.off("mouseenter", "vertices-circles", handleVertexEnter);
       map.off("mouseleave", "vertices-circles", handleVertexLeave);
 

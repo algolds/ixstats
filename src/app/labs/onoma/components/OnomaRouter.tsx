@@ -5,7 +5,7 @@
 // Features: Spatial Workspace Transitions, Dynamic Facet Canvas Materials, and Fluid Apple Spring Physics
 
 import React from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { useOnomaRouter } from "../hooks/useOnomaRouter";
 
@@ -47,26 +47,15 @@ export function OnomaRouter() {
   const shouldReduceMotion = useReducedMotion();
 
   const activePillar: OnomaProductPillar =
-    activeSection === "studio"
-      ? "studio"
-      : activeSection === "explore"
-        ? "explore"
-        : "create";
+    activeSection === "studio" ? "studio" : activeSection === "explore" ? "explore" : "create";
 
   // Dynamic canvas styling per pillar
   const pillarBorderColor =
     activePillar === "create"
       ? `${SECTION_COLORS[activeSection] || "#0091ff"}25`
       : activePillar === "studio"
-        ? "#ec489930"
-        : "#8b5cf630";
-
-  const pillarGlow =
-    activePillar === "create"
-      ? `0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 0 20px 0px ${SECTION_COLORS[activeSection] || "#0091ff"}10`
-      : activePillar === "studio"
-        ? "0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 0 20px 0px rgba(236, 72, 153, 0.12)"
-        : "0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 0 20px 0px rgba(139, 92, 246, 0.12)";
+        ? "rgba(0, 145, 255, 0.2)"
+        : "rgba(99, 102, 241, 0.2)";
 
   return (
     <div className="bg-background text-foreground min-h-screen p-3.5 antialiased transition-colors duration-300 sm:p-6">
@@ -89,31 +78,20 @@ export function OnomaRouter() {
           onNavigateExplore={handleNavigateExplore}
         />
 
-        {/* Workspace Canvas (Frosted glass with dynamic themed borders and shadow transitions) */}
+        {/* Workspace Canvas (Frosted glass with dynamic themed borders and clean elevation) */}
         <FacetMaterial
           material="satin"
-          className="relative overflow-hidden border p-4.5 shadow-xl transition-all duration-300 sm:p-6 rounded-2xl"
+          className="relative overflow-hidden rounded-2xl border border-border/50 p-4.5 shadow-sm transition-all duration-300 sm:p-6"
           style={{
             borderColor: pillarBorderColor,
-            boxShadow: pillarGlow,
           }}
         >
           <AnimatePresence mode="wait" initial={false}>
-
-
             <motion.div
               key={`${activeSection}-${activeSection === "studio" ? activeSubTab : activeSection === "explore" ? activeExploreSubTab : ""}`}
-              initial={
-                shouldReduceMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: 6, scale: 0.995 }
-              }
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.995 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={
-                shouldReduceMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: -4, scale: 0.995 }
-              }
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.995 }}
               transition={{
                 duration: 0.2,
                 ease: [0.23, 1, 0.32, 1], // Emil Kowalski strong ease-out

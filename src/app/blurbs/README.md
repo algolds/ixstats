@@ -1,10 +1,10 @@
 # Blurbs
 
-**Last updated:** June 2026
+**Last updated:** September 2026
 
 Blurbs is the platform's "Topic Tuesday" community prompt system. Admins (or users, pending review) publish **prompts** — open-ended questions about a nation's culture, daily life, history, or lore — and signed-in users post a single **response** per prompt from their country's perspective. Responses can link wiki articles and may be flagged "featured" by admins. The system lives inside the WikiOS shell (`WikiOSLayout`) and writes/reads via the `blurbs` tRPC router.
 
-> **Discrepancy with root README:** the root `README.md` (line 182) calls Blurbs "community wiki reviews." The code does **not** implement article reviews — it implements weekly cultural prompts and per-country responses (an in-house "Topic Tuesday"). Wiki articles only appear as optional links attached to a response (`linkedArticles`, max 5). The root description is inaccurate; this README reflects the code.
+> **Note:** Blurbs are **not** article reviews — the system implements weekly cultural prompts and per-country responses (an in-house "Topic Tuesday"). Wiki articles only appear as optional links attached to a response (`linkedArticles`, max 5).
 
 ## Routes
 
@@ -22,7 +22,7 @@ Admin moderation is **not** under `/blurbs` — it lives at `src/app/admin/blurb
 - **Prompts** with lifecycle status: `DRAFT → ACTIVE → CLOSED → ARCHIVED`; optional `scheduledFor`, `closedAt`, `isRecurring`, `featured`.
 - **One response per user per prompt** (DB `@@unique([promptId, userId])`); requires the user to have a country.
 - **Response content** up to 1000 chars; optional `linkedArticles` (title + url, max 5; URL defaults to `/wiki/<Title>`).
-- **24-hour edit window** on a user's own response (`updateResponse`).
+- **Responses are not editable after submission** — the former `updateResponse` procedure (24-hour edit window) was removed on 2026-09-27 (plan 312, zero callers).
 - **Featured flags** on both prompts and responses, set by admins; featured responses sort first.
 - **Auto cross-post to ThinkPages**: on submit, if the user has a ThinkPages account, a public auto-generated post (≤280 chars, `#blurb #topictuesday`, `[blurb:slug|title]` prefix) is created and its id stored in `thinkpagesPostId`. Non-fatal if it fails.
 - **User-submitted prompts** are auto-slugged and saved as `DRAFT`; an admin must publish.
@@ -60,7 +60,6 @@ Router: `src/server/api/routers/blurbs/` (`mergeRouters` of three files; registe
 | `getMyBlurbs` | `respond.ts` | protected | Current user's responses |
 | `getMyResponse` | `respond.ts` | protected | Whether user already answered a prompt |
 | `submitResponse` | `respond.ts` | protected | Create response (+ThinkPages cross-post) |
-| `updateResponse` | `respond.ts` | protected | Edit own response within 24h |
 | `submitPrompt` | `respond.ts` | protected | Suggest a prompt (→ `DRAFT`) |
 | `getAllPrompts` | `moderate.ts` | admin | All prompts incl. drafts/closed/archived |
 | `createPrompt` / `updatePrompt` | `moderate.ts` | admin | Prompt lifecycle management |

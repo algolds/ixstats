@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+import { describe, it, expect, beforeEach } from "@jest/globals";
 
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
-import { overlayProcedures, computeCanonDensityScores } from "~/server/api/routers/geo/core/overlays";
+import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
+import {
+  overlayProcedures,
+  computeCanonDensityScores,
+} from "~/server/api/routers/geo/core/overlays";
 
 type MockFn = jest.Mock<any, any>;
 
@@ -62,6 +67,13 @@ const mockDb = {
   },
   storyPin: {
     groupBy: jest.fn() as MockFn,
+  },
+  countryGeoProfile: {
+    findMany: jest.fn() as MockFn,
+    findUnique: jest.fn() as MockFn,
+  },
+  crisisEvent: {
+    findMany: jest.fn() as MockFn,
   },
 };
 
@@ -250,5 +262,106 @@ describe("getCanonDensity", () => {
     expect(byId.get("C")?.value).toBeGreaterThan(byId.get("B")?.value ?? 1);
 
     expect(result.metadata.maxVal).toBe(6);
+  });
+});
+
+describe("getCrisisRiskMap", () => {
+  type CrisisRiskResult = {
+    riskMap: { features: { properties: { id: string } }[] };
+    crisisEvents: {
+      features: {
+        geometry: { coordinates: [number, number] };
+        properties: { id: string; countryName: string };
+      }[];
+    };
+  };
+
+  function makeProfile(countryId: string) {
+    return {
+      countryId,
+      climateDistribution: null,
+      elevationProfile: null,
+      arableLandPercent: 40,
+      coastlineKm: 500,
+      isLandlocked: false,
+      neighborCount: 3,
+      terrainRoughness: 0.2,
+      meanElevation: 300,
+      country: {
+        name: `Country ${countryId}`,
+        slug: countryId,
+        geometry: { type: "Polygon", coordinates: [[[0, 0]]] },
+      },
+    };
+  }
+
+  function makeCrisis(id: string, affectedCountries: string | null) {
+    return {
+      id,
+      title: `Crisis ${id}`,
+      type: "natural_disaster",
+      severity: "high",
+      location: null,
+      affectedCountries,
+    };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    clearTrpcMemoryCache();
+  });
+
+  it("does not issue per-profile findUnique", async () => {
+    mockDb.countryGeoProfile.findMany.mockResolvedValue([makeProfile("A"), makeProfile("B")]);
+    mockDb.crisisEvent.findMany.mockResolvedValue([]);
+
+    const caller = createCallerFactory(testRouter)(baseContext);
+    const result = (await caller.getCrisisRiskMap()) as CrisisRiskResult;
+
+    expect(mockDb.countryGeoProfile.findUnique).not.toHaveBeenCalled();
+    expect(mockDb.country.findMany).not.toHaveBeenCalled();
+    expect(result.riskMap.features).toHaveLength(2);
+  });
+
+  it("resolves crisis points from JSON id arrays with one country query", async () => {
+    mockDb.countryGeoProfile.findMany.mockResolvedValue([]);
+    mockDb.crisisEvent.findMany.mockResolvedValue([
+      makeCrisis("x1", '["A","B"]'),
+      makeCrisis("x2", '["C"]'),
+    ]);
+    mockDb.country.findMany.mockResolvedValue([
+      { id: "A", name: "Alpha", centroid: { coordinates: [1, 2] } },
+      { id: "C", name: "Gamma", centroid: { coordinates: [3, 4] } },
+    ]);
+
+    const caller = createCallerFactory(testRouter)(baseContext);
+    const result = (await caller.getCrisisRiskMap()) as CrisisRiskResult;
+
+    expect(mockDb.country.findMany).toHaveBeenCalledTimes(1);
+    expect(result.crisisEvents.features).toHaveLength(2);
+    const byCrisis = new Map(result.crisisEvents.features.map((f) => [f.properties.id, f]));
+    expect(byCrisis.get("x1")?.properties.countryName).toBe("Alpha");
+    expect(byCrisis.get("x1")?.geometry.coordinates).toEqual([1, 2]);
+    expect(byCrisis.get("x2")?.properties.countryName).toBe("Gamma");
+  });
+
+  it("skips crises whose affected countries have no centroid", async () => {
+    mockDb.countryGeoProfile.findMany.mockResolvedValue([]);
+    mockDb.crisisEvent.findMany.mockResolvedValue([
+      makeCrisis("x1", '["A"]'),
+      makeCrisis("x2", "A, B"),
+      makeCrisis("x3", null),
+    ]);
+    mockDb.country.findMany.mockResolvedValue([
+      { id: "A", name: "Alpha", centroid: null },
+      { id: "B", name: "Beta", centroid: { coordinates: [5, 6] } },
+    ]);
+
+    const caller = createCallerFactory(testRouter)(baseContext);
+    const result = (await caller.getCrisisRiskMap()) as CrisisRiskResult;
+
+    expect(result.crisisEvents.features).toHaveLength(1);
+    expect(result.crisisEvents.features[0]?.properties.id).toBe("x2");
+    expect(result.crisisEvents.features[0]?.properties.countryName).toBe("Beta");
   });
 });

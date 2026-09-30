@@ -5,6 +5,8 @@ import type { MapLayerType } from "~/lib/maps/map-config";
 import type { SelectedCountry } from "../IxWorldMap";
 
 interface UseMapDataQueriesProps {
+  /** Realm slug the map shows (`?realm=`); undefined = the viewer's realm */
+  realm?: string;
   initialLayers?: MapLayerType[];
   currentZoom?: number;
   initialCountryId?: string;
@@ -20,6 +22,7 @@ interface UseMapDataQueriesProps {
 }
 
 export function useMapDataQueries({
+  realm,
   initialLayers,
   currentZoom,
   initialCountryId,
@@ -42,26 +45,35 @@ export function useMapDataQueries({
     error,
     overlayFeatures: batchedOverlayFeatures,
     capitalsGeoJson: batchedCapitalsGeoJson,
-  } = useMapDataBatched(initialLayers, currentZoom);
+  } = useMapDataBatched(initialLayers, currentZoom, realm);
 
   // 3. Story Pins and Labels queries
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: storyPinsGeoJson, isLoading: isStoryPinsLoading } =
-    api.geoFeatures.getAllStoryPins.useQuery(undefined, {
-      staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
-      enabled: mapEngineReady,
-    });
+    api.geoFeatures.getAllStoryPins.useQuery(
+      { realm },
+      {
+        staleTime: 5 * 60_000,
+        gcTime: 30 * 60_000,
+        enabled: mapEngineReady,
+      }
+    );
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: mapLabelsGeoJson, isLoading: isMapLabelsLoading } =
-    api.geoFeatures.getAllMapLabels.useQuery(undefined, {
-      staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
-      enabled: mapEngineReady,
-    });
+    api.geoFeatures.getAllMapLabels.useQuery(
+      { realm },
+      {
+        staleTime: 5 * 60_000,
+        gcTime: 30 * 60_000,
+        enabled: mapEngineReady,
+      }
+    );
 
   // 4. Top-25 countries
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: topCountryNames, isLoading: isTopCountriesLoading } =
     api.countries.getTopCountriesByImportance.useQuery(
-      { limit: 25 },
+      { limit: 25, realm },
       { staleTime: 5 * 60_000, gcTime: 30 * 60_000, enabled: mapEngineReady }
     );
 
@@ -172,32 +184,35 @@ export function useMapDataQueries({
 
   // 10. Fetch Optional Data-Visualizations (Choropleths and Routes)
   const { data: wealthData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "gdpPerCapita", groupBy: "country" },
+    { metric: "gdpPerCapita", groupBy: "country", realm },
     { enabled: overlayVisibility.wealth, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
   const { data: populationData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "population", groupBy: "country" },
+    { metric: "population", groupBy: "country", realm },
     { enabled: overlayVisibility.population, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
   const { data: crisisData } = api.geoCore.getCrisisRiskMap.useQuery(
-    {},
+    { realm },
     { enabled: overlayVisibility.crises, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
-  const { data: diplomacyData } = api.geoCore.getGeopoliticalOverlay.useQuery(undefined, {
-    enabled: overlayVisibility.diplomacy,
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-  });
+  const { data: diplomacyData } = api.geoCore.getGeopoliticalOverlay.useQuery(
+    { realm },
+    {
+      enabled: overlayVisibility.diplomacy,
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+    }
+  );
   const { data: transportData } = api.transport.getAllRoutesGeoJSON.useQuery(
-    {},
+    { realm },
     { enabled: overlayVisibility.transport, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
   const { data: economicTierData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "gdpPerCapita", groupBy: "country" },
+    { metric: "gdpPerCapita", groupBy: "country", realm },
     { enabled: overlayVisibility.economicTier, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
   const { data: vitalityData } = api.geoCore.getRegionalChoropleth.useQuery(
-    { metric: "vitality", groupBy: "country" },
+    { metric: "vitality", groupBy: "country", realm },
     { enabled: overlayVisibility.vitality, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
 

@@ -9,7 +9,6 @@ node_modules/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
-bun.lock
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -53,7 +52,6 @@ prisma/*.backup-*
 # --------------------------------------------------------------------------------
 # TypeScript
 # --------------------------------------------------------------------------------
-*.tsbuildinfo
 next-env.d.ts
 .tsbuild/
 
@@ -88,7 +86,6 @@ CLAUDE.md
 arch.md
 maps.md
 plans/
-ws-backend.mjs
 c15t-backend.config.ts
 typecheck-*.log
 
@@ -104,9 +101,7 @@ functions/node_modules/
 # --------------------------------------------------------------------------------
 # Testing & Mocks
 # --------------------------------------------------------------------------------
-coverage/
 test-results/
-jest-mocks/
 .jest/
 cypress/screenshots/
 cypress/videos/
@@ -118,13 +113,13 @@ cypress/videos/
 *.key
 *.crt
 *.cert
-*.log
 *.bak
 *.old
 *.backup
 *.claude.md
 /.clerk/
 .eslintcache
+.oxlintcache
 .hextaui
 
 # Ignore local sibling workspace development artifacts not part of this repo.
@@ -149,6 +144,7 @@ prettier.config.js
 scripts/audit/reports/
 scripts/audit-reports/
 prisma/backups/
+/backups/
 
 # --------------------------------------------------------------------------------
 # Archive & Generated Docs
@@ -170,31 +166,17 @@ scripts/world-roster-data.json
 # --------------------------------------------------------------------------------
 # IDE / Tool Settings
 # --------------------------------------------------------------------------------
-.claude/
-.agents/
-.superpowers/
 .antigravitycli/
 .antigravityignore
-.cursor/
 .cursorrules
-.opencode/
 .diagnostics/
 
-# --------------------------------------------------------------------------------
-# Extra tsconfigs (typecheck commands crash server)
-# --------------------------------------------------------------------------------
-tsconfig.*.json
-!tsconfig.json
 
 # --------------------------------------------------------------------------------
 # Specific Config Files & Local Tooling (keep on disk, not in repo)
 # --------------------------------------------------------------------------------
-c15t-backend.config.ts
-prisma.config.ts
 eslint.config.js
 next.config.js
-opencode.json
-skills-lock.json
 
 # --------------------------------------------------------------------------------
 # Session Data & Temp Drafts
@@ -254,5 +236,11 @@ scripts/onoma/raw/
 # --------------------------------------------------------------------------------
 # Kokoro TTS Service local caches
 # --------------------------------------------------------------------------------
-kokoro-cache/
 scripts/merge-and-cleanup.ts
+
+# regenerable pipeline output / one-off report output (audit 2026-09-23, plan 343)
+scripts/archive/geojson_dumps/
+scripts/reports/
+data/political-audit/
+scripts/*.json
+scripts/*_report.md

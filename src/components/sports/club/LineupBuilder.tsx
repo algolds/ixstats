@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Loader2, Shirt, Star, Check } from "lucide-react";
+import { SystemRestart as Loader2, Shop as Shirt, Star, Check } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import type { SportPreset } from "~/lib/sports/presets";
-import TeamLineup1 from "~/components/sports/team-lineups/TeamLineup1";
+import { TeamLineup } from "~/components/sports/TeamLineup";
 import { useNotify } from "~/hooks/useNotify";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
+import type { SportPreset } from "~/lib/sports/presets";
 
 interface LineupBuilderProps {
   teamId: string;
@@ -22,7 +22,7 @@ interface LineupBuilderProps {
     lastName: string;
     position: string;
     number?: number | null;
-    ratings: Record<string, any>;
+    ratings?: Record<string, number | undefined> | null;
   }>;
   presets: SportPreset[];
   sportPreset: string;
@@ -60,7 +60,7 @@ export function LineupBuilder({
         lastName: p.lastName,
         position: p.position,
         number: p.number,
-        overallRating: (p.ratings as any)?.overall ?? 50,
+        overallRating: (p.ratings as Record<string, number> | undefined)?.overall ?? 50,
       }));
   }, [players, starters]);
 
@@ -71,11 +71,10 @@ export function LineupBuilder({
     },
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const startingSlots = preset?.startingSlots ?? {};
+  const startingSlots: Record<string, number> = (preset?.startingSlots as Record<string, number>) ?? {};
 
-  const maxStarters = useMemo(() => {
-    return Object.values(startingSlots).reduce((sum, val) => sum + val, 0);
+  const maxStarters: number = useMemo(() => {
+    return Object.values(startingSlots).reduce((sum: number, val: number) => sum + val, 0);
   }, [startingSlots]);
 
   const handleToggleStarter = (playerId: string) => {
@@ -135,7 +134,7 @@ export function LineupBuilder({
             Starting XI
             <Badge
               variant="outline"
-              className="border-border text-muted-foreground ml-2 text-[10px]"
+              className="border-border text-muted-foreground ml-2 text-xs"
             >
               {starterCount} selected
             </Badge>
@@ -145,14 +144,14 @@ export function LineupBuilder({
           <div className="grid max-h-[460px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {[...players]
               .sort((a, b) => {
-                const ovrA = (a.ratings as any)?.overall ?? 50;
-                const ovrB = (b.ratings as any)?.overall ?? 50;
+                const ovrA = a.ratings?.overall ?? 50;
+                const ovrB = b.ratings?.overall ?? 50;
                 return ovrB - ovrA;
               })
               .map((player) => {
                 const isStarter = starters.includes(player.id);
                 const isCaptain = captainId === player.id;
-                const ovr = (player.ratings as any)?.overall ?? 50;
+                const ovr = player.ratings?.overall ?? 50;
 
                 return (
                   <button
@@ -164,14 +163,14 @@ export function LineupBuilder({
                         : {}
                     }
                     className={cn(
-                      "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all",
+                      "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       isStarter
                         ? "text-foreground border-transparent"
                         : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
                     )}
                   >
                     {player.number && (
-                      <span className="text-muted-foreground w-5 text-center text-[10px] font-bold tabular-nums">
+                      <span className="text-muted-foreground w-5 text-center text-xs font-bold tabular-nums">
                         #{player.number}
                       </span>
                     )}
@@ -186,14 +185,14 @@ export function LineupBuilder({
                         <PositionTooltip position={player.position}>
                           <Badge
                             variant="outline"
-                            className="border-border text-muted-foreground cursor-help rounded px-1 py-0 text-[9px]"
+                            className="border-border text-muted-foreground cursor-help rounded px-1 py-0 text-xs"
                           >
                             {player.position}
                           </Badge>
                         </PositionTooltip>
                         <span
                           className={cn(
-                            "text-[10px] font-bold",
+                            "text-xs font-bold",
                             ovr >= 80
                               ? "text-amber-400"
                               : ovr >= 70
@@ -234,9 +233,9 @@ export function LineupBuilder({
           <Button
             onClick={handleSave}
             disabled={setLineup.isPending}
-            className="w-full text-xs font-semibold transition-all hover:opacity-90"
+            className="w-full text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
             size="sm"
-            style={{ backgroundColor: teamColor, color: "#ffffff" }}
+            style={{ backgroundColor: teamColor }}
           >
             {setLineup.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             Save Lineup
@@ -244,11 +243,11 @@ export function LineupBuilder({
         </CardContent>
       </Card>
 
-      <TeamLineup1
+      <TeamLineup
         teamName={teamName}
         teamColor={teamColor}
         players={starterPlayersMapped}
-        sportPreset={sportPreset as any}
+        sportPreset={sportPreset}
       />
     </div>
   );

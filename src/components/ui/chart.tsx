@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ResponsiveContainer, Tooltip, Legend } from "recharts";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
@@ -97,6 +97,8 @@ ${colorConfig
 
 const ChartTooltip = Tooltip;
 
+import type { ChartPayloadEntry } from "~/types/charts";
+
 function ChartTooltipContent({
   active,
   payload,
@@ -113,15 +115,21 @@ function ChartTooltipContent({
   labelKey,
 }: {
   active?: boolean;
-  payload?: any[];
-  label?: any;
+  payload?: ChartPayloadEntry[];
+  label?: string | number | React.ReactNode;
   className?: string;
   indicator?: "line" | "dot" | "dashed";
   hideLabel?: boolean;
   hideIndicator?: boolean;
-  labelFormatter?: (label: any, payload: any[]) => React.ReactNode;
+  labelFormatter?: (label: React.ReactNode, payload: ChartPayloadEntry[]) => React.ReactNode;
   labelClassName?: string;
-  formatter?: (value: any, name: any, item: any, index: number, payload: any[]) => React.ReactNode;
+  formatter?: (
+    value: unknown,
+    name: string | number,
+    item: ChartPayloadEntry,
+    index: number,
+    payload: Record<string, unknown>
+  ) => React.ReactNode;
   color?: string;
   nameKey?: string;
   labelKey?: string;
@@ -176,7 +184,7 @@ function ChartTooltipContent({
             <div
               key={`${item.dataKey}-${index}`}
               className={cn(
-                "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
+                "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [:where(&)>svg]:h-2.5 [:where(&)>svg]:w-2.5",
                 indicator === "dot" && "items-center"
               )}
             >
@@ -247,7 +255,7 @@ function ChartLegendContent({
 }: {
   className?: string;
   hideIcon?: boolean;
-  payload?: any[];
+  payload?: ChartPayloadEntry[];
   verticalAlign?: "top" | "bottom";
   nameKey?: string;
 }) {
@@ -265,7 +273,7 @@ function ChartLegendContent({
         className
       )}
     >
-      {payload?.map((item: any, index: number) => {
+      {payload?.map((item: ChartPayloadEntry, index: number) => {
         const key = `${nameKey || item.dataKey || "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
@@ -273,7 +281,7 @@ function ChartLegendContent({
           <div
             key={`${item.value}-${index}`}
             className={cn(
-              "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3"
+              "[&>svg]:text-muted-foreground flex items-center gap-1.5 [:where(&)>svg]:h-3 [:where(&)>svg]:w-3"
             )}
           >
             {itemConfig?.icon && !hideIcon ? (

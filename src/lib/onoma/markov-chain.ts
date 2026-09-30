@@ -227,7 +227,7 @@ export class MarkovChain {
         if (/(.)\1\1/i.test(candidate)) continue;
 
         // 2. Double punctuation (e.g. "--", "''")
-        if (/[-\']{2,}/.test(candidate)) continue;
+        if (/[-']{2,}/.test(candidate)) continue;
 
         // 3. Leading/trailing hyphens/apostrophes
         if (/^[-']|[-']$/.test(candidate)) continue;

@@ -1,7 +1,12 @@
 "use client";
 
 import React, { memo, useCallback, useState, useRef } from "react";
-import { Upload, FileImage, FileText, Loader2 } from "lucide-react";
+import {
+  Upload,
+  MediaImage as FileImage,
+  Page as FileText,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 
 interface UploadStepProps {
@@ -77,20 +82,22 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
       {/* Scope picker */}
       <div className="space-y-2">
-        <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Import Scope
         </label>
         <div className="grid grid-cols-3 gap-2">
-          {[
-            { id: "both", label: "Provinces & Cities" },
-            { id: "provinces", label: "Provinces Only" },
-            { id: "cities", label: "Cities Only" },
-          ].map((scope) => (
+          {(
+            [
+              { id: "both", label: "Provinces & Cities" },
+              { id: "provinces", label: "Provinces Only" },
+              { id: "cities", label: "Cities Only" },
+            ] as const
+          ).map((scope) => (
             <button
               key={scope.id}
               type="button"
-              onClick={() => importer.setImportScope(scope.id as any)}
-              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-all ${
+              onClick={() => importer.setImportScope(scope.id)}
+              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 importer.importScope === scope.id
                   ? "border-primary bg-primary/10 text-primary shadow-sm"
                   : "border-border hover:bg-accent text-muted-foreground hover:text-foreground"
@@ -157,7 +164,7 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
         </div>
       )}
 
-      <div className="text-muted-foreground text-[10px]">
+      <div className="text-muted-foreground text-xs">
         <strong>Tips:</strong> For best results, use an Inkscape SVG where each province is a
         separate path or group. Name your groups/paths with province names. For PNG files, use
         distinct fill colors for each province.

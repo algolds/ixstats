@@ -58,7 +58,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
           </h2>
           <button
             onClick={onOpenCommons}
-            className="rounded bg-amber-500 px-2 py-1 text-[10px] font-bold text-zinc-950 transition-colors hover:bg-amber-600"
+            className="rounded bg-amber-500 px-2 py-1 text-xs font-bold text-zinc-950 transition-colors hover:bg-amber-600"
           >
             🌐 Browse Commons
           </button>
@@ -94,7 +94,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
             {/* Local Templates */}
             {localTemplates.length > 0 && (
               <div>
-                <span className="mb-2 block text-[9px] font-bold tracking-wider text-zinc-500 uppercase">
+                <span className="mb-2 block text-xs font-bold tracking-wider text-zinc-500 uppercase">
                   Built-in Templates
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -102,10 +102,10 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <button
                       key={item.id}
                       onClick={() => handleAddCharge(item.id)}
-                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-all outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
+                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
                     >
                       <span className="text-xl">🐾</span>
-                      <span className="w-full truncate text-center text-[10px] font-medium text-zinc-300">
+                      <span className="w-full truncate text-center text-xs font-medium text-zinc-300">
                         {item.name}
                       </span>
                     </button>
@@ -116,7 +116,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
 
             {/* Database Library */}
             <div>
-              <span className="mb-2 block text-[9px] font-bold tracking-wider text-zinc-500 uppercase">
+              <span className="mb-2 block text-xs font-bold tracking-wider text-zinc-500 uppercase">
                 Imported Charges
               </span>
 
@@ -125,7 +125,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                   Loading library...
                 </div>
               ) : (data?.items ?? []).length === 0 ? (
-                <div className="py-6 text-center text-[10px] text-zinc-600 italic">
+                <div className="py-6 text-center text-xs text-zinc-600 italic">
                   No custom charges found. Use the Commons Browser to import.
                 </div>
               ) : (
@@ -134,7 +134,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <button
                       key={item.id}
                       onClick={() => handleAddCharge(item.id)}
-                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-all outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
+                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
                     >
                       {/* SVG preview */}
                       <div
@@ -145,7 +145,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                             .replace(/height="[^"]*"/, 'height="100%"'),
                         }}
                       />
-                      <span className="w-full truncate text-center text-[10px] font-medium text-zinc-300">
+                      <span className="w-full truncate text-center text-xs font-medium text-zinc-300">
                         {item.name}
                       </span>
                     </button>

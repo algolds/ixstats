@@ -1,8 +1,6 @@
 // src/lib/utils/chart-utils.ts
 // FIXED: Consistent percentage and number formatting
 
-import { formatPopulation, formatCurrency, formatPercentage, formatNumber } from "./format-utils";
-
 /**
  * FIXED: Format growth rates from decimal to percentage
  * @param value The decimal growth rate (e.g., 0.005 for 0.5%)
@@ -308,6 +306,7 @@ export function getGrowthColor(decimalValue: number | null | undefined): string 
   return "text-gray-500";
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
   if (!value || !isFinite(value)) return fallback;
 

@@ -2,7 +2,6 @@
 // Onoma Lab — Linguistics Engine Morphology Simulator
 
 import { MarkovChain } from "./markov-chain";
-import { isVowel } from "./phonetics-shared";
 
 export type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
 
@@ -76,8 +75,6 @@ export function detectGender(word: string, culture: string | null): GrammaticalG
   if (w.endsWith("o") || w.endsWith("u")) return "neuter";
   return "masculine"; // ends in consonant
 }
-
-
 
 /**
  * Generates Singular & Plural declined forms for all 5 cases.

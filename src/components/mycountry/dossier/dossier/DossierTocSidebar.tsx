@@ -5,22 +5,19 @@ import { useRouter } from "next/navigation";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import {
   Search,
-  BookOpen,
-  Layers,
-  ChevronRight,
-  ChevronDown,
-  FileText,
+  OpenBook as BookOpen,
+  Component as Layers,
+  NavArrowRight as ChevronRight,
+  NavArrowDown as ChevronDown,
+  Page as FileText,
   Folder,
-  FolderOpen,
+  Folder as FolderOpen,
   Globe,
-  ExternalLink,
-  Sparkles,
-} from "lucide-react";
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
-import { parseInfoboxValue } from "~/lib/builder";
-import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import type { CountryInfobox } from "~/types/dossier";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
@@ -105,13 +102,10 @@ function categorizeTitle(title: string, source: "wiki" | "native"): string {
 
 export function DossierTocSidebar({
   countryName,
-  infobox,
   sections,
   nativeDocs = [],
   activeSectionId,
   onSelectSection,
-  flagColors,
-  wikiSource = "ixwiki",
 }: DossierTocSidebarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -244,20 +238,10 @@ export function DossierTocSidebar({
     }
   };
 
-  const flagUrl =
-    infobox?.image_flag || infobox?.flag
-      ? resolveImageUrl(infobox.image_flag || infobox.flag, wikiSource)
-      : undefined;
-
-  const coatUrl =
-    infobox?.image_coat || (infobox as any)?.coat
-      ? resolveImageUrl(infobox?.image_coat || (infobox as any)?.coat, wikiSource)
-      : undefined;
-
   const totalEntries = Object.values(groupedFolders).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
-    <div className="sticky top-6 space-y-4">
+    <div className="sticky top-20 space-y-4">
       {/* Searchable Dynamic Dossier Table of Contents */}
       <FacetCard
         depth={1}
@@ -272,7 +256,7 @@ export function DossierTocSidebar({
             </CardTitle>
             <Badge
               variant="outline"
-              className="text-muted-foreground border-white/10 font-mono text-[9px]"
+              className="text-muted-foreground border-white/10 font-mono text-xs"
             >
               {totalEntries} Entries
             </Badge>
@@ -296,7 +280,7 @@ export function DossierTocSidebar({
               <button
                 key={mode}
                 onClick={() => setSourceFilter(mode)}
-                className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase transition-colors ${
+                className={`rounded px-2 py-0.5 text-xs font-bold uppercase transition-colors ${
                   sourceFilter === mode
                     ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
                     : "text-muted-foreground hover:text-foreground"
@@ -334,7 +318,7 @@ export function DossierTocSidebar({
                     </div>
 
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <span className="text-muted-foreground rounded border border-white/5 bg-black/40 px-1.5 py-0.5 font-mono text-[10px]">
+                      <span className="text-muted-foreground rounded border border-white/5 bg-black/40 px-1.5 py-0.5 font-mono text-xs">
                         {items.length}
                       </span>
                       {isOpen ? (
@@ -354,7 +338,7 @@ export function DossierTocSidebar({
                           <button
                             key={item.id}
                             onClick={() => handleItemClick(item)}
-                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-all ${
+                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                               isSelected
                                 ? "bg-blue-500/20 font-bold text-blue-400"
                                 : item.isPage
@@ -370,7 +354,7 @@ export function DossierTocSidebar({
                               ) : (
                                 <FileText className="h-3 w-3 shrink-0 text-amber-400/80" />
                               )}
-                              <span className="truncate text-[11px] font-medium">{item.title}</span>
+                              <span className="truncate text-xs font-medium">{item.title}</span>
                             </div>
 
                             {item.isPage ? (

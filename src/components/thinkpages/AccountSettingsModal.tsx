@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2 } from "lucide-react";
+import { Xmark as X, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
@@ -31,6 +31,7 @@ export function AccountSettingsModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
@@ -50,6 +51,7 @@ export function AccountSettingsModal({
 
   useEffect(() => {
     if (account) {
+      // oxlint-disable-next-line
       setVerified(account.verified);
       setPostingFrequency(account.postingFrequency);
       setPoliticalLean(account.politicalLean);
@@ -127,7 +129,7 @@ export function AccountSettingsModal({
                   <select
                     value={postingFrequency}
                     onChange={(e) => setPostingFrequency(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
+                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
                   >
                     <option
                       value="low"
@@ -156,7 +158,7 @@ export function AccountSettingsModal({
                   <select
                     value={politicalLean}
                     onChange={(e) => setPoliticalLean(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
+                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
                   >
                     <option
                       value="left"
@@ -185,7 +187,7 @@ export function AccountSettingsModal({
                   <select
                     value={personality}
                     onChange={(e) => setPersonality(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
+                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
                   >
                     <option
                       value="serious"
@@ -214,7 +216,7 @@ export function AccountSettingsModal({
                   <select
                     value={accountType}
                     onChange={(e) => setAccountType(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
+                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
                   >
                     <option
                       value="government"

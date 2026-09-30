@@ -5,27 +5,29 @@ import { type Metadata } from "next";
 import { Geist, Playfair_Display } from "next/font/google";
 
 import { ClerkProvider } from "@clerk/nextjs";
+import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
-import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
+import { MotionConfig } from "motion/react";
+import { Navigation, NavigationTransitionHandler } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/ui/webgl-error-handler";
-import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ui/ChunkLoadErrorBoundary";
-import { ToastProvider } from "~/components/ui/toast";
+import {
+  ChunkLoadErrorBoundary,
+  ChunkLoadErrorHandler,
+} from "~/components/ui/ChunkLoadErrorBoundary";
+import { Toaster } from "~/components/ui/toast";
 import { withBasePath } from "~/lib/base-path";
 import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
-import { GlobalLinkTooltipProvider } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
-import { MediaContextProvider } from "~/components/media/MediaContext";
-import { MiniPlayer } from "~/components/media/MiniPlayer";
+import { GlobalLinkTooltips } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
 
 import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { IxTimeProvider } from "~/context/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
-import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
 
@@ -56,58 +58,52 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
 });
 
+function AppContent({
+  children,
+  isStandalone,
+}: {
+  children: React.ReactNode;
+  isStandalone: boolean;
+}) {
+  return (
+    <TRPCReactProvider>
+      <ThemeProvider>
+        {/* One switch honours prefers-reduced-motion for every `motion` element in the tree. */}
+        <MotionConfig reducedMotion="user">
+          <AbilityProvider>
+            <IxTimeProvider>
+              <ExecutiveNotificationProvider>
+                <WikiContextProvider>
+                  <LazyGameProviders>
+                    <WebGLErrorHandler />
+                    <MapPrefetcher />
+                    <GlobalLinkTooltips />
+                    <NavigationTransitionHandler />
+                    <CuelumeSoundProvider />
+                    <div className="flex min-h-screen flex-col">
+                      <Navigation />
+                      {!isStandalone && <SetupRedirect />}
+                      {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
+                      <main className="flex flex-1 flex-col">{children}</main>
+                    </div>
+                  </LazyGameProviders>
+                  <Toaster />
+                </WikiContextProvider>
+              </ExecutiveNotificationProvider>
+            </IxTimeProvider>
+          </AbilityProvider>
+        </MotionConfig>
+      </ThemeProvider>
+    </TRPCReactProvider>
+  );
+}
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
   const isStandalone = isStandaloneRequest(headersList);
   const dashboardPath = withBasePath("/dashboard");
   const signInPath = withBasePath("/sign-in");
   const signUpPath = withBasePath("/sign-up");
-
-  const AppContent = () => (
-    <TRPCReactProvider>
-      <GlobalLinkTooltipProvider>
-        <ThemeProvider>
-          <AbilityProvider>
-            <IxTimeProvider>
-              <ExecutiveNotificationProvider>
-                <WikiContextProvider>
-                  <MediaThemeProvider>
-                    <CuelumeSoundProvider>
-                      <ToastProvider>
-                        <LazyGameProviders>
-                          <WebGLErrorHandler />
-                          <MapPrefetcher />
-                          <NavigationTransitionHandler />
-                          {isStandalone ? (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                            </div>
-                          ) : (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              {/* <GlobalActivityMarquee /> */}
-                              <SetupRedirect />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                              <MiniPlayer />
-                            </div>
-                          )}
-                        </LazyGameProviders>
-                      </ToastProvider>
-                    </CuelumeSoundProvider>
-                  </MediaThemeProvider>
-                </WikiContextProvider>
-              </ExecutiveNotificationProvider>
-            </IxTimeProvider>
-          </AbilityProvider>
-        </ThemeProvider>
-      </GlobalLinkTooltipProvider>
-    </TRPCReactProvider>
-  );
 
   if (!isClerkConfigured) {
     throw new Error(
@@ -130,14 +126,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             signInUrl={signInPath}
             signUpUrl={signUpPath}
             signInFallbackRedirectUrl={dashboardPath}
+            appearance={facetClerkAppearance}
           >
             <AuthProvider>
-              <MediaContextProvider>
-                <AppContent />
-              </MediaContextProvider>
+              <AppContent isStandalone={isStandalone}>{children}</AppContent>
             </AuthProvider>
           </ClerkProvider>
-          {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
         </ChunkLoadErrorBoundary>
       </body>
     </html>

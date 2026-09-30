@@ -1,9 +1,8 @@
+"use client";
 // src/components/forum/reader/Pagination.tsx
 // Forum pagination component.
 
-"use client";
-
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 interface PaginationProps {

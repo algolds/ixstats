@@ -170,7 +170,9 @@ export async function speakName(opts: {
             if (cultureMap[primaryCulture]) {
               cultureMappedVoice = cultureMap[primaryCulture];
             }
-          } catch {}
+          } catch {
+            // malformed personal voice map — use default voice selection
+          }
         }
         chosen = cultureMappedVoice || resolvedUserDefaultVoice || "";
       }

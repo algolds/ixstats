@@ -29,7 +29,9 @@ export function runStrictStages(
 
   for (let i = 0; i < stages.length; i++) {
     const stage = stages[i];
-    console.log(`▶ [${i + 1}/${stages.length}] ${stage.name} (${stage.command} ${stage.args.join(" ")})`);
+    console.log(
+      `▶ [${i + 1}/${stages.length}] ${stage.name} (${stage.command} ${stage.args.join(" ")})`
+    );
 
     const result = spawnSync(stage.command, stage.args, {
       stdio: "inherit",
@@ -48,7 +50,9 @@ export function runStrictStages(
 
     const exitCode = result.status ?? (result.signal ? 1 : 0);
     if (exitCode !== 0) {
-      console.error(`\n❌ Stage "${stage.name}" failed with exit code ${exitCode}. Short-circuiting verification.`);
+      console.error(
+        `\n❌ Stage "${stage.name}" failed with exit code ${exitCode}. Short-circuiting verification.`
+      );
       return {
         passed: false,
         failedStage: stage.name,

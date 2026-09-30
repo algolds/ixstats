@@ -8,7 +8,6 @@
  *  - namebank:    name bank CRUD, Stash item sync, public dictionary catalog, training data
  *  - speech:      speech config, Kokoro natural voice admin & health, branding config
  *  - history:     generation event logging, timeline, favorites, stats
- *  - batch:       batch generation jobs & matrix permutations
  *  - marketplace: language pack discovery, rating, and forking
  *  - etymology:   etymological graph links & root trees
  *  - syntax:      sentence structure, POS, and grammar trees
@@ -19,7 +18,6 @@ import { mergeRouters } from "~/server/api/trpc";
 import { onomaNameBankRouter } from "./namebank";
 import { onomaSpeechRouter } from "./speech";
 import { onomaHistoryRouter } from "./history";
-import { onomaBatchRouter } from "./batch";
 import { onomaMarketplaceRouter } from "./marketplace";
 import { onomaEtymologyRouter } from "./etymology";
 import { onomaSyntaxRouter } from "./syntax";
@@ -30,7 +28,6 @@ export const onomaRouter = mergeRouters(
   onomaNameBankRouter,
   onomaSpeechRouter,
   onomaHistoryRouter,
-  onomaBatchRouter,
   onomaMarketplaceRouter,
   onomaEtymologyRouter,
   onomaSyntaxRouter,

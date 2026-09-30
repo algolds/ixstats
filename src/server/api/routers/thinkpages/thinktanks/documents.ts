@@ -1,268 +1,22 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-// Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
-import { globalCache } from "~/lib/cache";
+import { resolveDisplayName } from "~/server/shared/display-names";
+import { getGroupAccess, requireGroupMember, requireGroupReader } from "./access";
 
-const invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
-
-const hydratePostDates = (post: any) => {
-  if (!post) return post;
-  return {
-    ...post,
-    createdAt: post.createdAt ? new Date(post.createdAt) : undefined,
-    ixTimeTimestamp: post.ixTimeTimestamp ? new Date(post.ixTimeTimestamp) : undefined,
-    parentPost: post.parentPost
-      ? {
-          ...post.parentPost,
-          createdAt: post.parentPost.createdAt ? new Date(post.parentPost.createdAt) : undefined,
-          ixTimeTimestamp: post.parentPost.ixTimeTimestamp
-            ? new Date(post.parentPost.ixTimeTimestamp)
-            : undefined,
-        }
-      : undefined,
-    repostOf: post.repostOf
-      ? {
-          ...post.repostOf,
-          createdAt: post.repostOf.createdAt ? new Date(post.repostOf.createdAt) : undefined,
-          ixTimeTimestamp: post.repostOf.ixTimeTimestamp
-            ? new Date(post.repostOf.ixTimeTimestamp)
-            : undefined,
-        }
-      : undefined,
-    reactions: post.reactions
-      ? post.reactions.map((r: any) => ({
-          ...r,
-          createdAt: r.createdAt ? new Date(r.createdAt) : undefined,
-        }))
-      : undefined,
-  };
-};
-
-const SearchUnsplashImagesSchema = z.object({
-  query: z.string().min(1),
-  page: z.number().min(1).default(1),
-  per_page: z.number().min(1).max(30).default(10),
-  orientation: z.enum(["landscape", "portrait", "squarish"]).optional(),
-  color: z.string().optional(), // Unsplash API supports specific color names or hex codes
-});
-
-// Base schema for ThinkPages accounts
-const thinkpagesAccountBaseSchema = z.object({
-  countryId: z.string(),
-  accountType: z.enum(["government", "media", "citizen"]),
-  username: z
-    .string()
-    .min(3)
-    .max(20)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  firstName: z.string().min(1).max(50),
-  lastName: z.string().max(50).optional().default(""),
-  bio: z.string().max(500).optional().default(""),
-  verified: z.boolean().default(false),
-  postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
-  politicalLean: z.enum(["left", "center", "right"]).default("center"),
-  personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
-  profileImageUrl: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
-});
-const pollInclude = {
-  poll: {
-    include: {
-      options: {
-        include: {
-          _count: {
-            select: { votes: true },
-          },
-        },
-      },
-    },
-  },
-};
-
-// Create schema - all required fields with defaults
-const CreateAccountSchema = thinkpagesAccountBaseSchema;
-
-// Update schema - all fields optional
-const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
-
-const CreatePostSchema = z.object({
-  accountId: z.string(), // ThinkpagesAccount ID for feed posts
-  content: z
-    .string()
-    .max(10000)
-    .optional()
-    .default("")
-    .refine(
-      (content) => {
-        if (!content) return true;
-        const validation = validateNoXSS(content);
-        return validation.valid;
-      },
-      {
-        message:
-          "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
-      }
-    ),
-  hashtags: z.array(z.string()).optional(),
-  mentions: z.array(z.string()).optional(),
-  visibility: z.enum(["public", "private", "unlisted"]).default("public"),
-  parentPostId: z.string().optional(), // For replies
-  repostOfId: z.string().optional(), // For reposts
-  visualizations: z
-    .array(
-      z.object({
-        type: z.enum([
-          "economic_chart",
-          "diplomatic_map",
-          "trade_flow",
-          "gdp_growth",
-          "demographics",
-          "budget_debt",
-          "labor_market",
-          "national_vitality",
-        ]),
-        title: z.string(),
-        config: z
-          .object({
-            chartType: z.string().optional(),
-            dataSource: z.string().optional(),
-            timeRange: z
-              .union([
-                z.string(),
-                z.object({
-                  start: z.string().optional(),
-                  end: z.string().optional(),
-                }),
-              ])
-              .optional(),
-            metrics: z.array(z.string()).optional(),
-            countries: z.array(z.string()).optional(),
-            colors: z.array(z.string()).optional(),
-            displayOptions: z
-              .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
-              .optional(),
-          })
-          .passthrough(), // Allow additional custom properties
-      })
-    )
-    .optional(), // Data visualizations embedded in post
-  mediaUrls: z.array(z.string()).max(4).optional(), // Up to 4 images per post
-  postToDiscord: z.boolean().optional().default(true),
-  poll: z
-    .object({
-      question: z.string().min(1).max(500),
-      description: z.string().max(2000).optional(),
-      pollType: z.enum(["choice", "feature-poll"]).default("choice"),
-      multiple: z.boolean().default(false),
-      options: z.array(z.string().min(1).max(200)).min(2, "At least 2 options are required"),
-    })
-    .optional(),
-});
-
-const AddReactionSchema = z.object({
-  postId: z.string(),
-  accountId: z.string(), // ThinkpagesAccount ID for reactions
-  reactionType: z.union([
-    z.enum(["like", "laugh", "angry", "sad", "fire", "thumbsup", "thumbsdown"]),
-    z.string().startsWith("discord:"), // Support Discord emoji reactions like "discord:ixnay"
-  ]),
-});
-
-const GetFeedSchema = z.object({
-  countryId: z.string().optional(), // Feed filtered by country
-  hashtag: z.string().optional(),
-  filter: z.enum(["recent", "trending", "hot"]).default("recent"),
-  limit: z.number().min(1).max(50).default(20),
-  cursor: z.string().optional(),
-});
 export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
-  // Search Unsplash images
-
-  // Fetch Discord Channel Topic (Easter Egg)
-
-  // Search Wiki Commons images
-
-  // Calculate trending topics
-
-  // Search users globally for ThinkTanks/ThinkShare
-
-  // Update ThinkPages Feed Account
-  // Username availability check for ThinkPages Feed Accounts
-
-  // Generate random profile picture
-
-  // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
-
-  // Get ThinkPages Feed Accounts by Country - For Feed only
-
-  // Get current user's ThinkPages accounts
-
-  // Get Account Counts by Type - For Feed only
-
-  // Post creation
-
-  // Update post content (edit post)
-
-  // Delete post (soft delete)
-
-  // Add reaction to post
-
-  // Remove reaction
-
-  // Get feed
-
-  // Get trending topics
-
-  // Get account details
-
-  // Get Thinkpages account by Clerk User ID
-
-  // Get post details with replies
-
-  // Get posts by Clerk User ID - shows all posts from all accounts owned by this user
-
-  // Trigger citizen reaction to a post
-
-  // Calculate and store country mood metrics
-
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====
 
-  // Create a new ThinkTank group
-
-  // Get ThinkTanks globally (no country restriction)
-
-  // Join a ThinkTank group
-
-  // Leave a ThinkTank group
-
-  // Get ThinkTank messages
-
-  // Send message to ThinkTank
-
-  // Update a ThinkTank group
-
-  // Invite users to a ThinkTank group
-
-  // Get collaborative documents for a ThinkTank
+  // Get collaborative documents for a ThinkTank. Non-public groups: members only (SL-2).
   getThinktankDocuments: publicProcedure
     .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // Verify user is a member of the group
+      await requireGroupReader(db, input.groupId, ctx.auth?.userId);
+
       const documents = await db.collaborativeDoc.findMany({
         where: { groupId: input.groupId },
         orderBy: { updatedAt: "desc" },
@@ -278,7 +32,6 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
       z.object({
         groupId: z.string(),
         title: z.string().min(1).max(200),
-        createdBy: z.string(), // userId (clerkUserId)
         content: z
           .string()
           .optional()
@@ -290,6 +43,10 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const createdBy = ctx.auth.userId;
+
+      // Only members can create documents
+      await requireGroupMember(db, input.groupId, createdBy);
 
       // Check document count limit (10 per group)
       const documentCount = await db.collaborativeDoc.count({
@@ -303,31 +60,14 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
         });
       }
 
-      // Verify user is a member of the group
-      const member = await db.thinktankMember.findUnique({
-        where: {
-          groupId_userId: {
-            groupId: input.groupId,
-            userId: input.createdBy,
-          },
-        },
-      });
-
-      if (!member || !member.isActive) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Not a member of this group",
-        });
-      }
-
       const document = await db.collaborativeDoc.create({
         data: {
           groupId: input.groupId,
           title: input.title,
           content: input.content || "",
           version: 1,
-          createdBy: input.createdBy,
-          lastEditBy: input.createdBy,
+          createdBy,
+          lastEditBy: createdBy,
           isPublic: input.isPublic,
         },
       });
@@ -338,24 +78,20 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
           where: { id: input.groupId },
           include: {
             members: {
-              where: { isActive: true, userId: { not: input.createdBy } },
+              where: { isActive: true, userId: { not: createdBy } },
               select: { userId: true },
             },
           },
         });
 
-        const creator = await db.user.findUnique({
-          where: { clerkUserId: input.createdBy },
-        });
-
-        if (group && group.members.length > 0 && creator) {
-          const creatorDisplayName = `User ${input.createdBy.slice(0, 8)}`;
+        if (group && group.members.length > 0) {
+          const creatorDisplayName = await resolveDisplayName(db, createdBy);
           await notificationHooks.onThinktankActivity({
             activityType: "document_created",
             groupId: input.groupId,
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: input.createdBy,
+            actorUserId: createdBy,
             actorUserName: creatorDisplayName,
             targetUserIds: group.members.map((m) => m.userId),
             contentTitle: input.title,
@@ -374,7 +110,6 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     .input(
       z.object({
         documentId: z.string(),
-        userId: z.string(),
         title: z.string().min(1).max(200).optional(),
         content: z
           .string()
@@ -387,6 +122,7 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const userId = ctx.auth.userId;
 
       // Get the document to check permissions
       const document = await db.collaborativeDoc.findUnique({
@@ -402,7 +138,9 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
       }
 
       // Verify user is a member
-      const isMember = document.group.members.some((m) => m.userId === input.userId && m.isActive);
+      const isMember =
+        document.group.createdBy === userId ||
+        document.group.members.some((m) => m.userId === userId && m.isActive);
 
       if (!isMember) {
         throw new TRPCError({
@@ -412,7 +150,7 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
       }
 
       const updateData: any = {
-        lastEditBy: input.userId,
+        lastEditBy: userId,
         version: { increment: 1 },
       };
 
@@ -431,24 +169,20 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
           where: { id: document.groupId },
           include: {
             members: {
-              where: { isActive: true, userId: { not: input.userId } },
+              where: { isActive: true, userId: { not: userId } },
               select: { userId: true },
             },
           },
         });
 
-        const editor = await db.user.findUnique({
-          where: { clerkUserId: input.userId },
-        });
-
-        if (group && group.members.length > 0 && editor) {
-          const editorDisplayName = `User ${input.userId.slice(0, 8)}`;
+        if (group && group.members.length > 0) {
+          const editorDisplayName = await resolveDisplayName(db, userId);
           await notificationHooks.onThinktankActivity({
             activityType: "document_updated",
             groupId: document.groupId,
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: input.userId,
+            actorUserId: userId,
             actorUserName: editorDisplayName,
             targetUserIds: group.members.map((m) => m.userId),
             contentTitle: updatedDocument.title,
@@ -467,11 +201,11 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     .input(
       z.object({
         documentId: z.string(),
-        userId: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const userId = ctx.auth.userId;
 
       const document = await db.collaborativeDoc.findUnique({
         where: { id: input.documentId },
@@ -485,14 +219,14 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
         });
       }
 
-      // Only creator or group owner can delete
-      const isCreator = document.createdBy === input.userId;
-      const isGroupOwner = document.group.createdBy === input.userId;
+      // Only the document's creator (while still a member) or a group owner/admin can delete
+      const access = await getGroupAccess(db, document.group, userId);
+      const isCreator = document.createdBy === userId && access.isMember;
 
-      if (!isCreator && !isGroupOwner) {
+      if (!isCreator && !access.isManager) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Only document creator or group owner can delete documents",
+          message: "Only the document creator or a group owner/admin can delete documents",
         });
       }
 
@@ -502,97 +236,4 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
 
       return { success: true };
     }),
-
-  // Get a single document
-  getThinktankDocument: publicProcedure
-    .input(
-      z.object({
-        documentId: z.string(),
-        userId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      const document = await db.collaborativeDoc.findUnique({
-        where: { id: input.documentId },
-        include: {
-          group: {
-            include: {
-              members: {
-                where: { isActive: true },
-              },
-            },
-          },
-        },
-      });
-
-      if (!document) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Document not found",
-        });
-      }
-
-      // Check permissions
-      if (!document.isPublic) {
-        const isMember = document.group.members.some((m) => m.userId === input.userId);
-
-        if (!isMember) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You do not have access to this document",
-          });
-        }
-      }
-
-      return document;
-    }),
-
-  // Add reaction to a Thinkshare message
-
-  // Remove reaction from a Thinkshare message
-
-  // Edit a Thinkshare message
-
-  // Delete a Thinkshare message
-
-  // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
-
-  // Create a new conversation
-
-  // Get conversations for a user
-
-  // Get messages for a conversation
-
-  // Send message to conversation
-
-  // Mark messages as read
-
-  // Update user presence/online status
-
-  // Get presence for multiple users
-
-  // Get Discord server emojis
-
-  // Pin/unpin a post
-
-  // Bookmark/unbookmark a post
-  // Get user's bookmarked posts
-
-  // Check if a post is bookmarked by user
-
-  // Bookmark or unbookmark a post
-
-  // Get all flagged posts (admin only)
-
-  // Check if a post is flagged by user
-
-  // Flag a post for moderation
-
-  // Remove a flag (unflag post)
-
-  // Create a conversation between two countries' official accounts
-
-  // Get post reactions with account details
 });

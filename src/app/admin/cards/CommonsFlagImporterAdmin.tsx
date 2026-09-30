@@ -1,5 +1,5 @@
-// src/app/admin/cards/CommonsFlagImporterAdmin.tsx
 "use client";
+// src/app/admin/cards/CommonsFlagImporterAdmin.tsx
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
@@ -10,17 +10,17 @@ import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
 import {
   Globe,
   Download,
-  Loader2,
-  CheckCircle2,
+  SystemRestart as Loader2,
+  CheckCircle as CheckCircle2,
   Search,
-  ExternalLink,
+  OpenNewWindow as ExternalLink,
   CheckSquare,
   Square,
   ArrowRight,
-  AlertCircle,
-  RefreshCw,
+  WarningCircle as AlertCircle,
+  Refresh as RefreshCw,
   Check,
-} from "lucide-react";
+} from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
 
 function cleanCategoryTitle(input: string): string {
@@ -181,7 +181,7 @@ export function CommonsFlagImporterAdmin() {
             <Button
               onClick={handleParseCategory}
               disabled={commonsQuery.isFetching}
-              className="h-10 rounded-xl border border-cyan-500/30 bg-cyan-500/20 px-5 text-xs font-semibold text-cyan-600 shadow-xs transition-all hover:bg-cyan-500/30 active:scale-95 dark:text-cyan-300"
+              className="h-10 rounded-xl border border-cyan-500/30 bg-cyan-500/20 px-5 text-xs font-semibold text-cyan-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/30 active:scale-95 dark:text-cyan-300"
             >
               {commonsQuery.isFetching ? (
                 <>
@@ -197,7 +197,7 @@ export function CommonsFlagImporterAdmin() {
 
           {/* Quick Preset Shortcuts */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-muted-foreground text-[11px] font-medium">Quick Categories:</span>
+            <span className="text-muted-foreground text-xs font-medium">Quick Categories:</span>
             <button
               onClick={() => {
                 const url =
@@ -206,7 +206,7 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_flags_of_fictional_countries");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all"
+              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               SVG flags of fictional countries
             </button>
@@ -218,7 +218,7 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_special_or_fictional_flags");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all"
+              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               SVG special or fictional flags
             </button>
@@ -235,7 +235,7 @@ export function CommonsFlagImporterAdmin() {
             variant="ghost"
             onClick={() => void commonsQuery.refetch()}
             disabled={commonsQuery.isFetching}
-            className="text-muted-foreground hover:text-foreground h-7 text-[11px]"
+            className="text-muted-foreground hover:text-foreground h-7 text-xs"
           >
             <RefreshCw
               className={`mr-1 h-3 w-3 ${commonsQuery.isFetching ? "animate-spin" : ""}`}
@@ -245,33 +245,33 @@ export function CommonsFlagImporterAdmin() {
         </div>
 
         {/* Card Minting Parameters */}
-        <div className="border-border grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
+        <div className="border-border/40 grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
           {/* Default Rarity */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+            <label className="text-muted-foreground mb-1 block text-xs font-medium">
               Target Card Rarity
             </label>
             <select
               value={defaultRarity}
               onChange={(e) => setDefaultRarity(e.target.value as CardRarity)}
-              className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
+              className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
             >
-              <option value="COMMON" className="bg-card text-card-foreground">
+              <option value="COMMON" className="bg-background text-foreground">
                 Common
               </option>
-              <option value="UNCOMMON" className="bg-card text-card-foreground">
+              <option value="UNCOMMON" className="bg-background text-foreground">
                 Uncommon
               </option>
-              <option value="RARE" className="bg-card text-card-foreground">
+              <option value="RARE" className="bg-background text-foreground">
                 Rare
               </option>
-              <option value="ULTRA_RARE" className="bg-card text-card-foreground">
+              <option value="ULTRA_RARE" className="bg-background text-foreground">
                 Ultra Rare
               </option>
-              <option value="EPIC" className="bg-card text-card-foreground">
+              <option value="EPIC" className="bg-background text-foreground">
                 Epic
               </option>
-              <option value="LEGENDARY" className="bg-card text-card-foreground">
+              <option value="LEGENDARY" className="bg-background text-foreground">
                 Legendary
               </option>
             </select>
@@ -279,21 +279,21 @@ export function CommonsFlagImporterAdmin() {
 
           {/* Season */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+            <label className="text-muted-foreground mb-1 block text-xs font-medium">
               Target Card Season
             </label>
             <select
               value={season}
               onChange={(e) => setSeason(parseInt(e.target.value, 10))}
-              className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
+              className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
             >
-              <option value={1} className="bg-card text-card-foreground">
+              <option value={1} className="bg-background text-foreground">
                 Season 1
               </option>
-              <option value={2} className="bg-card text-card-foreground">
+              <option value={2} className="bg-background text-foreground">
                 Season 2
               </option>
-              <option value={3} className="bg-card text-card-foreground">
+              <option value={3} className="bg-background text-foreground">
                 Season 3
               </option>
             </select>
@@ -378,7 +378,7 @@ export function CommonsFlagImporterAdmin() {
                 size="sm"
                 onClick={() => handleImportSelected()}
                 disabled={selectedItemUrls.size === 0 || importMutation.isPending}
-                className="h-8 rounded-xl border border-cyan-500/30 bg-cyan-500/20 text-xs font-semibold text-cyan-600 shadow-xs transition-all hover:bg-cyan-500/30 active:scale-95 dark:text-cyan-300"
+                className="h-8 rounded-xl border border-cyan-500/30 bg-cyan-500/20 text-xs font-semibold text-cyan-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/30 active:scale-95 dark:text-cyan-300"
               >
                 {importMutation.isPending ? (
                   <>
@@ -404,7 +404,7 @@ export function CommonsFlagImporterAdmin() {
                 <div
                   key={item.fileUrl}
                   onClick={() => handleToggleItem(item.fileUrl)}
-                  className={`group relative flex cursor-pointer flex-col justify-between rounded-xl border p-2.5 backdrop-blur-md transition-all ${
+                  className={`group relative flex cursor-pointer flex-col justify-between rounded-xl border p-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     isMinted
                       ? "border-border/40 bg-card/30 opacity-55 grayscale hover:opacity-100 hover:grayscale-0"
                       : isSelected
@@ -422,7 +422,7 @@ export function CommonsFlagImporterAdmin() {
 
                     {/* Already Minted Badge */}
                     {isMinted && (
-                      <div className="absolute top-1 left-1 flex items-center gap-1 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
+                      <div className="absolute top-1 left-1 flex items-center gap-1 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-xs font-bold text-white shadow-xs">
                         <Check className="h-2.5 w-2.5" /> Minted
                       </div>
                     )}
@@ -437,7 +437,7 @@ export function CommonsFlagImporterAdmin() {
                   </div>
                   <div className="mt-2 space-y-1">
                     <div
-                      className="text-foreground truncate text-[11px] font-bold"
+                      className="text-foreground truncate text-xs font-bold"
                       title={item.cleanTitle}
                     >
                       {item.cleanTitle}
@@ -447,7 +447,7 @@ export function CommonsFlagImporterAdmin() {
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="text-muted-foreground inline-flex items-center gap-0.5 text-[9px] font-semibold hover:text-cyan-500"
+                      className="text-muted-foreground inline-flex items-center gap-0.5 text-xs font-semibold hover:text-cyan-500"
                     >
                       Wikimedia <ExternalLink className="h-2.5 w-2.5" />
                     </a>

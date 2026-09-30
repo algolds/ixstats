@@ -1,13 +1,13 @@
+"use client";
 // src/app/(wiki-os)/wiki/[slug]/edit/page.tsx
 // WikiOS Article Editor Entrypoint — delegates to WikiEditBridge with instant mode support.
 
-"use client";
-
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { withBasePath } from "~/lib/base-path";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 
 export default function WikiOSEditPage() {
   const params = useParams<{ slug: string }>();
@@ -23,13 +23,22 @@ export default function WikiOSEditPage() {
     }
   }, [slug]);
 
-  const initialMode = (searchParams.get("mode") === "visual" ? "visual" : "source") as
-    | "source"
-    | "visual";
+  // Section edit links open the source editor at the heading they came from.
+  const section = searchParams.get("section") ?? undefined;
+  const initialMode: "source" | "visual" =
+    !section && searchParams.get("mode") === "visual" ? "visual" : "source";
 
   const handleClose = useCallback(() => {
     router.push(withBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`));
   }, [router, title]);
+
+  // Another wiki's page (?source=) is read-only in WikiOS (ruling E-l′): back to its read view.
+  const source = parseWikiSource(searchParams.get("source"));
+  const isIxWiki = source === "ixwiki";
+  useEffect(() => {
+    if (!isIxWiki) router.replace(withBasePath(wikiReaderPath(title, source)));
+  }, [isIxWiki, router, title, source]);
+  if (!isIxWiki) return null;
 
   return (
     <WikiOSLayout title={`Editing ${title}`} hideTitleHeading>
@@ -37,6 +46,7 @@ export default function WikiOSEditPage() {
         <WikiEditBridge
           title={title}
           initialMode={initialMode}
+          initialSection={section}
           onClose={handleClose}
           onSaveSuccess={handleClose}
         />

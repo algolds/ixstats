@@ -244,6 +244,7 @@ export function generateChartColors(
  */
 export function convertThemeColorForChart(
   colorVar: string,
+  // oxlint-disable-next-line typescript/no-unused-vars
   opacity: number = 1
 ): {
   hsl: string;

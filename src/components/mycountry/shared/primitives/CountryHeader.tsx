@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, BarChart3, Edit } from "lucide-react";
+import { Crown, StatsReport as BarChart3, EditPencil as Edit } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { createUrl } from "~/lib/utils";
@@ -18,9 +18,6 @@ export function CountryHeader({
   countryName,
   countryId,
   countrySlug,
-  economicTier,
-  populationTier,
-  variant = "unified",
 }: CountryHeaderProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -11,9 +11,13 @@ import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { IxTime } from "~/lib/ixtime";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
+  countryTaxSystemInputSchema,
+  countryGovernmentStructureInputSchema,
+  countryEconomyBuilderStateSchema,
 } from "~/server/shared/country-payload-builder";
 import {
   syncNationalIdentity,
@@ -24,7 +28,7 @@ import {
   syncGovernmentComponents,
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
-
+import { assignNation, DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 export const managementCreateProcedures = {
   // Create a new country from builder
@@ -35,9 +39,9 @@ export const managementCreateProcedures = {
         foundationCountry: z.string().nullable(),
         economicInputs: countryEconomicInputsSchema,
         governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
-        taxSystemData: z.any().optional(),
-        governmentStructure: z.any().optional(),
-        economyBuilderState: z.any().optional(),
+        taxSystemData: countryTaxSystemInputSchema.nullish(),
+        governmentStructure: countryGovernmentStructureInputSchema.nullish(),
+        economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
         archetypeId: z.string().optional(),
       })
     )
@@ -74,8 +78,10 @@ export const managementCreateProcedures = {
 
       let foundationData: any = null;
       if (input.foundationCountry) {
+        // Foundations are IxWorld nations; names repeat across realms (ruling E-p).
         const foundationCountry = await ctx.db.country.findFirst({
           where: {
+            realmId: DEFAULT_REALM_ID,
             OR: [{ slug: input.foundationCountry }, { name: input.foundationCountry }],
           },
         });
@@ -230,16 +236,25 @@ export const managementCreateProcedures = {
         }
       }
 
-      const slug = input.name
+      let baseSlug = input.name
         .toLowerCase()
         .trim()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
+      if (!baseSlug) baseSlug = "country";
+
+      let slug = baseSlug;
+      let counter = 1;
+      while (await ctx.db.country.findUnique({ where: { slug }, select: { id: true } })) {
+        counter++;
+        slug = `${baseSlug}-${counter}`;
+      }
 
       try {
         const result = await ctx.db.$transaction(async (tx) => {
+          const ixNow = new Date(IxTime.getCurrentIxTime());
           const country = await tx.country.create({
             data: {
               name: input.name,
@@ -258,6 +273,7 @@ export const managementCreateProcedures = {
               coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
               baselinePopulation: population,
               baselineGdpPerCapita: gdpPerCapita,
+              baselineDate: ixNow,
               currentPopulation: population,
               currentGdpPerCapita: gdpPerCapita,
               currentTotalGdp: totalGdp,
@@ -295,11 +311,8 @@ export const managementCreateProcedures = {
               minimumWage: laborEmployment.minimumWage || 15,
               averageAnnualIncome: laborEmployment.averageAnnualIncome || gdpPerCapita * 0.8,
               taxRevenueGDPPercent:
-                fiscalSystem.taxRevenueGDPPercent ||
-                (taxSystemData as any)?.totalTaxRate ||
-                25,
-              governmentRevenueTotal:
-                fiscalSystem.governmentRevenueTotal || nominalGDP * 0.25,
+                fiscalSystem.taxRevenueGDPPercent || (taxSystemData as any)?.totalTaxRate || 25,
+              governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || nominalGDP * 0.25,
               taxRevenuePerCapita:
                 fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.25) / population,
               governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 25,
@@ -327,22 +340,29 @@ export const managementCreateProcedures = {
                 ? population / foundationData.landArea
                 : undefined,
               gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
-              lastCalculated: new Date(),
+              lastCalculated: ixNow,
             },
           });
 
           await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
           await syncDemographics(tx, country.id, demographics);
-          await syncIncomeAndSpending(tx, country.id, incomeWealth, governmentSpending, fiscalSystem);
+          await syncIncomeAndSpending(
+            tx,
+            country.id,
+            incomeWealth,
+            governmentSpending,
+            fiscalSystem
+          );
           await syncTaxSystem(tx, country.id, taxSystemData);
           await syncGovernmentStructure(tx, country.id, input.name, governmentStructure);
           await syncGovernmentComponents(tx, country.id, governmentComponentsList);
           await syncEconomyBuilderState(tx, country.id, economyBuilderState);
 
-          await tx.user.update({
+          const owner = await tx.user.findUniqueOrThrow({
             where: { clerkUserId: userId },
-            data: { countryId: country.id },
+            select: { id: true },
           });
+          await assignNation(tx, { userId: owner.id, countryId: country.id });
 
           return country;
         });
@@ -376,7 +396,8 @@ export const managementCreateProcedures = {
       } catch (error) {
         console.error("[createCountry] Transaction failed:", error);
         throw new Error(
-          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),

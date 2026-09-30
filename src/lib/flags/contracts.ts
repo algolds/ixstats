@@ -3,12 +3,7 @@
  */
 
 export type FlagSource =
-  | "provided"
-  | "persistent-cache"
-  | "memory-cache"
-  | "commons"
-  | "fictional-wiki"
-  | "placeholder";
+  "provided" | "persistent-cache" | "memory-cache" | "commons" | "fictional-wiki" | "placeholder";
 
 export type FlagFallbackPolicy = "commons-only" | "fictional-wiki";
 
@@ -42,16 +37,16 @@ export interface FlagResolverOptions {
 }
 
 export interface FlagResolver {
-  resolve(
-    countryName: string,
-    options?: FlagResolverOptions
-  ): Promise<FlagResolution>;
+  resolve(countryName: string, options?: FlagResolverOptions): Promise<FlagResolution>;
   resolveBatch(
     countryNames: readonly string[],
     options?: { fallbackPolicy?: FlagFallbackPolicy }
   ): Promise<ReadonlyMap<string, FlagResolution>>;
   peek(countryName: string): FlagResolution | null;
-  prefetch(countryNames: readonly string[], options?: { fallbackPolicy?: FlagFallbackPolicy }): void;
+  prefetch(
+    countryNames: readonly string[],
+    options?: { fallbackPolicy?: FlagFallbackPolicy }
+  ): void;
   clear(): Promise<void>;
   stats(): FlagResolverStats;
 }

@@ -130,16 +130,16 @@ This config allows you to run `ssh ixwiki` to open a shell and automatically spi
 ## Part 3 — Cloning & Configuration Sync
 
 ### Step 1 — Clone the Repository
-Inside WSL, clone the repository into your home directory and switch to the active `v2` branch:
+Inside WSL, clone the repository into your home directory and switch to the active integration branch, `rose-garden`:
 ```bash
 mkdir -p ~/projects && cd ~/projects
 git clone https://github.com/algolds/ixstats.git
-cd ixstats && git checkout v2
+cd ixstats && git checkout rose-garden
 git config core.autocrlf input
 ```
 
 ### Step 2 — Fetch Gitignored Configuration Files
-Since environment, editor settings, sub-project TypeScript definitions, and tooling configuration files are excluded from git tracking, copy them over SSH from the VPS:
+Environment files, editor settings, Docker specs and several tooling configs are gitignored (see `.gitignore`), so copy them over SSH from the VPS. The `tsconfig*.json` files, `prisma.config.ts`, `.oxlintrc.json` and `bun.lock` are tracked in git, so do not overwrite them from the server:
 ```bash
 cd ~/projects/ixstats
 
@@ -152,9 +152,8 @@ scp ixwiki:"/ixwiki/public/projects/ixstats/.env.local.dev" .
 scp ixwiki:"/ixwiki/public/projects/ixstats/docker-compose.yml" .
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/docker" .
 
-# Copy sibling JS/TS toolchain configs, sub-project tsconfigs, and lockfiles
-scp ixwiki:"/ixwiki/public/projects/ixstats/{prisma.config.ts,c15t-backend.config.ts,next.config.js,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml,opencode.json,skills-lock.json}" .
-scp ixwiki:"/ixwiki/public/projects/ixstats/tsconfig.*.json" .
+# Copy gitignored JS/TS toolchain configs (skip any the server does not have)
+scp ixwiki:"/ixwiki/public/projects/ixstats/{next.config.js,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml}" .
 
 # Copy editor workspace settings
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/.vscode" .
@@ -171,10 +170,10 @@ To create countries, manage sports clubs, trade cards, or save stashes, configur
 1. Create or edit `.env.local` (or modify `.env.local.dev`) in the repository root:
    ```ini
    DATABASE_READONLY="false"
-   DATABASE_URL="postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connection_limit=5"
+   DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5433/ixstats?connection_limit=5"
    ```
    *(Note: The password is URL-encoded and connects as the `postgres` superuser on your local Docker container).*
-2. Under this mode, any database updates and codebase schema changes (like `v2` additions) are automatically pushed and synchronized on server boot.
+2. Under this mode, `start-development.sh` runs `bun run db:push:force` on boot whenever a `prisma/schema/*.prisma` file is newer than `.prisma/.schema-push-stamp` (set `SKIP_DB_PUSH=1` to skip it).
 
 ### Mode B: Read-Only Mode (Production Replica Inspection)
 To inspect production data securely without making modifications:
@@ -183,34 +182,34 @@ To inspect production data securely without making modifications:
    DATABASE_READONLY="true"
    DATABASE_URL="postgresql://ixstats_readonly:PASSWORD@localhost:5433/ixstats"
    ```
-2. Create the `ixstats_readonly` user credentials inside your local docker container:
+2. Create the `ixstats_readonly` login role inside your local docker container (`./scripts/refresh-local-db.sh` also creates it if it is missing — with login only when `IXSTATS_READONLY_PASSWORD` is set, e.g. `IXSTATS_READONLY_PASSWORD='…' ./scripts/refresh-local-db.sh`). Use the password from your `.env.local.dev`; never paste it into docs:
    ```bash
-   docker exec -it ixstats-postgres psql -U postgres -d ixstats -c "CREATE ROLE ixstats_readonly WITH LOGIN PASSWORD 'Q9ul7FneYGI4vT/s1/jkIokTH97nuZ8Xk9qnmIVMgVs=';"
+   docker exec -it ixstats-postgres psql -U postgres -d ixstats -c "CREATE ROLE ixstats_readonly WITH LOGIN PASSWORD '<password from .env.local.dev>';"
    ```
-3. Under this mode, all write actions and `db push` schema migrations are blocked.
+3. Under this mode (`DATABASE_READONLY="true"`), the Prisma client blocks writes and `start-development.sh` skips its `db push`.
 
 ---
 
 ## Part 5 — Automated Workflow Scripts
 
-Two primary automation scripts are mapped in `package.json` to simplify daily WSL development:
+Three automation scripts simplify daily WSL development:
 
 ### 1. Unified Development Bootstrapper (`bun run dev:local`)
 Instead of running Docker, SSH, and Next.js separately, run:
 ```bash
 bun run dev:local
 ```
-This runs the internal [dev-local.sh](file:///ixwiki/public/projects/ixstats/scripts/dev-local.sh) script, which:
-- Starts your background OpenSSH tunnels to `ixwiki`.
-- Spins up local Docker Postgres (`5433`) and Redis (`6379`) containers.
-- Pulls and restores the latest production database dump.
+This runs the internal [dev-local.sh](../../scripts/dev-local.sh) script, which:
+- Opens a background OpenSSH master connection to `ixwiki` (which brings up the `LocalForward` tunnels).
+- Runs `docker compose up -d` for the local Postgres (`5433`) container; `start-development.sh` then starts the `ixstats-redis-cache` Redis container (`6379`) via `scripts/setup-redis.sh`.
+- Pulls and restores a production database dump **only** when you pass `--sync-db` (or `-s`) or the local `ixstats` database does not exist yet; otherwise it keeps your existing local data.
 - **Rsyncs Gitignored Static Assets:** Automatically runs `rsync` to sync flags, fonts, textures, sounds, and public images from the VPS, excluding uploads to save bandwidth.
-- **Runs Schema Reconciler:** Automatically runs `db:push:force` (if running in Write Mode) to align the DB schema with the codebase.
-- Launches the Next.js dev server on `http://localhost:3000` (Turbopack).
+- **Runs Schema Reconciler:** Hands off to `start-development.sh`, which runs `db:push:force` (Write Mode only) when the schema changed or the dump was just restored.
+- Launches the Next.js dev server on `http://localhost:3000` (Turbopack) via `start-development.sh`.
 - Cleans up and kills background OpenSSH tunnel processes gracefully on exit (`Ctrl+C`).
 
 ### 2. Manual Data Refresh (`./scripts/refresh-local-db.sh`)
-To fetch fresh production database dumps and sync static assets without restarting the dev server:
+To fetch a fresh production database dump, sync static assets, run `db:push:force` and the WikiOS integrity check without restarting the dev server:
 ```bash
 ./scripts/refresh-local-db.sh
 ```
@@ -220,12 +219,12 @@ Run code quality checks and push local work to staging/production in one line:
 ```bash
 bun run deploy:local
 ```
-This script runs the [deploy-local.sh](file:///ixwiki/public/projects/ixstats/scripts/deploy-local.sh) wrapper, which:
+This script runs the [deploy-local.sh](../../scripts/deploy-local.sh) wrapper, which:
 - Verifies code formatting with Prettier (`bun run format:check`).
-- Runs strict ESLint checks (`bun run lint:strict`).
-- Runs unit and integration tests (`bun run test`).
-- Pushes the active branch to GitHub.
-- Logs into the VPS and executes the deployment script.
+- Runs Oxlint (`bun run lint`).
+- Runs the Jest suite (`bun run test`).
+- Pushes the active branch to GitHub (`origin`).
+- Logs into the VPS and runs `./scripts/deploy-production.sh`, which deploys whatever branch the **server** checkout is on (not necessarily the branch you just pushed).
 
 ---
 

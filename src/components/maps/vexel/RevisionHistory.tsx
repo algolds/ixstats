@@ -36,7 +36,7 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
 
   return (
     <div className="space-y-4">
-      <h4 className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+      <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
         Revision History ({revisions.length})
       </h4>
 
@@ -59,18 +59,18 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
                   <span className="block font-semibold text-zinc-300">
                     Version: {revisions.length - idx}
                   </span>
-                  <span className="block text-[10px] text-zinc-500">
+                  <span className="block text-xs text-zinc-500">
                     {new Date(rev.createdAt).toLocaleString()}
                   </span>
                   {rev.revisionNote && (
-                    <p className="text-[10px] text-zinc-400 italic">Change: {rev.revisionNote}</p>
+                    <p className="text-xs text-zinc-400 italic">Change: {rev.revisionNote}</p>
                   )}
                 </div>
               </div>
 
               <button
                 onClick={() => handleRevert(comp)}
-                className="rounded bg-zinc-800 px-2 py-1 text-[10px] font-semibold transition-all hover:bg-zinc-700 hover:text-amber-400"
+                className="rounded bg-zinc-800 px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-zinc-700 hover:text-amber-400"
               >
                 Restore
               </button>

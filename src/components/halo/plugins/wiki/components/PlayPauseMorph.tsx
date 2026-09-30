@@ -1,9 +1,8 @@
+"use client";
 // src/components/halo/plugins/wiki/components/PlayPauseMorph.tsx
 // Apple Design Play ↔ Pause vector morphing component.
 // Smoothly interpolates dual SVG polygon paths between a right-facing play wedge and dual pause pillars
 // with fluid cubic-bezier easing, optical centering, and spring dynamics.
-
-"use client";
 
 import React from "react";
 import { cn } from "~/lib/utils";
@@ -64,7 +63,7 @@ export function PlayPauseMorph({
         <path
           d={leftPath}
           fill={fill}
-          className="transition-all duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{
             transformOrigin: "center",
           }}
@@ -74,7 +73,7 @@ export function PlayPauseMorph({
         <path
           d={rightPath}
           fill={fill}
-          className="transition-all duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{
             transformOrigin: "center",
           }}

@@ -119,7 +119,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
         <div className="space-y-4">
           {/* Step 1: Select Card */}
           <div>
-            <label className="text-muted-foreground mb-1.5 block text-[10px] font-semibold tracking-wider uppercase">
+            <label className="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wider uppercase">
               Select Card to Sell
             </label>
             {inventoryLoading ? (
@@ -140,7 +140,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                       key={card.id}
                       onClick={() => setSelectedCardId(card.id)}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-all",
+                        "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                         selectedCardId === card.id
                           ? "bg-amber-500/10 ring-1 ring-amber-500/35 dark:bg-amber-500/20 dark:ring-amber-400/50"
                           : "hover:bg-black/5 dark:hover:bg-white/5"
@@ -170,7 +170,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                           </span>
                           <span
                             className={cn(
-                              "ml-2 text-[8px] font-bold uppercase",
+                              "ml-2 text-xs font-bold uppercase",
                               rarityColor[card.rarity] || "text-slate-400"
                             )}
                           >
@@ -185,7 +185,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                     </button>
                   ))
                 ) : (
-                  <div className="py-6 text-center text-[10px] text-slate-400">
+                  <div className="py-6 text-center text-xs text-slate-400">
                     No available cards — all your cards are either already listed or locked in
                     trades
                   </div>
@@ -199,7 +199,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase">
+                  <label className="text-muted-foreground mb-1 flex items-center gap-1 text-xs font-bold tracking-wider uppercase">
                     Starting Bid (<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />)
                   </label>
                   <Input
@@ -212,7 +212,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                  <label className="text-muted-foreground mb-1 block text-xs font-bold tracking-wider uppercase">
                     Buyout Price (optional)
                   </label>
                   <Input
@@ -227,7 +227,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                <label className="text-muted-foreground mb-1 block text-xs font-bold tracking-wider uppercase">
                   Listing Duration
                 </label>
                 <Select value={duration} onValueChange={(v) => setDuration(v as "30" | "60")}>
@@ -241,7 +241,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                 </Select>
               </div>
 
-              <p className="text-muted-foreground text-[10px] leading-tight">
+              <p className="text-muted-foreground text-xs leading-tight">
                 Listing fee: 5 IxCredits • Market fee: 10% on sales over 100 IxCredits
               </p>
             </>

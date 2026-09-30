@@ -76,7 +76,13 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
             priority: "low",
             metadata: { auctionId: auction.id },
           });
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Card Market Router] Listing notification failed for auction",
+            auction.id,
+            err
+          );
+        }
 
         await Promise.all([
           globalCache.delete(`user_vault_stats:${ctx.user.id}`),
@@ -170,7 +176,13 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
           if (auction?.cardInstanceId) {
             auctionXpResult = await grantCardXp(ctx.db, auction.cardInstanceId, 50, "BUYOUT");
           }
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Card Market Router] Buyout notification/XP grant failed for auction",
+            input.auctionId,
+            err
+          );
+        }
 
         if (auctionInfo) {
           await Promise.all([
@@ -243,7 +255,13 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
             });
             currentBidderClerkId = bidder?.clerkUserId ?? null;
           }
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Card Market Router] Bidder lookup failed for auction",
+            input.auctionId,
+            err
+          );
+        }
 
         await auctionService.cancelAuction(
           {
@@ -266,7 +284,13 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
               metadata: { auctionId: input.auctionId },
             });
           }
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Card Market Router] Cancellation notification failed for auction",
+            input.auctionId,
+            err
+          );
+        }
 
         await Promise.all([
           // Invalidate seller

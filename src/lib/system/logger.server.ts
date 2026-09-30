@@ -1,13 +1,7 @@
 import "server-only";
 import { db } from "~/server/db";
 import { discordWebhook } from "../discord/webhook";
-import {
-  registerLogSinkProvider,
-  logger,
-  LogLevel,
-  LogCategory,
-  type LogEntry,
-} from "./logger";
+import { registerLogSinkProvider, logger, LogLevel, LogCategory, type LogEntry } from "./logger";
 
 registerLogSinkProvider({
   persistLogs: async (entries: LogEntry[]) => {
@@ -43,11 +37,7 @@ registerLogSinkProvider({
 
     const levelName = LogLevel[entry.level];
     const emoji =
-      entry.level === LogLevel.CRITICAL
-        ? "🚨"
-        : entry.level === LogLevel.ERROR
-          ? "❌"
-          : "⚠️";
+      entry.level === LogLevel.CRITICAL ? "🚨" : entry.level === LogLevel.ERROR ? "❌" : "⚠️";
 
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
       { name: "Category", value: entry.category, inline: true },

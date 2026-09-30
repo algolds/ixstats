@@ -7,7 +7,6 @@
  */
 
 import { IxTime } from "./core";
-import { IxTimeAccuracyVerifier } from "./accuracy";
 
 export interface SyncTarget {
   id: string;
@@ -348,10 +347,12 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - Discord bot may be unresponsive");
+              throw new Error("Request timeout - Discord bot may be unresponsive", {
+                cause: fetchError,
+              });
             }
             if (fetchError.message.includes("fetch")) {
-              throw new Error("Network error - Discord bot may be offline");
+              throw new Error("Network error - Discord bot may be offline", { cause: fetchError });
             }
           }
           throw fetchError;
@@ -387,10 +388,14 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - external service unresponsive");
+              throw new Error("Request timeout - external service unresponsive", {
+                cause: fetchError,
+              });
             }
             if (fetchError.message.includes("fetch")) {
-              throw new Error("Network error - external service unavailable");
+              throw new Error("Network error - external service unavailable", {
+                cause: fetchError,
+              });
             }
           }
           throw fetchError;
@@ -420,7 +425,7 @@ export class IxTimeSyncManager {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      throw new Error(`Failed to sync with ${target.name}: ${errorMessage}`);
+      throw new Error(`Failed to sync with ${target.name}: ${errorMessage}`, { cause: error });
     }
   }
 
@@ -431,23 +436,10 @@ export class IxTimeSyncManager {
 
     try {
       if (target.type === "discord-bot") {
-        // Send time override to Discord bot
-        const response = await fetch(`${target.endpoint}/ixtime/override`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ixTimeMs: this.masterState!.currentIxTime,
-            multiplier: this.masterState!.multiplier,
-          }),
-          signal: AbortSignal.timeout(10000),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log(`[IxTime Sync] Drift corrected for ${target.name}:`, result.message);
+        // The Discord bot is the source of truth for IxTime: on drift, adopt the bot's clock
+        // locally instead of overwriting the bot with ours.
+        const result = await IxTime.syncWithBot();
+        console.log(`[IxTime Sync] Adopted ${target.name} clock after drift:`, result);
 
         // Proactive alert notification in production
         if (

@@ -5,13 +5,34 @@
 **Status:** 🟢 Product Definition
 **Date:** July 15, 2026
 **Product Family:** IxLabs (`/labs/vexel`)
-**Supersedes:** [Vexel_PRD_v0.1.md](file:///ixwiki/public/projects/ixstats/docs/Vexel_PRD_v0.1.md) (Draft)
+**Supersedes:** `Vexel_PRD_v0.1.md` (Draft — removed from the repo on 2026-08-20 in commit `852c32a1a`; retrievable from git history)
+
+> **Implementation status (audited 2026-09-29): Phase 1 partially shipped (Labs, unlisted in the main nav).** Routes `/labs/vexel`, `/labs/vexel/[id]`, `/labs/vexel/generate`, `/labs/vexel/registry`, `/labs/vexel/registry/[id]`; engine in `src/lib/heraldry/` (composition schema, layout, blazon, validation, generator); UI in `src/components/maps/vexel/`; tRPC router `api.heraldry.*` (`src/server/api/routers/heraldry/`); Prisma models in `prisma/schema/heraldry.prisma`. Reachable from the Halo command palette; the Labs nav dropdown still omits it.
+>
+> | Req | Status | Notes |
+> |---|---|---|
+> | P0-1 Panel editor (layers, live preview, properties) | ✅ | `VexelEditor`, `LayerPanel`, `PreviewPanel`, `PropertiesPanel` |
+> | P0-2 Full achievement | 🟡 | Types/layout cover helm, crest, mantling, supporters, motto, compartment; the properties panel edits helm + motto only and `ShieldRenderer` draws the shield only |
+> | P0-3 Commons-seeded charge library | 🟡 | `HeraldryCharge` + `getChargeLibrary`; only 5 bundled inline charge paths ship, no seed script |
+> | P0-4 Commons browser | ✅ | `CommonsBrowserPanel` + `importCommonsCharge` |
+> | P0-5 Local asset cache | ✅ | Imported SVG stored in `HeraldryCharge.svgData` |
+> | P0-6 Blazon generation | ✅ | `src/lib/heraldry/blazon.ts`, `BlazonPanel` |
+> | P0-7 Tincture advisory | ✅ | `validation.ts`, `ValidationPanel` |
+> | P0-8 Lore-aware gallery | ✅ | `generateRandom` (culture/religion/government options), `GalleryMode` |
+> | P0-9 Attach to Country | 🟡 | `attachToCountry` writes `thumbnailUrl`/`largeUrl`, which nothing populates (the model stores `svgData`), so the country's `coatOfArms` is set to an empty string |
+> | P0-10 Attribution on export | 🟡 | Export dialog shows an attribution notice; no credit line is embedded in the exported file |
+> | P0-11 SVG + PNG export | ✅ | `ExportDialog` (SVG, PNG 256/1024) |
+> | P0-12 Registry | ✅ | `getRegistry`, `RegistryBrowser`, `/labs/vexel/registry` |
+> | P0-13 Revision history | ✅ | `HeraldryRevision` rows written on save; `RevisionHistory` restore |
+> | P0-14 Autosave (15 s) | ❌ | Manual save only |
+> | P1-1 … P1-7 | ❌ / 🟡 | Charge library has search + category filter; templates, public gallery beyond the registry, IxCards artwork variants, shortcuts, conflict detection and personal heraldry are not built |
+> | P2-1 … P2-10 | ❌ | Not started |
 
 ---
 
 ## Overview
 
-Vexel is a structured heraldic achievement generator and editor for the Ixnay/IxStates ecosystem. It lives in **IxLabs** — the suite of standalone creative tools at `/labs/` — alongside Onoma and the Design Bible.
+Vexel is a structured heraldic achievement generator and editor for the Ixnay/IxStates ecosystem. It lives in **IxLabs** — the suite of standalone creative tools at `/labs/` — alongside Onoma and the Map Pipeline.
 
 Rather than a freeform SVG editor, Vexel treats heraldry as **structured data**. Every coat of arms is a composition model — a JSON tree of field, divisions, ordinaries, charges, tinctures, and external ornaments — from which SVG renderings, PNG exports, and formal blazon text are all deterministically derived. The composition is the permanent source of truth; images are generated outputs.
 
@@ -317,7 +338,7 @@ The editor follows a **Figma-style layer paradigm** applied to heraldry:
 
 #### Commons Browser Integration
 
-An in-editor panel (slide-over or modal) powered by the existing [`commons.ts`](file:///ixwiki/public/projects/ixstats/src/server/api/routers/commons.ts) tRPC router:
+An in-editor panel (slide-over or modal) powered by the existing [`commons.ts`](../../src/server/api/routers/commons.ts) tRPC router:
 
 - Browse by category (maps to Commons' `Category:Heraldry_by_elements` tree: charges, divisions, tinctures, shields, badges, etc.)
 - Search by keyword
@@ -405,7 +426,7 @@ When a composition uses Commons-sourced charges, the exported SVG/PNG includes a
 
 ### Caching Strategy
 
-Following the existing pattern established by the [`commons.ts`](file:///ixwiki/public/projects/ixstats/src/server/api/routers/commons.ts) router:
+Following the existing pattern established by the [`commons.ts`](../../src/server/api/routers/commons.ts) router:
 - SVG assets are downloaded and cached server-side
 - The editor renders from cached assets, never hitting Commons at runtime
 - Cache invalidation is manual (admin-triggered re-import)
@@ -474,7 +495,9 @@ HeraldryRevision
 
 ## tRPC Router
 
-New router: `src/server/api/routers/heraldry.ts` (or `heraldry/` subdirectory if it exceeds 700 lines per arch-guard rules).
+New router: `src/server/api/routers/heraldry/` (`queries.ts` + `mutations.ts`, merged in `index.ts`).
+
+> **Shipped procedures:** `getAchievement`, `getChargeLibrary`, `getChargeById`, `getRegistry`, `getRevisionHistory`, `generateRandom` (queries); `saveAchievement` (also writes the revision snapshot), `publishAchievement`, `unpublishAchievement`, `importCommonsCharge`, `attachToCountry` (mutations). Blazon generation and validation run client-side from `src/lib/heraldry/`. Not implemented: `getAchievementsBySubject`, `getChargeCategories`, `searchRegistry`, `generateBlazon`, `validateComposition`, `detectConflicts`, `deleteAchievement`, `createRevision`.
 
 ### Procedures (estimated)
 
@@ -501,7 +524,7 @@ New router: `src/server/api/routers/heraldry.ts` (or `heraldry/` subdirectory if
 - `heraldry.attachToCountry` — Link an achievement to a country record
 - `heraldry.createRevision` — Save a revision snapshot
 
-Register in [`src/server/api/root.ts`](file:///ixwiki/public/projects/ixstats/src/server/api/root.ts).
+Register in [`src/server/api/root.ts`](../../src/server/api/root.ts).
 
 ---
 
@@ -607,7 +630,7 @@ Rampant, Passant, Sejant, Couchant, Dormant, Salient, Statant, Guardant, Reguard
 | **IxWiki** | Render arms in wiki article infoboxes; blazon text in article body |
 | **ThinkPages** | P1 — Personal heraldry on user profiles |
 | **Autosave system** | Reuse platform-wide 15s-debounce pattern |
-| **Labs layout** | Use existing headless-nav pattern from `/labs/layout.tsx` |
+| **Labs layout** | Use the headless-nav pattern (there is no shared `/labs/layout.tsx`; each lab has its own layout) |
 
 ---
 
@@ -616,7 +639,7 @@ Rampant, Passant, Sejant, Couchant, Dormant, Salient, Statant, Guardant, Reguard
 ```
 /labs/vexel                    — Editor landing / new achievement
 /labs/vexel/[id]               — Edit existing achievement
-/labs/vexel/[id]/preview       — Public preview / share link
+/labs/vexel/[id]/preview       — Public preview / share link   (not built; registry/[id] serves as the public page)
 /labs/vexel/registry           — Heraldic Authority registry
 /labs/vexel/registry/[id]      — Single achievement public page
 /labs/vexel/generate           — Standalone procedural generation gallery
@@ -665,7 +688,7 @@ Rampant, Passant, Sejant, Couchant, Dormant, Salient, Statant, Guardant, Reguard
 
 ## Versioning
 
-Per the [Versioning & Release Architecture](file:///ixwiki/public/projects/ixstats/docs/reference/revision.md), Vexel will receive a **capability integer** in the Version Registry at [`src/lib/buildVersion.ts`](file:///ixwiki/public/projects/ixstats/src/lib/buildVersion.ts) (e.g. `VEXEL_VERSION = 1`) once implementation begins. The platform minor version bumps when Vexel ships.
+Per the [Versioning & Release Architecture](../reference/revision.md), Vexel will receive a **capability integer** in the Version Registry at [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) (e.g. `VEXEL_VERSION = 1`) once implementation begins. The platform minor version bumps when Vexel ships. *(As of 1.4.0 no `VEXEL_VERSION` exists — Labs inherit the platform version.)*
 
 ---
 

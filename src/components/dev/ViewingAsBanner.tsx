@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { WarningTriangle as AlertTriangle, ArrowLeft } from "iconoir-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { cn } from "~/lib/utils";
 

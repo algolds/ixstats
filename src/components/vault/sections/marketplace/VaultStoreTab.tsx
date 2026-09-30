@@ -3,50 +3,51 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Package,
-  Sparkles,
-  Star,
+  Sparks as Sparkles,
   Gift,
-  Store,
+  Shop as Store,
   Crown,
   Cpu,
-  BookOpen,
+  OpenBook as BookOpen,
   Database,
-  TrendingUp,
-  Award,
-  Flame,
+  StatUp as TrendingUp,
+  Trophy as Award,
+  FireFlame as Flame,
   Shield,
-  Zap,
+  Flash as Zap,
   Coins,
   Heart,
   Palette,
   Wrench,
-  Gauge,
+  Dashboard as Gauge,
   Lock,
   Compass,
   Trophy,
-  Gem,
-  Sword,
-  Target,
-  Flag,
-  Ghost,
-  Skull,
+  Crown as Gem,
+  Tournament as Sword,
+  Archery as Target,
+  WhiteFlag as Flag,
+  Sparks as Ghost,
+  Emoji as Skull,
   Key,
-  Lightbulb,
+  LightBulb as Lightbulb,
   Terminal,
-  Music,
-  Ticket,
-  Gamepad2,
-  Anchor,
-  Sun,
-  Moon,
+  MusicDoubleNote as Music,
+  Label as Ticket,
+  Gamepad as Gamepad2,
+  SeaWaves as Anchor,
+  SunLight as Sun,
+  HalfMoon as Moon,
   Hammer,
   Eye,
   User,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -105,6 +106,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   User,
 };
 
+// oxlint-disable-next-line eslint/no-unused-vars
 interface Particle {
   id: number;
   x: number;
@@ -161,7 +163,7 @@ export function VaultStoreTab() {
     },
   });
 
-  const spendCreditsMutation = api.vault.spendCredits.useMutation({
+  const purchaseStoreItemMutation = api.vault.purchaseStoreItem.useMutation({
     onSuccess: () => {
       notify.success("Item unlocked successfully!");
       void utils.vault.getBalance.invalidate();
@@ -200,16 +202,7 @@ export function VaultStoreTab() {
 
   const upgradeItems: StoreItem[] = ((storeItemsData || []) as any[])
     .filter((item) => item.category === "upgrades")
-    .filter((item) => {
-      if (item.id === "upgrade_card_capacity_mega") {
-        const purchaseCounts = (
-          ownedData as { purchaseCounts?: Record<string, number> } | undefined
-        )?.purchaseCounts;
-        const standardCount = purchaseCounts?.["upgrade_card_capacity"] || 0;
-        return standardCount >= 5;
-      }
-      return true;
-    })
+    .filter((item) => storePrerequisiteMet(item.id, ownedData?.purchaseCounts))
     .map((item) => ({
       id: item.id,
       name: item.name,
@@ -225,12 +218,7 @@ export function VaultStoreTab() {
   const handleCustomPurchaseConfirm = () => {
     if (!activeCheckoutItem) return;
     setPurchasingItemId(activeCheckoutItem.id);
-    spendCreditsMutation.mutate({
-      amount: activeCheckoutItem.price,
-      type: "SPEND_COSMETIC",
-      source: `Purchase item: ${activeCheckoutItem.name}`,
-      metadata: { itemId: activeCheckoutItem.id },
-    });
+    purchaseStoreItemMutation.mutate({ itemId: activeCheckoutItem.id });
   };
 
   const isLoading =
@@ -257,10 +245,10 @@ export function VaultStoreTab() {
     },
     cosmetics: {
       title: "Profile Customizations",
-      icon: <Sparkles className="h-4 w-4 text-purple-500" />,
+      icon: <Sparkles className="h-4 w-4 text-indigo-500" />,
       description:
         "Exclusive decorations, neon frames, and elite name tags to customize your profile presence.",
-      badgeStyle: "border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/5",
+      badgeStyle: "border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5",
       statusText: "Cosmetics",
     },
     upgrades: {
@@ -285,9 +273,9 @@ export function VaultStoreTab() {
       icon: "text-amber-500",
     },
     cosmetics: {
-      text: "text-purple-650 dark:text-purple-400",
-      bg: "bg-purple-500/10 dark:bg-purple-500/15 border-purple-500/20",
-      icon: "text-purple-500",
+      text: "text-indigo-600 dark:text-indigo-400",
+      bg: "bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/20",
+      icon: "text-indigo-500",
     },
     upgrades: {
       text: "text-emerald-600 dark:text-emerald-400",
@@ -301,7 +289,7 @@ export function VaultStoreTab() {
   return (
     <div className="pb-10">
       {/* Large Storefront Showcase Window */}
-      <div className="glass-surface glass-refraction border-border/40 relative min-h-[380px] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.01] to-black/5 p-6 shadow-xl backdrop-blur-md dark:to-black/40">
+      <div className="facet-surface facet-refraction border-border/40 relative min-h-[380px] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.01] to-black/5 p-6 shadow-xl backdrop-blur-md dark:to-black/40">
         <TextureOverlay texture="dots" opacity={0.03} />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
 
@@ -322,11 +310,11 @@ export function VaultStoreTab() {
               {activeConfig.icon}
               {activeConfig.title}
             </h3>
-            <p className="text-muted-foreground mt-1 text-[10px]">{activeConfig.description}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{activeConfig.description}</p>
           </div>
           <span
             className={cn(
-              "rounded-full border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase",
+              "rounded-full border px-2 py-0.5 text-xs font-semibold tracking-wider uppercase",
               activeConfig.badgeStyle
             )}
           >
@@ -453,15 +441,8 @@ export function VaultStoreTab() {
                         item={item}
                         onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
                         isPurchasing={purchasingItemId === item.id}
-                        isOwned={
-                          !!(
-                            ownedData as { purchasedIds?: string[] } | undefined
-                          )?.purchasedIds?.includes(item.id)
-                        }
-                        purchaseCount={
-                          (ownedData as { purchaseCounts?: Record<string, number> } | undefined)
-                            ?.purchaseCounts?.[item.id] ?? 0
-                        }
+                        isOwned={!!ownedData?.purchasedItemIds.includes(item.id)}
+                        purchaseCount={ownedData?.purchaseCounts[item.id] ?? 0}
                       />
                     ))}
                   </div>
@@ -484,15 +465,9 @@ export function VaultStoreTab() {
                         item={item}
                         onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
                         isPurchasing={purchasingItemId === item.id}
-                        isOwned={
-                          !!(
-                            ownedData as { purchasedIds?: string[] } | undefined
-                          )?.purchasedIds?.includes(item.id)
-                        }
-                        purchaseCount={
-                          (ownedData as { purchaseCounts?: Record<string, number> } | undefined)
-                            ?.purchaseCounts?.[item.id] ?? 0
-                        }
+                        // Upgrades stack, so they are never "owned"; the count shows how many.
+                        isOwned={false}
+                        purchaseCount={ownedData?.purchaseCounts[item.id] ?? 0}
                       />
                     ))}
                   </div>
@@ -514,7 +489,9 @@ export function VaultStoreTab() {
         item={activeCheckoutItem}
         onClose={() => setActiveCheckoutItem(null)}
         onConfirm={handleCustomPurchaseConfirm}
-        isPurchasing={purchasingItemId === activeCheckoutItem?.id && spendCreditsMutation.isPending}
+        isPurchasing={
+          purchasingItemId === activeCheckoutItem?.id && purchaseStoreItemMutation.isPending
+        }
       />
 
       <VaultParticleExplosionModal

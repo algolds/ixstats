@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Command, Dices, Search, Tag, Sparkles, Check } from "lucide-react";
+import { DiceSix as Dices, Label as Tag, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface DomesticSuggestion {
@@ -211,6 +211,30 @@ export const DOMESTIC_SUGGESTIONS: DomesticSuggestion[] = [
     keywords: ["airport", "aviation", "flight", "travel"],
     icon: "✈️",
   },
+  {
+    category: "Infrastructure",
+    label: "Accelerate High-Speed Rail Corridor velocity & throughput",
+    keywords: ["rail", "train", "hsr", "speed", "transit", "velocity"],
+    icon: "🚄",
+  },
+  {
+    category: "Infrastructure",
+    label: "Harmonize arterial freight & highway speed limits",
+    keywords: ["highway", "road", "freight", "speed", "motorway", "drayage"],
+    icon: "🛣️",
+  },
+  {
+    category: "Infrastructure",
+    label: "Emergency Transport Infrastructure Rehabilitation",
+    keywords: ["infrastructure", "repair", "maintenance", "bridge", "pothole", "rehabilitation"],
+    icon: "🛠️",
+  },
+  {
+    category: "Infrastructure",
+    label: "Automate seaport container transshipment & drayage",
+    keywords: ["port", "container", "shipping", "dock", "dwell", "maritime"],
+    icon: "🚢",
+  },
 
   // Security (8 presets)
   {
@@ -312,54 +336,54 @@ export const DOMESTIC_SUGGESTIONS: DomesticSuggestion[] = [
     icon: "🛰️",
   },
 
-  // Diplomacy (8 presets)
+  // Diplomacy & Foreign Affairs (8 presets)
   {
     category: "Diplomacy",
-    label: "Sign bilateral free trade agreement",
-    keywords: ["trade", "pact", "agreement", "treaty", "ally"],
-    icon: "🤝",
-  },
-  {
-    category: "Diplomacy",
-    label: "Expand international embassy footprint",
-    keywords: ["embassy", "diplomat", "consulate", "foreign"],
+    label: "Fund foreign ministry diplomatic consular service",
+    keywords: ["consular", "service", "diplomatic", "staff", "ministry"],
     icon: "🏛️",
   },
   {
     category: "Diplomacy",
-    label: "Join regional economic trade coalition",
-    keywords: ["coalition", "alliance", "trade", "pact"],
+    label: "Establish export trade promotion agency",
+    keywords: ["export", "trade", "agency", "promotion", "business"],
     icon: "🌐",
   },
   {
     category: "Diplomacy",
-    label: "Broker regional peace treaty mediation",
-    keywords: ["peace", "treaty", "mediation", "truce"],
-    icon: "🕊️",
+    label: "Subsidize international commercial trade missions",
+    keywords: ["commercial", "trade", "mission", "business", "market"],
+    icon: "🤝",
   },
   {
     category: "Diplomacy",
-    label: "Negotiate mutual visa-free travel pacts",
-    keywords: ["visa", "travel", "border", "passport"],
+    label: "Modernize border customs screening infrastructure",
+    keywords: ["border", "customs", "trade", "port", "entry", "infrastructure"],
     icon: "🛂",
   },
   {
     category: "Diplomacy",
-    label: "Provide international foreign humanitarian aid",
-    keywords: ["aid", "relief", "humanitarian", "global"],
+    label: "Authorize overseas humanitarian relief fund",
+    keywords: ["aid", "relief", "fund", "humanitarian", "global"],
     icon: "❤️",
   },
   {
     category: "Diplomacy",
-    label: "Host global environmental climate summit",
-    keywords: ["summit", "climate", "global", "conference"],
-    icon: "🌍",
+    label: "Promote domestic green export technology initiatives",
+    keywords: ["export", "clean", "technology", "initiative", "energy"],
+    icon: "🌱",
   },
   {
     category: "Diplomacy",
-    label: "Apply for international trade organization seat",
-    keywords: ["seat", "member", "organization", "global"],
-    icon: "🏛️",
+    label: "Expand national trade exhibition centers",
+    keywords: ["trade", "exhibition", "commerce", "center"],
+    icon: "🏢",
+  },
+  {
+    category: "Diplomacy",
+    label: "Streamline international student visa processing",
+    keywords: ["student", "visa", "education", "processing", "academic"],
+    icon: "🎓",
   },
 
   // Governance (8 presets)
@@ -462,7 +486,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
               type="button"
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                "rounded-xl border px-3 py-1.5 text-[11px] font-extrabold transition-all duration-150 select-none active:scale-95",
+                "rounded-xl border px-3 py-1.5 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
                 selectedCategory === cat
                   ? "border-amber-500/50 bg-amber-500/20 text-amber-950 shadow-sm dark:text-amber-300"
                   : "border-border/40 bg-card/40 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
@@ -477,9 +501,10 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
           <button
             type="button"
             onClick={onSurpriseMe}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
+            data-cuelume-press="tick"
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Dices className="h-3.5 w-3.5" />
             <span>Surprise Me</span>
           </button>
         )}
@@ -495,7 +520,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
               type="button"
               onClick={() => onSelectGoal(item.label)}
               className={cn(
-                "group flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 active:scale-[0.98]",
+                "group flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                 isSelected
                   ? "border-amber-500 bg-amber-500/15 shadow-md ring-2 ring-amber-500/40"
                   : "border-border/50 bg-card/60 hover:bg-card hover:border-amber-500/40 hover:shadow-sm"
@@ -515,7 +540,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
                 >
                   {item.label}
                 </p>
-                <span className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase opacity-80">
+                <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase opacity-80">
                   {item.category}
                 </span>
               </div>

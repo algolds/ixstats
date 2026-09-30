@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Landmark, Save, CheckCircle } from "lucide-react";
+import { Bank as Landmark, FloppyDisk as Save, CheckCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 type SelectionMethod =
@@ -43,15 +43,18 @@ function parseChambersClient(
   if (chamberType && chamberType.includes("|")) {
     const [, serialized] = chamberType.split("|");
     if (serialized) {
-      return serialized.split(";").filter(Boolean).map((part) => {
-        const [name, seatsStr, system, selection] = part.split(":");
-        return {
-          name: name || "Chamber",
-          seats: Number(seatsStr) || 100,
-          electoralSystem: (system || globalElectoralSystem || "proportional") as any,
-          selectionMethod: (selection as SelectionMethod) || "elected",
-        };
-      });
+      return serialized
+        .split(";")
+        .filter(Boolean)
+        .map((part) => {
+          const [name, seatsStr, system, selection] = part.split(":");
+          return {
+            name: name || "Chamber",
+            seats: Number(seatsStr) || 100,
+            electoralSystem: (system || globalElectoralSystem || "proportional") as any,
+            selectionMethod: (selection as SelectionMethod) || "elected",
+          };
+        });
     }
   }
 
@@ -118,6 +121,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
         baseChamberType = legislature.chamberType.split("|")[0]!;
       }
 
+      // oxlint-disable-next-line
       setFormData({
         name: legislature.name,
         chamberType: baseChamberType as any,
@@ -141,6 +145,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
       return;
     }
     if (formData.chamberType === "unicameral") {
+      // oxlint-disable-next-line
       setChambers([
         {
           name: formData.name,
@@ -270,7 +275,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   const isMultiChamber = formData.chamberType !== "unicameral";
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Landmark className="h-4 w-4 text-amber-600" />
@@ -329,7 +334,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   setFormData({ ...formData, totalSeats: val });
                 }}
               />
-              <p className="text-muted-foreground mt-1 text-[10px]">
+              <p className="text-muted-foreground mt-1 text-xs">
                 {isMultiChamber
                   ? "Calculated as sum of all chambers (up to 10,000)"
                   : "1-5,000 seats"}
@@ -352,7 +357,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 </SelectContent>
               </Select>
               {isMultiChamber && (
-                <p className="text-muted-foreground mt-1 text-[10px]">
+                <p className="text-muted-foreground mt-1 text-xs">
                   Configured individually per chamber below
                 </p>
               )}
@@ -383,7 +388,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   <SelectItem value="variable">Variable (snap elections)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-muted-foreground mt-1 text-[10px]">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Fixed = strict schedule; Variable = parliament may dissolve early
               </p>
             </div>
@@ -402,7 +407,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                     className="grid grid-cols-1 gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 sm:grid-cols-2 lg:grid-cols-4"
                   >
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-slate-400">Chamber {index + 1} Name</Label>
+                      <Label className="text-xs text-slate-400">Chamber {index + 1} Name</Label>
                       <Input
                         value={chamber.name}
                         onChange={(e) => updateChamber(index, "name", e.target.value)}
@@ -411,7 +416,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-slate-400">Seats (10 - 5,000)</Label>
+                      <Label className="text-xs text-slate-400">Seats (10 - 5,000)</Label>
                       <Input
                         type="number"
                         min={10}
@@ -422,14 +427,14 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         className="h-8 bg-slate-900 text-xs"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] text-slate-400">Electoral System</Label>
+                    <div className="min-w-0 space-y-1">
+                      <Label className="text-xs text-slate-400">Electoral System</Label>
                       <Select
                         value={chamber.electoralSystem}
                         onValueChange={(v) => updateChamber(index, "electoralSystem", v)}
                       >
-                        <SelectTrigger className="h-8 bg-slate-900 text-xs">
-                          <SelectValue />
+                        <SelectTrigger className="h-8 w-full min-w-0 overflow-hidden bg-slate-900 text-xs">
+                          <SelectValue className="truncate" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
@@ -438,14 +443,14 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] text-slate-400">Selection Method</Label>
+                    <div className="min-w-0 space-y-1">
+                      <Label className="text-xs text-slate-400">Selection Method</Label>
                       <Select
                         value={chamber.selectionMethod || "elected"}
                         onValueChange={(v) => updateChamber(index, "selectionMethod", v)}
                       >
-                        <SelectTrigger className="h-8 bg-slate-900 text-xs">
-                          <SelectValue />
+                        <SelectTrigger className="h-8 w-full min-w-0 overflow-hidden bg-slate-900 text-xs">
+                          <SelectValue className="truncate" />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(SELECTION_METHOD_LABELS).map(([value, label]) => (

@@ -63,6 +63,42 @@ export function isPrivilegedCountryWriter(authUserId?: string | null, roleName?:
   return false;
 }
 
+function requireAuthUserId(ctx: CountryAuthContext): string {
+  const authUserId = ctx.auth?.userId;
+  if (!authUserId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Authentication required",
+    });
+  }
+  return authUserId;
+}
+
+function hasCachedPrivilege(ctx: CountryAuthContext, authUserId: string): boolean {
+  return isPrivilegedCountryWriter(authUserId, getRoleName(ctx.user, ctx.auth?.sessionClaims));
+}
+
+interface FreshWriter {
+  privileged: boolean;
+  countryId: string | null;
+}
+
+/** Single fresh DB lookup for stale or incomplete cached context. */
+async function findFreshWriter(
+  ctx: CountryAuthContext,
+  authUserId: string
+): Promise<FreshWriter | null> {
+  const freshUser = await ctx.db.user.findUnique({
+    where: { clerkUserId: authUserId },
+    include: { role: true },
+  });
+  if (!freshUser) return null;
+  return {
+    privileged: isPrivilegedCountryWriter(authUserId, getRoleName(freshUser)),
+    countryId: freshUser.countryId ?? null,
+  };
+}
+
 /**
  * Canonical country-write authorization assertion.
  *
@@ -74,17 +110,10 @@ export async function assertCountryWriteAccess(
   ctx: CountryAuthContext,
   countryId: string
 ): Promise<void> {
-  const authUserId = ctx.auth?.userId;
-  if (!authUserId) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "Authentication required",
-    });
-  }
+  const authUserId = requireAuthUserId(ctx);
 
   // 1. Check system owner or cached privileged role
-  const cachedRole = getRoleName(ctx.user, ctx.auth?.sessionClaims);
-  if (isPrivilegedCountryWriter(authUserId, cachedRole)) {
+  if (hasCachedPrivilege(ctx, authUserId)) {
     return;
   }
 
@@ -94,16 +123,9 @@ export async function assertCountryWriteAccess(
   }
 
   // 3. Fallback: fresh DB lookup for stale or incomplete cached context
-  const freshUser = await ctx.db.user.findUnique({
-    where: { clerkUserId: authUserId },
-    include: { role: true },
-  });
-
-  if (freshUser) {
-    const freshRole = getRoleName(freshUser);
-    if (isPrivilegedCountryWriter(authUserId, freshRole) || freshUser.countryId === countryId) {
-      return;
-    }
+  const freshWriter = await findFreshWriter(ctx, authUserId);
+  if (freshWriter && (freshWriter.privileged || freshWriter.countryId === countryId)) {
+    return;
   }
 
   // 4. Verify target country existence if country delegate is available
@@ -123,5 +145,35 @@ export async function assertCountryWriteAccess(
   throw new TRPCError({
     code: "FORBIDDEN",
     message: "You do not have permission to modify this country.",
+  });
+}
+
+/**
+ * Assert write access for a row that belongs to a country.
+ * `countryId` is the row's owning country as loaded from the DB;
+ * null/undefined (row missing or orphaned) → NOT_FOUND for non-privileged callers.
+ */
+export async function assertCountryResourceWriteAccess(
+  ctx: CountryAuthContext,
+  countryId: string | null | undefined,
+  resourceLabel: string
+): Promise<void> {
+  if (countryId) {
+    await assertCountryWriteAccess(ctx, countryId);
+    return;
+  }
+
+  const authUserId = requireAuthUserId(ctx);
+  if (hasCachedPrivilege(ctx, authUserId)) {
+    return;
+  }
+  const freshWriter = await findFreshWriter(ctx, authUserId);
+  if (freshWriter?.privileged) {
+    return;
+  }
+
+  throw new TRPCError({
+    code: "NOT_FOUND",
+    message: `${resourceLabel} not found`,
   });
 }

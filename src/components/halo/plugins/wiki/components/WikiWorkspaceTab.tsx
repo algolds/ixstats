@@ -1,26 +1,29 @@
+"use client";
 // src/components/halo/plugins/wiki/components/WikiWorkspaceTab.tsx
 // Quick actions, drafts manager, paused reading sessions, and recent changes feed for Halo Wiki mode.
-
-"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  FileEdit,
-  History,
-  Link2,
+  PageEdit as FileEdit,
+  ClockRotateRight as History,
+  Link as Link2,
   Clock,
-  ExternalLink,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+  OpenNewWindow as ExternalLink,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
-import { formatTimeAgo, type LocalDraft, type PausedSession } from "../types";
+import { timeAgo } from "~/lib/format/compact";
+import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
+import { type LocalDraft, type PausedSession } from "../types";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;
+  /** The wiki the article lives on; another wiki's page is read-only in WikiOS (ruling E-l′). */
+  wikiSource: WikiSource;
   isMainPage?: boolean;
   isSignedIn?: boolean;
   slug?: string | null;
@@ -32,11 +35,13 @@ interface WikiWorkspaceTabProps {
     timestamp?: string | null;
   }> | null;
   onClose: () => void;
-  onNavigateToArticle: (title: string) => void;
+  /** Opens the page on its own wiki (IxWiki when none is given) */
+  onNavigateToArticle: (title: string, source?: WikiSource) => void;
 }
 
 export function WikiWorkspaceTab({
   articleTitle,
+  wikiSource,
   isMainPage = false,
   isSignedIn = false,
   slug,
@@ -83,13 +88,13 @@ export function WikiWorkspaceTab({
                   >
                     {draft.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
+                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
                     {draft.type === "visual"
                       ? "Visual Editor (Canvas) Draft"
                       : "Source Editor Draft"}
                   </PreText>
                 </div>
-                <span className="shrink-0 text-[10px] font-semibold text-blue-400">Resume ›</span>
+                <span className="shrink-0 text-xs font-semibold text-blue-400">Resume ›</span>
               </button>
             ))}
           </div>
@@ -110,7 +115,7 @@ export function WikiWorkspaceTab({
               <button
                 key={idx}
                 type="button"
-                onClick={() => onNavigateToArticle(session.title)}
+                onClick={() => onNavigateToArticle(session.title, session.source)}
                 className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
@@ -120,11 +125,11 @@ export function WikiWorkspaceTab({
                   >
                     {session.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
-                    {`Last read ${formatTimeAgo(session.updatedAt)}`}
+                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
+                    {`Last read ${timeAgo(session.updatedAt)}`}
                   </PreText>
                 </div>
-                <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
+                <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-xs font-semibold tabular-nums">
                   {session.scrollPercent}%
                 </span>
               </button>
@@ -153,7 +158,7 @@ export function WikiWorkspaceTab({
                   <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
                     {rc.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-[10px]" whiteSpace="nowrap">
+                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
                     {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
                   </PreText>
                 </button>
@@ -172,41 +177,16 @@ export function WikiWorkspaceTab({
         <div className="border-border mb-3 border-b pb-3">
           <SectionHeader label="This Page" />
           <div className="space-y-0.5">
-            {isSignedIn && (
-              <QuickAction
-                icon={<FileEdit />}
-                label="Edit"
-                shortcut="Tab Tab"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(`/wiki/${slug}/edit`, router);
-                }}
-              />
+            {wikiSource === "ixwiki" && (
+              <IxWikiPageActions isSignedIn={isSignedIn} slug={slug} onClose={onClose} />
             )}
-            <QuickAction
-              icon={<History />}
-              label="History"
-              onClick={() => {
-                onClose();
-                navigateWithBasePath(`/wiki/history/${slug}`, router);
-              }}
-            />
-            <QuickAction
-              icon={<Link2 />}
-              label="What links here"
-              onClick={() => {
-                onClose();
-                navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
-              }}
-            />
             <QuickAction
               icon={<ExternalLink />}
               label="View on Original Wiki"
               onClick={() => {
                 onClose();
                 if (articleTitle) {
-                  const mwBaseUrl =
-                    process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+                  const mwBaseUrl = getWikiBaseUrl(wikiSource);
                   const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
                   window.open(targetUrl, "_blank", "noopener,noreferrer");
                 }
@@ -219,9 +199,49 @@ export function WikiWorkspaceTab({
   );
 }
 
+/** Edit, History and What links here act on the IxWiki page, so another wiki's page has none. */
+function IxWikiPageActions({
+  isSignedIn,
+  slug,
+  onClose,
+}: Pick<WikiWorkspaceTabProps, "isSignedIn" | "slug" | "onClose">) {
+  const router = useRouter();
+  return (
+    <>
+      {isSignedIn && (
+        <QuickAction
+          icon={<FileEdit />}
+          label="Edit"
+          shortcut="Tab Tab"
+          onClick={() => {
+            onClose();
+            navigateWithBasePath(`/wiki/${slug}/edit`, router);
+          }}
+        />
+      )}
+      <QuickAction
+        icon={<History />}
+        label="History"
+        onClick={() => {
+          onClose();
+          navigateWithBasePath(`/wiki/history/${slug}`, router);
+        }}
+      />
+      <QuickAction
+        icon={<Link2 />}
+        label="What links here"
+        onClick={() => {
+          onClose();
+          navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
+        }}
+      />
+    </>
+  );
+}
+
 export function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
+    <div className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
       <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
@@ -247,7 +267,7 @@ export function CollapsibleSection({
       <button
         type="button"
         onClick={onToggle}
-        className="text-muted-foreground hover:text-foreground mb-1 flex w-full cursor-pointer items-center justify-between text-[10px] font-semibold tracking-wider uppercase"
+        className="text-muted-foreground hover:text-foreground mb-1 flex w-full cursor-pointer items-center justify-between text-xs font-semibold tracking-wider uppercase"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -292,7 +312,7 @@ export function QuickAction({
       </span>
       {shortcut && (
         <PreText
-          className="border-border bg-accent/10 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[10px]"
+          className="border-border bg-accent/10 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-xs"
           whiteSpace="nowrap"
         >
           {shortcut}

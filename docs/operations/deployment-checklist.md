@@ -1,9 +1,11 @@
 # Production Deployment Checklist
 
-**Last Updated:** August 2026
-**Version:** IxStates 1.4.0 "Ogma" (Release Candidate)
+**Last Updated:** September 2026
+**Version:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)
 
 Complete checklist for deploying IxStates to production. Follow these steps to ensure a safe, successful deployment.
+
+> **Production today** is a single VPS (`ssh ixwiki`, checkout at `/ixwiki/public/projects/ixstats`, served at `https://ixwiki.com/projects/ixstates`). Postgres runs in the Docker container `ixstats-postgres` and Redis in `ixstats-redis-cache`. The web app runs outside PM2 via `start-production.sh`; PM2 runs `ixstats-cron`, `ixstats-ws` and `ixstats-ixtwitter` from the gitignored `ecosystem.config.cjs`. `scripts/deploy-production.sh` (`bun run deploy:prod`) performs the build/deploy steps below. For the current release, follow [`deploy-rose-garden-2026-09.md`](deploy-rose-garden-2026-09.md).
 
 ## Table of Contents
 - [Pre-Deployment](#pre-deployment)
@@ -34,10 +36,11 @@ Complete checklist for deploying IxStates to production. Follow these steps to e
   # Should show: "Found 0 errors"
   ```
 
-- [ ] **No ESLint errors**
+- [ ] **No Oxlint errors** (TS 7 native, 50-100× faster)
   ```bash
   bun run lint
-  # Should show: "✓ No ESLint warnings or errors"
+  # Should show: 0 errors, warnings pre-existing and expected (see .oxlintrc.json)
+  # Stricter gate: bun run lint:strict (fails above 2100 warnings)
   ```
 
 - [ ] **Code reviewed and approved**
@@ -72,50 +75,49 @@ Complete checklist for deploying IxStates to production. Follow these steps to e
 - [ ] **On correct branch**
   ```bash
   git branch
-  # Should show: * v2
+  # Should show: * rose-garden (the current integration branch)
   ```
 
 - [ ] **Latest changes pulled**
   ```bash
-git pull origin v2
+git pull origin rose-garden
 # Should show: "Already up to date"
   ```
 
 - [ ] **Create release tag**
   ```bash
-git tag -a v1.0.0 -m "Release IxStates 1.0"
-git push origin v1.0.0
+git tag -a v1.4.0 -m "Release IxStates 1.4.0 Lobster Crosby"
+git push origin v1.4.0
   ```
 
 ### Backups
 
 - [ ] **Database backup created**
   ```bash
-  # Development database
+  # Production database (PostgreSQL in Docker): pg_dump -Fc into backups/, keeps the newest 14.
+  # deploy-production.sh also runs this before `db push` and aborts if it fails.
   bun run db:backup
 
-  # Production database (PostgreSQL)
-  pg_dump -U postgres -d ixstats > backups/ixstats-$(date +%Y%m%d).sql
-
   # Verify backup file exists
-  ls -lh backups/
+  ls -lh backups/ixstats-*.dump | tail -1
   ```
 
 - [ ] **Environment files backed up**
   ```bash
   cp .env.production .env.production.backup-$(date +%Y%m%d)
-  cp .env.local .env.local.backup-$(date +%Y%m%d)
+  cp .env.production.local .env.production.local.backup-$(date +%Y%m%d)
   ```
 
 - [ ] **Previous deployment code archived**
   ```bash
   # Tag current production deployment
-git tag -a production-pre-v1.0.0 -m "Production before IxStates 1.0 deployment"
-git push origin production-pre-v1.0.0
+git tag -a production-pre-v1.4.0 -m "Production before IxStates 1.4.0 deployment"
+git push origin production-pre-v1.4.0
+# Or just note the commit: git log -1 --oneline
   ```
 
 - [ ] **Backup retention verified**
-  - [ ] Database backups older than 30 days removed
+  - [ ] `backups/` holds the newest 14 dumps (`db:backup` prunes older ones; `--keep N` to change)
   - [ ] Sufficient disk space available (check with `df -h`)
 
 ---
@@ -131,11 +133,12 @@ git push origin production-pre-v1.0.0
 
 - [ ] **All required variables set**
   ```bash
-  # Run validation script
+  # Run validation scripts
   bun run auth:check:prod
+  bun run verify:environment
 
-  # Manual check - all these should be set:
-  grep -E "DATABASE_URL|CLERK_SECRET_KEY|NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" .env.production
+  # Manual check - all these should be set (secrets live in .env.production.local):
+  grep -E "DATABASE_URL|CLERK_SECRET_KEY|NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY|CRON_SECRET|IXTIME_BOT_SECRET|WIKI_SYNC_WEBHOOK_SECRET" .env.production .env.production.local
   ```
 
 - [ ] **Required environment variables:**
@@ -143,8 +146,13 @@ git push origin production-pre-v1.0.0
   - [ ] `DATABASE_URL` (PostgreSQL connection string)
   - [ ] `CLERK_SECRET_KEY` (production key, starts with `sk_live_`)
   - [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (production key, starts with `pk_live_`)
+  - [ ] `CRON_SECRET` (≥32 characters; the app refuses to start without it)
+  - [ ] `IXTIME_BOT_SECRET` (the app refuses to start without it)
+  - [ ] `WIKI_SYNC_WEBHOOK_SECRET` (≥32 characters; the app refuses to start without it)
+  - [ ] `NEXT_PUBLIC_APP_URL` and `WS_ALLOWED_ORIGINS` (WebSocket origin allowlist; fails closed)
+  - [ ] `CRON_ENABLED_JOBS` (in `ecosystem.config.cjs` for `ixstats-cron`; empty = no jobs)
   - [ ] `DISCORD_WEBHOOK_URL` (optional but recommended)
-  - [ ] `REDIS_URL` (for rate limiting in production)
+  - [ ] `REDIS_ENABLED="true"` + `REDIS_URL` (rate limiting, caches, ThinkPages broadcast bridge)
   - [ ] `PORT` (default: 3550)
 
 - [ ] **Optional but recommended variables:**
@@ -164,15 +172,15 @@ git push origin production-pre-v1.0.0
 - [ ] **Secrets not committed to git**
   ```bash
   # Verify .env files in .gitignore
-  git check-ignore .env.production .env.local
-  # Should show both files
+  git check-ignore .env.production .env.production.local .env.local
+  # Should show all three files
   ```
 
 ### Server Configuration
 
 - [ ] **Server requirements met:**
-  - [ ] Node.js version: v18.17.0 or higher
-  - [ ] bun version: 1.0.0 or higher
+  - [ ] Node.js version: v20 or higher (`engines.node` in package.json)
+  - [ ] bun version: 1.4.0 or higher (`engines.bun`)
   - [ ] PostgreSQL version: 14+ (if using PostgreSQL)
   - [ ] Redis: 6.0+ (for rate limiting)
   - [ ] Disk space: 10GB+ available
@@ -183,18 +191,18 @@ git push origin production-pre-v1.0.0
   - [ ] bun: `bun --version`
   - [ ] PostgreSQL: `psql --version` (if applicable)
   - [ ] Redis: `redis-cli --version` (if applicable)
-  - [ ] PM2: `pm2 --version` (if using PM2)
+  - [ ] PM2: `pm2 --version` (runs `ixstats-cron`, `ixstats-ws`, `ixstats-ixtwitter`)
 
 - [ ] **Firewall configured:**
   - [ ] Port 80 (HTTP) open
   - [ ] Port 443 (HTTPS) open
-  - [ ] Port 3550 (application) open (if direct access needed)
+  - [ ] Port 3550 (application) and 3551 (`ixstats-ws`) reachable from the reverse proxy only
   - [ ] Database port restricted to localhost or specific IPs
 
 - [ ] **SSL certificate valid:**
   ```bash
   # Check certificate expiry
-  openssl s_client -connect ixstats.com:443 -servername ixstats.com < /dev/null 2>/dev/null | openssl x509 -noout -dates
+  openssl s_client -connect ixwiki.com:443 -servername ixwiki.com < /dev/null 2>/dev/null | openssl x509 -noout -dates
   ```
 
 - [ ] **Reverse proxy configured (nginx/Apache):**
@@ -212,17 +220,17 @@ git push origin production-pre-v1.0.0
 
 - [ ] **Database server running**
   ```bash
-  # PostgreSQL
-  sudo systemctl status postgresql
-  # Should show: "active (running)"
+  # PostgreSQL (Docker container)
+  docker ps --filter name=ixstats-postgres
+  # Should show the container as Up
 
   # Test connection
-  psql -U postgres -c "SELECT version();"
+  docker exec ixstats-postgres psql -U postgres -c "SELECT version();"
   ```
 
 - [ ] **Database exists**
   ```bash
-  psql -U postgres -c "\l" | grep ixstats
+  docker exec ixstats-postgres psql -U postgres -c "\l" | grep ixstats
   # Should show ixstats database
   ```
 
@@ -247,17 +255,10 @@ git push origin production-pre-v1.0.0
   # Regenerate client for production
   ```
 
-- [ ] **Migration status checked**
-  ```bash
-  bunx prisma migrate status
-  # Should show: "Database schema is up to date!"
-  ```
-
-- [ ] **Pending migrations applied (if any)**
-  ```bash
-  bun run db:migrate:deploy
-  # Apply production migrations
-  ```
+- [ ] **Schema changes reviewed**
+  - The schema is applied with `prisma db push` (`bun run db:push:force`), which `deploy-production.sh` runs; the Prisma migration history stops in November 2025, so `prisma migrate status` / `db:migrate:deploy` are not meaningful
+  - Run any hand-written pre-push SQL (e.g. dedupes in `prisma/migrations/*.sql`) the release notes call for
+  - If `db push` warns about data loss, stop and read it; do not add `--accept-data-loss` blindly
 
 - [ ] **Schema validated**
   ```bash
@@ -294,7 +295,7 @@ git push origin production-pre-v1.0.0
 - [ ] **Database size acceptable**
   ```bash
   # PostgreSQL: Check database size
-  psql -U postgres -c "SELECT pg_size_pretty(pg_database_size('ixstats'));"
+  docker exec ixstats-postgres psql -U postgres -c "SELECT pg_size_pretty(pg_database_size('ixstats'));"
   ```
 
 ---
@@ -305,8 +306,8 @@ git push origin production-pre-v1.0.0
 
 - [ ] **Dependencies installed**
   ```bash
-  bun install --production
-  # Install only production dependencies
+  bun install --frozen-lockfile
+  # What deploy-production.sh runs (the build needs devDependencies)
   ```
 
 - [ ] **Build completes successfully**
@@ -336,19 +337,20 @@ git push origin production-pre-v1.0.0
 
 - [ ] **Start production build locally**
   ```bash
-  NODE_ENV=production bun run start
-  # Test on port 3550
+  bun run start
+  # server.mjs on port 3550 under /projects/ixstates
   ```
 
 - [ ] **Homepage loads**
   ```bash
-  curl -I http://localhost:3550
+  curl -I http://localhost:3550/projects/ixstates
   # Should return: HTTP/1.1 200 OK
   ```
 
 - [ ] **API endpoints respond**
   ```bash
-  curl http://localhost:3550/api/trpc/countries.getAll
+  curl http://localhost:3550/projects/ixstates/api/health
+  curl http://localhost:3550/projects/ixstates/api/trpc/countries.getAll
   # Should return JSON
   ```
 
@@ -367,7 +369,7 @@ git push origin production-pre-v1.0.0
 - [ ] **Performance acceptable**
   ```bash
   # Test page load time
-  curl -o /dev/null -s -w "Total: %{time_total}s\n" http://localhost:3550
+  curl -o /dev/null -s -w "Total: %{time_total}s\n" http://localhost:3550/projects/ixstates
 
   # Should be < 2 seconds
   ```
@@ -383,7 +385,7 @@ git push origin production-pre-v1.0.0
 - [ ] **Concurrent users tested**
   ```bash
   # Use tool like Apache Bench
-  ab -n 1000 -c 10 http://localhost:3550/
+  ab -n 1000 -c 10 http://localhost:3550/projects/ixstates/
   # 1000 requests, 10 concurrent
   ```
 
@@ -405,13 +407,13 @@ git push origin production-pre-v1.0.0
 
 Choose your deployment method:
 
-**Option A: Platform Deployment (Vercel/Netlify)**
+**Option A: Platform Deployment (Vercel/Netlify)** — not used. The repo is connected to a Vercel project, but `vercel.json` turns off its git deployments (`git.deploymentEnabled: false`): every Vercel build failed, since the app needs a database, Clerk keys, the `/projects/ixstates` base path and the git-ignored `next.config.js`. There is no `netlify.toml`
 - [ ] See [Platform Deployment](#platform-deployment)
 
-**Option B: VPS/Dedicated Server**
+**Option B: VPS/Dedicated Server** — **production path**
 - [ ] See [Manual Server Deployment](#manual-server-deployment)
 
-**Option C: Docker Container**
+**Option C: Docker Container** — not used; the repo ships no `Dockerfile` (Docker is only used for Postgres/Redis)
 - [ ] See [Docker Deployment](#docker-deployment)
 
 ---
@@ -431,7 +433,7 @@ Choose your deployment method:
 - [ ] **Build settings configured**
   - Build command: `bun run build`
   - Output directory: `.next`
-  - Node version: 18.x
+  - Node version: 20.x or later
 
 - [ ] **Deploy to preview**
   ```bash
@@ -461,67 +463,33 @@ Choose your deployment method:
 
 - [ ] **SSH into server**
   ```bash
-  ssh user@your-server.com
+  ssh ixwiki
   ```
 
 - [ ] **Navigate to application directory**
   ```bash
-  cd /var/www/ixstats
-  # Or your deployment directory
+  cd /ixwiki/public/projects/ixstats
   ```
 
-- [ ] **Pull latest code**
+- [ ] **Check out the release branch** (the deploy script deploys the checkout's current branch; the remote is named `master`)
   ```bash
-  git fetch origin
-  git checkout v2
-  git pull origin v2
+  git fetch master rose-garden
+  git checkout -B rose-garden master/rose-garden
   ```
 
-- [ ] **Install dependencies**
+- [ ] **Run the deploy script**
   ```bash
-  bun install --production
-  ```
-
-- [ ] **Build application**
-  ```bash
-  bun run build
-  ```
-
-- [ ] **Stop current application**
-  ```bash
-  # PM2
-  pm2 stop ixstats
-
-  # systemd
-  sudo systemctl stop ixstats
-
-  # Docker
-  docker-compose down
-  ```
-
-- [ ] **Start new application**
-  ```bash
-  # PM2
-  pm2 start ecosystem.config.cjs
-  pm2 save
-
-  # systemd
-  sudo systemctl start ixstats
-
-  # Docker
-  docker-compose up -d
+  ./scripts/deploy-production.sh
+  # hard-resets to master/<branch>, bun install --frozen-lockfile, db:generate,
+  # db:push:force, build, deploy-ixworld.sh, pm2 startOrReload ecosystem.config.cjs --update-env,
+  # frees port 3550 and execs start-production.sh (next start)
   ```
 
 - [ ] **Verify application started**
   ```bash
-  # PM2
-  pm2 status
-
-  # systemd
-  sudo systemctl status ixstats
-
-  # Docker
-  docker-compose ps
+  curl -s http://localhost:3550/projects/ixstates/api/health
+  pm2 status          # ixstats-cron, ixstats-ws, ixstats-ixtwitter online
+  curl -s http://localhost:3551/healthz   # ixstats-ws
   ```
 
 ---
@@ -570,12 +538,12 @@ Choose your deployment method:
 
 - [ ] **Application accessible**
   ```bash
-  curl -I https://ixstats.com
+  curl -I https://ixwiki.com/projects/ixstates
   # Should return: HTTP/2 200
   ```
 
 - [ ] **Homepage loads**
-  - Visit https://ixstats.com
+  - Visit https://ixwiki.com/projects/ixstates
   - Page loads without errors
   - No JavaScript console errors
 
@@ -586,8 +554,8 @@ Choose your deployment method:
 
 - [ ] **Critical API endpoints functional**
   ```bash
-  curl https://ixstats.com/api/trpc/countries.getAll
-  curl https://ixstats.com/api/trpc/users.getProfile
+  curl https://ixwiki.com/projects/ixstates/api/trpc/countries.getAll
+  curl https://ixwiki.com/projects/ixstates/api/trpc/users.getProfile
   # Both should return valid JSON
   ```
 
@@ -645,14 +613,14 @@ Test all critical features:
 - [ ] **Page load times acceptable**
   ```bash
   # Test with curl
-  curl -o /dev/null -s -w "Total: %{time_total}s\n" https://ixstats.com
+  curl -o /dev/null -s -w "Total: %{time_total}s\n" https://ixwiki.com/projects/ixstates
 
   # Should be < 3 seconds
   ```
 
 - [ ] **Lighthouse score acceptable**
   ```bash
-  bunx lighthouse https://ixstats.com --view
+  bunx lighthouse https://ixwiki.com/projects/ixstates --view
   # Performance: 70+
   # Accessibility: 90+
   # Best Practices: 80+
@@ -682,7 +650,7 @@ Test all critical features:
 
 - [ ] **Discord webhooks sending**
   - Check Discord channel
-  - Verify deployment notification received
+  - Note: the app only posts `ERROR`-level logs (production, `DISCORD_WEBHOOK_ENABLED=true`); `deploy-production.sh` sends no deployment notification
 
 - [ ] **Email notifications working (if applicable)**
   - Send test email
@@ -690,7 +658,7 @@ Test all critical features:
 
 - [ ] **Redis connection active**
   ```bash
-  redis-cli ping
+  docker exec ixstats-redis-cache redis-cli ping
   # Should return: PONG
   ```
 
@@ -702,20 +670,17 @@ Test all critical features:
 
 - [ ] **Application logs being written**
   ```bash
-  # PM2
-  pm2 logs ixstats
+  # Web app: the terminal/session running start-production.sh (it is not a PM2 app)
 
-  # systemd
-  journalctl -u ixstats -f
-
-  # Docker
-  docker-compose logs -f ixstats
+  # PM2 processes
+  pm2 logs ixstats-cron --lines 50 --nostream
+  pm2 logs ixstats-ws --lines 50 --nostream
   ```
 
 - [ ] **Error logs monitored**
   ```bash
-  tail -f logs/error.log
-  # Check for unexpected errors
+  # [SECURITY_AUDIT], [RATE_LIMIT] and [ERROR_LOGGER] lines in the app output;
+  # ERROR-level entries also go to the Discord webhook when enabled
   ```
 
 - [ ] **Access logs monitored**
@@ -726,7 +691,7 @@ Test all critical features:
 
 - [ ] **Database logs checked**
   ```bash
-  tail -f /var/log/postgresql/postgresql-*.log
+  docker logs --tail 100 -f ixstats-postgres
   # Check for errors or slow queries
   ```
 
@@ -736,8 +701,8 @@ Test all critical features:
   ```bash
   # Use service like UptimeRobot, Pingdom, or custom script
 
-  # Simple health check
-  curl https://ixstats.com/api/health
+  # Simple health check (200 ok / 503 degraded; reports db + memory)
+  curl https://ixwiki.com/projects/ixstates/api/health
   ```
 
 - [ ] **Monitor these metrics:**
@@ -783,43 +748,24 @@ Immediately rollback if:
   - Document reason for rollback
   - Notify team
 
-- [ ] **Stop current deployment**
+- [ ] **Revert to previous version and redeploy**
   ```bash
-  pm2 stop ixstats
-  # or
-  docker-compose down
-  ```
-
-- [ ] **Revert to previous version**
-  ```bash
-  git checkout production-pre-v1.0.0
-  # Or specific commit: git checkout <commit-hash>
-  ```
-
-- [ ] **Reinstall dependencies**
-  ```bash
-  bun install --production
-  ```
-
-- [ ] **Rebuild application**
-  ```bash
-  bun run build
+  cd /ixwiki/public/projects/ixstats
+  git checkout -B <previous branch> <commit noted before deploying>
+  ./scripts/deploy-production.sh
+  # NOTE: the script hard-resets to master/<branch>, so the previous commit must be
+  # the tip of that branch on the remote (or push a rollback branch first).
+  # `bun run deploy:rollback` (scripts/deployment/rollback-deployment.sh) is an older helper; read it before use.
   ```
 
 - [ ] **Restore database (if needed)**
   ```bash
-  # PostgreSQL
-  psql -U postgres -d ixstats < backups/ixstats-YYYYMMDD.sql
+  # PostgreSQL (Docker), from the pre-deploy dump in backups/ (prints the plan; add --yes to restore)
+  bun run db:restore -- ixstats-<stamp>.dump --i-know-this-is-production
+  bun run db:restore -- ixstats-<stamp>.dump --i-know-this-is-production --yes
 
   # Verify restore
-  psql -U postgres -d ixstats -c "SELECT version();"
-  ```
-
-- [ ] **Restart application**
-  ```bash
-  pm2 start ecosystem.config.cjs
-  # or
-  docker-compose up -d
+  docker exec ixstats-postgres psql -U postgres -d ixstats -c "SELECT count(*) FROM \"Country\";"
   ```
 
 - [ ] **Verify rollback successful**
@@ -848,8 +794,8 @@ After successful deployment (wait 24-48 hours):
 
 - [ ] **Remove old backups**
   ```bash
-  # Keep last 7 days of backups
-  find backups/ -name "*.sql" -mtime +7 -delete
+  # backups/ is pruned by db:backup (newest 14 kept); remove older manual dumps in /root
+  find /root -maxdepth 1 -name "ixstats-*.dump" -mtime +7 -delete
   ```
 
 - [ ] **Clean up build artifacts**
@@ -907,7 +853,7 @@ Use this checklist for every production deployment to ensure:
 
 ---
 
-**Last Updated:** August 2026
-**Version:** IxStates 1.4.0 "Ogma" (Release Candidate)
+**Last Updated:** September 2026
+**Version:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)
 **Maintainer:** IxStates Core Engineering
 

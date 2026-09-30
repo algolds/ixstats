@@ -14,7 +14,7 @@ export interface FontConfig {
  * Recursively scans a style object to resolve placeholder fonts
  * with runtime-specific font arrays (DejaVu vs Noto Sans).
  */
-export function resolveStylePlaceholders(obj: any, glyphsUrl: string, fonts: FontConfig): any {
+function resolveStylePlaceholders(obj: any, glyphsUrl: string, fonts: FontConfig): any {
   if (Array.isArray(obj)) {
     if (obj.length === 1) {
       if (obj[0] === "__FONT_REGULAR__") return [...fonts.regular];

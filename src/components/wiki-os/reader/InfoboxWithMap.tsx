@@ -1,5 +1,5 @@
-// src/components/wiki-os/reader/InfoboxWithMap.tsx
 "use client";
+// src/components/wiki-os/reader/InfoboxWithMap.tsx
 
 import { useMemo } from "react";
 import Link from "next/link";
@@ -49,7 +49,7 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
   const blurbs = blurbData?.pages.flatMap((p) => p.responses) ?? [];
 
   return (
-    <aside className="wikios-infobox glass-hierarchy-child">
+    <aside className="wikios-infobox facet-hierarchy-child">
       <div dangerouslySetInnerHTML={{ __html: infoboxHtml }} />
       {matchedCountry && (
         <div className="wikios-infobox-map-embed">

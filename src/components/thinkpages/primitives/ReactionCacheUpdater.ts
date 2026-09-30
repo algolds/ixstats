@@ -102,7 +102,31 @@ export const updateReactionsInCacheData = (
     };
   }
 
-  // Case 3: Single post object
+  // Case 3: Activity Feed Data { activities: Array<any> } (Dashboard feeds)
+  if (oldData.activities && Array.isArray(oldData.activities)) {
+    return {
+      ...oldData,
+      activities: oldData.activities.map((item: any) => {
+        if (!item) return item;
+        if (item.source === "thinkpages" && item.rawPost) {
+          const updatedRawPost = updatePost(item.rawPost);
+          if (updatedRawPost !== item.rawPost) {
+            return {
+              ...item,
+              rawPost: updatedRawPost,
+              engagement: {
+                ...item.engagement,
+                likes: updatedRawPost.likeCount ?? item.engagement?.likes ?? 0,
+              },
+            };
+          }
+        }
+        return item;
+      }),
+    };
+  }
+
+  // Case 4: Single post object
   if (oldData.id === postId) {
     return updatePost(oldData);
   }

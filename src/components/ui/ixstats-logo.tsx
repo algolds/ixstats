@@ -2,8 +2,8 @@
 
 import React from "react";
 import { motion, type Easing } from "motion/react";
-import { TrendingUp, Crown, Globe } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { StatUp as TrendingUp, Crown, Globe } from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
 
 interface IxStatsLogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
@@ -87,6 +87,7 @@ export function IxStatsLogo({
       : {},
   };
 
+  // oxlint-disable-next-line
   const LogoIcon = () => (
     <motion.div
       className={cn("relative flex items-center justify-center", config.container)}
@@ -134,6 +135,7 @@ export function IxStatsLogo({
     </motion.div>
   );
 
+  // oxlint-disable-next-line
   const LogoText = () => (
     <h1
       className={cn(

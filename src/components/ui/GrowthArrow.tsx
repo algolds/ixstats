@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "~/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { cn } from "~/lib/utils/cn";
+import { StatUp as TrendingUp, StatDown as TrendingDown } from "iconoir-react";
 
 interface GrowthArrowProps {
   /** Signed percentage change, e.g. 2.4 or -1.1. */
@@ -32,12 +32,12 @@ export function GrowthArrow({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-0.5 text-[10px] font-semibold",
+        "inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold",
         !inheritColor && (up ? "text-emerald-500" : "text-red-500"),
         className
       )}
     >
-      <Icon size={size} />
+      <Icon width={size} height={size} />
       {!iconOnly && (
         <span>
           {up ? "+" : ""}

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * GlobalLinkTooltipProvider — Intercepts ALL link hovers across the entire app.
+ * GlobalLinkTooltips — Intercepts ALL link hovers across the entire app.
  *
  * Uses document-level event delegation to detect any <a> pointing to:
  * - ixwiki.com/wiki/*       → Wiki article preview tooltip
@@ -9,15 +9,21 @@
  * - forum.ixwiki.com/threads/* → Forum thread preview tooltip
  * - maps.ixwiki.com/*       → Map link indicator
  *
- * Mount once in the root layout — every link gets tooltips automatically,
- * no per-component wrapping needed. Future wiki/forum links added anywhere
- * in the app will automatically get tooltip coverage.
+ * Mount once in the root layout as a sibling (it wraps nothing) — every link gets
+ * tooltips automatically, no per-component wrapping needed. Future wiki/forum links
+ * added anywhere in the app will automatically get tooltip coverage.
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
-import { BookOpen, ExternalLink, MessageSquare, Eye, Users } from "lucide-react";
+import {
+  OpenBook as BookOpen,
+  OpenNewWindow as ExternalLink,
+  ChatBubble as MessageSquare,
+  Eye,
+  Group as Users,
+} from "iconoir-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 
 // ──────────────────────────────────────────────
@@ -98,10 +104,10 @@ function clampX(rect: DOMRect): number {
 }
 
 // ──────────────────────────────────────────────
-// Provider component
+// Tooltip host component
 // ──────────────────────────────────────────────
 
-export function GlobalLinkTooltipProvider({ children }: { children: React.ReactNode }) {
+export function GlobalLinkTooltips() {
   const [activeLink, setActiveLink] = useState<DetectedLink | null>(null);
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -179,30 +185,25 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
     };
   }, [show, hide, keepOpen]);
 
-  return (
-    <>
-      {children}
-      {activeLink &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            className="global-link-tooltip border-border bg-card animate-in fade-in-0 zoom-in-95 fixed z-[9999] w-80 rounded-xl border p-3 shadow-xl duration-150"
-            style={{ left: activeLink.x, top: activeLink.y }}
-            onMouseEnter={keepOpen}
-            onMouseLeave={() => {
-              setActiveLink(null);
-              activeElementRef.current = null;
-            }}
-          >
-            {activeLink.kind === "wiki" ? (
-              <WikiTooltipBody title={activeLink.title} wiki={activeLink.wiki} />
-            ) : (
-              <ForumTooltipBody threadId={activeLink.threadId} />
-            )}
-          </div>,
-          document.body
-        )}
-    </>
+  if (!activeLink || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="global-link-tooltip border-border bg-card animate-in fade-in-0 zoom-in-95 fixed z-[9999] w-80 rounded-xl border p-3 shadow-xl duration-150"
+      style={{ left: activeLink.x, top: activeLink.y }}
+      onMouseEnter={keepOpen}
+      onMouseLeave={() => {
+        setActiveLink(null);
+        activeElementRef.current = null;
+      }}
+    >
+      {activeLink.kind === "wiki" ? (
+        <WikiTooltipBody title={activeLink.title} wiki={activeLink.wiki} />
+      ) : (
+        <ForumTooltipBody threadId={activeLink.threadId} />
+      )}
+    </div>,
+    document.body
   );
 }
 
@@ -223,7 +224,7 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
       <div className="flex items-center gap-2">
         <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium">
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
@@ -238,7 +239,7 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
       <a
         href={articleUrl}
         {...(wiki === "ixwiki" ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-        className="flex items-center gap-1 text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+        className="flex items-center gap-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
       >
         Read full article <ExternalLink className="h-2.5 w-2.5" />
       </a>
@@ -262,7 +263,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
           <span className="text-foreground text-sm font-medium">Loading thread...</span>
         </div>
         <div className="bg-muted h-10 animate-pulse rounded" />
@@ -273,11 +274,11 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
         <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
+        <span className="inline-block rounded-full bg-orange-500/10 px-1.5 py-0.5 text-xs font-medium text-orange-400">
           {thread.forumName}
         </span>
       )}
@@ -287,7 +288,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
           {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
+      <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <span className="flex items-center gap-0.5">
           <Users className="h-2.5 w-2.5" />
           {thread.author}
@@ -305,7 +306,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         href={forumUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1 text-[10px] font-medium text-violet-500 transition-colors hover:text-violet-400"
+        className="flex items-center gap-1 text-xs font-medium text-orange-500 transition-colors hover:text-orange-400"
       >
         Open thread <ExternalLink className="h-2.5 w-2.5" />
       </a>

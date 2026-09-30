@@ -1,21 +1,19 @@
+"use client";
 // src/components/wiki-os/stashes/StashImagesGrid.tsx
 // Saved Wikimedia Commons media grid with interactive lightbox modal.
 
-"use client";
-
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import {
   ZoomIn,
-  Loader2,
-  X,
+  SystemRestart as Loader2,
+  Xmark as X,
   Copy,
   Check,
-  ImageIcon,
+  MediaImage as ImageIcon,
   Download,
-  Trash2,
-} from "lucide-react";
+  Trash as Trash2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { CommonsImage } from "./types";
@@ -36,64 +34,62 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => {
           const imgInfo = resolvedImagesMap.get(item.pageTitle);
-          const cleanTitle = item.pageTitle
-            .replace(/^commons:File:/, "")
-            .replace(/_/g, " ");
+          const cleanTitle = item.pageTitle.replace(/^commons:File:/, "").replace(/_/g, " ");
 
           return (
             <div
               key={item.id}
-              className="wikios-commons-card group relative cursor-pointer overflow-hidden"
+              className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
               onClick={() => imgInfo && setSelectedImage(imgInfo)}
             >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.05}
-                className="mix-blend-overlay"
-              />
-              <TextureOverlay
-                texture="dots"
-                opacity={0.03}
-                className="mix-blend-overlay"
-              />
-              <div className="wikios-commons-card-thumb">
+              <div className="relative aspect-4/3 w-full overflow-hidden border-b border-[var(--wikios-border)]/60 bg-white/5">
                 {imgInfo ? (
                   <img
                     src={imgInfo.thumbUrl}
                     alt={cleanTitle}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-white/5">
+                  <div className="flex h-full w-full items-center justify-center">
                     <Loader2 className="h-4 w-4 animate-spin opacity-40" />
                   </div>
                 )}
-                <div className="wikios-commons-card-overlay">
-                  <ZoomIn className="h-5 w-5" />
+
+                {/* Hover overlay button */}
+                <div className="backdrop-blur-2xs absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/20 shadow-md">
+                    <ZoomIn className="h-4 w-4" />
+                  </div>
                 </div>
+
+                {/* Remove button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUnstash(item.pageTitle);
+                  }}
+                  className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-black/60 text-white opacity-0 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:opacity-100 hover:border-rose-500 hover:bg-rose-500/80"
+                  title="Remove from stash"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
-              <div className="wikios-commons-card-info">
-                <span className="wikios-commons-card-title truncate" title={cleanTitle}>
+
+              <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
+                <span
+                  className="truncate text-xs font-bold text-[var(--wikios-text)] transition-colors group-hover:text-[var(--wikios-accent)]"
+                  title={cleanTitle}
+                >
                   {cleanTitle}
                 </span>
-                <span className="wikios-commons-card-meta">
-                  {imgInfo ? `${imgInfo.width}×${imgInfo.height}` : "..."}
+                <span className="font-mono text-xs text-[var(--wikios-text-dim)]">
+                  {imgInfo ? `${imgInfo.width} × ${imgInfo.height}` : "..."}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUnstash(item.pageTitle);
-                }}
-                className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded border border-white/10 bg-black/60 text-white opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
-                title="Remove from stash"
-              >
-                <X size={12} />
-              </button>
             </div>
           );
         })}
@@ -144,7 +140,7 @@ export function StashedImageModal({
         const cleanName = image.title.replace(/^File:/, "");
         const res = await utils.wikios.downloadFile.fetch({ filename: cleanName });
         if (!res || !res.content) {
-          throw new Error("Failed to download image from server");
+          throw new Error("Failed to download image from server", { cause: directErr });
         }
         const byteCharacters = atob(res.content);
         const byteNumbers = new Array(byteCharacters.length);
@@ -234,7 +230,7 @@ export function StashedImageModal({
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 cursor-pointer rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 p-2.5 text-[var(--wikios-text)] transition-all hover:bg-[var(--wikios-border)]"
+        className="absolute top-4 right-4 cursor-pointer rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 p-2.5 text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)]"
         title="Close Lightbox"
         type="button"
       >
@@ -267,7 +263,7 @@ export function StashedImageModal({
         <div className="flex w-full flex-col justify-between gap-4 md:w-80">
           <div className="flex flex-col gap-3">
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-[var(--wikios-accent)] uppercase">
+              <span className="text-xs font-bold tracking-wider text-[var(--wikios-accent)] uppercase">
                 Stashed Media
               </span>
               <h2 className="mt-0.5 text-lg leading-tight font-bold break-words text-[var(--wikios-text)]">
@@ -299,7 +295,7 @@ export function StashedImageModal({
 
             {/* Wikitext formats */}
             <div>
-              <span className="mb-1.5 block text-[9px] font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+              <span className="mb-1.5 block text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
                 Wikitext Copy Format
               </span>
               <div className="wikios-filter-group grid grid-cols-4">
@@ -331,7 +327,7 @@ export function StashedImageModal({
               <button
                 type="button"
                 onClick={handleCopy}
-                className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--wikios-accent)] py-2 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--wikios-accent)] py-2 text-sm font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.98]"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {copied ? "Copied!" : format === "url" ? "Copy URL" : "Copy Wikitext"}
@@ -340,7 +336,7 @@ export function StashedImageModal({
                 type="button"
                 onClick={handleCopyImage}
                 disabled={isCopyingImage}
-                className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-sm font-semibold text-[var(--wikios-text)] transition-all hover:bg-[var(--wikios-border)] active:scale-[0.98] disabled:opacity-50"
+                className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-sm font-semibold text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)] active:scale-[0.98] disabled:opacity-50"
                 title="Copy Image to Clipboard"
               >
                 {isCopyingImage ? (
@@ -358,14 +354,14 @@ export function StashedImageModal({
               <button
                 type="button"
                 onClick={() => window.open(image.url, "_blank")}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-xs font-semibold text-[var(--wikios-text)] transition-all hover:bg-[var(--wikios-border)]"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-xs font-semibold text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)]"
               >
                 <Download className="h-3.5 w-3.5" /> Download
               </button>
               <button
                 type="button"
                 onClick={onUnstash}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-semibold text-red-500 transition-all hover:bg-red-500/20 dark:text-red-400"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-semibold text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/20 dark:text-red-400"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Unstash
               </button>
@@ -382,7 +378,7 @@ export function StashedImageModal({
         >
           <button
             onClick={() => setIsZoomed(false)}
-            className="absolute top-4 right-4 cursor-pointer rounded-full border border-white/10 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20"
+            className="absolute top-4 right-4 cursor-pointer rounded-full border border-white/10 bg-white/10 p-2.5 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/20"
             title="Exit Fullscreen"
             type="button"
           >

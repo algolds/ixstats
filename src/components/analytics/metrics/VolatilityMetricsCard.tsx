@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { Activity } from "lucide-react";
+import { Activity } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import type { VolatilityMetric } from "~/lib/utils";
@@ -18,7 +18,7 @@ interface VolatilityMetricsCardProps {
 
 export const VolatilityMetricsCard = React.memo<VolatilityMetricsCardProps>(({ metrics }) => {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-orange-600" />

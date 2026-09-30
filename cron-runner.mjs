@@ -1,19 +1,18 @@
 #!/usr/bin/env node
 /**
- * Standalone cron runner.
+ * Standalone cron runner — the ONLY scheduler for IxStats jobs (plan 330).
  *
- * Why this exists: the scheduled jobs (passive income, auctions, card values,
- * lore cards, lorewards, trades, sports) historically lived only inside the
- * custom Next server (`server.mjs`). Production is currently served by a plain
- * Next standalone server (no custom server), so `server.mjs`'s cron never ran —
- * passive income / yield boosts never distributed. This process runs the same
- * schedules independently so they fire regardless of how the web app is served.
+ * Run as its own PM2 app under Bun (see ecosystem.config.cjs → "ixstats-cron"). The web app
+ * (`next start`, server.mjs, ws-backend.mjs) schedules nothing.
  *
- * Run as its own PM2 app (see ecosystem.config.cjs → "ixstats-cron").
+ * Jobs are defined in src/server/cron/jobs.ts. At startup every job module is imported and
+ * the process exits non-zero if any import fails. Only the jobs named in CRON_ENABLED_JOBS
+ * (comma-separated job names, or "*" for all; unset/empty = none) are scheduled. Each run
+ * holds the Postgres advisory lock from src/lib/system/job-lock.ts, so a slow run, a second
+ * runner or a manual trigger skips instead of double-applying.
  *
- * SINGLE OWNER: do not also run `server.mjs` with its inline cron, or daily
- * payouts will double. ixtwitter sync is intentionally omitted here because it
- * already runs as the separate "ixstats-ixtwitter" PM2 process.
+ * ixtwitter sync is intentionally not a job here: it runs as the separate
+ * "ixstats-ixtwitter" PM2 process.
  *
  * NOTE: no top-level await — PM2's Bun fork container `require()`s this entry
  * file, which fails on top-level await. Everything runs inside main().
@@ -25,7 +24,10 @@ function loadEnvVariables() {
   const cwd = process.cwd();
   const mode = process.env.NODE_ENV || "development";
   const envFiles =
-    mode === "production" ? [".env.production", ".env.local"] : [".env.local.dev", ".env.local"];
+    mode === "production"
+      ? // .env.production.local holds the prod secrets (same list as ws-backend.mjs); first file wins.
+        [".env.production", ".env.local", ".env.production.local"]
+      : [".env.local.dev", ".env.local"];
   envFiles.push(".env");
 
   for (const file of envFiles) {
@@ -54,208 +56,93 @@ function loadEnvVariables() {
   }
 }
 
-function matchCronField(field, value) {
-  if (field === "*") return true;
-  if (field.includes("/")) {
-    const [range, stepStr] = field.split("/");
-    const step = parseInt(stepStr, 10);
-    if (isNaN(step) || step <= 0) return false;
-    let min = 0;
-    if (range !== "*") {
-      min = parseInt(range, 10) || 0;
-    }
-    return (value - min) % step === 0 && value >= min;
-  }
-  if (field.includes(",")) {
-    return field.split(",").some((f) => matchCronField(f.trim(), value));
-  }
-  if (field.includes("-")) {
-    const [start, end] = field.split("-").map((v) => parseInt(v, 10));
-    return value >= start && value <= end;
-  }
-  return parseInt(field, 10) === value;
-}
-
-function matchesCron(pattern, date = new Date()) {
-  const parts = pattern.trim().split(/\s+/);
-  if (parts.length !== 5) return false;
-  const [m, h, dom, mon, dow] = parts;
-
-  const minute = date.getUTCMinutes();
-  const hour = date.getUTCHours();
-  const dayOfMonth = date.getUTCDate();
-  const month = date.getUTCMonth() + 1;
-  const dayOfWeek = date.getUTCDay();
-
-  return (
-    matchCronField(m, minute) &&
-    matchCronField(h, hour) &&
-    matchCronField(dom, dayOfMonth) &&
-    matchCronField(mon, month) &&
-    matchCronField(dow, dayOfWeek)
-  );
-}
-
 async function main() {
+  if (typeof Bun === "undefined") {
+    console.error("[Cron] cron-runner.mjs must run under Bun");
+    process.exit(1);
+  }
   loadEnvVariables();
 
-  // Schedules (overridable via SystemConfig, matching server.mjs)
-  let cronSchedule_lorewardsScoring = "0 6 * * *";
-  let cronSchedule_passiveIncome = "0 0 * * *";
-  let cronSchedule_cardValue = "0 */6 * * *";
-  try {
-    const { PrismaClient } = await import("@prisma/client");
-    const db = new PrismaClient();
-    const configs = await db.systemConfig.findMany({
-      where: {
-        key: {
-          in: [
-            "cronSchedule_lorewardsScoring",
-            "cronSchedule_passiveIncome",
-            "cronSchedule_cardValue",
-          ],
-        },
-      },
-    });
-    for (const c of configs) {
-      if (c.key === "cronSchedule_lorewardsScoring" && c.value)
-        cronSchedule_lorewardsScoring = c.value.trim();
-      else if (c.key === "cronSchedule_passiveIncome" && c.value)
-        cronSchedule_passiveIncome = c.value.trim();
-      else if (c.key === "cronSchedule_cardValue" && c.value)
-        cronSchedule_cardValue = c.value.trim();
+  const [
+    { CRON_JOBS, resolveEnabledJobs, resolveSchedule, summarizeResult },
+    { startScheduler },
+    { withJobLock },
+    { db },
+    { env },
+  ] = await Promise.all([
+    import("./src/server/cron/jobs.js"),
+    import("./src/server/cron/scheduler.js"),
+    import("./src/lib/system/job-lock.js"),
+    import("./src/server/db.js"),
+    import("./src/env.js"),
+  ]);
+
+  // Fail loudly: every job module must import, enabled or not, so a broken path can never
+  // silently disable a job again. PM2 restart-loops on this exit — check `pm2 logs`.
+  const runs = new Map();
+  for (const job of CRON_JOBS) {
+    try {
+      runs.set(job.name, await job.load());
+    } catch (error) {
+      console.error("[Cron] FATAL: job module failed to import:", job.name, error);
+      process.exit(1);
     }
-    await db.$disconnect();
-  } catch (error) {
-    console.warn("[Cron] Failed to fetch custom schedules, using defaults:", error.message);
   }
 
-  const isBun = typeof Bun !== "undefined" && typeof Bun.cron === "function";
+  const { enabled, unknown } = resolveEnabledJobs(env.CRON_ENABLED_JOBS);
+  if (unknown.length > 0) {
+    console.error(`[Cron] FATAL: unknown job name(s) in CRON_ENABLED_JOBS: ${unknown.join(", ")}`);
+    process.exit(1);
+  }
+  if (enabled.length === 0) {
+    console.warn("[Cron] CRON_ENABLED_JOBS is empty — no jobs scheduled");
+  }
 
-  const scheduleCron = (name, schedule, handler) => {
+  // SystemConfig schedule overrides (read once at startup; restart to pick up changes).
+  const overrides = new Map();
+  const configKeys = enabled.flatMap((job) =>
+    job.scheduleConfigKey ? [job.scheduleConfigKey] : []
+  );
+  if (configKeys.length > 0) {
     try {
-      if (isBun) {
-        Bun.cron({
-          pattern: schedule,
-          run: handler,
-        });
-        console.log(`[Cron:Bun] ✓ ${name} (${schedule})`);
-      } else {
-        // Zero-dependency minute polling for fallback Node runtime
-        setInterval(() => {
-          if (matchesCron(schedule)) {
-            handler();
-          }
-        }, 60000);
-        console.log(`[Cron:Native] ✓ ${name} (${schedule})`);
-      }
+      const rows = await db.systemConfig.findMany({
+        where: { key: { in: configKeys } },
+        select: { key: true, value: true },
+      });
+      for (const row of rows) overrides.set(row.key, row.value);
     } catch (error) {
-      console.error(`[Cron] ✗ Failed to schedule ${name} (${schedule}):`, error.message);
+      console.warn("[Cron] Failed to fetch custom schedules, using defaults:", error.message);
     }
+  }
+
+  // Cross-process single-flight for every job (plan 328): a Postgres advisory lock via the
+  // shared db singleton. A run that finds the lock held is skipped.
+  const runLocked = async (job) => {
+    const startedAt = Date.now();
+    const outcome = await withJobLock(db, job.lockName, runs.get(job.name), {
+      timeoutMs: job.timeoutMs,
+    });
+    if (!outcome.ran) {
+      console.log(`[Cron] ${job.name} skipped — another run holds the "${job.lockName}" lock`);
+      return;
+    }
+    console.log(
+      `[Cron] ${job.name} done in ${Date.now() - startedAt}ms: ${summarizeResult(outcome.result)}`
+    );
   };
 
-  scheduleCron("Auction completion", "* * * * *", async () => {
-    try {
-      const { processExpiredAuctions } = await import("./src/lib/auction-completion-cron.js");
-      await processExpiredAuctions();
-    } catch (error) {
-      console.error("[Cron] Auction completion failed:", error);
-    }
+  const tasks = enabled.map((job) => {
+    const schedule = resolveSchedule(job, overrides);
+    console.log(`[Cron] ✓ ${job.name} (${schedule})`);
+    return { name: job.name, schedule, run: () => runLocked(job) };
   });
+  startScheduler(tasks);
 
-  scheduleCron("Passive income distribution", cronSchedule_passiveIncome, async () => {
-    try {
-      const { distributePassiveIncome } = await import(
-        "./src/lib/passive-income-distribution-cron.js"
-      );
-      await distributePassiveIncome();
-    } catch (error) {
-      console.error("[Cron] Passive income distribution failed:", error);
-    }
-  });
+  console.log(
+    `[Cron] Standalone cron runner started: ${tasks.length}/${CRON_JOBS.length} jobs enabled.`
+  );
 
-  scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
-    try {
-      const { updateCardValues } = await import("./src/lib/nation-card-value-update-cron.js");
-      await updateCardValues();
-    } catch (error) {
-      console.error("[Cron] Card value update failed:", error);
-    }
-  });
-
-  scheduleCron("Lore card generation", "0 2 * * *", async () => {
-    try {
-      const { generateDailyLoreCards } = await import("./src/lib/lore-card-generation-cron.js");
-      await generateDailyLoreCards();
-    } catch (error) {
-      console.error("[Cron] Lore card generation failed:", error);
-    }
-  });
-
-  let loreSyncRunning = false;
-  scheduleCron("Lorewards fullSync", cronSchedule_lorewardsScoring, async () => {
-    if (loreSyncRunning) return;
-    loreSyncRunning = true;
-    try {
-      const { fullSync } = await import("./src/lib/lorewards-sync.js");
-      await fullSync();
-    } catch (error) {
-      console.error("[Cron] Lorewards fullSync failed:", error);
-    } finally {
-      loreSyncRunning = false;
-    }
-  });
-
-  // Pull the bot's local state file every 10 min so the calendar tracks the bot
-  // without waiting for the daily fullSync. Cheap: local JSON read + upserts, no
-  // wiki DB / no stats recompute (fullSync still does the heavy reconciliation).
-  let loreStateSyncRunning = false;
-  scheduleCron("Lorewards state-file sync", "*/10 * * * *", async () => {
-    if (loreStateSyncRunning || loreSyncRunning) return;
-    loreStateSyncRunning = true;
-    try {
-      const { syncFromStateFile } = await import("./src/lib/lorewards-sync.js");
-      await syncFromStateFile();
-    } catch (error) {
-      console.error("[Cron] Lorewards state-file sync failed:", error);
-    } finally {
-      loreStateSyncRunning = false;
-    }
-  });
-
-  scheduleCron("Trade expiry", "*/5 * * * *", async () => {
-    try {
-      const { processExpiredTrades } = await import("./src/lib/trade-expiry-cron.js");
-      await processExpiredTrades();
-    } catch (error) {
-      console.error("[Cron] Trade expiry failed:", error);
-    }
-  });
-
-  // Every 15 min: the advancer self-gates on each match's scheduledIxTime and
-  // no-ops when nothing is due, so a tight tick just trims resolve latency.
-  // The reentrancy guard prevents overlap if a run runs long (it shouldn't).
-  let sportsAdvanceRunning = false;
-  scheduleCron("Sports season auto-advance", "*/15 * * * *", async () => {
-    if (sportsAdvanceRunning) return;
-    sportsAdvanceRunning = true;
-    try {
-      const { PrismaClient } = await import("@prisma/client");
-      const { advanceSportsSeasons } = await import("./src/lib/sports/season-cron.js");
-      const db = new PrismaClient();
-      const advanced = await advanceSportsSeasons(db);
-      if (advanced > 0) console.log(`[Cron] Sports: advanced ${advanced} seasons`);
-      await db.$disconnect();
-    } catch (error) {
-      console.error("[Cron] Sports season advance failed:", error.message);
-    } finally {
-      sportsAdvanceRunning = false;
-    }
-  });
-
-  console.log("[Cron] Standalone cron runner started.");
-
-  // Keep the process alive.
+  // Keep the process alive even with no jobs scheduled.
   setInterval(() => {}, 1 << 30);
 }
 

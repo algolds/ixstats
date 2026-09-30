@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Crosshair, Shield, Anchor, Swords, GraduationCap, AlertTriangle } from "lucide-react";
+import {
+  Archery as Crosshair,
+  Shield,
+  SeaWaves as Anchor,
+  Tournament as Swords,
+  GraduationCap,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -25,6 +32,7 @@ import { Slider } from "~/components/ui/slider";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
+import { formatCurrency } from "~/lib/utils/format-utils";
 
 interface DeploymentWizardProps {
   countryId: string;
@@ -154,12 +162,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     setSelectedAssetIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-  };
-
-  const formatCurrency = (val: number) => {
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-    return `$${val.toLocaleString()}`;
   };
 
   return (

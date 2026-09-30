@@ -3,17 +3,17 @@
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  MessageSquare,
+  ChatBubble as MessageSquare,
   Search,
-  ChevronRight,
+  NavArrowRight as ChevronRight,
   Plus,
-  Layout,
+  ViewGrid as Layout,
   Bookmark,
-  RefreshCw,
-  X,
+  Refresh as RefreshCw,
+  Xmark as X,
   Bell,
   Settings,
-} from "lucide-react";
+} from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useUser } from "~/context/auth-context";
@@ -27,7 +27,7 @@ export interface ForumViewProps extends DIViewProps {}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
+    <div className="text-muted-foreground px-1 pt-2 pb-1 text-xs font-semibold tracking-wider uppercase">
       {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
     </div>
   );
@@ -54,7 +54,7 @@ function ForumRow({
   return (
     <Component
       onClick={onClick}
-      className={`group hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
+      className={`group hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
         onClick ? "cursor-pointer" : "cursor-default"
       }`}
     >
@@ -78,7 +78,7 @@ function ForumRow({
       {rightElement !== undefined ? (
         rightElement
       ) : onClick ? (
-        <ChevronRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-3.5 w-3.5 transition-all group-hover:translate-x-0.5" />
+        <ChevronRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-3.5 w-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5" />
       ) : null}
     </Component>
   );
@@ -243,15 +243,15 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
         />
 
         <ForumRow
-          icon={<MessageSquare className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
-          iconBg="bg-purple-500/15"
+          icon={<MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
+          iconBg="bg-blue-500/15"
           label="Messages"
           description="Private conversations and inbox"
           onClick={() => navigate("/forum/conversations")}
           rightElement={
             unreadAlerts > 0 ? (
               <PreText
-                className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white shadow-sm"
+                className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white shadow-sm"
                 whiteSpace="nowrap"
               >
                 {String(unreadAlerts)}
@@ -269,7 +269,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
             <div className="bg-accent/15 flex max-w-[140px] flex-1 rounded-lg p-0.5">
               <button
                 onClick={() => setActiveTab("recent")}
-                className={`flex-1 rounded-md py-0.5 text-center text-[9px] font-bold tracking-wide uppercase transition-all ${
+                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   activeTab === "recent"
                     ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
                     : "text-muted-foreground hover:text-foreground"
@@ -281,7 +281,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
               </button>
               <button
                 onClick={() => setActiveTab("stash")}
-                className={`flex-1 rounded-md py-0.5 text-center text-[9px] font-bold tracking-wide uppercase transition-all ${
+                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   activeTab === "stash"
                     ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
                     : "text-muted-foreground hover:text-foreground"

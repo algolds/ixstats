@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { History, ArrowUp, ArrowDown } from "lucide-react";
+import { ClockRotateRight as History, ArrowUp, ArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -26,7 +26,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
     <FacetCard
       depth={2}
       className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
       )}
     >
       <TextureOverlay texture="dots" opacity={0.03} />
@@ -57,7 +57,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
             return (
               <div
                 key={activity.id}
-                className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 text-xs backdrop-blur-md transition-all active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
+                className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 text-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -65,7 +65,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                       "flex h-7 w-7 items-center justify-center rounded-full border shadow-sm backdrop-blur-md",
                       isEarn
                         ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                        : "border-rose-500/30 bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                        : "border-red-500/30 bg-red-500/15 text-red-600 dark:text-red-400"
                     )}
                   >
                     {isEarn ? (
@@ -78,7 +78,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                     <p className="text-foreground font-bold tracking-tight">
                       {activity.source.replace(/_/g, " ")}
                     </p>
-                    <p className="text-muted-foreground mt-0.5 text-[10px]">
+                    <p className="text-muted-foreground mt-0.5 text-xs">
                       {new Date(activity.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -87,8 +87,8 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                   className={cn(
                     "flex items-center gap-0.5 font-mono text-sm font-bold tracking-tight",
                     isEarn
-                      ? "text-emerald-600 drop-shadow-[0_0_6px_rgba(16,185,129,0.3)] dark:text-emerald-400"
-                      : "text-rose-600 dark:text-rose-400"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
                   )}
                 >
                   {isEarn ? "+" : "-"}

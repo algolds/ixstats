@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useRef, useCallback, memo, useEffect } from "react";
-import { GripVertical } from "lucide-react";
+import { Menu as GripVertical } from "iconoir-react";
 
 interface FloatingImportPanelProps {
   children: React.ReactNode;
@@ -42,6 +42,7 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
       width: window.innerWidth,
       height: window.innerHeight,
     };
+    // oxlint-disable-next-line
     setPos({
       x: Math.max(16, rect.width - DEFAULT_WIDTH - 16),
       y: 16,

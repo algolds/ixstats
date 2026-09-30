@@ -1,9 +1,17 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ChevronUp, Globe, RotateCcw, Eye, X, ChevronDown, AlertTriangle } from "lucide-react";
+// oxlint-disable-next-line eslint/no-unused-vars
+import {
+  Globe,
+  Undo as RotateCcw,
+  Eye,
+  NavArrowDown as ChevronDown,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -34,7 +42,7 @@ export function DevCountryViewToolbar() {
 
   // Fetch country list for dropdown
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
-    { limit: 500 },
+    { limit: 500, realm: ALL_REALMS },
     { enabled: canUseDevView && isToolbarExpanded }
   );
 
@@ -46,7 +54,9 @@ export function DevCountryViewToolbar() {
 
   const countries = useMemo<{ id: string; name: string }[]>(() => {
     if (!countriesData) return [];
-    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any).items ?? [];
+    const list = Array.isArray(countriesData)
+      ? countriesData
+      : ((countriesData as any).items ?? []);
     return list.map((c: any) => ({
       id: c.id,
       name: c.name,
@@ -74,7 +84,7 @@ export function DevCountryViewToolbar() {
           "fixed right-4 bottom-4 z-50",
           "flex items-center gap-2 px-3 py-2",
           "rounded-full shadow-lg",
-          "border backdrop-blur-md transition-all hover:scale-105",
+          "border backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105",
           isViewingOtherCountry
             ? "border-amber-500 bg-amber-500/20 text-amber-300"
             : "border-blue-500 bg-blue-500/20 text-blue-300"
@@ -96,7 +106,7 @@ export function DevCountryViewToolbar() {
       className={cn(
         "fixed right-4 bottom-4 z-50 w-80",
         "rounded-xl p-4 shadow-2xl",
-        "border backdrop-blur-xl transition-all",
+        "border backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         isViewingOtherCountry
           ? "border-amber-500/50 bg-slate-900/95"
           : "border-blue-500/30 bg-slate-900/95"
@@ -148,9 +158,7 @@ export function DevCountryViewToolbar() {
       {/* Country selector */}
       <div className="space-y-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-300">
-            Switch to:
-          </label>
+          <label className="mb-1 block text-xs font-medium text-slate-300">Switch to:</label>
           <Select
             value={selectedCountryId}
             onValueChange={setSelectedCountryId}

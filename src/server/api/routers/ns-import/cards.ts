@@ -11,14 +11,33 @@ import {
   protectedProcedure,
   adminProcedure,
   publicProcedure,
+  lightMutationProcedure,
+  rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { nsImportService } from "~/lib/nationstates/import-service";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { Prisma } from "@prisma/client";
 
 // ─── Background Processing Functions ──────────────────────────────
+
+/** Normalize an NS nation name for comparison: case, underscores and spacing don't matter. */
+export function normalizeNationName(name: string): string {
+  return name.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function nationNamesMatch(a: string, b: string): boolean {
+  const left = normalizeNationName(a);
+  return left.length > 0 && left === normalizeNationName(b);
+}
+
+/** The nation an NS-import card depicts: its NS data name, falling back to the title. */
+function cardNationName(card: { title: string; metadata: unknown; nsData: unknown }): string {
+  const meta = (card.metadata as { nsData?: { name?: unknown } } | null) ?? {};
+  const nsData = (card.nsData as { name?: unknown } | null) ?? {};
+  const name = meta.nsData?.name ?? nsData.name;
+  return typeof name === "string" && name.trim() ? name : card.title;
+}
 
 export const nsImportCardsRouter = createTRPCRouter({
   /**
@@ -35,7 +54,7 @@ export const nsImportCardsRouter = createTRPCRouter({
   /**
    * Public/Protected: Self-service NationStates card takedown by verifying nation ownership via NS API.
    */
-  requestSelfServiceTakedown: publicProcedure
+  requestSelfServiceTakedown: rateLimitedPublicProcedure
     .input(
       z.object({
         cardId: z.string(),
@@ -56,6 +75,14 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
+      // Self-service takedowns only cover NationStates flag cards.
+      if (card.cardType !== "NS_IMPORT") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only NationStates-import cards can be taken down by their flag owner.",
+        });
+      }
+
       // 1. Verify nation ownership on NationStates
       const isVerified = await nsApiClient.verifyOwnership(
         input.nationName.trim(),
@@ -70,13 +97,8 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
-      // 2. Validate nation match against card title / metadata
-      const cleanNation = input.nationName.toLowerCase().replace(/_/g, " ").trim();
-      const cleanTitle = card.title.toLowerCase().replace(/_/g, " ").trim();
-
-      const isMatch = cleanTitle.includes(cleanNation) || cleanNation.includes(cleanTitle);
-
-      if (!isMatch) {
+      // 2. The verified nation must be exactly the card's nation (not a substring of it).
+      if (!nationNamesMatch(input.nationName, cardNationName(card))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: `Verified nation "${input.nationName}" does not match card target "${card.title}". Takedowns require ownership of the card's flag nation.`,
@@ -111,88 +133,6 @@ export const nsImportCardsRouter = createTRPCRouter({
         message: `Card artwork for "${card.title}" has been retired per verified nation owner request.`,
       };
     }),
-  /**
-   * Get user's import history
-   */
-  getMyImportHistory: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().int().min(1).max(50).default(10),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      // Get user's vault transactions for NS imports
-      const vault = await ctx.db.myVault.findUnique({
-        where: { userId: ctx.user.id },
-        include: {
-          transactions: {
-            where: {
-              source: "ns_import_bonus",
-            },
-            orderBy: { createdAt: "desc" },
-            take: input.limit,
-          },
-        },
-      });
-
-      const imports = vault?.transactions || [];
-
-      return imports.map((tx) => ({
-        id: tx.id,
-        nationName: (tx.metadata as any)?.nationName || "Unknown",
-        cardsImported: (tx.metadata as any)?.cardsImported || 0,
-        totalValue: (tx.metadata as any)?.totalValue || 0,
-        bonusCredits: tx.credits,
-        importedAt: tx.createdAt,
-      }));
-    }),
-
-  /**
-   * Get import statistics
-   */
-  getImportStats: protectedProcedure.query(async ({ ctx }) => {
-    // Count NS import transactions
-    const vault = await ctx.db.myVault.findUnique({
-      where: { userId: ctx.user.id },
-      include: {
-        transactions: {
-          where: {
-            source: "ns_import_bonus",
-          },
-        },
-      },
-    });
-
-    const imports = vault?.transactions || [];
-    const totalImports = imports.length;
-    const lastImport = imports[0]?.createdAt || null;
-
-    // Count imported cards
-    const importedCards = await ctx.db.cardOwnership.findMany({
-      where: {
-        userId: ctx.user.id,
-        cards: {
-          cardType: "NS_IMPORT",
-        },
-      },
-      include: {
-        cards: true,
-      },
-    });
-
-    const totalCards = importedCards.reduce((sum, ownership) => sum + ownership.quantity, 0);
-    const totalValue = importedCards.reduce(
-      (sum, ownership) => sum + (ownership.cards.marketValue || 0),
-      0
-    );
-
-    return {
-      totalImports,
-      totalCards,
-      totalValue,
-      lastImport,
-    };
-  }),
 
   /**
    * Admin: Hide a NationStates-import card (flag-owner takedown / opt-out).
@@ -362,8 +302,24 @@ export const nsImportCardsRouter = createTRPCRouter({
             select: {
               id: true,
               title: true,
+              description: true,
+              rarity: true,
+              season: true,
+              cardType: true,
+              category: true,
+              subcategory: true,
+              artwork: true,
+              artworkUrl: true,
+              artworkVariants: true,
+              artworkSource: true,
+              artworkCredit: true,
+              slug: true,
+              marketValue: true,
+              totalSupply: true,
+              stats: true,
               nsCardId: true,
               nsSeason: true,
+              nsData: true,
               isRetired: true,
               retiredAt: true,
               metadata: true,
@@ -389,14 +345,40 @@ export const nsImportCardsRouter = createTRPCRouter({
       })
       .map((o) => {
         const meta = (o.cards.metadata as Record<string, any>) || {};
-        const nation = (meta.nsData?.name as string) || o.cards.title;
+        const nsData = (o.cards.nsData as Record<string, any>) || {};
+        const nation = (meta.nsData?.name as string) || (nsData.name as string) || o.cards.title;
+        const flag =
+          (nsData.flag as string) ||
+          (meta.nsData?.flag as string) ||
+          o.cards.artworkUrl ||
+          o.cards.artwork ||
+          null;
         const takedown = meta.nsTakedown as Record<string, any> | null | undefined;
         return {
+          id: o.cards.id,
           cardId: o.cards.id,
           title: o.cards.title,
+          description: o.cards.description,
+          rarity: o.cards.rarity,
+          season: o.cards.season,
+          cardType: o.cards.cardType,
+          category: o.cards.category,
+          subcategory: o.cards.subcategory,
+          artwork: o.cards.artwork || flag || "",
+          artworkUrl: o.cards.artworkUrl || flag || null,
+          artworkVariants: (o.cards.artworkVariants as any) ?? null,
+          artworkSource: o.cards.artworkSource,
+          artworkCredit: o.cards.artworkCredit,
+          slug: o.cards.slug,
+          marketValue: o.cards.marketValue,
+          totalSupply: o.cards.totalSupply,
+          stats: o.cards.stats,
           nsCardId: o.cards.nsCardId,
           nsSeason: o.cards.nsSeason,
+          nsData: o.cards.nsData,
+          metadata: o.cards.metadata,
           nation,
+          imageUrl: flag,
           isHidden: o.cards.isRetired,
           hiddenAt: takedown?.hiddenAt ?? o.cards.retiredAt ?? null,
           reason: takedown?.reason ?? null,
@@ -507,109 +489,13 @@ export const nsImportCardsRouter = createTRPCRouter({
       };
     }),
 
-  // ─── Bulk Import Endpoints ────────────────────────────────────────
-
-  // ─── Pause / Play / Stop controls ───
-
   // ─── Region Discovery ────────────────────────────────────────────
-
-  /**
-   * Batch-update gameplay stats (economic/diplomatic/military/social)
-   * for all NS_IMPORT cards that don't have them yet.
-   */
-  batchUpdateCardStats: adminProcedure
-    .input(
-      z
-        .object({
-          forceAll: z.boolean().optional().default(false),
-        })
-        .optional()
-        .default({ forceAll: false })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const BATCH = 100;
-      let updated = 0;
-      let skipped = 0;
-      let errors = 0;
-
-      // Get all NS_IMPORT cards
-      const cards = await ctx.db.card.findMany({
-        where: { cardType: "NS_IMPORT" },
-        select: { id: true, nsCardId: true, stats: true },
-      });
-
-      console.log(
-        `[NS Import] Batch updating stats for ${cards.length} NS cards (forceAll=${input.forceAll})`
-      );
-
-      for (let i = 0; i < cards.length; i += BATCH) {
-        const batch = cards.slice(i, i + BATCH);
-        const updates = [];
-
-        for (const card of batch) {
-          const existingStats = card.stats as Record<string, unknown> | null;
-          if (!existingStats) {
-            skipped++;
-            continue;
-          }
-
-          // Skip if already has gameplay stats (unless forceAll)
-          if (!input.forceAll && typeof existingStats.economic === "number") {
-            skipped++;
-            continue;
-          }
-
-          const gameplayStats = nsImportService.generateCardStats(
-            {
-              govt: existingStats.govt as string | undefined,
-              marketValue: existingStats.marketValue as string | undefined,
-              badge: existingStats.badge as string | undefined,
-              trophies: existingStats.trophies as string | undefined,
-              region: existingStats.region as string | undefined,
-              category: existingStats.category as string | undefined,
-              cardcategory: existingStats.cardcategory as string | undefined,
-            },
-            card.nsCardId ?? undefined
-          );
-
-          updates.push(
-            ctx.db.card.update({
-              where: { id: card.id },
-              data: {
-                stats: { ...existingStats, ...gameplayStats },
-              },
-            })
-          );
-        }
-
-        if (updates.length > 0) {
-          try {
-            await Promise.all(updates);
-            updated += updates.length;
-          } catch (err) {
-            errors += updates.length;
-            console.error(`[NS Import] Batch error at offset ${i}:`, err);
-          }
-        }
-
-        if ((i + BATCH) % 1000 === 0 || i + BATCH >= cards.length) {
-          console.log(
-            `[NS Import] Progress: ${Math.min(i + BATCH, cards.length)}/${cards.length} (updated: ${updated}, skipped: ${skipped})`
-          );
-        }
-      }
-
-      console.log(
-        `[NS Import] Batch stats complete: ${updated} updated, ${skipped} skipped, ${errors} errors`
-      );
-      return { updated, skipped, errors, total: cards.length };
-    }),
 
   /**
    * Refresh market values for user's 0-value NS cards by re-fetching from NS API,
    * then recalculate deckValue from actual card values.
    */
-  refreshCardValues: protectedProcedure.mutation(async ({ ctx }) => {
+  refreshCardValues: lightMutationProcedure.mutation(async ({ ctx }) => {
     // Find all NS_IMPORT cards owned by the current user with 0 market value
     const ownerships = await ctx.db.cardOwnership.findMany({
       where: { userId: ctx.user.id },

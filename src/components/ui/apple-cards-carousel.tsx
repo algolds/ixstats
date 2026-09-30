@@ -4,9 +4,9 @@ import { createPortal } from "react-dom";
 import {
   ArrowLeft as IconArrowNarrowLeft,
   ArrowRight as IconArrowNarrowRight,
-  X as IconX,
-} from "lucide-react";
-import { cn } from "~/lib/utils";
+  Xmark as IconX,
+} from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
 import { AnimatePresence, motion } from "motion/react";
 import Image, { type ImageProps } from "next/image";
 import { useOutsideClick } from "~/hooks/use-outside-click";
@@ -47,6 +47,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
       carouselRef.current.scrollLeft = initialScroll;
       checkScrollability();
     }
+    // oxlint-disable-next-line
   }, [initialScroll]);
 
   const checkScrollability = () => {
@@ -161,6 +162,7 @@ export const Card = ({
 }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { onCardClose, currentIndex } = useContext(CarouselContext);
   const [mounted, setMounted] = useState(false);
 
@@ -221,7 +223,7 @@ export const Card = ({
                 <img
                   src={withBasePath(card.src)}
                   alt=""
-                  className="h-full w-full object-cover opacity-15 blur-[2px] transition-all duration-300 dark:opacity-25"
+                  className="h-full w-full object-cover opacity-15 blur-[2px] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:opacity-25"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/80 to-white dark:from-neutral-900/20 dark:via-neutral-900/85 dark:to-neutral-900" />
               </div>

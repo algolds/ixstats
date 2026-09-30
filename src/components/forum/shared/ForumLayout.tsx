@@ -1,30 +1,27 @@
+"use client";
 // src/components/forum/shared/ForumLayout.tsx
 // Forum content wrapper with icon rail sidebar on desktop, horizontal pills on mobile.
 // Mirrors WikiOSLayout.tsx pattern with orange forum accent color.
 
-"use client";
-
-import { type ReactNode, useState, useEffect, useRef, useCallback } from "react";
+import { type ReactNode, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Home,
-  Flame,
+  HomeSimple as Home,
+  FireFlame as Flame,
   Clock,
   Search,
   Bookmark,
-  MessageCircle,
-  Bell,
+  ChatBubble as MessageCircle,
   Reply,
-  Share2,
-  PenSquare,
-} from "lucide-react";
+  ShareAndroid as Share2,
+  EditPencil as PenSquare,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
-import { api } from "~/trpc/react";
 import { IXFORUM_VERSION } from "~/lib/buildVersion";
 
 // ---------------------------------------------------------------------------
@@ -50,6 +47,7 @@ const NAV_GROUP_2: ForumNavItem[] = [
   { id: "conversations", href: "/messages", icon: MessageCircle, title: "Messages" },
 ];
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const NAV_GROUP_3: ForumNavItem[] = [
   { id: "search", href: "/forum/search", icon: Search, title: "Search" },
 ];
@@ -65,6 +63,7 @@ function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => voi
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setQuery("");
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -113,7 +112,7 @@ function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => voi
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-[var(--forum-text-dim)] sm:inline">
+          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs text-[var(--forum-text-dim)] sm:inline">
             ESC
           </kbd>
         </div>
@@ -196,7 +195,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
         height={40}
         squares={[50, 40]}
         className="pointer-events-auto fixed inset-0 z-0 opacity-25 dark:opacity-15"
-        squaresClassName="fill-slate-200/15 dark:fill-slate-700/15 stroke-slate-300/20 dark:stroke-slate-600/20 [&:hover]:fill-orange-500/30 [&:hover]:stroke-orange-500/50 transition-all duration-300"
+        squaresClassName="fill-slate-200/15 dark:fill-slate-700/15 stroke-slate-300/20 dark:stroke-slate-600/20 [&:hover]:fill-orange-500/30 [&:hover]:stroke-orange-500/50 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
       />
 
       {/* Mobile: horizontal pill bar */}
@@ -211,7 +210,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
           <button
             onClick={() => setSearchOpen(true)}
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
             )}
           >
@@ -246,7 +245,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
             <button
               onClick={() => setSearchOpen(true)}
               className={cn(
-                "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
+                "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-300"
               )}
               title="Search (⌘K)"
@@ -306,7 +305,7 @@ function RailIcon({ item, isActive }: { item: ForumNavItem; isActive: boolean })
     <Link
       href={withBasePath(item.href)}
       className={cn(
-        "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
+        "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
         isActive
           ? "bg-orange-500/15 text-orange-400"
           : "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-300"
@@ -331,7 +330,7 @@ function MobilePill({ item, isActive }: { item: ForumNavItem; isActive: boolean 
     <Link
       href={withBasePath(item.href)}
       className={cn(
-        "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+        "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         isActive
           ? "bg-orange-500/15 text-orange-400 shadow-sm"
           : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"

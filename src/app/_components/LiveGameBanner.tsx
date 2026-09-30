@@ -6,18 +6,18 @@ import { useIxTime } from "~/context/IxTimeContext";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import {
-  RefreshCw,
+  Refresh as RefreshCw,
   Clock,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Building2,
+  StatUp as TrendingUp,
+  Group as Users,
+  Dollar as DollarSign,
+  City as Building2,
   MapPin,
   Activity,
-  Target,
-} from "lucide-react";
+  Archery as Target,
+} from "iconoir-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
-import { GlassCard } from "~/components/ui/enhanced-card";
+import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 
 interface LiveGameBannerProps {
@@ -28,6 +28,7 @@ interface LiveGameBannerProps {
 
 export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBannerProps) {
   // Use centralized time context
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { ixTimeTimestamp, multiplier, ixTimeFormatted, refreshTime } = useIxTime();
 
   const [currentTime, setCurrentTime] = useState<{
@@ -135,6 +136,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       timeDisplay,
       multiplier,
     });
+    // oxlint-disable-next-line
   }, [ixTimeTimestamp, multiplier]);
 
   useEffect(() => {
@@ -143,7 +145,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       try {
         const status = await IxTime.checkBotHealth();
         setBotStatus(status);
-      } catch (error) {
+      } catch {
         setBotStatus({
           available: false,
           message: "Connection failed",
@@ -202,10 +204,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* GlassCard overlay for main info/time block */}
         <div className="relative z-10 mx-auto mb-6 max-w-2xl">
-          <GlassCard
-            variant="glass"
-            className="animate-fade-in flex flex-col items-center justify-between gap-4 p-6 shadow-xl lg:flex-row"
-          >
+          <Card className="facet-card animate-fade-in flex flex-col items-center justify-between gap-4 border-white/20 bg-white/10 p-6 shadow-xl backdrop-blur-md lg:flex-row dark:bg-black/30">
             {/* Game Time Section */}
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
@@ -223,13 +222,13 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                 onClick={handleRefresh}
                 disabled={isLoading}
                 size="sm"
-                className="glass-button border-white/30 text-white transition-all duration-250"
+                className="border border-white/30 bg-white/10 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/20 active:scale-95"
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                 Refresh All
               </Button>
             </div>
-          </GlassCard>
+          </Card>
           {/* Aurora/animated background effect (optional, subtle) */}
           <div className="aurora-bg pointer-events-none absolute inset-0 z-0 rounded-2xl" />
         </div>

@@ -27,7 +27,9 @@ export function VaultSidebarLayout({
   children,
   heroSection,
   alerts,
+  // oxlint-disable-next-line eslint/no-unused-vars
   activeSection,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onNavigate,
 }: VaultSidebarLayoutProps) {
   const pathname = stripBasePath(usePathname());
@@ -68,7 +70,7 @@ export function VaultSidebarLayout({
         <div className="flex gap-4 sm:gap-6">
           {/* Desktop: Fixed sidebar widgets */}
           <div className="relative z-30 hidden shrink-0 lg:block">
-            <div className="sticky top-6 space-y-4">
+            <div className="sticky top-20 space-y-4">
               <DashboardPlayerWidget />
               <VaultWidget />
               <DashboardQuickLinks />
@@ -79,7 +81,7 @@ export function VaultSidebarLayout({
           <div className="min-w-0 flex-1">
             {/* Mobile: Horizontal nav strip */}
             <div className="mb-4 lg:hidden">
-              <div className="glass-hierarchy-child border-border bg-background/60 scrollbar-none overflow-x-auto rounded-xl border p-1.5 backdrop-blur-md dark:bg-black/30">
+              <div className="facet-hierarchy-child border-border bg-background/60 scrollbar-none overflow-x-auto rounded-xl border p-1.5 backdrop-blur-md dark:bg-black/30">
                 <div className="flex min-w-max gap-1.5">
                   {mobileNavItems.map((item) => {
                     const isActive =
@@ -108,9 +110,9 @@ export function VaultSidebarLayout({
                         key={item.id}
                         href={item.href}
                         className={cn(
-                          "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all duration-200",
+                          "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                           isActive
-                            ? "border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-600 shadow-sm dark:text-purple-400"
+                            ? "border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"
                         )}
                       >

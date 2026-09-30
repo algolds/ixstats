@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useIxMedia } from "./MediaContext";
 import { FacetContainer } from "~/components/ui/facet-container";
-import { Play, Pause, SkipForward, Maximize2 } from "lucide-react";
+import { Play, Pause, FastArrowRight as SkipForward, Expand as Maximize2 } from "iconoir-react";
 import { FullPlayer } from "./FullPlayer";
 
 export function MiniPlayer() {
@@ -29,7 +29,7 @@ export function MiniPlayer() {
           {/* Top edge progress bar */}
           <div className="absolute top-0 right-0 left-0 h-[2px] bg-black/5 dark:bg-white/5">
             <div
-              className="bg-primary h-full transition-all duration-100 ease-out"
+              className="bg-primary h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -51,7 +51,7 @@ export function MiniPlayer() {
               <span className="group-hover:text-primary truncate text-xs font-bold transition-colors">
                 {activeTrack.title}
               </span>
-              <span className="text-muted-foreground truncate text-[10px]">
+              <span className="text-muted-foreground truncate text-xs">
                 {activeTrack.subtitle}
               </span>
             </div>

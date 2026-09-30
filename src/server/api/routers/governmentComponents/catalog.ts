@@ -9,15 +9,11 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { ComponentType } from "@prisma/client";
-import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/government/atomic-data";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 
-import {
-  type ParsedComponent,
-  transformDatabaseComponent,
-} from "./serializer";
+import { type ParsedComponent, transformDatabaseComponent } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
@@ -32,30 +28,13 @@ const getAllComponentsSchema = z
   })
   .optional();
 
-const getComponentByTypeSchema = z.object({
-  componentType: componentTypeSchema,
-});
-
-const getSynergiesSchema = z.object({
-  componentType: componentTypeSchema,
-});
-
 const incrementUsageSchema = z.object({
   componentType: componentTypeSchema,
-});
-
-const createSynergySchema = z.object({
-  component1: componentTypeSchema,
-  component2: componentTypeSchema,
-  synergyType: z.enum(["STRONG", "MODERATE", "WEAK", "CONFLICT"]),
-  bonusPercent: z.number().min(-100).max(100),
-  description: z.string().optional(),
 });
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
 
 /**
  * Ensure database is seeded with government component reference data
@@ -120,58 +99,6 @@ function getFallbackComponents(): ParsedComponent[] {
       usageCount: 0,
       isActive: true,
     }));
-}
-
-/**
- * Get fallback component by type
- */
-function getFallbackComponentByType(componentType: ComponentType): ParsedComponent | null {
-  const component = ATOMIC_COMPONENTS[componentType];
-  if (!component) return null;
-
-  return {
-    id: component.id,
-    type: component.type,
-    name: component.name,
-    description: component.description,
-    effectiveness: component.effectiveness,
-    synergies: component.synergies,
-    conflicts: component.conflicts,
-    implementationCost: component.implementationCost,
-    maintenanceCost: component.maintenanceCost,
-    requiredCapacity: component.requiredCapacity,
-    category: component.category,
-    prerequisites: component.prerequisites,
-    color: component.color,
-    metadata: component.metadata,
-    usageCount: 0,
-    isActive: true,
-  };
-}
-
-/**
- * Get components grouped by category
- */
-function getComponentsByCategory(): Record<string, ParsedComponent[]> {
-  const fallbackComponents = getFallbackComponents();
-  const grouped: Record<string, ParsedComponent[]> = {};
-
-  // Initialize all categories
-  Object.keys(COMPONENT_CATEGORIES).forEach((category) => {
-    grouped[category] = [];
-  });
-
-  // Group components by category
-  fallbackComponents.forEach((component) => {
-    for (const [categoryName, componentTypes] of Object.entries(COMPONENT_CATEGORIES)) {
-      if ((componentTypes as ComponentType[]).includes(component.type)) {
-        grouped[categoryName].push(component);
-        break;
-      }
-    }
-  });
-
-  return grouped;
 }
 
 // ============================================================================
@@ -247,167 +174,10 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
   }),
 
   /**
-   * Get a single component by type
-   */
-  getComponentByType: publicProcedure
-    .input(getComponentByTypeSchema)
-    .query(async ({ ctx, input }) => {
-      try {
-        await ensureSeeded(ctx.db);
-
-        const dbComponent = await ctx.db.governmentComponentData.findUnique({
-          where: { componentType: input.componentType },
-        });
-
-        if (dbComponent) {
-          return {
-            success: true,
-            component: transformDatabaseComponent(dbComponent),
-            isUsingFallback: false,
-          };
-        }
-
-        const component = getFallbackComponentByType(input.componentType);
-
-        if (!component) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Component type ${input.componentType} not found`,
-          });
-        }
-
-        return {
-          success: true,
-          component,
-          isUsingFallback: true,
-        };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-
-        console.error("Error fetching component by type:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch component",
-        });
-      }
-    }),
-
-  /**
-   * Get components grouped by category
-   */
-  getComponentsByCategory: publicProcedure.query(async ({ ctx }) => {
-    try {
-      await ensureSeeded(ctx.db);
-
-      const dbComponents = await ctx.db.governmentComponentData.findMany({
-        where: { isActive: true },
-        orderBy: { usageCount: "desc" },
-      });
-
-      if (dbComponents.length === 0) {
-        const grouped = getComponentsByCategory();
-
-        return {
-          success: true,
-          categories: grouped,
-          categoryCount: Object.keys(grouped).length,
-          isUsingFallback: true,
-        };
-      }
-
-      const parsed = dbComponents.map(transformDatabaseComponent);
-      const grouped: Record<string, ParsedComponent[]> = {};
-
-      // Initialize all categories
-      Object.keys(COMPONENT_CATEGORIES).forEach((category) => {
-        grouped[category] = [];
-      });
-
-      parsed.forEach((component) => {
-        for (const [categoryName, componentTypes] of Object.entries(COMPONENT_CATEGORIES)) {
-          if ((componentTypes as ComponentType[]).includes(component.type)) {
-            grouped[categoryName].push(component);
-            break;
-          }
-        }
-      });
-
-      return {
-        success: true,
-        categories: grouped,
-        categoryCount: Object.keys(grouped).length,
-        isUsingFallback: false,
-      };
-    } catch (error) {
-      console.error("Error fetching components by category:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch components by category",
-      });
-    }
-  }),
-
-  /**
-   * Get synergies for a specific component
-   * Returns both positive synergies and conflicts
-   */
-  getSynergies: publicProcedure.input(getSynergiesSchema).query(async ({ ctx, input }) => {
-    try {
-      await ensureSeeded(ctx.db);
-
-      const component = await ctx.db.governmentComponentData
-        .findUnique({
-          where: { componentType: input.componentType },
-        })
-        .then((res) =>
-          res ? transformDatabaseComponent(res) : getFallbackComponentByType(input.componentType)
-        );
-
-      if (!component) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Component type ${input.componentType} not found`,
-        });
-      }
-
-      // Build synergy objects from the component's synergies and conflicts
-      const synergies = component.synergies.map((synergyType) => ({
-        component1: input.componentType,
-        component2: synergyType,
-        synergyType: "STRONG" as const,
-        bonusPercent: 15,
-        description: `Strong synergy between ${component.name} and ${ATOMIC_COMPONENTS[synergyType]?.name || synergyType}`,
-      }));
-
-      const conflicts = component.conflicts.map((conflictType) => ({
-        component1: input.componentType,
-        component2: conflictType,
-        synergyType: "CONFLICT" as const,
-        bonusPercent: -20,
-        description: `Conflict between ${component.name} and ${ATOMIC_COMPONENTS[conflictType]?.name || conflictType}`,
-      }));
-
-      return {
-        success: true,
-        synergies: [...synergies, ...conflicts],
-        count: synergies.length + conflicts.length,
-      };
-    } catch (error) {
-      if (error instanceof TRPCError) throw error;
-
-      console.error("Error fetching synergies:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch synergies",
-      });
-    }
-  }),
-
-  /**
    * Increment component usage count
    * This tracks how often components are used across all countries
    */
-  incrementComponentUsage: publicProcedure
+  incrementComponentUsage: rateLimitedPublicProcedure
     .input(incrementUsageSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -450,8 +220,4 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
         };
       }
     }),
-
-  // ============================================================================
-  // Admin Endpoints
-  // ============================================================================
 });

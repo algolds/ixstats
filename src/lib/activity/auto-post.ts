@@ -1,9 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { db as prisma } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import * as crypto from "crypto";
-
-const prisma = new PrismaClient();
 
 export async function generateAndPostCrisisEvent(crisisEventId: string) {
   const crisisEvent = await prisma.crisisEvent.findUnique({
@@ -19,6 +17,7 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
 
   // Determine which account type should post based on crisis type or severity
   // For simplicity, let's say media accounts post about all crises for now.
+  // oxlint-disable-next-line typescript/no-unused-vars
   const accountTypeToPost = "media";
 
   const activeUsers = await prisma.user.findMany({
@@ -95,7 +94,7 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
   for (const country of countriesWithGrowth) {
     // Trigger government announcement
     const governmentUsers = await prisma.user.findMany({
-      where: { countryId: country.id, isActive: true },
+      where: { isActive: true, ownedCountries: { some: { id: country.id } } },
       take: 1,
     });
 

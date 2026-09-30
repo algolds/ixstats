@@ -3,7 +3,7 @@
 import React from "react";
 import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/ui/color-picker";
-import { Ruler } from "lucide-react";
+import { Ruler } from "iconoir-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
@@ -37,12 +37,17 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
   // tRPC query that shipped the entire polygon in the GET URL, which blew past
   // URL/header limits for large countries → ERR_HTTP2_PROTOCOL_ERROR / 520.)
   const sampleAreaValue = React.useMemo<number | undefined>(() => {
-    const geom = form.geometry as { type?: string; coordinates?: unknown } | undefined;
+    const geom = form.geometry as
+      | { type?: string; coordinates?: number[][][] | number[][][][] }
+      | undefined;
     if (!geom || !geom.coordinates || geom.type === "Point" || geom.type === "LineString") {
       return undefined;
     }
     try {
-      const v = geometryAreaSqKm(geom as Parameters<typeof geometryAreaSqKm>[0]);
+      const v = geometryAreaSqKm({
+        type: geom.type ?? "Polygon",
+        coordinates: geom.coordinates,
+      });
       return Number.isFinite(v) && v > 0 ? v : undefined;
     } catch {
       return undefined;
@@ -95,7 +100,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
           <div className="flex items-center justify-between">
             <label className="text-muted-foreground text-xs font-medium">Area (km²)</label>
             {derivedFromGeometry && sampleAreaValue !== undefined && (
-              <span className="text-muted-foreground text-[10px]">from geometry</span>
+              <span className="text-muted-foreground text-xs">from geometry</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -120,14 +125,14 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
                   areaSqKm: sampleAreaValue ?? form.areaSqKm,
                 })
               }
-              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-colors disabled:opacity-50"
+              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors disabled:opacity-50"
             >
               <Ruler className="h-3.5 w-3.5" />
               <span>Auto</span>
             </button>
           </div>
           {sampleAreaValue !== undefined && !derivedFromGeometry && (
-            <div className="text-muted-foreground text-[10px]">
+            <div className="text-muted-foreground text-xs">
               ≈ {sampleAreaValue.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from
               geometry
             </div>

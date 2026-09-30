@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Users, TrendingUp, TrendingDown, DollarSign, Shield, Briefcase, Zap } from "lucide-react";
+import {
+  Group as Users,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Dollar as DollarSign,
+  Shield,
+  Suitcase as Briefcase,
+} from "iconoir-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, LaborConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
@@ -99,7 +105,10 @@ export function LaborEmploymentTab({
     );
   }, [selectedComponents]);
 
-  const handleLaborChange = (field: keyof LaborConfiguration, value: any) => {
+  const handleLaborChange = <K extends keyof LaborConfiguration>(
+    field: K,
+    value: LaborConfiguration[K]
+  ) => {
     const updatedLaborMarket = { ...economyBuilder.laborMarket, [field]: value };
     if (field === "laborForceParticipationRate") {
       const population = economyBuilder.demographics.totalPopulation || 0;
@@ -115,13 +124,17 @@ export function LaborEmploymentTab({
   const handleNestedLaborChange = (
     parentField: keyof LaborConfiguration,
     field: string,
-    value: any
+    value: number | string | boolean
   ) => {
+    const parentObj = (economyBuilder.laborMarket[parentField] || {}) as Record<
+      string,
+      number | string | boolean
+    >;
     onEconomyBuilderChange({
       ...economyBuilder,
       laborMarket: {
         ...economyBuilder.laborMarket,
-        [parentField]: { ...(economyBuilder.laborMarket[parentField] as any), [field]: value },
+        [parentField]: { ...parentObj, [field]: value },
       },
     });
   };
@@ -160,6 +173,7 @@ export function LaborEmploymentTab({
 
   const laborBounds = useMemo(() => getLaborBounds(selectedComponents), [selectedComponents]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const hasComponentImpact =
     employmentImpacts.unemployment !== 0 ||
     employmentImpacts.participation !== 1 ||
@@ -218,21 +232,23 @@ export function LaborEmploymentTab({
       </div>
 
       <div className="border-border bg-muted/30 flex space-x-1 rounded-xl border p-1 shadow-inner backdrop-blur-md">
-        {[
-          { id: "workforce", label: "Workforce", icon: Users },
-          { id: "employment", label: "Employment", icon: Briefcase },
-          { id: "income", label: "Income & Wages", icon: DollarSign },
-          { id: "protections", label: "Worker Rights & Protections", icon: Shield },
-        ].map((section) => {
+        {(
+          [
+            { id: "workforce", label: "Workforce", icon: Users },
+            { id: "employment", label: "Employment", icon: Briefcase },
+            { id: "income", label: "Income & Wages", icon: DollarSign },
+            { id: "protections", label: "Worker Rights & Protections", icon: Shield },
+          ] as const
+        ).map((section) => {
           const Icon = section.icon;
           return (
             <Button
               key={section.id}
               variant={activeSection === section.id ? "default" : "ghost"}
               size="sm"
-              onClick={() => setActiveSection(section.id as any)}
+              onClick={() => setActiveSection(section.id)}
               className={cn(
-                "flex-1 rounded-lg transition-all duration-205",
+                "flex-1 rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-205",
                 activeSection === section.id
                   ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -246,7 +262,7 @@ export function LaborEmploymentTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <GlassCard
+        <FacetCard
           depth="base"
           theme="emerald"
           className="border-emerald-500/20"
@@ -261,7 +277,7 @@ export function LaborEmploymentTab({
               {activeSection === "protections" && "Worker Protections"}
             </h3>
           </div>
-          <GlassCardContent className="space-y-6 p-6">
+          <FacetCardContent className="space-y-6 p-6">
             {activeSection === "workforce" && (
               <FieldIndicator fieldKey="participationRate" severity="none">
                 <WorkforceSection
@@ -304,8 +320,8 @@ export function LaborEmploymentTab({
                 />
               </FieldIndicator>
             )}
-          </GlassCardContent>
-        </GlassCard>
+          </FacetCardContent>
+        </FacetCard>
 
         <LaborVisualizations
           laborMarket={economyBuilder.laborMarket}

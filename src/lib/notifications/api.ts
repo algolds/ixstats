@@ -21,7 +21,6 @@
  */
 
 import { db } from "~/server/db";
-import { emitNotificationEvent } from "./emitter";
 import { withBasePath } from "~/lib/base-path";
 import { isNotificationEventEnabled } from "./guard";
 
@@ -161,15 +160,14 @@ class NotificationAPIService {
         },
       });
 
-      // Emit real-time event
-      emitNotificationEvent(notification);
-
-      console.log(
-        "[NotificationAPI] Created notification:",
-        notification.id,
-        "-",
-        notification.title
-      );
+      if (process.env.NODE_ENV !== "test") {
+        console.log(
+          "[NotificationAPI] Created notification:",
+          notification.id,
+          "-",
+          notification.title
+        );
+      }
       return notification.id;
     } catch (error) {
       console.error("[NotificationAPI] Failed to create notification:", error);

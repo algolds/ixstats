@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { withBasePath } from "~/lib/base-path";
-import { getSoundService } from "~/lib/media";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
@@ -117,7 +116,9 @@ function MessagesRouterInner() {
         : [...prev, conversationId];
       try {
         localStorage.setItem("ixstats:messages:muted", JSON.stringify(next));
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
       return next;
     });
   }, []);
@@ -129,7 +130,9 @@ function MessagesRouterInner() {
         : [...prev, conversationId];
       try {
         localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
       return next;
     });
     // Deselect active conversation if archived
@@ -178,11 +181,9 @@ function MessagesRouterInner() {
     }
   );
 
-  const unreadCounts = useMemo(
-    () =>
-      (folderCounts as Record<MessageFolder, number> | undefined) ?? {
-        conversations: 0,
-      },
+  // The UI has a single "conversations" folder; its badge is the server's total unread (inbox).
+  const unreadCounts = useMemo<Record<MessageFolder, number>>(
+    () => ({ conversations: folderCounts?.inbox ?? 0 }),
     [folderCounts]
   );
 
@@ -196,7 +197,7 @@ function MessagesRouterInner() {
     () =>
       isCustomSpecialId
         ? null
-        : activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null,
+        : (activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null),
     [activeFolderConversations, selectedConversationId, isCustomSpecialId]
   );
 
@@ -267,7 +268,9 @@ function MessagesRouterInner() {
               const next = prev.filter((id) => id !== data.conversationId);
               try {
                 localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
-              } catch {}
+              } catch {
+                // storage unavailable (private mode) — preference is not persisted
+              }
               return next;
             });
           }
@@ -623,10 +626,10 @@ function MessagesRouterInner() {
         chatPanel={
           isLoadingSingleConversation && selectedConversationId ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-sm animate-pulse">
-                <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-sm">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
-              <p className="text-xs font-semibold text-muted-foreground">Connecting to thread...</p>
+              <p className="text-muted-foreground text-xs font-semibold">Connecting to thread...</p>
             </div>
           ) : selectedConversation ? (
             <MessagesChatPanel

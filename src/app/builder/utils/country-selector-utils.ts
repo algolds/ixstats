@@ -17,15 +17,7 @@ export interface CountryPreview {
   potentialScore: number;
 }
 
-export const formatNumber = (num: number | undefined, isCurrency = true, precision = 1): string => {
-  if (num === undefined || num === null || isNaN(num)) return isCurrency ? "$0" : "0";
-  const prefix = isCurrency ? "$" : "";
-  if (Math.abs(num) >= 1e12) return `${prefix}${(num / 1e12).toFixed(precision)}T`;
-  if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(precision)}B`;
-  if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(precision)}M`;
-  if (Math.abs(num) >= 1e3) return `${prefix}${(num / 1e3).toFixed(precision)}K`;
-  return `${prefix}${num.toFixed(isCurrency ? precision : 0)}`;
-};
+export { formatNumber } from "~/lib/utils";
 
 export const generateCountryPreview = (country: RealCountryData): CountryPreview => {
   const economicScore = Math.min(100, ((country.gdpPerCapita || 0) / 80000) * 100);
@@ -114,21 +106,28 @@ export const filterCountries = (
   }
 
   if (selectedArchetypes.length > 0) {
-    // Union of all selected archetypes (OR logic)
-    const matchingCountries = new Set<string>();
+    // Faceted filtering: OR within the same category (e.g. Europe OR Asia), AND across categories (e.g. Europe AND Advanced Economy)
+    const categoryGroups = new Map<string, string[]>();
 
     selectedArchetypes.forEach((archetypeId) => {
       const archetype = archetypes.find((a) => a.id === archetypeId);
-      if (archetype) {
-        filtered.forEach((country) => {
-          if (archetype.filter(country)) {
-            matchingCountries.add(country.countryCode);
-          }
-        });
+      const catKey = (archetype as { categoryId?: string })?.categoryId || "default";
+      if (!categoryGroups.has(catKey)) {
+        categoryGroups.set(catKey, []);
       }
+      categoryGroups.get(catKey)!.push(archetypeId);
     });
 
-    filtered = filtered.filter((country) => matchingCountries.has(country.countryCode));
+    filtered = filtered.filter((country) => {
+      for (const groupIds of categoryGroups.values()) {
+        const matchesCategory = groupIds.some((id) => {
+          const arch = archetypes.find((a) => a.id === id);
+          return arch ? arch.filter(country) : false;
+        });
+        if (!matchesCategory) return false;
+      }
+      return true;
+    });
   }
 
   // Ensure unique country codes

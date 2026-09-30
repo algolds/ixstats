@@ -4,15 +4,17 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { FeatureContextMenu } from "~/components/maps/editor/FeatureContextMenu";
+import type {
+  EditorContextMenuData,
+  MapEditorInstance,
+  EditorFeature,
+  FeatureType,
+} from "../types/editor-state";
 
 interface EditorContextMenuWrapperProps {
-  contextMenu: {
-    x: number;
-    y: number;
-    feature: any;
-  } | null;
-  setContextMenu: (menu: any | null) => void;
-  editor: any;
+  contextMenu: EditorContextMenuData | null;
+  setContextMenu: (menu: EditorContextMenuData | null) => void;
+  editor: MapEditorInstance;
 }
 
 export function EditorContextMenuWrapper({
@@ -30,23 +32,26 @@ export function EditorContextMenuWrapper({
       y={contextMenu.y}
       feature={contextMenu.feature}
       onEdit={() => {
-        const feat = editor.allFeatures.find((f: any) => f.id === contextMenu.feature.id);
+        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
         if (feat) editor.startEditing(feat);
         setContextMenu(null);
       }}
       onDuplicate={() => {
-        const feat = editor.allFeatures.find((f: any) => f.id === contextMenu.feature.id);
+        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
         if (feat && editor.duplicateFeature) {
           void editor.duplicateFeature(feat);
         }
         setContextMenu(null);
       }}
       onDelete={() => {
-        editor.handleDeleteFeature(contextMenu.feature.id, contextMenu.feature.type as any);
+        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
+        if (feat) {
+          void editor.handleDeleteFeature(feat);
+        }
         setContextMenu(null);
       }}
       onCopyCoords={() => {
-        const feat = editor.allFeatures.find((f: any) => f.id === contextMenu.feature.id);
+        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
         if (feat && "coordinates" in feat && Array.isArray(feat.coordinates)) {
           navigator.clipboard.writeText(`${feat.coordinates[1]}, ${feat.coordinates[0]}`);
         }

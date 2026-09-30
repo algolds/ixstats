@@ -35,7 +35,7 @@ graph TD
 
 ---
 
-## 2. Dynamic Island (Halo) Narrator Integration
+## 2. Halo Narrator & Audio Equalizer Integration
 
 The WikiOS article narrator bridges its audio state with Halo:
 1. **Pill-Center Equalizer**: Collapsed Halo renders a live bouncing audio waveform out-of-sync using Tailwind animation offsets, with a quick Play/Pause toggler.
@@ -59,5 +59,5 @@ docker run -d --name kokoro-web -p 8888:8888 -e KW_SECRET_API_KEY="mysecret" ghc
 ## Related Documentation
 
 - [Onoma Brand Guide](./onoma-brand-guide.md)
-- [Halo Plugin System](./dynamic-island.md)
+- [Halo Plugin System](./halo.md)
 - [WikiOS System Guide](./wikios.md)

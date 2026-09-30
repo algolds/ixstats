@@ -1,8 +1,19 @@
 # IxStats Premium Features Matrix
 
-**Last Updated:** June 2026 (platform: IxStates 1.1.1 "Ogma"; legacy v1.42 numbering retired — see [revision.md](./reference/revision.md))
+**Last Updated:** September 2026 (platform: IxStates 1.4.0 "Lobster Crosby", Release Candidate — see [revision.md](./revision.md))
 
 This document provides a comprehensive breakdown of features available in the Basic (Free) tier versus the MyCountry Premium tier.
+
+> **Implementation status (verified against code, 2026-09-29).** Most of this matrix is the *planned* product. What is actually enforced today:
+>
+> | Enforced | Where |
+> |---|---|
+> | Tier flag `User.membershipTier` (`"basic"` \| `"mycountry_premium"`), set by admins only | `/admin/membership` → `users.updateMembershipTier` |
+> | Server gate on 10 Defense/Security procedures (military assets, operations, conflicts, security events) | `premiumProcedure` / `premiumMiddleware` in `src/server/api/trpc/` |
+> | Defense domain renders as a read-only preview with an Upgrade banner for non-premium users (`/mycountry/intelligence` resolves to the same Defense domain) | `PremiumPreviewFrame`, `DomainSurface.tsx`, `ability.can("access", "MyCountryFeature", "defense")` |
+> | Intelligence/Defense nav items locked or hidden for non-premium users | `MyCountrySidebarNav.tsx` |
+>
+> **Not implemented:** payments/subscriptions (no Stripe or checkout; no $9.99 billing), a separate 5-tab Intelligence Dashboard, tiered API rate limits (everyone gets the same limits, e.g. 100 req/min on `rateLimitMiddleware`), export quotas, 30-day history limits, custom reports, document/scenario/alert quotas, and premium ThinkPages limits (every user is capped at **25** ThinkPages accounts). Vault's `premiumMultiplier` is display-only. Owners/admins/staff pass the client-side ability check (`src/lib/auth/ability.ts`) but not `premiumMiddleware`, which checks `membershipTier` only.
 
 ---
 
@@ -29,7 +40,7 @@ This document provides a comprehensive breakdown of features available in the Ba
 - Social platform (ThinkPages)
 - Public data browsing
 
-**MyCountry Premium** ($9.99/month)
+**MyCountry Premium** ($9.99/month — *planned; no billing integration exists*)
 - Everything in Basic tier
 - **Intelligence Dashboard** - Full 5-tab analytics suite
 - **Advanced Analytics** - Enhanced data access and unlimited exports
@@ -40,23 +51,23 @@ This document provides a comprehensive breakdown of features available in the Ba
 
 ### Premium Feature Flags
 
-From `/src/lib/membership.ts`:
+From `src/hooks/usePremium.tsx` (data from `users.getMembershipStatus` in `src/server/api/routers/users/country-linking.ts`; every flag simply mirrors `isPremium`):
 
 ```typescript
 interface PremiumFeatures {
-  sdi: boolean;                  // DEPRECATED - Legacy flag (always false)
-  eci: boolean;                  // DEPRECATED - Legacy flag (always false)
-  intelligence: boolean;         // Intelligence Dashboard (ACTIVE)
-  advancedAnalytics: boolean;    // Advanced Analytics & Exports (ACTIVE)
+  intelligence: boolean;
+  defense: boolean;
+  advancedAnalytics: boolean;
 }
 ```
 
-**Active Premium Features:**
-- ✅ **Intelligence Dashboard** - Full 5-tab analytics suite
-- ✅ **Advanced Analytics** - Enhanced data access and exports
-- ✅ **ThinkPages Pro** - 50 accounts vs 5 for basic
-- ✅ **Higher Rate Limits** - 1000/min vs 100/min
-- ✅ **Unlimited Exports** - 1000/day vs 5/day
+**Premium Features — actual state:**
+- ✅ **Defense & Security actions** - Enforced server-side (`premiumProcedure`) and client-side (read-only preview)
+- ⚠️ **Intelligence** - Nav gating only; `/mycountry/intelligence` shows the Defense domain
+- ❌ **Advanced Analytics** - Flag exists, nothing reads it
+- ❌ **ThinkPages Pro** - Not implemented (flat 25-account cap for all users)
+- ❌ **Higher Rate Limits** - Not implemented
+- ❌ **Unlimited Exports** - Not implemented
 
 ---
 
@@ -78,9 +89,9 @@ interface PremiumFeatures {
 | → Policy Editor | Adjust governance settings | ✅ | ✅ | Basic editing free |
 | → Diplomacy Page | Embassy network & missions | ✅ | ✅ | Basic diplomacy free |
 | → Diplomatic Events | Event responses | ✅ | ✅ | Crisis responses available |
-| → Intelligence Page | **Analytics dashboard** | ⚠️ Limited | ✅ Full | **PREMIUM GATED** |
-| → Defense & Security | Force management | ✅ | ✅ | Available to all |
-| → Map Editor | Territory editing | ✅ | ✅ | Geometry tools free |
+| → Intelligence Page | **Analytics dashboard** | ⚠️ Limited | ✅ Full | Nav-gated; route resolves to Defense domain |
+| → Defense & Security | Force management | ⚠️ Read-only preview | ✅ | **PREMIUM GATED** (enforced) |
+| → Map Editor | Territory editing | ✅ | ✅ | `ability.ts` marks it premium, but no UI/route enforces it |
 | → Editor | Country editor page | ✅ | ✅ | Available to all |
 | | | | | |
 | **Country Builder** | | | | |
@@ -107,9 +118,9 @@ interface PremiumFeatures {
 | → ThinkPages Feed | Social feed & posts | ✅ | ✅ | Public platform |
 | → ThinkTanks | Group collaboration | ✅ | ✅ | Free for all |
 | → ThinkShare Messages | Secure messaging | ✅ | ✅ | Basic messaging free |
-| → Account Management | **Multiple accounts** | ⚠️ 5 max | ✅ 50 max | **PREMIUM BENEFIT** |
+| → Account Management | **Multiple accounts** | 25 max | 25 max | Planned: 5 / 50 (not implemented) |
 | → Document Storage | ThinkPages documents | ⚠️ 50 docs | ✅ 500 docs | More storage for premium |
-| → Rate Limiting | API request limits | ⚠️ 100/min | ✅ 1000/min | Higher limits for premium |
+| → Rate Limiting | API request limits | 100/min | 100/min | Planned premium tier not implemented |
 | | | | | |
 | **Data & Export** | | | | |
 | → View Economic Data | Current statistics | ✅ | ✅ | Basic viewing free |
@@ -127,6 +138,8 @@ interface PremiumFeatures {
 ---
 
 ## Premium Feature Details
+
+> The feature descriptions below are the **planned** premium scope. See the implementation status at the top of this page for what ships today.
 
 ### 1. Intelligence Dashboard (`intelligence: true`)
 
@@ -210,6 +223,8 @@ interface PremiumFeatures {
 
 ## Usage Limits
 
+> **Planned — none of these limits are enforced in code.** All users currently share the same limits (e.g. 25 ThinkPages accounts, standard tRPC rate limits).
+
 ### Rate Limits
 
 | Resource | Basic | Premium | Benefit |
@@ -233,6 +248,8 @@ interface PremiumFeatures {
 ## Pricing Information
 
 ### MyCountry Premium
+
+> **Planned.** There is no payment provider, checkout, or subscription code in the repository; premium is granted manually by admins at `/admin/membership`.
 
 **Monthly Subscription:** $9.99/month
 - Cancel anytime
@@ -264,39 +281,26 @@ interface PremiumFeatures {
 
 ### Server-Side Feature Gating
 
-**File:** `/src/lib/membership.ts`
+**Membership status:** `users.getMembershipStatus` (`src/server/api/routers/users/country-linking.ts`) returns `{ tier, isPremium, features }`, where every feature flag equals `isPremium`. Admins change tiers with `users.updateMembershipTier` (`adminProcedure`). There is no `src/lib/membership.ts`.
 
-```typescript
-export async function getUserMembership(clerkUserId?: string): Promise<{
-  tier: MembershipTier;
-  isPremium: boolean;
-  features: PremiumFeatures;
-}> {
-  // ... implementation
-}
-
-export async function checkFeatureAccess(
-  feature: keyof PremiumFeatures,
-  clerkUserId?: string
-): Promise<boolean> {
-  const membership = await getUserMembership(clerkUserId);
-  return membership.features[feature];
-}
-```
+**Procedure gate:** `premiumProcedure` (`src/server/api/trpc/procedures.ts`) = authenticated procedure + `premiumMiddleware` (`src/server/api/trpc/middleware.ts`), which throws `ForbiddenError("MyCountry Premium membership required")` unless `ctx.user.membershipTier === "mycountry_premium"`.
 
 ### Client-Side Gating
 
-**Component:** `<PremiumGate>`
+**Component:** `<PremiumPreviewFrame>` (`src/components/mycountry/shared/primitives/PremiumPreviewFrame.tsx`) — renders real content read-only (`canEdit=false`) with an Upgrade banner when `locked`.
 
 ```tsx
-import { PremiumGate } from "~/components/ui/premium-gate";
+import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives";
 
-<PremiumGate feature="intelligence">
-  <IntelligenceDashboard />
-</PremiumGate>
+<PremiumPreviewFrame
+  feature="defense"
+  locked={!ability.can("access", "MyCountryFeature", "defense")}
+>
+  <DefenseCommandPanel countryId={countryId} />
+</PremiumPreviewFrame>
 ```
 
-**Hook:** `usePremium()`
+**Hooks:** `usePremium()`, `useFeatureAccess(feature)`, `usePremiumGate()` (`src/hooks/usePremium.tsx`)
 
 ```tsx
 import { usePremium } from "~/hooks/usePremium";
@@ -304,11 +308,11 @@ import { usePremium } from "~/hooks/usePremium";
 function MyComponent() {
   const { isPremium, features } = usePremium();
 
-  if (!features.sdi) {
+  if (!features.defense) {
     return <UpgradePrompt />;
   }
 
-  return <SDIDashboard />;
+  return <DefenseTools />;
 }
 ```
 
@@ -327,15 +331,18 @@ model User {
 ### tRPC Endpoint Protection
 
 ```typescript
-// Protected endpoint example
-export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
-  const hasAccess = await checkFeatureAccess('intelligence', ctx.auth.userId);
-  if (!hasAccess) {
-    throw new TRPCError({ code: 'FORBIDDEN' });
-  }
-  return next({ ctx });
+import { createTRPCRouter, premiumProcedure } from "~/server/api/trpc";
+
+export const militaryRouter = createTRPCRouter({
+  createMilitaryAsset: premiumProcedure
+    .input(/* zod schema */)
+    .mutation(async ({ ctx, input }) => {
+      /* only reached when membershipTier === "mycountry_premium" */
+    }),
 });
 ```
+
+Current `premiumProcedure` users: `security/military.ts`, `security/operations.ts`, `security/conflicts.ts`, `security/stability.ts`.
 
 ---
 
@@ -348,19 +355,17 @@ export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
 - **Upgrade Prompts** - Contextual upgrade suggestions when accessing premium features
 - **Feature Previews** - Limited previews of premium features for basic users
 
-### Intelligence Page Behavior
+### Intelligence & Defense Page Behavior
 
 **Basic Users:**
-- See intelligence page in navigation
-- Access settings tab only
-- View upgrade prompt with feature preview
-- Can explore sample intelligence data
+- Intelligence/Defense nav items are hidden unless an admin enables `showIntelligenceTab` / `showDefenseTab`, in which case they show as locked "(Premium)" teasers
+- `/mycountry/defense` (and `/mycountry/intelligence`, which resolves to the Defense domain) renders a read-only live preview with an Upgrade banner (links to `/help/getting-started/welcome`)
+- Defense mutations are rejected server-side
 
 **Premium Users:**
-- Full access to all 5 intelligence tabs
-- No upgrade prompts
-- Advanced alert configuration
-- Historical data analysis
+- Full Defense command access with editing enabled
+- "Premium" badge in the MyCountry sidebar
+- The planned 5-tab Intelligence Dashboard does not exist yet
 
 ---
 
@@ -439,10 +444,10 @@ IxStats follows a **generous freemium model**:
 
 ## Related Documentation
 
-- [Intelligence System Documentation](./systems/intelligence.md)
-- [API Catalog](./reference/api-complete.md)
-- [Rate Limiting Guide](./RATE_LIMITING_GUIDE.md)
-- [User Profile Utils](./USER_PROFILE_UTILS_USAGE.md)
+- [Intelligence System Documentation](../systems/intelligence.md)
+- [API Catalog](./api-complete.md)
+- [Rate Limiting Guide](../operations/rate-limiting.md)
+- [User Profile Utils](./user-profile-utils.md)
 
 ---
 
@@ -451,5 +456,5 @@ IxStats follows a **generous freemium model**:
 - Email: support@ixstats.com
 - Discord: [IxStats Community Server]
 
-**Last Review:** June 2026
-**Platform:** IxStates 1.1.1 "Ogma" (legacy v1.42 retired)
+**Last Review:** September 2026
+**Platform:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)

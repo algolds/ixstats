@@ -1,10 +1,19 @@
 # MyLeague Lore Integration: Top 5 Features Proposal
 **Author**: Antigravity AI  
 **Date**: June 11, 2026  
-**Status**: Proposal  
+**Status**: Proposal — largely implemented (audited September 2026)  
 **Target Directory**: `/plans`  
 
-This document presents the top 5 high-impact features designed to bridge the gaps between our rich in-world sports lore (WAFF World Cup, Caphirian Imperial League, and Ice Hockey/LHL) and the `MyLeague` simulation engine. Each feature is designed to fit directly into the existing modular monolith architecture of **IxStates** using [sports.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/sports.prisma) and [resolver.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/resolver.ts).
+> **Implementation status (Sept 2026):**
+> 1. **Ice Hockey preset** — ✅ Complete: `src/lib/sports/resolvers/hockey.ts` (3 periods, lines, minors/power plays, fight majors, goalie pull at t ≥ 57, 3-on-3 OT, shootout).
+> 2. **Multi-Stage / Golden Box** — 🟡 Partial: `SportSeason.activeStage` + `transitionToNextStage()` in `src/lib/sports/transition.ts` (group-crossing and top-K qualifiers, driven by `season.settings.stages`). Nothing in the UI or API writes `settings.stages`, and the double-elimination Golden Box format is not implemented.
+> 3. **Promotion & Relegation** — ✅ Complete: `tier`, `parentLeagueId`, `promotionCount`, `relegationCount` on `SportLeague`; swaps run in `transition.ts` (not `server.mjs`); counts are editable in League Settings. League news bulletin for swaps is not implemented.
+> 4. **Patron Saints** — 🟡 Partial: `invokePatronSaint` (100₷) writes a `sports_saint_blessing` StorytellerEffect; `team-rating.ts` applies saint/scandal effects; divine-derby volatility 0.95 in `match-outcome.ts`. Only the admin Sports Labs panel calls the mutation (no MyClub UI), and the reverse Sports → Storyteller `special_event` write-back is not implemented.
+> 5. **Quadrennial World Cup** — ✅ Complete: `simulateWorldCup()` every 4th season drafts national squads, posts a SportsNews ThinkPages bulletin (mirrored to Discord), and championship trophy cards are minted at season end.
+>
+> Model names in the code samples below are illustrative (`SportLeague`/`SportTeam`/`SportSeason`, `thinkpagesPost` in the real schema).
+
+This document presents the top 5 high-impact features designed to bridge the gaps between our rich in-world sports lore (WAFF World Cup, Caphirian Imperial League, and Ice Hockey/LHL) and the `MyLeague` simulation engine. Each feature is designed to fit directly into the existing modular monolith architecture of **IxStates** using [sports.prisma](../../prisma/schema/sports.prisma) and [resolver.ts](../../src/lib/sports/resolver.ts).
 
 ---
 
@@ -57,7 +66,7 @@ Extend the tournament structures in the database and engine to support multi-sta
 * **Caphirian Imperial League**: 16-team double round-robin (30 matches) -> Top 4 enter the "Golden Box" postseason knockout to determine the champion.
 
 ### 2. Technical Implementation
-* **Database Schema Expansion** in [sports.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/sports.prisma):
+* **Database Schema Expansion** in [sports.prisma](../../prisma/schema/sports.prisma):
   ```prisma
   model SportsSeason {
     // ... current fields
@@ -109,7 +118,7 @@ Simulate a realistic league pyramid by linking domestic leagues (e.g. *Caphirian
   }
   ```
 * **Season Boundary Transitions**:
-  During the `advanceSeason` cron/trigger in [server.mjs](file:///ixwiki/public/projects/ixstats/server.mjs):
+  During the `advanceSeason` cron/trigger in [server.mjs](../../server.mjs):
   1. Retrieve the final standings of the Division 1 league and its child Division 2 league.
   2. Select the lowest $R$ teams from Division 1 standings and the highest $P$ teams from Division 2 standings.
   3. Swap their `leagueId` fields in the `SportsTeam` database table:

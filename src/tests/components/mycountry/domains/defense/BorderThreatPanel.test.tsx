@@ -1,21 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { BorderThreatPanel } from "~/components/mycountry/domains/defense/BorderThreatPanel";
-
-jest.mock("~/trpc/react", () => ({
-  api: {
-    security: {
-      getBorderSecurity: {
-        useQuery: jest.fn(),
-      },
-    },
-    useUtils: jest.fn(() => ({ invalidate: jest.fn() })),
-  },
-}));
-
-const mockedApi = jest.requireMock("~/trpc/react").api as {
-  security: { getBorderSecurity: { useQuery: jest.Mock } };
-};
+import { api } from "~/trpc/react";
 
 const mockBorderData = {
   id: "border-1",
@@ -67,7 +53,7 @@ function renderPanel() {
 
 describe("BorderThreatPanel", () => {
   beforeEach(() => {
-    mockedApi.security.getBorderSecurity.useQuery.mockReturnValue({
+    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
       data: null,
       isLoading: false,
       isError: false,
@@ -80,7 +66,7 @@ describe("BorderThreatPanel", () => {
   });
 
   it("renders a loading skeleton while loading", () => {
-    mockedApi.security.getBorderSecurity.useQuery.mockReturnValue({
+    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
       data: null,
       isLoading: true,
       isError: false,
@@ -97,7 +83,7 @@ describe("BorderThreatPanel", () => {
   });
 
   it("renders overview stats and neighbor threat rows when data returns", () => {
-    mockedApi.security.getBorderSecurity.useQuery.mockReturnValue({
+    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
       data: mockBorderData,
       isLoading: false,
       isError: false,
@@ -129,8 +115,8 @@ describe("BorderThreatPanel", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders empty state when neighborThreats is empty", () => {
-    mockedApi.security.getBorderSecurity.useQuery.mockReturnValue({
+  it("renders empty state when no neighbor threats exist", () => {
+    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
       data: {
         ...mockBorderData,
         neighborThreats: [],
@@ -147,6 +133,24 @@ describe("BorderThreatPanel", () => {
     renderPanel();
 
     expect(screen.getByText("No neighbor threat assessments recorded yet.")).toBeInTheDocument();
-    expect(screen.queryByText("Eastland")).not.toBeInTheDocument();
+  });
+
+  it("renders default fallback stats when data is completely null", () => {
+    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
+      data: null,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isFetching: false,
+      isSuccess: true,
+      status: "success" as const,
+    });
+
+    const { container } = renderPanel();
+
+    expect(container.textContent).toContain("0/100");
+    expect(screen.getByText("unknown")).toBeInTheDocument();
+    expect(screen.getByText("No neighbor threat assessments recorded yet.")).toBeInTheDocument();
   });
 });

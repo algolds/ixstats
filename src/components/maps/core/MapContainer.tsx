@@ -27,6 +27,7 @@ import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
 import { TimelineScrubber } from "./TimelineScrubber";
+import { MapRealmProvider } from "./MapRealmContext";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
 import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
@@ -42,7 +43,7 @@ import { TourHUD } from "./components/TourHUD";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
-  loading: () => <div className="absolute inset-0 bg-[#0a1628]" />,
+  loading: () => <div className="bg-map-ocean absolute inset-0" />,
 });
 
 const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEditorOverlay"), {
@@ -69,6 +70,8 @@ export interface MapContainerProps {
   onMapReady?: (map: import("maplibre-gl").Map | null) => void;
   /** Suppress country click-to-select + flyTo (e.g. while a border editor owns clicks). */
   disableCountrySelect?: boolean;
+  /** Realm slug to show (`?realm=`); undefined = the viewer's realm. Editors opened here edit it too. */
+  realm?: string;
 }
 
 export function MapContainer({
@@ -89,6 +92,7 @@ export function MapContainer({
   hideEditButtons = false,
   onMapReady,
   disableCountrySelect = false,
+  realm,
 }: MapContainerProps) {
   const isAdmin = useIsAdmin();
   const isStaff = useIsStaff();
@@ -117,7 +121,7 @@ export function MapContainer({
     isServerLoading,
     dropPin,
     clearPin,
-  } = useMapPinInfo();
+  } = useMapPinInfo(realm);
 
   // Fetch user profile to get countryId first
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
@@ -196,6 +200,7 @@ export function MapContainer({
     overlayData,
     error,
   } = useMapDataQueries({
+    realm,
     initialLayers,
     currentZoom,
     initialCountryId,
@@ -234,6 +239,7 @@ export function MapContainer({
   });
 
   // Bind aggregated layer properties needed by state handlers
+  // oxlint-disable-next-line eslint/no-unused-vars
   const layerDataMap = useMemo(() => {
     const map: Record<string, any> = {};
     for (const ml of mapLayers) {
@@ -254,7 +260,7 @@ export function MapContainer({
     historicalIxTime === null ? null : IxTime.getCurrentGameYear(historicalIxTime);
 
   const { data: historicalPolitical } = api.geoCore.getWorldMapAsOf.useQuery(
-    { ixTime: historicalIxTime as number },
+    { ixTime: historicalIxTime as number, realm },
     {
       enabled: historicalIxTime !== null,
       staleTime: 5 * 60_000,
@@ -407,6 +413,7 @@ export function MapContainer({
           onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
           onSearchResult={handleSearchResult}
           onOpenWelcome={() => setIsWelcomeOpen(true)}
+          realm={realm}
         />
       )}
 
@@ -504,27 +511,32 @@ export function MapContainer({
         totalSteps={totalSteps}
       />
 
-      {/* Map editor overlay */}
-      {isEditing && editingCountryId && (
-        <MapEditorOverlay
-          countryId={editingCountryId}
-          mapLayers={mapLayers}
-          onExit={handleExitEditor}
-          historicalYear={historicalYear}
-          mapInstance={mapRef.current?.getMap() ?? null}
-        />
-      )}
+      {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
+          nation's realm — undefined = the viewer's realm — even when opened from /maps?realm=<other> */}
+      <MapRealmProvider value={undefined}>
+        {isEditing && editingCountryId && (
+          <MapEditorOverlay
+            countryId={editingCountryId}
+            mapLayers={mapLayers}
+            onExit={handleExitEditor}
+            historicalYear={historicalYear}
+            mapInstance={mapRef.current?.getMap() ?? null}
+          />
+        )}
+      </MapRealmProvider>
 
-      {/* World map editor overlay */}
-      {isWorldEditing && (
-        <MapEditorOverlay
-          isWorldMode={true}
-          mapLayers={mapLayers}
-          onExit={() => setIsWorldEditing(false)}
-          historicalYear={historicalYear}
-          mapInstance={mapRef.current?.getMap() ?? null}
-        />
-      )}
+      {/* The world editor edits the realm this map shows (ruling E-r) */}
+      <MapRealmProvider value={realm}>
+        {isWorldEditing && (
+          <MapEditorOverlay
+            isWorldMode={true}
+            mapLayers={mapLayers}
+            onExit={() => setIsWorldEditing(false)}
+            historicalYear={historicalYear}
+            mapInstance={mapRef.current?.getMap() ?? null}
+          />
+        )}
+      </MapRealmProvider>
 
       {/* Historical timeline scrubber (read-only) */}
       {showControls && tourState === "idle" && (
@@ -533,15 +545,15 @@ export function MapContainer({
 
       {/* Maps Private Beta Alert Banner for Non-Staff */}
       {!isStaff && showGatekeepingWarning && (
-        <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-all duration-300">
+        <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="flex gap-2.5">
-              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-bold text-amber-500">
+              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-500">
                 ⚠️
               </span>
               <div className="space-y-1">
                 <h4 className="text-xs font-bold text-amber-500">Maps Private Beta</h4>
-                <p className="text-[10px] leading-relaxed text-zinc-300">
+                <p className="text-xs leading-relaxed text-zinc-300">
                   External country integration and interactive plotting are under active
                   development. You can freely explore the world map, topography, and other nations,
                   but adding your own borders or claiming territory is not yet open to external
@@ -551,7 +563,7 @@ export function MapContainer({
             </div>
             <button
               onClick={() => setShowGatekeepingWarning(false)}
-              className="p-0.5 text-[10px] font-bold text-zinc-400 transition-colors hover:text-white"
+              className="p-0.5 text-xs font-bold text-zinc-400 transition-colors hover:text-white"
               title="Dismiss warning"
               type="button"
             >
@@ -563,8 +575,8 @@ export function MapContainer({
 
       {/* WebGL/Loading Error Fallback Overlay */}
       {(webglError || mapLoadTimeout) && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#0a1628] p-6 text-center">
-          <div className="glass-hierarchy-child max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="bg-map-ocean absolute inset-0 z-[60] flex items-center justify-center p-6 text-center">
+          <div className="facet-hierarchy-child max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

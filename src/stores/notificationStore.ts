@@ -1,9 +1,8 @@
+"use client";
 /**
  * Unified Notification Store
  * Global state management for the enhanced notification system
  */
-
-"use client";
 
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
@@ -18,7 +17,6 @@ import type {
   NotificationEngagement,
   DeliveryContext,
   NotificationHistory,
-  DeliveryMethod,
 } from "~/types/unified-notifications";
 
 import {
@@ -223,6 +221,7 @@ export const useNotificationStore = create<NotificationStore>()(
           notification.status = "delivered";
         }
 
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'state' is intentional in this scope
         set((state) => {
           const newNotifications = [notification, ...state.notifications];
 
@@ -340,6 +339,7 @@ export const useNotificationStore = create<NotificationStore>()(
         status: "delivered" as const,
       }));
 
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'state' is intentional in this scope
       set((state) => {
         const updatedNotifications = state.notifications.map((n) => {
           const optimized = optimizedNotifications.find((opt) => opt.id === n.id);

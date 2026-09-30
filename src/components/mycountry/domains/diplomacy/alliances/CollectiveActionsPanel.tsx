@@ -6,11 +6,11 @@ import {
   ThumbsDown,
   MinusCircle,
   Plus,
-  Loader2,
-  CheckCircle2,
-  XCircle,
+  SystemRestart as Loader2,
+  CheckCircle as CheckCircle2,
+  XmarkCircle as XCircle,
   Clock,
-} from "lucide-react";
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
@@ -49,7 +49,6 @@ const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
 
 export function CollectiveActionsPanel({
   allianceId,
-  countryId,
   myRole,
 }: CollectiveActionsPanelProps) {
   const [proposeOpen, setProposeOpen] = useState(false);
@@ -173,7 +172,7 @@ export function CollectiveActionsPanel({
                       <span className="font-medium">{action.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {action.actionType.replace("_", " ")}
                       </Badge>
                       <span className="text-muted-foreground text-xs">

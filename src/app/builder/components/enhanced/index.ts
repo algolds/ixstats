@@ -9,19 +9,17 @@ import { lazy } from "react";
 
 // Eager exports for small/critical components
 export { CountrySelector } from "./CountrySelector";
-export { EconomicCustomizationHub } from "./EconomicCustomizationHub";
 
 import type { ComponentType } from "react";
 
 import { EconomyBuilderPage } from "./EconomyBuilderPage";
 export { EconomyBuilderPage };
 
-export const EconomicArchetypeDisplay = lazy<ComponentType<any>>(() =>
+import type { EconomicArchetypeDisplayProps } from "./EconomicArchetypeDisplay";
+
+export const EconomicArchetypeDisplay = lazy<ComponentType<EconomicArchetypeDisplayProps>>(() =>
   import("./EconomicArchetypeDisplay").then((module) => ({
     default: module.EconomicArchetypeDisplay,
   }))
 );
 
-export const InteractivePreview = lazy<ComponentType<any>>(() =>
-  import("./InteractivePreview").then((module) => ({ default: module.InteractivePreview }))
-);

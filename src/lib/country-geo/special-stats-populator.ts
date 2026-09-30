@@ -21,6 +21,7 @@ export function computeSpecialStats(card: {
 
   if (cardType === "NATION") {
     const pop = nsData.population ?? 0;
+    // oxlint-disable-next-line typescript/no-unused-vars
     const freedom = nsData.freedom ?? {};
     const economy = nsData.economy ?? "";
     const govType = attrs.governmentType ?? nsData.governmentType ?? "";

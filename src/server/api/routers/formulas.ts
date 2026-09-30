@@ -71,58 +71,6 @@ export const formulasRouter = createTRPCRouter({
     return { formulas };
   }),
 
-  getById: adminProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    // Avoid self-referential call: reconstruct the same data as getAll
-    const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
-    const lastModified = lastCalc?.timestamp ?? new Date();
-    const formulas: FormulaMeta[] = [
-      {
-        id: "gdp-growth",
-        name: "GDP Effective Growth Rate",
-        description: "Computes effective GDP growth applying global/local factors and tier caps",
-        category: "economic",
-        formula:
-          "calculateEffectiveGrowthRate(baseGrowthRate, gdpPerCapita, globalGrowthFactor, localGrowthFactor)",
-        variables: {
-          baseGrowthRate: 0.02,
-          gdpPerCapita: 20000,
-          globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
-          localGrowthFactor: 1.0,
-        },
-        constants: {
-          minGrowthRate: -0.5,
-          globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
-        },
-        isActive: true,
-        version: "1.0.0",
-        lastModified,
-        modifiedBy: ctx.user?.id || "system",
-      },
-      {
-        id: "gdp-per-capita-progression",
-        name: "GDP Per Capita Progression (descriptive)",
-        description:
-          "Progression computed inside IxStatsCalculator using config tier caps and factors",
-        category: "economic",
-        formula: "IxStatsCalculator.calculateGdpPerCapitaProgression(...) (internal)",
-        variables: {
-          adjustedGrowthRate: 0.02,
-          maxGrowthRate: 0.05,
-          yearsFromBaseline: 1,
-        },
-        constants: {
-          globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
-        },
-        isActive: true,
-        version: "1.0.0",
-        lastModified,
-        modifiedBy: ctx.user?.id || "system",
-      },
-    ];
-    const found = formulas.find((f) => f.id === input.id) || null;
-    return found;
-  }),
-
   update: adminProcedure
     .input(
       z.object({
@@ -164,7 +112,7 @@ export const formulasRouter = createTRPCRouter({
         expectedOutput: z.number().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input }) => {
       const startTime = Date.now();
 
       let result = 0;
@@ -207,56 +155,5 @@ export const formulasRouter = createTRPCRouter({
         passed:
           input.expectedOutput != null ? Math.abs(result - input.expectedOutput) < 0.0001 : null,
       };
-    }),
-
-  getSystemMetrics: adminProcedure.query(async ({ ctx }) => {
-    const [countries, users, notifications, calcCount, lastCalc] = await Promise.all([
-      ctx.db.country.count(),
-      ctx.db.user.count(),
-      ctx.db.notification.count(),
-      ctx.db.calculationLog.count(),
-      ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } }),
-    ]);
-
-    return {
-      database: {
-        tableCount: undefined,
-        totalRecords: undefined,
-      },
-      application: {
-        countries,
-        users,
-        notifications,
-        totalCalculations: calcCount,
-        lastCalculationAt: lastCalc?.timestamp ?? null,
-      },
-    } as any;
-  }),
-
-  getExecutionHistory: adminProcedure
-    .input(
-      z.object({
-        limit: z.number().default(50),
-        formulaId: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const logs = await ctx.db.calculationLog.findMany({
-        orderBy: { timestamp: "desc" },
-        take: input.limit,
-      });
-
-      const history = logs.map((l) => ({
-        id: l.id,
-        action: "CALCULATION_RUN",
-        formulaId: "system",
-        formulaName: "Scheduled calculation",
-        timestamp: l.timestamp,
-        user: "system",
-        executionTime: l.executionTimeMs,
-        success: true,
-      }));
-
-      return { history };
     }),
 });

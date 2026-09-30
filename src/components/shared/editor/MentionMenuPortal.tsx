@@ -1,11 +1,10 @@
+"use client";
 // src/components/shared/editor/MentionMenuPortal.tsx
 // Floating portal menu for account and entity @mentions in PlateJS editors.
 
-"use client";
-
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface MentionMenuPortalProps {
@@ -27,6 +26,7 @@ export function MentionMenuPortal({
 }: MentionMenuPortalProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
     return () => setMounted(false);
   }, []);
@@ -62,18 +62,18 @@ export function MentionMenuPortal({
                   }}
                   onClick={() => onSelect(idx)}
                   className={cn(
-                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 select-none",
+                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
                     active
                       ? "border-l-[3px] border-blue-500 bg-blue-500/10 font-semibold text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"
                       : "text-neutral-700 hover:bg-neutral-500/5 dark:text-slate-300 dark:hover:bg-white/5"
                   )}
                 >
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-neutral-200/50 bg-neutral-100/50 text-[11px] leading-none dark:border-white/5 dark:bg-white/5">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-neutral-200/50 bg-neutral-100/50 text-xs leading-none dark:border-white/5 dark:bg-white/5">
                     {item.icon}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs leading-tight font-bold">{item.name}</div>
-                    <div className="mt-0.5 truncate text-[9px] font-semibold tracking-wider text-neutral-400 uppercase dark:text-slate-500">
+                    <div className="mt-0.5 truncate text-xs font-semibold tracking-wider text-neutral-400 uppercase dark:text-slate-500">
                       {item.description}
                     </div>
                   </div>

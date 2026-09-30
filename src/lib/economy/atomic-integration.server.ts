@@ -1,7 +1,7 @@
 // src/lib/atomic-economic-integration.server.ts
 // Server-side functions that require database access
 import { ComponentType, type AtomicEffectiveness } from "@prisma/client";
-import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
+import { getAtomicEffectivenessService } from "~/server/services/AtomicEffectivenessService";
 import { db } from "~/server/db";
 import type {
   AtomicEconomicModifiers,
@@ -11,8 +11,8 @@ import type {
 
 export async function calculateAtomicEconomicImpactServer(
   components: ComponentType[],
-  baseGdpPerCapita: number,
-  baseTaxRevenue: number = 0
+  _baseGdpPerCapita: number,
+  _baseTaxRevenue: number = 0
 ): Promise<AtomicEconomicModifiers> {
   const atomicService = getAtomicEffectivenessService(db as any);
   const componentBreakdown = atomicService.getComponentBreakdown(components);
@@ -196,64 +196,4 @@ export async function calculateCountryDataWithAtomicEnhancement(
       overallEffectivenessGrade: effectivenessGrade,
     },
   };
-}
-
-// Helper function to get atomic intelligence recommendations
-export async function getAtomicIntelligenceRecommendations(countryId: string): Promise<
-  Array<{
-    type: "component_add" | "component_improve" | "synergy_opportunity" | "conflict_resolution";
-    priority: "critical" | "high" | "medium" | "low";
-    title: string;
-    description: string;
-    expectedImpact: {
-      economic: number;
-      stability: number;
-      legitimacy: number;
-    };
-  }>
-> {
-  const atomicService = getAtomicEffectivenessService(db as any);
-
-  // Get current country data
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    include: {
-      governmentComponents: { where: { isActive: true } },
-      atomicEffectiveness: true,
-    },
-  });
-
-  if (!country) return [];
-
-  const recommendations = [];
-  const currentComponents = country.governmentComponents.map((c) => c.componentType);
-
-  // Check for missing high-impact components
-  const highImpactComponents = [
-    ComponentType.PROFESSIONAL_BUREAUCRACY,
-    ComponentType.RULE_OF_LAW,
-    ComponentType.INDEPENDENT_JUDICIARY,
-    ComponentType.TECHNOCRATIC_PROCESS,
-  ];
-
-  for (const component of highImpactComponents) {
-    if (!currentComponents.includes(component)) {
-      const componentData = atomicService.getComponentBreakdown([component])[0];
-      if (componentData) {
-        recommendations.push({
-          type: "component_add" as const,
-          priority: "high" as const,
-          title: `Add ${component.replace(/_/g, " ")}`,
-          description: `Adding this component could significantly improve government effectiveness`,
-          expectedImpact: {
-            economic: (componentData.economicImpact - 1) * 100,
-            stability: componentData.stabilityImpact,
-            legitimacy: componentData.legitimacyImpact,
-          },
-        });
-      }
-    }
-  }
-
-  return recommendations.slice(0, 10); // Limit to top 10 recommendations
 }

@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import type { LucideIcon } from "lucide-react";
-import { ScrollText } from "lucide-react";
+
+import { Page as ScrollText } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { CutoutPanel } from "~/components/mycountry/cards";
 import { ACCENT_CLASSES, type MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
+import { timeAgo } from "~/lib/format/compact";
 
 export interface ContextStat {
   label: string;
@@ -17,7 +18,7 @@ export interface ContextStat {
 
 export interface ContextActivityEntry {
   id: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   iconColor: string;
   text: string;
   time: Date;
@@ -27,7 +28,7 @@ interface SectionContextWidgetProps {
   accent?: MyCountryAccent;
   /** Activity-log header title (default "Activity"). */
   title?: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   /** Compact quick-stat snapshot rendered above the log. */
   stats?: ContextStat[];
   /** Recent-activity entries (latest first; only the first 5 are shown). */
@@ -68,7 +69,7 @@ export function SectionContextWidget({
           {stats!.map((s) => (
             <div key={s.label} className="bg-muted/40 rounded-lg p-2 text-center">
               <div className={cn("text-sm font-bold", s.accentText && a.text)}>{s.value}</div>
-              <div className="text-muted-foreground text-[10px]">{s.label}</div>
+              <div className="text-muted-foreground text-xs">{s.label}</div>
             </div>
           ))}
         </div>
@@ -79,36 +80,25 @@ export function SectionContextWidget({
           <HeaderIcon className={cn("h-3.5 w-3.5", a.text)} />
           <span className="text-xs font-semibold">{title}</span>
         </div>
-        <Badge variant="outline" className="px-1.5 py-0 text-[0.65rem]">
+        <Badge variant="outline" className="px-1.5 py-0 text-xs">
           {recent.length}
         </Badge>
       </div>
 
       <div className="space-y-1.5">
         {recent.length === 0 && (
-          <p className="text-muted-foreground py-3 text-center text-[11px]">{emptyMessage}</p>
+          <p className="text-muted-foreground py-3 text-center text-xs">{emptyMessage}</p>
         )}
         {recent.map((e) => (
           <div key={e.id} className="flex items-start gap-2 py-1">
             <e.icon className={cn("mt-0.5 h-3 w-3 shrink-0", e.iconColor)} />
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-[11px] leading-snug">{e.text}</p>
-              <span className="text-muted-foreground text-[10px]">{timeAgo(e.time)}</span>
+              <p className="line-clamp-1 text-xs leading-snug">{e.text}</p>
+              <span className="text-muted-foreground text-xs">{timeAgo(e.time)}</span>
             </div>
           </div>
         ))}
       </div>
     </CutoutPanel>
   );
-}
-
-function timeAgo(date: Date): string {
-  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

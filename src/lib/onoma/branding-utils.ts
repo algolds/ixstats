@@ -12,8 +12,6 @@ export const GOOGLE_FONTS = [
   { id: "Inter", family: "Inter", type: "sans" },
 ];
 
-
-
 /**
  * Returns the Google Fonts CSS import link for a given font family name.
  */

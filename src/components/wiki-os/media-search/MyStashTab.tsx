@@ -1,14 +1,13 @@
-// src/components/media-search/MyStashTab.tsx
 "use client";
+// src/components/media-search/MyStashTab.tsx
 
 import React, { useState, useMemo, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import { Search, Loader2, Bookmark, Folder } from "lucide-react";
+import { Search, SystemRestart as Loader2, Bookmark, Folder, ZoomIn, Xmark as X } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { ZoomIn } from "lucide-react";
 import type { CommonsImage } from "./types";
 
 interface MyStashTabProps {
@@ -47,6 +46,7 @@ export function MyStashTab({
   // Fetch images for all pages in the stash in parallel
   useEffect(() => {
     if (!selectedStashId || stashItems.length === 0) {
+      // oxlint-disable-next-line
       setAllStashImages([]);
       return;
     }
@@ -61,30 +61,41 @@ export function MyStashTab({
               title: item.pageTitle,
             });
             if (!isMounted) return [];
-            return (images ?? []).map((img: { title?: string; thumbUrl?: string; url?: string; width?: number; height?: number }, imgIdx: number) => {
-              const ext = (img.title || "").split(".").pop()?.toLowerCase() ?? "";
-              const guessedMime =
-                ext === "svg"
-                  ? "image/svg+xml"
-                  : ext === "png"
-                    ? "image/png"
-                    : ext === "jpg" || ext === "jpeg"
-                      ? "image/jpeg"
-                      : "image/png";
-              return {
-                pageid: idx * 1000 + imgIdx + 5000000,
-                title: img.title || "",
-                thumbUrl: img.thumbUrl || img.url || "",
-                url: img.url || "",
-                descriptionUrl: img.url || "",
-                width: img.width || 0,
-                height: img.height || 0,
-                mime: guessedMime,
-                description: `From stashed page: ${item.pageTitle}`,
-                artist: "Wiki Contributor",
-                license: "CC BY-SA 3.0",
-              };
-            });
+            return (images ?? []).map(
+              (
+                img: {
+                  title?: string;
+                  thumbUrl?: string;
+                  url?: string;
+                  width?: number;
+                  height?: number;
+                },
+                imgIdx: number
+              ) => {
+                const ext = (img.title || "").split(".").pop()?.toLowerCase() ?? "";
+                const guessedMime =
+                  ext === "svg"
+                    ? "image/svg+xml"
+                    : ext === "png"
+                      ? "image/png"
+                      : ext === "jpg" || ext === "jpeg"
+                        ? "image/jpeg"
+                        : "image/png";
+                return {
+                  pageid: idx * 1000 + imgIdx + 5000000,
+                  title: img.title || "",
+                  thumbUrl: img.thumbUrl || img.url || "",
+                  url: img.url || "",
+                  descriptionUrl: img.url || "",
+                  width: img.width || 0,
+                  height: img.height || 0,
+                  mime: guessedMime,
+                  description: `From stashed page: ${item.pageTitle}`,
+                  artist: "Wiki Contributor",
+                  license: "CC BY-SA 3.0",
+                };
+              }
+            );
           } catch (e) {
             console.error("Failed to fetch page images for:", item.pageTitle, e);
             return [];
@@ -136,30 +147,42 @@ export function MyStashTab({
       {/* Search and Navigation */}
       <div className="border-border/10 bg-card/5 border-b p-3">
         <div className="relative mb-2">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
             placeholder={
               stashViewMode === "stashes" ? "Search collections..." : "Search stash images..."
             }
             value={stashSearchQuery}
             onChange={(e) => setStashSearchQuery(e.target.value)}
-            className="h-9 pl-9 text-xs"
+            className="h-9 pl-9 pr-8 text-xs bg-muted/30 border-border/50 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring"
           />
+          {stashSearchQuery && (
+            <button
+              type="button"
+              onClick={() => setStashSearchQuery("")}
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95] cursor-pointer"
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Breadcrumb row */}
         <div className="text-muted-foreground border-border/5 flex items-center gap-1.5 border-t py-1.5 text-xs">
           <button
+            type="button"
             onClick={() => {
               setStashViewMode("stashes");
               setSelectedStashId(null);
               onSelectImage(null as any);
               setStashSearchQuery("");
             }}
-            className="hover:text-foreground flex items-center gap-1 font-semibold transition-colors"
+            className="hover:text-foreground flex items-center gap-1 font-semibold transition-colors active:scale-[0.97] cursor-pointer"
           >
             <Bookmark className="h-3.5 w-3.5" />
-            Stashes
+            <span>Stashes</span>
           </button>
           {selectedStashId && (
             <>
@@ -167,7 +190,7 @@ export function MyStashTab({
               <span className="text-foreground flex items-center gap-1.5 font-semibold">
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedStashColor || "#3b82f6" }}
+                  style={{ backgroundColor: selectedStashColor || "var(--color-info)" }}
                 />
                 {selectedStashName}
               </span>
@@ -183,7 +206,7 @@ export function MyStashTab({
           {stashViewMode === "stashes" &&
             (isLoadingStashes ? (
               <div className="flex h-32 items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : filteredStashes.length > 0 ? (
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
@@ -197,13 +220,13 @@ export function MyStashTab({
                       setStashViewMode("images");
                       setStashSearchQuery("");
                     }}
-                    className="group border-border/10 flex cursor-pointer items-center justify-between rounded-lg border bg-slate-100 p-3 transition-all hover:bg-slate-200/50 dark:bg-white/5 dark:hover:bg-white/10"
+                    className="group border border-border/40 flex cursor-pointer items-center justify-between rounded-xl bg-card p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-muted/40 hover:border-border/70 active:scale-[0.98] shadow-2xs select-none"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
                       <div className="min-w-0">
                         <p className="text-foreground truncate text-xs font-bold">{stash.name}</p>
-                        <p className="text-muted-foreground text-[10px] font-medium">
+                        <p className="text-muted-foreground text-xs font-medium">
                           {stash.itemCount} items
                         </p>
                       </div>
@@ -221,10 +244,10 @@ export function MyStashTab({
           {stashViewMode === "images" &&
             (isLoadingStashItems || isLoadingImages ? (
               <div className="flex h-32 items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : filteredPageImages.length > 0 ? (
-              <div className="wikios-commons-grid">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                 {filteredPageImages.map((img) => {
                   const isSelected = selectedImageObj?.pageid === img.pageid;
                   const cleanTitle = (img.title || "").replace(/^File:/, "").replace(/_/g, " ");
@@ -232,11 +255,14 @@ export function MyStashTab({
                   return (
                     <button
                       key={img.pageid}
+                      type="button"
                       onClick={() => onSelectImage(img)}
                       onDoubleClick={onDoubleClickConfirm}
                       className={cn(
-                        "wikios-commons-card relative overflow-hidden",
-                        isSelected && "wikios-commons-card--selected"
+                        "group relative flex flex-col overflow-hidden rounded-lg border bg-card text-left select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98] cursor-pointer",
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/30 shadow-sm"
+                          : "border-border/50 hover:border-border hover:shadow-xs"
                       )}
                       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
                     >
@@ -246,21 +272,26 @@ export function MyStashTab({
                         className="mix-blend-overlay"
                       />
                       <TextureOverlay texture="dots" opacity={0.03} className="mix-blend-overlay" />
-                      <div className="wikios-commons-card-thumb">
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted/20">
                         <img
                           src={img.thumbUrl}
                           alt={cleanTitle}
                           loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           onContextMenu={(e) => e.preventDefault()}
                         />
-                        <div className="wikios-commons-card-overlay">
-                          <ZoomIn className="h-5 w-5" />
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
+                          <div className="rounded-full border border-white/20 bg-black/60 p-1.5 text-white shadow-md">
+                            <ZoomIn className="h-4 w-4" />
+                          </div>
                         </div>
                       </div>
-                      <div className="wikios-commons-card-info text-left">
-                        <span className="wikios-commons-card-title">{cleanTitle}</span>
-                        <span className="wikios-commons-card-meta">
-                          {img.width}×{img.height}
+                      <div className="flex flex-col gap-0.5 p-2 text-left">
+                        <span className="truncate text-xs font-medium text-foreground/90 group-hover:text-foreground">
+                          {cleanTitle}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}
                         </span>
                       </div>
                     </button>
@@ -276,7 +307,7 @@ export function MyStashTab({
 
         {/* Right Side Detail Panel for Stash view */}
         {selectedImageObj && (
-          <div className="border-border/10 w-80 shrink-0 overflow-y-auto border-l bg-slate-100/30 backdrop-blur-md dark:bg-zinc-950/20">
+          <div className="border-border/40 w-80 shrink-0 overflow-y-auto border-l bg-card/40 backdrop-blur-md">
             <CommonsDetailPanel
               image={selectedImageObj}
               onClose={() => {

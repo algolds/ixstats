@@ -1,7 +1,7 @@
 import type React from "react";
 
 import { withBasePath } from "~/lib/base-path";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 export type TextureVariant =
   "fabric-of-squares" | "grid-noise" | "inflicted" | "debut-light" | "groovepaper" | "none";

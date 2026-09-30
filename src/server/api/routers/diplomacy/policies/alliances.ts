@@ -102,7 +102,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
   createAlliance: protectedProcedure
     .input(
       z.object({
-        name: z.string().min(2).max(100),
+        name: z.string().min(2, "Alliance name must be at least 2 characters long").max(100),
         shortName: z.string().max(10).optional(),
         type: z.enum(["military", "economic", "political", "regional"]),
         description: z.string().optional(),
@@ -136,7 +136,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             create: {
               countryId: ctx.user.countryId,
               role: "founder",
-              votingPower: 2.0, // Founders get double voting power
+              votingPower: 1.0, // Standard 1 vote per member
               contributionLevel: "high",
             },
           },
@@ -174,7 +174,9 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             metadata: { allianceId: alliance.id, allianceName: input.name },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[Alliances] Formation notification failed for alliance", alliance.id, err);
+      }
 
       return alliance;
     }),
@@ -254,9 +256,9 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       try {
         const targetCountry = await ctx.db.country.findUnique({
           where: { id: input.targetCountryId },
-          select: { users: { select: { clerkUserId: true } } },
+          select: { owner: { select: { clerkUserId: true } } },
         });
-        const targetUserId = targetCountry?.users[0]?.clerkUserId;
+        const targetUserId = targetCountry?.owner?.clerkUserId;
         const alliance = await ctx.db.alliance.findUnique({
           where: { id: input.allianceId },
           select: { name: true },
@@ -273,7 +275,13 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             metadata: { allianceId: input.allianceId },
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn(
+          "[Alliances] Invitation notification failed for alliance",
+          input.allianceId,
+          err
+        );
+      }
 
       return { success: true };
     }),
@@ -519,85 +527,5 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       }
 
       return updatedAction;
-    }),
-
-  // Create an alliance document
-  createAllianceDocument: protectedProcedure
-    .input(
-      z.object({
-        allianceId: z.string(),
-        title: z.string().min(2),
-        content: z.string(),
-        documentType: z
-          .enum(["memo", "policy", "strategy", "communique"])
-          .optional()
-          .default("memo"),
-        isPublic: z.boolean().optional().default(false),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Not associated with a country." });
-      }
-
-      // Verify membership
-      const membership = await ctx.db.allianceMember.findUnique({
-        where: {
-          allianceId_countryId: {
-            allianceId: input.allianceId,
-            countryId: ctx.user.countryId,
-          },
-        },
-      });
-
-      if (!membership || !membership.isActive) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Must be an active member." });
-      }
-
-      const doc = await ctx.db.allianceDocument.create({
-        data: {
-          allianceId: input.allianceId,
-          title: input.title,
-          content: input.content,
-          documentType: input.documentType,
-          authorCountryId: ctx.user.countryId,
-          isPublic: input.isPublic,
-        },
-      });
-
-      return doc;
-    }),
-
-  // Get documents for an alliance
-  getAllianceDocuments: publicProcedure
-    .input(
-      z.object({
-        allianceId: z.string(),
-        countryId: z.string().optional(), // If provided, show private docs for members
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      let isMember = false;
-      if (input.countryId) {
-        const membership = await ctx.db.allianceMember.findUnique({
-          where: {
-            allianceId_countryId: {
-              allianceId: input.allianceId,
-              countryId: input.countryId,
-            },
-          },
-        });
-        isMember = !!membership?.isActive;
-      }
-
-      const docs = await ctx.db.allianceDocument.findMany({
-        where: {
-          allianceId: input.allianceId,
-          ...(isMember ? {} : { isPublic: true }),
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return docs;
     }),
 });

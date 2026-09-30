@@ -2,7 +2,7 @@
 
 import { use, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AlertTriangle, Users } from "lucide-react";
+import { WarningTriangle as AlertTriangle, Group as Users } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
 import {
@@ -23,10 +23,16 @@ import { CountryTabs } from "../_components/CountryTabs";
 import { useCountryPageState } from "../_hooks/useCountryPageState";
 import { toCountrySlug } from "../_types";
 
+import { useState, useEffect } from "react";
+import { CountryConceptSwitcher, type ProfileConcept } from "../_components/switcher/CountryConceptSwitcher";
+import { CommandProfileView } from "../_components/concepts/CommandProfileView";
+import { EditorialProfileView } from "../_components/concepts/EditorialProfileView";
+import { AtlasProfileView } from "../_components/concepts/AtlasProfileView";
+
 /**
  * CountryProfileLayout — persistent country shell (route group `(profile)`).
  * Owns the country query via `CountryDataProvider`, header, breadcrumbs,
- * and the prominent Tier-1 top bar.
+ * concept switcher, and the prominent sovereign views.
  */
 export default function CountryProfileLayout({
   children,
@@ -49,6 +55,38 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   const { country, isLoading, error } = useCountryData();
   const { userProfile } = useUserCountry();
   const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");
+
+  // Concept switcher state with URL and localStorage sync (default: command)
+  const [concept, setConceptState] = useState<ProfileConcept>("command");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramConcept = urlParams.get("concept") as ProfileConcept | null;
+      if (paramConcept && ["command", "editorial", "atlas", "standard"].includes(paramConcept)) {
+        setConceptState(paramConcept);
+        return;
+      }
+      const saved = localStorage.getItem("ixstates_profile_concept") as ProfileConcept | null;
+      if (saved && ["command", "editorial", "atlas", "standard"].includes(saved)) {
+        setConceptState(saved);
+      }
+    }
+  }, []);
+
+  const handleConceptChange = (newConcept: ProfileConcept) => {
+    setConceptState(newConcept);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ixstates_profile_concept", newConcept);
+        const url = new URL(window.location.href);
+        url.searchParams.set("concept", newConcept);
+        window.history.replaceState({}, "", url.toString());
+      } catch {
+        /* ignore */
+      }
+    }
+  };
 
   usePageTitle({
     title: country ? `${country.name.replace(/_/g, " ")}` : "Country Profile",
@@ -118,17 +156,27 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
     );
   }
 
+  const sovereignUser = country.owner
+    ? {
+        username: country.owner.forumUsername || country.owner.wikiUsername || null,
+        roleName: country.owner.role?.displayName || country.owner.role?.name || null,
+      }
+    : null;
+
   return (
     <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
       <CountryHeader
         country={{
           name: country.name,
+          slug: country.slug ?? country.name.replace(/\s+/g, "_"),
           currentPopulation: country.currentPopulation,
           currentGdpPerCapita: country.currentGdpPerCapita,
           currentTotalGdp: country.currentTotalGdp,
           landArea: country.landArea ?? null,
           adjustedGdpGrowth: country.adjustedGdpGrowth,
           continent: country.continent,
+          realm: country.realm ?? null,
+          sovereignUser,
         }}
         flagUrl={flagUrl}
         flagLoading={flagLoading}
@@ -140,7 +188,6 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
         customBannerUrl={customBannerUrl}
         onToggleGdpDisplay={toggleGdpDisplay}
         onTogglePopulationDisplay={togglePopulationDisplay}
-        onCountryActionsClick={() => setShowCountryActions(true)}
         onBannerModeChange={setBannerMode}
       />
 
@@ -161,7 +208,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
           <Button
             size="sm"
             onClick={() => setShowCountryActions(true)}
-            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black shadow-md backdrop-blur-xl transition-all duration-100 ease-out hover:scale-105 active:scale-95"
+            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black shadow-md backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out hover:scale-105 active:scale-95"
             style={{
               borderColor: "var(--flag-border-primary)",
               color: "var(--flag-primary)",
@@ -173,10 +220,23 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
           </Button>
         </div>
 
-        <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} countrySlug={slug} />
-
-        {children}
+        {/* Concept Views Dispatcher */}
+        {concept === "command" && <CommandProfileView country={country} slug={slug} />}
+        {concept === "editorial" && <EditorialProfileView country={country} slug={slug} />}
+        {concept === "atlas" && <AtlasProfileView country={country} slug={slug} />}
+        {concept === "standard" && (
+          <>
+            <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} countrySlug={slug} />
+            {children}
+          </>
+        )}
       </div>
+
+      {/* Floating Glass Dev Concept Switcher */}
+      <CountryConceptSwitcher
+        activeConcept={concept}
+        onSelectConcept={handleConceptChange}
+      />
 
       <CountryActionsMenu
         targetCountryId={country.id}

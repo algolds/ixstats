@@ -1,10 +1,9 @@
+"use client";
 // src/components/wiki-os/editor/components/StashImageCard.tsx
 // Thumbnail card for Commons images in the Stash Explorer popover.
 
-"use client";
-
 import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "iconoir-react";
 
 export interface StashImageCardProps {
   imgInfo: any;
@@ -13,12 +12,7 @@ export interface StashImageCardProps {
   onInsert: () => void;
 }
 
-export function StashImageCard({
-  imgInfo,
-  cleanTitle,
-  filename,
-  onInsert,
-}: StashImageCardProps) {
+export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: StashImageCardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -31,7 +25,7 @@ export function StashImageCard({
   return (
     <div
       onClick={onInsert}
-      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-white/5 bg-white/5 text-white transition-all hover:border-white/10 hover:bg-white/10"
+      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-white/5 bg-white/5 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 hover:bg-white/10"
       title={`Click to insert [[File:${filename}]]`}
     >
       {imgInfo?.thumbUrl ? (
@@ -57,7 +51,7 @@ export function StashImageCard({
         </button>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/85 to-transparent p-1 text-[8px] text-zinc-300 group-hover:text-white">
+      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/85 to-transparent p-1 text-xs text-zinc-300 group-hover:text-white">
         {cleanTitle}
       </div>
     </div>

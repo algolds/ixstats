@@ -7,6 +7,9 @@ import {
   setSnapEnabled,
   getSnapTolerance,
   setSnapTolerance,
+  getDisabledSnapLayers,
+  setSnapLayerEnabled,
+  withoutDisabledSnapLayers,
 } from "~/lib/maps/editor-prefs";
 
 describe("editor-prefs — snap enabled", () => {
@@ -46,5 +49,40 @@ describe("editor-prefs — snap tolerance", () => {
       localStorage.removeItem("ixeditor-snap-tolerance");
       expect(getSnapTolerance()).toBeCloseTo(0.015, 10);
     }
+  });
+});
+
+describe("editor-prefs — per-layer snap toggles", () => {
+  test("all snap layers are on by default", () => {
+    expect(getDisabledSnapLayers().size).toBe(0);
+  });
+
+  test("switching a layer off and on round-trips", () => {
+    setSnapLayerEnabled("background", false);
+    setSnapLayerEnabled("rivers", false);
+    expect([...getDisabledSnapLayers()].sort()).toEqual(["background", "rivers"]);
+
+    setSnapLayerEnabled("rivers", true);
+    expect([...getDisabledSnapLayers()]).toEqual(["background"]);
+
+    setSnapLayerEnabled("background", true);
+    expect(getDisabledSnapLayers().size).toBe(0);
+  });
+
+  test("withoutDisabledSnapLayers drops only switched-off layers", () => {
+    const visible = new Set(["background", "rivers", "lakes", "political"]);
+    expect(withoutDisabledSnapLayers(visible)).toEqual(visible);
+
+    setSnapLayerEnabled("lakes", false);
+    expect(withoutDisabledSnapLayers(visible)).toEqual(
+      new Set(["background", "rivers", "political"])
+    );
+    setSnapLayerEnabled("lakes", true);
+  });
+
+  test("unknown stored layer names are ignored", () => {
+    localStorage.setItem("ixeditor-snap-layers-off", "rivers,bogus");
+    expect([...getDisabledSnapLayers()]).toEqual(["rivers"]);
+    localStorage.removeItem("ixeditor-snap-layers-off");
   });
 });

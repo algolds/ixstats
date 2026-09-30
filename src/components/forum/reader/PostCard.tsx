@@ -1,15 +1,23 @@
+"use client";
 // src/components/forum/reader/PostCard.tsx
 // Renders a single forum post within a thread view.
 
-"use client";
-
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { Heart, Quote, Reply, Bookmark, Pencil, Trash2, X, Check, Send } from "lucide-react";
+// oxlint-disable-next-line eslint/no-unused-vars
+import {
+  Heart,
+  Quote,
+  Reply,
+  Bookmark,
+  EditPencil as Pencil,
+  Trash as Trash2,
+  Check,
+} from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import * as LucideIcons from "lucide-react";
+import * as IconoirIcons from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { sanitizeHtml } from "~/lib/utils";
 
@@ -92,7 +100,7 @@ export function PostCard({
   const isOwnPost = currentForumUserId != null && currentForumUserId === authorId;
   const utils = api.useUtils();
   const { chatBadge } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
+  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
 
   const reactMutation = api.forum.reactToPost.useMutation({
     onMutate: () => {
@@ -204,7 +212,7 @@ export function PostCard({
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/10 text-[10px] font-medium text-orange-400">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/10 text-xs font-medium text-orange-400">
                 {authorName.charAt(0).toUpperCase()}
               </div>
             )}

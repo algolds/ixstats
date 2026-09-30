@@ -1,10 +1,9 @@
+"use client";
 /**
  * Card3DViewer Component
  * Interactive 3D card rotation viewer with flip animation
  * Shows both CardDisplay (front) and CardBack (back)
  */
-
-"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
@@ -104,6 +103,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
 
     // Sync currentSide and reset rotation when initialSide prop changes
     useEffect(() => {
+      // oxlint-disable-next-line
       setCurrentSide(initialSide);
       rotateX.set(0);
       rotateY.set(0);

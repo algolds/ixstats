@@ -1,10 +1,9 @@
+"use client";
 /**
  * CraftingAnimation Component
  * Crafting success/failure animation with glass fusion effects
  * Phase 3: Crafting System
  */
-
-"use client";
 
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -80,6 +79,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
       clearTimeout(revealTimer);
       clearTimeout(closeTimer);
     };
+    // oxlint-disable-next-line
   }, [success, onComplete]);
 
   /**
@@ -117,7 +117,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
               <div className="relative flex h-64 items-center justify-center">
                 {/* Left circle */}
                 <motion.div
-                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 opacity-50"
+                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 opacity-50"
                   animate={{
                     x: [-100, 0],
                     scale: [1, 1.2, 0.8],
@@ -131,7 +131,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
 
                 {/* Right circle */}
                 <motion.div
-                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 opacity-50"
+                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-amber-500 to-indigo-500 opacity-50"
                   animate={{
                     x: [100, 0],
                     scale: [1, 1.2, 0.8],
@@ -147,7 +147,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                 <motion.div
                   className="absolute h-16 w-16 rounded-full bg-white"
                   animate={{
-                    scale: [0, 1.5, 1],
+                    scale: [0.2, 1.5, 1],
                     opacity: [0, 1, 0.8],
                   }}
                   transition={{
@@ -252,8 +252,8 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                   {/* XP badge */}
                   {xpGained > 0 && (
                     <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
+                      initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
                       transition={{ delay: 0.5, type: "spring" }}
                     >
                       <CometCard className="inline-block px-6 py-3" glassDepth="interactive">

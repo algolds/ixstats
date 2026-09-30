@@ -17,7 +17,15 @@
  */
 
 import { AnimatePresence, motion } from "motion/react";
-import { Search, X, Globe, Loader2, MessageCircle, Bell, HelpCircle } from "lucide-react";
+import {
+  Search,
+  Xmark as X,
+  Globe,
+  SystemRestart as Loader2,
+  ChatBubble as MessageCircle,
+  Bell,
+  HelpCircle,
+} from "iconoir-react";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import { cn } from "~/lib/utils";
 import { useIsMobile } from "~/hooks/useIsMobile";
@@ -46,6 +54,8 @@ interface MapDynamicIslandProps {
   onProjectionChange: (mode: ProjectionMode) => void;
   onSearchResult: (result: MapSearchResult) => void;
   onOpenWelcome?: () => void;
+  /** Realm slug the map shows; search stays inside it */
+  realm?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,6 +67,7 @@ export function MapDynamicIsland({
   onProjectionChange,
   onSearchResult,
   onOpenWelcome,
+  realm,
 }: MapDynamicIslandProps) {
   const isMobile = useIsMobile();
   const {
@@ -88,7 +99,7 @@ export function MapDynamicIsland({
     closeSearch,
     handleSelect,
     handleKeyDown,
-  } = useDynamicIslandState({ onSearchResult });
+  } = useDynamicIslandState({ onSearchResult, realm });
 
   const debouncedQueryLength = query.trim().length;
 
@@ -164,7 +175,7 @@ export function MapDynamicIsland({
                   router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                 }
                 className={cn(
-                  "relative shrink-0 rounded-full p-1 transition-all duration-300",
+                  "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                   isFlashing ? "scale-110 bg-red-500/20" : "text-muted-foreground"
                 )}
               >
@@ -173,12 +184,11 @@ export function MapDynamicIsland({
                 ) : (
                   <Bell className="h-3.5 w-3.5" />
                 )}
-                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-bold text-white">
+                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
                   {totalUnread > 99 ? "99+" : totalUnread}
                 </span>
               </button>
             )}
-
 
             <MapSettingsPopover
               projectionMode={projectionMode}
@@ -196,62 +206,41 @@ export function MapDynamicIsland({
 
   const desktopPill = (
     <div className="relative">
-      {/* Outer glow — multi-layer halos for depth */}
-      <motion.div
-        layout
-        transition={SPRING}
-        className={cn(
-          "absolute inset-0 rounded-full transition-opacity duration-500",
-          isFlashing ? "opacity-100" : "opacity-60"
+      {/* Outer alert glow on new notification / flashing mode */}
+      <AnimatePresence>
+        {isFlashing && (
+          <motion.div
+            layout
+            transition={SPRING}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 rounded-full"
+            style={{ willChange: "width, height" }}
+          >
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
+          </motion.div>
         )}
-        style={{ willChange: "width, height" }}
-      >
-        <div
-          className={cn(
-            "absolute inset-0 rounded-full blur-xl transition-colors duration-500",
-            isFlashing
-              ? "bg-red-500/50"
-              : "bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30"
-          )}
-        />
-        <div
-          className={cn(
-            "absolute inset-0 rounded-full blur-lg transition-colors duration-500",
-            isFlashing
-              ? "bg-orange-400/40"
-              : "bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20"
-          )}
-        />
-      </motion.div>
+      </AnimatePresence>
 
-      {/* Main glass pill */}
+      {/* Main glass pill — Apple HIG Acrylic Shell */}
       <motion.div
         layout
         transition={SPRING}
         animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
         data-expanded={searchOpen ? "true" : undefined}
         className={cn(
-          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-500",
-          isFlashing && "!border-red-500/50 !bg-red-500/20"
+          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-300",
+          isFlashing && "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]"
         )}
         style={{
           willChange: "width, height",
         }}
       >
-        {/* Inner refraction edges */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/30" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 to-transparent dark:via-white/30" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 to-transparent dark:via-white/10" />
-          {/* Inner shimmer */}
-          <div
-            className={cn(
-              "absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent will-change-transform dark:via-white/10",
-              isFlashing && "bg-red-500/10"
-            )}
-            style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
-          />
+        {/* Specular edge highlight (Apple physical acrylic top lip) */}
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/20" />
         </div>
 
         {/* Content */}
@@ -338,7 +327,7 @@ export function MapDynamicIsland({
                       router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                     }
                     className={cn(
-                      "relative shrink-0 rounded-full p-1 transition-all duration-300",
+                      "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                       isFlashing
                         ? "scale-125 bg-red-500/20"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -366,7 +355,7 @@ export function MapDynamicIsland({
                     )}
                     <span
                       className={cn(
-                        "ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm ring-2 transition-colors duration-500",
+                        "ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-xs font-bold text-white shadow-sm ring-2 transition-colors duration-500",
                         messageUnreadCount > 0
                           ? isFlashing
                             ? "animate-bounce bg-red-600"
@@ -378,7 +367,6 @@ export function MapDynamicIsland({
                     </span>
                   </button>
                 )}
-
 
                 {/* Settings */}
                 <MapSettingsPopover
@@ -430,7 +418,7 @@ export function MapDynamicIsland({
               const Icon = meta.icon;
               return (
                 <div key={type}>
-                  <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                  <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
                     <Icon className="h-3 w-3" />
                     {meta.label}
                   </div>
@@ -495,7 +483,7 @@ export function MapDynamicIsland({
                 const Icon = meta.icon;
                 return (
                   <div key={type}>
-                    <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                    <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
                       <Icon className="h-3 w-3" />
                       {meta.label}
                     </div>

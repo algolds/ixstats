@@ -115,13 +115,8 @@ export async function cloneOrSeedNationalIssues(
   demoCountryId: string,
   _countryName: string
 ): Promise<number> {
-  const { count } = await cloneRecords(
-    prisma,
-    "nationalIssue",
-    sourceCountryId,
-    demoCountryId,
-    { take: 10 }
-  );
+  const { count } = await cloneRecords(prisma, "nationalIssue", sourceCountryId, demoCountryId, {
+    take: 10,
+  });
   return count;
 }
-

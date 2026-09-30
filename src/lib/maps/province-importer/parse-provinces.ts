@@ -31,6 +31,11 @@ import { extractAllTextLabels, matchLabelsToProvinces } from "./svg-text-matcher
 const SVG_NS = "http://www.w3.org/2000/svg";
 const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";
 
+// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
+// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
+// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
+type XmlElement = import("@xmldom/xmldom").Element;
+
 // ──────────────────────────────────────────────
 // Main Entry Point
 // ──────────────────────────────────────────────
@@ -68,7 +73,7 @@ export function parseProvinceSvg(
   log.push(`SVG viewBox: ${viewBox.width} × ${viewBox.height}`);
 
   // Detect province layer
-  let targetContainer: Element = svgRoot;
+  let targetContainer: XmlElement = svgRoot;
   const layersFound: string[] = [];
 
   if (config.targetLayer) {
@@ -341,8 +346,8 @@ export function parseProvinceSvg(
  * Parse each shape element individually (no group merging).
  */
 function parseIndividual(
-  shapes: Element[],
-  container: Element,
+  shapes: XmlElement[],
+  container: XmlElement,
   bezierSegments: number,
   minRingSize: number,
   includeTransforms: boolean,
@@ -371,8 +376,8 @@ function parseIndividual(
  * and treats sub-groups as individual provinces when appropriate.
  */
 function parseWithSmartGrouping(
-  shapes: Element[],
-  container: Element,
+  shapes: XmlElement[],
+  container: XmlElement,
   bezierSegments: number,
   minRingSize: number,
   maxMergeSize: number,
@@ -380,11 +385,11 @@ function parseWithSmartGrouping(
   log: string[]
 ): ProvinceFeature[] {
   // Group shapes by their immediate parent <g>
-  const groupMap = new Map<Element, Element[]>();
-  const ungrouped: Element[] = [];
+  const groupMap = new Map<XmlElement, XmlElement[]>();
+  const ungrouped: XmlElement[] = [];
 
   for (const shape of shapes) {
-    const parent = shape.parentNode as Element | null;
+    const parent = shape.parentNode as XmlElement | null;
 
     if (parent && parent !== container && isGroupElement(parent)) {
       const existing = groupMap.get(parent) ?? [];
@@ -531,7 +536,7 @@ function parseWithSmartGrouping(
 }
 
 // ──────────────────────────────────────────────
-// Element Parsing
+// XmlElement Parsing
 // ──────────────────────────────────────────────
 
 /**
@@ -539,14 +544,14 @@ function parseWithSmartGrouping(
  * Works for any shape type (path, polygon, rect, circle, etc.).
  */
 function parseSingleElement(
-  el: Element,
+  el: XmlElement,
   index: number,
-  transformRoot: Element,
+  transformRoot: XmlElement,
   bezierSegments: number,
   minRingSize: number,
   includeTransforms: boolean,
   log: string[],
-  parentGroup?: Element
+  parentGroup?: XmlElement
 ): ProvinceFeature | null {
   const sourceId = el.getAttribute("id") || `province_${index}`;
   const { name, confidence } = detectProvinceName(el, sourceId, parentGroup);
@@ -603,10 +608,10 @@ function parseSingleElement(
  * Merge multiple shapes from a group into a single province.
  */
 function mergeGroupShapes(
-  group: Element,
-  shapes: Element[],
+  group: XmlElement,
+  shapes: XmlElement[],
   index: number,
-  transformRoot: Element,
+  transformRoot: XmlElement,
   bezierSegments: number,
   minRingSize: number,
   includeTransforms: boolean,
@@ -685,9 +690,9 @@ function mergeGroupShapes(
  *   6. Fallback: generated from element ID
  */
 function detectProvinceName(
-  el: Element | null,
+  el: XmlElement | null,
   fallbackId: string,
-  parentGroup?: Element
+  parentGroup?: XmlElement
 ): { name: string; confidence: number } {
   // Check element's own attributes
   if (el) {
@@ -701,7 +706,7 @@ function detectProvinceName(
     if (result) return result;
 
     // Check grandparent group
-    const grandparent = parentGroup.parentNode as Element | null;
+    const grandparent = parentGroup.parentNode as XmlElement | null;
     if (grandparent && isGroupElement(grandparent) && grandparent.localName !== "svg") {
       const gpResult = extractNameFromElement(grandparent, 0.75, 0.7, 0.6);
       if (gpResult) return gpResult;
@@ -710,13 +715,13 @@ function detectProvinceName(
 
   // Check parent if no explicit parentGroup was provided
   if (!parentGroup && el) {
-    const parent = el.parentNode as Element | null;
+    const parent = el.parentNode as XmlElement | null;
     if (parent && isGroupElement(parent) && parent.localName !== "svg") {
       const result = extractNameFromElement(parent, 0.9, 0.85, 0.7);
       if (result) return result;
 
       // Grandparent
-      const gp = parent.parentNode as Element | null;
+      const gp = parent.parentNode as XmlElement | null;
       if (gp && isGroupElement(gp) && gp.localName !== "svg") {
         const gpResult = extractNameFromElement(gp, 0.75, 0.7, 0.6);
         if (gpResult) return gpResult;
@@ -730,7 +735,7 @@ function detectProvinceName(
 
 /** Try to extract a meaningful name from an element's attributes. */
 function extractNameFromElement(
-  el: Element,
+  el: XmlElement,
   labelConf: number,
   dataNameConf: number,
   idConf: number
@@ -891,7 +896,7 @@ function countGeometryVertices(geom: Polygon | MultiPolygon): number {
   );
 }
 
-function extractViewBox(svgRoot: Element): { width: number; height: number } {
+function extractViewBox(svgRoot: XmlElement): { width: number; height: number } {
   const viewBoxAttr = svgRoot.getAttribute("viewBox");
   let w = 0;
   let h = 0;
@@ -909,7 +914,7 @@ function extractViewBox(svgRoot: Element): { width: number; height: number } {
   return { width: w, height: h };
 }
 
-function getGroupName(g: Element): string {
+function getGroupName(g: XmlElement): string {
   return (
     g.getAttributeNS(INKSCAPE_NS, "label") ||
     g.getAttribute("inkscape:label") ||
@@ -919,16 +924,16 @@ function getGroupName(g: Element): string {
   );
 }
 
-function isGroupElement(el: Element): boolean {
+function isGroupElement(el: XmlElement): boolean {
   const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
   return tag === "g";
 }
 
-function getDirectSubGroups(group: Element): Element[] {
-  const result: Element[] = [];
+function getDirectSubGroups(group: XmlElement): XmlElement[] {
+  const result: XmlElement[] = [];
   const children = group.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (!child || child.nodeType !== 1) continue;
     if (isGroupElement(child)) {
       // Only count sub-groups that contain shapes
@@ -939,10 +944,10 @@ function getDirectSubGroups(group: Element): Element[] {
   return result;
 }
 
-function hasShapeDescendant(el: Element): boolean {
+function hasShapeDescendant(el: XmlElement): boolean {
   const children = el.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
+    const child = children[i] as XmlElement;
     if (!child || child.nodeType !== 1) continue;
     const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
     if (SHAPE_TAGS.has(tag)) return true;
@@ -951,16 +956,16 @@ function hasShapeDescendant(el: Element): boolean {
   return false;
 }
 
-function isDescendantOf(el: Element, ancestor: Element): boolean {
-  let current = el.parentNode as Element | null;
+function isDescendantOf(el: XmlElement, ancestor: XmlElement): boolean {
+  let current = el.parentNode as XmlElement | null;
   while (current) {
     if (current === ancestor) return true;
-    current = current.parentNode as Element | null;
+    current = current.parentNode as XmlElement | null;
   }
   return false;
 }
 
-function findLayerByName(svgRoot: Element, name: string): Element | null {
+function findLayerByName(svgRoot: XmlElement, name: string): XmlElement | null {
   const lower = name.toLowerCase();
   const allGroups = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
   for (let i = 0; i < allGroups.length; i++) {

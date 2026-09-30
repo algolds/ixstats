@@ -112,10 +112,12 @@ export function VaultCardsSection() {
   const capacityBoost = userStatsData?.cardCapacityBoost ?? 0;
 
   // Render current sidebar content
+  // oxlint-disable-next-line eslint/no-unused-vars
   const sidebarContent = useMemo(() => {
     if (activeTab === "collections") {
       return <CollectionsSidebarContent onCreateCollection={() => setCreateCollectionOpen(true)} />;
     }
+    // oxlint-disable-next-line
     if (activeTab === "gallery" && isDev) {
       return (
         <GallerySidebarContent

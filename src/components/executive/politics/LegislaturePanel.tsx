@@ -4,19 +4,18 @@ import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import {
-  Landmark,
-  BarChart2,
-  ScrollText,
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+  Bank as Landmark,
+  StatsReport as BarChart2,
+  Page as ScrollText,
+  WarningTriangle as AlertTriangle,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
-import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 
 // ── Lazy-loaded sub-components (only mount when expanded) ─────────────────
 
@@ -39,21 +38,6 @@ const GovernmentMetricsEditor = dynamic(
   () =>
     import("~/components/executive/politics/GovernmentMetricsEditor").then((m) => ({
       default: m.GovernmentMetricsEditor,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
-  }
-);
-
-const LegislativePolicies = dynamic(
-  () =>
-    import("~/components/executive/politics/LegislativePolicies").then((m) => ({
-      default: m.LegislativePolicies,
     })),
   {
     ssr: false,
@@ -91,7 +75,6 @@ interface LegislaturePanelProps {
 export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
   const [setupExpanded, setSetupExpanded] = useState(true);
   const [metricsExpanded, setMetricsExpanded] = useState(false);
-  const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [issuesExpanded, setIssuesExpanded] = useState(false);
 
   // Current parliament data for the hemicycle
@@ -118,17 +101,21 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     if (!parliament) return [];
     if (chambers.length <= 1) return parliament.seats;
     return parliament.seats.filter((s: any) => s.chamber === activeChamberTab);
+    // oxlint-disable-next-line
   }, [parliament, chambers, activeChamberTab]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activeChamberSeatsCount = useMemo(() => {
     if (!parliament) return 0;
     if (chambers.length <= 1) return parliament.legislature.totalSeats;
     const activeChamber = chambers.find((c: any) => c.name === activeChamberTab);
     return activeChamber ? activeChamber.seats : activeChamberSeats.length;
+    // oxlint-disable-next-line
   }, [parliament, chambers, activeChamberTab, activeChamberSeats]);
 
   // Lore-first: surface a non-default selection method (sortition, appointed, …) for the
   // active chamber. "elected" is the default and shown as nothing to avoid noise.
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activeChamberSelectionLabel = useMemo(() => {
     const labels: Record<string, string> = {
       appointed: "Appointed",
@@ -141,8 +128,10 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       chambers.length <= 1 ? chambers[0] : chambers.find((c: any) => c.name === activeChamberTab);
     const method = (active as any)?.selectionMethod;
     return method && method !== "elected" ? (labels[method] ?? null) : null;
+    // oxlint-disable-next-line
   }, [chambers, activeChamberTab]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activeChamberPartySummary = useMemo(() => {
     if (!parliament) return [];
     if (chambers.length <= 1) return parliament.partySummary;
@@ -169,8 +158,10 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       }
     }
     return Array.from(counts.values()).sort((a, b) => b.seats - a.seats);
+    // oxlint-disable-next-line
   }, [parliament, activeChamberSeats, chambers]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const hasParliamentData = parliament && parliament.seats.length > 0;
 
   return (
@@ -215,7 +206,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
             className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setMetricsExpanded(!metricsExpanded)}
           >
-            <BarChart2 className="h-4 w-4 text-violet-600" />
+            <BarChart2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-sm font-semibold">Political Metrics</h3>
           </button>
           <div className="flex items-center gap-1">
@@ -241,38 +232,9 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
       <Separator />
 
-      {/* ─── Laws & Active Policies (default: collapsed) ─── */}
-      <section className="space-y-3">
-        <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
-          <button
-            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
-            onClick={() => setPoliciesExpanded(!policiesExpanded)}
-          >
-            <ScrollText className="h-4 w-4 text-emerald-600" />
-            <h3 className="text-sm font-semibold">Laws & Active Policies</h3>
-          </button>
-          <div className="flex items-center gap-1">
-            <SectionHelpIcon
-              title="Laws & Active Policies"
-              content="View enacted legislation and active policy bills. Create new policies to shape your nation's direction."
-            />
-            <button
-              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
-              onClick={() => setPoliciesExpanded(!policiesExpanded)}
-            >
-              {policiesExpanded ? (
-                <ChevronDown className="text-muted-foreground h-4 w-4" />
-              ) : (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {policiesExpanded && <LegislativePolicies countryId={countryId} />}
-      </section>
-
       <Separator />
+
+      {/* ─── Governance Issues (default: collapsed) ─── */}
 
       {/* ─── Governance Issues (default: collapsed) ─── */}
       <section className="space-y-3">

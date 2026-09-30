@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Search, Building, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import {
+  Xmark as X,
+  Search,
+  Building,
+  SystemRestart as Loader2,
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Portal, type BaseModalProps } from "./types";
 
@@ -45,6 +52,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setActiveTab("search");
       setSearchQuery("");
       setSelectedBusiness(null);
@@ -138,11 +146,11 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
         onClick={onClose}
       >
         <div
-          className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
+          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
             <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <Building className="h-5 w-5 text-cyan-400" />
               Insert Business Data
@@ -157,10 +165,10 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           </div>
 
           {/* Tab Selection */}
-          <div className="flex border-b border-border bg-muted/20 p-1 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/20 flex border-b p-1 dark:border-white/10 dark:bg-white/5">
             <button
               onClick={() => setActiveTab("search")}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                 activeTab === "search"
                   ? "bg-cyan-500/20 text-cyan-400 shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -170,7 +178,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
             </button>
             <button
               onClick={() => setActiveTab("create")}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                 activeTab === "create"
                   ? "bg-cyan-500/20 text-cyan-400 shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -199,7 +207,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                 </div>
 
                 {/* List */}
-                <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-36 divide-y overflow-y-auto rounded-lg border">
+                <div className="border-border divide-border bg-muted/20 max-h-36 scrollbar-thin divide-y overflow-y-auto rounded-lg border">
                   {searchLoading && (
                     <div className="text-muted-foreground flex items-center gap-2 p-3 text-xs">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
@@ -218,7 +226,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                         }`}
                       >
                         <span>{b.name}</span>
-                        <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-[10px] capitalize">
+                        <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs capitalize">
                           {b.category}
                         </span>
                       </button>
@@ -238,10 +246,12 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                     <span className="block text-xs font-semibold text-cyan-400/80">
                       Ready to Link
                     </span>
-                    <span className="text-foreground text-sm font-bold">{selectedBusiness.name}</span>
+                    <span className="text-foreground text-sm font-bold">
+                      {selectedBusiness.name}
+                    </span>
                   </div>
                   {createSuccess && (
-                    <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                    <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-bold text-emerald-400">
                       <CheckCircle className="h-3 w-3" /> Registered
                     </span>
                   )}
@@ -276,14 +286,14 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
                 <button
                   onClick={onClose}
-                  className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
+                  className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleInsertBusiness}
                   disabled={!selectedBusiness}
-                  className="animate-pulse-subtle rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
+                  className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
                 >
                   Insert Business Data
                 </button>
@@ -293,7 +303,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
             /* Create and Link business POI */
             <form
               onSubmit={handleCreateBusiness}
-              className="scrollbar-thin max-h-[60vh] space-y-4 overflow-y-auto p-6"
+              className="max-h-[60vh] scrollbar-thin space-y-4 overflow-y-auto p-6"
             >
               {!viewerCountryId ? (
                 <div className="space-y-2 rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-center">
@@ -391,14 +401,14 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                     <button
                       type="button"
                       onClick={() => setActiveTab("search")}
-                      className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
+                      className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={createPoiMutation.isPending}
-                      className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
                     >
                       {createPoiMutation.isPending && (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -3,19 +3,35 @@
 import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { TrendingUp, TrendingDown, Briefcase, Building, Globe } from "lucide-react";
-import { ChevronRight } from "lucide-react";
+import {
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Building,
+} from "iconoir-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { SectorBreakdownCard, MetricCardGrid, useCountryData } from "~/components/mycountry/shared/primitives";
+import {
+  SectorBreakdownCard,
+  MetricCardGrid,
+  useCountryData,
+} from "~/components/mycountry/shared/primitives";
 import type { CardImageType } from "~/lib/cards/image-presets";
 import Link from "next/link";
 import { createUrl } from "~/lib/utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
+import type {
+  CountryWithEconomicData,
+  MappedEconomyData,
+} from "~/components/mycountry/shared/primitives/CountryDataProvider";
+import type { extractCountryImageData } from "~/lib/media";
+import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
+import { EconomyTradeSection } from "./EconomyTradeSection";
+import { EconomyBusinessSection } from "./EconomyBusinessSection";
 
 export function EconomyTab({
   country,
@@ -26,13 +42,13 @@ export function EconomyTab({
   metricView,
   setMetricViewAction,
 }: {
-  country: any;
-  economyData: any;
-  countryImageData: any;
+  country: CountryWithEconomicData;
+  economyData: MappedEconomyData;
+  countryImageData: ReturnType<typeof extractCountryImageData>;
   setImageUploadModalAction: (state: { isOpen: boolean; cardType: CardImageType }) => void;
   openMetricModalAction: (metricType: MetricType, countryId: string) => void;
-  metricView: any;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
+  metricView: MyCountryMetricView;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("sectors");
   const currency = country?.nationalIdentity?.currency || "USD";
@@ -43,7 +59,7 @@ export function EconomyTab({
   };
 
   return (
-    <Card className="glass-surface glass-refraction bg-gradient-economy border-border relative overflow-hidden">
+    <Card className="facet-surface facet-refraction bg-gradient-economy border-border relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -75,7 +91,7 @@ export function EconomyTab({
                 content="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
               />
             </div>
-            <p className="text-muted-foreground/80 text-[11px]">
+            <p className="text-muted-foreground/80 text-xs">
               GDP, trade, and sector analysis for {country.name}
             </p>
           </div>
@@ -100,14 +116,14 @@ export function EconomyTab({
               {/* Metric 1: GDP */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     economyGdp: v.economyGdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                   {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </p>
                 <div
@@ -126,7 +142,7 @@ export function EconomyTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground flex items-center text-base font-bold tracking-tight hover:underline"
                     >
                       {metricView.economyGdp === "perCapita"
@@ -141,20 +157,20 @@ export function EconomyTab({
                     );
                     if (gdpGrowth > 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-emerald-500">
+                        <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
                           <TrendingUp className="inline h-3 w-3" /> +{gdpGrowth.toFixed(1)}%
                         </span>
                       );
                     if (gdpGrowth < 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-red-500">
+                        <span className="flex items-center gap-0.5 text-xs font-semibold text-red-500">
                           <TrendingDown className="inline h-3 w-3" /> {gdpGrowth.toFixed(1)}%
                         </span>
                       );
-                    return <span className="text-muted-foreground text-[10px]">0.0%</span>;
+                    return <span className="text-muted-foreground text-xs">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground truncate text-[10px] font-medium">
+                <p className="text-muted-foreground truncate text-xs font-medium">
                   {metricView.economyGdp === "perCapita"
                     ? `${country.economicTier || "Developing"} · ${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
                     : `Per capita: ${formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)}`}
@@ -164,14 +180,14 @@ export function EconomyTab({
               {/* Metric 2: Fiscal */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     fiscal: v.fiscal === "balance" ? "revenue" : "balance",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
                 </p>
                 <div
@@ -187,7 +203,7 @@ export function EconomyTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.fiscal === "balance"
@@ -200,7 +216,7 @@ export function EconomyTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   {metricView.fiscal === "balance"
                     ? (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
                       ? "Fiscal Surplus"
@@ -212,14 +228,14 @@ export function EconomyTab({
               {/* Metric 3: Trade */}
               <button
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     trade: v.trade === "imports" ? "exports" : "imports",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
                   {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
                 </p>
                 <div
@@ -235,7 +251,7 @@ export function EconomyTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.trade === "imports"
@@ -252,7 +268,7 @@ export function EconomyTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground mt-0.5 truncate text-xs">
                   Net Balance: +3.0% (Surplus)
                 </p>
               </button>
@@ -270,7 +286,7 @@ export function EconomyTab({
             <div className="flex">
               <button
                 onClick={() => toggleSection("sectors")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                   expandedSection === "sectors"
                     ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
                     : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
@@ -282,7 +298,7 @@ export function EconomyTab({
                 <span>Sectors & Distribution</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "sectors" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -292,7 +308,7 @@ export function EconomyTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "sectors" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "sectors"
                   ? "border border-white/10"
@@ -365,363 +381,18 @@ export function EconomyTab({
           </div>
 
           {/* Dossier Section 2: Trade */}
-          <div className="flex flex-col">
-            <div className="flex">
-              <button
-                onClick={() => toggleSection("trade")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
-                  expandedSection === "trade"
-                    ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
-                }`}
-              >
-                <Globe
-                  className={`h-3.5 w-3.5 ${expandedSection === "trade" ? "text-emerald-500" : "text-muted-foreground/60"}`}
-                />
-                <span>Trade Flows & Balance</span>
-                <motion.div
-                  animate={{ rotate: expandedSection === "trade" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="ml-1"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </motion.div>
-              </button>
-            </div>
-            <motion.div
-              initial={false}
-              animate={{ height: expandedSection === "trade" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
-              className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-                expandedSection === "trade" ? "border border-white/10" : "border border-transparent"
-              }`}
-            >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
-              <div className="relative z-10 space-y-4 p-4">
-                <div className="border-border/10 grid grid-cols-3 gap-4 rounded-xl border bg-white/10 p-3 dark:bg-white/[0.02]">
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Total Exports
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatCompactCurrency(
-                        (economyData?.core.nominalGDP ?? 0) * 0.35,
-                        "N/A",
-                        currency
-                      )}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">35.0% of GDP</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Total Imports
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
-                      {formatCompactCurrency(
-                        (economyData?.core.nominalGDP ?? 0) * 0.32,
-                        "N/A",
-                        currency
-                      )}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">32.0% of GDP</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Trade Balance
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold text-emerald-500">
-                      {formatCompactCurrency(
-                        (economyData?.core.nominalGDP ?? 0) * 0.03,
-                        "N/A",
-                        currency
-                      )}
-                    </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Surplus (+3.0%)</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <SectorBreakdownCard
-                    title="Export Composition"
-                    subtitle="Distribution of goods and services exported"
-                    layout="list"
-                    showProgressBars={true}
-                    cardWrapper="panel"
-                    accent="emerald"
-                    currency={currency}
-                    sectors={[
-                      {
-                        id: "manufactured",
-                        name: "Manufactured Goods",
-                        value: 0,
-                        percentage: 45,
-                        color: "blue",
-                        trend: "up",
-                        trendValue: 1.5,
-                      },
-                      {
-                        id: "tech",
-                        name: "Technology Products",
-                        value: 0,
-                        percentage: 25,
-                        color: "cyan",
-                        trend: "up",
-                        trendValue: 3.2,
-                      },
-                      {
-                        id: "services",
-                        name: "Services",
-                        value: 0,
-                        percentage: 15,
-                        color: "purple",
-                        trend: "stable",
-                      },
-                      {
-                        id: "agri",
-                        name: "Agricultural Products",
-                        value: 0,
-                        percentage: 10,
-                        color: "green",
-                        trend: "down",
-                        trendValue: -0.8,
-                      },
-                      {
-                        id: "raw",
-                        name: "Raw Materials",
-                        value: 0,
-                        percentage: 5,
-                        color: "amber",
-                        trend: "stable",
-                      },
-                    ]}
-                  />
-                  <SectorBreakdownCard
-                    title="Import Composition"
-                    subtitle="Distribution of goods and services imported"
-                    layout="list"
-                    showProgressBars={true}
-                    cardWrapper="panel"
-                    accent="emerald"
-                    currency={currency}
-                    sectors={[
-                      {
-                        id: "energy",
-                        name: "Energy & Fuels",
-                        value: (economyData?.core.nominalGDP ?? 0) * 0.32 * 0.3,
-                        percentage: 30,
-                        color: "red",
-                        trend: "down",
-                        trendValue: -2.1,
-                      },
-                      {
-                        id: "manufactured",
-                        name: "Manufactured Goods",
-                        value: 0,
-                        percentage: 25,
-                        color: "blue",
-                        trend: "stable",
-                      },
-                      {
-                        id: "tech",
-                        name: "Technology Products",
-                        value: 0,
-                        percentage: 20,
-                        color: "cyan",
-                        trend: "up",
-                        trendValue: 1.8,
-                      },
-                      {
-                        id: "raw",
-                        name: "Raw Materials",
-                        value: 0,
-                        percentage: 15,
-                        color: "amber",
-                        trend: "stable",
-                      },
-                      {
-                        id: "food",
-                        name: "Food & Agricultural",
-                        value: 0,
-                        percentage: 10,
-                        color: "green",
-                        trend: "up",
-                        trendValue: 0.5,
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </div>
+          <EconomyTradeSection
+            isExpanded={expandedSection === "trade"}
+            onToggle={() => toggleSection("trade")}
+            economyData={economyData}
+            currency={currency}
+          />
 
           {/* Dossier Section 3: Business & Innovation */}
-          <div className="flex flex-col">
-            <div className="flex">
-              <button
-                onClick={() => toggleSection("business")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
-                  expandedSection === "business"
-                    ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
-                }`}
-              >
-                <Briefcase
-                  className={`h-3.5 w-3.5 ${expandedSection === "business" ? "text-emerald-500" : "text-muted-foreground/60"}`}
-                />
-                <span>Business & Innovation Climate</span>
-                <motion.div
-                  animate={{ rotate: expandedSection === "business" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="ml-1"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </motion.div>
-              </button>
-            </div>
-            <motion.div
-              initial={false}
-              animate={{ height: expandedSection === "business" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
-              className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-                expandedSection === "business"
-                  ? "border border-white/10"
-                  : "border border-transparent"
-              }`}
-            >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
-              <div className="relative z-10 space-y-4 p-4">
-                <div className="border-border/10 grid grid-cols-2 gap-4 rounded-xl border bg-white/10 p-3 md:grid-cols-4 dark:bg-white/[0.02]">
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Doing Business
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">Rank #45</p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      Out of 190 countries
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      Startup Formation
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">12.5</p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
-                      Per 1,000 citizens
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      R&D Investment
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">2.8%</p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Share of GDP</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
-                      FDI Inflow
-                    </p>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">2.5%</p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Of nominal GDP</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <SectorBreakdownCard
-                    title="Regulatory Environment"
-                    subtitle="Key regulatory and startup ease metrics"
-                    layout="list"
-                    showProgressBars={true}
-                    cardWrapper="panel"
-                    accent="emerald"
-                    sectors={[
-                      {
-                        id: "time",
-                        name: "Time to Start (days)",
-                        value: 0,
-                        percentage: 92,
-                        color: "green",
-                        description: "8 days",
-                      },
-                      {
-                        id: "cost",
-                        name: "Cost to Start (% income)",
-                        value: 0,
-                        percentage: 97.5,
-                        color: "blue",
-                        description: "2.5%",
-                      },
-                      {
-                        id: "regulatory",
-                        name: "Regulatory Quality",
-                        value: 0,
-                        percentage: 72,
-                        color: "purple",
-                        trend: "up",
-                        trendValue: 2.3,
-                      },
-                      {
-                        id: "finance",
-                        name: "Access to Finance",
-                        value: 0,
-                        percentage: 68,
-                        color: "amber",
-                        trend: "up",
-                        trendValue: 1.5,
-                      },
-                    ]}
-                  />
-                  <SectorBreakdownCard
-                    title="Business Size Composition"
-                    subtitle="Distribution of business by personnel size"
-                    layout="list"
-                    showProgressBars={true}
-                    cardWrapper="panel"
-                    accent="emerald"
-                    sectors={[
-                      {
-                        id: "small",
-                        name: "Small Businesses (0-50)",
-                        value: 0,
-                        percentage: 85,
-                        color: "green",
-                      },
-                      {
-                        id: "medium",
-                        name: "Medium Businesses (50-250)",
-                        value: 0,
-                        percentage: 12,
-                        color: "blue",
-                      },
-                      {
-                        id: "large",
-                        name: "Large Businesses (250+)",
-                        value: 0,
-                        percentage: 3,
-                        color: "purple",
-                      },
-                      {
-                        id: "entrepreneurship",
-                        name: "Entrepreneurship Rate",
-                        value: 0,
-                        percentage: 15.2,
-                        color: "amber",
-                        trend: "up",
-                        trendValue: 0.8,
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </div>
+          <EconomyBusinessSection
+            isExpanded={expandedSection === "business"}
+            onToggle={() => toggleSection("business")}
+          />
         </div>
       </CardContent>
     </Card>

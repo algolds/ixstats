@@ -5,7 +5,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { TOUR_STEPS } from "./HaloTourContext";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { Button } from "~/components/ui/button";
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
+import {
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Xmark as X,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export function HaloTourTooltip() {
@@ -22,13 +26,16 @@ export function HaloTourTooltip() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
 
     // Check initial completed status from localStorage
     try {
       const hasCompleted = localStorage.getItem("ixstats:halo-tour-completed") === "true";
       setTourState((prev) => ({ ...prev, completed: hasCompleted }));
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — tour treated as not completed
+    }
 
     const handleStepChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
@@ -126,7 +133,7 @@ export function HaloTourTooltip() {
               <div className="relative z-10 flex flex-col gap-3">
                 {/* Header & Close */}
                 <div className="flex items-center justify-between">
-                  <span className="text-primary text-[10px] font-bold tracking-wider uppercase">
+                  <span className="text-primary text-xs font-bold tracking-wider uppercase">
                     Halo Walkthrough • {currentStep} of 5
                   </span>
                   <button
@@ -153,7 +160,7 @@ export function HaloTourTooltip() {
                   {TOUR_STEPS.map((s) => (
                     <div
                       key={s.id}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                      className={`h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                         s.id === currentStep
                           ? "bg-primary w-4"
                           : s.id < currentStep

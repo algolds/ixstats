@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -17,7 +18,16 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { useNotify } from "~/hooks/useNotify";
-import { Send, Plus, Bell, MessageSquare, Crown, Shield, Globe, Sparkles } from "lucide-react";
+import {
+  Send,
+  Plus,
+  Bell,
+  ChatBubble as MessageSquare,
+  Crown,
+  Shield,
+  Globe,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 type BroadcastMode = "platform_alert" | "system_message" | "direct_message";
@@ -99,7 +109,8 @@ const PRESETS = [
     mode: "system_message" as BroadcastMode,
     fill: {
       title: "🚀 IxStates 1.4.0 Engine Update Deployed",
-      description: "Platform performance upgraded with TypeScript 7.0 Go Engine and real-time mesh caching.",
+      description:
+        "Platform performance upgraded with TypeScript 7.0 Go Engine and real-time mesh caching.",
       type: "system",
       level: "high" as const,
       category: "system",
@@ -112,7 +123,8 @@ const PRESETS = [
     mode: "platform_alert" as BroadcastMode,
     fill: {
       title: "🚨 System Crisis Detected",
-      description: "A major economic or geopolitical crisis event has been detected requiring immediate attention.",
+      description:
+        "A major economic or geopolitical crisis event has been detected requiring immediate attention.",
       type: "crisis",
       level: "critical" as const,
       category: "crisis",
@@ -125,7 +137,8 @@ const PRESETS = [
     mode: "direct_message" as BroadcastMode,
     fill: {
       title: "Summons for Bilateral Security Consultation",
-      description: "The Executive Council requests an immediate bilateral diplomatic review regarding regional borders.",
+      description:
+        "The Executive Council requests an immediate bilateral diplomatic review regarding regional borders.",
       type: "diplomatic",
       level: "high" as const,
       category: "diplomatic",
@@ -153,7 +166,8 @@ const PRESETS = [
     mode: "system_message" as BroadcastMode,
     fill: {
       title: "🏆 National Milestone Achieved!",
-      description: "Your nation has achieved a significant economic development threshold. Stash rewards unlocked.",
+      description:
+        "Your nation has achieved a significant economic development threshold. Stash rewards unlocked.",
       type: "success",
       level: "high" as const,
       category: "achievement",
@@ -168,7 +182,10 @@ export function NotificationComposer() {
   const notify = useNotify();
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countries } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   // Mutations
   const createNotificationMutation = api.notifications.createNotification.useMutation({
@@ -282,17 +299,17 @@ export function NotificationComposer() {
                 type="button"
                 onClick={() => handleField("mode", "platform_alert")}
                 className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all active:scale-[0.98]",
+                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   form.mode === "platform_alert"
-                    ? "border-rose-500/50 bg-rose-500/10 text-foreground shadow-2xs"
+                    ? "text-foreground border-rose-500/50 bg-rose-500/10 shadow-2xs"
                     : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
                 )}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
                   <Bell className="h-3.5 w-3.5 text-rose-500" />
                   Platform Alert
                 </div>
-                <p className="text-[11px] leading-tight text-muted-foreground">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Halo tray & realtime notification center.
                 </p>
               </button>
@@ -301,17 +318,17 @@ export function NotificationComposer() {
                 type="button"
                 onClick={() => handleField("mode", "system_message")}
                 className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all active:scale-[0.98]",
+                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   form.mode === "system_message"
-                    ? "border-amber-500/50 bg-amber-500/10 text-foreground shadow-2xs"
+                    ? "text-foreground border-amber-500/50 bg-amber-500/10 shadow-2xs"
                     : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
                 )}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
                   <Crown className="h-3.5 w-3.5 text-amber-500" />
                   System Message
                 </div>
-                <p className="text-[11px] leading-tight text-muted-foreground">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Pinned System Messages thread in /messages inbox.
                 </p>
               </button>
@@ -320,17 +337,17 @@ export function NotificationComposer() {
                 type="button"
                 onClick={() => handleField("mode", "direct_message")}
                 className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all active:scale-[0.98]",
+                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                   form.mode === "direct_message"
-                    ? "border-indigo-500/50 bg-indigo-500/10 text-foreground shadow-2xs"
+                    ? "text-foreground border-indigo-500/50 bg-indigo-500/10 shadow-2xs"
                     : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
                 )}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
                   <MessageSquare className="h-3.5 w-3.5 text-indigo-500" />
                   Direct Dispatch
                 </div>
-                <p className="text-[11px] leading-tight text-muted-foreground">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Direct conversation or diplomatic cable in /messages.
                 </p>
               </button>
@@ -353,7 +370,7 @@ export function NotificationComposer() {
                   key={p.label}
                   variant="outline"
                   size="sm"
-                  className="h-7 text-[11px] font-medium"
+                  className="h-7 text-xs font-medium"
                   onClick={() => applyPreset(p)}
                 >
                   {p.label}
@@ -557,7 +574,7 @@ export function NotificationComposer() {
                 checked={form.actionable}
                 onCheckedChange={(v) => handleField("actionable", v)}
               />
-              <Label className="text-xs font-medium cursor-pointer">
+              <Label className="cursor-pointer text-xs font-medium">
                 Actionable (highlights action button in UI)
               </Label>
             </div>
@@ -590,17 +607,17 @@ export function NotificationComposer() {
           <CardContent className="space-y-3">
             {form.mode === "platform_alert" && (
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/[0.06] p-3.5 shadow-xs">
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-400">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-rose-400 uppercase">
                     <Shield className="h-3 w-3" />
                     {form.level} Priority Alert
                   </span>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">Just now</span>
+                  <span className="text-muted-foreground text-xs tabular-nums">Just now</span>
                 </div>
-                <h4 className="text-xs font-bold text-foreground">
+                <h4 className="text-foreground text-xs font-bold">
                   {form.title || "Notification Title"}
                 </h4>
-                <p className="text-[11px] leading-relaxed text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {form.description || "Notification body preview will appear here."}
                 </p>
               </div>
@@ -608,22 +625,22 @@ export function NotificationComposer() {
 
             {form.mode === "system_message" && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-3.5 shadow-xs">
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
                     <Crown className="h-3 w-3" />
                     System Dispatch • {form.category}
                   </span>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">10:42 AM</span>
+                  <span className="text-muted-foreground text-xs tabular-nums">10:42 AM</span>
                 </div>
-                <h4 className="text-xs font-bold text-foreground">
+                <h4 className="text-foreground text-xs font-bold">
                   {form.title || "System Message Title"}
                 </h4>
-                <p className="text-[11px] leading-relaxed text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {form.description || "Event summary and dispatch details."}
                 </p>
                 {form.actionable && (
                   <div className="mt-2.5 flex items-center gap-2">
-                    <div className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                    <div className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-400">
                       Open Action →
                     </div>
                   </div>
@@ -633,23 +650,25 @@ export function NotificationComposer() {
 
             {form.mode === "direct_message" && (
               <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/[0.06] p-3.5 shadow-xs">
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-indigo-400 uppercase">
                     <Globe className="h-3 w-3" />
-                    {form.classification} // {form.conversationType.toUpperCase()}
+                    {form.classification}
+                    {" // "}
+                    {form.conversationType.toUpperCase()}
                   </span>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">Just now</span>
+                  <span className="text-muted-foreground text-xs tabular-nums">Just now</span>
                 </div>
-                <h4 className="text-xs font-bold text-foreground">
+                <h4 className="text-foreground text-xs font-bold">
                   {form.title || "Subject Line"}
                 </h4>
-                <p className="text-[11px] leading-relaxed text-muted-foreground mt-1 whitespace-pre-wrap">
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed whitespace-pre-wrap">
                   {form.description || "Direct dispatch message contents."}
                 </p>
               </div>
             )}
 
-            <div className="pt-2 text-xs text-muted-foreground space-y-1">
+            <div className="text-muted-foreground space-y-1 pt-2 text-xs">
               <p>
                 <strong>Recipient Scope:</strong>{" "}
                 {form.scope === "global"

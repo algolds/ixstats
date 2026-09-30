@@ -77,8 +77,6 @@ export function parseChambers(
 }
 
 export const electionsLegislatureRouter = createTRPCRouter({
-  // ─── Political Parties ─────────────────────────────────
-
   // ─── Legislature ───────────────────────────────────────
 
   getLegislature: publicProcedure
@@ -191,12 +189,4 @@ export const electionsLegislatureRouter = createTRPCRouter({
 
       return legislature;
     }),
-
-  // ─── Elections ─────────────────────────────────────────
-
-  // ─── Candidates ────────────────────────────────────────
-
-  // ─── Election Simulation (Core Algorithm) ──────────────
-
-  // ─── Current Parliament (for hemicycle visualization) ───
 });

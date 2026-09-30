@@ -14,35 +14,6 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "@prisma/client";
 
-/**
- * Trade offer creation schema
- */
-const _createtradeOfferSchema = z.object({
-  recipientId: z.string().min(1, "Recipient ID is required"),
-  initiatorCardIds: z.array(z.string()).min(1, "At least one card must be offered"),
-  recipientCardIds: z.array(z.string()).min(1, "At least one card must be requested"),
-  initiatorCredits: z.number().int().min(0).default(0),
-  recipientCredits: z.number().int().min(0).default(0),
-  message: z.string().max(500).optional(),
-});
-
-/**
- * Trade response schema
- */
-const _respondToTradeSchema = z.object({
-  tradeId: z.string().min(1),
-  action: z.enum(["ACCEPT", "REJECT", "COUNTER"]),
-  // For counter offers
-  newInitiatorCardIds: z.array(z.string()).optional(),
-  newRecipientCardIds: z.array(z.string()).optional(),
-  newInitiatorCredits: z.number().int().min(0).optional(),
-  newRecipientCredits: z.number().int().min(0).optional(),
-  counterMessage: z.string().max(500).optional(),
-});
-
-type _CreateTradeOfferInput = z.infer<typeof _createtradeOfferSchema>;
-type _RespondToTradeInput = z.infer<typeof _respondToTradeSchema>;
-
 export const tradingQueriesRouter = createTRPCRouter({
   /**
    * Get active trades (sent and received)

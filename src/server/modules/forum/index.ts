@@ -33,8 +33,16 @@ export {
   setupForumCustomFields,
   lookupForumUser,
   syncUserToForum,
-  linkForumAccount,
 } from "./services/xenforo-user-sync";
+
+export {
+  createForumLinkService,
+  forumVerificationCode,
+  ForumLinkError,
+  FORUM_CODE_WINDOW_MS,
+  type ForumLinkDeps,
+  type ForumProfileProof,
+} from "./services/forum-link-verification";
 
 export {
   requireForumUser,
@@ -43,7 +51,7 @@ export {
 } from "./services/linked-user";
 
 export { forumBridge } from "./services/forum-bridge";
-export type { BridgeAdapter, BridgeSyncResult } from "./services/bridge-types";
+export type { BridgeAdapter, BridgeSyncResult } from "~/server/shared/bridge-types";
 
 // ─── Lib / Utilities ─────────────────────────────────────────────────────────
 export { transformBBCode, transformPosts, type TransformedPost } from "./lib/bbcode-transformer";

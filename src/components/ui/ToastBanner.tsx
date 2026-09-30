@@ -1,212 +1,130 @@
-/**
- * ToastBanner - iOS-style notification banner designed for Sonner.
- *
- * Features:
- * - Glass morphism matching the Facet aesthetic
- * - Category-colored left accent bar
- * - Action buttons
- * - Auto-dismiss progress bar countdown
- */
-
 "use client";
+// src/components/ui/ToastBanner.tsx
+// Facet Design System Floating Toast Banner Component
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   CheckCircle,
-  AlertCircle,
-  AlertTriangle,
-  Info,
-  X,
-  TrendingUp,
-  Globe,
-  Users,
-  Building2,
-  Shield,
-  Trophy,
-  Zap,
-  Swords,
-} from "lucide-react";
-import type { ToastQueueItem, ToastType } from "~/stores/toastQueueStore";
-import type { NotificationCategory } from "~/types/unified-notifications";
+  WarningCircle,
+  WarningTriangle as AlertTriangle,
+  InfoCircle,
+  Xmark as X,
+} from "iconoir-react";
+import type { ToastQueueItem } from "~/stores/toastQueueStore";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils/cn";
 
 interface ToastBannerProps {
   toast: ToastQueueItem;
-  onDismiss: (id: string) => void;
+  onDismiss: () => void;
 }
 
-// ─── Icon mapping ─────────────────────────────────────────────────────
+export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
+  const { title, message, type = "info", priority = "medium", actions } = toast;
 
-function getIconForToast(
-  type: ToastType,
-  category?: NotificationCategory
-): React.ComponentType<{ className?: string }> {
-  if (category) {
-    switch (category) {
-      case "economic":
-      case "opportunity":
-        return TrendingUp;
-      case "diplomatic":
-        return Globe;
-      case "social":
-        return Users;
-      case "governance":
-      case "policy":
-        return Building2;
-      case "security":
-        return Shield;
-      case "achievement":
-        return Trophy;
-      case "crisis":
-        return AlertCircle;
-      case "intelligence":
-        return Zap;
-      case "military":
-        return Swords;
+  const getTypeStyles = () => {
+    switch (type) {
+      case "success":
+        return {
+          icon: <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />,
+          badgeBg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
+          glow: "shadow-[0_4px_24px_rgba(16,185,129,0.15)]",
+          borderAccent: "border-emerald-500/30",
+        };
+      case "error":
+        return {
+          icon: <WarningCircle className="h-4 w-4 shrink-0 text-red-500" />,
+          badgeBg: "bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400",
+          glow: "shadow-[0_4px_24px_rgba(239,68,68,0.18)]",
+          borderAccent: "border-red-500/40",
+        };
+      case "warning":
+        return {
+          icon: <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />,
+          badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400",
+          glow: "shadow-[0_4px_24px_rgba(245,158,11,0.15)]",
+          borderAccent: "border-amber-500/30",
+        };
+      case "info":
       default:
-        break;
+        return {
+          icon: <InfoCircle className="h-4 w-4 shrink-0 text-cyan-500" />,
+          badgeBg: "bg-cyan-500/15 border-cyan-500/30 text-cyan-600 dark:text-cyan-400",
+          glow: "shadow-[0_4px_24px_rgba(6,182,212,0.12)]",
+          borderAccent: "border-cyan-500/30",
+        };
     }
-  }
+  };
 
-  switch (type) {
-    case "success":
-      return CheckCircle;
-    case "error":
-      return AlertCircle;
-    case "warning":
-      return AlertTriangle;
-    case "info":
-      return Info;
-  }
-}
-
-// ─── Color mapping ────────────────────────────────────────────────────
-
-const ACCENT_COLORS: Record<ToastType, string> = {
-  success: "bg-emerald-500",
-  error: "bg-red-500",
-  warning: "bg-amber-500",
-  info: "bg-blue-500",
-};
-
-const ICON_COLORS: Record<ToastType, string> = {
-  success: "text-emerald-400",
-  error: "text-red-400",
-  warning: "text-amber-400",
-  info: "text-blue-400",
-};
-
-const ICON_BG_COLORS: Record<ToastType, string> = {
-  success: "bg-emerald-500/15",
-  error: "bg-red-500/15",
-  warning: "bg-amber-500/15",
-  info: "bg-blue-500/15",
-};
-
-// ─── Component ────────────────────────────────────────────────────────
-
-export const ToastBanner = React.memo(function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
-  const [progress, setProgress] = useState(100);
-  const Icon = getIconForToast(toast.type, toast.category);
-
-  // Progress bar countdown
-  useEffect(() => {
-    if (toast.persistent) return;
-
-    const startTime = Date.now();
-    const duration = toast.duration || 5000;
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, duration - elapsed);
-      const pct = (remaining / duration) * 100;
-      setProgress(pct);
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, [toast.duration, toast.persistent]);
+  const styleConfig = getTypeStyles();
 
   return (
-    <div className="pointer-events-auto relative w-[95vw] select-none sm:w-[90vw] md:w-[400px]">
-      <div
-        className="border-border/40 bg-background/95 dark:bg-background/90 relative overflow-hidden rounded-2xl border shadow-2xl shadow-black/15 dark:border-white/15"
-        style={{
-          backdropFilter: "blur(40px) saturate(180%)",
-          WebkitBackdropFilter: "blur(40px) saturate(180%)",
-        }}
-      >
-        {/* Left accent bar */}
-        <div className={`absolute top-0 left-0 h-full w-[3px] ${ACCENT_COLORS[toast.type]}`} />
+    <div
+      role="alert"
+      className={cn(
+        "group pointer-events-auto relative flex w-full max-w-sm sm:max-w-md items-start gap-3 rounded-2xl border p-3.5 sm:p-4 text-left select-none",
+        "bg-card/95 dark:bg-card/90 text-card-foreground backdrop-blur-2xl",
+        "border-border/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+        styleConfig.glow,
+        styleConfig.borderAccent
+      )}
+    >
+      {/* Icon Badge */}
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-muted/40 border border-border/40">
+        {styleConfig.icon}
+      </div>
 
-        {/* Content */}
-        <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
-          {/* Icon */}
-          <div className={`mt-0.5 shrink-0 rounded-lg p-1.5 ${ICON_BG_COLORS[toast.type]}`}>
-            <Icon className={`h-4 w-4 ${ICON_COLORS[toast.type]}`} />
-          </div>
-
-          {/* Text content */}
-          <div className="min-w-0 flex-1">
-            <div className="text-foreground/95 text-[13px] leading-tight font-semibold">
-              {toast.title}
-            </div>
-            {toast.message && (
-              <div className="text-muted-foreground mt-0.5 line-clamp-2 text-[12px] leading-snug">
-                {toast.message}
-              </div>
-            )}
-
-            {/* Action buttons */}
-            {toast.actions && toast.actions.length > 0 && (
-              <div className="mt-2 flex items-center gap-2">
-                {toast.actions.map((action, i) => (
-                  <button
-                    key={i}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      action.onClick();
-                      onDismiss(toast.id);
-                    }}
-                    className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                      i === 0
-                        ? "bg-foreground/10 text-foreground hover:bg-foreground/20"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Dismiss button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDismiss(toast.id);
-            }}
-            className="text-muted-foreground/50 hover:bg-foreground/10 hover:text-muted-foreground mt-0.5 shrink-0 rounded-full p-1 transition-colors"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+      {/* Text Content */}
+      <div className="flex-1 min-w-0 pr-1">
+        <div className="flex items-center gap-2">
+          <h4 className="text-xs sm:text-sm font-semibold text-foreground tracking-tight line-clamp-1">
+            {title}
+          </h4>
+          {priority === "critical" && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-red-500/20 text-red-500 border border-red-500/30">
+              Urgent
+            </span>
+          )}
         </div>
 
-        {/* Progress bar */}
-        {!toast.persistent && (
-          <div className="bg-foreground/5 h-[2px] w-full">
-            <div
-              className={`h-full ${ACCENT_COLORS[toast.type]}`}
-              style={{
-                width: `${progress}%`,
-                opacity: 0.6,
-                transition: "width 0.05s linear",
-              }}
-            />
+        {message && (
+          <p className="mt-0.5 text-xs sm:text-xs text-muted-foreground leading-relaxed line-clamp-3">
+            {message}
+          </p>
+        )}
+
+        {/* Custom Actions */}
+        {actions && actions.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            {actions.map((action, idx) => (
+              <Button
+                key={idx}
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  action.onClick();
+                  onDismiss();
+                }}
+                className="h-6 rounded-lg border-border/50 px-2.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+              >
+                {action.label}
+              </Button>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Dismiss button */}
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss notification"
+        className="shrink-0 p-1 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted/50 transition-colors active:scale-[0.95]"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
-});
+}
 
 export default ToastBanner;

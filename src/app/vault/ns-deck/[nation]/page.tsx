@@ -5,11 +5,16 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { Loader2, ExternalLink, TrendingUp, ImageOff } from "lucide-react";
+import {
+  SystemRestart as Loader2,
+  OpenNewWindow as ExternalLink,
+  StatUp as TrendingUp,
+  MediaImage as ImageOff,
+} from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import Image from "next/image";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
-import { getRarityTheme } from "~/components/vault/vault-theme";
+import { getRarityTheme } from "~/lib/cards/display-utils";
 
 export default function NSDeckPage() {
   const params = useParams();
@@ -58,7 +63,7 @@ export default function NSDeckPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardHeader className="pb-3">
             <CardTitle className="text-muted-foreground text-sm font-medium">Total Cards</CardTitle>
           </CardHeader>
@@ -68,7 +73,7 @@ export default function NSDeckPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardHeader className="pb-3">
             <CardTitle className="text-muted-foreground text-sm font-medium">
               Unique Cards
@@ -80,7 +85,7 @@ export default function NSDeckPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardHeader className="pb-3">
             <CardTitle className="text-muted-foreground text-sm font-medium">Deck Value</CardTitle>
           </CardHeader>
@@ -93,7 +98,7 @@ export default function NSDeckPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardHeader className="pb-3">
             <CardTitle className="text-muted-foreground text-sm font-medium">Showing</CardTitle>
           </CardHeader>
@@ -113,7 +118,7 @@ export default function NSDeckPage() {
             const hasImageFailed = failedImages.has(cardKey);
 
             return (
-              <Card key={cardKey} className="glass-hierarchy-child overflow-hidden">
+              <Card key={cardKey} className="facet-hierarchy-child overflow-hidden">
                 <CardHeader className="p-0">
                   <div className="relative aspect-[3/4] w-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                     {card.flag && !hasImageFailed ? (
@@ -189,7 +194,7 @@ export default function NSDeckPage() {
       </div>
 
       {/* Info Card */}
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle>About This Deck</CardTitle>
           <CardDescription>Data pulled from NationStates public API</CardDescription>

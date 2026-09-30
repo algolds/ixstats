@@ -1,78 +1,80 @@
 # Admin Router Endpoint Security Map
 
+Covers the `admin.*` tRPC namespace: `src/server/api/routers/admin/*.ts`, merged in `admin/index.ts`. `adminProcedure` is also used by roughly 270 procedures in other routers, which this map does not list.
+
 ## Security Level Hierarchy
 ```
 ┌─────────────────────────────────────────────────────┐
 │  LEVEL 4: GOD-MODE (System Owner Only)             │
-│  ├─ updateCountryData                              │
-│  └─ bulkUpdateCountries                            │
+│  └─ (None - updateCountryData / bulkUpdateCountries │
+│      were deleted 2026-09-27, plan 312)            │
 ├─────────────────────────────────────────────────────┤
-│  LEVEL 3: ADMIN PROCEDURES (Admin Role Required)   │
-│  ├─ getSystemStatus                                │
-│  ├─ getBotStatus                                   │
-│  ├─ getConfig                                      │
-│  ├─ getCalculationLogs                             │
-│  ├─ syncWithBot                                    │
-│  ├─ getSystemHealth                                │
-│  ├─ saveConfig                                     │
-│  ├─ setCustomTime                                  │
-│  ├─ syncBot                                        │
-│  ├─ pauseBot                                       │
-│  ├─ resumeBot                                      │
-│  ├─ clearBotOverrides                              │
-│  ├─ analyzeImport                                  │
-│  ├─ importRosterData                               │
-│  ├─ syncEpochWithData                              │
-│  ├─ forceRecalculation                             │
-│  ├─ listUsersWithCountries                         │
-│  ├─ listCountriesWithUsers                         │
-│  ├─ assignUserToCountry                            │
-│  ├─ unassignUserFromCountry                        │
-│  ├─ updateNavigationSettings                       │
-│  ├─ getAdminAuditLog                               │
-│  ├─ createCustomScenario                           │
-│  ├─ createGlobalAnnouncement                       │
-│  └─ createMaintenanceNotification                  │
+│  LEVEL 3: ADMIN PROCEDURES (adminProcedure)        │
+│  system.ts:  getGlobalStats, getSystemStatus,      │
+│              getConfig, saveConfig, setCustomTime, │
+│              getCalculationLogs, syncEpochWithData,│
+│              forceRecalculation, getSystemLogs,    │
+│              clearSystemLogs                       │
+│  bot.ts:     getBotStatus, syncBot, pauseBot,      │
+│              resumeBot, clearBotOverrides,         │
+│              getBotProcesses, controlBotProcess,   │
+│              getBotProcessLogs, getBotCommands,    │
+│              getBotRoles, simulateBotCommand       │
+│  users.ts:   listUsersWithCountries,               │
+│              listCountriesWithUsers,               │
+│              assignUserToCountry,                  │
+│              unassignUserFromCountry,              │
+│              updateNavigationSettings,             │
+│              inviteUserToBypassWaitlist,           │
+│              listUserIdentities, linkUserWiki,     │
+│              unlinkUserWiki, linkUserDiscord,      │
+│              unlinkUserDiscord,                    │
+│              syncDiscordGuildMembers,              │
+│              applyDiscordAutoAssignments,          │
+│              listMediaWikiReconciliationMatrix     │
+│  countries/: analyzeImport, importRosterData,      │
+│              getAdminAuditLog, getCountryGrid,     │
+│              getCountryDetail                      │
+│  worldEvents.ts, wiki.ts, thinkpages.ts,           │
+│  thinkpagesDiscordFeed.ts, stash.ts, cron.ts:      │
+│              every procedure (see the files)       │
 ├─────────────────────────────────────────────────────┤
 │  LEVEL 2: PROTECTED (Authentication Required)      │
-│  ├─ getCalculationFormulas                         │
-│  ├─ getGlobalStats                                 │
-│  └─ getNavigationSettings                          │
+│  └─ (None in the admin namespace)                  │
 ├─────────────────────────────────────────────────────┤
 │  LEVEL 1: PUBLIC (No Authentication)               │
-│  └─ (None - all admin endpoints are secured)      │
+│  └─ getNavigationSettings (publicProcedure)        │
 └─────────────────────────────────────────────────────┘
 ```
 
-## Recent Security Changes (Task 1.4 & 1.7)
+## Recent Security Changes
 
-### Endpoints Moved from PUBLIC to PROTECTED
-1. `getCalculationFormulas` - Internal calculation formulas
-2. `getGlobalStats` - Global statistics for SDI interface
-3. `getNavigationSettings` - Navigation tab visibility settings
+### October 2025 (Tasks 1.4 & 1.7)
+- `getSystemStatus`, `getBotStatus`, `getConfig`, `getCalculationLogs` moved from PUBLIC to ADMIN (still admin).
+- `getGlobalStats` moved from PUBLIC to PROTECTED; it is now ADMIN.
+- `getNavigationSettings` was listed as PROTECTED; it is `publicProcedure` today (it only returns tab-visibility settings).
+- `updateCountryData` and `bulkUpdateCountries` gained a system-owner check.
 
-### Endpoints Moved from PUBLIC to ADMIN
-4. `getSystemStatus` - System status information
-5. `getBotStatus` - Discord bot health check
-6. `getConfig` - System configuration
-7. `getCalculationLogs` - Calculation execution logs
-8. `syncWithBot` - Bot synchronization
-9. `getSystemHealth` - System health metrics
-
-### God-Mode Endpoints Enhanced with System Owner Check
-10. `updateCountryData` - Direct country data manipulation
-11. `bulkUpdateCountries` - Bulk country updates
+### 2026-09-27 (plan 312, zero-caller procedure deletion)
+- Deleted: `updateCountryData`, `bulkUpdateCountries`, `syncWithBot`, `getSystemHealth`, `getCalculationFormulas`, `createCustomScenario`, `createGlobalAnnouncement`, `createMaintenanceNotification`.
+- No admin procedure performs its own system-owner check any more, so there is currently no god-mode tier.
 
 ## Authorization Flow
 
+`adminProcedure` (`src/server/api/trpc/procedures.ts`) runs, in order:
+
 ```
-Request → Authentication Check → Role Check → System Owner Check → Execute
-   ↓              ↓                   ↓              ↓               ↓
-PUBLIC      PROTECTED            ADMIN          GOD-MODE        Success
-   ↓              ↓                   ↓              ↓
-  403          Clerk              Role Table   isSystemOwner()
- Error        Session           Check (Admin)   Check (Owner)
+authMiddleware → adminMiddleware → inputValidationMiddleware → rateLimitMiddleware → auditLogMiddleware → userLoggingMiddleware.admin
+      ↓                 ↓                     ↓                          ↓                       ↓
+ Clerk session +   play-as → 403;       only for paths with       100 req/min,          [SECURITY_AUDIT] +
+ DB user record    system owner →       "execute"/"Action":       namespace "default"   AuditLog row for failed
+                   bypass role check;   rejects script/SQL-like                          or "execute" calls
+                   else role name in    input and >10 000 chars
+                   owner/admin/staff
+                   or role level ≤ 20
 ```
+
+System owners are the Clerk IDs in `SYSTEM_OWNER_IDS` (`src/lib/auth/system-owner-constants.ts`).
 
 ## Security Guarantees
 
@@ -84,44 +86,53 @@ PUBLIC      PROTECTED            ADMIN          GOD-MODE        Success
 
 ### Admin Procedures
 - ✅ All protected procedure checks
-- ✅ Admin role required in database
-- ✅ Role validation via middleware
+- ✅ Admin role required in database (`owner`/`admin`/`staff`, or role level ≤ 20), or system owner
+- ✅ Blocked while playing as another user
+- ✅ Rate limited (100/min) and audit-logged when a call fails or its path contains `execute`
 - ❌ System owner not required
 
 ### God-Mode Operations
-- ✅ All admin procedure checks
-- ✅ System owner validation required
-- ✅ Explicit error if not system owner
-- ✅ Audit logging for all god-mode actions
+- None exist at present. A future god-mode procedure must call `isSystemOwner()` itself.
 
 ## Error Responses
 
-### Unauthenticated (Protected/Admin/God-Mode)
+### Unauthenticated (Protected/Admin)
 ```json
 {
   "error": {
     "code": "UNAUTHORIZED",
-    "message": "Authentication required"
+    "message": "Authentication required. Please sign in to access this resource."
   }
 }
 ```
 
-### Not Admin (Admin/God-Mode)
+### Not Admin (Admin)
 ```json
 {
   "error": {
     "code": "FORBIDDEN",
-    "message": "Admin access required"
+    "message": "Admin privileges required. Your current role is \"user\" (level 100)."
+  }
+}
+```
+(The role name and level are the caller's own.)
+
+### Admin While Playing As Another User
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Admin actions are disabled while playing as another user. Exit play-as mode first."
   }
 }
 ```
 
-### Not System Owner (God-Mode)
+### Rate Limited (Admin)
 ```json
 {
   "error": {
-    "code": "FORBIDDEN",
-    "message": "God-mode operations require system owner privileges. Regular admin access is insufficient."
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Too many requests. Maximum 100 requests per 60 seconds. Try again at <ISO time>"
   }
 }
 ```
@@ -130,11 +141,11 @@ PUBLIC      PROTECTED            ADMIN          GOD-MODE        Success
 
 | Endpoint Type | Public User | Authenticated User | Admin User | System Owner |
 |---------------|-------------|-------------------|------------|--------------|
-| Protected     | ❌ 403      | ✅ 200            | ✅ 200     | ✅ 200       |
-| Admin         | ❌ 403      | ❌ 403            | ✅ 200     | ✅ 200       |
-| God-Mode      | ❌ 403      | ❌ 403            | ❌ 403     | ✅ 200       |
+| Public        | ✅ 200      | ✅ 200            | ✅ 200     | ✅ 200       |
+| Protected     | ❌ 401      | ✅ 200            | ✅ 200     | ✅ 200       |
+| Admin         | ❌ 401      | ❌ 403            | ✅ 200     | ✅ 200       |
 
 ---
 
-**Last Updated:** October 22, 2025
-**Security Audit Status:** ✅ COMPLETED (Tasks 1.4 & 1.7)
+**Last Updated:** September 29, 2026
+**Security Audit Status:** Tasks 1.4 & 1.7 completed October 2025; map re-verified against code after plan 312 (2026-09-27)

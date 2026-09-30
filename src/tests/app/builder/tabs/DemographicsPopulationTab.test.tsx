@@ -5,7 +5,11 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { DemographicsPopulationTab } from "~/app/builder/components/enhanced/tabs/DemographicsPopulationTab";
-import { mockEconomyBuilder, mockAtomicComponents, mockDemographics } from "~/app/builder/__tests__/fixtures";
+import {
+  mockEconomyBuilder,
+  mockAtomicComponents,
+  mockDemographics,
+} from "~/app/builder/__tests__/fixtures";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 
 describe("DemographicsPopulationTab", () => {

@@ -634,6 +634,7 @@ export class DiplomaticChoiceTracker {
     const total = choices.length || 1;
 
     // Count all cultural-related actions for culturallyActive detection
+    // oxlint-disable-next-line typescript/no-unused-vars
     const allCulturalActions = [
       ...(choicesByType["cultural_exchange"] || []),
       ...(choicesByType["cultural_exchange_initiated"] || []),

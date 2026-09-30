@@ -57,7 +57,7 @@ export function CollectionEditDeleteModals({
                 id="edit-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="glass-hierarchy-child"
+                className="facet-hierarchy-child"
               />
             </div>
             <div>
@@ -66,7 +66,7 @@ export function CollectionEditDeleteModals({
                 id="edit-description"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="glass-hierarchy-child"
+                className="facet-hierarchy-child"
               />
             </div>
             <div className="flex items-center gap-2">

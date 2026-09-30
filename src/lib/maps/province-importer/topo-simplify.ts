@@ -365,6 +365,7 @@ export function simplifyProvinceBatch(
 
   for (let i = 0; i < features.length; i++) {
     const original = features[i]!;
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'simplified' is intentional in this scope
     const simplified = resultFc.features[i];
     const name = (original.properties?.name as string) ?? `Province ${i}`;
 

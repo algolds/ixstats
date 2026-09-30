@@ -7,26 +7,39 @@
  * Shows route metadata, stops, and actions (edit, delete, status change).
  */
 
-import { useState } from "react";
+import { useState, memo, useMemo } from "react";
 import {
-  X,
+  Xmark as X,
   Train,
   Car,
-  Ship,
-  Plane,
-  Droplets,
+  DeliveryTruck as Ship,
+  Airplane as Plane,
+  Droplet as Droplets,
+  Flash,
+  Shield,
+  Wifi,
   MapPin,
-  Gauge,
-  Mountain,
+  Dashboard as Gauge,
+  Clock,
+  ModernTv as Mountain,
   Calendar,
-  Loader2,
-  Trash2,
-  Pencil,
+  SystemRestart as Loader2,
+  Trash as Trash2,
+  EditPencil as Pencil,
   Check,
   Coins,
-  Route,
-} from "lucide-react";
+  PathArrow as Route,
+  Wind,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { getRouteFamily } from "~/lib/economy/transport-costs";
+import {
+  calculateRouteTravelTime,
+  resolveRouteBaseSpeed,
+  KMH_PER_KNOT,
+  type LngLat,
+} from "~/lib/economy/travel-time";
 
 interface RouteInfoPanelProps {
   routeId: string;
@@ -37,14 +50,73 @@ interface RouteInfoPanelProps {
   onEditPath?: (routeId: string) => void;
 }
 
-const TYPE_META: Record<string, { icon: typeof Train; label: string; color: string }> = {
-  rail: { icon: Train, label: "Railway", color: "#374151" },
-  highway: { icon: Car, label: "Highway", color: "#f97316" },
-  road: { icon: Car, label: "Road", color: "#92400e" },
-  shipping_lane: { icon: Ship, label: "Shipping Lane", color: "#3b82f6" },
-  canal: { icon: Droplets, label: "Canal", color: "#06b6d4" },
-  air_corridor: { icon: Plane, label: "Air Route", color: "#a855f7" },
-  ferry: { icon: Ship, label: "Ferry", color: "#14b8a6" },
+interface RouteDisplayProperties {
+  speed_kmh?: number | string;
+  costBillion?: number | string;
+  maintenanceCost?: number | string;
+  [key: string]: string | number | boolean | null | undefined;
+}
+
+interface RouteGeometry {
+  type?: string;
+  coordinates?: LngLat[] | LngLat[][];
+}
+
+/** Route vertices for the sea current/wind model; null when the geometry is not a line. */
+function routeGeometryPath(geometry: RouteGeometry | null | undefined): LngLat[] | null {
+  if (!geometry || !Array.isArray(geometry.coordinates)) return null;
+  if (geometry.type === "LineString") return geometry.coordinates as LngLat[];
+  if (geometry.type === "MultiLineString") return (geometry.coordinates as LngLat[][]).flat();
+  return null;
+}
+
+function formatSignedSpeed(kmh: number): string {
+  const sign = kmh >= 0 ? "+" : "−";
+  const abs = Math.abs(kmh);
+  return `${sign}${abs.toFixed(1)} km/h (${sign}${(abs / KMH_PER_KNOT).toFixed(1)} kn)`;
+}
+
+interface ResolvedStop {
+  cityId?: string;
+  cityName?: string;
+  name?: string;
+  cityPopulation?: number | null;
+  coordinates?: [number, number];
+  order?: number;
+}
+
+const TYPE_META: Record<string, { icon: typeof Train; label: string; badgeClass: string }> = {
+  // Rail
+  rail: { icon: Train, label: "Railway", badgeClass: "bg-slate-500/15 text-slate-400" },
+  high_speed_rail: { icon: Train, label: "High-Speed Rail", badgeClass: "bg-blue-500/15 text-blue-400" },
+  railway: { icon: Train, label: "Conventional Rail", badgeClass: "bg-blue-600/15 text-blue-400" },
+  metro: { icon: Train, label: "Metro System", badgeClass: "bg-indigo-600/15 text-indigo-400" },
+  light_rail: { icon: Train, label: "Light Rail", badgeClass: "bg-cyan-500/15 text-cyan-400" },
+  monorail: { icon: Train, label: "Monorail", badgeClass: "bg-indigo-500/15 text-indigo-400" },
+
+  // Road
+  motorway: { icon: Car, label: "Motorway", badgeClass: "bg-orange-600/15 text-orange-500" },
+  highway: { icon: Car, label: "Highway", badgeClass: "bg-amber-500/15 text-amber-400" },
+  trunk: { icon: Car, label: "Trunk Road", badgeClass: "bg-amber-600/15 text-amber-500" },
+  road: { icon: Car, label: "Road", badgeClass: "bg-orange-500/15 text-orange-400" },
+  secondary: { icon: Car, label: "Secondary Road", badgeClass: "bg-stone-500/15 text-stone-400" },
+
+  // Maritime
+  shipping_lane: { icon: Ship, label: "Shipping Lane", badgeClass: "bg-blue-500/15 text-blue-400" },
+  canal: { icon: Droplets, label: "Canal", badgeClass: "bg-cyan-500/15 text-cyan-400" },
+  ferry: { icon: Ship, label: "Ferry", badgeClass: "bg-cyan-600/15 text-cyan-400" },
+
+  // Air
+  air_corridor: { icon: Plane, label: "Air Route", badgeClass: "bg-indigo-500/15 text-indigo-400" },
+
+  // Utility
+  pipeline: { icon: Droplets, label: "Pipeline", badgeClass: "bg-yellow-500/15 text-yellow-400" },
+  power_grid: { icon: Flash, label: "Power Grid", badgeClass: "bg-amber-500/15 text-amber-300" },
+  fiber: { icon: Wifi, label: "Fiber Optic", badgeClass: "bg-emerald-500/15 text-emerald-400" },
+
+  // Military
+  military_supply: { icon: Shield, label: "Mil. Supply", badgeClass: "bg-red-500/15 text-red-400" },
+  military_naval: { icon: Shield, label: "Mil. Naval", badgeClass: "bg-red-900/20 text-red-400" },
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -54,7 +126,7 @@ const STATUS_COLORS: Record<string, string> = {
   abandoned: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
 };
 
-export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteInfoPanelProps) {
+export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteInfoPanelProps) {
   const utils = api.useUtils();
   const { data: route, isLoading } = api.transport.getRouteById.useQuery(
     { id: routeId },
@@ -64,6 +136,8 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editStatus, setEditStatus] = useState("");
+  const [editSpeed, setEditSpeed] = useState<number | undefined>(undefined);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const updateRoute = api.transport.updateRoute.useMutation({
     onSuccess: () => {
@@ -82,6 +156,33 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
       onClose();
     },
   });
+
+  const routeSpeedKmh = (route as { speedKmh?: number | null } | undefined)?.speedKmh;
+
+  const baseSpeed = useMemo(() => {
+    if (!route) return 0;
+    return resolveRouteBaseSpeed({
+      speedKmh: routeSpeedKmh,
+      properties: route.properties as Record<string, unknown> | null,
+      routeType: route.routeType,
+    });
+  }, [routeSpeedKmh, route?.properties, route?.routeType]);
+
+  const seaPath = useMemo(
+    () => routeGeometryPath(route?.geometry as RouteGeometry | null | undefined),
+    [route?.geometry]
+  );
+
+  const travelTime = useMemo(() => {
+    return calculateRouteTravelTime({
+      lengthKm: route?.lengthKm ?? 0,
+      speedKmh: baseSpeed,
+      routeType: route?.routeType ?? "rail",
+      terrainDifficulty: route?.terrainDifficulty,
+      stopsCount: route?.stopsResolved?.length ?? 0,
+      seaPath,
+    });
+  }, [route?.lengthKm, baseSpeed, route?.routeType, route?.terrainDifficulty, route?.stopsResolved?.length, seaPath]);
 
   if (isLoading) {
     return (
@@ -107,11 +208,53 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
   const typeMeta = TYPE_META[route.routeType] ?? TYPE_META.road!;
   const TypeIcon = typeMeta.icon;
   const statusClass = STATUS_COLORS[route.status] ?? STATUS_COLORS.operational!;
-  const props = (route.properties ?? {}) as Record<string, any>;
+  const props = (route.properties as RouteDisplayProperties | null) ?? {};
+  const modalFamily = getRouteFamily(route.routeType);
+  const largestSeaEffect = travelTime.sea?.largestEffect ?? null;
+
+  const intermodalBadge = (() => {
+    if (modalFamily === "maritime") {
+      return {
+        title: "Deepwater Transshipment Corridor",
+        detail: "Connects maritime sea lanes to on-dock rail & drayage trucking terminals.",
+      };
+    }
+    if (route.routeType === "freight_rail") {
+      return {
+        title: "Intermodal Freight Rail Spine",
+        detail: "Heavy-haul container rail linked to seaport terminals & classification yards.",
+      };
+    }
+    if (modalFamily === "air") {
+      return {
+        title: "Air Freight Express Corridor",
+        detail: "High-speed cargo link for courier dispatch & perishable airfreight.",
+      };
+    }
+    if (
+      modalFamily === "road" &&
+      (route.routeType === "motorway" || route.routeType === "trunk" || route.isInternational)
+    ) {
+      return {
+        title: "Arterial Highway Freight Route",
+        detail: "Regional drayage corridor connecting production centers to logistics hubs.",
+      };
+    }
+    return null;
+  })();
+
 
   const handleStartEdit = () => {
     setEditName(route.name ?? "");
     setEditStatus(route.status);
+    setEditSpeed(
+      routeSpeedKmh ??
+        (typeof props.speed_kmh === "number"
+          ? props.speed_kmh
+          : props.speed_kmh
+            ? Number(props.speed_kmh)
+            : baseSpeed)
+    );
     setEditing(true);
   };
 
@@ -122,13 +265,16 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
       countryId: route.countryId,
       name: editName || undefined,
       status: editStatus as "planned" | "under_construction" | "operational" | "abandoned",
+      speedKmh: editSpeed != null && !isNaN(editSpeed) && editSpeed > 0 ? editSpeed : undefined,
     });
   };
 
-  const handleDelete = () => {
-    if (!route.countryId || !confirm("Delete this route?")) return;
-    deleteRoute.mutate({ id: route.id, countryId: route.countryId });
-  };
+  const diffBgClass =
+    (route.terrainDifficulty ?? 0) > 0.7
+      ? "bg-destructive"
+      : (route.terrainDifficulty ?? 0) > 0.4
+        ? "bg-amber-500"
+        : "bg-emerald-500";
 
   return (
     <div
@@ -140,8 +286,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
       {/* Header */}
       <div className="border-border flex items-start gap-2 border-b px-4 py-3">
         <div
-          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: typeMeta.color + "20", color: typeMeta.color }}
+          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${typeMeta.badgeClass}`}
         >
           <TypeIcon className="h-4 w-4" />
         </div>
@@ -150,7 +295,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
             <input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="border-border bg-background w-full rounded border px-1.5 py-0.5 text-sm font-semibold"
+              className="border-border bg-background w-full rounded border px-1.5 py-0.5 text-sm font-semibold focus:outline-none"
               placeholder="Route name"
               autoFocus
             />
@@ -160,12 +305,12 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
             </h3>
           )}
           <div className="mt-0.5 flex items-center gap-1.5">
-            <span className="text-muted-foreground text-[10px]">{typeMeta.label}</span>
+            <span className="text-muted-foreground text-xs">{typeMeta.label}</span>
             {editing ? (
               <select
                 value={editStatus}
                 onChange={(e) => setEditStatus(e.target.value)}
-                className="border-border bg-background rounded border px-1 py-0.5 text-[10px]"
+                className="border-border bg-background rounded border px-1 py-0.5 text-xs focus:outline-none"
               >
                 <option value="planned">Planned</option>
                 <option value="under_construction">Under Construction</option>
@@ -173,7 +318,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
                 <option value="abandoned">Abandoned</option>
               </select>
             ) : (
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusClass}`}>
+              <span className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${statusClass}`}>
                 {route.status.replace("_", " ")}
               </span>
             )}
@@ -181,7 +326,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
         </div>
         <button
           onClick={onClose}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-md p-1"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-md p-1 transition-colors active:scale-[0.98]"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -193,7 +338,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
           <span className="text-muted-foreground flex items-center gap-1.5">
             <Gauge className="h-3 w-3" /> Length
           </span>
-          <span className="font-medium tabular-nums">
+          <span className="font-medium font-mono tabular-nums">
             {route.lengthKm?.toLocaleString() ?? "—"} km
           </span>
         </div>
@@ -206,29 +351,59 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
             <div className="flex items-center gap-1.5">
               <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full">
                 <div
-                  className="h-full rounded-full"
+                  className={`h-full rounded-full ${diffBgClass}`}
                   style={{
                     width: `${Math.round(route.terrainDifficulty * 100)}%`,
-                    backgroundColor:
-                      route.terrainDifficulty > 0.7
-                        ? "#ef4444"
-                        : route.terrainDifficulty > 0.4
-                          ? "#f59e0b"
-                          : "#22c55e",
                   }}
                 />
               </div>
-              <span className="font-medium tabular-nums">
+              <span className="font-medium font-mono tabular-nums">
                 {Math.round(route.terrainDifficulty * 100)}%
               </span>
             </div>
           </div>
         )}
 
-        {Boolean(props.speed_kmh) && (
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground flex items-center gap-1.5">
+            <Clock className="h-3 w-3" /> Est. Travel Time
+          </span>
+          <span className="font-semibold font-mono tabular-nums text-foreground">
+            {travelTime.formattedTime}
+          </span>
+        </div>
+
+        {editing ? (
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Speed</span>
-            <span className="font-medium tabular-nums">{String(props.speed_kmh)} km/h</span>
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Gauge className="h-3 w-3" /> Speed
+            </span>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min={5}
+                max={2000}
+                value={editSpeed ?? ""}
+                onChange={(e) => setEditSpeed(e.target.value ? Number(e.target.value) : undefined)}
+                className="border-border bg-background w-20 rounded border px-1.5 py-0.5 text-right font-mono text-xs tabular-nums focus:outline-none"
+                placeholder={String(baseSpeed)}
+              />
+              <span className="text-muted-foreground text-xs">km/h</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Gauge className="h-3 w-3" /> Speed
+            </span>
+            <div className="flex items-center gap-1.5 font-mono tabular-nums">
+              <span className="font-medium">{Math.round(travelTime.effectiveSpeedKmh)} km/h</span>
+              {travelTime.terrainDragFactor < 1 && (
+                <span className="text-xs text-amber-500/80">
+                  ({Math.round(baseSpeed)} base)
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -237,14 +412,14 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
             <span className="text-muted-foreground flex items-center gap-1.5">
               <Calendar className="h-3 w-3" /> Built
             </span>
-            <span className="font-medium tabular-nums">{route.builtYear}</span>
+            <span className="font-medium font-mono tabular-nums">{route.builtYear}</span>
           </div>
         )}
 
         {Boolean(route.isInternational) && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">International</span>
-            <span className="font-medium text-blue-500">Yes</span>
+            <span className="text-primary font-medium">Yes</span>
           </div>
         )}
 
@@ -256,6 +431,51 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
         )}
       </div>
 
+      {/* Transit details (sea routes: currents & prevailing winds) */}
+      {travelTime.sea && (
+        <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
+          <Eyebrow className="mb-1.5 block">Transit details</Eyebrow>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Clock className="h-3 w-3" /> Total time
+            </span>
+            <span className="font-semibold font-mono tabular-nums text-foreground">
+              {travelTime.formattedTime}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Gauge className="h-3 w-3" /> Avg. speed
+            </span>
+            <span className="font-medium font-mono tabular-nums">
+              {`${travelTime.sea.averageSpeedKmh.toFixed(1)} km/h (${(travelTime.sea.averageSpeedKmh / KMH_PER_KNOT).toFixed(1)} kn)`}
+            </span>
+          </div>
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-muted-foreground flex shrink-0 items-center gap-1.5">
+              <Wind className="h-3 w-3" /> Largest effect
+            </span>
+            {largestSeaEffect ? (
+              <span className="min-w-0 text-right">
+                <span className="block truncate font-medium">{largestSeaEffect.name}</span>
+                <span
+                  className={`block font-mono tabular-nums ${
+                    largestSeaEffect.averageChangeKmh >= 0 ? "text-emerald-500" : "text-amber-500"
+                  }`}
+                >
+                  {formatSignedSpeed(largestSeaEffect.averageChangeKmh)}
+                </span>
+                <span className="text-muted-foreground block">
+                  {largestSeaEffect.kind} · over {Math.round(largestSeaEffect.distanceKm).toLocaleString()} km
+                </span>
+              </span>
+            ) : (
+              <span className="text-muted-foreground">None on this path</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Cost breakdown */}
       {Boolean(props.costBillion || props.maintenanceCost) && (
         <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
@@ -264,7 +484,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
               <span className="text-muted-foreground flex items-center gap-1.5">
                 <Coins className="h-3 w-3" /> Build Cost
               </span>
-              <span className="font-medium tabular-nums">
+              <span className="font-medium font-mono tabular-nums">
                 {Number(props.costBillion).toFixed(2)}B
               </span>
             </div>
@@ -272,7 +492,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
           {Boolean(props.maintenanceCost) && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Annual Maint.</span>
-              <span className="font-medium tabular-nums">
+              <span className="font-medium font-mono tabular-nums">
                 {Number(props.maintenanceCost).toFixed(3)}B/yr
               </span>
             </div>
@@ -280,21 +500,35 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
         </div>
       )}
 
+      {/* Intermodal Logistics */}
+      <div className="border-border space-y-1.5 border-t px-4 py-2.5 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Modal Network</span>
+          <span className="font-medium capitalize text-foreground">{modalFamily} Logistics</span>
+        </div>
+        {intermodalBadge && (
+          <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1.5 text-xs text-cyan-400">
+            <span className="font-semibold">{intermodalBadge.title}</span>
+            <p className="text-xs text-muted-foreground mt-0.5">{intermodalBadge.detail}</p>
+          </div>
+        )}
+      </div>
+
       {/* Stops */}
       {Boolean(route.stopsResolved && route.stopsResolved.length > 0) && (
         <div className="border-border border-t px-4 py-3">
-          <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
             Stops ({route.stopsResolved.length})
           </div>
           <div className="space-y-1">
-            {route.stopsResolved.map((stop: any, i: number) => (
+            {route.stopsResolved.map((stop: ResolvedStop, i: number) => (
               <div key={i} className="flex items-center gap-1.5 text-xs">
                 <MapPin className="text-muted-foreground h-3 w-3 shrink-0" />
                 <span className="flex-1 truncate">
                   {stop.cityName ?? stop.name ?? `Stop ${i + 1}`}
                 </span>
                 {Boolean(stop.cityPopulation) && (
-                  <span className="text-muted-foreground text-[10px] tabular-nums">
+                  <span className="text-muted-foreground text-xs font-mono tabular-nums">
                     {Number(stop.cityPopulation).toLocaleString()}
                   </span>
                 )}
@@ -306,13 +540,13 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
 
       {/* Actions */}
       {Boolean(canEdit && route.countryId) && (
-        <div className="border-border flex items-center gap-1 border-t px-4 py-2">
+        <div className="border-border flex items-center justify-between gap-1 border-t px-4 py-2">
           {editing ? (
-            <>
+            <div className="flex w-full items-center gap-1">
               <button
                 onClick={handleSaveEdit}
                 disabled={updateRoute.isPending}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium disabled:opacity-50"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition active:scale-[0.98] disabled:opacity-50"
               >
                 {updateRoute.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -323,31 +557,58 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
               </button>
               <button
                 onClick={() => setEditing(false)}
-                className="border-border text-foreground/80 hover:bg-accent rounded-md border px-2 py-1.5 text-xs"
+                className="border-border text-foreground/80 hover:bg-accent rounded-md border px-2 py-1.5 text-xs transition active:scale-[0.98]"
               >
                 Cancel
               </button>
-            </>
+            </div>
+          ) : confirmingDelete ? (
+            <div className="flex w-full items-center justify-between gap-2">
+              <span className="text-xs font-medium text-destructive">Delete route?</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (route.countryId) {
+                      deleteRoute.mutate({ id: route.id, countryId: route.countryId });
+                    }
+                  }}
+                  disabled={deleteRoute.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded px-2 py-1 text-xs font-medium transition active:scale-[0.98] disabled:opacity-50"
+                >
+                  {deleteRoute.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    "Confirm"
+                  )}
+                </button>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  className="border-border hover:bg-accent rounded border px-2 py-1 text-xs text-muted-foreground transition active:scale-[0.98]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <button
                 onClick={handleStartEdit}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1.5 text-xs"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1.5 text-xs transition active:scale-[0.98]"
               >
                 <Pencil className="h-3 w-3" /> Edit
               </button>
               {onEditPath && (
                 <button
                   onClick={() => onEditPath(routeId)}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1.5 text-xs"
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1.5 text-xs transition active:scale-[0.98]"
                 >
                   <Route className="h-3 w-3" /> Edit Path
                 </button>
               )}
               <button
-                onClick={handleDelete}
+                onClick={() => setConfirmingDelete(true)}
                 disabled={deleteRoute.isPending}
-                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition active:scale-[0.98] disabled:opacity-50"
               >
                 <Trash2 className="h-3 w-3" /> Delete
               </button>
@@ -357,4 +618,4 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
       )}
     </div>
   );
-}
+});

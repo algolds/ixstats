@@ -1,8 +1,8 @@
-// src/components/defense/CommandPanel.tsx
 "use client";
+// src/components/defense/CommandPanel.tsx
 
 import { useDefenseBudget } from "~/hooks/useDefenseBudget";
-import { BudgetManagementCard, ReadinessOverviewCard } from "~/components/mycountry/domains/defense/command";
+import { BudgetManagementCard } from "~/components/mycountry/domains/defense/command";
 
 interface CommandPanelProps {
   countryId: string;

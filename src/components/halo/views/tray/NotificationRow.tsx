@@ -2,8 +2,8 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { ChevronRight, X } from "lucide-react";
-import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable";
+import { NavArrowRight as ChevronRight, Xmark as X } from "iconoir-react";
+import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { cn } from "~/lib/utils";
 import type { NotificationItem } from "./types";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -26,6 +26,7 @@ export function NotificationRow({
   isRead,
   colors,
   Icon,
+  // oxlint-disable-next-line eslint/no-unused-vars
   handleMarkRead,
   handleDismiss,
   handleClick,
@@ -66,7 +67,7 @@ export function NotificationRow({
             handleDismiss(n);
           },
           label: "Clear",
-          color: "#ef4444",
+          color: "var(--color-error)",
         }}
       >
         {n.href && (
@@ -86,7 +87,7 @@ export function NotificationRow({
             soundEffects.droplet();
             handleDismiss(n);
           }}
-          color="#ef4444"
+          color="var(--color-error)"
         />
       </SwipeableRow.Trailing>
 
@@ -95,23 +96,23 @@ export function NotificationRow({
         <div
           data-cuelume-hover="whisper"
           className={cn(
-            "relative flex w-full flex-col overflow-hidden rounded-xl border backdrop-blur-xl transition-all duration-200",
+            "relative flex w-full flex-col overflow-hidden rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
             !isRead
-              ? "border-amber-500/30 bg-amber-500/[0.04] shadow-xs hover:border-amber-500/50"
-              : "border-border/50 bg-card/60 hover:border-border hover:bg-card/90 opacity-85 hover:opacity-100"
+              ? "border-amber-500/30 bg-amber-500/[0.06] shadow-xs hover:border-amber-500/50"
+              : "border-black/[0.06] bg-black/[0.02] opacity-90 hover:border-black/10 hover:bg-black/[0.04] hover:opacity-100 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07]"
           )}
         >
           {/* Left Accent Border Strip */}
           <div
             className={cn(
-              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-all duration-300",
+              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
               colors.text.replace("text-", "bg-"),
               isRead ? "opacity-30" : "opacity-100"
             )}
           />
 
           {/* Header Content */}
-          <div className="flex cursor-grab items-center gap-3 p-3 text-left hover:bg-accent/5 active:cursor-grabbing">
+          <div className="hover:bg-accent/5 flex cursor-grab items-center gap-3 p-3 text-left active:cursor-grabbing">
             <div
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/5 shadow-2xs",
@@ -123,20 +124,23 @@ export function NotificationRow({
 
             <div className="min-w-0 flex-1 pl-0.5">
               <div className="flex items-center gap-2">
-                <span className="text-foreground block truncate text-xs font-semibold">{n.title}</span>
+                <span className="text-foreground block truncate text-xs font-semibold">
+                  {n.title}
+                </span>
                 {!isRead && (
                   <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-amber-500 shadow-xs shadow-amber-500/50" />
                 )}
               </div>
               {!isExpanded && (n.description || n.message) && (
-                <span className="text-muted-foreground mt-0.5 block truncate text-[11px] leading-relaxed font-medium">
+                <span className="text-muted-foreground mt-0.5 block truncate text-xs leading-relaxed font-medium">
                   {n.description || n.message}
                 </span>
               )}
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="text-muted-foreground/70 text-[9px] font-medium tabular-nums">
+              <span className="text-muted-foreground/70 text-xs font-medium tabular-nums">
+                // oxlint-disable-next-line
                 {relTime(n.timestamp || n.createdAt || Date.now())}
               </span>
               <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
@@ -149,8 +153,8 @@ export function NotificationRow({
 
       {/* Expanded detail panel */}
       <SwipeableRow.Expanded>
-        <div className="space-y-3 rounded-b-xl border-t border-border/30 bg-accent/5 px-3.5 pt-3 pb-3.5 pl-[18px]">
-          <p className="text-foreground/95 text-[11.5px] leading-relaxed font-medium whitespace-pre-wrap select-text selection:bg-amber-500/30">
+        <div className="border-border/30 bg-accent/5 space-y-3 rounded-b-xl border-t px-3.5 pt-3 pb-3.5 pl-[18px]">
+          <p className="text-foreground/95 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text selection:bg-amber-500/30">
             {n.description || n.message}
           </p>
 
@@ -161,7 +165,7 @@ export function NotificationRow({
                   e.stopPropagation();
                   handleClick(n);
                 }}
-                className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary px-3 py-1.5 text-[10px] font-bold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]"
+                className="border-primary/30 bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
                 <span>Open</span>
@@ -172,7 +176,7 @@ export function NotificationRow({
                 e.stopPropagation();
                 handleDismiss(n);
               }}
-              className="text-muted-foreground hover:text-foreground flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border/50 bg-accent/10 px-3 py-1.5 text-[10px] font-bold transition-all hover:bg-accent/20 active:scale-[0.98]"
+              className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <X className="text-muted-foreground/60 h-3.5 w-3.5" />
               <span>Dismiss</span>

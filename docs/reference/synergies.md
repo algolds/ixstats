@@ -1,8 +1,8 @@
 # Government Component Synergy Reference
 
-## Quick Reference: All 91 Component Relationships
+## Quick Reference: All 90 Component Relationships
 
-### ✅ ADDITIVE SYNERGIES (46 total) - +10 effectiveness each
+### ✅ ADDITIVE SYNERGIES (45 total) - +10 effectiveness each
 
 #### Power Distribution
 1. CENTRALIZED_POWER + AUTOCRATIC_PROCESS
@@ -60,7 +60,6 @@
 43. STATE_CAPITALISM + TECHNOCRATIC_AGENCIES
 44. RESOURCE_BASED_ECONOMY + STATE_CAPITALISM
 45. RESOURCE_BASED_ECONOMY + TECHNOCRATIC_AGENCIES
-46. (Reserved for future additions)
 
 ### ⚠️ CONFLICTING RELATIONSHIPS (45 total) - -15 effectiveness each
 
@@ -188,11 +187,10 @@
 2. TECHNOCRATIC_PROCESS + TECHNOCRATIC_AGENCIES = +10
 3. PERFORMANCE_LEGITIMACY + PROFESSIONAL_BUREAUCRACY = +10
 4. PROFESSIONAL_BUREAUCRACY + RULE_OF_LAW = +10
-5. INDEPENDENT_JUDICIARY + RULE_OF_LAW = +10
 
 **Conflicts**: None
 
-**Result**: Base 90 + 50 synergy = **140 → capped at 100%**
+**Result**: Base 90 + 40 synergy = **130 → capped at 100%**
 
 ## Component Categories
 
@@ -265,9 +263,11 @@
 
 ## Implementation Details
 
-**File**: `/src/lib/government-synergy.ts`
+**File**: `src/lib/government/synergy.ts` (pairs in `SYNERGY_MAP`; used server-side by `src/server/shared/country-mutation-helpers.ts` when components are saved)
 **Function**: `checkComponentSynergy(type1, type2)`
-**Returns**: `{ type: 'ADDITIVE'|'CONFLICTING', multiplier: 1.0, description: string } | null`
+**Returns**: `{ type: 'ADDITIVE'|'MULTIPLICATIVE'|'CONFLICTING', multiplier: number, description: string } | null` (no `MULTIPLICATIVE` pairs are defined today)
+
+**Summary helper**: `getSynergySummary()` returns counts by type; `calculateGovernmentEffectiveness(components, synergies)` applies the formula below.
 
 **Calculation**:
 ```typescript

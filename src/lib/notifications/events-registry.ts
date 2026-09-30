@@ -39,6 +39,16 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
     defaultEnabled: true,
   },
   {
+    eventKey: "budgetYearNotification",
+    name: "New Budget Year",
+    description:
+      "Once per new IxTime year, asks each country owner to set the new year's budget (the previous budget stays in effect until then)",
+    category: "economic",
+    source: "budget-year-rollover",
+    triggerType: "scheduled",
+    defaultEnabled: true,
+  },
+  {
     eventKey: "onTaxSystemChange",
     name: "Tax System Change",
     description: "Triggers when tax system is updated or changes significantly",
@@ -99,7 +109,7 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onIntelligenceAlert",
     name: "Intelligence Alert",
-    description: "Triggers for intelligence/SDI alerts: threats, opportunities, trends, anomalies",
+    description: "Triggers for intelligence alerts: threats, opportunities, trends, anomalies",
     category: "intelligence",
     source: "intelligence",
     triggerType: "pattern",

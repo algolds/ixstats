@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
@@ -25,7 +26,12 @@ import {
 } from "~/components/ui/table";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
-import { SlidersHorizontal, Plus, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import {
+  ControlSlider as SlidersHorizontal,
+  Plus,
+  Trash as Trash2,
+  Undo as RotateCcw,
+} from "iconoir-react";
 
 interface ThresholdForm {
   id: string | undefined;
@@ -69,7 +75,10 @@ export function AlertRulesPanel() {
   const [form, setForm] = useState<ThresholdForm>(emptyForm);
 
   const { data, isLoading, refetch } = api.notifications.getAlertThresholds.useQuery();
-  const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countries } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   const updateMutation = api.notifications.updateAlertThreshold.useMutation({
     onSuccess: () => {
@@ -206,7 +215,7 @@ export function AlertRulesPanel() {
                       >
                         <TableCell className="font-medium">{t.metricName}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-xs">
                             {t.alertType}
                           </Badge>
                         </TableCell>

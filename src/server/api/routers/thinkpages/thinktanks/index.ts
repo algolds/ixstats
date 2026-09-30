@@ -7,18 +7,15 @@
  * Domains:
  *  - groups:     ThinkTank group lifecycle (create / get / update / delete) and invites
  *  - membership: joining, leaving, role management, removal
- *  - messages:   ThinkTank messages and reaction / edit / delete operations
  *  - documents:  collaborative documents (create / get / update / delete)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { thinkpagesThinktanksGroupsRouter } from "./groups";
 import { thinkpagesThinktanksMembershipRouter } from "./membership";
-import { thinkpagesThinktanksMessagesRouter } from "./messages";
 import { thinkpagesThinktanksDocumentsRouter } from "./documents";
 
 export const thinkpagesThinktanksRouter = mergeRouters(
   thinkpagesThinktanksGroupsRouter,
   thinkpagesThinktanksMembershipRouter,
-  thinkpagesThinktanksMessagesRouter,
   thinkpagesThinktanksDocumentsRouter
 );

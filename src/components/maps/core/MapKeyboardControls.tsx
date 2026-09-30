@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
-import { Keyboard, X } from "lucide-react";
+import { Keyframe as Keyboard, Xmark as X } from "iconoir-react";
 import type { IxWorldMapRef } from "./IxWorldMap";
 import { MAP_DEFAULTS, type ProjectionMode } from "~/lib/maps/map-config";
 
@@ -145,7 +145,7 @@ export function MapKeyboardControls({
     <>
       {/* Bottom-right: copyright + keyboard shortcut button */}
       <div className="absolute right-4 bottom-4 z-10 flex items-center gap-1.5">
-        <span className="text-muted-foreground/60 text-right text-[10px] leading-tight select-none">
+        <span className="text-muted-foreground/60 text-right text-xs leading-tight select-none">
           © 2026 Ixnay
           <br />
           Powered by IxStates
@@ -176,7 +176,7 @@ export function MapKeyboardControls({
           <div className="space-y-1">
             {SHORTCUTS.map(({ keys, desc }) => (
               <div key={keys} className="flex items-center justify-between text-xs">
-                <kbd className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
+                <kbd className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-xs">
                   {keys}
                 </kbd>
                 <span className="text-muted-foreground">{desc}</span>

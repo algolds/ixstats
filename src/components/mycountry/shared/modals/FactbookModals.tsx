@@ -3,14 +3,14 @@
 import React from "react";
 import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
 import { CardImageUploadModal, useCountryData } from "~/components/mycountry/shared/primitives";
-import { GdpDetailsModal } from "~/components/ui/modals/GdpDetailsModal";
-import { PopulationDetailsModal } from "~/components/ui/modals/PopulationDetailsModal";
 import {
+  GdpDetailsModal,
+  PopulationDetailsModal,
   LaborDetailsModal,
   GovernmentSpendingModal,
   DebtAnalysisModal,
   DemographicsHealthModal,
-} from "~/components/ui/modals/metric-details";
+} from "~/components/mycountry/shared/modals/metric-details";
 
 /**
  * FactbookModals — shared metric-details + card-image-upload modal renderer.

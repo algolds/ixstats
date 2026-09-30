@@ -8,7 +8,7 @@
 
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, FileSpreadsheet, Download } from "lucide-react";
+import { StatUp as TrendingUp, Table as FileSpreadsheet, Download } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -25,7 +25,7 @@ interface SectorGrowthChartProps {
 export const SectorGrowthChart = React.memo<SectorGrowthChartProps>(
   ({ data, formatPercent, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-hierarchy-child" id="sector-growth-chart">
+      <Card className="facet-hierarchy-child" id="sector-growth-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

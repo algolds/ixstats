@@ -20,17 +20,10 @@ interface CountryMetricsGridProps {
 }
 
 export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMetricsGridProps) {
-  const gridCols =
-    variant === "executive"
-      ? "grid-cols-2 md:grid-cols-6"
-      : variant === "compact"
-        ? "grid-cols-2 md:grid-cols-4"
-        : "grid-cols-2 md:grid-cols-4";
-
   const cardSize = variant === "compact" ? "p-4" : "p-4";
   const textSize =
     variant === "compact" ? "text-xs" : variant === "executive" ? "text-lg" : "text-xl";
-  const labelSize = variant === "compact" ? "text-[0.65rem]" : "text-sm";
+  const labelSize = variant === "compact" ? "text-xs" : "text-sm";
 
   return (
     <Card
@@ -46,7 +39,7 @@ export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMet
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <div
-                  className={`text-center ${cardSize} rounded-lg border ${metric.colorClass} flex shrink-0 cursor-pointer flex-col justify-between transition-all duration-300 hover:scale-105`}
+                  className={`text-center ${cardSize} rounded-lg border ${metric.colorClass} flex shrink-0 cursor-pointer flex-col justify-between transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105`}
                 >
                   <div className={`${textSize} grow font-bold whitespace-nowrap`}>
                     {metric.value}

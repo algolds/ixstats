@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { BarChart2 } from "lucide-react";
+import { StatsReport as BarChart2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface GovernmentMetricsEditorProps {
@@ -87,10 +87,10 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
   };
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <BarChart2 className="h-4 w-4 text-violet-600" />
+          <BarChart2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           Political Metrics
         </CardTitle>
         <CardDescription>
@@ -121,12 +121,12 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
                   {!metric.isYears && (
                     <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                       <div
-                        className={`h-full rounded-full transition-all ${barColor(value, !!metric.invertedScale)}`}
+                        className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${barColor(value, !!metric.invertedScale)}`}
                         style={{ width: `${value}%` }}
                       />
                     </div>
                   )}
-                  <p className="text-muted-foreground text-[10px] leading-tight">
+                  <p className="text-muted-foreground text-xs leading-tight">
                     {metric.description}
                   </p>
                 </div>

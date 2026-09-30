@@ -132,7 +132,7 @@ export function GovernmentSynergyDialog({
                         }
                       }}
                       disabled={primary.id === secondary.id}
-                      className={`flex aspect-square min-h-[2rem] items-center justify-center border border-white/10 text-xs font-bold transition-all ${
+                      className={`flex aspect-square min-h-[2rem] items-center justify-center border border-white/10 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         primary.id === secondary.id
                           ? "cursor-not-allowed bg-white/5 text-white/20"
                           : `${getSynergyColor(synergyType)} cursor-pointer ${

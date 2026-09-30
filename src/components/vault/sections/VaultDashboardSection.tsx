@@ -4,7 +4,10 @@ import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { getRarityGlow, getRarityBorder } from "~/components/vault/vault-theme";
+import {
+  getRarityGlowRgba as getRarityGlow,
+  getRarityBorderRgba as getRarityBorder,
+} from "~/lib/cards/display-utils";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
 import type { CardInstance } from "~/types/cards-display";
 import { VaultNetWorthCard } from "./dashboard/VaultNetWorthCard";
@@ -50,15 +53,13 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     enabled: !!user,
   });
 
-  const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(
-    { userId: user?.id ?? "" },
-    { enabled: !!user?.id }
-  );
+  const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
 
-  const { data: levelData } = api.vault.getVaultLevel.useQuery(
-    { userId: user?.id ?? "" },
-    { enabled: !!user?.id }
-  );
+  const { data: levelData } = api.vault.getVaultLevel.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
 
   const { data: topCardsData, isLoading: topCardsLoading } = api.cards.getMyCards.useQuery(
     { sortBy: "value" },

@@ -9,10 +9,18 @@
  */
 
 import { useMemo } from "react";
-import { X, MapPin, Mountain, Cloud, Flag, Map } from "lucide-react";
+import {
+  Xmark as X,
+  MapPin,
+  ModernTv as Mountain,
+  Cloud,
+  WhiteFlag as Flag,
+  Map,
+} from "iconoir-react";
 import type { ClientPointQueryResult } from "~/lib/maps/map-point-query";
 import type { PinPosition } from "~/hooks/useMapPinInfo";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface PointInfoServerResult {
   coordinates: { lng: number; lat: number };
@@ -77,9 +85,9 @@ function InfoRow({
         <Icon className="text-muted-foreground h-3.5 w-3.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Eyebrow className="block">
           {label}
-        </div>
+        </Eyebrow>
         {loading ? (
           <div className="bg-muted mt-0.5 h-4 w-24 animate-pulse rounded" />
         ) : (
@@ -196,7 +204,7 @@ export default function MapPinInfoPanel({
 
       {/* Footer */}
       <div className="px-4 py-2 text-center">
-        <span className="text-muted-foreground/40 text-[10px]">Tap map to update pin</span>
+        <span className="text-muted-foreground/40 text-xs">Tap map to update pin</span>
       </div>
     </>
   );

@@ -1,10 +1,9 @@
+"use client";
 // src/components/wiki-os/editor/components/WikiEditorSavePanel.tsx
 // Unified save bar containing summary input, minor checkbox, and publish/session button.
 
-"use client";
-
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 
 export interface WikiEditorSavePanelProps {
   showSavePanel: boolean;
@@ -43,15 +42,11 @@ export function WikiEditorSavePanel({
         }}
       />
       <label className="wikios-ve-save-minor">
-        <input
-          type="checkbox"
-          checked={minor}
-          onChange={(e) => setMinor(e.target.checked)}
-        />
+        <input type="checkbox" checked={minor} onChange={(e) => setMinor(e.target.checked)} />
         Minor
       </label>
       <button
-        className="flex h-8 items-center justify-center rounded-lg bg-[var(--wikios-accent)] px-3 text-xs font-semibold text-white transition-all hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
+        className="flex h-8 items-center justify-center rounded-lg bg-[var(--wikios-accent)] px-3 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
         onClick={onSave}
         type="button"
         disabled={saving}

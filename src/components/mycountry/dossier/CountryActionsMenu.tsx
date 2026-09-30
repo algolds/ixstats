@@ -5,28 +5,28 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   UserPlus,
-  UserMinus,
-  MessageSquare,
-  Building2,
+  UserXmark as UserMinus,
+  ChatBubble as MessageSquare,
+  City as Building2,
   Heart,
-  X,
-  Loader2,
-  Sparkles,
-  Handshake,
+  Xmark as X,
+  SystemRestart as Loader2,
+  Sparks as Sparkles,
+  Community as Handshake,
   Shield,
-  Scale,
+  ScaleFrameEnlarge as Scale,
   Globe,
-  ExternalLink,
-  Share2,
+  OpenNewWindow as ExternalLink,
+  ShareAndroid as Share2,
   Copy,
   Check,
-  ScrollText,
-  Swords,
+  Page as ScrollText,
+  Tournament as Swords,
   Map,
   Wallet,
   Trophy,
   Calendar,
-} from "lucide-react";
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
@@ -64,6 +64,7 @@ export function CountryActionsMenu({
   const [schedulerOpen, setSchedulerOpen] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
@@ -221,7 +222,7 @@ export function CountryActionsMenu({
     foreignPolicyMutation.isPending;
 
   const actionButtonClass = (colors: string) =>
-    `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${colors}`;
+    `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 disabled:opacity-50 ${colors}`;
 
   if (!mounted) return null;
 
@@ -261,7 +262,7 @@ export function CountryActionsMenu({
                       </div>
                       <button
                         onClick={onClose}
-                        className="group rounded-xl p-2 transition-all duration-200 hover:bg-white/10"
+                        className="group rounded-xl p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10"
                         aria-label="Close"
                       >
                         <X className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" />
@@ -271,7 +272,7 @@ export function CountryActionsMenu({
                     {/* Own Country Actions */}
                     {isOwnCountry && (
                       <div className="space-y-2.5">
-                        <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                        <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                           Management
                         </p>
 
@@ -281,7 +282,7 @@ export function CountryActionsMenu({
                             onClose();
                           }}
                           className={actionButtonClass(
-                            "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30"
+                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
                           )}
                         >
                           <Building2 className="h-4 w-4" />
@@ -294,7 +295,7 @@ export function CountryActionsMenu({
                             onClose();
                           }}
                           className={actionButtonClass(
-                            "border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30"
+                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
                           )}
                         >
                           <ScrollText className="h-4 w-4" />
@@ -307,7 +308,7 @@ export function CountryActionsMenu({
                             onClose();
                           }}
                           className={actionButtonClass(
-                            "border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30"
+                            "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/20"
                           )}
                         >
                           <Handshake className="h-4 w-4" />
@@ -320,7 +321,7 @@ export function CountryActionsMenu({
                             onClose();
                           }}
                           className={actionButtonClass(
-                            "border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30"
+                            "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
                           )}
                         >
                           <Map className="h-4 w-4" />
@@ -333,7 +334,7 @@ export function CountryActionsMenu({
                             onClose();
                           }}
                           className={actionButtonClass(
-                            "border-pink-500/20 bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-pink-300 hover:from-pink-500/30 hover:to-rose-500/30"
+                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
                           )}
                         >
                           <Wallet className="h-4 w-4" />
@@ -346,7 +347,7 @@ export function CountryActionsMenu({
                             onClose();
                           }}
                           className={actionButtonClass(
-                            "border-teal-500/20 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 hover:from-teal-500/30 hover:to-emerald-500/30"
+                            "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20"
                           )}
                         >
                           <Scale className="h-4 w-4" />
@@ -359,7 +360,7 @@ export function CountryActionsMenu({
                     {!isOwnCountry && (
                       <>
                         <div className="space-y-2.5">
-                          <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                             Social
                           </p>
 
@@ -369,8 +370,8 @@ export function CountryActionsMenu({
                             className={cn(
                               actionButtonClass(""),
                               followStatus?.isFollowing
-                                ? "border-red-500/20 bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-300 hover:from-red-500/30 hover:to-pink-500/30"
-                                : "border-blue-500/20 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 hover:from-blue-500/30 hover:to-cyan-500/30"
+                                ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20"
+                                : "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
                             )}
                           >
                             {followMutation.isPending || unfollowMutation.isPending ? (
@@ -387,7 +388,7 @@ export function CountryActionsMenu({
                             onClick={handleDiplomaticMessage}
                             disabled={!viewerCountryId}
                             className={actionButtonClass(
-                              "border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30"
+                              "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
                             )}
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -400,7 +401,7 @@ export function CountryActionsMenu({
                                 onClick={handleCongratulate}
                                 disabled={!viewerCountryId || isLoading || !selectedAchievement}
                                 className={actionButtonClass(
-                                  "border-green-500/20 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 hover:from-green-500/30 hover:to-emerald-500/30"
+                                  "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
                                 )}
                               >
                                 <div className="flex items-center gap-3">
@@ -415,7 +416,7 @@ export function CountryActionsMenu({
                                   value={selectedAchievement}
                                   onChange={(e) => setSelectedAchievement(e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="min-w-[140px] cursor-pointer rounded-lg border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-foreground backdrop-blur-md transition-colors hover:bg-card hover:border-border focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+                                  className="border-border/60 bg-card/80 text-foreground hover:bg-card hover:border-border min-w-[140px] cursor-pointer rounded-lg border px-3 py-1.5 text-xs backdrop-blur-md transition-colors focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                                 >
                                   <option value="" className="bg-popover text-popover-foreground">
                                     Select achievement...
@@ -443,7 +444,7 @@ export function CountryActionsMenu({
 
                         {/* Diplomatic Actions */}
                         <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                             Diplomacy
                           </p>
 
@@ -451,7 +452,7 @@ export function CountryActionsMenu({
                             onClick={handleEstablishEmbassy}
                             disabled={!viewerCountryId || isLoading}
                             className={actionButtonClass(
-                              "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 hover:from-amber-500/30 hover:to-yellow-500/30"
+                              "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
                             )}
                           >
                             {establishEmbassyMutation.isPending ? (
@@ -472,7 +473,7 @@ export function CountryActionsMenu({
                             }}
                             disabled={!viewerCountryId || isLoading}
                             className={actionButtonClass(
-                              "border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30"
+                              "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20"
                             )}
                           >
                             <Calendar className="h-4 w-4" />
@@ -483,7 +484,7 @@ export function CountryActionsMenu({
                             onClick={() => handleForeignPolicy("free_trade")}
                             disabled={!viewerCountryId || isLoading}
                             className={actionButtonClass(
-                              "border-emerald-500/20 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 hover:from-emerald-500/30 hover:to-green-500/30"
+                              "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
                             )}
                           >
                             {foreignPolicyMutation.isPending ? (
@@ -498,7 +499,7 @@ export function CountryActionsMenu({
                             onClick={() => handleForeignPolicy("military_alliance")}
                             disabled={!viewerCountryId || isLoading}
                             className={actionButtonClass(
-                              "border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30"
+                              "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/20"
                             )}
                           >
                             <Shield className="h-4 w-4" />
@@ -508,7 +509,7 @@ export function CountryActionsMenu({
 
                         {/* Foreign Policy (Adversarial) */}
                         <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                             Foreign Policy
                           </p>
 
@@ -516,7 +517,7 @@ export function CountryActionsMenu({
                             onClick={() => handleForeignPolicy("sanction")}
                             disabled={!viewerCountryId || isLoading}
                             className={actionButtonClass(
-                              "border-orange-500/20 bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 hover:from-orange-500/30 hover:to-amber-500/30"
+                              "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
                             )}
                           >
                             <Scale className="h-4 w-4" />
@@ -527,7 +528,7 @@ export function CountryActionsMenu({
                             onClick={() => handleForeignPolicy("embargo")}
                             disabled={!viewerCountryId || isLoading}
                             className={actionButtonClass(
-                              "border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30"
+                              "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20"
                             )}
                           >
                             <Swords className="h-4 w-4" />
@@ -539,7 +540,7 @@ export function CountryActionsMenu({
 
                     {/* Quick Links (always shown) */}
                     <div className="mt-4 space-y-2.5">
-                      <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                      <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
                         Quick Links
                       </p>
 
@@ -549,7 +550,7 @@ export function CountryActionsMenu({
                           onClose();
                         }}
                         className={actionButtonClass(
-                          "border-yellow-500/20 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 text-yellow-300 hover:from-yellow-500/20 hover:to-amber-500/20"
+                          "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
                         )}
                       >
                         <Trophy className="h-4 w-4" />
@@ -560,7 +561,7 @@ export function CountryActionsMenu({
                         <Link
                           href={titleToWikiOSPath(targetCountryName)}
                           className={actionButtonClass(
-                            "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
+                            "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
                           )}
                           onClick={onClose}
                         >
@@ -573,11 +574,11 @@ export function CountryActionsMenu({
                       <button
                         onClick={handleCopyLink}
                         className={actionButtonClass(
-                          "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
+                          "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
                         )}
                       >
                         {copiedLink ? (
-                          <Check className="h-4 w-4 text-green-400" />
+                          <Check className="h-4 w-4 text-emerald-400" />
                         ) : (
                           <Copy className="h-4 w-4" />
                         )}
@@ -597,7 +598,7 @@ export function CountryActionsMenu({
                           onClose();
                         }}
                         className={actionButtonClass(
-                          "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
+                          "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
                         )}
                       >
                         <Share2 className="h-4 w-4" />

@@ -3,6 +3,8 @@
  * Used for dynamic theming based on flag and coat of arms uploads
  */
 
+import { rgbToHex } from "~/lib/color";
+
 export interface ExtractedColors {
   primary: string;
   secondary: string;
@@ -151,9 +153,9 @@ function extractDominantColors(imageData: ImageData): ExtractedColors {
   const accent = findDistinctColor(clusters, primary, secondary) || { r: 6, g: 182, b: 212 };
 
   return {
-    primary: rgbToHex(primary),
-    secondary: rgbToHex(secondary),
-    accent: rgbToHex(accent),
+    primary: rgbToHex(primary.r, primary.g, primary.b),
+    secondary: rgbToHex(secondary.r, secondary.g, secondary.b),
+    accent: rgbToHex(accent.r, accent.g, accent.b),
     rgbPrimary: primary,
     rgbSecondary: secondary,
     rgbAccent: accent,
@@ -199,18 +201,6 @@ function colorDistance(
   const dg = color1.g - color2.g;
   const db = color1.b - color2.b;
   return Math.sqrt(dr * dr + dg * dg + db * db);
-}
-
-/**
- * Convert RGB to hex
- */
-function rgbToHex(rgb: { r: number; g: number; b: number }): string {
-  const componentToHex = (c: number) => {
-    const hex = Math.max(0, Math.min(255, Math.round(c))).toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
-  };
-
-  return `#${componentToHex(rgb.r)}${componentToHex(rgb.g)}${componentToHex(rgb.b)}`;
 }
 
 /**

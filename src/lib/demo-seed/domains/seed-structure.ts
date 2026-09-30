@@ -3,7 +3,7 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import fallbackGov from "../../../../data/seed/fallback-government.json";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 type Prisma = PrismaClient;
 
@@ -160,7 +160,7 @@ export async function seedGovernmentTree(
   }
 
   // Budget allocations for each department
-  const budgetYear = new Date().getFullYear();
+  const budgetYear = currentBudgetYear();
   const budgets = [
     { departmentId: deptIds[0]!, allocatedAmount: 85000000000, allocatedPercent: 22 },
     { departmentId: deptIds[1]!, allocatedAmount: 58000000000, allocatedPercent: 15 },
@@ -396,6 +396,7 @@ export async function seedTaxTree(prisma: Prisma, countryId: string): Promise<nu
   count++;
 
   // TaxCategory: Sales
+  // oxlint-disable-next-line typescript/no-unused-vars
   const salesCat = await prisma.taxCategory.create({
     data: {
       taxSystemId: taxSystem.id,

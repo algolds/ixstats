@@ -1,20 +1,18 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import {
-  Users,
+  Group as Users,
   Heart,
   GraduationCap,
-  Building2,
-  UserCheck,
-  Info,
-  Baby,
+  City as Building2,
+  UserBadgeCheck as UserCheck,
+  Lullaby as Baby,
   MapPin,
-} from "lucide-react";
+} from "iconoir-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type {
   EconomyBuilderState,
@@ -133,7 +131,10 @@ export function DemographicsPopulationTab({
     );
   }, [selectedComponents]);
 
-  const handleDemographicsChange = (field: keyof DemographicsConfiguration, value: any) => {
+  const handleDemographicsChange = <K extends keyof DemographicsConfiguration>(
+    field: K,
+    value: DemographicsConfiguration[K]
+  ) => {
     onEconomyBuilderChange({
       ...economyBuilder,
       demographics: { ...economyBuilder.demographics, [field]: value },
@@ -143,9 +144,13 @@ export function DemographicsPopulationTab({
   const handleNestedDemographicsChange = (
     parentField: keyof DemographicsConfiguration,
     field: string,
-    value: any
+    value: number | string | boolean
   ) => {
-    let nextParentValue = { ...(economyBuilder.demographics[parentField] as any), [field]: value };
+    const parentObj = economyBuilder.demographics[parentField];
+    let nextParentValue: Record<string, number | string | boolean> =
+      typeof parentObj === "object" && parentObj !== null
+        ? { ...(parentObj as Record<string, number | string | boolean>), [field]: value }
+        : { [field]: value };
 
     // Auto-balance urban/rural split to sum to 100
     if (parentField === "urbanRuralSplit") {
@@ -185,7 +190,11 @@ export function DemographicsPopulationTab({
     });
   };
 
-  const handleRegionChange = (regionIndex: number, field: keyof RegionDistribution, value: any) => {
+  const handleRegionChange = <K extends keyof RegionDistribution>(
+    regionIndex: number,
+    field: K,
+    value: RegionDistribution[K]
+  ) => {
     const regionsCopy = economyBuilder.demographics.regions.map((region) => ({ ...region }));
     const targetRegion = regionsCopy[regionIndex];
 
@@ -343,6 +352,7 @@ export function DemographicsPopulationTab({
     [economyBuilder.demographics]
   );
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const hasComponentImpact = Object.values(demographicImpacts).some((v) => v !== 1);
 
   return (
@@ -393,21 +403,23 @@ export function DemographicsPopulationTab({
       </div>
 
       <div className="border-border bg-muted/30 flex space-x-1 rounded-xl border p-1 shadow-inner backdrop-blur-md">
-        {[
-          { id: "population", label: "Population", icon: Users },
-          { id: "age", label: "Age Structure", icon: Baby },
-          { id: "geographic", label: "Geographic", icon: MapPin },
-          { id: "social", label: "Social Indicators", icon: GraduationCap },
-        ].map((section) => {
+        {(
+          [
+            { id: "population", label: "Population", icon: Users },
+            { id: "age", label: "Age Structure", icon: Baby },
+            { id: "geographic", label: "Geographic", icon: MapPin },
+            { id: "social", label: "Social Indicators", icon: GraduationCap },
+          ] as const
+        ).map((section) => {
           const Icon = section.icon;
           return (
             <Button
               key={section.id}
               variant={activeSection === section.id ? "default" : "ghost"}
               size="sm"
-              onClick={() => setActiveSection(section.id as any)}
+              onClick={() => setActiveSection(section.id)}
               className={cn(
-                "flex-1 rounded-lg transition-all duration-205",
+                "flex-1 rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-205",
                 activeSection === section.id
                   ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -421,7 +433,7 @@ export function DemographicsPopulationTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <GlassCard
+        <FacetCard
           depth="base"
           theme="emerald"
           className="border-emerald-500/20"
@@ -436,7 +448,7 @@ export function DemographicsPopulationTab({
               {activeSection === "social" && "Social Indicators"}
             </h3>
           </div>
-          <GlassCardContent className="space-y-6 p-6">
+          <FacetCardContent className="space-y-6 p-6">
             {activeSection === "population" && (
               <PopulationSection
                 demographics={economyBuilder.demographics}
@@ -468,8 +480,8 @@ export function DemographicsPopulationTab({
                 showAdvanced={showAdvanced}
               />
             )}
-          </GlassCardContent>
-        </GlassCard>
+          </FacetCardContent>
+        </FacetCard>
 
         <DemographicsVisualizations demographics={economyBuilder.demographics} {...chartData} />
       </div>

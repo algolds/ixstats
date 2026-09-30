@@ -29,7 +29,7 @@ export const VERSIONS = {
     major: 1,
     minor: 4,
     patch: 0,
-    release: "Ogma",
+    release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
   },
 
@@ -49,8 +49,8 @@ export const VERSIONS = {
 
   // UI / feature systems — independent, user-facing.
   systems: {
-    mycountry: 5, // public-facing executive command UI; v5: 4-tier modular architecture (shell, shared primitives, 6 simulation domains, dossier)
-    builder: 3, // v3: unified statecraft & tax builder subsystems
+    mycountry: 6, // public-facing executive command UI; v6: dedicated Country Editor architecture with Guided & Power mode toggle, inline click-to-edit fields, live diff indicators, and 10-level undo stack
+    builder: 4, // v4: guided wizard stepper, progressive disclosure tiers, and archetype default engine
     thinkpages: 2, // v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
@@ -78,11 +78,11 @@ export const VERSIONS = {
 
 const p = VERSIONS.platform;
 
-/** Public platform version, e.g. "1.0 Ogma". */
+/** Public platform version, e.g. "1.4 Lobster Crosby". */
 export const APP_VERSION = `${p.major}.${p.minor} ${p.release}`;
 /** Full SemVer platform string, e.g. "1.0.0". */
 export const PLATFORM_VERSION = `${p.major}.${p.minor}.${p.patch}`;
-/** Permanent epoch release name, e.g. "Ogma". */
+/** Permanent epoch release name, e.g. "Lobster Crosby". */
 export const RELEASE_NAME = p.release;
 /** Current release channel, e.g. "Alpha" | "Beta". */
 export const CHANNEL: ReleaseChannel = p.channel;

@@ -13,7 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { vaultService, getVaultConfig } from "~/lib/vault/vault-service";
+import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { type CardType } from "@prisma/client";
@@ -22,121 +22,6 @@ import { type CardType } from "@prisma/client";
  * Recipe type enum
  */
 const recipeTypeEnum = z.enum(["FUSION", "EVOLUTION"]);
-
-/**
- * Material requirement schema
- */
-const materialRequirementSchema = z.object({
-  cardId: z.string().optional(), // Specific card ID (for evolution)
-  rarity: z.string().optional(), // Required rarity (for fusion)
-  type: z.string().optional(), // Required card type
-  quantity: z.number().int().min(1), // Number of cards needed
-});
-
-/**
- * Unlock requirement schema
- */
-const unlockRequirementSchema = z.object({
-  minLevel: z.number().int().optional(), // Minimum collector level
-  achievements: z.array(z.string()).optional(), // Required achievements
-  completedRecipes: z.array(z.string()).optional(), // Required completed recipes
-});
-
-/**
- * Calculate success rate based on card rarity
- */
-function calculateSuccessRate(resultRarity: string): number {
-  const rates: Record<string, number> = {
-    COMMON: 100,
-    UNCOMMON: 95,
-    RARE: 85,
-    ULTRA_RARE: 70,
-    EPIC: 50,
-    LEGENDARY: 30,
-    MYTHIC: 15,
-  };
-  return rates[resultRarity] ?? 50;
-}
-
-/**
- * Calculate IxCredits cost based on rarity
- */
-function calculateCraftingCost(resultRarity: string): number {
-  const costs: Record<string, number> = {
-    COMMON: 100,
-    UNCOMMON: 250,
-    RARE: 500,
-    ULTRA_RARE: 1000,
-    EPIC: 2500,
-    LEGENDARY: 5000,
-    MYTHIC: 10000,
-  };
-  return costs[resultRarity] ?? 500;
-}
-
-/**
- * Calculate XP reward based on rarity
- */
-function calculateXPReward(resultRarity: string): number {
-  const xp: Record<string, number> = {
-    COMMON: 10,
-    UNCOMMON: 25,
-    RARE: 50,
-    ULTRA_RARE: 100,
-    EPIC: 250,
-    LEGENDARY: 500,
-    MYTHIC: 1000,
-  };
-  return xp[resultRarity] ?? 50;
-}
-
-/**
- * Check if user meets unlock requirements
- */
-async function checkUnlockRequirements(
-  userId: string,
-  requirements: any,
-  db: any
-): Promise<boolean> {
-  if (!requirements) return true;
-
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { collectorLevel: true },
-  });
-
-  if (!user) return false;
-
-  // Check collector level
-  if (requirements.minLevel && user.collectorLevel < requirements.minLevel) {
-    return false;
-  }
-
-  // Check achievements (placeholder - implement when achievement system is ready)
-  if (requirements.achievements && requirements.achievements.length > 0) {
-    // TODO: Check achievements
-  }
-
-  // Check completed recipes
-  if (requirements.completedRecipes && requirements.completedRecipes.length > 0) {
-    const completedRecipes = await db.craftingHistory.findMany({
-      where: {
-        userId,
-        success: true,
-        recipeId: { in: requirements.completedRecipes },
-      },
-      select: { recipeId: true },
-      distinct: ["recipeId"],
-    });
-
-    if (completedRecipes.length < requirements.completedRecipes.length) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 export const craftingRecipesRouter = createTRPCRouter({
   /**
    * Get all available recipes with unlock status
@@ -150,7 +35,7 @@ export const craftingRecipesRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Fetch all recipes
       const recipes = await ctx.db.craftingRecipe.findMany({
@@ -226,7 +111,7 @@ export const craftingRecipesRouter = createTRPCRouter({
   getRecipeById: protectedProcedure
     .input(z.object({ recipeId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const recipe = await ctx.db.craftingRecipe.findUnique({
         where: { id: input.recipeId },
@@ -283,7 +168,7 @@ export const craftingRecipesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Check crafting switch or maintenance mode
       const config = await getVaultConfig(ctx.db);
@@ -388,97 +273,105 @@ export const craftingRecipesRouter = createTRPCRouter({
       const success = roll <= recipe.successRate;
 
       // Start transaction
-      const result = await ctx.db.$transaction(async (tx) => {
-        // Deduct IxCredits
-        await vaultService.spendCredits(
-          userId,
-          recipe.ixCreditsCost,
-          "SPEND_CRAFT",
-          "Crafting Recipe",
-          tx as any,
-          { recipeId: recipe.id, recipeName: recipe.name }
-        );
-
-        // Delete consumed cards
-        await tx.cardOwnership.deleteMany({
-          where: {
-            id: { in: input.materialCardIds },
-          },
-        });
-
-        let resultCard = null;
-
-        // If successful, create result card
-        if (success) {
-          // Create new card instance
-          const baseCard = recipe.resultCardId
-            ? await tx.card.findUnique({ where: { id: recipe.resultCardId } })
-            : null;
-
-          // Generate new card
-          const newCard = await tx.card.create({
-            data: {
-              title: baseCard?.title ?? `${recipe.name} Result`,
-              description: baseCard?.description ?? `Crafted via ${recipe.name}`,
-              artwork: baseCard?.artwork ?? "",
-              rarity: recipe.resultRarity ?? "COMMON",
-              cardType: "NATION" as CardType, // Default card type
-              season: currentSeason,
-              stats: {},
-              marketValue: 0,
-              totalSupply: 1,
-              level: 1,
-            },
-          });
-
-          // Create ownership
-          resultCard = await tx.cardOwnership.create({
-            data: {
-              id: `${userId}-${newCard.id}-${Date.now()}`,
-              cardId: newCard.id,
-              userId: userId,
-              ownerId: userId,
-              serialNumber: 1,
-              acquiredAt: new Date(),
-            },
-            include: {
-              cards: true,
-            },
-          });
-
-          // Award XP to the crafted card
-          if (resultCard) {
-            await grantCardXp(
-              tx as any,
-              resultCard.id,
-              recipe.collectorXPGain,
-              "CRAFT",
-              JSON.stringify({ recipeId: recipe.id, recipeName: recipe.name })
-            );
+      try {
+        const result = await ctx.db.$transaction(async (tx) => {
+          // Deduct IxCredits first — a LedgerError rolls the whole craft back
+          if (recipe.ixCreditsCost > 0) {
+            await vaultService.spendCreditsTx(tx, {
+              userId,
+              amount: recipe.ixCreditsCost,
+              type: "SPEND_CRAFT",
+              source: "Crafting Recipe",
+              metadata: { recipeId: recipe.id, recipeName: recipe.name },
+            });
           }
-        }
 
-        // Record crafting history
-        const history = await tx.craftingHistory.create({
-          data: {
-            userId,
-            recipeId: recipe.id,
-            materialsUsed: input.materialCardIds,
+          // Delete consumed cards
+          await tx.cardOwnership.deleteMany({
+            where: {
+              id: { in: input.materialCardIds },
+            },
+          });
+
+          let resultCard = null;
+
+          // If successful, create result card
+          if (success) {
+            // Create new card instance
+            const baseCard = recipe.resultCardId
+              ? await tx.card.findUnique({ where: { id: recipe.resultCardId } })
+              : null;
+
+            // Generate new card
+            const newCard = await tx.card.create({
+              data: {
+                title: baseCard?.title ?? `${recipe.name} Result`,
+                description: baseCard?.description ?? `Crafted via ${recipe.name}`,
+                artwork: baseCard?.artwork ?? "",
+                rarity: recipe.resultRarity ?? "COMMON",
+                cardType: "NATION" as CardType, // Default card type
+                season: currentSeason,
+                stats: {},
+                marketValue: 0,
+                totalSupply: 1,
+                level: 1,
+              },
+            });
+
+            // Create ownership
+            resultCard = await tx.cardOwnership.create({
+              data: {
+                id: `${userId}-${newCard.id}-${Date.now()}`,
+                cardId: newCard.id,
+                userId: userId,
+                ownerId: userId,
+                serialNumber: 1,
+                acquiredAt: new Date(),
+              },
+              include: {
+                cards: true,
+              },
+            });
+
+            // Award XP to the crafted card
+            if (resultCard) {
+              await grantCardXp(
+                tx as any,
+                resultCard.id,
+                recipe.collectorXPGain,
+                "CRAFT",
+                JSON.stringify({ recipeId: recipe.id, recipeName: recipe.name })
+              );
+            }
+          }
+
+          // Record crafting history
+          const history = await tx.craftingHistory.create({
+            data: {
+              userId,
+              recipeId: recipe.id,
+              materialsUsed: input.materialCardIds,
+              success,
+              resultCardId: resultCard?.id ?? null,
+              ixCreditsSpent: recipe.ixCreditsCost,
+              collectorXPGain: success ? recipe.collectorXPGain : 0,
+            },
+          });
+
+          return {
             success,
-            resultCardId: resultCard?.id ?? null,
-            ixCreditsSpent: recipe.ixCreditsCost,
-            collectorXPGain: success ? recipe.collectorXPGain : 0,
-          },
+            resultCard,
+            history,
+            xpGained: success ? recipe.collectorXPGain : 0,
+          };
         });
 
-        return {
-          success,
-          resultCard,
-          history,
-          xpGained: success ? recipe.collectorXPGain : 0,
-        };
-      });
-
-      return result;
+        return result;
+      } catch (error) {
+        if (error instanceof LedgerError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+        throw error;
+      }
     }),
 });

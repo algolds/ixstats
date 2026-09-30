@@ -3,7 +3,13 @@ global.TextDecoder = TextDecoder as any;
 global.TextEncoder = TextEncoder as any;
 
 import { NextRequest } from "next/server";
-import { GET, POST, splitIntoSentences, mergeWavBuffers, mergeMp3Buffers } from "~/app/api/onoma/tts/route";
+import {
+  GET,
+  POST,
+  splitIntoSentences,
+  mergeWavBuffers,
+  mergeMp3Buffers,
+} from "~/app/api/onoma/tts/route";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { rateLimiter } from "~/lib/cache";
@@ -36,7 +42,7 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 jest.mock("~/lib/auth", () => ({
-  isSystemOwner: jest.fn(() => false),
+  isSystemOwner: jest.fn(() => true),
 }));
 
 describe("TTS Proxy API Route (/api/onoma/tts)", () => {
@@ -312,6 +318,76 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ phonemes: "ɪmˈpɛɾiə", voice: "af_heart" }),
+      })
+    );
+  });
+
+  test("an admin test uses the unsaved kokoro-fastapi engine and URL from the request", async () => {
+    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
+    // Saved config: kokoro-web, no FastAPI URL.
+    (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
+      { key: "onoma.kokoro.enabled", value: "true" },
+      { key: "onoma.kokoro.engine", value: "kokoro-web" },
+    ]);
+    (globalCache.get as jest.Mock).mockResolvedValue(null);
+
+    const uint8 = new TextEncoder().encode("audio");
+    const ab = uint8.buffer.slice(uint8.byteOffset, uint8.byteOffset + uint8.byteLength);
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => ab,
+      headers: { get: (h: string) => (h === "content-type" ? "audio/wav" : null) },
+    });
+
+    const request = new NextRequest("http://localhost/api/onoma/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Imperia",
+        ipa: "/ɪmˈpɛɾia/",
+        engine: "kokoro-fastapi",
+        fastApiUrl: "http://fastapi-service:8880",
+      }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://fastapi-service:8880/dev/generate_from_phonemes",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  test("an admin test with a blank apiKey uses the saved key", async () => {
+    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
+    (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
+      { key: "onoma.kokoro.enabled", value: "true" },
+      { key: "onoma.kokoro.baseUrl", value: "http://kokoro-service" },
+      { key: "onoma.kokoro.engine", value: "kokoro-web" },
+      { key: "onoma.kokoro.apiKey", value: "saved-key" },
+    ]);
+    (globalCache.get as jest.Mock).mockResolvedValue(null);
+
+    const uint8 = new TextEncoder().encode("audio");
+    const ab = uint8.buffer.slice(uint8.byteOffset, uint8.byteOffset + uint8.byteLength);
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => ab,
+      headers: { get: () => "audio/mpeg" },
+    });
+
+    const request = new NextRequest("http://localhost/api/onoma/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "hello", apiKey: "" }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://kokoro-service/api/v1/audio/speech",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer saved-key" }),
       })
     );
   });

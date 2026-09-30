@@ -1,4 +1,5 @@
-import { describe, it, expect, jest } from "@jest/globals";
+// `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
+import { describe, it, expect } from "@jest/globals";
 
 jest.mock("~/lib/maps/province-importer/svg-element-converter", () => {
   return {

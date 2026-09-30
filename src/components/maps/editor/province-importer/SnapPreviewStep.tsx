@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useMemo } from "react";
-import { Magnet, Minimize2 } from "lucide-react";
+import { Magnet, Compress as Minimize2 } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { Polygon, MultiPolygon, Position } from "geojson";
 
@@ -59,7 +59,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
           onChange={(e) => importer.setSnapTolerance(parseFloat(e.target.value))}
           className="w-full"
         />
-        <div className="text-muted-foreground flex justify-between text-[10px]">
+        <div className="text-muted-foreground flex justify-between text-xs">
           <span>Tight (1km)</span>
           <span className="font-mono">{importer.snapTolerance.toFixed(2)}°</span>
           <span>Loose (220km)</span>
@@ -80,7 +80,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
           onChange={(e) => importer.setSimplifyTolerance(parseFloat(e.target.value))}
           className="w-full"
         />
-        <div className="text-muted-foreground flex justify-between text-[10px]">
+        <div className="text-muted-foreground flex justify-between text-xs">
           <span>More detail</span>
           <span className="font-mono">{importer.simplifyTolerance.toFixed(3)}°</span>
           <span>Fewer points</span>
@@ -118,7 +118,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
         Apply Snap & Simplify
       </button>
 
-      <div className="text-muted-foreground text-[10px]">
+      <div className="text-muted-foreground text-xs">
         Snapping aligns edges to the country border. Simplification reduces vertices while
         preserving shape. Neighbor alignment ensures no gaps between adjacent provinces.
       </div>

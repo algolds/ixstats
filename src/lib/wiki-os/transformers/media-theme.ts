@@ -190,9 +190,7 @@ export function setStoredMediaThemeMode(mode: MediaThemeMode): void {
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-media-theme", canonical);
     }
-    window.dispatchEvent(
-      new CustomEvent(MEDIA_THEME_EVENT_NAME, { detail: { mode: canonical } })
-    );
+    window.dispatchEvent(new CustomEvent(MEDIA_THEME_EVENT_NAME, { detail: { mode: canonical } }));
   } catch {
     // ignore
   }

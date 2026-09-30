@@ -1,7 +1,12 @@
 "use client";
 
 import React, { memo, useEffect } from "react";
-import { CheckCircle, AlertTriangle, XCircle, Wrench } from "lucide-react";
+import {
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+  XmarkCircle as XCircle,
+  Wrench,
+} from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 
 interface ValidationStepProps {
@@ -14,6 +19,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
     if (!importer.validationReport) {
       importer.runValidation();
     }
+    // oxlint-disable-next-line
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const report = importer.validationReport;
@@ -33,7 +39,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             <CheckCircle className="h-4 w-4" />
             Ready for City Import
           </div>
-          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
             Province topology checks are skipped for cities-only import.{" "}
             {importer.rawCityPoints.length} cities detected in SVG layers.
           </p>
@@ -71,7 +77,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             </div>
             <div className="bg-accent h-2 w-full rounded-full">
               <div
-                className={`h-full rounded-full transition-all ${
+                className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   report.coveragePercent > 95
                     ? "bg-green-500"
                     : report.coveragePercent > 80
@@ -81,7 +87,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 style={{ width: `${Math.min(100, report.coveragePercent)}%` }}
               />
             </div>
-            <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
+            <div className="text-muted-foreground mt-1 flex justify-between text-xs">
               <span>Provinces: {report.totalProvincesArea.toLocaleString()} km²</span>
               <span>Country: {report.countryArea.toLocaleString()} km²</span>
             </div>
@@ -98,7 +104,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 {report.gaps.some((g) => g.autoFixable) && (
                   <button
                     onClick={importer.autoFixGaps}
-                    className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium"
+                    className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-xs font-medium"
                   >
                     <Wrench className="h-3 w-3" />
                     Auto-fix small gaps
@@ -106,7 +112,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 )}
               </div>
               {report.gaps.slice(0, 5).map((gap, i) => (
-                <div key={i} className="bg-accent rounded px-2 py-1.5 text-[10px]">
+                <div key={i} className="bg-accent rounded px-2 py-1.5 text-xs">
                   <span className="font-medium">{gap.areaSqKm} km²</span>
                   {gap.adjacentProvinces.length > 0 && (
                     <span className="text-muted-foreground">
@@ -118,7 +124,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 </div>
               ))}
               {report.gaps.length > 5 && (
-                <div className="text-muted-foreground text-[10px]">
+                <div className="text-muted-foreground text-xs">
                   +{report.gaps.length - 5} more gaps
                 </div>
               )}
@@ -135,14 +141,14 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 </span>
                 <button
                   onClick={importer.autoFixOverlaps}
-                  className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium"
+                  className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-xs font-medium"
                 >
                   <Wrench className="h-3 w-3" />
                   Resolve overlaps
                 </button>
               </div>
               {report.overlaps.slice(0, 5).map((overlap, i) => (
-                <div key={i} className="bg-accent rounded px-2 py-1.5 text-[10px]">
+                <div key={i} className="bg-accent rounded px-2 py-1.5 text-xs">
                   <span className="font-medium">{overlap.areaSqKm} km²</span>
                   <span className="text-muted-foreground">
                     {" "}
@@ -162,7 +168,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                 {report.featureIssues.length !== 1 ? "s" : ""}
               </span>
               {report.featureIssues.slice(0, 5).map((issue, i) => (
-                <div key={i} className="bg-accent rounded px-2 py-1.5 text-[10px]">
+                <div key={i} className="bg-accent rounded px-2 py-1.5 text-xs">
                   <span className="font-medium">{issue.provinceName}:</span>{" "}
                   <span className="text-muted-foreground">{issue.issues.join("; ")}</span>
                 </div>

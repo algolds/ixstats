@@ -5,7 +5,6 @@
  * These types ensure type safety across the entire MyCountry system.
  */
 
-import type { LucideIcon } from "lucide-react";
 import type { IntelligenceItem } from "./intelligence-unified";
 
 // Re-export from ixstats for consistency
@@ -155,7 +154,7 @@ export interface ActivityRing {
   value: number; // Current value (0-100)
   max: number; // Maximum value (usually 100)
   color: string; // CSS color
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   metrics: {
     primary: string;
     secondary: string;
@@ -425,3 +424,23 @@ export const ExecutiveActionSchema = {
   urgency: ["low", "medium", "high", "critical"],
   enabled: "boolean",
 } as const;
+
+/**
+ * Shared types for country comparison modal and comparison hooks
+ */
+export interface ComparisonCountry {
+  id: string;
+  name: string;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  populationGrowthRate: number;
+  adjustedGdpGrowth: number;
+  economicTier: string;
+  populationTier: string;
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
+  landArea?: number | null;
+  continent?: string | null;
+  color: string;
+}

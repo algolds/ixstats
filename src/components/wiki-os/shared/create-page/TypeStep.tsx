@@ -1,14 +1,13 @@
-import React from "react";
 import {
-  FileText,
+  Page as FileText,
   User,
   Building,
   Clock,
   Globe,
   ShieldAlert,
-  Landmark,
-  Sparkles,
-} from "lucide-react";
+  Bank as Landmark,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { type PageType } from "../CreatePageModal";
 
@@ -83,7 +82,7 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
               type="button"
               onClick={() => setPageType(item.id as PageType)}
               className={cn(
-                "flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition-all",
+                "flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 pageType === item.id
                   ? "border-[var(--wikios-accent)] bg-[var(--wikios-accent)]/[0.08] text-[var(--wikios-text)]"
                   : "bg-foreground/[0.03] hover:bg-foreground/[0.06] border-[var(--wikios-border)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
@@ -99,7 +98,7 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
               />
               <div>
                 <div className="text-xs font-semibold text-[var(--wikios-text)]">{item.label}</div>
-                <div className="mt-0.5 text-[9px] leading-tight text-[var(--wikios-text-dim)]">
+                <div className="mt-0.5 text-xs leading-tight text-[var(--wikios-text-dim)]">
                   {item.desc}
                 </div>
               </div>

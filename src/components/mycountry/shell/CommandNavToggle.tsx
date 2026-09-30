@@ -3,35 +3,30 @@
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutGrid,
-  Command,
-  Handshake,
-  Shield,
-  Scale,
-  TrendingUp,
+  ViewGrid as LayoutGrid,
+  KeyCommand as Command,
   User,
-  Edit3,
-} from "lucide-react";
+  EditPencil as Edit3,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { useTheme } from "~/context/theme-context";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
+import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 export type CommandNavMode = "home" | "executive";
 export type V2Mode = CommandNavMode;
 
 export function CommandNavToggle({
   mode = "home",
-  activeSection = "overview",
   onChangeMode,
-  onNavigate,
 }: {
   mode?: CommandNavMode;
   activeSection?: string;
   onChangeMode?: (mode: CommandNavMode) => void;
-  onNavigate?: (section: any) => void;
+  onNavigate?: (section: string) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -61,43 +56,6 @@ export function CommandNavToggle({
     },
   ];
 
-  const pageNav: {
-    href: string;
-    label: string;
-    icon: typeof Handshake;
-    activeCls: string;
-    hoverCls: string;
-  }[] = [
-    {
-      href: "/mycountry/diplomacy",
-      label: "Diplomacy",
-      icon: Handshake,
-      activeCls: "bg-teal-500/20 text-teal-300 border-teal-500/30 shadow-sm",
-      hoverCls: "hover:bg-teal-500/10 hover:text-teal-400 hover:border-teal-500/20",
-    },
-    {
-      href: "/mycountry/defense",
-      label: "Defense",
-      icon: Shield,
-      activeCls: "bg-red-500/20 text-red-300 border-red-500/30 shadow-sm",
-      hoverCls: "hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20",
-    },
-    {
-      href: "/mycountry/politics",
-      label: "Politics",
-      icon: Scale,
-      activeCls: "bg-violet-500/20 text-violet-300 border-violet-500/30 shadow-sm",
-      hoverCls: "hover:bg-violet-500/10 hover:text-violet-400 hover:border-violet-500/20",
-    },
-    {
-      href: "/mycountry/economy",
-      label: "Economy",
-      icon: TrendingUp,
-      activeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-sm",
-      hoverCls: "hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20",
-    },
-  ];
-
   const isHomeSection =
     rawPath === "/mycountry" || rawPath === "/mycountry/v2" || rawPath === "/mycountry/";
 
@@ -123,31 +81,8 @@ export function CommandNavToggle({
               }
             }}
             className={cn(
-              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all",
+              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]",
               compactMode ? "px-3 py-1.25 text-xs" : "px-3.5 py-1.5 text-xs",
-              active ? activeCls : hoverCls
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {label}
-          </button>
-        );
-      })}
-
-      {/* Subtle vertical divider */}
-      <div className="mx-1 h-4 w-px shrink-0 bg-white/10" />
-
-      {/* Full Page Navigation Links */}
-      {pageNav.map(({ href, label, icon: Icon, activeCls, hoverCls }) => {
-        const active = rawPath.startsWith(href);
-        return (
-          <button
-            key={href}
-            type="button"
-            onClick={() => router.push(withBasePath(href))}
-            className={cn(
-              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all",
-              compactMode ? "px-2.5 py-1.25 text-xs" : "px-3 py-1.5 text-xs",
               active ? activeCls : hoverCls
             )}
           >
@@ -168,7 +103,7 @@ export function CommandRightPillNav({
   country,
   onNavigate,
 }: {
-  country?: any;
+  country?: CountryWithEconomicData | null;
   onNavigate?: (section: MyCountrySection) => void;
 }) {
   const pathname = usePathname();
@@ -226,7 +161,7 @@ export function CommandRightPillNav({
                 }
               }}
               className={cn(
-                "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all select-none active:scale-95",
+                "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
                 compactMode ? "px-3 py-1.25 text-xs" : "px-3.5 py-1.5 text-xs",
                 active ? activeCls : hoverCls
               )}

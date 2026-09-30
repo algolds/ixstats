@@ -4,15 +4,15 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Loader2,
+  SystemRestart as Loader2,
   ArrowLeft,
   ArrowRight,
   Check,
   Trophy,
-  RotateCcw,
-  ImageIcon,
-  Trash2,
-} from "lucide-react";
+  Undo as RotateCcw,
+  MediaImage as ImageIcon,
+  Trash as Trash2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -31,7 +31,8 @@ import { withBasePath } from "~/lib/base-path";
 import type { ArchetypeType } from "~/lib/sports";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -179,6 +180,7 @@ export function LeagueCreator({
   const archetypeLabel = archetype ? archetypeLabels[archetype] : null;
 
   const isDivisionConference = archetype === "division_conference";
+  // oxlint-disable-next-line eslint/no-unused-vars
   const isBracket = archetype === "bracket";
   const isCircuit = archetype === "circuit";
   // Boxing has bracket archetype
@@ -318,7 +320,7 @@ export function LeagueCreator({
             )}
             <div
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all duration-300",
+                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                 isActive &&
                   "bg-primary text-primary-foreground ring-primary/40 ring-offset-background shadow-md ring-2 ring-offset-2",
                 isDone && "bg-primary/20 text-primary",
@@ -364,7 +366,7 @@ export function LeagueCreator({
                 whileTap="tap"
                 onClick={() => handleSportSelect(preset.key)}
                 className={cn(
-                  "facet-hierarchy-interactive group focus:ring-primary/30 relative cursor-pointer rounded-xl border p-4 text-left transition-all focus:ring-2 focus:outline-none",
+                  "facet-hierarchy-interactive group focus:ring-primary/30 relative cursor-pointer rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none",
                   isSelected
                     ? "border-primary/60 bg-primary/5 ring-primary ring-2"
                     : "border-border/60 bg-card/50 hover:border-border hover:bg-card/80"
@@ -418,7 +420,7 @@ export function LeagueCreator({
           onChange={(e) => setLeagueName(e.target.value.slice(0, 100))}
           maxLength={100}
         />
-        <p className="text-muted-foreground text-[11px]">{leagueName.length}/100 characters</p>
+        <p className="text-muted-foreground text-xs">{leagueName.length}/100 characters</p>
       </div>
 
       {/* Team Count */}
@@ -463,7 +465,7 @@ export function LeagueCreator({
               else if (e.target.value === "") setMatchIntervalDays(0);
             }}
           />
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-xs">
             Matches auto-resolve in the background on the IxTime clock. {matchIntervalDays} IxDay
             {matchIntervalDays === 1 ? "" : "s"} ≈ {(matchIntervalDays / 2).toLocaleString()}{" "}
             real-world day
@@ -489,7 +491,7 @@ export function LeagueCreator({
               else if (e.target.value === "") setDivisions(0);
             }}
           />
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-xs">
             Teams will be split across {divisions} divisions for the regular season.
           </p>
         </div>
@@ -505,7 +507,7 @@ export function LeagueCreator({
             value={weightClassesRaw}
             onChange={(e) => setWeightClassesRaw(e.target.value)}
           />
-          <p className="text-muted-foreground text-[11px]">Comma-separated weight class names.</p>
+          <p className="text-muted-foreground text-xs">Comma-separated weight class names.</p>
         </div>
       )}
 
@@ -528,7 +530,7 @@ export function LeagueCreator({
               }
             }}
           />
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-xs">
             Points championship across {raceCount} race weekends.
           </p>
         </div>

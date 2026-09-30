@@ -16,21 +16,25 @@ function envBool(name: string, dflt: boolean): boolean {
   return v === "1" || v.toLowerCase() === "true";
 }
 
-export const GAMEPLAY_FLAGS = {
-  /**
-   * Auto-generate national issues from country state (on inbox open + via the
-   * background generation cron). Default ON — issues are the core Executive loop.
-   * Set ISSUES_AUTO_GENERATE=0 to return to pure narrative mode.
-   */
-  issuesAutoGenerate: envBool("ISSUES_AUTO_GENERATE", true),
-  /** Enforce issue deadlines: block dismiss of deadline issues + auto-resolve on expiry. */
-  issuesEnforceDeadlines: envBool("ISSUES_ENFORCE_DEADLINES", false),
-  /** Award IxCredits for resolving issues (engagement reward). */
-  issuesAwardCredits: envBool("ISSUES_AWARD_CREDITS", false),
-  /**
-   * Statecraft spine: the Meeting/recon → Capacity loop on issues (Stage 1 of
-   * plans/statecraft-stage1.md). Default OFF — ships dark until the loop is complete.
-   * Set STATECRAFT_SPINE=1 to enable recon Meetings + Capacity spend.
-   */
-  statecraftSpine: envBool("STATECRAFT_SPINE", false),
-} as const;
+export function getGameplayFlags() {
+  return {
+    /**
+     * Auto-generate national issues from country state (on inbox open + via the
+     * background generation cron). Default ON — issues are the core Executive loop.
+     * Set ISSUES_AUTO_GENERATE=0 to return to pure narrative mode.
+     */
+    issuesAutoGenerate: envBool("ISSUES_AUTO_GENERATE", true),
+    /** Enforce issue deadlines: block dismiss of deadline issues + auto-resolve on expiry. */
+    issuesEnforceDeadlines: envBool("ISSUES_ENFORCE_DEADLINES", false),
+    /** Award IxCredits for resolving issues (engagement reward). */
+    issuesAwardCredits: envBool("ISSUES_AWARD_CREDITS", false),
+    /**
+     * Statecraft spine: the Meeting/recon → Capacity loop on issues (Stage 1 of
+     * plans/statecraft-stage1.md). Default OFF — ships dark until the loop is complete.
+     * Set STATECRAFT_SPINE=1 to enable recon Meetings + Capacity spend.
+     */
+    statecraftSpine: envBool("STATECRAFT_SPINE", false),
+  };
+}
+
+export const GAMEPLAY_FLAGS = getGameplayFlags();

@@ -2,11 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Group,
-  Sparks,
-  Plus,
-} from "iconoir-react";
+import { Group, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
@@ -17,7 +13,7 @@ import { ThinktankLayout } from "./ThinktankLayout";
 import { ThinktankDirectorySidebar } from "./ThinktankDirectorySidebar";
 import { ThinktankHeader, type ThinktankTab } from "./ThinktankHeader";
 import { ThinktankFeedTab } from "./ThinktankFeedTab";
-import { ThinktankChatTab } from "./ThinktankChatTab";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { ThinktankPapersTab } from "./ThinktankPapersTab";
 import { ThinktankRosterTab } from "./ThinktankRosterTab";
 import { ThinktankSettingsModal } from "./ThinktankSettingsModal";
@@ -28,6 +24,7 @@ interface ThinktankWorkspaceProps {
 }
 
 export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWorkspaceProps = {}) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const router = useRouter();
   const searchParams = useSearchParams();
   const notify = useNotify();
@@ -82,7 +79,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
 
   // ── Queries ──
   const { data: allGroupsData, isLoading: isLoadingGroups } = api.thinkpages.getThinktanks.useQuery(
-    { userId: currentUserId, type: "all" },
+    { type: "all" },
     { staleTime: 15000 }
   );
 
@@ -93,18 +90,23 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
     if (selectedGroupId || groups.length === 0) return;
 
     if (initialGroupId) {
+      // oxlint-disable-next-line
       setSelectedGroupId(initialGroupId);
       return;
     }
 
     // 1. Check localStorage for last viewed group
     try {
-      const lastGroupId = localStorage.getItem(`ix_thinktanks_last_selected_${currentUserId || "guest"}`);
+      const lastGroupId = localStorage.getItem(
+        `ix_thinktanks_last_selected_${currentUserId || "guest"}`
+      );
       if (lastGroupId && groups.some((g) => g.id === lastGroupId)) {
         setSelectedGroupId(lastGroupId);
         return;
       }
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — fall back to the default group
+    }
 
     // 2. Prioritize most recent group user is a member of
     const myGroups = groups.filter(
@@ -128,25 +130,29 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   useEffect(() => {
     if (selectedGroupId) {
       try {
-        localStorage.setItem(`ix_thinktanks_last_selected_${currentUserId || "guest"}`, selectedGroupId);
-      } catch {}
+        localStorage.setItem(
+          `ix_thinktanks_last_selected_${currentUserId || "guest"}`,
+          selectedGroupId
+        );
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
     }
   }, [selectedGroupId, currentUserId]);
 
   // Selected Group Details
-  const {
-    data: activeGroupData,
-    isLoading: isLoadingActiveGroup,
-  } = api.thinkpages.getThinktankById.useQuery(
-    { groupId: selectedGroupId!, userId: currentUserId },
-    { enabled: !!selectedGroupId, staleTime: 10000 }
-  );
+  const { data: activeGroupData, isLoading: isLoadingActiveGroup } =
+    api.thinkpages.getThinktankById.useQuery(
+      { groupId: selectedGroupId! },
+      { enabled: !!selectedGroupId, staleTime: 10000 }
+    );
 
   const activeGroup = activeGroupData ?? null;
 
   // Auto-switch to feed if user is not a member of the selected group
   useEffect(() => {
     if (activeGroup && !activeGroup.isMember && activeTab !== "feed") {
+      // oxlint-disable-next-line
       setActiveTab("feed");
     }
   }, [activeGroup, activeTab]);
@@ -185,14 +191,14 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   const handleJoin = () => {
     if (!selectedGroupId || !currentUserId) return;
     soundEffects.press();
-    joinMutation.mutate({ groupId: selectedGroupId, userId: currentUserId });
+    joinMutation.mutate({ groupId: selectedGroupId });
   };
 
   const handleLeave = () => {
     if (!selectedGroupId || !currentUserId) return;
     if (confirm("Are you sure you want to leave this group?")) {
       soundEffects.press();
-      leaveMutation.mutate({ groupId: selectedGroupId, userId: currentUserId });
+      leaveMutation.mutate({ groupId: selectedGroupId });
     }
   };
 
@@ -222,10 +228,10 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         workspacePanel={
           isLoadingActiveGroup && selectedGroupId ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs animate-pulse">
-                <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
-              <p className="text-xs font-semibold text-muted-foreground">Loading group...</p>
+              <p className="text-muted-foreground text-xs font-semibold">Loading group...</p>
             </div>
           ) : activeGroup ? (
             <div className="flex h-full flex-col overflow-hidden">
@@ -251,6 +257,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
                     groupId={activeGroup.id}
                     groupName={activeGroup.name}
                     isMember={Boolean(activeGroup.isMember)}
+                    canReadFeed={Boolean(activeGroup.isMember) || activeGroup.type === "public"}
                     allowPersonaPosting={Boolean(activeGroup.settings?.allowPersonaPosting)}
                     currentUserId={currentUserId}
                     onJoin={handleJoin}
@@ -273,9 +280,10 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-xs dark:text-emerald-400">
                 <Group className="h-7 w-7" />
               </div>
-              <h3 className="mt-4 text-base font-bold text-foreground">Select a Group</h3>
-              <p className="mt-1.5 max-w-sm text-xs text-muted-foreground leading-relaxed">
-                Choose a group from the sidebar to view the feed, open discussions, or check the roster.
+              <h3 className="text-foreground mt-4 text-base font-bold">Select a Group</h3>
+              <p className="text-muted-foreground mt-1.5 max-w-sm text-xs leading-relaxed">
+                Choose a group from the sidebar to view the feed, open discussions, or check the
+                roster.
               </p>
               <Button
                 onClick={() => {

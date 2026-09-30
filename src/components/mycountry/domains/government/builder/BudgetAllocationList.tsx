@@ -1,20 +1,24 @@
+"use client";
 /**
  * Budget Allocation List Component (Refactored)
  *
  * List of budget allocations with soft warnings for underfunded vital services.
  */
 
-"use client";
-
 import React, { useMemo } from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight, Info } from "lucide-react";
+import {
+  WarningTriangle as AlertTriangle,
+  CheckCircle,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { BudgetAllocationForm } from "~/components/mycountry/domains/government/atoms/BudgetAllocationForm";
 import { BudgetMeter } from "./BudgetMeter";
 import type { DepartmentInput, BudgetAllocationInput } from "~/types/government";
 import type { BudgetSummary } from "~/lib/government/builder-validation";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 export interface BudgetAllocationListProps {
   departments: DepartmentInput[];
@@ -148,7 +152,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
           );
           const allocation: BudgetAllocationInput = existingAllocation || {
             departmentId: index.toString(),
-            budgetYear: new Date(IxTime.getCurrentIxTime()).getFullYear(),
+            budgetYear: currentBudgetYear(),
             allocatedAmount: 0,
             allocatedPercent: 0,
             notes: "",

@@ -16,7 +16,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { LineChart as LineChartIcon, FileSpreadsheet, Download } from "lucide-react";
+import { GraphUp as LineChartIcon, Table as FileSpreadsheet, Download } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -33,7 +33,7 @@ interface EconomicOverviewChartProps {
 export const EconomicOverviewChart = React.memo<EconomicOverviewChartProps>(
   ({ data, formatCurrency, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-hierarchy-child" id="gdp-trend-chart">
+      <Card className="facet-hierarchy-child" id="gdp-trend-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

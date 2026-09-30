@@ -74,7 +74,7 @@ export function VaultSubTabNav<T extends string>({
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-transparent px-3 py-2 text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95",
+              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-transparent px-3 py-2 text-xs font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
               isActive
                 ? cn(configColor.text, "font-bold drop-shadow-sm")
                 : "text-muted-foreground hover:text-foreground"
@@ -90,7 +90,7 @@ export function VaultSubTabNav<T extends string>({
             )}
             <span>{tab.label}</span>
             {tab.badgeCount !== undefined && tab.badgeCount > 0 && (
-              <span className="ml-1 animate-pulse rounded-full border border-blue-400/40 bg-blue-500/90 px-1.5 py-0.5 text-[9px] font-semibold text-white tabular-nums shadow-sm backdrop-blur-md">
+              <span className="ml-1 rounded-full border border-blue-400/40 bg-blue-500/90 px-1.5 py-0.5 text-xs font-semibold text-white tabular-nums shadow-sm backdrop-blur-md">
                 {tab.badgeCount}
               </span>
             )}

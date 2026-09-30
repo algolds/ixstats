@@ -1,14 +1,22 @@
+"use client";
 /**
  * CollectionGallery Component
  * Public collection browser with filtering, sorting, and leaderboards
  */
 
-"use client";
-
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Grid3x3, Trophy, Heart, Eye, Lock, Globe, Search, Filter } from "lucide-react";
+import {
+  ViewGrid as Grid3x3,
+  Trophy,
+  Heart,
+  Eye,
+  Lock,
+  Globe,
+  Search,
+  Filter,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
@@ -67,6 +75,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
   const {
     data: collectionsData,
     isLoading,
+    // oxlint-disable-next-line eslint/no-unused-vars
     refetch,
   } = api.vault.getPublicCollections.useQuery({
     limit: pageSize,
@@ -119,7 +128,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 placeholder="Search collections or users..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="glass-hierarchy-child pl-10"
+                className="facet-hierarchy-child pl-10"
               />
             </div>
           </div>
@@ -130,7 +139,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="glass-hierarchy-child cursor-pointer rounded-lg border-none px-3 py-2 text-sm text-white outline-none"
+              className="facet-hierarchy-child cursor-pointer rounded-lg border-none px-3 py-2 text-sm text-white outline-none"
             >
               <option value="newest">Newest</option>
               <option value="mostValuable">Most Valuable</option>
@@ -146,7 +155,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-hierarchy-parent rounded-lg p-4 sm:p-6"
+          className="facet-hierarchy-parent rounded-lg p-4 sm:p-6"
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-xl font-bold text-white">
@@ -159,7 +168,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                   key={cat}
                   onClick={() => setLeaderboardCategory(cat)}
                   className={cn(
-                    "rounded-lg px-3 py-1 text-xs font-medium transition-all",
+                    "rounded-lg px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     leaderboardCategory === cat
                       ? "glass-hierarchy-interactive text-white"
                       : "text-white/60 hover:text-white/80"
@@ -178,7 +187,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
               <Link
                 key={collection.id}
                 href={`/vault/collections/${collection.id}`}
-                className="glass-hierarchy-child rounded-lg p-3 transition-transform hover:scale-105"
+                className="facet-hierarchy-child rounded-lg p-3 transition-transform hover:scale-105"
               >
                 <div className="mb-2 flex items-start justify-between">
                   <span className="text-gold-400 text-xs font-bold">#{collection.rank}</span>
@@ -204,12 +213,12 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <Grid3x3 className="mx-auto mb-3 h-12 w-12 animate-pulse text-white/20" />
+            <Grid3x3 className="mx-auto mb-3 h-12 w-12 text-white/20" />
             <p className="text-sm text-white/50">Loading collections...</p>
           </div>
         </div>
       ) : filteredCollections.length === 0 ? (
-        <div className="glass-hierarchy-child rounded-lg p-12 text-center">
+        <div className="facet-hierarchy-child rounded-lg p-12 text-center">
           <Grid3x3 className="mx-auto mb-4 h-16 w-16 text-white/20" />
           <h3 className="mb-2 text-lg font-semibold text-white">No collections found</h3>
           <p className="text-sm text-white/60">
@@ -229,7 +238,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
                 <Link href={`/vault/collections/${collection.id}`}>
-                  <Card className="glass-hierarchy-child h-full cursor-pointer transition-all duration-300 hover:scale-105">
+                  <Card className="facet-hierarchy-child h-full cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105">
                     <CardContent className="space-y-3 p-4">
                       {/* Header */}
                       <div className="flex items-start justify-between">
@@ -260,13 +269,13 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-white/50">Value</div>
-                          <div className="flex items-center justify-center gap-0.5 text-sm font-bold text-green-400">
+                          <div className="flex items-center justify-center gap-0.5 text-sm font-bold text-amber-400">
                             <IxCreditsSymbol className="h-3.5 w-3.5 shrink-0" />0
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-white/50">Likes</div>
-                          <div className="flex items-center justify-center gap-1 text-sm font-bold text-pink-400">
+                          <div className="flex items-center justify-center gap-1 text-sm font-bold text-red-400">
                             <Heart className="h-3 w-3" />0
                           </div>
                         </div>
@@ -291,7 +300,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 onClick={handlePrevPage}
                 disabled={currentPage === 0}
                 variant="outline"
-                className="glass-hierarchy-child"
+                className="facet-hierarchy-child"
               >
                 Previous
               </Button>
@@ -300,7 +309,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 onClick={handleNextPage}
                 disabled={!hasMore}
                 variant="outline"
-                className="glass-hierarchy-child"
+                className="facet-hierarchy-child"
               >
                 Next
               </Button>

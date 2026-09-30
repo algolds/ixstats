@@ -258,6 +258,7 @@ const drawExploration: ShapeDrawer = (ctx, cx, cy, r) => {
 };
 
 /** Flame */
+// oxlint-disable-next-line typescript/no-unused-vars
 const drawDisaster: ShapeDrawer = (ctx, cx, cy, r) => {
   const s = r * 0.65;
   ctx.beginPath();

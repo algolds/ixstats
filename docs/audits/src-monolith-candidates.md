@@ -1,5 +1,69 @@
 # src/ Monolithic File Candidates (June 2026)
 
+> ## Status (2026-09-29) — tracker
+>
+> Recomputed with `find src -name '*.ts*' | xargs wc -l` (≥800 lines). **Every file listed in the June tables below is resolved:** each is gone from its path (deleted, moved to JSON/DB seeds, or split into a directory) or now under 800 lines — e.g. `useBuilderState.ts` 557, `useMapEditor.ts` 630, `sports/resolver.ts` 124, `ThinkpagesPost.tsx` 224, `VaultCardsSection.tsx` 246, `WikiVisualEditor.tsx` 346, `types/ixstats.ts` 788, the two admin `page.tsx` files 8 each. No router ≥1,700 lines remains (largest: `routers/wikios/templates.ts`, 1,298).
+>
+> **Current ≥800-line files (54, of which 2 are tests) — the live tracker:**
+>
+> | Lines | File | Kind |
+> |------:|------|------|
+> | 2,372 | `src/app/admin/cards/LoreCardBatchAdmin.tsx` | component |
+> | 1,802 | `src/app/admin/_components/CountryInspector.tsx` | component |
+> | 1,511 | `src/lib/diplomacy/npc-personality.ts` | logic |
+> | 1,471 | `src/lib/builder/client-calculations.ts` | logic |
+> | 1,455 | `src/components/maps/editor/EditorMap.tsx` | component |
+> | 1,440 | `src/app/admin/myleague/SportsOversightPanel.tsx` | component |
+> | 1,435 | `src/lib/discord/ixtwitter-sync.ts` | logic |
+> | 1,433 | `src/lib/cards/lore-card-generator.ts` | logic |
+> | 1,383 | `src/lib/maps/border-editor.ts` | logic |
+> | 1,298 | `src/server/api/routers/wikios/templates.ts` | router (≈69% static data) |
+> | 1,289 | `src/lib/economy/auction-service.ts` | class-service |
+> | 1,288 | `src/lib/notifications/hooks.ts` | hooks |
+> | 1,275 | `src/lib/sports/transition.ts` | logic |
+> | 1,266 | `src/components/maps/editor/hooks/useMapLayers.ts` | hook |
+> | 1,225 | `src/components/shared/polls/poll-widget.tsx` | component |
+> | 1,197 | `src/lib/maps/province-importer/parse-provinces.ts` | logic |
+> | 1,157 | `src/app/admin/_components/platform/BotControlCard.tsx` | component |
+> | 1,147 | `src/app/admin/maps/_components/PipelineWizard.tsx` | component |
+> | 1,117 | `src/lib/government/tax/atomic-tax-components.ts` | data |
+> | 1,073 | `src/app/admin/_components/platform/LorewardsBotSection.tsx` | component |
+> | 1,048 | `src/app/admin/cards/NSImportSuiteAdmin.tsx` | component |
+> | 1,037 | `src/lib/diplomacy/cultural-scenario-generator.ts` | logic |
+> | 1,026 | `src/app/admin/users/UsersPanel.tsx` | component |
+> | 1,005 | `src/components/wiki-os/editor/hooks/useWikiVisualFormatting.ts` | hook |
+> | 1,002 | `src/components/mycountry/shared/modals/metric-details/PopulationDetailsModal.tsx` | component |
+> | 992 | `src/components/wiki-os/margin/tabs/MarginThreadsTab.tsx` | component |
+> | 991 | `src/lib/achievements/definitions.ts` | data |
+> | 991 | `src/app/admin/vault/VaultUserDirectory.tsx` | component |
+> | 963 | `src/components/executive/actions/MeetingScheduler.tsx` | component |
+> | 948 | `src/components/ui/facet/swipeable/SwipeableRow.tsx` | component |
+> | 920 | `src/lib/diplomacy/npc-cultural-participation.ts` | logic |
+> | 902 | `src/lib/intelligence/live-data-transformers.ts` | logic |
+> | 895 | `src/lib/economy/factory.ts` | data/logic |
+> | 888 | `src/app/settings/_components/panels/PrivacySecurityPanel.tsx` | component |
+> | 887 | `src/lib/maps/province-importer/topology.ts` | logic |
+> | 885 | `src/components/wiki-os/editor/plate/wiki-html.ts` | logic |
+> | 879 | `src/lib/maps/province-importer/alignment.ts` | logic |
+> | 871 | `src/lib/onoma/language-families.ts` | data |
+> | 871 | `src/lib/diplomacy/markov-engine.ts` | logic |
+> | 859 | `src/components/wiki-os/reader/ArticleRenderer.tsx` | component |
+> | 858 | `src/app/labs/onoma/components/sections/writing/GlyphForgeCanvas.tsx` | component |
+> | 854 | `src/components/sports/league/LeagueCreator.tsx` | component |
+> | 850 | `src/lib/maps/geo-analytics.ts` | logic |
+> | 848 | `src/lib/economy/transport-generator.ts` | logic |
+> | 847 | `src/lib/utils/format-utils.ts` | utils |
+> | 830 | `src/app/labs/onoma/components/sections/LoanwordsSection.tsx` | component |
+> | 826 | `src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts` | hook |
+> | 826 | `src/components/cards/display/CardBack.tsx` | component |
+> | 814 | `src/app/setup/page.tsx` | component |
+> | 809 | `src/hooks/useWikiNarrator.ts` | hook |
+> | 802 | `src/lib/nationstates/api-client.ts` | logic |
+> | 800 | `src/app/countries/_components/economy/EconomicModelingEngine.tsx` | component |
+>
+> (Tests excluded from the table: `national-issues-engine-characterization.test.ts` 865, `realms-claims.test.ts` 817.) `bun run audit:arch` currently flags 15 of these as new god files (see `AUDIT_2026-06-13.md` status).
+
+
 Scan of `src/` for the largest hand-written files, curated for refactoring. Data/seed/type files
 that are *inherently* flat are excluded (splitting them adds indirection for no benefit). Companion
 to the router-modularization work (see CLAUDE.md → "tRPC Router Modularization").

@@ -1,7 +1,4 @@
-/**
- * Flag Color Extractor - Extracts dominant colors from country flags
- * Used to create themed UI effects based on flag colors
- */
+import { hslToHex, hexToRgb } from "~/lib/color";
 
 export interface FlagColors {
   primary: string;
@@ -155,41 +152,6 @@ function generateFlagColors(countryName: string): FlagColors {
     rgbSecondary: hexToRgb(secondary),
     rgbAccent: hexToRgb(accent),
   };
-}
-
-/**
- * Converts HSL to hex color
- */
-function hslToHex(h: number, s: number, l: number): string {
-  // Safety check to prevent #NaNNaNNaN
-  if (isNaN(h) || isNaN(s) || isNaN(l)) {
-    return DEFAULT_COLORS.primary;
-  }
-
-  l /= 100;
-  const a = (s * Math.min(l, 1 - l)) / 100;
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
-
-/**
- * Converts hex to RGB
- */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1] || "63", 16),
-        g: parseInt(result[2] || "66", 16),
-        b: parseInt(result[3] || "f1", 16),
-      }
-    : { r: 99, g: 102, b: 241 };
 }
 
 /**

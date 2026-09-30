@@ -5,7 +5,7 @@
  * 100% compile-time type safety with TypeScript 7.0.
  */
 
-import type { Position, Polygon, MultiPolygon, LineString, MultiLineString, Point } from "geojson";
+import type { Polygon, MultiPolygon, LineString, MultiLineString, Point } from "geojson";
 
 // ──────────────────────────────────────────────
 // Branded Nominal Identifiers
@@ -30,15 +30,7 @@ export type BoundingBox = readonly [minLng: Lng, minLat: Lat, maxLng: Lng, maxLa
 // ──────────────────────────────────────────────
 
 export type FeatureType =
-  | "city"
-  | "subdivision"
-  | "poi"
-  | "storyPin"
-  | "mapLabel"
-  | "peak"
-  | "river"
-  | "lake"
-  | "route";
+  "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "peak" | "river" | "lake" | "route";
 
 export interface BaseEditorFeature {
   id: string;

@@ -5,7 +5,7 @@
  * see where the data comes from and its licensing status.
  */
 import { NationStatesLogo } from "./NationStatesLogo";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "iconoir-react";
 
 export function NationStatesAttribution({
   className,
@@ -16,7 +16,7 @@ export function NationStatesAttribution({
 }) {
   return (
     <div
-      className={`border-border/40 bg-card/40 text-muted-foreground flex shrink-0 items-center justify-between gap-2.5 rounded-lg border px-2.5 py-1.5 text-[10px] leading-tight backdrop-blur-sm ${className ?? ""}`}
+      className={`border-border/40 bg-card/40 text-muted-foreground flex shrink-0 items-center justify-between gap-2.5 rounded-lg border px-2.5 py-1.5 text-xs leading-tight backdrop-blur-sm ${className ?? ""}`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-1.5">
         <NationStatesLogo size="xs" className="mt-0.5 shrink-0" />
@@ -41,7 +41,7 @@ export function NationStatesAttribution({
           <button
             type="button"
             onClick={onRequestTakedown}
-            className="inline-flex shrink-0 items-center gap-1 font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline dark:text-rose-400 dark:hover:text-rose-300"
+            className="inline-flex shrink-0 items-center gap-1 font-medium text-red-500 transition-colors hover:text-red-600 hover:underline dark:text-red-400 dark:hover:text-red-300"
           >
             <ShieldAlert className="h-3 w-3 shrink-0" />
             <span>Verify & Request Takedown</span>

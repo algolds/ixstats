@@ -1,6 +1,6 @@
-import { diplomaticCulturalNpcResponsesRouter } from "../../../../server/api/routers/diplomacy/cultural/npc/responses";
-import { createCallerFactory } from "../../../../server/api/trpc";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { diplomaticCulturalNpcResponsesRouter } from "~/server/api/routers/diplomacy/cultural/npc/responses";
+import { createCallerFactory } from "~/server/api/trpc";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("Plan 159: Diplomacy NPC Responses Query Batching", () => {
   const createCaller = createCallerFactory(diplomaticCulturalNpcResponsesRouter);
@@ -10,9 +10,17 @@ describe("Plan 159: Diplomacy NPC Responses Query Batching", () => {
       { country1: "p-country-1", country2: "host-country", relationship: "alliance", strength: 90 },
       { country1: "p-country-2", country2: "host-country", relationship: "friendly", strength: 75 },
     ]);
-    const embassyFindManyMock = jest.fn().mockResolvedValue([
-      { guestCountryId: "p-country-1", hostCountryId: "other", specialization: "cultural", level: 3, influence: 80 },
-    ]);
+    const embassyFindManyMock = jest
+      .fn()
+      .mockResolvedValue([
+        {
+          guestCountryId: "p-country-1",
+          hostCountryId: "other",
+          specialization: "cultural",
+          level: 3,
+          influence: 80,
+        },
+      ]);
 
     const mockDb = {
       culturalExchange: {

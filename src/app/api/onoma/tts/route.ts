@@ -128,10 +128,10 @@ async function handleTts(request: NextRequest) {
     const allowedAdminRoles = ["admin", "owner", "staff"];
     const allowedBetaRoles = ["beta_tester", "beta-tester", "beta"];
 
-    let isAdmin = isOwner || (typeof clerkRole === "string" && allowedAdminRoles.includes(clerkRole));
+    let isAdmin =
+      isOwner || (typeof clerkRole === "string" && allowedAdminRoles.includes(clerkRole));
     let hasAccess =
-      isAdmin ||
-      (typeof clerkRole === "string" && allowedBetaRoles.includes(clerkRole));
+      isAdmin || (typeof clerkRole === "string" && allowedBetaRoles.includes(clerkRole));
 
     if (!hasAccess || !isAdmin) {
       const dbUser = await db.user.findUnique({
@@ -169,10 +169,10 @@ async function handleTts(request: NextRequest) {
     let enabled = map.get("onoma.kokoro.enabled") === "true";
     let baseUrl = map.get("onoma.kokoro.baseUrl") || "";
     let apiKey = map.get("onoma.kokoro.apiKey") || "";
-    let defaultModel = map.get("onoma.kokoro.model") || "model_q8f16";
-    let defaultVoice = map.get("onoma.kokoro.voice") || "af_heart";
+    const defaultModel = map.get("onoma.kokoro.model") || "model_q8f16";
+    const defaultVoice = map.get("onoma.kokoro.voice") || "af_heart";
     const defaultSpeedVal = map.get("onoma.kokoro.speed");
-    let defaultSpeed =
+    const defaultSpeed =
       defaultSpeedVal != null && defaultSpeedVal !== "" ? Number(defaultSpeedVal) : 1.0;
     // Phoneme-native engine + its base URL. kokoro-fastapi is primary; kokoro-web
     // (the re-spelling path) stays as fallback so the swap is rollback-safe.
@@ -218,14 +218,17 @@ async function handleTts(request: NextRequest) {
         if (body.stripStress !== undefined) stripStress = Boolean(body.stripStress);
         if (body.prosody !== undefined) prosody = body.prosody;
 
-        // Allow overrides for baseUrl and apiKey only if Admin
+        // Allow overrides of the engine settings only if Admin (the admin panel's unsaved values)
         if (isAdmin) {
+          if (body.engine) engine = parseEngine(body.engine);
+          if (body.fastApiUrl) fastApiUrl = body.fastApiUrl;
           if (body.baseUrl) baseUrl = body.baseUrl;
-          if (body.apiKey !== undefined) apiKey = body.apiKey;
+          // An empty key means "use the saved one" (the admin form never holds it).
+          if (body.apiKey) apiKey = body.apiKey;
           // In test mode we bypass the "enabled" switch
           enabled = true;
         }
-      } catch (e) {
+      } catch {
         return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
       }
     } else {

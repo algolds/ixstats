@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Radio } from "lucide-react";
+import { AntennaSignal as Radio } from "iconoir-react";
 import { IxTime } from "~/lib/ixtime";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -31,6 +31,7 @@ function shortFor(t: { name: string; shortName?: string | null }): string {
 function useLiveMatchState(match: LiveActivityMatch | null) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
+    // oxlint-disable-next-line
     if (!match) return;
     const id = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(id);
@@ -63,7 +64,7 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
       >
         {shortFor(match.homeTeam)} {state.homeScore}–{state.awayScore} {shortFor(match.awayTeam)}
       </PreText>
-      <PreText className="text-muted-foreground font-mono text-[10px]" whiteSpace="nowrap">
+      <PreText className="text-muted-foreground font-mono text-xs" whiteSpace="nowrap">
         {state.isFinal ? "FT" : `${state.minute}'`}
       </PreText>
     </span>
@@ -87,11 +88,11 @@ function SportsLiveView({ context }: DIViewProps) {
       />
       <div className="relative z-10 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+          <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
             <Radio className={`h-2.5 w-2.5 ${state.isFinal ? "" : "animate-pulse"}`} />
             {state.isFinal ? "FULL TIME" : "LIVE"}
           </span>
-          <span className="text-muted-foreground truncate text-[11px]">{match.leagueName}</span>
+          <span className="text-muted-foreground truncate text-xs">{match.leagueName}</span>
         </div>
 
         <div className="flex items-center justify-around">
@@ -112,7 +113,7 @@ function SportsLiveView({ context }: DIViewProps) {
         {/* Broadcast progress */}
         <div className="bg-muted/40 h-1 overflow-hidden rounded-full">
           <div
-            className="h-full rounded-full bg-red-500 transition-all duration-1000 ease-linear"
+            className="h-full rounded-full bg-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-1000 ease-linear"
             style={{ width: `${Math.round(state.progress * 100)}%` }}
           />
         </div>

@@ -17,8 +17,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 
-const _LORE_CARD_REQUEST_COST = 50; // IxCredits
-
 /**
  * Lore Cards Router
  */
