@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { resolveDisplayName } from "~/server/shared/display-names";
+import { getRealmBoardAccess, isRealmBoard } from "./realm-board";
 
 export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====
@@ -54,8 +55,17 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
         });
       }
 
-      // Private and invite-only groups: consume an open invite addressed to the caller.
-      if (group.type !== "public" && group.createdBy !== userId) {
+      // Realm boards: open to owners of a nation in the realm (and its moderators), never by invite.
+      if (isRealmBoard(group)) {
+        const { isMember } = await getRealmBoardAccess(db, group.id, userId);
+        if (!isMember) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only owners of a nation in this realm can join its board",
+          });
+        }
+      } else if (group.type !== "public" && group.createdBy !== userId) {
+        // Private and invite-only groups: consume an open invite addressed to the caller.
         const invite = await db.thinktankInvite.findFirst({
           where: {
             groupId: input.groupId,
