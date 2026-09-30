@@ -21,7 +21,7 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 
 ## Profile Navigation Structure
 
-The profile shell (`(profile)/layout.tsx`) offers three presentation concepts via `CountryConceptSwitcher` — `CommandProfileView`, `EditorialProfileView`, and `AtlasProfileView` (`_components/concepts/`). Within them, the public profile employs a 2-tier Apple Design navigation hierarchy:
+The profile shell (`(profile)/layout.tsx`) defaults to the Standard Factbook (the tabbed shell below, wired to live data). `CountryConceptSwitcher` also offers three prototype layouts — `CommandProfileView`, `EditorialProfileView`, and `AtlasProfileView` (`_components/concepts/`) — whose sections mostly show sample (Caphirian) figures; the page labels them as prototypes. Within them, the public profile employs a 2-tier Apple Design navigation hierarchy:
 1. **Tier 1 (Page Top Bar — `CountryTabs.tsx`):** `Factbook` (`/factbook`), `Dossier` (`/dossier`), and `Activity` (`/activity`) with physical Framer Motion spring layout indicators.
 2. **Tier 2 (Factbook Sections — `MyCountryTabsList.tsx`):** `Overview`, `Economy`, `Labor`, `Government`, and `Geography` with sliding underline navigation.
 

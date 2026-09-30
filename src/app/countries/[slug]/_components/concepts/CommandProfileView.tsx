@@ -57,10 +57,17 @@ export function CommandProfileView({ country, slug }: CommandProfileViewProps) {
     }
   };
 
-  const gdpFormatted = `$${((country.currentTotalGdp || 40200000000000) / 1000000000000).toFixed(1)}T`;
-  const popFormatted = `${((country.currentPopulation || 626200000) / 1000000).toFixed(1)}M`;
-  const perCapitaFormatted = `$${Math.round(country.currentGdpPerCapita || 64273).toLocaleString()}`;
-  const areaFormatted = country.landArea ? `${(country.landArea / 1000).toFixed(0)}k km²` : "7.5M km²";
+  // Headline figures come from this country (no sample fallbacks); "—" when unknown.
+  const gdpFormatted = country.currentTotalGdp
+    ? `$${(country.currentTotalGdp / 1000000000000).toFixed(1)}T`
+    : "—";
+  const popFormatted = country.currentPopulation
+    ? `${(country.currentPopulation / 1000000).toFixed(1)}M`
+    : "—";
+  const perCapitaFormatted = country.currentGdpPerCapita
+    ? `$${Math.round(country.currentGdpPerCapita).toLocaleString()}`
+    : "—";
+  const areaFormatted = country.landArea ? `${(country.landArea / 1000).toFixed(0)}k km²` : "—";
 
   return (
     <div className="space-y-6">
@@ -216,7 +223,7 @@ export function CommandProfileView({ country, slug }: CommandProfileViewProps) {
               <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
                 <p className="text-xs font-bold text-muted-foreground uppercase">GDP per Capita</p>
                 <p className="text-base font-extrabold text-foreground mt-0.5">{perCapitaFormatted}</p>
-                <p className="text-xs text-muted-foreground">{country.economicTier || "Extravagant"} Tier</p>
+                <p className="text-xs text-muted-foreground">{country.economicTier || "Unknown"} Tier</p>
               </div>
               <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
                 <p className="text-xs font-bold text-muted-foreground uppercase">Real Growth</p>
