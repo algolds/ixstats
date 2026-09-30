@@ -20,7 +20,7 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
     const revs: any[] = await (db as any).wikiRevision.findMany({
       where: {
         source: "ixwiki",
-        article: { namespace: 0 },
+        article: { namespace: 0, status: "PUBLISHED" },
         author: { notIn: ["LorewardsBot", "Maintenance script", "Robot"] },
       },
       orderBy: { createdAt: "desc" },
@@ -261,7 +261,7 @@ export async function ixwikiGetUserContribs(
     const pgRevs: any[] = await (db as any).wikiRevision.findMany({
       where: {
         author: { equals: username, mode: "insensitive" },
-        article: { namespace },
+        article: { namespace, status: "PUBLISHED" },
       },
       orderBy: { createdAt: "desc" },
       take: limit,
@@ -355,6 +355,7 @@ export async function ixwikiGetUserCreatedPages(
     const createdArticles: any[] = await (db as any).wikiArticle.findMany({
       where: {
         source: "ixwiki",
+        status: "PUBLISHED",
         revisions: {
           some: {
             author: { equals: username, mode: "insensitive" },

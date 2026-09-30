@@ -16,6 +16,7 @@ import {
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
+import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import {
   extractLeadImageFromWikitext,
   normalizeWikiImageUrl,
@@ -103,6 +104,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         try {
           const articles = await db.wikiArticle.findMany({
             where: {
+              status: "PUBLISHED",
               OR: [
                 { title: { in: titles } },
                 { title: { in: titles.map((t) => t.replace(/_/g, " ")) } },
@@ -181,7 +183,8 @@ export const wikiosCategoriesRouter = createTRPCRouter({
    */
   getParentCategories: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title);
       const categories = await getParentCategories(input.title);
       return { categories };
     }),
@@ -223,7 +226,9 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         const categories = await db.wikiCategory.findMany({
           where: whereCat,
           include: {
-            _count: { select: { members: true, children: true } },
+            _count: {
+              select: { members: { where: { article: { status: "PUBLISHED" } } }, children: true },
+            },
           },
           orderBy: { name: "asc" },
           take: input.limit,
@@ -301,7 +306,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
           const categories = await db.wikiCategory.findMany({
             take: input.limit,
             include: {
-              _count: { select: { members: true } },
+              _count: { select: { members: { where: { article: { status: "PUBLISHED" } } } } },
             },
             orderBy: { members: { _count: "desc" } },
           });

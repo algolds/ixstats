@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
   const realm = search.get("realm") || "ixwiki";
 
   const revisions = await db.wikiRevision.findMany({
-    where: { source: realm },
+    where: { source: realm, article: { status: "PUBLISHED" } },
     take: limit,
     orderBy: { createdAt: "desc" },
     select: {

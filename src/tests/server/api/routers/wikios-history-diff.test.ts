@@ -1,7 +1,17 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories
 // rely on the ambient global.
-jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: true }));
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  // plan 409: a read first looks the page's status up (a deleted page is hidden from most readers)
+  db: {
+    wikiArticle: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+  },
+  isDatabaseReadOnly: true,
+}));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
   getRevisionWikitextShadow: jest.fn(),

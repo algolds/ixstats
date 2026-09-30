@@ -347,6 +347,7 @@ export class PageManagementService {
 
     const articles = await db.wikiArticle.findMany({
       where: {
+        status: "PUBLISHED",
         OR: [
           { wikitext: { contains: clean, mode: "insensitive" } },
           { contentHtml: { contains: clean, mode: "insensitive" } },

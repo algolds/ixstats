@@ -233,13 +233,13 @@ const REDIRECT_SELECT = { wikitext: true } as const;
 /** The IxWiki row for a canonical title: the exact title, else the one row whose slug matches. */
 async function findRedirectRow(title: string) {
   const exact = await db.wikiArticle.findUnique({
-    where: { source_title: { source: "ixwiki", title } },
+    where: { source_title: { source: "ixwiki", title }, status: "PUBLISHED" },
     select: REDIRECT_SELECT,
   });
   if (exact) return exact;
 
   const variants = await db.wikiArticle.findMany({
-    where: { source: "ixwiki", slug: toArticleSlug(title) },
+    where: { source: "ixwiki", slug: toArticleSlug(title), status: "PUBLISHED" },
     take: 2,
     select: REDIRECT_SELECT,
   });

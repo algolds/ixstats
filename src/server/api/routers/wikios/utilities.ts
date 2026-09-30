@@ -9,6 +9,7 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
+import { getWikiPermissions } from "~/lib/wiki-os/rights";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 export const wikiosUtilitiesRouter = createTRPCRouter({
@@ -196,7 +197,9 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).default(50),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // The list of deleted pages is for those who may browse them; everyone else sees none.
+      if (!(await getWikiPermissions(ctx)).rights.has("browsearchive")) return [];
       return db.wikiArticle.findMany({
         where: {
           source: input.realm,
@@ -209,7 +212,6 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           slug: true,
           title: true,
           summary: true,
-          lastEditorId: true,
           updatedAt: true,
         },
       });

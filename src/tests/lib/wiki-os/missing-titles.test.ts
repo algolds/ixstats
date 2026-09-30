@@ -28,6 +28,7 @@ test("returns only titles with no article, comparing canonical titles exactly", 
   expect(mockFindMany).toHaveBeenCalledWith({
     where: {
       source: "ixwiki",
+      status: { not: "ARCHIVED" },
       title: { in: ["Treaty of Oakhaven", "Caphiria", "Treaty of oakhaven", "Nowhere Land"] },
     },
     select: { title: true },
@@ -42,11 +43,19 @@ test("reports a title MediaWiki would refuse as missing without querying for it"
     "Talk:",
   ]);
   expect(mockFindMany).toHaveBeenCalledWith(
-    expect.objectContaining({ where: { source: "ixwiki", title: { in: [] } } })
+    expect.objectContaining({
+      where: { source: "ixwiki", status: { not: "ARCHIVED" }, title: { in: [] } },
+    })
   );
 });
 
 test("skips the query when there is nothing to check", async () => {
   await expect(ArticleRepository.findMissingTitles([])).resolves.toEqual([]);
   expect(mockFindMany).not.toHaveBeenCalled();
+});
+
+test("a deleted page is a red link: the query leaves archived rows out", async () => {
+  mockFindMany.mockResolvedValue([]);
+  await ArticleRepository.findMissingTitles(["Caphiria"]);
+  expect(mockFindMany.mock.calls[0]?.[0].where.status).toEqual({ not: "ARCHIVED" });
 });

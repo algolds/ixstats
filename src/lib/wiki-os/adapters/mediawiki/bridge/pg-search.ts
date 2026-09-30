@@ -77,6 +77,7 @@ export async function ixwikiSearchTemplates(query: string, limit: number = 10): 
     const articles = await (db as any).wikiArticle.findMany({
       where: {
         source: "ixwiki",
+        status: "PUBLISHED",
         namespace: 10,
         title: { contains: query, mode: "insensitive" },
       },

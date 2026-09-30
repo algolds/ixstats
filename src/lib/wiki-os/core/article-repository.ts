@@ -654,7 +654,11 @@ export class ArticleRepository {
       title: canonicalizeTitle(raw, { source })?.title,
     }));
     const found = await db.wikiArticle.findMany({
-      where: { source, title: { in: candidates.flatMap((c) => c.title ?? []) } },
+      where: {
+        source,
+        status: { not: "ARCHIVED" }, // a deleted page is a red link
+        title: { in: candidates.flatMap((c) => c.title ?? []) },
+      },
       select: { title: true },
     });
     const existing = new Set(found.map((a) => a.title));

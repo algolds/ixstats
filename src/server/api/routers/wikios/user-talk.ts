@@ -8,6 +8,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getWikiAuth } from "~/lib/wiki-os/auth";
+import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import { findWikiProfileUser } from "~/lib/wiki-os/storage";
 import {
   getUserContribs,
@@ -98,7 +99,8 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         offset: z.string().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title);
       // 1. Fast-path: Native PostgreSQL Directed Link Graph (<1ms)
       const nativeLinks = await LinkGraphService.getBacklinks(input.title, "ixwiki", input.limit);
       if (nativeLinks.length > 0) {
