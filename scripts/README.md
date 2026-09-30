@@ -88,6 +88,7 @@ scripts/
 
 | Script | Purpose & Command |
 | :--- | :--- |
+| [`scripts/migrations/mark-match-revenue-collected.ts`](migrations/mark-match-revenue-collected.ts) | `bun run db:mark-match-revenue-collected [-- --apply]` — one-off SL-14 fix: marks matches completed before per-match revenue tracking as collected, so the first `collectMatchRevenue` after the deploy doesn't pay a club's whole history. Dry run by default; run once after the schema push. |
 | [`scripts/migrations/remap-budget-years.ts`](migrations/remap-budget-years.ts) | `bun run db:remap-budget-years [-- --apply]` — one-off MC-1 fix: shifts `BudgetAllocation.budgetYear` rows still on real-calendar years (≤ 2035) onto the IxTime basis (`currentBudgetYear()`) by the constant offset `ixYear − realYear`. Dry run by default (prints the year mapping and conflicts); `--apply` writes in one transaction. Take a `db:backup` first. |
 | [`scripts/migrations/budget-year-remap-plan.ts`](migrations/budget-year-remap-plan.ts) | Pure planner for the remap above (`planBudgetYearRemap`); a target year the department already holds is reported, never overwritten. |
 

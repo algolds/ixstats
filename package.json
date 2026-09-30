@@ -45,6 +45,7 @@
     "db:backup": "bun scripts/setup/backup-db.ts",
     "db:generate": "prisma generate",
     "db:init": "bun scripts/setup/init-db.ts",
+    "db:mark-match-revenue-collected": "bun scripts/migrations/mark-match-revenue-collected.ts",
     "db:migrate": "echo '⛔ ERROR: db:migrate blocked - database contains production data (82 nations). Use db:migrate:force to override.' && exit 1",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:force": "prisma migrate dev",

@@ -95,7 +95,7 @@ masked in the admin config; sports season and simulation procedures require the 
 - **ThinkShare encryption & signatures:** schema fields exist, no cryptography.
 
 ### Labs
-- **MyLeague:** boxing bout engine (uses the soccer loop); pay the sponsor `winBonus`; Golden Box stage config UI and double elimination; patron-saint MyClub UI and Sports → Storyteller write-back.
+- **MyLeague:** boxing bout engine (uses the soccer loop); Golden Box stage config UI and double elimination; patron-saint MyClub UI and Sports → Storyteller write-back.
 - **Onoma:** partial phases 4, 5, 8, 9 ([onoma-roadmap.md](../systems/onoma-roadmap.md)).
 - **Vexel:** add to the Labs menu; full external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../specs/vexel-prd.md)).
 

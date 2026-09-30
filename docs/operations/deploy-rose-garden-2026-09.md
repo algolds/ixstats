@@ -223,10 +223,31 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 `politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` → `scheduled-changes` →
 `policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `passive-income` (last).
 
+Enable `db-backup` (daily dump to `backups/`) with the first cycle, and `budget-year-rollover` (new-fiscal-year
+reminders) once the budget-year remap in step 8 is applied.
+
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop
 syncing until you enable it, or until the MediaWiki webhook calls `/api/wikios/inbound-sync` with the secret.
 
-## 8. One-off data fix
+## 8. One-off data fixes
+
+**Right after the deploy script** (it pushes the schema that adds per-match revenue tracking), mark matches that finished
+before this release as already paid, or each club's first "Collect Revenue" pays its whole history (SL-14):
+
+```bash
+bun run db:mark-match-revenue-collected             # dry run: prints how many matches
+bun run db:mark-match-revenue-collected -- --apply
+```
+
+The M0 fixes add three more, each a dry run first (take `bun run db:backup` before the first `--apply`):
+
+```bash
+bun run db:remap-budget-years               # real-calendar budget years → IxTime years (MC-1)
+bun run db:remap-budget-years -- --apply
+bun run audit:vault-exploits                # exploit rows and the corrections it would make (VT-1/2/6/11)
+bun run audit:vault-exploits:apply
+bun run audit:forum-links                   # read-only: forum links made without proof (WK-1)
+```
 
 Existing storyteller effects were stored with second-scale IxTime and never applied (plan 329):
 

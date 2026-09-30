@@ -34,16 +34,21 @@ export function RevenueCollector({
 }: RevenueCollectorProps) {
   const utils = api.useUtils();
 
+  // What's waiting: completed matches this club hasn't been paid for yet (each pays once).
+  const { data: pending } = api.sports.previewMatchRevenue.useQuery({ teamId });
   const collect = api.sports.collectMatchRevenue.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
+      void utils.sports.getMyClubOverview.invalidate({ teamId });
+      void utils.sports.previewMatchRevenue.invalidate({ teamId });
       onCollected?.();
     },
   });
 
-  const ticketRevenue = Math.round(stadiumCapacity * ticketPrice * 0.6 * (popularity / 100));
-  const sponsorIncome = sponsor?.baseFee ?? 0;
-  const total = ticketRevenue + sponsorIncome;
+  const perHomeMatch = Math.round(stadiumCapacity * ticketPrice * 0.6 * (popularity / 100));
+  const ticketRevenue = pending?.ticketRevenue ?? 0;
+  const sponsorIncome = (pending?.sponsorFees ?? 0) + (pending?.winBonuses ?? 0);
+  const total = pending?.total ?? 0;
+  const matchesWaiting = pending ? pending.homeMatches : 0;
 
   return (
     <Card className="facet-hierarchy-child bg-card/40 border-border">
@@ -58,7 +63,8 @@ export function RevenueCollector({
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground flex items-center gap-1.5">
               <Ticket className="h-3.5 w-3.5" />
-              Ticket Revenue
+              Ticket Revenue ({matchesWaiting} home {matchesWaiting === 1 ? "match" : "matches"} ×{" "}
+              {perHomeMatch.toLocaleString()}c)
             </span>
             <span className="text-foreground font-medium tabular-nums">
               +{ticketRevenue.toLocaleString()}c
@@ -68,6 +74,9 @@ export function RevenueCollector({
             <span className="text-muted-foreground flex items-center gap-1.5">
               <BadgeDollarSign className="h-3.5 w-3.5" />
               {sponsor?.name ?? "No sponsor"}
+              {pending && pending.wins > 0
+                ? ` (incl. ${pending.wins} ${pending.wins === 1 ? "win bonus" : "win bonuses"})`
+                : ""}
             </span>
             <span className="text-foreground font-medium tabular-nums">
               +{sponsorIncome.toLocaleString()}c
@@ -96,13 +105,13 @@ export function RevenueCollector({
 
         <Button
           onClick={() => collect.mutate({ teamId })}
-          disabled={collect.isPending}
+          disabled={collect.isPending || total <= 0}
           className="w-full text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
           size="sm"
           style={{ backgroundColor: teamColor || "var(--color-info)" }}
         >
           {collect.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-          Collect Revenue
+          {total > 0 ? "Collect Revenue" : "No new match revenue"}
         </Button>
       </CardContent>
     </Card>

@@ -124,7 +124,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Tool | Version | Routes | Routers | Status | Notes |
 |---|:---:|---|---|:---:|---|
 | Onoma | v4 | `/labs/onoma` | `onoma/`, `/api/onoma/tts` | 🧪 Labs | Roadmap phases 1–3 and 7 done; 4, 5, 8, 9 partial; 6 and 10 not started |
-| MyLeague & MyClub | platform | `/myleague`, `/myclub` | `sports/` | 🧪 Labs | 7 sport presets; boxing reuses the soccer loop; sponsor win bonus unpaid |
+| MyLeague & MyClub | platform | `/myleague`, `/myclub` | `sports/` | 🧪 Labs | 7 sport presets; boxing reuses the soccer loop |
 | Vexel heraldry | — | `/labs/vexel` | `heraldry/` | 🧪 Labs | P0 mostly built; not in the Labs menu; attach-to-country blanks the coat of arms |
 | Map pipeline | Atlas v5 | `/labs/map-pipeline` | `geo/editor/procedural.ts` | 🧪 Labs | |
 
@@ -133,8 +133,9 @@ found several that are partly built, read-only, or broken, so each row now carri
 ## Known blockers on `rose-garden`
 
 - **M0 follow-ups (code audit 2026-09-30).** The exploit and authorization fixes are merged ([#36](https://github.com/algolds/ixstats/pull/36), [#37](https://github.com/algolds/ixstats/pull/37), [#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)).
-  Still open: the CSP nonce (PL-2), per-click match revenue (SL-14), rate limits on the remaining protected mutations, and
-  these ops steps (besides the password rotation below): run `db:backup` and test a restore; run `db:remap-budget-years`;
+  Still open: the CSP nonce (PL-2), rate limits on the remaining protected mutations, and
+  these ops steps (besides the password rotation below): run `db:backup` and test a restore; run
+  `db:mark-match-revenue-collected` right after the schema push; run `db:remap-budget-years`;
   review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup` and
   `budget-year-rollover` in `CRON_ENABLED_JOBS`; set `DISCORD_GUILD_ID`. Plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
 - **`audit:arch` (non-blocking in CI) reports 15 source files over their line ceiling** (largest:

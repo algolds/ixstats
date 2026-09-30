@@ -8,11 +8,13 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   assertCanManageLeague,
   viewerCanManageLeague,
 } from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
+import { computeMatchRevenue } from "~/lib/sports/match-revenue";
 import {
   generateSchedule,
   matchIntervalMs,
@@ -21,30 +23,83 @@ import {
   type ArchetypeType,
 } from "~/lib/sports";
 
+/** Completed matches of `teamId` whose revenue that side hasn't collected yet. */
+function uncollectedMatches(
+  db: Pick<PrismaClient, "sportMatch"> | Prisma.TransactionClient,
+  teamId: string
+) {
+  return db.sportMatch.findMany({
+    where: {
+      status: "completed",
+      OR: [
+        { homeTeamId: teamId, homeRevenueCollectedAt: null },
+        { awayTeamId: teamId, awayRevenueCollectedAt: null },
+      ],
+    },
+    select: { id: true, homeTeamId: true, awayTeamId: true, homeScore: true, awayScore: true },
+  });
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export const sportsSeasonsLifecycleRouter = createTRPCRouter({
   // ═══ Team Management ═════════════════════════════════════════════════════════
 
+  /** What the caller's club would collect now: completed matches it hasn't been paid for yet. */
+  previewMatchRevenue: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+      if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+      if (team.ownerUserId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+      }
+      return computeMatchRevenue(team, await uncollectedMatches(ctx.db, team.id));
+    }),
+
+  /**
+   * Pay the club for completed matches it hasn't collected yet (SL-14): ticket revenue and the
+   * sponsor base fee per home match, the sponsor win bonus per win. Each match pays once.
+   */
   collectMatchRevenue: protectedProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        return await ctx.db.$transaction(async (tx) => {
+          // Serialize collections per team so two clicks can't both pay the same matches
+          await tx.$queryRaw`SELECT id FROM "sport_teams" WHERE id = ${input.teamId} FOR UPDATE`;
+          const team = await tx.sportTeam.findUnique({ where: { id: input.teamId } });
+          if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+          if (team.ownerUserId !== ctx.user.id) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+          }
 
-        const ticketRevenue =
-          team.stadiumCapacity * team.ticketPrice * 0.6 * (team.popularity / 100);
-        const sponsorIncome = (team.sponsor as any)?.baseFee ?? 0;
-        const totalIncome = Math.round(ticketRevenue + sponsorIncome);
+          const matches = await uncollectedMatches(tx, team.id);
+          const revenue = computeMatchRevenue(team, matches);
+          if (matches.length === 0) {
+            return { ...revenue, matchesCollected: 0, budget: team.budget ?? 0 };
+          }
 
-        const currentBudget = team.budget ?? 0;
-        return ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { budget: currentBudget + totalIncome },
+          const now = new Date();
+          const homeIds = matches.filter((m) => m.homeTeamId === team.id).map((m) => m.id);
+          const awayIds = matches.filter((m) => m.awayTeamId === team.id).map((m) => m.id);
+          if (homeIds.length > 0) {
+            await tx.sportMatch.updateMany({
+              where: { id: { in: homeIds } },
+              data: { homeRevenueCollectedAt: now },
+            });
+          }
+          if (awayIds.length > 0) {
+            await tx.sportMatch.updateMany({
+              where: { id: { in: awayIds } },
+              data: { awayRevenueCollectedAt: now },
+            });
+          }
+          const updated = await tx.sportTeam.update({
+            where: { id: team.id },
+            data: { budget: { increment: revenue.total } },
+          });
+          return { ...revenue, matchesCollected: matches.length, budget: updated.budget ?? 0 };
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;

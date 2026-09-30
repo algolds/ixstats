@@ -187,7 +187,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                 <div>
                   <span className="text-muted-foreground block text-xs uppercase">Base Fee</span>
                   <span className="text-foreground font-semibold">
-                    ₷{currentSponsor.baseFee} / season
+                    ₷{currentSponsor.baseFee} / home match
                   </span>
                 </div>
                 <div>
@@ -195,7 +195,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                     Win Bonus
                   </span>
                   <span className="text-foreground font-semibold">
-                    ₷{currentSponsor.winBonus} / match
+                    ₷{currentSponsor.winBonus} / win
                   </span>
                 </div>
               </div>

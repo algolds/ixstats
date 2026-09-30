@@ -77,7 +77,7 @@ code-health track runs throughout.
 | 10 | Lorewards admin mutations use `adminProcedure`; mask the Narrator LLM key | WK-9, WK-12 | S | P0 | Merged ([#38](https://github.com/algolds/ixstats/pull/38)) |
 | 11 | Anonymous Kokoro access: protect or rate-limit `suggestPhonemes` / `wakeKokoroServer`; rate-limit public usage counters | PL-3 | S | P0 | Merged ([#38](https://github.com/algolds/ixstats/pull/38)) |
 | 12 | The admin audit log actually persists: check `result.ok`, log every admin mutation | PL-1 | S | P0 | Merged ([#38](https://github.com/algolds/ixstats/pull/38)) |
-| 13 | `collectMatchRevenue` pays per home match, not per click (with the sponsor `winBonus` fix) | SL-14 | S | P0 | Open |
+| 13 | `collectMatchRevenue` pays per home match, not per click (with the sponsor `winBonus` fix) | SL-14 | S | P0 | Merged ([#43](https://github.com/algolds/ixstats/pull/43)); run `db:mark-match-revenue-collected` at deploy (ops) |
 | 14 | Budget year: one IxTime-based year for writers, readers and the zod bound (it breaks on 2027-01-01) | MC-1 | S | P0 | Merged ([#37](https://github.com/algolds/ixstats/pull/37)) |
 | 15 | Backups: a working `db:backup` / `db:restore` for Postgres, a `pg_dump` in `deploy-production.sh` before `db push`, and a tested restore | PL-11 | M | P0 | Merged ([#37](https://github.com/algolds/ixstats/pull/37)); restore not yet tested on a scratch DB (ops) |
 | 16 | Rotate the `ixstats_readonly` password (it's in git history) | pending-features §1 | S | P0 (ops) | Open (ops) |
