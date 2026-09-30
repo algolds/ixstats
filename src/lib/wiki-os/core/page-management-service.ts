@@ -95,7 +95,7 @@ export class PageManagementService {
           format: "WIKITEXT",
           wikitext: `#REDIRECT [[${newCanonicalTitle}]]`,
           contentHtml: `<div class="redirect-banner">Redirect to <a href="/wiki/${newSlug}">${newCanonicalTitle}</a></div>`,
-          redirectTargetSlug: newSlug,
+          redirectTargetSlug: newCanonicalTitle,
           summary: `Redirected to [[${newCanonicalTitle}]] via page move`,
           authorId: userId,
           lastEditorId: userId,
@@ -344,7 +344,9 @@ export class PageManagementService {
   }
 
   /**
-   * Maintenance Diagnostic: Broken Redirects
+   * Maintenance Diagnostic: Broken Redirects. `redirectTargetSlug` holds the target's canonical
+   * TITLE (the column name is historical), so a redirect is broken when no published article of
+   * the same realm has that title. `targetSlug` in the result is that title.
    */
   static async getBrokenRedirects(
     limit = 50,
@@ -367,29 +369,40 @@ export class PageManagementService {
 
       if (!redirects || redirects.length === 0) return [];
 
-      const targetSlugs = redirects
-        .map((r) => r.redirectTargetSlug)
-        .filter((s): s is string => Boolean(s));
+      // A stored target is canonical when the app wrote it; canonicalizing again also covers
+      // values the SQL backfill derived without a canonical namespace prefix.
+      const withTargets = redirects.flatMap((r) =>
+        r.redirectTargetSlug
+          ? [
+              {
+                ...r,
+                target:
+                  canonicalizeTitle(r.redirectTargetSlug, { source: realm })?.title ??
+                  r.redirectTargetSlug,
+              },
+            ]
+          : []
+      );
 
       const existingTargets = await db.wikiArticle.findMany({
         where: {
           source: realm,
-          slug: { in: targetSlugs },
+          title: { in: withTargets.map((r) => r.target) },
           status: "PUBLISHED",
         },
-        select: { slug: true },
+        select: { title: true },
       });
 
-      const validTargetSet = new Set(existingTargets.map((t) => t.slug));
+      const validTargetSet = new Set(existingTargets.map((t) => t.title));
 
-      return redirects
-        .filter((r) => r.redirectTargetSlug && !validTargetSet.has(r.redirectTargetSlug))
+      return withTargets
+        .filter((r) => !validTargetSet.has(r.target))
         .slice(0, limit)
         .map((r) => ({
           id: r.id,
           title: r.title,
           slug: r.slug,
-          targetSlug: r.redirectTargetSlug!,
+          targetSlug: r.target,
         }));
     } catch {
       return [];
