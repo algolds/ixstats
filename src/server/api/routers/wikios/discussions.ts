@@ -10,7 +10,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, lightMutationProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, isWikiAdmin } from "~/lib/wiki-os/auth";
-import { requireNotBlocked } from "~/lib/wiki-os/permissions";
+import { assertTitleVisible, requireNotBlocked } from "~/lib/wiki-os/permissions";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -56,7 +56,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
         status: z.enum(["ALL", "OPEN", "RESOLVED", "ARCHIVED"]).default("OPEN"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.articleTitle);
       const normalizedTitle = input.articleTitle.trim().replace(/ /g, "_");
 
       const whereClause: {

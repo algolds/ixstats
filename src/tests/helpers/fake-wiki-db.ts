@@ -138,6 +138,7 @@ export interface FakeWikiDb {
   wikiRevision: Table;
   wikiLink: Table;
   wikiLog: Table;
+  wikiDiscussionThread: Table;
   $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>): Promise<T>;
 }
 
@@ -157,6 +158,7 @@ export function createFakeWikiDb() {
     wikiRevision: createTable(),
     wikiLink: createTable(),
     wikiLog: createTable(() => ({ comment: null, params: null, articleId: null })),
+    wikiDiscussionThread: createTable(),
   };
   const db: FakeWikiDb = {
     ...tables,

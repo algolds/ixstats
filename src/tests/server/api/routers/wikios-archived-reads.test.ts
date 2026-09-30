@@ -60,6 +60,7 @@ import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-dif
 import { wikiosCategoriesRouter } from "~/server/api/routers/wikios/categories";
 import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
 import { wikiosUtilitiesRouter } from "~/server/api/routers/wikios/utilities";
+import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 import {
@@ -86,6 +87,8 @@ const history = (role: string | null) => createCallerFactory(wikiosHistoryDiffRo
 const categories = (role: string | null) =>
   createCallerFactory(wikiosCategoriesRouter)(ctxOf(role));
 const userTalk = (role: string | null) => createCallerFactory(wikiosUserTalkRouter)(ctxOf(role));
+const discussions = (role: string | null) =>
+  createCallerFactory(wikiosDiscussionsRouter)(ctxOf(role));
 const utilities = (role: string | null) => createCallerFactory(wikiosUtilitiesRouter)(ctxOf(role));
 
 const revision = {
@@ -133,6 +136,10 @@ const READS: Array<[string, (role: string | null, title: string) => Promise<unkn
   ["getHistory", (r, title) => history(r).getHistory({ title })],
   ["getParentCategories", (r, title) => categories(r).getParentCategories({ title })],
   ["getBacklinks", (r, title) => userTalk(r).getBacklinks({ title })],
+  [
+    "getArticleMarginData",
+    (r, title) => discussions(r).getArticleMarginData({ articleTitle: title }),
+  ],
 ];
 
 describe.each(READS)("%s", (_name, read) => {
