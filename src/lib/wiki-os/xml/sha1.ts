@@ -10,8 +10,12 @@ import { createHash } from "node:crypto";
 /** Length MediaWiki pads the base-36 digest to (the largest SHA-1 needs 31 digits). */
 const SHA1_BASE36_LENGTH = 31;
 
+/** A SHA-1 given as 40 hex digits (what the MediaWiki Action API reports) in MediaWiki's base 36. */
+export function sha1HexToBase36(hex: string): string {
+  return BigInt(`0x${hex}`).toString(36).padStart(SHA1_BASE36_LENGTH, "0");
+}
+
 /** The MediaWiki `rev_sha1` of `text`: "phoiac9h4m842xq45sp7s6u21eteeq1" for the empty string. */
 export function mwSha1Base36(text: string): string {
-  const hex = createHash("sha1").update(text, "utf8").digest("hex");
-  return BigInt(`0x${hex}`).toString(36).padStart(SHA1_BASE36_LENGTH, "0");
+  return sha1HexToBase36(createHash("sha1").update(text, "utf8").digest("hex"));
 }

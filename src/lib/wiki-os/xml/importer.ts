@@ -49,6 +49,8 @@ export interface ImportOptions {
 
 /** Title used for errors that are about the dump rather than one of its pages. */
 export const DUMP_ERROR_TITLE = "(dump)";
+/** Pages in a row that fail to write before the import gives up (database down, schema not migrated). */
+export const MAX_CONSECUTIVE_WRITE_FAILURES = 10;
 const DELETED_AUTHOR = "(deleted)";
 const SUMMARY_COLUMN_LIMIT = 480;
 
@@ -59,8 +61,22 @@ interface ImportContext {
   authors: Map<string, string | null>;
 }
 
-const messageOf = (error: unknown): string =>
-  error instanceof Error ? error.message : "Unknown error";
+/** A page the dump describes wrongly (as opposed to one the database failed to take). */
+class PageRejected extends Error {}
+
+/** Prisma opens its messages with "Invalid `client.model.op()` invocation in <file>" and a source frame. */
+const PRISMA_INVOCATION = /^\s*Invalid `[^`]+` invocation/;
+
+/**
+ * An error as one readable line. What went wrong in a Prisma message is its last line (the
+ * database reports it after the failing call and its source frame).
+ */
+function messageOf(error: unknown): string {
+  if (!(error instanceof Error)) return "Unknown error";
+  if (!PRISMA_INVOCATION.test(error.message)) return error.message;
+  const lines = error.message.split("\n").filter((line) => line.trim() !== "");
+  return lines.at(-1)?.trim() ?? error.message;
+}
 
 function emptySummary(): ImportSummary {
   return {
@@ -92,11 +108,11 @@ function protectionFromRestrictions(
  */
 function resolveIdentity(page: ImportPage, source: string) {
   const canon = page.title.includes("#") ? null : canonicalizeTitle(page.title, { source });
-  if (!canon) throw new Error(`Invalid title ${JSON.stringify(page.title)}`);
+  if (!canon) throw new PageRejected(`Invalid title ${JSON.stringify(page.title)}`);
 
   const namespace = storedNamespace(canon, page.ns ?? canon.namespaceId);
   if (namespace.namespaceId !== (page.ns ?? canon.namespaceId)) {
-    throw new Error(
+    throw new PageRejected(
       `Namespace ${page.ns} does not match the title ${JSON.stringify(canon.title)} (namespace ${namespace.namespaceId})`
     );
   }
@@ -119,6 +135,7 @@ async function linkAuthors(page: ImportPage, ctx: ImportContext): Promise<void> 
   const links = await db.wikiAccountLink.findMany({
     where: { source: ctx.source, username: { in: unknown }, verifiedAt: { not: null } },
     select: { username: true, userId: true },
+    take: unknown.length,
   });
   for (const name of unknown) ctx.authors.set(name, null);
   for (const link of links) ctx.authors.set(link.username, link.userId);
@@ -137,7 +154,7 @@ function authorOf(
 function timestampOf(revision: XmlRevision): number {
   const time = Date.parse(revision.timestamp);
   if (Number.isNaN(time)) {
-    throw new Error(
+    throw new PageRejected(
       `Revision ${revision.id ?? "(no id)"} has an invalid timestamp ${JSON.stringify(revision.timestamp)}`
     );
   }
@@ -198,7 +215,7 @@ function headOf(
 
 async function buildPageInput(page: ImportPage, ctx: ImportContext): Promise<ImportPageInput> {
   const { canon, namespace } = resolveIdentity(page, ctx.source);
-  if (page.revisions.length === 0) throw new Error("The page has no revisions");
+  if (page.revisions.length === 0) throw new PageRejected("The page has no revisions");
 
   await linkAuthors(page, ctx);
   const revisions = toImportedRevisions(page, ctx.authors);
@@ -216,12 +233,15 @@ async function buildPageInput(page: ImportPage, ctx: ImportContext): Promise<Imp
   };
 }
 
+/** How one page went: imported, rejected as malformed, or failed in the database. */
+type PageOutcome = "imported" | "rejected" | "failed";
+
 /** Import one page and add what happened to `summary`; a failure becomes an `errors` entry. */
 async function importOnePage(
   page: ImportPage,
   ctx: ImportContext,
   summary: ImportSummary
-): Promise<void> {
+): Promise<PageOutcome> {
   summary.pages += 1;
   summary.uploadsSkipped += page.uploads;
   try {
@@ -236,14 +256,17 @@ async function importOnePage(
         message: `${result.conflicts} revision(s) already belong to another page and were skipped`,
       });
     }
+    return "imported";
   } catch (error) {
     summary.errors.push({ title: page.title, message: messageOf(error) });
+    return error instanceof PageRejected ? "rejected" : "failed";
   }
 }
 
 /**
  * Import every page of a dump. Never throws: failures are in the returned summary's `errors`
- * (a malformed or truncated dump as one `(dump)` entry).
+ * (a malformed or truncated dump as one `(dump)` entry). When `MAX_CONSECUTIVE_WRITE_FAILURES`
+ * pages in a row fail in the database, the import stops instead of failing every page of the dump.
  */
 export async function importExport(
   events: AsyncIterable<ImportEvent>,
@@ -251,11 +274,25 @@ export async function importExport(
 ): Promise<ImportSummary> {
   const summary = emptySummary();
   const ctx: ImportContext = { source, dryRun, authors: new Map() };
+  let failuresInARow = 0;
   try {
     for await (const event of events) {
       if (event.type !== "page") continue;
-      await importOnePage(event.page, ctx, summary);
+      const outcome = await importOnePage(event.page, ctx, summary);
       onProgress?.(summary);
+
+      if (outcome === "imported") failuresInARow = 0;
+      if (outcome === "failed") failuresInARow += 1;
+      if (failuresInARow >= MAX_CONSECUTIVE_WRITE_FAILURES) {
+        summary.errors.push({
+          title: DUMP_ERROR_TITLE,
+          message:
+            `Stopped after ${failuresInARow} pages in a row failed to import ` +
+            `(last: ${summary.errors[summary.errors.length - 1]?.message}). ` +
+            "Is the database reachable and migrated (prisma/manual-migrations)?",
+        });
+        break;
+      }
     }
   } catch (error) {
     summary.errors.push({ title: DUMP_ERROR_TITLE, message: messageOf(error) });

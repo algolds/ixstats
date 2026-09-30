@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
+import { mwSha1Base36, sha1HexToBase36 } from "~/lib/wiki-os/xml/sha1";
 
 // Reference values computed independently (hashlib + a hand-written base-36 conversion).
 describe("mwSha1Base36", () => {
@@ -21,5 +21,13 @@ describe("mwSha1Base36", () => {
 
   it("left-pads a small digest with zeros to 31 characters", () => {
     expect(mwSha1Base36("pad10")).toBe("0xppfai6ugrm8kqtj77un9sv64fkg0z");
+  });
+});
+
+describe("sha1HexToBase36", () => {
+  it("converts the hex digest the Action API reports to MediaWiki's base 36", () => {
+    expect(sha1HexToBase36("da39a3ee5e6b4b0d3255bfef95601890afd80709")).toBe(
+      "phoiac9h4m842xq45sp7s6u21eteeq1"
+    );
   });
 });

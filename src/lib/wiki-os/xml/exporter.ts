@@ -52,7 +52,8 @@ interface RevisionRow {
   summary: string | null;
   minor: boolean;
   byteSize: number;
-  sha1: string | null;
+  /** Only read for full history. */
+  sha1?: string | null;
   createdAt: Date;
   wikitext: string;
 }
@@ -67,17 +68,20 @@ const PAGE_SELECT = {
   updatedAt: true,
 } as const;
 
-const REVISION_SELECT = {
+/** The revision columns a current-only export needs (no hash: the writer hashes the text it writes). */
+const CURRENT_REVISION_SELECT = {
   id: true,
   mwRevId: true,
   author: true,
   summary: true,
   minor: true,
   byteSize: true,
-  sha1: true,
   createdAt: true,
   wikitext: true,
 } as const;
+
+/** Full history also reads `sha1`, which a placeholder revision (no text to hash) is exported with. */
+const HISTORY_REVISION_SELECT = { ...CURRENT_REVISION_SELECT, sha1: true } as const;
 
 /** Who a revision's `author` string names: an IP, a hidden contributor, or an account. */
 export function contributorOf(author: string | null): Contributor {
@@ -112,11 +116,16 @@ async function* historyOf(articleId: string): AsyncGenerator<XmlRevision> {
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: REVISION_BATCH,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-      select: REVISION_SELECT,
+      select: HISTORY_REVISION_SELECT,
     });
     for (const row of batch) {
       yield isPlaceholder(row)
-        ? { ...toXmlRevision(row, parentId, ""), text: null, bytes: row.byteSize, sha1: row.sha1 }
+        ? {
+            ...toXmlRevision(row, parentId, ""),
+            text: null,
+            bytes: row.byteSize,
+            sha1: row.sha1 ?? null,
+          }
         : toXmlRevision(row, parentId, row.wikitext);
       parentId = row.mwRevId;
     }
@@ -133,7 +142,7 @@ async function newestRevision(articleId: string): Promise<RevisionRow | undefine
   const row: RevisionRow | null = await db.wikiRevision.findFirst({
     where: { articleId, OR: [{ wikitext: { not: "" } }, { byteSize: 0 }] },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: REVISION_SELECT,
+    select: CURRENT_REVISION_SELECT,
   });
   return row ?? undefined;
 }

@@ -9,7 +9,11 @@ import { join } from "node:path";
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
 import { readExport, type ImportEvent } from "~/lib/wiki-os/xml/import-reader";
-import { importExport, type ImportSummary } from "~/lib/wiki-os/xml/importer";
+import {
+  importExport,
+  MAX_CONSECUTIVE_WRITE_FAILURES,
+  type ImportSummary,
+} from "~/lib/wiki-os/xml/importer";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import type { XmlRevision } from "~/lib/wiki-os/xml/types";
 import {
@@ -404,6 +408,50 @@ describe("WikiOS revisions that MediaWiki also has", () => {
   });
 });
 
+describe("a page with a long history", () => {
+  const longDump = (count: number) =>
+    `<mediawiki><page><title>Long page</title><ns>0</ns><id>1</id>${Array.from(
+      { length: count },
+      (_, i) =>
+        `<revision><id>${i + 1}</id><timestamp>2026-01-01T00:${String(Math.floor(i / 60) % 60).padStart(2, "0")}:${String(i % 60).padStart(2, "0")}Z</timestamp><contributor><username>Jane</username></contributor><text>v${i}</text></revision>`
+    ).join("")}</page></mediawiki>`;
+
+  it("re-imports as a no-op even when the page has more rows than a capped read returns", async () => {
+    // 2400 revisions: over the 1000-row cap the read-only db guard puts on an unbounded findMany,
+    // and over IMPORT_BATCH (500), so inserts and lookups are both chunked.
+    const first = await importXml(longDump(2400));
+    expect(first).toMatchObject({ revisionsImported: 2400, errors: [] });
+    expect(store.revisions).toHaveLength(2400);
+
+    const again = await importXml(longDump(2400));
+
+    expect(again).toMatchObject({
+      revisionsImported: 0,
+      revisionsSkipped: 2400,
+      placeholdersFilled: 0,
+      errors: [],
+    });
+    expect(store.revisions).toHaveLength(2400);
+  });
+
+  it("fills placeholders of a long history beyond the capped read", async () => {
+    const seeded = seedArticle({ title: "Long page", slug: "long_page" });
+    for (let i = 0; i < 1500; i++) {
+      seedRevision(seeded.id, {
+        mwRevId: i + 1,
+        wikitext: "",
+        byteSize: 3,
+        createdAt: new Date(Date.UTC(2026, 0, 1, 0, Math.floor(i / 60) % 60, i % 60)),
+      });
+    }
+
+    const summary = await importXml(longDump(1500));
+
+    expect(summary).toMatchObject({ placeholdersFilled: 1500, revisionsImported: 0, errors: [] });
+    expect(store.revisions.every((r) => r.wikitext !== "")).toBe(true);
+  });
+});
+
 describe("authors", () => {
   it("links a revision to a WikiOS user only through a verified account link, one lookup per name", async () => {
     store.accountLinks.push(
@@ -585,6 +633,71 @@ describe("pages that cannot be imported", () => {
     // "First"'s article row was created before its revisions failed: the rollback removed it.
     expect(store.articles.map((a) => a.title)).toEqual(["Second"]);
     expect(store.revisions).toHaveLength(1);
+  });
+});
+
+describe("a database that is down or not migrated", () => {
+  const goodPage = (n: number) =>
+    `<page><title>Page ${n}</title><ns>0</ns><revision><id>${n}</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>x</text></revision></page>`;
+  const badPage = (n: number) =>
+    `<page><title>Bad|${n}</title><ns>0</ns><revision><timestamp>2026-01-01T00:00:00Z</timestamp><text>x</text></revision></page>`;
+  const dump = (...pages: string[]) => `<mediawiki>${pages.join("")}</mediawiki>`;
+
+  const findUnique = () => {
+    const { db } = jest.requireMock("~/server/db") as {
+      db: { wikiArticle: { findUnique: (...a: unknown[]) => Promise<unknown> } };
+    };
+    return jest.spyOn(db.wikiArticle, "findUnique");
+  };
+
+  it("stops after a run of failed pages instead of failing the whole dump", async () => {
+    const broken = findUnique().mockRejectedValue(
+      new Error("The column `wiki_revisions.sha1` does not exist in the current database.")
+    );
+
+    const pages = Array.from({ length: MAX_CONSECUTIVE_WRITE_FAILURES + 15 }, (_, i) =>
+      goodPage(i)
+    );
+    const summary = await importXml(dump(...pages));
+    const calls = broken.mock.calls.length;
+    broken.mockRestore();
+
+    expect(calls).toBe(MAX_CONSECUTIVE_WRITE_FAILURES);
+    expect(summary.pages).toBe(MAX_CONSECUTIVE_WRITE_FAILURES);
+    expect(summary.errors).toHaveLength(MAX_CONSECUTIVE_WRITE_FAILURES + 1);
+    expect(summary.errors[MAX_CONSECUTIVE_WRITE_FAILURES]).toMatchObject({ title: "(dump)" });
+    expect(summary.errors[MAX_CONSECUTIVE_WRITE_FAILURES]?.message).toMatch(
+      /Stopped after 10 pages in a row.*sha1.*migrated/
+    );
+  });
+
+  it("reports a Prisma failure as the one line that says what went wrong", async () => {
+    const broken = findUnique().mockRejectedValue(
+      new Error(
+        "\nInvalid `client.wikiRevision.findMany()` invocation in\n/app/article-repository.ts:126:37\n\n  123 : [];\n→ 126 ...(await client.wikiRevision.findMany(\nThe column `t0.sha1` does not exist in the current database."
+      )
+    );
+
+    const summary = await importXml(dump(goodPage(1)));
+    broken.mockRestore();
+
+    expect(summary.errors).toEqual([
+      { title: "Page 1", message: "The column `t0.sha1` does not exist in the current database." },
+    ]);
+  });
+
+  it("keeps going after an isolated failure, and malformed pages never count towards stopping", async () => {
+    const blip = findUnique().mockRejectedValueOnce(new Error("blip"));
+
+    const summary = await importXml(
+      dump(goodPage(1), ...Array.from({ length: 15 }, (_, i) => badPage(i)), goodPage(2))
+    );
+    blip.mockRestore();
+
+    expect(summary.pages).toBe(17);
+    expect(summary.errors.filter((e) => e.title === "(dump)")).toEqual([]);
+    expect(summary.errors).toHaveLength(16);
+    expect(store.articles.map((a) => a.title)).toEqual(["Page 2"]);
   });
 });
 

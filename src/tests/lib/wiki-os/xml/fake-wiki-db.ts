@@ -113,6 +113,8 @@ function runQuery<T extends Row>(rows: T[], query: Query): T[] {
     }
     return 0;
   });
+  // The app's read-only db guard (src/server/db.ts) caps a findMany without take or cursor at 1000.
+  if (query.take === undefined && !query.cursor) query = { ...query, take: 1000 };
   if (query.cursor) {
     const at = found.findIndex((row) => row.id === query.cursor?.id);
     found = found.slice(at === -1 ? 0 : at);

@@ -159,6 +159,30 @@ describe("writeExport", () => {
     });
   });
 
+  it("does not read the revision hash for a current-only export, only for full history", async () => {
+    seedPage({ title: "Alpha" }, [{ mwRevId: 1 }]);
+    const { db } = jest.requireMock("~/server/db") as {
+      db: {
+        wikiRevision: {
+          findFirst: (...a: unknown[]) => Promise<unknown>;
+          findMany: (...a: unknown[]) => Promise<unknown>;
+        };
+      };
+    };
+    const first = jest.spyOn(db.wikiRevision, "findFirst");
+    const many = jest.spyOn(db.wikiRevision, "findMany");
+
+    await exportXml({ source: "ixwiki", titles: ["Alpha"], history: false });
+    const currentSelect = (first.mock.calls[0]?.[0] as { select: Record<string, boolean> }).select;
+    await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true });
+    const historySelect = (many.mock.calls[0]?.[0] as { select: Record<string, boolean> }).select;
+    first.mockRestore();
+    many.mockRestore();
+
+    expect(currentSelect).not.toHaveProperty("sha1");
+    expect(historySelect).toHaveProperty("sha1", true);
+  });
+
   it("skips a newer unfilled placeholder when choosing the head's revision", async () => {
     seedPage({ title: "Alpha", wikitext: "real text" }, [
       { mwRevId: 1, wikitext: "real text", author: "Jane" },

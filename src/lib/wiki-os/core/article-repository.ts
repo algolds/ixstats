@@ -106,6 +106,8 @@ export interface ImportPageResult {
 const IMPORT_TRANSACTION = { maxWait: 10_000, timeout: 300_000 } as const;
 /** Rows per `createMany` and ids per `IN (...)`: well inside PostgreSQL's bind-parameter limit. */
 const IMPORT_BATCH = 500;
+/** An explicit `take` for reads that must not be cut short (the read-only db guard caps a findMany without one at 1000 rows). */
+const ALL_ROWS = 2_147_483_647;
 
 type ImportClient = Prisma.TransactionClient;
 type ExistingArticle = { id: string; mwPageId: number | null; protectionLevel: string };
@@ -119,7 +121,7 @@ async function loadExistingRows(
   const select = { id: true, articleId: true, mwRevId: true, sha1: true, createdAt: true } as const;
   const revIds = input.revisions.flatMap((r) => (r.mwRevId === null ? [] : [r.mwRevId]));
   const rows = articleId
-    ? await client.wikiRevision.findMany({ where: { articleId }, select })
+    ? await client.wikiRevision.findMany({ where: { articleId }, select, take: ALL_ROWS })
     : [];
   for (let i = 0; i < revIds.length; i += IMPORT_BATCH) {
     rows.push(
@@ -137,6 +139,7 @@ async function loadExistingRows(
     ? await client.wikiRevision.findMany({
         where: { articleId, wikitext: "" },
         select: { id: true },
+        take: ALL_ROWS,
       })
     : [];
   const blankIds = new Set(blank.map((row) => row.id));
