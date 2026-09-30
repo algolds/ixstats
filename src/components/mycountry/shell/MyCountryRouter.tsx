@@ -105,6 +105,12 @@ function MyCountryRouterInner() {
     (section: string) => {
       if (!isMyCountrySection(section) || section === activeSection) return;
 
+      // The map editor is a full-screen route, not a surface of the command shell.
+      if (section === "map-editor") {
+        router.push(createUrl("/mycountry/map-editor"));
+        return;
+      }
+
       setActiveSection(section);
 
       // Sync URL without triggering Next.js route navigation
@@ -121,7 +127,7 @@ function MyCountryRouterInner() {
       // Scroll to top on section change
       window.scrollTo({ top: 0, behavior: "instant" });
     },
-    [activeSection, country?.name]
+    [activeSection, country?.name, router]
   );
 
   // Handle browser back/forward navigation

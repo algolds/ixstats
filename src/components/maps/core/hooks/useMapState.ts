@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import type { OverlayVisibility } from "../IxWorldMap";
@@ -37,6 +38,7 @@ export function useMapState({
   dropPin,
   clearPin,
 }: UseMapStateProps) {
+  const notify = useNotify();
   const utils = api.useUtils();
   const hoverDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -200,9 +202,12 @@ export function useMapState({
       setEditingCountryId(userCountryId);
       setIsEditing(true);
     } else {
-      alert("You must have a country to edit the map. Go to /mycountry to create or claim one.");
+      notify.info(
+        "You need a country to edit the map",
+        "Create or claim one from MyCountry first."
+      );
     }
-  }, [userCountryId]);
+  }, [userCountryId, notify]);
 
   const handleOpenWorldEditor = useCallback(() => {
     setIsWorldEditing(true);
