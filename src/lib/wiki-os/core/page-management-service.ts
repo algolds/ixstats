@@ -7,6 +7,7 @@
 
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
+import { canonicalizeTitle } from "./title";
 
 export interface MovePageResult {
   success: boolean;
@@ -36,8 +37,10 @@ export class PageManagementService {
     userId: string,
     realm = "ixwiki"
   ): Promise<MovePageResult> {
+    const target = canonicalizeTitle(newTitle, { source: realm });
+    if (!target) throw new Error("Invalid title");
+    const { title: newCanonicalTitle, slug: newSlug } = target;
     const oldSlug = toArticleSlug(oldSlugOrTitle);
-    const newSlug = toArticleSlug(newTitle);
 
     if (oldSlug === newSlug) {
       throw new Error("Old and new page names are identical.");
@@ -60,20 +63,22 @@ export class PageManagementService {
       const existingTarget = await tx.wikiArticle.findFirst({
         where: {
           source: realm,
-          OR: [{ slug: newSlug }, { title: newTitle.replace(/_/g, " ") }],
+          OR: [{ slug: newSlug }, { title: newCanonicalTitle }],
         },
       });
 
       if (existingTarget && existingTarget.id !== original.id) {
-        throw new Error(`Destination title "${newTitle}" already exists.`);
+        throw new Error(`Destination title "${newCanonicalTitle}" already exists.`);
       }
 
       // 3. Update original article to new title and slug
       const movedArticle = await tx.wikiArticle.update({
         where: { id: original.id },
         data: {
-          title: newTitle.replace(/_/g, " "),
+          title: newCanonicalTitle,
           slug: newSlug,
+          namespace: target.namespaceId,
+          namespacePrefix: target.namespacePrefix,
           lastEditorId: userId,
           updatedAt: new Date(),
         },
@@ -88,10 +93,10 @@ export class PageManagementService {
           namespace: original.namespace,
           status: "PUBLISHED",
           format: "WIKITEXT",
-          wikitext: `#REDIRECT [[${newTitle.replace(/_/g, " ")}]]`,
-          contentHtml: `<div class="redirect-banner">Redirect to <a href="/wiki/${newSlug}">${newTitle}</a></div>`,
+          wikitext: `#REDIRECT [[${newCanonicalTitle}]]`,
+          contentHtml: `<div class="redirect-banner">Redirect to <a href="/wiki/${newSlug}">${newCanonicalTitle}</a></div>`,
           redirectTargetSlug: newSlug,
-          summary: `Redirected to [[${newTitle}]] via page move`,
+          summary: `Redirected to [[${newCanonicalTitle}]] via page move`,
           authorId: userId,
           lastEditorId: userId,
         },
@@ -108,13 +113,13 @@ export class PageManagementService {
         data: {
           logType: "move",
           action: "move",
-          title: newTitle,
+          title: newCanonicalTitle,
           actorName: userId || "Wiki Contributor",
           comment: reason,
           params: {
             oldTitle: original.title,
             oldSlug,
-            newTitle,
+            newTitle: newCanonicalTitle,
             newSlug,
             reason,
           },
