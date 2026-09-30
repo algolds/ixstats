@@ -5,6 +5,7 @@
  * idempotently on (source, mwRevId).
  */
 import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
+import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 
 const mockSystemConfigFindUnique = jest.fn();
 const mockSystemConfigUpsert = jest.fn();
@@ -33,6 +34,8 @@ jest.mock("~/server/db", () => ({
     wikiCategoryMember: { upsert: jest.fn() },
   },
 }));
+
+jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 
 const HWM_KEY = "wikiAutoSync.rcHighWater";
 
@@ -207,17 +210,30 @@ test("inserts revisions with createMany skipDuplicates", async () => {
   );
 });
 
-test("clears cached contentHtml when the synced wikitext differs (NEW-2)", async () => {
+test("marks the rendered view stale and queues a render when the synced wikitext differs (NEW-2)", async () => {
   rcResponses = [{ changes: [change("A", 100, 1)] }];
   mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Old body." });
 
   await runAutoSyncCycle();
 
   const args = mockWikiArticleUpsert.mock.calls[0]?.[0];
-  expect(args.update).toMatchObject({ wikitext: "Body text.", contentHtml: "" });
+  expect(args.update).toMatchObject({ wikitext: "Body text.", htmlSyncedAt: null });
+  // The previous HTML keeps being served until the render lands: it is never cleared.
+  expect(args.update).not.toHaveProperty("contentHtml");
+  expect(enqueueRender).toHaveBeenCalledTimes(1);
+  expect(enqueueRender).toHaveBeenCalledWith("art-1");
 });
 
-test("keeps cached contentHtml when the synced wikitext is unchanged", async () => {
+test("queues the first render of a page that is new to Postgres", async () => {
+  rcResponses = [{ changes: [change("A", 100, 1)] }];
+  mockWikiArticleFindUnique.mockResolvedValue(null);
+
+  await runAutoSyncCycle();
+
+  expect(enqueueRender).toHaveBeenCalledWith("art-1");
+});
+
+test("leaves the rendered view and the queue alone when the synced wikitext is unchanged", async () => {
   rcResponses = [{ changes: [change("A", 100, 1)] }];
   mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Body text." });
 
@@ -225,6 +241,8 @@ test("keeps cached contentHtml when the synced wikitext is unchanged", async () 
 
   const args = mockWikiArticleUpsert.mock.calls[0]?.[0];
   expect(args.update).not.toHaveProperty("contentHtml");
+  expect(args.update).not.toHaveProperty("htmlSyncedAt");
+  expect(enqueueRender).not.toHaveBeenCalled();
 });
 
 test("skips the bot revision WikiOS exported (article mwLatestRevId matches) (NEW-4)", async () => {
