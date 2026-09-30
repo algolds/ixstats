@@ -18,6 +18,7 @@ jest.mock("~/lib/auth", () => ({
 
 import { isWikiAdmin } from "~/lib/wiki-os/auth";
 import {
+  mwAccountAutoconfirms,
   AUTOCONFIRM_AGE_MS,
   AUTOCONFIRM_EDIT_COUNT,
   BUREAUCRAT_CHANGEABLE_GROUPS,
@@ -42,7 +43,7 @@ const input = (overrides: Partial<GroupResolutionInput> = {}): GroupResolutionIn
   signedIn: true,
   accountCreatedAt: ago(DAY),
   editCount: 0,
-  verifiedWikiUsername: null,
+  linkAutoconfirms: false,
   explicitGroups: [],
   roleName: "user",
   isSystemOwner: false,
@@ -60,8 +61,8 @@ describe("resolveGroups: implicit groups", () => {
     expect(groupsOf()).toEqual(["*", "user"]);
   });
 
-  it("autoconfirms a verified wiki link immediately, however new the account", () => {
-    expect(groupsOf({ verifiedWikiUsername: "Alice", accountCreatedAt: ago(1000) })).toContain(
+  it("autoconfirms a verified link to a wiki account that is itself old and active, however new the WikiOS account", () => {
+    expect(groupsOf({ linkAutoconfirms: true, accountCreatedAt: ago(1000) })).toContain(
       "autoconfirmed"
     );
   });
@@ -82,7 +83,7 @@ describe("resolveGroups: implicit groups", () => {
   });
 
   it("never autoconfirms someone who is signed out", () => {
-    expect(groupsOf({ signedIn: false, verifiedWikiUsername: "Alice" })).toEqual(["*"]);
+    expect(groupsOf({ signedIn: false, linkAutoconfirms: true })).toEqual(["*"]);
   });
 });
 
@@ -236,9 +237,19 @@ const ctxFor = (
   },
 });
 
+/** A verified link row as `getVerifiedWikiLink` reads it. By default: proven by the account itself, to a wiki account old and active enough. */
+const linkRow = (overrides: Record<string, unknown> = {}) => ({
+  username: "Alice",
+  verifiedById: null,
+  mwRegisteredAt: ago(30 * DAY),
+  mwEditCount: 50,
+  ...overrides,
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers().setSystemTime(NOW);
+  mockDb.user.findUnique.mockResolvedValue(null);
   groupRows = [];
   blockRows = [];
   mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
@@ -275,7 +286,7 @@ describe("getWikiPermissions", () => {
     expect(beforeLink.groups).not.toContain("sysop");
     expect(beforeLink.rights.has("delete")).toBe(false);
 
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({ username: "Alice" });
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow());
     const afterLink = await getWikiPermissions(ctxFor());
     expect(afterLink.groups).toEqual(expect.arrayContaining(["sysop", "autoconfirmed"]));
     expect(afterLink.rights.has("delete")).toBe(true);
@@ -308,8 +319,8 @@ describe("getWikiPermissions", () => {
     expect(mockDb.wikiRevision.count).not.toHaveBeenCalled();
   });
 
-  it("does not count edits for an account with a verified link", async () => {
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({ username: "Alice" });
+  it("does not count edits for an account whose verified link already autoconfirms it", async () => {
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow());
     await getWikiPermissions(ctxFor({ createdAt: ago(30 * DAY) }));
     expect(mockDb.wikiRevision.count).not.toHaveBeenCalled();
   });
@@ -341,7 +352,7 @@ describe("getWikiPermissions: blocks", () => {
   });
 
   it("finds a block placed on the wiki username of a verified link", async () => {
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({ username: "Alice" });
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow());
     blockRows = [{ wikiUsername: "Alice", reason: null, expiresAt: null, allowUserTalk: false }];
     expect((await getWikiPermissions(ctxFor())).block).toEqual({
       reason: null,
@@ -432,6 +443,7 @@ describe("loadTargetPermissions (someone else's profile)", () => {
   });
 
   it("gives a linked ordinary user no more than autoconfirmed, and an unlinked wiki username only its explicit groups", async () => {
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow());
     mockDb.user.findUnique.mockResolvedValue({
       createdAt: ago(DAY),
       clerkUserId: "user_plain",
@@ -447,5 +459,123 @@ describe("loadTargetPermissions (someone else's profile)", () => {
     const pending = await loadTargetPermissions({ userId: null, wikiUsername: "Pending" });
     expect(pending.groups).toEqual(["*", "bot"]);
     expect(mockDb.user.findUnique).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("mwAccountAutoconfirms: a verified link autoconfirms only for an old, active wiki account", () => {
+  it.each([
+    ["old enough and active enough", ago(AUTOCONFIRM_AGE_MS), AUTOCONFIRM_EDIT_COUNT, true],
+    ["too young", ago(AUTOCONFIRM_AGE_MS - 1), 500, false],
+    ["too few edits", ago(30 * DAY), AUTOCONFIRM_EDIT_COUNT - 1, false],
+    ["no registration date recorded", null, 500, false],
+    ["no edit count recorded", ago(30 * DAY), null, false],
+  ])("%s", (_label, mwRegisteredAt, mwEditCount, expected) => {
+    expect(mwAccountAutoconfirms({ mwRegisteredAt, mwEditCount }, NOW)).toBe(expected);
+  });
+
+  it("decides the autoconfirmed group of a linked user, falling back to the WikiOS rule", async () => {
+    const link = (overrides: Record<string, unknown>) =>
+      mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow(overrides));
+
+    link({});
+    expect((await getWikiPermissions(ctxFor({ createdAt: ago(1000) }))).groups).toContain(
+      "autoconfirmed"
+    );
+
+    link({ mwRegisteredAt: ago(DAY) });
+    expect((await getWikiPermissions(ctxFor({ createdAt: ago(1000) }))).groups).not.toContain(
+      "autoconfirmed"
+    );
+
+    link({ mwEditCount: 3 });
+    expect((await getWikiPermissions(ctxFor({ createdAt: ago(1000) }))).groups).not.toContain(
+      "autoconfirmed"
+    );
+
+    // a link with no record (an older link, or an admin's) proves identity only
+    link({ mwRegisteredAt: null, mwEditCount: null });
+    const identityOnly = await getWikiPermissions(ctxFor({ createdAt: ago(1000) }));
+    expect(identityOnly.groups).not.toContain("autoconfirmed");
+    expect(identityOnly.verifiedWikiUsername).toBe("Alice");
+
+    // ...and the WikiOS-side rule still applies to it
+    mockDb.wikiRevision.count.mockResolvedValue(AUTOCONFIRM_EDIT_COUNT);
+    const aged = await getWikiPermissions(ctxFor({ createdAt: ago(AUTOCONFIRM_AGE_MS + DAY) }));
+    expect(aged.groups).toContain("autoconfirmed");
+  });
+});
+
+describe("pending wiki-username rows attach only through a trusted link (plan 409 review)", () => {
+  const PENDING_SYSOP = { wikiUsername: "Alice", group: "sysop", expiresAt: null };
+  const PENDING_BLOCK = {
+    wikiUsername: "Alice",
+    reason: "spam",
+    expiresAt: null,
+    allowUserTalk: false,
+  };
+
+  it("attaches to a link the account proved itself (verifiedById null)", async () => {
+    groupRows = [PENDING_SYSOP];
+    blockRows = [PENDING_BLOCK];
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow({ verifiedById: null }));
+
+    const perms = await getWikiPermissions(ctxFor());
+    expect(perms.groups).toContain("sysop");
+    expect(perms.block).not.toBeNull();
+  });
+
+  it("does NOT attach to a link an ordinary admin confirmed: the reviewer's exploit gains nothing", async () => {
+    groupRows = [
+      { wikiUsername: "Mwbureaucrat", group: "bureaucrat", expiresAt: null },
+      PENDING_SYSOP,
+    ];
+    blockRows = [PENDING_BLOCK];
+    // a staff member linked themselves (or was linked) to an unclaimed wiki bureaucrat's name
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(
+      linkRow({ username: "Mwbureaucrat", verifiedById: "dbstaff" })
+    );
+    mockDb.user.findUnique.mockResolvedValue({ clerkUserId: "user_staff" });
+
+    const perms = await getWikiPermissions(ctxFor());
+
+    expect(perms.verifiedWikiUsername).toBe("Mwbureaucrat"); // it still says who the account is
+    expect(perms.groups).not.toContain("bureaucrat");
+    expect(perms.groups).not.toContain("sysop");
+    expect(perms.rights.has("userrights")).toBe(false);
+    expect(perms.block).toBeNull();
+    expect(mockDb.user.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "dbstaff" } })
+    );
+  });
+
+  it("attaches to a link a system owner confirmed", async () => {
+    groupRows = [PENDING_SYSOP];
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow({ verifiedById: "dbowner" }));
+    mockDb.user.findUnique.mockResolvedValue({ clerkUserId: "user_owner" });
+
+    expect((await getWikiPermissions(ctxFor())).groups).toContain("sysop");
+  });
+
+  it("still applies rows keyed by the user id, whoever confirmed the link", async () => {
+    groupRows = [{ userId: "db1", group: "bot", expiresAt: null }];
+    blockRows = [{ userId: "db1", reason: "x", expiresAt: null, allowUserTalk: true }];
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow({ verifiedById: "dbstaff" }));
+
+    const perms = await getWikiPermissions(ctxFor());
+    expect(perms.groups).toContain("bot");
+    expect(perms.block).not.toBeNull();
+  });
+
+  it("applies the same trust to the permissions shown for another user", async () => {
+    groupRows = [PENDING_SYSOP];
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(linkRow({ verifiedById: "dbstaff" }));
+    mockDb.user.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) =>
+      where.id === "dbstaff"
+        ? { clerkUserId: "user_staff" }
+        : { createdAt: ago(DAY), clerkUserId: "user_1", role: { name: "user" } }
+    );
+
+    const perms = await loadTargetPermissions({ userId: "db1", wikiUsername: "Alice" });
+    expect(perms.groups).not.toContain("sysop");
   });
 });

@@ -146,7 +146,12 @@ export interface FakeWikiDb {
 export function createFakeWikiDb() {
   const tables = {
     user: createTable(),
-    wikiAccountLink: createTable(),
+    // a link the account proved itself, to a wiki account old and active enough to autoconfirm
+    wikiAccountLink: createTable(() => ({
+      verifiedById: null,
+      mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      mwEditCount: 50,
+    })),
     wikiUserGroup: createTable(() => ({ expiresAt: null })),
     wikiBlock: createTable(() => ({ allowUserTalk: true, reason: null, expiresAt: null })),
     wikiRestriction: createTable(() => ({ expiresAt: null, cascade: false, reason: null })),

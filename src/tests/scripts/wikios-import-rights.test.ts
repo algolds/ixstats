@@ -526,8 +526,20 @@ describe("applyPlan", () => {
   const setup = () => {
     const fake = createFakeWikiDb();
     fake.tables.wikiAccountLink.seed(
-      { userId: "dbkir", source: "ixwiki", username: "Kir", verifiedAt: new Date("2026-01-01") },
-      { userId: "dbpending", source: "ixwiki", username: "Pending", verifiedAt: null }
+      {
+        userId: "dbkir",
+        source: "ixwiki",
+        username: "Kir",
+        verifiedAt: new Date("2026-01-01"),
+        verifiedById: null,
+      },
+      {
+        userId: "dbpending",
+        source: "ixwiki",
+        username: "Pending",
+        verifiedAt: null,
+        verifiedById: null,
+      }
     );
     fake.tables.wikiArticle.seed({ source: "ixwiki", title: "Caphiria" });
     return { fake, prisma: fake.db as unknown as PrismaClient };
@@ -572,6 +584,20 @@ describe("applyPlan", () => {
       protectionLevel: "SYSOP",
       protectionExpiry: new Date(FUTURE),
     });
+  });
+
+  it("leaves a name whose link an admin confirmed keyed by wiki username, so the admin's link inherits nothing", async () => {
+    const { fake, prisma } = setup();
+    fake.tables.wikiAccountLink.rows.find((link) => link.username === "Kir")!.verifiedById =
+      "dbadmin";
+
+    await applyPlan(prisma, plan());
+
+    const sysop = fake.tables.wikiUserGroup.rows.find((g) => g.group === "sysop");
+    expect(sysop).toMatchObject({ wikiUsername: "Kir", source: "mw-import" });
+    expect(sysop).not.toHaveProperty("userId");
+    const block = fake.tables.wikiBlock.rows.find((b) => b.wikiUsername === "Kir");
+    expect(block?.userId).toBeNull();
   });
 
   it("is idempotent, and never overwrites a row WikiOS already has", async () => {

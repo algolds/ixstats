@@ -50,3 +50,12 @@ CREATE INDEX IF NOT EXISTS "wiki_blocks_userId_idx" ON "wiki_blocks" ("userId");
 CREATE INDEX IF NOT EXISTS "wiki_blocks_wikiUsername_idx" ON "wiki_blocks" ("wikiUsername");
 
 COMMIT;
+
+-- Plan 409 (security review): who confirmed a wiki link, and the wiki account's age and edits at proof time.
+BEGIN;
+
+ALTER TABLE "wiki_account_links" ADD COLUMN IF NOT EXISTS "verifiedById" TEXT;
+ALTER TABLE "wiki_account_links" ADD COLUMN IF NOT EXISTS "mwRegisteredAt" TIMESTAMP(3);
+ALTER TABLE "wiki_account_links" ADD COLUMN IF NOT EXISTS "mwEditCount" INTEGER;
+
+COMMIT;

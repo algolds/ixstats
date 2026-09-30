@@ -6,7 +6,9 @@
 //   - the implicit groups: `*` (everyone), `user` (signed in), `autoconfirmed` (see below);
 //   - their explicit, non-expired `wiki_user_groups` rows, keyed by WikiOS user id or by the
 //     MediaWiki username of their VERIFIED wiki link (so a membership imported from MediaWiki for a
-//     name nobody has linked yet applies the moment the link is verified);
+//     name nobody has linked yet applies the moment the link is verified), but only when the link
+//     was proven by the account's own token or confirmed by a system owner: a link an ordinary admin
+//     confirmed proves nothing about who owns the wiki account, so it never inherits pending rows;
 //   - the groups their IxStates role maps to (`ROLE_GROUP_MAP`).
 // Enforcement of an action against these rights lives in `permissions.ts`.
 
@@ -14,7 +16,7 @@ import { SYSTEM_OWNER_IDS, isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
-import { getVerifiedWikiUsername } from "~/lib/wiki-os/storage";
+import { getVerifiedWikiLink } from "~/lib/wiki-os/storage";
 
 /** Groups an administrator can grant explicitly (stored in `wiki_user_groups`). */
 export const EXPLICIT_GROUPS = [
@@ -161,6 +163,22 @@ export const ROLE_GROUP_MAP: Readonly<Record<string, readonly ExplicitGroup[]>> 
 export const AUTOCONFIRM_AGE_MS = 4 * 24 * 60 * 60 * 1000;
 export const AUTOCONFIRM_EDIT_COUNT = 10;
 
+/**
+ * Whether the wiki account behind a verified link is at least `AUTOCONFIRM_AGE_MS` old and has
+ * `AUTOCONFIRM_EDIT_COUNT` edits, as recorded when the link was proven. A link without that record
+ * (an older link, or an admin's) proves identity only: autoconfirmed then comes from WikiOS's own rule.
+ */
+export function mwAccountAutoconfirms(
+  link: { mwRegisteredAt: Date | null; mwEditCount: number | null },
+  now: Date
+): boolean {
+  return (
+    link.mwRegisteredAt !== null &&
+    now.getTime() - link.mwRegisteredAt.getTime() >= AUTOCONFIRM_AGE_MS &&
+    (link.mwEditCount ?? 0) >= AUTOCONFIRM_EDIT_COUNT
+  );
+}
+
 export interface GroupRow {
   group: string;
   expiresAt: Date | null;
@@ -172,8 +190,8 @@ export interface GroupResolutionInput {
   accountCreatedAt: Date | null;
   /** WikiOS edits (`wiki_revisions` by author) the account has made. */
   editCount: number;
-  /** The user's verified wiki account name, or null. A verified link alone autoconfirms. */
-  verifiedWikiUsername: string | null;
+  /** The user's verified wiki link is to an account that is itself old and active enough (see `mwAccountAutoconfirms`). */
+  linkAutoconfirms: boolean;
   explicitGroups: readonly GroupRow[];
   roleName: string | null;
   isSystemOwner: boolean;
@@ -186,7 +204,7 @@ export function isActive(expiresAt: Date | null, now: Date): boolean {
 }
 
 function isAutoconfirmed(input: GroupResolutionInput): boolean {
-  if (input.verifiedWikiUsername !== null) return true;
+  if (input.linkAutoconfirms) return true;
   const { accountCreatedAt, editCount, now } = input;
   return (
     accountCreatedAt !== null &&
@@ -244,10 +262,16 @@ export interface RightsSubject {
   accountCreatedAt: Date | null;
   roleName: string | null;
   isSystemOwner: boolean;
-  /** Wiki username that group and block rows may be keyed by. */
-  wikiUsername: string | null;
-  /** Whether `wikiUsername` is proven (a verified `WikiAccountLink`). */
-  linkVerified: boolean;
+  /** The verified wiki account name (own user page); null = no verified link. */
+  verifiedWikiUsername: string | null;
+  /**
+   * The wiki username pending group and block rows attach through: the verified name when the link
+   * was proven by the account's own token or confirmed by a system owner; null for a link an
+   * ordinary admin confirmed (an admin must not be able to claim a name that holds imported groups).
+   * For a wiki username nobody has linked it is that name.
+   */
+  pendingKeyUsername: string | null;
+  linkAutoconfirms: boolean;
 }
 
 interface BlockRow {
@@ -260,8 +284,8 @@ interface BlockRow {
 function identityKeys(subject: RightsSubject) {
   return [
     ...(subject.userId ? [{ userId: subject.userId }] : []),
-    ...(subject.wikiUsername
-      ? [{ wikiUsername: normalizeWikiUsername(subject.wikiUsername) }]
+    ...(subject.pendingKeyUsername
+      ? [{ wikiUsername: normalizeWikiUsername(subject.pendingKeyUsername) }]
       : []),
   ];
 }
@@ -287,8 +311,8 @@ function mergeBlocks(rows: readonly BlockRow[]): ActiveBlock | null {
 
 /** WikiOS edits by the subject, counted only when the account is old enough for the count to matter. */
 async function countEditsIfEligible(subject: RightsSubject, now: Date): Promise<number> {
-  const { userId, accountCreatedAt, linkVerified } = subject;
-  if (!userId || linkVerified || accountCreatedAt === null) return 0;
+  const { userId, accountCreatedAt, linkAutoconfirms } = subject;
+  if (!userId || linkAutoconfirms || accountCreatedAt === null) return 0;
   if (now.getTime() - accountCreatedAt.getTime() < AUTOCONFIRM_AGE_MS) return 0;
   return db.wikiRevision.count({ where: { authorId: userId } });
 }
@@ -315,7 +339,7 @@ export async function loadSubjectPermissions(
     signedIn: subject.signedIn,
     accountCreatedAt: subject.accountCreatedAt,
     editCount,
-    verifiedWikiUsername: subject.linkVerified ? subject.wikiUsername : null,
+    linkAutoconfirms: subject.linkAutoconfirms,
     explicitGroups,
     roleName: subject.roleName,
     isSystemOwner: subject.isSystemOwner,
@@ -325,7 +349,7 @@ export async function loadSubjectPermissions(
     groups: [...groups],
     rights: rightsForGroups(groups),
     block: mergeBlocks(blocks.filter((block) => isActive(block.expiresAt, now))),
-    verifiedWikiUsername: subject.linkVerified ? subject.wikiUsername : null,
+    verifiedWikiUsername: subject.verifiedWikiUsername,
   };
 }
 
@@ -335,9 +359,41 @@ function toDate(value: Date | string | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+type LinkStanding = Pick<
+  RightsSubject,
+  "verifiedWikiUsername" | "pendingKeyUsername" | "linkAutoconfirms"
+>;
+
+const NO_LINK: LinkStanding = {
+  verifiedWikiUsername: null,
+  pendingKeyUsername: null,
+  linkAutoconfirms: false,
+};
+
+/** Whether the WikiOS user `verifierId` is a system owner (the non-logging check, see `loadTargetPermissions`). */
+async function isSystemOwnerUser(verifierId: string): Promise<boolean> {
+  const verifier = await db.user.findUnique({
+    where: { id: verifierId },
+    select: { clerkUserId: true },
+  });
+  return Boolean(verifier?.clerkUserId && SYSTEM_OWNER_IDS.includes(verifier.clerkUserId));
+}
+
+/** What the user's verified wiki link is worth to the rights engine, and through which name it may attach pending rows. */
+async function linkStanding(userId: string | null, now: Date): Promise<LinkStanding> {
+  const link = userId ? await getVerifiedWikiLink(userId) : null;
+  if (!link) return NO_LINK;
+  const trusted = link.verifiedById === null || (await isSystemOwnerUser(link.verifiedById));
+  return {
+    verifiedWikiUsername: link.username,
+    pendingKeyUsername: trusted ? link.username : null,
+    linkAutoconfirms: mwAccountAutoconfirms(link, now),
+  };
+}
+
 async function loadCtxPermissions(ctx: WikiAuthContext): Promise<WikiPermissions> {
   const { internalUserId, userId } = getWikiAuth(ctx);
-  const verified = internalUserId ? await getVerifiedWikiUsername(internalUserId) : null;
+  const now = new Date();
   return loadSubjectPermissions(
     {
       userId: internalUserId,
@@ -345,10 +401,9 @@ async function loadCtxPermissions(ctx: WikiAuthContext): Promise<WikiPermissions
       accountCreatedAt: toDate(ctx.user?.createdAt),
       roleName: ctx.user?.role?.name ?? null,
       isSystemOwner: userId !== null && isSystemOwner(userId),
-      wikiUsername: verified,
-      linkVerified: verified !== null,
+      ...(await linkStanding(internalUserId, now)),
     },
-    new Date()
+    now
   );
 }
 
@@ -403,8 +458,9 @@ export async function loadTargetPermissions(
       roleName: user?.role?.name ?? null,
       // Not `isSystemOwner`: that logs an [AUDIT] line per call, and this runs for any profile anyone looks up.
       isSystemOwner: Boolean(user?.clerkUserId && SYSTEM_OWNER_IDS.includes(user.clerkUserId)),
-      wikiUsername: target.wikiUsername,
-      linkVerified: target.userId !== null,
+      ...(target.userId
+        ? await linkStanding(target.userId, now)
+        : { ...NO_LINK, pendingKeyUsername: target.wikiUsername }),
     },
     now
   );

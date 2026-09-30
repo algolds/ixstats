@@ -1,6 +1,9 @@
 import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
 
 const NOW = new Date("2026-09-27T12:00:00Z");
+/** An ordinary admin (not a system owner) confirming links by authority, and a system owner doing so. */
+const ADMIN = { adminUserId: "dbadmin", isSystemOwner: false };
+const OWNER = { adminUserId: "dbowner", isSystemOwner: true };
 const TOKEN = "ixstates-verify-abcdef1234";
 type Rev = { content: string | null; author: string | null };
 const rev = (content: string | null, author: string | null): Rev => ({ content, author });
@@ -19,10 +22,16 @@ function setup(overrides: Partial<Record<string, any>> = {}) {
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     user: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    wikiUserGroup: { count: jest.fn().mockResolvedValue(0) },
     ...overrides,
   };
   const deps = {
-    fetchWikiUser: jest.fn().mockResolvedValue({ username: "Kir", userId: 7 }),
+    fetchWikiUser: jest.fn().mockResolvedValue({
+      username: "Kir",
+      userId: 7,
+      registration: new Date("2026-01-01T00:00:00Z"),
+      editCount: 42,
+    }),
     fetchUserPageHistory: jest.fn().mockResolvedValue(history([rev(`Hello ${TOKEN}`, "Kir")])),
     now: () => NOW,
     newToken: () => "ixstates-verify-abcdef1234",
@@ -120,7 +129,15 @@ describe("wiki link verification — confirm()", () => {
     await expect(service.confirm("u1", "ixwiki")).resolves.toEqual({ username: "Kir" });
     expect(db.wikiAccountLink.updateMany).toHaveBeenCalledWith({
       where: { id: "l1", userId: "u1", token: "ixstates-verify-abcdef1234", verifiedAt: null },
-      data: { verifiedAt: NOW, token: null, tokenExpiresAt: null },
+      data: {
+        verifiedAt: NOW,
+        token: null,
+        tokenExpiresAt: null,
+        // self-service proof: nobody confirmed it by authority, and the account's age and edits are recorded
+        verifiedById: null,
+        mwRegisteredAt: new Date("2026-01-01T00:00:00Z"),
+        mwEditCount: 42,
+      },
     });
     expect(db.user.updateMany).toHaveBeenCalledWith({
       where: { wikiUsername: "Kir", id: { not: "u1" } },
@@ -203,6 +220,42 @@ describe("wiki link verification — confirm()", () => {
     deps.fetchUserPageHistory.mockRejectedValue(new Error("cloudflare"));
     await expect(service.confirm("u1", "iiwiki")).rejects.toBeInstanceOf(WikiLinkError);
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "WIKI_UNREACHABLE" });
+  });
+
+  it("verifies nothing when the wiki cannot be asked for the account's age and edits", async () => {
+    const { db, deps, service } = setup();
+    db.wikiAccountLink.findUnique.mockResolvedValue({
+      id: "l1",
+      userId: "u1",
+      source: "ixwiki",
+      username: "Kir",
+      token: "ixstates-verify-abcdef1234",
+      tokenExpiresAt: new Date(NOW.getTime() + 1000),
+      verifiedAt: null,
+    });
+    deps.fetchWikiUser.mockRejectedValue(new Error("cloudflare"));
+    await expect(service.confirm("u1", "ixwiki")).rejects.toMatchObject({ code: "WIKI_UNREACHABLE" });
+    expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("records no age or edit count for an account the wiki does not say them for", async () => {
+    const { db, deps, service } = setup();
+    db.wikiAccountLink.findUnique.mockResolvedValue({
+      id: "l1",
+      userId: "u1",
+      source: "ixwiki",
+      username: "Kir",
+      token: "ixstates-verify-abcdef1234",
+      tokenExpiresAt: new Date(NOW.getTime() + 1000),
+      verifiedAt: null,
+    });
+    deps.fetchWikiUser.mockResolvedValue({ username: "Kir", userId: 7, registration: null, editCount: null });
+    await service.confirm("u1", "ixwiki");
+    expect(db.wikiAccountLink.updateMany.mock.calls[0]?.[0].data).toMatchObject({
+      verifiedById: null,
+      mwRegisteredAt: null,
+      mwEditCount: null,
+    });
   });
 
   it("leaves user.* untouched for a non-ixwiki confirm", async () => {
@@ -342,17 +395,33 @@ describe("wiki link verification — adminVerify() (admin authority substitutes 
     db.wikiAccountLink.findUnique.mockResolvedValue(null);
     const tx = { wikiAccountLink: { findUnique: jest.fn().mockResolvedValue({ userId: "other", verifiedAt: NOW }), deleteMany: jest.fn(), upsert: jest.fn() }, user: { updateMany: jest.fn(), update: jest.fn() } };
     db.$transaction.mockImplementation((cb: any) => cb(tx));
-    await expect(service.adminVerify("u1", "ixwiki", "Kir", 7)).rejects.toMatchObject({ code: "TAKEN" });
+    await expect(service.adminVerify("u1", "ixwiki", "Kir", 7, ADMIN)).rejects.toMatchObject({ code: "TAKEN" });
     expect(tx.wikiAccountLink.upsert).not.toHaveBeenCalled();
   });
 
   it("writes a verified row and the ixwiki legacy columns without ever issuing a token", async () => {
     const { db, service } = setup();
-    await expect(service.adminVerify("u1", "ixwiki", "kir", 7)).resolves.toEqual({ username: "Kir" });
+    await expect(service.adminVerify("u1", "ixwiki", "kir", 7, ADMIN)).resolves.toEqual({ username: "Kir" });
     expect(db.wikiAccountLink.upsert).toHaveBeenCalledWith({
       where: { source_username: { source: "ixwiki", username: "Kir" } },
-      update: { userId: "u1", wikiUserId: 7, verifiedAt: NOW, token: null, tokenExpiresAt: null },
-      create: { userId: "u1", source: "ixwiki", username: "Kir", wikiUserId: 7, verifiedAt: NOW },
+      update: {
+        userId: "u1",
+        wikiUserId: 7,
+        verifiedAt: NOW,
+        token: null,
+        tokenExpiresAt: null,
+        verifiedById: "dbadmin",
+        mwRegisteredAt: null,
+        mwEditCount: null,
+      },
+      create: {
+        userId: "u1",
+        source: "ixwiki",
+        username: "Kir",
+        wikiUserId: 7,
+        verifiedAt: NOW,
+        verifiedById: "dbadmin",
+      },
     });
     expect(db.user.updateMany).toHaveBeenCalledWith({
       where: { wikiUsername: "Kir", id: { not: "u1" } },
@@ -364,9 +433,50 @@ describe("wiki link verification — adminVerify() (admin authority substitutes 
     });
   });
 
+  it("records who confirmed the link, so the rights engine can tell it from a self-proven one", async () => {
+    const { db, service } = setup();
+    await service.adminVerify("u1", "ixwiki", "Kir", 7, OWNER);
+    expect(db.wikiAccountLink.upsert.mock.calls[0]?.[0].create).toMatchObject({ verifiedById: "dbowner" });
+  });
+
+  it("refuses an admin linking their own account, and lets a system owner", async () => {
+    const { db, service } = setup();
+    await expect(service.adminVerify("dbadmin", "ixwiki", "Mwbureaucrat", 7, ADMIN)).rejects.toMatchObject({
+      code: "NOT_ALLOWED",
+    });
+    expect(db.wikiAccountLink.upsert).not.toHaveBeenCalled();
+    expect(db.user.update).not.toHaveBeenCalled();
+
+    await expect(service.adminVerify("dbowner", "ixwiki", "Kir", 7, OWNER)).resolves.toEqual({ username: "Kir" });
+  });
+
+  it("refuses a wiki name that already holds pending groups unless the admin is a system owner", async () => {
+    const { db, service } = setup();
+    db.wikiUserGroup.count.mockResolvedValue(1);
+
+    await expect(service.adminVerify("u1", "ixwiki", "Mwbureaucrat", 7, ADMIN)).rejects.toMatchObject({
+      code: "NOT_ALLOWED",
+      message: expect.stringContaining("only a system owner"),
+    });
+    expect(db.wikiUserGroup.count).toHaveBeenCalledWith({ where: { wikiUsername: "Mwbureaucrat" } });
+    expect(db.wikiAccountLink.upsert).not.toHaveBeenCalled();
+    expect(db.user.update).not.toHaveBeenCalled();
+
+    await expect(service.adminVerify("u1", "ixwiki", "Mwbureaucrat", 7, OWNER)).resolves.toEqual({
+      username: "Mwbureaucrat",
+    });
+  });
+
+  it("does not look at pending groups for another wiki's links", async () => {
+    const { db, service } = setup();
+    db.wikiUserGroup.count.mockResolvedValue(1);
+    await expect(service.adminVerify("u1", "iiwiki", "Kir", 7, ADMIN)).resolves.toEqual({ username: "Kir" });
+    expect(db.wikiUserGroup.count).not.toHaveBeenCalled();
+  });
+
   it("accepts a null wikiUserId (PostgreSQL fast-path lookups hard-code id 1, which is not real)", async () => {
     const { db, service } = setup();
-    await expect(service.adminVerify("u1", "ixwiki", "Kir", null)).resolves.toEqual({ username: "Kir" });
+    await expect(service.adminVerify("u1", "ixwiki", "Kir", null, ADMIN)).resolves.toEqual({ username: "Kir" });
     expect(db.wikiAccountLink.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ create: expect.objectContaining({ wikiUserId: null }) })
     );

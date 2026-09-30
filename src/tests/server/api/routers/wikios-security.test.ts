@@ -147,14 +147,19 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
   });
 
   it("allows the user's own User: page with a verified link, looked up by internal id", async () => {
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({ username: "Verified" });
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue({
+      username: "Verified",
+      verifiedById: null,
+      mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      mwEditCount: 50,
+    });
 
     await editCaller().saveWikitext({ title: "User:Verified/Notes", wikitext: "x" });
 
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
     expect(mockDb.wikiAccountLink.findFirst).toHaveBeenCalledWith({
       where: { userId: "db1", source: "ixwiki", verifiedAt: { not: null } },
-      select: { username: true },
+      select: { username: true, verifiedById: true, mwRegisteredAt: true, mwEditCount: true },
     });
   });
 
@@ -169,7 +174,12 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
       code: "FORBIDDEN",
     });
 
-    mockDb.wikiAccountLink.findFirst.mockResolvedValue({ username: "Verified" });
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue({
+      username: "Verified",
+      verifiedById: null,
+      mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      mwEditCount: 50,
+    });
     await editCaller().saveWikitext({ title: "Guarded", wikitext: "x" });
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
   });

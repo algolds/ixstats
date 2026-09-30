@@ -32,7 +32,7 @@ export interface WikiAuthIdentity {
   wikiUsername: string | null;
   /**
    * Whether `User.wikiUsername` is set. NOT proof of a linked wiki account: the column can hold a
-   * display fallback, so it must never gate authorization. Use `getVerifiedWikiUsername` (storage.ts),
+   * display fallback, so it must never gate authorization. Use `getVerifiedWikiLink` (storage.ts),
    * which reads the verified `WikiAccountLink`, for anything security-relevant.
    */
   hasLegacyWikiUsername: boolean;

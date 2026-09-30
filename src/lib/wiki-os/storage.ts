@@ -38,19 +38,36 @@ export async function resolveActiveCountryId(ctx: WikiAuthContext): Promise<stri
 }
 
 /**
- * The user's VERIFIED wiki account name on `source`, or null. Verified means the user proved control
- * of the account (`WikiAccountLink.verifiedAt`); `User.wikiUsername` is never consulted because it can
- * hold an unverified display fallback. This is the only source of wiki identity for authorization.
+ * A user's VERIFIED wiki account on `source`, with what the rights engine needs to judge how far to
+ * trust it. Verified means the user proved control of the account (`WikiAccountLink.verifiedAt`);
+ * `User.wikiUsername` is never consulted because it can hold an unverified display fallback. This is
+ * the only source of wiki identity for authorization.
  */
-export async function getVerifiedWikiUsername(
+export interface VerifiedWikiLink {
+  username: string;
+  /** null = proven by the account's own token; else the id of the admin who confirmed it. */
+  verifiedById: string | null;
+  /** The wiki account's registration date and edit count when the link was proven; null = not recorded. */
+  mwRegisteredAt: Date | null;
+  mwEditCount: number | null;
+}
+
+/** The user's verified link on `source`, or null. */
+export async function getVerifiedWikiLink(
   userId: string,
   source: WikiSource = "ixwiki"
-): Promise<string | null> {
+): Promise<VerifiedWikiLink | null> {
   const link = await db.wikiAccountLink.findFirst({
     where: { userId, source, verifiedAt: { not: null } },
-    select: { username: true },
+    select: { username: true, verifiedById: true, mwRegisteredAt: true, mwEditCount: true },
   });
-  return link?.username ?? null;
+  if (!link) return null;
+  return {
+    username: link.username,
+    verifiedById: link.verifiedById ?? null,
+    mwRegisteredAt: link.mwRegisteredAt ?? null,
+    mwEditCount: link.mwEditCount ?? null,
+  };
 }
 
 /** What a wiki profile may show about the account's owner: no user, role or Clerk ids. */

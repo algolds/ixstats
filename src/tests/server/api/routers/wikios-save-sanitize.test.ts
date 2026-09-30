@@ -73,11 +73,23 @@ import { db } from "~/server/db";
 
 const createCaller = createCallerFactory(wikiosEditingRouter);
 
-/** The verified WikiAccountLink of the signed-in user (null = no verified link). */
+/**
+ * The verified WikiAccountLink of the signed-in user (null = no verified link): proven by the account
+ * itself, to a wiki account that is old and active enough to autoconfirm.
+ */
 const mockVerifiedLink = (username: string | null) =>
   (
     db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }
-  ).wikiAccountLink.findFirst.mockResolvedValue(username ? { username } : null);
+  ).wikiAccountLink.findFirst.mockResolvedValue(
+    username
+      ? {
+          username,
+          verifiedById: null,
+          mwRegisteredAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          mwEditCount: 50,
+        }
+      : null
+  );
 
 const userCtx = (wikiUsername: string | null = null) =>
   createMockRouterContext({

@@ -10,7 +10,8 @@
  *   - create-protections  list=protectedtitles
  *   - user blocks         list=blocks
  * and maps them onto `wiki_user_groups`, `wiki_restrictions` and `wiki_blocks` (rows with source
- * `mw-import`, keyed by wiki username; a username with a VERIFIED WikiAccountLink gets that user's id).
+ * `mw-import`, keyed by wiki username; a username whose VERIFIED WikiAccountLink the account proved itself
+ * gets that user's id; a link an admin confirmed gets nothing, it must not inherit MediaWiki rights).
  *
  * Usage:
  *   bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php            # dry run (default)
@@ -489,8 +490,15 @@ export interface ApplyResult {
  */
 export async function applyPlan(prisma: PrismaClient, plan: ImportPlan): Promise<ApplyResult> {
   const names = [...new Set([...plan.groups, ...plan.blocks].map((row) => row.wikiUsername))];
+  // Only links the account proved itself (no admin confirmed them): an admin-confirmed link must not
+  // inherit a name's groups, so those names stay keyed by wiki username, which such a link never matches.
   const links = await prisma.wikiAccountLink.findMany({
-    where: { source: "ixwiki", verifiedAt: { not: null }, username: { in: names } },
+    where: {
+      source: "ixwiki",
+      verifiedAt: { not: null },
+      verifiedById: null,
+      username: { in: names },
+    },
     select: { userId: true, username: true },
   });
   const userIdOf = new Map(links.map((link) => [link.username, link.userId]));
