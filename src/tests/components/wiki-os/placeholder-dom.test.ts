@@ -150,6 +150,46 @@ describe("injectPlaceholderElements", () => {
   });
 });
 
+describe("parsing stays inert (plan 404 review)", () => {
+  it("makes and serializes every node in the template's own document, never in the live page", () => {
+    const createElement = jest.spyOn(document, "createElement");
+    const createFragment = jest.spyOn(document, "createDocumentFragment");
+    const createWalker = jest.spyOn(document, "createTreeWalker");
+    const adopt = jest.spyOn(document, "adoptNode");
+    const importNode = jest.spyOn(document, "importNode");
+
+    try {
+      const out = injectPlaceholderElements(
+        '<img src="x" onerror="alert(1)"><a href="/wiki/Coords:1,2">x</a> {{MyCountry:gdp}} [[MapEmbed:1,2,3]]'
+      );
+      addSectionEditLinks("<h2>Head</h2>", "Foo");
+      extractStatKeys("<p>{{MyCountry:gdp}}</p>");
+
+      expect(out).toContain("wikios-coords-placeholder");
+      // The only node the live document makes is the <template> that holds the parse.
+      expect(createElement.mock.calls.map(([tag]) => tag)).toEqual([
+        "template",
+        "template",
+        "template",
+      ]);
+      expect(createFragment).not.toHaveBeenCalled();
+      expect(createWalker).not.toHaveBeenCalled();
+      expect(adopt).not.toHaveBeenCalled();
+      expect(importNode).not.toHaveBeenCalled();
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
+  it("keeps an image in the fragment from ever being attached to the live page", () => {
+    const before = document.querySelectorAll("img").length;
+
+    injectPlaceholderElements('<img src="https://tracker.example/x.png" onerror="alert(1)">');
+
+    expect(document.querySelectorAll("img")).toHaveLength(before);
+  });
+});
+
 describe("extractStatKeys", () => {
   it("finds stat placeholders, stat links and raw templates, once each", () => {
     const keys = extractStatKeys(

@@ -3,6 +3,7 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
+import { parseInert } from "./inert-dom";
 import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
@@ -435,11 +436,11 @@ export function transformImages(
  * the HTML comes back untouched.
  */
 export function addSectionEditLinks(html: string, slug: string): string {
-  if (typeof document === "undefined") return html;
+  const parsed = parseInert(html);
+  if (!parsed) return html;
 
-  const template = document.createElement("template");
-  template.innerHTML = html;
-  for (const heading of Array.from(template.content.querySelectorAll("h2, h3"))) {
+  const { template, document, content } = parsed;
+  for (const heading of Array.from(content.querySelectorAll("h2, h3"))) {
     const text = (heading.textContent ?? "").trim();
     if (!text) continue;
 

@@ -5,6 +5,7 @@
 // `<` and `>` unescaped in attribute values, so a regex that looks for `<a ...>(.*?)</a>` can be
 // made to end inside an attribute and publish the rest of it as live markup).
 
+import { parseInert } from "~/lib/wiki-os/transformers/inert-dom";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 
 const COORDS_HREF = /Coords(?::|%3a)([^"|?#&]+)/i;
@@ -89,23 +90,15 @@ function textNodesOf(document: Document, root: DocumentFragment): Text[] {
   return nodes;
 }
 
-/** `html` parsed into an inert fragment (nothing in it loads or runs), or null outside a browser. */
-function parseFragment(html: string): { document: Document; content: DocumentFragment } | null {
-  if (typeof document === "undefined") return null;
-  const template = document.createElement("template");
-  template.innerHTML = html;
-  return { document, content: template.content };
-}
-
 /**
  * `html` with its coordinate links, map embeds and stat templates (links and raw `{{...}}` text)
  * replaced by placeholder elements, and its iframes removed. The DOM does the work; outside a
  * browser the HTML comes back untouched.
  */
 export function injectPlaceholderElements(html: string): string {
-  const parsed = parseFragment(html);
+  const parsed = parseInert(html);
   if (!parsed) return html;
-  const { document, content } = parsed;
+  const { template, document, content } = parsed;
 
   for (const iframe of Array.from(content.querySelectorAll("iframe"))) iframe.remove();
   for (const anchor of Array.from(content.querySelectorAll("a[href]"))) {
@@ -117,14 +110,13 @@ export function injectPlaceholderElements(html: string): string {
     if (fragment) node.replaceWith(fragment);
   }
 
-  const holder = document.createElement("div");
-  holder.append(content);
-  return holder.innerHTML;
+  // Serialized where it was parsed: the nodes never leave the inert template.
+  return template.innerHTML;
 }
 
 /** The stat keys `html` asks for: stat placeholders, stat template links and raw stat templates. */
 export function extractStatKeys(html: string): string[] {
-  const parsed = parseFragment(html);
+  const parsed = parseInert(html);
   if (!parsed) return [];
   const { document, content } = parsed;
 
