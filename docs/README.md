@@ -18,7 +18,7 @@ comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versionin
 - **What's pending** — [roadmap/pending-features.md](roadmap/pending-features.md) (doc-based backlog) · [roadmap/code-audit-2026-09-30.md](roadmap/code-audit-2026-09-30.md) (code-level findings, incl. security and economy exploits)
 - **Platform overview** — [overview/platform.md](overview/platform.md)
 - **Local dev setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
-- **Production deployment** — [operations/deployment.md](operations/deployment.md) · current release runbook: [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md)
+- **Production deployment** — start with the [release guide](operations/release-guide.md) (pre-deploy checklist, build and deploy from `master`, verify, rollback) · reference: [operations/deployment.md](operations/deployment.md) · September runbook: [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md)
 - **API catalog (77 routers, ~960 procedures)** — [reference/api-complete.md](reference/api-complete.md)
 - **Database (18 schema files, 332 models)** — [reference/database.md](reference/database.md)
 - **Facet design system** — [reference/facet-design-system.md](reference/facet-design-system.md) · [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
@@ -147,6 +147,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [operations/local-dev-setup.md](operations/local-dev-setup.md) | WSL2 dev environment, DB sync from production, dev scripts |
 | [operations/deployment.md](operations/deployment.md) | Production reference: PM2 apps (web, ws, cron), env vars, health checks |
 | [operations/deployment-checklist.md](operations/deployment-checklist.md) | Pre-flight and post-deploy procedure |
+| [operations/release-guide.md](operations/release-guide.md) | Release guide: pre-deploy checklist, build and deploy from `master`, verification, rollback, and this release's one-off steps |
 | [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md) | Release runbook for rose-garden (Realms schema push, backfill, Eurth) |
 | [operations/credentials.md](operations/credentials.md) | Credentials and environment variables |
 | [operations/rate-limiting.md](operations/rate-limiting.md) | Rate-limit tiers, identity and coverage (sketches marked) |

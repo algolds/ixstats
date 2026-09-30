@@ -32,7 +32,7 @@ Security-relevant items marked ★ were re-checked by hand.
 
 Collected here from the area tables so they can be fixed as one batch. Every one is S or M.
 
-**Status (2026-09-30):** fixes for everything except PL-2 are merged: [#36](https://github.com/algolds/ixstats/pull/36) (Vault), [#38](https://github.com/algolds/ixstats/pull/38) (authorization)
+**Status (2026-09-30):** fixes for everything are merged (PL-2's code side in [#46](https://github.com/algolds/ixstats/pull/46); the nginx override still has to go): [#36](https://github.com/algolds/ixstats/pull/36) (Vault), [#38](https://github.com/algolds/ixstats/pull/38) (authorization)
 and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups). The Fix column links each one.
 
 | ID | Exploit | Evidence | Fix |
@@ -52,7 +52,7 @@ and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups). Th
 | WK-12 | `getNarratorSettings` returns the LLM API key unmasked (admin-only). | `routers/narrator/index.ts:145` | [#38](https://github.com/algolds/ixstats/pull/38) |
 | VT-22 | `refreshCardValues` lets any user make one NationStates API call per zero-value card, which risks an NS lockout of the shared IP. | `ns-import/cards.ts:475-530` | [#36](https://github.com/algolds/ixstats/pull/36) |
 | VT-24 | `createAuction` reads `isLocked:false` and then locks unconditionally, so the same card can be listed twice. | `lib/economy/auction-service.ts:75-170` | [#36](https://github.com/algolds/ixstats/pull/36) |
-| PL-2 | The CSP nonce never reaches the page (it is set on the response, not the request headers). Removing the nginx override today would block every inline script. | `src/proxy.ts:90-91`; `app/layout.tsx:125` | Open |
+| PL-2 | The CSP nonce never reaches the page (it is set on the response, not the request headers). Removing the nginx override today would block every inline script. | `src/proxy.ts:90-91`; `app/layout.tsx:125` | [#46](https://github.com/algolds/ixstats/pull/46); then remove the nginx override (ops) |
 
 **After fixing VT-1, VT-2 and VT-6:** audit `vault_transactions` for `SPEND_COSMETIC` / `SPEND_BOOST` rows whose amount doesn't
 match the item price, and for repeated `bonus:ns_deck_import` rows.
@@ -206,7 +206,7 @@ audit:vault-exploits` shows them (dry run) and `bun run audit:vault-exploits:app
 | ID | Type | Item | Evidence | Size | Impact |
 |---|---|---|---|---|---|
 | PL-1 ★ | SEC | The admin audit log persists nothing (see §1). | `trpc/middleware.ts:181-260` | S | H |
-| PL-2 | SEC | The CSP nonce isn't propagated (see §1). | `src/proxy.ts:90-91` | S | H |
+| PL-2 | SEC | The CSP nonce isn't propagated (see §1). **Fixed in code: [#46](https://github.com/algolds/ixstats/pull/46).** | `src/proxy.ts:90-91` | S | H |
 | PL-3 | SEC | Seven public mutations have no rate limit (see §1). | — | S | H |
 | PL-4 | BUG | Live auction WebSocket updates are dropped in production (no Redis bridge between processes). | `lib/economy/auction-service.ts:28-37` | M | M |
 | PL-5 | BUG | Seven package scripts fail on import (`set-admin-role`, `sync:owners`, `cleanup:logs`, `wiki:sync:*`, `audit:wikios-db`, `audit:country-links`). | `package.json` | S | M |

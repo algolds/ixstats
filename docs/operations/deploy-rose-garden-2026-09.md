@@ -260,9 +260,10 @@ Once applied, government-component and power-broker bonuses start affecting econ
 
 ## 9. Later, not part of this deploy
 
-- **CSP (plan 335 Step 6):** nginx or a Cloudflare transform rule replaces the app's `Content-Security-Policy`
-  header. Remove that override, then enable the nonce-based CSP and check the pages in section 6 for
-  "Refused to execute inline script".
+- **CSP (plan 335 Step 6, PL-2):** nginx or a Cloudflare transform rule replaces the app's `Content-Security-Policy`
+  header. The app's nonce now reaches the page, so once this release is live: remove that override, then load the
+  pages in section 6 with the browser console open and check for "Refused to execute inline script" (see
+  [the release guide](release-guide.md#b7-csp-remove-the-nginx-override)).
 - **Unused tables:** see plan 347 and branch `chore/drop-unused-prisma-models` (commit `d262df35`). It is kept off `rose-garden` on
   purpose, because `db push` would drop empty tables on the next deploy without review.
 - **Rotate** the PostgreSQL credential (plan 325).

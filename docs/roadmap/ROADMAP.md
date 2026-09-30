@@ -111,7 +111,7 @@ code-health track runs throughout.
 | Market WebSocket Redis bridge | PL-4 | M |
 | Commit `ecosystem.config.example.cjs`; run the web process under PM2 | PL-12 | S |
 | Rewrite the rollback script around tags and the real restart | PL-13 | S |
-| CSP: propagate the nonce on request headers → test in staging → remove the nginx override → drop `'unsafe-inline'` | PL-2, pending-features §1 | M |
+| CSP: ~~propagate the nonce on request headers~~ (done, [#46](https://github.com/algolds/ixstats/pull/46)) → remove the nginx override and check for violations → drop `'unsafe-inline'` | PL-2, pending-features §1 | M |
 
 **Scheduled jobs** (order matters; see [code audit §9](code-audit-2026-09-30.md#9-cron-job-readiness))
 | Item | Refs | Size |

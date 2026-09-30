@@ -133,7 +133,8 @@ found several that are partly built, read-only, or broken, so each row now carri
 ## Known blockers on `rose-garden`
 
 - **M0 follow-ups (code audit 2026-09-30).** The exploit and authorization fixes are merged ([#36](https://github.com/algolds/ixstats/pull/36), [#37](https://github.com/algolds/ixstats/pull/37), [#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)).
-  Still open: the CSP nonce (PL-2), rate limits on the remaining protected mutations, and
+  Still open: rate limits on the remaining protected mutations, removing the nginx CSP override (the nonce itself is
+  fixed), and
   these ops steps (besides the password rotation below): run `db:backup` and test a restore; run
   `db:mark-match-revenue-collected` right after the schema push; run `db:remap-budget-years`;
   review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup` and

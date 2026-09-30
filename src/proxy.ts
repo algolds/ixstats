@@ -62,9 +62,14 @@ function isEmbeddablePathFn(pathname: string): boolean {
 }
 
 /**
- * Add comprehensive security and performance headers to response
+ * Continue to the app with the security headers set (PL-2).
+ *
+ * The per-request CSP nonce goes on the forwarded *request* headers as well as the response:
+ * Next.js reads the nonce from the request's `Content-Security-Policy` to put it on its own
+ * inline scripts, and the root layout reads `x-csp-nonce` to hand it to Clerk. Both are
+ * overwritten here, so a client can't supply its own.
  */
-function enhanceResponse(response: NextResponse, req: NextRequest): NextResponse {
+function nextWithSecurityHeaders(req: NextRequest): NextResponse {
   // Single UUID for both nonce and request tracking (one crypto call instead of two)
   const requestId = crypto.randomUUID();
   const nonce = Buffer.from(requestId).toString("base64");
@@ -82,8 +87,12 @@ function enhanceResponse(response: NextResponse, req: NextRequest): NextResponse
     // Allow iframe embedding from any origin for maps, wiki articles, and country pages
     csp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
   }
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.set("x-csp-nonce", nonce);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
-  response.headers.set("X-CSP-Nonce", nonce);
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -152,8 +161,7 @@ function simpleMiddleware(req: NextRequest) {
   const standaloneRedirect = handleStandaloneRouting(req);
   if (standaloneRedirect) return standaloneRedirect;
 
-  const response = NextResponse.next();
-  return enhanceResponse(response, req);
+  return nextWithSecurityHeaders(req);
 }
 
 // SSE endpoints must bypass Clerk middleware — streaming ReadableStream
@@ -181,8 +189,7 @@ function getClerkMiddleware() {
         // SSE endpoints must bypass Clerk — streaming responses are incompatible
         // with Clerk's session token/cookie rewriting. Return early with headers only.
         if (SSE_ENDPOINTS.some((p) => req.nextUrl.pathname.startsWith(p))) {
-          const response = NextResponse.next();
-          return enhanceResponse(response, req);
+          return nextWithSecurityHeaders(req);
         }
 
         // IxWorld standalone route guard
@@ -193,8 +200,7 @@ function getClerkMiddleware() {
 
         // Allow public routes to pass through without auth
         if (isPublicRoute(req)) {
-          const response = NextResponse.next();
-          return enhanceResponse(response, req);
+          return nextWithSecurityHeaders(req);
         }
 
         // For protected routes, check authentication
@@ -243,8 +249,7 @@ function getClerkMiddleware() {
         }
 
         // For all other routes, continue without auth requirement
-        const response = NextResponse.next();
-        return enhanceResponse(response, req);
+        return nextWithSecurityHeaders(req);
       });
       console.log("[Middleware] Clerk middleware initialized successfully.");
     } catch (error) {
