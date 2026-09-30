@@ -44,6 +44,10 @@ module.exports = {
         HOSTNAME: "127.0.0.1",
         NODE_OPTIONS: "--max-old-space-size=1536",
         NEXT_PUBLIC_WIKIOS_STANDALONE: "true",
+        // The IxStates URL that WikiOS redirects non-wiki paths to. No default: it comes from the
+        // environment of scripts/deploy-wikios.sh (which sources $WIKIOS_DIR/.env.wikios-build) via
+        // `pm2 startOrReload --update-env`. The build inlines the same value; see the cutover runbook.
+        NEXT_PUBLIC_IXSTATES_URL: process.env.NEXT_PUBLIC_IXSTATES_URL,
         BASE_PATH: "",
         NEXT_PUBLIC_BASE_PATH: "",
         // Private MediaWiki render engine (scripts/ops/nginx/wikios-render-internal.conf).

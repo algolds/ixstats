@@ -1,10 +1,11 @@
 import {
   WIKIOS_ALLOWED_PREFIXES,
+  WikiStandaloneConfigError,
   isWikiStandalone,
   wikiStandaloneRedirect,
 } from "~/lib/system/wikios-standalone";
 
-const DEFAULT_IXSTATES = "https://ixwiki.com/projects/ixstats";
+const IXSTATES = "https://ixwiki.com/projects/ixstates";
 
 describe("isWikiStandalone", () => {
   const original = process.env.NEXT_PUBLIC_WIKIOS_STANDALONE;
@@ -30,7 +31,7 @@ describe("wikiStandaloneRedirect", () => {
   const original = process.env.NEXT_PUBLIC_IXSTATES_URL;
 
   beforeEach(() => {
-    delete process.env.NEXT_PUBLIC_IXSTATES_URL;
+    process.env.NEXT_PUBLIC_IXSTATES_URL = IXSTATES;
   });
 
   afterAll(() => {
@@ -58,6 +59,8 @@ describe("wikiStandaloneRedirect", () => {
     "/api/ixtime/current",
     "/api/onoma/tts",
     "/api.php",
+    "/wiki-sitemap",
+    "/wiki-sitemap.xml",
     "/sitemap.xml",
     "/sitemap-0.xml",
     "/sitemap/1",
@@ -98,16 +101,14 @@ describe("wikiStandaloneRedirect", () => {
     ["/sounds/cards/card-flip.mp3", ""],
     ["/admin", ""],
   ])("redirects %s to IxStates", (pathname, search) => {
-    expect(wikiStandaloneRedirect(pathname, search)).toBe(
-      `${DEFAULT_IXSTATES}${pathname}${search}`
-    );
+    expect(wikiStandaloneRedirect(pathname, search)).toBe(`${IXSTATES}${pathname}${search}`);
   });
 
   it("does not treat a longer name as a match for a segment prefix", () => {
-    expect(wikiStandaloneRedirect("/wikipedia", "")).toBe(`${DEFAULT_IXSTATES}/wikipedia`);
-    expect(wikiStandaloneRedirect("/utilities", "")).toBe(`${DEFAULT_IXSTATES}/utilities`);
-    expect(wikiStandaloneRedirect("/stashed", "")).toBe(`${DEFAULT_IXSTATES}/stashed`);
-    expect(wikiStandaloneRedirect("/fontsy", "")).toBe(`${DEFAULT_IXSTATES}/fontsy`);
+    expect(wikiStandaloneRedirect("/wikipedia", "")).toBe(`${IXSTATES}/wikipedia`);
+    expect(wikiStandaloneRedirect("/utilities", "")).toBe(`${IXSTATES}/utilities`);
+    expect(wikiStandaloneRedirect("/stashed", "")).toBe(`${IXSTATES}/stashed`);
+    expect(wikiStandaloneRedirect("/fontsy", "")).toBe(`${IXSTATES}/fontsy`);
   });
 
   it("uses NEXT_PUBLIC_IXSTATES_URL and ignores its trailing slashes", () => {
@@ -117,9 +118,25 @@ describe("wikiStandaloneRedirect", () => {
     );
   });
 
-  it("falls back to the default when NEXT_PUBLIC_IXSTATES_URL is empty", () => {
-    process.env.NEXT_PUBLIC_IXSTATES_URL = "";
-    expect(wikiStandaloneRedirect("/vault", "")).toBe(`${DEFAULT_IXSTATES}/vault`);
+  it.each([
+    ["unset", undefined],
+    ["empty", ""],
+    ["blank", "   "],
+  ])(
+    "has no default: a redirect to IxStates throws when NEXT_PUBLIC_IXSTATES_URL is %s",
+    (_label, value) => {
+      if (value === undefined) delete process.env.NEXT_PUBLIC_IXSTATES_URL;
+      else process.env.NEXT_PUBLIC_IXSTATES_URL = value;
+      expect(() => wikiStandaloneRedirect("/vault", "")).toThrow(WikiStandaloneConfigError);
+      expect(() => wikiStandaloneRedirect("/vault", "")).toThrow(/NEXT_PUBLIC_IXSTATES_URL/);
+    }
+  );
+
+  it("does not need NEXT_PUBLIC_IXSTATES_URL for paths WikiOS serves or for the root", () => {
+    delete process.env.NEXT_PUBLIC_IXSTATES_URL;
+    expect(wikiStandaloneRedirect("/", "")).toBe("/wiki/Main_Page");
+    expect(wikiStandaloneRedirect("/wiki/Main_Page", "")).toBeNull();
+    expect(wikiStandaloneRedirect("/_next/static/a.js", "")).toBeNull();
   });
 });
 

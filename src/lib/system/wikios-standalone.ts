@@ -7,7 +7,17 @@
  */
 
 const MAIN_PAGE_PATH = "/wiki/Main_Page";
-const DEFAULT_IXSTATES_URL = "https://ixwiki.com/projects/ixstats";
+
+/** The standalone build cannot redirect to IxStates without NEXT_PUBLIC_IXSTATES_URL. */
+export class WikiStandaloneConfigError extends Error {
+  constructor() {
+    super(
+      "NEXT_PUBLIC_IXSTATES_URL is not set: the WikiOS standalone build needs the IxStates URL " +
+        "that works on the server (there is no default; see docs/operations/wikios-v1-cutover.md)"
+    );
+    this.name = "WikiStandaloneConfigError";
+  }
+}
 
 /**
  * Request-path prefixes the standalone WikiOS process serves itself. Anything else is IxStates.
@@ -66,13 +76,15 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 }
 
 function ixstatesBaseUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_IXSTATES_URL;
-  return (configured || DEFAULT_IXSTATES_URL).replace(/\/+$/, "");
+  const configured = process.env.NEXT_PUBLIC_IXSTATES_URL?.trim();
+  if (!configured) throw new WikiStandaloneConfigError();
+  return configured.replace(/\/+$/, "");
 }
 
 /**
  * Where a standalone WikiOS request must be redirected, or null when WikiOS serves it.
  * `/` goes to the Main Page; a path outside WIKIOS_ALLOWED_PREFIXES belongs to IxStates.
+ * Throws WikiStandaloneConfigError when such a path needs NEXT_PUBLIC_IXSTATES_URL and it is unset.
  */
 export function wikiStandaloneRedirect(pathname: string, search: string): string | null {
   if (pathname === "/") return MAIN_PAGE_PATH;

@@ -180,7 +180,7 @@ export const env = createEnv({
     NEXT_PUBLIC_IXWORLD_STANDALONE: z.string().optional(),
     // "true" for the WikiOS standalone build (ixwiki.com/wiki/*): empty base path, other paths go to IxStates
     NEXT_PUBLIC_WIKIOS_STANDALONE: z.enum(["true", "false"]).optional(),
-    // IxStates base URL that the WikiOS standalone build redirects non-wiki paths to
+    // IxStates base URL that the WikiOS standalone build redirects non-wiki paths to; required there, no default
     NEXT_PUBLIC_IXSTATES_URL: z.string().url().optional(),
     // Map glyph (font PBF) URL template that overrides the default
     NEXT_PUBLIC_MAP_GLYPHS_URL: z.string().optional(),
