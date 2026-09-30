@@ -7,41 +7,32 @@
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import {
-  getArticleHtml,
-  renderArticleViaMediaWiki,
-} from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   transformArticleHtml,
   stripConflictingStyles,
 } from "~/lib/wiki-os/transformers/html-transformer";
-import { parseWikitextToHtml, cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
-import {
-  extractTemplateKeys,
-  resolveTemplates,
-  applyResolvedTemplates,
-  registerTemplateProvider,
-  type ResolvedTemplate,
-} from "~/lib/wiki-os/templates/template-resolver";
+import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { ixstatsTemplateProvider } from "~/server/shared/ixstats-template-provider";
 import {
   getArticleWikitextShadow,
-  saveArticleHtmlShadow,
-  getArticleHtmlShadow,
   getArticleAuthors,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
+import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import {
-  assertPageVisible,
   assertTitleVisible,
+  canSeeDeletedPages,
   canSeeTitle,
   visibleTitles,
 } from "~/lib/wiki-os/permissions";
+import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -115,10 +106,15 @@ export const wikiosPageContentRouter = createTRPCRouter({
           wikiSource
         );
 
+        // Another wiki's HTML is as untrusted as a user's: sanitized before it is served.
         return {
-          contentHtml: transformed.contentHtml,
-          infoboxHtml: transformed.infoboxHtml,
-          noticesHtml: transformed.noticesHtml,
+          contentHtml: sanitizeWikiArticleHtml(transformed.contentHtml),
+          infoboxHtml: transformed.infoboxHtml
+            ? sanitizeWikiArticleHtml(transformed.infoboxHtml)
+            : null,
+          noticesHtml: transformed.noticesHtml
+            ? sanitizeWikiArticleHtml(transformed.noticesHtml)
+            : null,
           toc: transformed.toc,
           title: article.title,
           categories: [] as string[],
@@ -128,6 +124,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
           resolvedFrom: null,
           wikiSource,
           authorInfo,
+          renderQuality: "rendered" as const,
+          stale: false,
         };
       }
 
@@ -172,233 +170,32 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       const { title: resolvedTitle } = await resolveRedirect(rawTitle);
 
-      // Fast-path: Check PostgreSQL Native Article Repository (<2ms)
-      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki", {
-        includeArchived: true,
-      }).catch(() => null);
-      // A deleted page is "not found" unless the reader may see deleted pages: checked before every fallback below.
-      await assertPageVisible(ctx, nativeArticle, input.title);
-      if (nativeArticle && (nativeArticle.contentHtml || nativeArticle.wikitext)) {
-        let rawHtml =
-          nativeArticle.contentHtml && nativeArticle.contentHtml.trim() !== ""
-            ? nativeArticle.contentHtml
-            : "";
-
-        // Detect corrupted wikitext remnants in cached HTML (e.g. leaked table pipes or dangling image parameters)
-        const hasCorruptedMarkup =
-          Boolean(rawHtml && (/\|\d+px\|/i.test(rawHtml) || /\|\s*(?:center|left|right|thumb)\]\]/i.test(rawHtml)));
-
-        const wikitextHasInfobox =
-          nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
-        const htmlHasInfobox =
-          rawHtml && !hasCorruptedMarkup && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
-
-        if (!rawHtml || hasCorruptedMarkup || (wikitextHasInfobox && !htmlHasInfobox)) {
-          // Render from the Postgres wikitext, not MediaWiki's copy of the page, which is stale
-          // right after a WikiOS save (NEW-3).
-          const parsed = await renderArticleViaMediaWiki(nativeArticle.wikitext, resolvedTitle);
-          if (parsed) {
-            rawHtml = parsed;
-            void saveArticleHtmlShadow(
-              resolvedTitle,
-              rawHtml,
-              "ixwiki",
-              nativeArticle.wikitext || undefined
-            ).catch(() => {});
-          }
+      const view = await getArticleView(
+        resolvedTitle,
+        () => resolveActiveCountryId(ctx),
+        () => canSeeDeletedPages(ctx)
+      ).catch((error: Error) => {
+        // Not asking MediaWiki about a missing page right now is "busy", not "no such page".
+        if (error instanceof ThrottledError) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
         }
-
-        if ((!rawHtml || hasCorruptedMarkup) && nativeArticle.wikitext) {
-          rawHtml = parseWikitextToHtml(nativeArticle.wikitext, "ixwiki");
-          void saveArticleHtmlShadow(
-            resolvedTitle,
-            rawHtml,
-            "ixwiki",
-            nativeArticle.wikitext
-          ).catch(() => {});
-        }
-
-        const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
-
-        const templateKeys = extractTemplateKeys(transformed.contentHtml);
-        let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-        try {
-          const myCountryId = await resolveActiveCountryId(ctx);
-          resolvedMap = await resolveTemplates(templateKeys, {
-            activeCountryId: myCountryId,
-          });
-        } catch {
-          resolvedMap = undefined;
-        }
-
-        const contentHtml = resolvedMap
-          ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-          : transformed.contentHtml;
-        const infoboxHtml =
-          resolvedMap && transformed.infoboxHtml
-            ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-            : transformed.infoboxHtml;
-        const noticesHtml =
-          resolvedMap && transformed.noticesHtml
-            ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-            : transformed.noticesHtml;
-
-        const authorInfo = await getArticleAuthors(resolvedTitle, "ixwiki");
-
-        // Native articles hold user-authored HTML (and compiled wikitext): sanitize on serve.
-        return {
-          contentHtml: sanitizeWikiArticleHtml(contentHtml),
-          infoboxHtml: infoboxHtml ? sanitizeWikiArticleHtml(infoboxHtml) : infoboxHtml,
-          noticesHtml: noticesHtml ? sanitizeWikiArticleHtml(noticesHtml) : noticesHtml,
-          toc: transformed.toc,
-          title: nativeArticle.title,
-          categories: [] as string[],
-          lastModified: nativeArticle.updatedAt.toISOString(),
-          isRedirect: false,
-          redirectTarget: null,
-          resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
-          wikiSource: "ixwiki" as const,
-          authorInfo,
-        };
-      }
-
-      // Fast-path: Check Postgres shadow HTML cache (<3ms)
-      const [shadowHtml, authorInfo] = await Promise.all([
-        getArticleHtmlShadow(resolvedTitle, "ixwiki"),
-        getArticleAuthors(resolvedTitle, "ixwiki"),
-      ]);
-      if (shadowHtml) {
-        const transformed = transformArticleHtml(
-          stripConflictingStyles(shadowHtml.html),
-          "",
-          "ixwiki"
-        );
-
-        // Pre-resolve custom templates (CountryData, BusinessData) server-side
-        const templateKeys = extractTemplateKeys(transformed.contentHtml);
-        let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-        try {
-          const myCountryId = await resolveActiveCountryId(ctx);
-          resolvedMap = await resolveTemplates(templateKeys, {
-            activeCountryId: myCountryId,
-          });
-        } catch {
-          resolvedMap = undefined;
-        }
-
-        const contentHtml = resolvedMap
-          ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-          : transformed.contentHtml;
-        const infoboxHtml =
-          resolvedMap && transformed.infoboxHtml
-            ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-            : transformed.infoboxHtml;
-        const noticesHtml =
-          resolvedMap && transformed.noticesHtml
-            ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-            : transformed.noticesHtml;
-
-        return {
-          contentHtml,
-          infoboxHtml,
-          noticesHtml,
-          toc: transformed.toc,
-          title: resolvedTitle.replace(/_/g, " "),
-          categories: [] as string[],
-          lastModified: shadowHtml.timestamp,
-          isRedirect: false,
-          redirectTarget: null,
-          resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
-          wikiSource: "ixwiki" as const,
-          authorInfo,
-        };
-      }
-
-      let article: any;
-      try {
-        article = await getArticleHtml(resolvedTitle);
-      } catch {
-        // Direct shadow and bridge fallback
-        const shadowRes = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
-        if (shadowRes?.wikitext) {
-          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
-          const { parseWikitextToHtml } =
-            await import("~/lib/wiki-os/transformers/wikitext-parser");
-          article = {
-            html: parseWikitextToHtml(shadowRes.wikitext, "ixwiki"),
-            title: resolvedTitle,
-            categories: [],
-            lastModified: shadowRes.timestamp || null,
-            isRedirect: false,
-            redirectTarget: null,
-          };
-        } else {
-          const wikiRes = await getArticleWikitext(resolvedTitle, "ixwiki");
-          if (wikiRes?.wikitext) {
-            // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
-            const { parseWikitextToHtml } =
-              await import("~/lib/wiki-os/transformers/wikitext-parser");
-            article = {
-              html: parseWikitextToHtml(wikiRes.wikitext, "ixwiki"),
-              title: wikiRes.title || resolvedTitle,
-              categories: [],
-              lastModified: null,
-              isRedirect: false,
-              redirectTarget: null,
-            };
-          } else {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: `The page "${input.title}" does not exist on IxWiki.`,
-            });
-          }
-        }
-      }
-
-      const transformed = transformArticleHtml(stripConflictingStyles(article.html), "", "ixwiki");
-
-      // Pre-resolve custom templates (CountryData, BusinessData) server-side
-      const templateKeys = extractTemplateKeys(transformed.contentHtml);
-      let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-      try {
-        const myCountryId = await resolveActiveCountryId(ctx);
-        resolvedMap = await resolveTemplates(templateKeys, {
-          activeCountryId: myCountryId,
+        throw error;
+      });
+      if (!view) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `The page "${input.title}" does not exist on IxWiki.`,
         });
-      } catch {
-        resolvedMap = undefined;
-      }
-
-      const contentHtml = resolvedMap
-        ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-        : transformed.contentHtml;
-      const infoboxHtml =
-        resolvedMap && transformed.infoboxHtml
-          ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-          : transformed.infoboxHtml;
-      const noticesHtml =
-        resolvedMap && transformed.noticesHtml
-          ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-          : transformed.noticesHtml;
-
-      // Phase 8: Backfill HTML shadow cache with complete raw Parsoid HTML so subsequent reads preserve infoboxes
-      if (article.html) {
-        void saveArticleHtmlShadow(resolvedTitle, article.html, "ixwiki");
       }
 
       return {
-        contentHtml,
-        infoboxHtml,
-        noticesHtml,
-        toc: transformed.toc,
-        title: article.title,
-        categories: article.categories || [],
-        lastModified: article.lastModified || null,
+        ...view,
         isRedirect: false,
         redirectTarget: null,
         resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
         wikiSource: "ixwiki" as const,
-        authorInfo,
+        // The reader fetches authorship lazily (getArticleAuthors) so it never holds the article back.
+        authorInfo: null,
       };
     }),
 
@@ -425,6 +222,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
       await assertTitleVisible(ctx, input.title);
+      // The head revision is read BEFORE the text: a save in between can then only make the text newer
+      // than its ref (a harmless extra conflict), never older (which would let a stale edit overwrite it).
+      // Without the shadow store the editor still loads; it then saves without a base revision.
+      const head = await getHeadRevisionRefs(input.title).catch(() => null);
       // Read-through the Postgres shadow store (resilient to MediaWiki downtime).
       const result = await getArticleWikitextShadow(input.title, "ixwiki", {
         includeArchived: true, // visibility was asserted above
@@ -433,6 +234,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wikitext: result?.wikitext ?? "",
         revid: result?.revid ?? null,
         timestamp: result?.timestamp ?? null,
+        /** The latest revision the editor is based on; send it back as `baseRevisionRef` when saving. */
+        revisionRef: head?.revisionRef ?? null,
+        /** Every reference that names that revision (its row id and its MediaWiki rev_id once stamped). */
+        revisionRefs: head?.revisionRefs ?? [],
       };
     }),
 

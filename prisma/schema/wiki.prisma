@@ -31,6 +31,7 @@ model WikiArticle {
   contentJson         Json?                // Structured Block AST (for 0ms Canvas startup)
   contentHtml         String?              @db.Text // Pre-compiled HTML (for <2ms reads)
   htmlContent         String?              @db.Text // Legacy pre-rendered transformed HTML cache
+  renderedView        Json?                // Reader view bundle built once per revision (WikiOS render-service); null until first render
   wikitext            String               @db.Text // Canonical wikitext representation
   summary             String?              @db.VarChar(500)
   

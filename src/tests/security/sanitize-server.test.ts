@@ -4,7 +4,11 @@
  * where there is no `window`. Before plan 335 they returned the input unchanged there.
  */
 
-import { sanitizeUserContent, sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import {
+  sanitizeUserContent,
+  sanitizeWikiArticleHtml,
+  wikiArticleSanitizerFingerprint,
+} from "~/lib/utils/sanitize-html";
 
 describe("server-side sanitization (no window)", () => {
   it("runs without a browser window", () => {
@@ -60,5 +64,34 @@ describe("server-side sanitization (no window)", () => {
       expect(out).not.toContain("onclick");
       expect(out).not.toContain("<script");
     });
+  });
+});
+
+describe("the article sanitizer's fingerprint (plan 404 review)", () => {
+  it("is stable and compact, so stored bundles can carry it", () => {
+    const fingerprint = wikiArticleSanitizerFingerprint();
+
+    expect(fingerprint).toMatch(/^[0-9a-f]{8,14}$/);
+    expect(wikiArticleSanitizerFingerprint()).toBe(fingerprint);
+  });
+
+  it("changes with DOMPurify's version: a sanitizer upgrade invalidates every stored bundle", () => {
+    const fingerprintWithVersion = (version?: string): string => {
+      let result = "";
+      jest.isolateModules(() => {
+        if (version) {
+          const DOMPurify = require("dompurify") as { version: string };
+          Object.defineProperty(DOMPurify, "version", { value: version, configurable: true });
+        }
+        result = (
+          require("~/lib/utils/sanitize-html") as typeof import("~/lib/utils/sanitize-html")
+        ).wikiArticleSanitizerFingerprint();
+      });
+      return result;
+    };
+
+    expect(fingerprintWithVersion()).toBe(wikiArticleSanitizerFingerprint());
+    expect(fingerprintWithVersion("99.0.0")).not.toBe(wikiArticleSanitizerFingerprint());
+    expect(fingerprintWithVersion("99.0.0")).toBe(fingerprintWithVersion("99.0.0"));
   });
 });

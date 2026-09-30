@@ -138,8 +138,8 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
 
   // Consolidated Save Workflow
   const executeSave = useCallback(
-    async (getContent: () => string) => {
-      if (!onSave) return;
+    async (getContent: () => string): Promise<boolean> => {
+      if (!onSave) return false;
       const content = getContent();
       setSaving(true);
       const isSession = saveActionType === "session";
@@ -154,9 +154,11 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
             ? "Your progress has been saved successfully."
             : "Your changes have been published to the wiki."
         );
+        return true;
       } catch (err) {
         console.error("Save failed:", err);
         notify.error("Save Failed", "Could not save article changes.");
+        return false;
       } finally {
         setSaving(false);
       }
@@ -168,11 +170,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
     (getContent: () => string, mode: "visual" | "source") => {
       const content = getContent();
       try {
-        if (mode === "visual") {
-          saveDraft({ title, source: "ixwiki", html: content, mode: "visual" });
-        } else {
-          saveDraft({ title, source: "ixwiki", wikitext: content, mode: "source" });
-        }
+        saveDraft({ title, source: "ixwiki", wikitext: content, mode });
         setIsDirty(false);
         notify.success("Draft Saved", "Your draft has been saved locally.");
       } catch (err) {

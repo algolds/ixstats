@@ -3,6 +3,7 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
+import { parseInert } from "./inert-dom";
 import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
@@ -74,19 +75,6 @@ const IMG_SRC_COMMON_REGEX =
   /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/gu;
 
 const STYLE_DEDUPLICATE_REGEX = /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/giu;
-
-const SECTION_HEADING_REGEX = /<(h[23])\b([^>]*)>([\s\S]*?)<\/\1>/giu;
-const HTML_ENTITY_REGEX = /&(amp|lt|gt|quot|#39|nbsp);/gu;
-const HTML_ENTITIES: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  "#39": "'",
-  nbsp: " ",
-};
-const ATTR_UNSAFE_REGEX = /[&"<]/gu;
-const ATTR_ESCAPES: Record<string, string> = { "&": "&amp;", '"': "&quot;", "<": "&lt;" };
 
 // ---------------------------------------------------------------------------
 // Main transformer
@@ -442,19 +430,31 @@ export function transformImages(
 
 /**
  * Append an "Edit" link to every h2/h3 heading, opening the source editor at that section
- * (`/wiki/{slug}/edit?section={heading text}`). `slug` must already be URI-encoded.
+ * (`/wiki/{slug}/edit?section={heading text}`). `slug` must already be URI-encoded. The DOM does the
+ * work: the HTML is sanitized already, and string surgery on sanitized HTML is not safe (a heading
+ * whose attribute holds `</h2>` would have the link written into that attribute). Outside a browser
+ * the HTML comes back untouched.
  */
 export function addSectionEditLinks(html: string, slug: string): string {
-  return html.replace(SECTION_HEADING_REGEX, (match, tag: string, attrs: string, inner: string) => {
-    const text = inner
-      .replace(TAG_STRIP_REGEX, "")
-      .replace(HTML_ENTITY_REGEX, (_entity, name: string) => HTML_ENTITIES[name] ?? "")
-      .trim();
-    if (!text) return match;
-    const href = withBasePath(`/wiki/${slug}/edit?section=${encodeURIComponent(text)}`);
-    const label = text.replace(ATTR_UNSAFE_REGEX, (c) => ATTR_ESCAPES[c] ?? c);
-    return `<${tag}${attrs}>${inner}<a class="wikios-section-edit-link" href="${href}" aria-label="Edit section: ${label}">Edit</a></${tag}>`;
-  });
+  const parsed = parseInert(html);
+  if (!parsed) return html;
+
+  const { template, document, content } = parsed;
+  for (const heading of Array.from(content.querySelectorAll("h2, h3"))) {
+    const text = (heading.textContent ?? "").trim();
+    if (!text) continue;
+
+    const link = document.createElement("a");
+    link.className = "wikios-section-edit-link";
+    link.setAttribute(
+      "href",
+      withBasePath(`/wiki/${slug}/edit?section=${encodeURIComponent(text)}`)
+    );
+    link.setAttribute("aria-label", `Edit section: ${text}`);
+    link.textContent = "Edit";
+    heading.append(link);
+  }
+  return template.innerHTML;
 }
 
 function styleEditSectionLinks(html: string): string {

@@ -11,6 +11,7 @@ const mockSetActiveModal = jest.fn();
 const mockReplace = jest.fn();
 let mockSearch = "";
 let mockSlug = "Portal%3AEurth";
+let mockSignedIn = true;
 
 jest.mock("next/navigation", () => ({
   useParams: () => ({ slug: mockSlug }),
@@ -22,6 +23,9 @@ jest.mock("~/trpc/react", () => ({
     useUtils: () => ({ wikios: { getWikitext: { prefetch: mockPrefetch } } }),
     wikios: { getArticleHtml: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } },
   },
+}));
+jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
+  useWikiAuth: () => ({ isSignedIn: mockSignedIn }),
 }));
 jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
   WikiOSLayout: ({ children, readOnly }: { children: ReactNode; readOnly?: boolean }) => {
@@ -73,6 +77,7 @@ describe("WikiOS reader ?source=", () => {
     jest.clearAllMocks();
     mockSlug = "Portal%3AEurth";
     mockSearch = "";
+    mockSignedIn = true;
     Object.assign(window, { requestIdleCallback: (cb: () => void) => cb() });
     document.head.querySelector('link[rel="canonical"]')?.remove();
   });
@@ -112,6 +117,71 @@ describe("WikiOS reader ?source=", () => {
     );
   });
 
+  it("warms the editor's wikitext only for a signed-in reader (plan 404)", () => {
+    mockSlug = "Aurelia";
+    found("Aurelia");
+
+    mockSignedIn = false;
+    render(<WikiOSArticlePage />);
+    expect(mockPrefetch).not.toHaveBeenCalled();
+
+    mockSignedIn = true;
+    render(<WikiOSArticlePage />);
+    expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
+  });
+
+  it("passes the page's own authorship through untouched: an IxWiki page gets none and loads it itself (plan 404)", () => {
+    mockSlug = "Aurelia";
+    found("Aurelia");
+    render(<WikiOSArticlePage />);
+
+    expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ authorInfo: null }));
+  });
+
+  describe("a stale article (its render still pending) is asked for again soon (plan 404 review)", () => {
+    interface ArticleQueryOptions {
+      staleTime: (query: { state: { data?: { stale: boolean } } }) => number;
+      refetchInterval: (query: { state: { data?: { stale: boolean } } }) => number | false;
+      retry: (failureCount: number, error: { data?: { code: string } }) => boolean;
+      retryDelay: number;
+    }
+    const options = () => mockUseQuery.mock.calls.at(-1)![1] as ArticleQueryOptions;
+    const queryWith = (data?: { stale: boolean }) => ({ state: { data } });
+
+    it("refetches after ~5 s while the article is stale, and stops once it is not", () => {
+      mockSlug = "Aurelia";
+      found("Aurelia");
+      render(<WikiOSArticlePage />);
+
+      expect(options().refetchInterval(queryWith({ stale: true }))).toBe(5_000);
+      expect(options().refetchInterval(queryWith({ stale: false }))).toBe(false);
+      expect(options().refetchInterval(queryWith(undefined))).toBe(false);
+    });
+
+    it("never treats a stale article as fresh for ten minutes", () => {
+      mockSlug = "Aurelia";
+      found("Aurelia");
+      render(<WikiOSArticlePage />);
+
+      expect(options().staleTime(queryWith({ stale: true }))).toBe(0);
+      expect(options().staleTime(queryWith({ stale: false }))).toBe(10 * 60 * 1000);
+    });
+
+    it("retries a busy answer (TOO_MANY_REQUESTS) twice, and nothing else", () => {
+      mockSlug = "Aurelia";
+      found("Aurelia");
+      render(<WikiOSArticlePage />);
+
+      const busy = { data: { code: "TOO_MANY_REQUESTS" } };
+      expect(options().retry(0, busy)).toBe(true);
+      expect(options().retry(1, busy)).toBe(true);
+      expect(options().retry(2, busy)).toBe(false);
+      expect(options().retry(0, { data: { code: "NOT_FOUND" } })).toBe(false);
+      expect(options().retry(0, {})).toBe(false);
+      expect(options().retryDelay).toBe(3_000);
+    });
+  });
+
   it("?margin=1 opens the margin on an IxWiki page only (ruling E-l′)", () => {
     mockSearch = "source=iiwiki&margin=1";
     found();
@@ -145,6 +215,68 @@ describe("WikiOS reader ?source=", () => {
     expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /create this page/i }));
     expect(mockEditor).toHaveBeenCalled();
+  });
+
+  describe("a busy answer (TOO_MANY_REQUESTS) is not a missing page (plan 404 review)", () => {
+    const busyError = Object.assign(new Error("Importing pages from MediaWiki is busy"), {
+      data: { code: "TOO_MANY_REQUESTS" },
+    });
+
+    it("says WikiOS is busy and offers a retry, never 'does not exist' or 'create this page'", () => {
+      const refetch = jest.fn();
+      mockSlug = "Nowhere";
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: busyError,
+        refetch,
+      });
+      render(<WikiOSArticlePage />);
+
+      expect(screen.getByText("WikiOS is busy")).toBeInTheDocument();
+      expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows a retrying state while the automatic retries run", () => {
+      mockSlug = "Nowhere";
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        error: null,
+        refetch: jest.fn(),
+        failureCount: 1,
+      });
+      render(<WikiOSArticlePage />);
+
+      expect(screen.getByText(/WikiOS is busy — retrying/)).toBeInTheDocument();
+    });
+
+    it("shows plain loading before any failure, and still not-found for any other error", () => {
+      mockSlug = "Nowhere";
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        error: null,
+        refetch: jest.fn(),
+        failureCount: 0,
+      });
+      const { unmount } = render(<WikiOSArticlePage />);
+      expect(screen.getByText("Loading article...")).toBeInTheDocument();
+      unmount();
+
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: Object.assign(new Error("nope"), { data: { code: "NOT_FOUND" } }),
+        refetch: jest.fn(),
+      });
+      render(<WikiOSArticlePage />);
+      expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    });
   });
 
   it("a missing iiwiki page names iiwiki and offers no ixwiki page creation", () => {

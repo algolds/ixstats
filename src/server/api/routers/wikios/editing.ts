@@ -9,6 +9,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, lightMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import {
   getRevisionWikitextShadow,
@@ -32,6 +33,7 @@ import {
   requireUploadTitle,
 } from "~/lib/wiki-os/permissions";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
@@ -120,7 +122,10 @@ export const wikiosEditingRouter = createTRPCRouter({
       const noticesPrefix = transformed.noticesHtml
         ? `<div class="wikios-notices-container mb-4">${transformed.noticesHtml}</div>`
         : "";
-      return { html: noticesPrefix + infoboxPrefix + transformed.contentHtml };
+      // MediaWiki's HTML, from a user's wikitext: sanitized before it is handed back.
+      return {
+        html: sanitizeWikiArticleHtml(noticesPrefix + infoboxPrefix + transformed.contentHtml),
+      };
     }),
 
   /**
@@ -135,12 +140,16 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
         turnstileToken: z.string().optional(),
-        basetimestamp: z.string().optional(),
+        /** `revisionRef` of the page when the editor loaded it; absent for a page that did not exist. */
+        baseRevisionRef: z.string().max(64).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
       await assertCanEditArticle(ctx, title);
+
+      const conflict = await detectEditConflict(title, input.baseRevisionRef);
+      if (conflict) return { success: false as const, editConflict: true as const, ...conflict };
 
       if (input.turnstileToken) {
         await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
@@ -175,7 +184,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
-        success: true,
+        success: true as const,
         title,
         revisionId: saveResult.revisionId,
         extractedLinksCount: saveResult.extractedLinksCount,

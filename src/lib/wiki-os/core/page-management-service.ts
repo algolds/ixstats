@@ -9,6 +9,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
+import { enqueueRender } from "../services/render-service";
 
 /** Who performed an operation: the WikiOS user row (for the foreign keys) and the name the log shows. */
 export interface PageActor {
@@ -86,6 +87,8 @@ export function talkTitleOf(title: string, realm = "ixwiki"): string | null {
 function findPage(client: Prisma.TransactionClient, ref: string, realm: string) {
   return client.wikiArticle.findFirst({
     where: { source: realm, OR: [{ slug: toArticleSlug(ref) }, { title: ref.replace(/_/g, " ") }] },
+    // Never the wikitext, the raw HTML or the rendered view bundle: a page operation needs none of them.
+    select: { id: true, title: true, namespace: true, status: true },
   });
 }
 
@@ -113,7 +116,7 @@ export class PageManagementService {
       throw new PageOperationError("BAD_REQUEST", "Old and new page names are identical.");
     }
 
-    return db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       const move = { reason, actor, realm, leaveRedirect, includeArchived };
       const moved = await this.moveOne(tx, oldSlugOrTitle, target, move);
       const fromTalk = moveTalk ? talkTitleOf(oldSlugOrTitle, realm) : null;
@@ -127,6 +130,11 @@ export class PageManagementService {
           : null;
       return { success: true, ...moved, talk };
     });
+
+    // A moved page is stale under its new name: render it off the read path.
+    enqueueRender(result.movedArticleId);
+    if (result.talk) enqueueRender(result.talk.movedArticleId);
+    return result;
   }
 
   /** Whether the talk page `fromTalk` exists and the destination talk page is free. */
@@ -186,6 +194,7 @@ export class PageManagementService {
     // 2. Check if target title already exists
     const existingTarget = await tx.wikiArticle.findFirst({
       where: { source: realm, OR: [{ slug: newSlug }, { title: newCanonicalTitle }] },
+      select: { id: true },
     });
     if (existingTarget && existingTarget.id !== original.id) {
       throw new PageOperationError(
@@ -207,9 +216,12 @@ export class PageManagementService {
         namespacePrefix: target.namespacePrefix,
         protectionLevel: legacyProtectionLevel(edit?.level),
         protectionExpiry: edit?.expiresAt ?? null,
+        // The page's name is part of how it renders ({{PAGENAME}}, the display title): stale.
+        htmlSyncedAt: null,
         lastEditorId: actor.userId,
         updatedAt: new Date(),
       },
+      select: { id: true },
     });
 
     // 5. Create a redirect at the old location: a page with its own `#REDIRECT` revision
@@ -304,6 +316,7 @@ export class PageManagementService {
         authorId: actor.userId,
         lastEditorId: actor.userId,
       },
+      select: { id: true },
     });
     const byteSize = Buffer.byteLength(wikitext, "utf8");
     await tx.wikiRevision.create({
@@ -342,6 +355,7 @@ export class PageManagementService {
       await tx.wikiArticle.update({
         where: { id: article.id },
         data: { status: "ARCHIVED", lastEditorId: actor.userId, updatedAt: new Date() },
+        select: { id: true },
       });
       await tx.wikiLog.create({
         data: {
@@ -380,6 +394,7 @@ export class PageManagementService {
       await tx.wikiArticle.update({
         where: { id: article.id },
         data: { status: "PUBLISHED", lastEditorId: actor.userId, updatedAt: new Date() },
+        select: { id: true },
       });
       await tx.wikiLog.create({
         data: {

@@ -76,6 +76,9 @@ beforeEach(() => {
       wikitext: TEXT(HIDDEN),
       contentHtml: `<p>${HIDDEN}</p>`,
       summary: HIDDEN,
+      // The fake ignores `select`: the relations the article view reads are plain fields here.
+      revisions: [],
+      categories: [],
       updatedAt: new Date("2026-09-01T00:00:00Z"),
     },
     {

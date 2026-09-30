@@ -6,7 +6,6 @@ import React from "react";
 export interface PlateWikiCallbacks {
   openTemplateEditor: (id: string) => void;
   deleteNode: (id: string) => void;
-  updateInfoboxFields?: (id: string, fields: Array<{ label: string; value: string }>) => void;
 }
 
 const CallbacksCtx = React.createContext<PlateWikiCallbacks | null>(null);

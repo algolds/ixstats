@@ -8,6 +8,7 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { ArticleNotFound } from "~/components/wiki-os/reader/ArticleNotFound";
+import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
 import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { withBasePath } from "~/lib/base-path";
@@ -21,7 +22,18 @@ import {
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { RESERVED_TOOL_PAGES } from "./reserved-tool-pages";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
+
+const ARTICLE_STALE_TIME_MS = 10 * 60 * 1000;
+/** How soon a stale article (its render pending) is asked for again. */
+const STALE_ARTICLE_REFETCH_MS = 5_000;
+const BUSY_RETRY_DELAY_MS = 3_000;
+
+/** "Busy" (TOO_MANY_REQUESTS): the page may exist, the lookup was refused for now. Not "no such page". */
+function isBusyError(error: { data?: { code?: string } | null }): boolean {
+  return error.data?.code === "TOO_MANY_REQUESTS";
+}
 
 /**
  * `?source=` reads another wiki's page (e.g. a realm's iiwiki lore), read-only (ruling E-l);
@@ -43,6 +55,7 @@ export default function WikiOSArticlePage() {
   const router = useRouter();
   const utils = api.useUtils();
   const { setActiveModal } = useWikiContext();
+  const { isSignedIn } = useWikiAuth();
   const articleRef = useRef<HTMLDivElement>(null);
 
   const { wikiSource, isEditAction, isMarginParam } = readerParams(searchParams);
@@ -165,25 +178,31 @@ export default function WikiOSArticlePage() {
   }, [canon, isIxWiki, isCategoryOrSpecialOrMain, decodedSlug, slug, searchParams, router]);
 
   // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
-  const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
+  const { data, isLoading, error, refetch, failureCount } = api.wikios.getArticleHtml.useQuery(
     articleHtmlInput(title, wikiSource),
     {
       enabled: !!title && !isCategoryOrSpecialOrMain,
-      staleTime: 10 * 60 * 1000,
-      retry: false,
+      // An article served while its render is still pending (`stale`) is asked for again soon and
+      // never treated as fresh; a finished one is good for ten minutes.
+      staleTime: (query) => (query.state.data?.stale ? 0 : ARTICLE_STALE_TIME_MS),
+      refetchInterval: (query) => (query.state.data?.stale ? STALE_ARTICLE_REFETCH_MS : false),
+      // "Busy" (the page may exist, MediaWiki was not asked yet) is worth a retry; anything else is final.
+      retry: (failures, err) => isBusyError(err) && failures < 2,
+      retryDelay: BUSY_RETRY_DELAY_MS,
     }
   );
 
-  // Background idle wikitext warmup so clicking Edit is 0ms
+  // Background idle wikitext warmup so clicking Edit is 0ms. Only a signed-in reader can edit:
+  // an anonymous reader never pays for the wikitext (up to 2 MB) of every page they open.
   useEffect(() => {
-    if (data && !isMainPage && isIxWiki) {
+    if (data && !isMainPage && isIxWiki && isSignedIn) {
       if ("requestIdleCallback" in window) {
         window.requestIdleCallback(() => {
           void utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
         });
       }
     }
-  }, [data, title, isMainPage, isIxWiki, utils]);
+  }, [data, title, isMainPage, isIxWiki, isSignedIn, utils]);
 
   // Canonical link and page title
   useEffect(() => {
@@ -254,10 +273,15 @@ export default function WikiOSArticlePage() {
             {isLoading && !data && (
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
-                <p className="mt-4 text-sm text-zinc-400">Loading article...</p>
+                <p className="mt-4 text-sm text-zinc-400">
+                  {failureCount > 0 ? "WikiOS is busy — retrying..." : "Loading article..."}
+                </p>
               </div>
             )}
-            {error && !data && (
+            {error && !data && isBusyError(error) && (
+              <ArticleBusy title={title} onRetry={() => void refetch()} />
+            )}
+            {error && !data && !isBusyError(error) && (
               <ArticleNotFound
                 title={title}
                 wikiSource={wikiSource}
@@ -274,48 +298,7 @@ export default function WikiOSArticlePage() {
                 categories={data.categories}
                 lastModified={data.lastModified ?? null}
                 wikiSource={wikiSource}
-                authorInfo={
-                  data.authorInfo
-                    ? {
-                        creator:
-                          typeof (data.authorInfo as any).creator === "object"
-                            ? ((data.authorInfo as any).creator?.username ?? null)
-                            : ((data.authorInfo as any).creator ??
-                              (data.authorInfo as any).author ??
-                              null),
-                        creatorAvatar:
-                          (data.authorInfo as any).creator?.avatar ??
-                          (data.authorInfo as any).creatorAvatar ??
-                          null,
-                        createdAt:
-                          (data.authorInfo as any).createdAt ??
-                          (data.authorInfo as any).creator?.timestamp ??
-                          (data.authorInfo as any).createdTimestamp ??
-                          null,
-                        lastEditor:
-                          typeof (data.authorInfo as any).lastEditor === "object"
-                            ? ((data.authorInfo as any).lastEditor?.username ?? null)
-                            : ((data.authorInfo as any).lastEditor ?? null),
-                        lastEditorAvatar:
-                          (data.authorInfo as any).lastEditor?.avatar ??
-                          (data.authorInfo as any).lastEditorAvatar ??
-                          null,
-                        lastEditedAt:
-                          (data.authorInfo as any).lastEditedAt ??
-                          (data.authorInfo as any).lastEditor?.timestamp ??
-                          (data.authorInfo as any).lastModifiedTimestamp ??
-                          null,
-                        contributors:
-                          (data.authorInfo as any).topContributors ??
-                          (data.authorInfo as any).contributors ??
-                          [],
-                        totalContributors:
-                          (data.authorInfo as any).totalContributors ??
-                          (data.authorInfo as any).topContributors?.length ??
-                          0,
-                      }
-                    : null
-                }
+                authorInfo={data.authorInfo}
               />
             )}
           </>

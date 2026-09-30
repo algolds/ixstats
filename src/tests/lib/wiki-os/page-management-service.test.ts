@@ -11,6 +11,7 @@ import {
   talkTitleOf,
   type PageActor,
 } from "~/lib/wiki-os/core/page-management-service";
+import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
@@ -23,6 +24,7 @@ const mockRestrictionDeleteMany = jest.fn();
 const mockRestrictionUpdateMany = jest.fn();
 const mockRestrictionFindUnique = jest.fn();
 
+jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 jest.mock("~/server/db", () => {
   const tx = {
     wikiArticle: {
@@ -42,7 +44,10 @@ jest.mock("~/server/db", () => {
   return {
     db: {
       $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
-      wikiArticle: { findMany: (...a: unknown[]) => mockFindMany(...a) },
+      wikiArticle: {
+        findMany: (...a: unknown[]) => mockFindMany(...a),
+      },
+      wikiLog: { create: (...a: unknown[]) => mockLogCreate(...a) },
     },
   };
 });
@@ -439,6 +444,98 @@ describe("PageManagementService.archiveArticle / restoreArticle", () => {
     await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toBeInstanceOf(
       PageOperationError
     );
+  });
+});
+
+/** Columns a page-management call must never read: the bundle, the raw HTML and the page text. */
+const HEAVY = ["renderedView", "contentHtml", "htmlContent", "contentJson", "wikitext"];
+
+function expectLeanSelect(call: unknown[] | undefined) {
+  const select = (call?.[0] as { select?: Record<string, boolean> } | undefined)?.select;
+  expect(select).toBeDefined();
+  for (const column of HEAVY) expect(select).not.toHaveProperty(column);
+}
+
+describe("PageManagementService.movePage and the rendered view (plan 404)", () => {
+  it("marks the moved page stale under its new name and queues its render after the commit", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ title: "New name", htmlSyncedAt: null });
+    expect(mockUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml");
+    expect(enqueueRender).toHaveBeenCalledTimes(1);
+    expect(enqueueRender).toHaveBeenCalledWith("orig");
+  });
+
+  it("queues the moved talk page's render too", async () => {
+    pages({ old_name: original, "talk:old_name": talkOriginal });
+    mockUpdate.mockImplementation(async ({ where }: { where: { id: string } }) => ({ id: where.id }));
+
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    expect(jest.mocked(enqueueRender).mock.calls.map((call) => call[0]).sort()).toEqual(["orig", "talk-orig"]);
+  });
+
+  it("queues nothing for a move that failed", async () => {
+    mockFindFirst.mockReset().mockResolvedValue(null);
+
+    await expect(PageManagementService.movePage("old_name", "new_name", "x", actor)).rejects.toThrow(
+      "not found"
+    );
+    expect(enqueueRender).not.toHaveBeenCalled();
+  });
+});
+
+describe("PageManagementService reads only the columns it uses (plan 404)", () => {
+  it("movePage selects an explicit, lean column list on every wikiArticle call", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    // The page and its destination, then the talk page and its destination.
+    expect(mockFindFirst).toHaveBeenCalledTimes(4);
+    for (const call of [...mockFindFirst.mock.calls, ...mockUpdate.mock.calls]) {
+      expectLeanSelect(call);
+    }
+    expect(mockFindFirst.mock.calls[0]?.[0].select).toEqual({
+      id: true,
+      title: true,
+      namespace: true,
+      status: true,
+    });
+    // The stub's own data carries the banner HTML (a write); its answer stays small.
+    expect(mockCreate.mock.calls[0]?.[0].select).toEqual({ id: true });
+    expect(mockLogCreate.mock.calls[0]?.[0].data.params).toMatchObject({ oldTitle: "Old name" });
+  });
+
+  it("archiveArticle reads the id, title and status, writes the status, and logs the previous one", async () => {
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
+    mockUpdate.mockResolvedValue({ id: "a1" });
+
+    await expect(PageManagementService.archiveArticle("Old name", "spam", actor)).resolves.toEqual({
+      success: true,
+      articleId: "a1",
+    });
+
+    expectLeanSelect(mockFindFirst.mock.calls[0]);
+    expectLeanSelect(mockUpdate.mock.calls[0]);
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ status: "ARCHIVED" });
+    expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({
+      title: "Old name",
+      params: { reason: "spam", previousStatus: "PUBLISHED" },
+    });
+  });
+
+  it("restoreArticle reads the id and title and publishes the page again", async () => {
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "ARCHIVED" });
+    mockUpdate.mockResolvedValue({ id: "a1" });
+
+    await expect(PageManagementService.restoreArticle("Old name", actor)).resolves.toEqual({
+      success: true,
+      articleId: "a1",
+    });
+
+    expectLeanSelect(mockFindFirst.mock.calls[0]);
+    expectLeanSelect(mockUpdate.mock.calls[0]);
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ status: "PUBLISHED" });
+    expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({ title: "Old name" });
   });
 });
 

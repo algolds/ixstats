@@ -12,7 +12,7 @@ jest.mock("~/server/db", () => ({
     wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
     wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
     wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
-    wikiArticle: { upsert: jest.fn() },
+    wikiArticle: { upsert: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     wikiRevision: { findFirst: jest.fn(), create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     stash: { findFirst: jest.fn(), create: jest.fn() },
     stashItem: { upsert: jest.fn(), deleteMany: jest.fn() },
@@ -36,6 +36,7 @@ jest.mock("~/lib/wiki-os/core", () => ({
   ArticleRepository: { findBySlug: jest.fn(), saveArticle: jest.fn() },
   MediaAssetService: { registerAsset: jest.fn() },
 }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   __esModule: true,
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
@@ -64,6 +65,11 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
 jest.mock("~/lib/wiki-os/adapters/mediawiki/write-service", () => ({
   __esModule: true,
   executeMediaWikiWrite: jest.fn(),
+}));
+// Edit conflicts have their own suite (wikios-edit-conflict.test.ts); here no save ever conflicts.
+jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({
+  __esModule: true,
+  detectEditConflict: jest.fn().mockResolvedValue(null),
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   __esModule: true,
@@ -106,7 +112,7 @@ import { db } from "~/server/db";
 const mockDb = db as unknown as {
   user: { findFirst: jest.Mock; update: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
-  wikiArticle: { upsert: jest.Mock };
+  wikiArticle: { upsert: jest.Mock; count: jest.Mock };
   wikiRestriction: { findMany: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
   stash: { findFirst: jest.Mock; create: jest.Mock };

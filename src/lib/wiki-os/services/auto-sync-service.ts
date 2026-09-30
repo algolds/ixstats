@@ -14,6 +14,7 @@ import { toArticleSlug } from "../core/domain-types";
 import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace } from "../core/title";
 import { DEFAULT_USER_AGENT } from "../config";
+import { enqueueRender } from "./render-service";
 
 const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
 const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
@@ -219,8 +220,8 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
   // MediaWiki's namespace wins where the canonical table has no prefix for it ("Portal:" is ns 100).
   const { namespaceId, namespacePrefix } = storedNamespace(canon, Number(page.ns || 0));
 
-  // The reader prefers cached contentHtml, so when the wikitext changes the cache must be cleared
-  // or MediaWiki-side edits never show (NEW-2). An empty cache is re-rendered on the next view.
+  // When the wikitext changes the rendered view goes stale (`htmlSyncedAt: null`) or MediaWiki-side
+  // edits never show (NEW-2); the previous view keeps being served until the queued render lands.
   const previous = await db.wikiArticle.findUnique({
     where: { source_title: { source: "ixwiki", title: articleTitle } },
     select: { wikitext: true },
@@ -255,7 +256,7 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
       namespace: namespaceId,
       namespacePrefix,
       wikitext,
-      ...(wikitextChanged ? { contentHtml: "" } : {}),
+      ...(wikitextChanged ? { htmlSyncedAt: null } : {}),
       summary,
       redirectTargetSlug,
       redirectTargetFragment,
@@ -268,6 +269,8 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
     },
     select: { id: true },
   });
+  // Inbound sync is a backlog: an editor's save renders before it.
+  if (wikitextChanged) enqueueRender(article.id, { background: true });
 
   // Record revision; (source, mwRevId) is unique, so a known revision is skipped by the DB.
   if (revId > 0) {

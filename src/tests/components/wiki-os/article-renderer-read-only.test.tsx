@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { api } from "~/trpc/react";
@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 const mockToggleMargin = jest.fn();
 const mockSetWikiPage = jest.fn();
 const mockMargin = jest.fn();
+const mockHeader = jest.fn();
 let mockMarginOpen = false;
 
 jest.mock("next/dynamic", () => () => () => null);
@@ -47,7 +48,10 @@ jest.mock("~/components/wiki-os/reader/AppleBooksTocDrawer", () => ({
 jest.mock("~/components/wiki-os/reader/StickyToc", () => ({ StickyToc: () => null }));
 jest.mock("~/components/wiki-os/reader/InfoboxWithMap", () => ({ InfoboxWithMap: () => null }));
 jest.mock("~/components/wiki-os/reader/ArticleHeader", () => ({
-  WikiOSHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
+  WikiOSHeader: (props: { title: string }) => {
+    mockHeader(props);
+    return <h1>{props.title}</h1>;
+  },
 }));
 jest.mock("~/components/wiki-os/reader/ArticleModals", () => ({
   QuickHistoryModal: () => null,
@@ -55,9 +59,11 @@ jest.mock("~/components/wiki-os/reader/ArticleModals", () => ({
 }));
 jest.mock("~/components/wiki-os/reader/ArticlePlaceholders", () => ({
   injectPlaceholderElements: (html: string) => html,
+  extractStatKeys: () => [],
   CoordsPill: () => null,
   DynamicStatSpan: () => null,
 }));
+jest.mock("~/components/wiki-os/reader/useStatValues", () => ({ useStatValues: () => ({}) }));
 jest.mock("~/components/wiki-os/reader/ArticleCategories", () => ({ CategoriesBar: () => null }));
 jest.mock("~/components/wiki-os/reader/ArticleFooter", () => ({ ArticleFooter: () => null }));
 jest.mock("~/components/wiki-os/margin", () => {
@@ -77,7 +83,10 @@ jest.mock("~/components/wiki-os/margin", () => {
 
 const content = '<h2 id="History">History</h2><p>Eurth is a world.</p>';
 
-function renderArticle(wikiSource: "ixwiki" | "iiwiki") {
+function renderArticle(
+  wikiSource: "ixwiki" | "iiwiki",
+  overrides: Partial<ComponentProps<typeof ArticleRenderer>> = {}
+) {
   return render(
     <ArticleRenderer
       title="Portal:Eurth"
@@ -89,6 +98,7 @@ function renderArticle(wikiSource: "ixwiki" | "iiwiki") {
       lastModified={null}
       wikiSource={wikiSource}
       authorInfo={null}
+      {...overrides}
     />
   );
 }
@@ -152,5 +162,105 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
 
     fireEvent.keyDown(window, { key: "t" });
     expect(mockToggleMargin).toHaveBeenCalledTimes(1);
+  });
+});
+
+const authorsQuery = api.wikios.getArticleAuthors.useQuery as jest.Mock;
+
+const EMBED_IDS = ["ixstats-embed-css", "ixstats-embed-js", "ixstats-embed-prefetch"];
+const embedAssets = () => EMBED_IDS.map((id) => document.getElementById(id));
+
+describe("ArticleRenderer embed assets load only for a page that embeds a map (plan 404)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    for (const id of EMBED_IDS) document.getElementById(id)?.remove();
+  });
+
+  it("adds no embed CSS, script or /maps prefetch to an ordinary page", () => {
+    renderArticle("ixwiki");
+
+    expect(embedAssets()).toEqual([null, null, null]);
+    expect(document.head.querySelector('link[rel="prefetch"]')).toBeNull();
+  });
+
+  it("adds them for a page whose body holds an embed", () => {
+    renderArticle("ixwiki", {
+      contentHtml: `${content}<div class="ix-embed-wrap" data-ix-lat="1" data-ix-lng="2" data-ix-zoom="4"></div>`,
+    });
+
+    expect(embedAssets().every(Boolean)).toBe(true);
+    expect(document.getElementById("ixstats-embed-prefetch")).toHaveAttribute(
+      "href",
+      "/maps?embed=true"
+    );
+  });
+
+  it("adds them for a page whose infobox holds an embed", () => {
+    renderArticle("ixwiki", {
+      infoboxHtml: '<table><tr><td><div class="ix-embed-wrap"></div></td></tr></table>',
+    });
+
+    expect(embedAssets().every(Boolean)).toBe(true);
+  });
+});
+
+describe("ArticleRenderer loads authorship beside the article (plan 404)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    authorsQuery.mockImplementation(() => ({ data: undefined, isLoading: true }));
+  });
+
+  it("asks for an IxWiki page's authors itself, without holding the article back", () => {
+    renderArticle("ixwiki");
+
+    expect(authorsQuery).toHaveBeenCalledWith(
+      { title: "Portal:Eurth", wikiSource: "ixwiki" },
+      expect.objectContaining({ enabled: true })
+    );
+    expect(mockHeader).toHaveBeenLastCalledWith(expect.objectContaining({ authorInfo: null }));
+    expect(screen.getByRole("heading", { name: "Portal:Eurth" })).toBeInTheDocument();
+  });
+
+  it("hands the header the authors, flattened, once they arrive", () => {
+    authorsQuery.mockImplementation(() => ({
+      data: {
+        creator: { username: "Alice", timestamp: "2026-01-01T00:00:00Z", avatar: "a.png" },
+        lastEditor: { username: "Bob", timestamp: "2026-09-01T00:00:00Z", avatar: null },
+        topContributors: [{ username: "Alice", editCount: 3 }],
+        totalContributors: 2,
+      },
+    }));
+    renderArticle("ixwiki");
+
+    expect(mockHeader).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        authorInfo: {
+          creator: "Alice",
+          creatorAvatar: "a.png",
+          createdAt: "2026-01-01T00:00:00Z",
+          lastEditor: "Bob",
+          lastEditorAvatar: null,
+          lastEditedAt: "2026-09-01T00:00:00Z",
+          contributors: [{ username: "Alice", editCount: 3 }],
+          totalContributors: 2,
+        },
+      })
+    );
+    // the mobile byline and the companion read the same authors
+    expect(screen.getAllByText("Alice").length).toBeGreaterThan(1);
+  });
+
+  it("does not ask when the page came with its authorship (another wiki's page)", () => {
+    renderArticle("iiwiki", {
+      authorInfo: { creator: { username: "Carol" }, totalContributors: 1 },
+    });
+
+    expect(authorsQuery).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ enabled: false })
+    );
+    expect(mockHeader).toHaveBeenLastCalledWith(
+      expect.objectContaining({ authorInfo: expect.objectContaining({ creator: "Carol" }) })
+    );
   });
 });

@@ -146,6 +146,12 @@ async function main() {
         const summary = cleanExcerpt(wikitext, 300);
         const leadImageUrl = extractLeadImageFromWikitext(wikitext);
 
+        // A changed text leaves the rendered view stale: readers re-render it on their next visit.
+        const textUnchanged =
+          (await prisma.wikiArticle.count({
+            where: { source: "ixwiki", title: fullTitle, wikitext },
+          })) > 0;
+
         const article = await prisma.wikiArticle.upsert({
           where: {
             source_title: {
@@ -175,6 +181,7 @@ async function main() {
             namespace: ns,
             namespacePrefix: prefix || null,
             wikitext,
+            ...(textUnchanged ? {} : { htmlSyncedAt: null }),
             summary: summary || null,
             leadImageUrl: leadImageUrl || null,
             wordCount,

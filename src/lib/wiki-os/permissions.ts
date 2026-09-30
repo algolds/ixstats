@@ -266,6 +266,11 @@ export async function requireGroupChange(
   }
 }
 
+/** Whether the caller holds `deletedhistory`: only they can see that a deleted (archived) page exists. */
+export async function canSeeDeletedPages(ctx: WikiAuthContext): Promise<boolean> {
+  return (await getWikiPermissions(ctx)).rights.has("deletedhistory");
+}
+
 /** Throws NOT_FOUND for a deleted (archived) page unless the reader holds `deletedhistory`: to everyone else it does not exist. */
 export async function assertPageVisible(
   ctx: WikiAuthContext,
@@ -273,8 +278,7 @@ export async function assertPageVisible(
   title: string
 ): Promise<void> {
   if (article?.status !== "ARCHIVED") return;
-  const { rights } = await getWikiPermissions(ctx);
-  if (!rights.has("deletedhistory")) {
+  if (!(await canSeeDeletedPages(ctx))) {
     throw new TRPCError({
       code: "NOT_FOUND",
       message: `The page "${title}" does not exist on IxWiki.`,
@@ -332,7 +336,7 @@ export async function visibleTitles(
 ): Promise<string[]> {
   const titles = rawTitles.flatMap((raw) => canonicalizeTitle(raw, { source })?.title ?? []);
   if (titles.length === 0) return [...rawTitles];
-  if ((await getWikiPermissions(ctx)).rights.has("deletedhistory")) return [...rawTitles];
+  if (await canSeeDeletedPages(ctx)) return [...rawTitles];
   const rows = await db.wikiArticle.findMany({
     where: { source, status: "ARCHIVED", title: { in: titles } },
     select: { title: true },

@@ -234,22 +234,31 @@ export interface ResolvedRedirect {
 /** MediaWiki follows one redirect; IxWiki has some double redirects, so two hops are safe. */
 const MAX_REDIRECT_HOPS = 2;
 
-const REDIRECT_SELECT = { wikitext: true } as const;
+interface WikitextHead {
+  head: string;
+}
 
-/** The IxWiki row for a canonical title: the exact title, else the one row whose slug matches. */
-async function findRedirectRow(title: string) {
-  const exact = await db.wikiArticle.findUnique({
-    where: { source_title: { source: "ixwiki", title }, status: "PUBLISHED" },
-    select: REDIRECT_SELECT,
-  });
-  if (exact) return exact;
+/**
+ * The start of the wikitext of the published IxWiki row for a canonical title (the exact title, else
+ * the one row whose slug matches), or null when there is no such row (a deleted page redirects nowhere). A redirect must start the page, so
+ * only its first 1024 characters are read, in the database: the rest of a page (up to 2 MB) never
+ * crosses the wire on a view. (A redirect that begins after ~700 characters of leading whitespace
+ * is not followed; MediaWiki would follow it, no real page has that.)
+ */
+async function findRedirectHead(title: string): Promise<string | null> {
+  const [exact] = await db.$queryRaw<WikitextHead[]>`
+    SELECT left("wikitext", 1024) AS head
+    FROM wiki_articles
+    WHERE "source" = 'ixwiki' AND "status" = 'PUBLISHED' AND "title" = ${title}
+    LIMIT 1`;
+  if (exact) return exact.head;
 
-  const variants = await db.wikiArticle.findMany({
-    where: { source: "ixwiki", slug: toArticleSlug(title), status: "PUBLISHED" },
-    take: 2,
-    select: REDIRECT_SELECT,
-  });
-  return variants.length === 1 ? (variants[0] ?? null) : null;
+  const variants = await db.$queryRaw<WikitextHead[]>`
+    SELECT left("wikitext", 1024) AS head
+    FROM wiki_articles
+    WHERE "source" = 'ixwiki' AND "status" = 'PUBLISHED' AND "slug" = ${toArticleSlug(title)}
+    LIMIT 2`;
+  return variants.length === 1 ? (variants[0]?.head ?? null) : null;
 }
 
 /**
@@ -259,8 +268,7 @@ async function findRedirectRow(title: string) {
  * never be followed. Null when the page is missing or its text is not a redirect.
  */
 async function redirectTargetOf(title: string): Promise<ResolvedRedirect | null> {
-  const row = await findRedirectRow(title);
-  const parsed = row ? parseRedirect(row.wikitext) : null;
+  const parsed = parseRedirect(await findRedirectHead(title));
   return parsed ? { title: parsed.title, fragment: parsed.fragment } : null;
 }
 

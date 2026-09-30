@@ -18,6 +18,7 @@ jest.mock("~/server/db", () => ({
     wikiTemplate: { findMany: jest.fn() },
     user: { count: jest.fn() },
     $queryRawUnsafe: jest.fn(),
+    $queryRaw: jest.fn().mockResolvedValue([]),
   },
 }));
 
@@ -46,7 +47,7 @@ const mockDb = jest.requireMock<{
     | "wikiTemplate"
     | "user",
     Delegate
-  > & { $queryRawUnsafe: jest.Mock };
+  > & { $queryRawUnsafe: jest.Mock; $queryRaw: jest.Mock };
 }>("~/server/db").db;
 
 const published = { status: "PUBLISHED" };
@@ -139,8 +140,10 @@ describe("activity and links", () => {
 
   it("a redirect from a deleted page is not followed", async () => {
     await ixwikiResolveRedirect("Old name");
-    expect(mockDb.wikiArticle.findUnique.mock.calls[0]?.[0].where).toMatchObject(published);
-    expect(mockDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
+    // Both the exact-title and the slug-variant lookup are raw SQL that names the status.
+    const queries = mockDb.$queryRaw.mock.calls.map(([strings]) => strings.join("$"));
+    expect(queries).toHaveLength(2);
+    for (const query of queries) expect(query).toContain(`"status" = 'PUBLISHED'`);
   });
 });
 
