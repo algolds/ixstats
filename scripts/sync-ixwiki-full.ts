@@ -32,7 +32,13 @@ const prisma = new PrismaClient({
 const IXWIKI_DB_HOST = process.env.IXWIKI_DB_HOST || "localhost";
 const IXWIKI_DB_PORT = parseInt(process.env.IXWIKI_DB_PORT || "13306", 10);
 const IXWIKI_DB_USER = process.env.IXWIKI_DB_USER || "ixwiki";
-const IXWIKI_DB_PASSWORD = process.env.IXWIKI_DB_PASSWORD || "Multico1!";
+const IXWIKI_DB_PASSWORD = process.env.IXWIKI_DB_PASSWORD;
+if (!IXWIKI_DB_PASSWORD) {
+  console.error(
+    "IXWIKI_DB_PASSWORD is not set. Export it (or add it to .env.local) before running this script; no default is provided."
+  );
+  process.exit(1);
+}
 const IXWIKI_DB_NAME = process.env.IXWIKI_DB_NAME || "ixwiki";
 
 function sanitize(str: string | null | undefined): string {
