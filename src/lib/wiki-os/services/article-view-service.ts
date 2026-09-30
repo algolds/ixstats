@@ -32,6 +32,11 @@ const MAX_REMEMBERED_IMPORTS = 5_000;
 /** A view served while its render is pending or failed is reused this long (the render cool-down). */
 const PENDING_VIEW_TTL_MS = 30_000;
 const VIEW_TTL_MS = 10 * 60 * 1000;
+/**
+ * A chip-filled view is reused this long for the same viewer country: chips show live simulation
+ * numbers, so they are kept for far less than the bundle.
+ */
+const CHIP_VIEW_TTL_MS = 60_000;
 
 /**
  * ponytail: per-process cache of the parts of a view that do not depend on the viewer, bounded by
@@ -67,9 +72,11 @@ interface SharedView {
   renderQuality: "rendered" | "fallback";
   /** A render is pending or failed: this is an older or degraded view, and the reader should ask again. */
   stale: boolean;
+  /** The cache key of this fresh view (article and render time); null for a stale one, which is not keyed. */
+  cacheKey: string | null;
 }
 
-export interface ArticleView extends Omit<SharedView, "chipKeys"> {
+export interface ArticleView extends Omit<SharedView, "chipKeys" | "cacheKey"> {
   /** The canonical title as stored. */
   title: string;
   categories: string[];
@@ -82,7 +89,7 @@ const importsInFlight = new Map<string, Promise<boolean>>();
 function toSharedView(
   bundle: ViewBundle,
   renderQuality: SharedView["renderQuality"],
-  stale: boolean
+  cacheKey: string | null
 ): SharedView {
   return {
     contentHtml: bundle.bodyHtml,
@@ -91,7 +98,8 @@ function toSharedView(
     toc: bundle.toc,
     chipKeys: chipKeysIn(bundle.bodyHtml, bundle.infoboxHtml, bundle.noticesHtml),
     renderQuality,
-    stale,
+    stale: cacheKey === null,
+    cacheKey,
   };
 }
 
@@ -126,15 +134,16 @@ async function readSharedView(head: ArticleViewHead): Promise<SharedView | null>
   }
 
   if (loaded?.htmlSyncedAt) {
-    const fresh = toSharedView(loaded.bundle, "rendered", false);
-    viewCache.set(viewKey(head.id, loaded.htmlSyncedAt), fresh, sizeOf(fresh));
+    const key = viewKey(head.id, loaded.htmlSyncedAt);
+    const fresh = toSharedView(loaded.bundle, "rendered", key);
+    viewCache.set(key, fresh, sizeOf(fresh));
     return fresh;
   }
 
   const fallback = loaded ? null : await renderFallbackView(head.id);
   const pending = loaded
-    ? toSharedView(loaded.bundle, "rendered", true)
-    : fallback && toSharedView(fallback, "fallback", true);
+    ? toSharedView(loaded.bundle, "rendered", null)
+    : fallback && toSharedView(fallback, "fallback", null);
   if (pending) viewCache.set(pendingViewKey(head), pending, sizeOf(pending), PENDING_VIEW_TTL_MS);
   return pending;
 }
@@ -205,29 +214,13 @@ function statPlaceholder(key: string): string {
   return `<span class="wikios-stat-placeholder" data-key="${key}"></span>`;
 }
 
-/**
- * `shared` with each chip marker replaced: by the viewer's chip when its key resolved, else by a
- * placeholder the reader's client fills in on its own. Only exact markers are touched, and a part
- * that changed goes through the sanitizer once more.
- */
-async function withViewerChips(
-  shared: SharedView,
-  getViewerCountryId: () => Promise<string | null>
-): Promise<SharedView> {
-  if (shared.chipKeys.length === 0) return shared;
-
-  let resolved = new Map<string, ResolvedTemplate>();
-  try {
-    resolved = await resolveTemplates(templateKeysOf(shared.chipKeys), {
-      activeCountryId: await getViewerCountryId(),
-    });
-  } catch {
-    // Unresolved chips become placeholders; the client resolves them itself.
-  }
+/** `shared` with each chip marker replaced by the viewer's chip, or by a placeholder when its key did not resolve. */
+function fillChips(shared: SharedView, resolved: Map<string, ResolvedTemplate>): SharedView {
   const chipFor = (key: string) => {
     const entry = resolved.get(key);
     return entry ? makeChip(key, entry.value) : statPlaceholder(key);
   };
+  // A part that changed goes through the sanitizer once more, before anything is served or kept.
   const fill = (html: string) => {
     const filled = substituteChipMarkers(html, chipFor);
     return filled === html ? html : sanitizeWikiArticleHtml(filled);
@@ -237,7 +230,42 @@ async function withViewerChips(
     contentHtml: fill(shared.contentHtml),
     infoboxHtml: shared.infoboxHtml && fill(shared.infoboxHtml),
     noticesHtml: shared.noticesHtml && fill(shared.noticesHtml),
+    chipKeys: [],
   };
+}
+
+/**
+ * `shared` with the viewer's chips in it (only exact markers are touched). A fresh view is kept per
+ * viewer country for a minute, so a popular chip page is filled and sanitized once per country, not
+ * once per request; a view whose chips could not be resolved is never kept.
+ */
+async function withViewerChips(
+  shared: SharedView,
+  getViewerCountryId: () => Promise<string | null>
+): Promise<SharedView> {
+  if (shared.chipKeys.length === 0) return shared;
+
+  let countryId: string | null;
+  try {
+    countryId = await getViewerCountryId();
+  } catch {
+    return fillChips(shared, new Map()); // the client resolves the placeholders itself
+  }
+  const key = shared.cacheKey && `chips:${shared.cacheKey}:${countryId ?? "-"}`;
+  const cached = key ? viewCache.get(key) : undefined;
+  if (cached) return cached;
+
+  let resolved: Map<string, ResolvedTemplate>;
+  try {
+    resolved = await resolveTemplates(templateKeysOf(shared.chipKeys), {
+      activeCountryId: countryId,
+    });
+  } catch {
+    return fillChips(shared, new Map());
+  }
+  const filled = fillChips(shared, resolved);
+  if (key) viewCache.set(key, filled, sizeOf(filled), CHIP_VIEW_TTL_MS);
+  return filled;
 }
 
 /**

@@ -530,7 +530,7 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
         ])
     );
 
-  it("stores a chip as an inert marker and fills in the viewer's chip, per request, without caching it", async () => {
+  it("stores a chip as an inert marker and fills in the viewer's chip", async () => {
     findArticleForView.mockResolvedValue(head());
     setRow(freshBundleRow(chipped));
     expect(mockBundleRow.current?.renderedView).toMatchObject({
@@ -540,21 +540,149 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
     const resolve = provider("12,345");
     const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
 
-    const first = await caller().getArticleHtml({ title: "Aurelia" });
-    resolve.mockImplementation(provider("99"));
-    const second = await caller().getArticleHtml({ title: "Aurelia" });
+    const result = await caller().getArticleHtml({ title: "Aurelia" });
     unregister();
 
-    expect(first.contentHtml).toContain("12,345");
-    expect(first.contentHtml).toContain("wikios-stat-resolved");
-    expect(first.contentHtml).not.toContain("data-wikios-chip");
-    expect(second.contentHtml).toContain("99");
-    expect(second.contentHtml).not.toContain("12,345");
-    expect(resolveActiveCountryId).toHaveBeenCalledTimes(2);
+    expect(result.contentHtml).toContain("12,345");
+    expect(result.contentHtml).toContain("wikios-stat-resolved");
+    expect(result.contentHtml).not.toContain("data-wikios-chip");
     expect(resolve).toHaveBeenCalledWith(
       [expect.objectContaining({ key: "CountryData:Aurelia:population" })],
       { activeCountryId: "country_1" }
     );
+  });
+
+  describe("the chip-filled view is kept per viewer country (plan 404 review)", () => {
+    const setup = async (countryId: string | null) => {
+      jest.mocked(resolveActiveCountryId).mockResolvedValue(countryId);
+    };
+
+    it("fills and sanitizes a popular chip page once per country, not once per request", async () => {
+      findArticleForView.mockResolvedValue(head());
+      setRow(freshBundleRow(chipped));
+      const resolve = provider("12,345");
+      const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
+      await setup("country_1");
+      jest.mocked(sanitizeWikiArticleHtml).mockClear();
+
+      const first = await caller().getArticleHtml({ title: "Aurelia" });
+      const second = await caller().getArticleHtml({ title: "Aurelia" });
+      const third = await caller().getArticleHtml({ title: "Aurelia" });
+      unregister();
+
+      expect(second.contentHtml).toBe(first.contentHtml);
+      expect(third.contentHtml).toBe(first.contentHtml);
+      expect(resolve).toHaveBeenCalledTimes(1);
+      expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(1);
+      // The viewer is still looked up per request: it is part of the key.
+      expect(resolveActiveCountryId).toHaveBeenCalledTimes(3);
+    });
+
+    it("keeps one view per viewer country, so MyCountry chips never cross viewers", async () => {
+      findArticleForView.mockResolvedValue(head());
+      setRow(freshBundleRow('<p>Mine: <a href="/wiki/Template:MyCountry:gdp">g</a></p>'));
+      const unregister = registerTemplateProvider({
+        name: "test",
+        canHandle: () => true,
+        resolve: async (keys, opts) =>
+          new Map(
+            keys.map((k) => [
+              k.key,
+              { key: k.key, value: `gdp of ${opts?.activeCountryId ?? "nobody"}` },
+            ])
+          ),
+      });
+
+      await setup("country_1");
+      const one = await caller().getArticleHtml({ title: "Aurelia" });
+      await setup("country_2");
+      const two = await caller().getArticleHtml({ title: "Aurelia" });
+      await setup(null);
+      const nobody = await caller().getArticleHtml({ title: "Aurelia" });
+      await setup("country_1");
+      const oneAgain = await caller().getArticleHtml({ title: "Aurelia" });
+      unregister();
+
+      expect(one.contentHtml).toContain("gdp of country_1");
+      expect(two.contentHtml).toContain("gdp of country_2");
+      expect(nobody.contentHtml).toContain("gdp of nobody");
+      expect(oneAgain.contentHtml).toBe(one.contentHtml);
+    });
+
+    it("forgets a filled view after a minute, since chips show live numbers", async () => {
+      findArticleForView.mockResolvedValue(head());
+      setRow(freshBundleRow(chipped));
+      await setup("country_1");
+      const resolve = provider("1");
+      const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
+      const realNow = Date.now.bind(Date);
+      let offset = 0;
+      const nowSpy = jest.spyOn(Date, "now").mockImplementation(() => realNow() + offset);
+
+      const before = await caller().getArticleHtml({ title: "Aurelia" });
+      offset = 30_000;
+      await caller().getArticleHtml({ title: "Aurelia" });
+      expect(resolve).toHaveBeenCalledTimes(1);
+
+      resolve.mockImplementation(provider("2"));
+      offset = 61_000;
+      const after = await caller().getArticleHtml({ title: "Aurelia" });
+      unregister();
+      nowSpy.mockRestore();
+
+      expect(before.contentHtml).toContain("</span> 1</span>");
+      expect(after.contentHtml).toContain("</span> 2</span>");
+      expect(resolve).toHaveBeenCalledTimes(2);
+    });
+
+    it("starts over when the article is rendered again", async () => {
+      const found = head();
+      findArticleForView.mockResolvedValue(found);
+      setRow(freshBundleRow(chipped));
+      await setup("country_1");
+      const resolve = provider("1");
+      const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
+      await caller().getArticleHtml({ title: "Aurelia" });
+
+      const later = new Date("2026-09-30T11:00:00Z");
+      findArticleForView.mockResolvedValue({ ...found, htmlSyncedAt: later });
+      setRow(freshBundleRow(chipped, later));
+      await caller().getArticleHtml({ title: "Aurelia" });
+      unregister();
+
+      expect(resolve).toHaveBeenCalledTimes(2);
+    });
+
+    it("never keeps a view whose chips could not be resolved, nor a stale one", async () => {
+      findArticleForView.mockResolvedValue(head());
+      setRow(freshBundleRow(chipped));
+      jest.mocked(resolveActiveCountryId).mockRejectedValueOnce(new Error("db down"));
+      const resolve = provider("12,345");
+      const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
+
+      const failed = await caller().getArticleHtml({ title: "Aurelia" });
+      await setup("country_1");
+      const recovered = await caller().getArticleHtml({ title: "Aurelia" });
+      unregister();
+
+      expect(failed.contentHtml).toContain("wikios-stat-placeholder");
+      expect(recovered.contentHtml).toContain("12,345");
+
+      const pending = head({ htmlSyncedAt: null });
+      findArticleForView.mockResolvedValue(pending);
+      setRow({ ...freshBundleRow(chipped, null) });
+      const resolveStale = provider("7");
+      const again = registerTemplateProvider({
+        name: "test2",
+        canHandle: () => true,
+        resolve: resolveStale,
+      });
+      await caller().getArticleHtml({ title: "Aurelia" });
+      await caller().getArticleHtml({ title: "Aurelia" });
+      again();
+
+      expect(resolveStale).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("runs a part that changed through the sanitizer once more, and only that part", async () => {
