@@ -39,30 +39,49 @@ export interface TerrainAreaResult {
 
 /**
  * Get terrain info at a specific point (elevation zone + climate zone).
+ *
+ * Pass `realmId` to restrict the lookup to that realm's layers; without it the
+ * point is matched against every realm's layers. When several altitude bands
+ * overlap the point, the highest (most specific) band wins, so the result is
+ * deterministic rather than whichever row the database returns first.
  */
 export async function getTerrainAtPoint(
   db: PrismaClient,
   lng: number,
-  lat: number
+  lat: number,
+  realmId?: string | null
 ): Promise<TerrainPointResult> {
   try {
+    const realmFilter = realmId ? `AND "worldId" = $3` : "";
+    const params: unknown[] = realmId ? [lng, lat, realmId] : [lng, lat];
     const results = await db.$queryRawUnsafe<
       Array<{
         layerType: string;
+        featureId?: string;
         properties: Record<string, unknown>;
       }>
     >(
-      `SELECT "layerType", properties
+      `SELECT "layerType", "featureId", properties
        FROM map_layers
        WHERE "isActive" = true
          AND geom_postgis IS NOT NULL
          AND "layerType" IN ('altitudes', 'climate')
-         AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))`,
-      lng,
-      lat
+         ${realmFilter}
+         AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+       ORDER BY "featureId"`,
+      ...params
     );
 
-    const altResult = results.find((r) => r.layerType === "altitudes");
+    const num = (v: unknown): number =>
+      typeof v === "number" && Number.isFinite(v) ? v : -Infinity;
+    const altResult = results
+      .filter((r) => r.layerType === "altitudes")
+      .reduce<(typeof results)[number] | undefined>((best, r) => {
+        if (!best) return r;
+        const dMin = num(r.properties?.elevationMin) - num(best.properties?.elevationMin);
+        if (dMin !== 0) return dMin > 0 ? r : best;
+        return num(r.properties?.elevationMax) > num(best.properties?.elevationMax) ? r : best;
+      }, undefined);
     const climResult = results.find((r) => r.layerType === "climate");
 
     return {
