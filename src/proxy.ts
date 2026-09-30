@@ -6,6 +6,7 @@ import {
   NextResponse,
 } from "next/server";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
+import { isWikiStandalone, wikiStandaloneRedirect } from "~/lib/system/wikios-standalone";
 import { buildCSPTemplate, renderCsp } from "~/lib/security/csp";
 
 // Get base path from environment - should match Next.js basePath
@@ -135,6 +136,18 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
   }
 
   return null;
+}
+
+/**
+ * WikiOS standalone route guard (plan 417). Only active in the WikiOS standalone build: `/` goes to
+ * the Main Page and any path WikiOS does not own goes to IxStates. Relative `Location` values are
+ * valid and keep the public scheme/host that nginx terminates.
+ */
+function handleWikiStandaloneRouting(req: NextRequest): NextResponse | null {
+  if (!isWikiStandalone()) return null;
+  const target = wikiStandaloneRedirect(req.nextUrl.pathname, req.nextUrl.search);
+  if (!target) return null;
+  return new NextResponse(null, { status: 302, headers: { location: target } });
 }
 
 /**
@@ -271,6 +284,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     );
     return new NextResponse("Forbidden", { status: 403 });
   }
+
+  const wikiStandaloneRedirectResponse = handleWikiStandaloneRouting(req);
+  if (wikiStandaloneRedirectResponse) return wikiStandaloneRedirectResponse;
 
   const clerk = getClerkMiddleware();
   if (clerk) {

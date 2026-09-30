@@ -1,0 +1,117 @@
+import {
+  WIKIOS_ALLOWED_PREFIXES,
+  isWikiStandalone,
+  wikiStandaloneRedirect,
+} from "~/lib/system/wikios-standalone";
+
+const DEFAULT_IXSTATES = "https://ixwiki.com/projects/ixstats";
+
+describe("isWikiStandalone", () => {
+  const original = process.env.NEXT_PUBLIC_WIKIOS_STANDALONE;
+
+  afterEach(() => {
+    if (original === undefined) delete process.env.NEXT_PUBLIC_WIKIOS_STANDALONE;
+    else process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = original;
+  });
+
+  it("is on only for the exact value 'true'", () => {
+    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "true";
+    expect(isWikiStandalone()).toBe(true);
+    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "false";
+    expect(isWikiStandalone()).toBe(false);
+    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "1";
+    expect(isWikiStandalone()).toBe(false);
+    delete process.env.NEXT_PUBLIC_WIKIOS_STANDALONE;
+    expect(isWikiStandalone()).toBe(false);
+  });
+});
+
+describe("wikiStandaloneRedirect", () => {
+  const original = process.env.NEXT_PUBLIC_IXSTATES_URL;
+
+  beforeEach(() => {
+    delete process.env.NEXT_PUBLIC_IXSTATES_URL;
+  });
+
+  afterAll(() => {
+    if (original === undefined) delete process.env.NEXT_PUBLIC_IXSTATES_URL;
+    else process.env.NEXT_PUBLIC_IXSTATES_URL = original;
+  });
+
+  it("sends the root to the Main Page and drops the query string", () => {
+    expect(wikiStandaloneRedirect("/", "")).toBe("/wiki/Main_Page");
+    expect(wikiStandaloneRedirect("/", "?ref=x")).toBe("/wiki/Main_Page");
+  });
+
+  it.each([
+    "/wiki",
+    "/wiki/Main_Page",
+    "/wiki/Special:FilePath/Example.png",
+    "/util/search",
+    "/stashes",
+    "/stashes/abc",
+    "/api/trpc/wikios.page.get",
+    "/api/wiki/sync-webhook",
+    "/api/wikios/inbound-sync",
+    "/api/mediawiki/parse",
+    "/api.php",
+    "/sitemap.xml",
+    "/sitemap-0.xml",
+    "/sitemap/1",
+    "/robots.txt",
+    "/_next/static/chunks/a.js",
+    "/sign-in",
+    "/sign-in/factor-one",
+    "/sign-up",
+    "/sso-callback",
+    "/favicon.ico",
+    "/favicon-wikios.svg",
+    "/wikios-logo.svg",
+    "/fonts/inter.woff2",
+    "/images/wikios-banner.png",
+    "/images/wikios/banner.png",
+    "/opensearch.xml",
+  ])("serves %s in WikiOS", (pathname) => {
+    expect(wikiStandaloneRedirect(pathname, "?x=1")).toBeNull();
+  });
+
+  it.each([
+    ["/mycountry", ""],
+    ["/mycountry/overview", "?tab=gdp"],
+    ["/countries/ixnay", ""],
+    ["/vault", ""],
+    ["/api/health", ""],
+    ["/api/sse/map-updates", ""],
+    ["/admin", ""],
+  ])("redirects %s to IxStates", (pathname, search) => {
+    expect(wikiStandaloneRedirect(pathname, search)).toBe(
+      `${DEFAULT_IXSTATES}${pathname}${search}`
+    );
+  });
+
+  it("does not treat a longer name as a match for a segment prefix", () => {
+    expect(wikiStandaloneRedirect("/wikipedia", "")).toBe(`${DEFAULT_IXSTATES}/wikipedia`);
+    expect(wikiStandaloneRedirect("/utilities", "")).toBe(`${DEFAULT_IXSTATES}/utilities`);
+    expect(wikiStandaloneRedirect("/stashed", "")).toBe(`${DEFAULT_IXSTATES}/stashed`);
+    expect(wikiStandaloneRedirect("/fontsy", "")).toBe(`${DEFAULT_IXSTATES}/fontsy`);
+  });
+
+  it("uses NEXT_PUBLIC_IXSTATES_URL and ignores its trailing slashes", () => {
+    process.env.NEXT_PUBLIC_IXSTATES_URL = "https://ixstates.example/";
+    expect(wikiStandaloneRedirect("/countries/ixnay", "?a=1")).toBe(
+      "https://ixstates.example/countries/ixnay?a=1"
+    );
+  });
+
+  it("falls back to the default when NEXT_PUBLIC_IXSTATES_URL is empty", () => {
+    process.env.NEXT_PUBLIC_IXSTATES_URL = "";
+    expect(wikiStandaloneRedirect("/vault", "")).toBe(`${DEFAULT_IXSTATES}/vault`);
+  });
+});
+
+describe("WIKIOS_ALLOWED_PREFIXES", () => {
+  it("is a single list of absolute path prefixes without duplicates", () => {
+    expect(WIKIOS_ALLOWED_PREFIXES.every((prefix) => prefix.startsWith("/"))).toBe(true);
+    expect(new Set(WIKIOS_ALLOWED_PREFIXES).size).toBe(WIKIOS_ALLOWED_PREFIXES.length);
+  });
+});
