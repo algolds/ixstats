@@ -118,6 +118,7 @@ describe("SL-1: group management needs the owner or a group admin", () => {
     ).rejects.toThrow(/owner or a group admin/);
     expect(db.thinktankInvite.createMany).not.toHaveBeenCalled();
 
+    db.user.findMany.mockResolvedValue([{ clerkUserId: "user_friend", countryId: null }]);
     await callerAs(OWNER, db).inviteToThinktank({
       groupId: "g1",
       userIds: ["user_friend"],

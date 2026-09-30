@@ -1,4 +1,5 @@
 import type { EventTraceStep } from "../resolver";
+import { isAllowedLlmApiUrl } from "~/lib/narrator/llm-url";
 
 /**
  * narrateEvents turns a list of match event steps into play-by-play commentary.
@@ -203,15 +204,8 @@ async function queryLLM(
       console.warn("[sports-narrator] Custom API URL provided without matching API key.");
       return "";
     }
-    try {
-      const parsedUrl = new URL(config.apiUrl);
-      const allowedDomains = ["integrate.api.nvidia.com", "openrouter.ai", "api.openai.com"];
-      if (!allowedDomains.includes(parsedUrl.hostname)) {
-        console.warn(`[sports-narrator] Custom API URL host not allowed: ${parsedUrl.hostname}`);
-        return "";
-      }
-    } catch {
-      console.warn("[sports-narrator] Invalid custom API URL.");
+    if (!isAllowedLlmApiUrl(config.apiUrl)) {
+      console.warn("[sports-narrator] Custom API URL is invalid or its host is not allowed.");
       return "";
     }
   }

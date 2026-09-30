@@ -124,7 +124,7 @@ export const env = createEnv({
     ISSUES_AWARD_CREDITS: z.string().optional(),
     // Neighbor-aware national issues; on unless "0"/"false" (national-issues/neighbors.ts)
     ISSUES_NEIGHBORS: z.string().optional(),
-    // Narrator LLM (lib/narrator/client.ts); each falls back to its SPORTS_LLM_* counterpart
+    // Narrator LLM (lib/narrator/client.ts); independent of the SPORTS_LLM_* keys (no fallback)
     NARRATOR_LLM_API_KEY: z.string().optional(),
     NARRATOR_LLM_API_URL: z.string().optional(),
     NARRATOR_LLM_MODEL: z.string().optional(),

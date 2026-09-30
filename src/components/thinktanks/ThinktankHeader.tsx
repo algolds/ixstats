@@ -11,8 +11,8 @@ import {
   Check,
   Plus,
   LogOut,
-  // oxlint-disable-next-line eslint/no-unused-vars
   ChatBubble,
+  Book,
   RssFeed,
   Group,
   SidebarCollapse,
@@ -24,7 +24,7 @@ import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 
-export type ThinktankTab = "feed" | "roster";
+export type ThinktankTab = "feed" | "roster" | "docs" | "chat";
 
 interface ThinktankHeaderProps {
   group: {
@@ -93,6 +93,8 @@ export function ThinktankHeader({
   }> = [
     { id: "feed", label: "Feed", icon: RssFeed },
     { id: "roster", label: "Members", icon: Group },
+    { id: "docs", label: "Docs", icon: Book },
+    { id: "chat", label: "Chat", icon: ChatBubble },
   ];
 
   return (

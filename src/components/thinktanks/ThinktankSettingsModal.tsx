@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Settings,
   Group,
@@ -79,8 +79,22 @@ export function ThinktankSettingsModal({
   // Media repository modal state
   const [mediaTarget, setMediaTarget] = useState<"avatar" | "banner" | null>(null);
 
-  // Invite user state
+  // Invite user state: search by ThinkPages username / display name, then pick a result.
   const [inviteInput, setInviteInput] = useState("");
+  const [inviteTarget, setInviteTarget] = useState<{
+    userId: string;
+    username: string;
+    displayName: string;
+  } | null>(null);
+  const [inviteQuery, setInviteQuery] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setInviteQuery(inviteInput.trim().replace(/^@/, "")), 250);
+    return () => clearTimeout(t);
+  }, [inviteInput]);
+  const { data: inviteResults } = api.thinkpages.searchInvitableUsers.useQuery(
+    { groupId, query: inviteQuery },
+    { enabled: isOpen && inviteQuery.length >= 2 && !inviteTarget, staleTime: 10000 }
+  );
 
   // Mutations
   const updateGroupMutation = api.thinkpages.updateThinktank.useMutation();
@@ -99,10 +113,16 @@ export function ThinktankSettingsModal({
   });
 
   const inviteMutation = api.thinkpages.inviteToThinktank.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result.skipped > 0 && result.count === 0) {
+        soundEffects.error();
+        notify.error("This user can't be invited (their privacy settings don't allow it).");
+        return;
+      }
       soundEffects.success();
-      notify.success(`Invitation sent to ${inviteInput.trim()}!`);
+      notify.success(`Invitation sent to ${inviteTarget?.displayName ?? inviteInput.trim()}!`);
       setInviteInput("");
+      setInviteTarget(null);
     },
     onError: (err) => {
       soundEffects.error();
@@ -149,12 +169,12 @@ export function ThinktankSettingsModal({
 
   const handleSendInvite = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteInput.trim()) return;
+    if (!inviteTarget) return;
 
     soundEffects.press();
     inviteMutation.mutate({
       groupId,
-      userIds: [inviteInput.trim()],
+      userIds: [inviteTarget.userId],
     });
   };
 
@@ -326,26 +346,69 @@ export function ThinktankSettingsModal({
                 <span className="text-foreground text-xs font-bold">Invite Members</span>
               </div>
               <p className="text-muted-foreground text-xs leading-snug">
-                Send an invitation to a player or collaborator by user ID or handle.
+                Search for a player by their ThinkPages username or display name, then send an
+                invitation.
               </p>
               <div className="flex items-center gap-2">
                 <Input
-                  placeholder="Enter User ID (e.g., user_2abc...)"
-                  value={inviteInput}
-                  onChange={(e) => setInviteInput(e.target.value)}
+                  placeholder="Search by username (e.g., @jane)"
+                  value={
+                    inviteTarget
+                      ? `${inviteTarget.displayName} (@${inviteTarget.username})`
+                      : inviteInput
+                  }
+                  onChange={(e) => {
+                    setInviteTarget(null);
+                    setInviteInput(e.target.value);
+                  }}
                   className="bg-background/50 border-border/40 placeholder:text-muted-foreground/60 h-8.5 flex-1 rounded-xl text-xs"
                 />
                 <Button
                   type="button"
                   size="sm"
                   onClick={handleSendInvite}
-                  disabled={inviteMutation.isPending || !inviteInput.trim()}
+                  disabled={inviteMutation.isPending || !inviteTarget}
                   className="h-8.5 rounded-xl bg-emerald-600 px-3 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
                 >
                   <Send className="mr-1 h-3 w-3" />
                   Invite
                 </Button>
               </div>
+              {!inviteTarget && inviteResults && inviteResults.length > 0 && (
+                <ul className="border-border/40 bg-background/60 divide-border/30 max-h-40 divide-y overflow-y-auto rounded-xl border">
+                  {inviteResults.map((u) => (
+                    <li key={u.userId}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEffects.press();
+                          setInviteTarget({
+                            userId: u.userId,
+                            username: u.username,
+                            displayName: u.displayName,
+                          });
+                        }}
+                        className="hover:bg-muted/50 flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs"
+                      >
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={u.profileImageUrl || undefined} alt="" />
+                          <AvatarFallback className="text-xs">
+                            {u.displayName.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-foreground font-medium">{u.displayName}</span>
+                        <span className="text-muted-foreground">@{u.username}</span>
+                        {u.countryName && (
+                          <span className="text-muted-foreground ml-auto">{u.countryName}</span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!inviteTarget && inviteQuery.length >= 2 && inviteResults?.length === 0 && (
+                <p className="text-muted-foreground text-xs">No invitable users found.</p>
+              )}
             </div>
 
             {/* Multi-Persona Posting Toggle (Replaced Sparkle Icon) */}
