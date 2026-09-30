@@ -3,7 +3,13 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  adminProcedure,
+  lightMutationProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 
 // Per-culture Kokoro voice assignments, stored as a JSON string in systemConfig.
 function parseVoiceMap(raw: string | undefined): Record<string, string> {
@@ -143,10 +149,11 @@ export const onomaSpeechRouter = createTRPCRouter({
   }),
 
   /**
-   * Public: suggest IPA phonemization from Kokoro's own G2P (/dev/phonemize).
+   * Signed-in, rate-limited: suggest IPA phonemization from Kokoro's own G2P (/dev/phonemize).
+   * The request carries the admin API key, so anonymous callers can't reach it.
    */
-  suggestPhonemes: publicProcedure
-    .input(z.object({ text: z.string() }))
+  suggestPhonemes: lightMutationProcedure
+    .input(z.object({ text: z.string().min(1).max(2000) }))
     .mutation(async ({ ctx, input }) => {
       const rows = await ctx.db.systemConfig.findMany({
         where: { key: { in: ["onoma.kokoro.fastApiUrl", "onoma.kokoro.apiKey"] } },
@@ -200,9 +207,9 @@ export const onomaSpeechRouter = createTRPCRouter({
     }),
 
   /**
-   * Public: Query health status of both engines.
+   * Public, rate-limited: Query health status of both engines.
    */
-  getEngineHealth: publicProcedure.query(async ({ ctx }) => {
+  getEngineHealth: rateLimitedPublicProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
@@ -255,10 +262,10 @@ export const onomaSpeechRouter = createTRPCRouter({
   }),
 
   /**
-   * Public: Actively ping / wake up the Hugging Face / Kokoro server.
+   * Signed-in, rate-limited: Actively ping / wake up the Hugging Face / Kokoro server.
    * If the Space is sleeping or cold-starting, waits with a 45s timeout to wake it up.
    */
-  wakeKokoroServer: publicProcedure.mutation(async ({ ctx }) => {
+  wakeKokoroServer: lightMutationProcedure.mutation(async ({ ctx }) => {
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });

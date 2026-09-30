@@ -79,7 +79,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
 
   // ── Queries ──
   const { data: allGroupsData, isLoading: isLoadingGroups } = api.thinkpages.getThinktanks.useQuery(
-    { userId: currentUserId, type: "all" },
+    { type: "all" },
     { staleTime: 15000 }
   );
 
@@ -143,7 +143,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   // Selected Group Details
   const { data: activeGroupData, isLoading: isLoadingActiveGroup } =
     api.thinkpages.getThinktankById.useQuery(
-      { groupId: selectedGroupId!, userId: currentUserId },
+      { groupId: selectedGroupId! },
       { enabled: !!selectedGroupId, staleTime: 10000 }
     );
 
@@ -191,14 +191,14 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   const handleJoin = () => {
     if (!selectedGroupId || !currentUserId) return;
     soundEffects.press();
-    joinMutation.mutate({ groupId: selectedGroupId, userId: currentUserId });
+    joinMutation.mutate({ groupId: selectedGroupId });
   };
 
   const handleLeave = () => {
     if (!selectedGroupId || !currentUserId) return;
     if (confirm("Are you sure you want to leave this group?")) {
       soundEffects.press();
-      leaveMutation.mutate({ groupId: selectedGroupId, userId: currentUserId });
+      leaveMutation.mutate({ groupId: selectedGroupId });
     }
   };
 
@@ -257,6 +257,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
                     groupId={activeGroup.id}
                     groupName={activeGroup.name}
                     isMember={Boolean(activeGroup.isMember)}
+                    canReadFeed={Boolean(activeGroup.isMember) || activeGroup.type === "public"}
                     allowPersonaPosting={Boolean(activeGroup.settings?.allowPersonaPosting)}
                     currentUserId={currentUserId}
                     onJoin={handleJoin}

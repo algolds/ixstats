@@ -6,6 +6,11 @@
  */
 
 import type { UserAccount } from "./contracts";
+import {
+  pickDisplayName,
+  resolveDisplayNames,
+  UNKNOWN_DISPLAY_NAME,
+} from "~/server/shared/display-names";
 
 export async function batchResolveMessagingAccounts(
   userIds: string[],
@@ -39,7 +44,7 @@ export async function batchResolveMessagingAccounts(
       map.set(u.clerkUserId, {
         id: u.clerkUserId,
         username: u.country?.slug ?? u.clerkUserId,
-        displayName: u.country?.name ?? "Unknown",
+        displayName: pickDisplayName(u) ?? UNKNOWN_DISPLAY_NAME,
         profileImageUrl: u.country?.flag ?? null,
         accountType: "country",
       });
@@ -60,6 +65,29 @@ export async function batchResolveMessagingAccounts(
           profileImageUrl: c.flag ?? null,
           accountType: "country",
         });
+      }
+    }
+
+    // Users with no linked name, or with only a ThinkPages account: resolve through identity.
+    const unnamed = realIds.filter(
+      (id) => !map.has(id) || map.get(id)!.displayName === UNKNOWN_DISPLAY_NAME
+    );
+    if (unnamed.length > 0) {
+      const names = await resolveDisplayNames(db, unnamed);
+      for (const id of unnamed) {
+        const displayName = names.get(id) ?? UNKNOWN_DISPLAY_NAME;
+        const existing = map.get(id);
+        if (existing) {
+          existing.displayName = displayName;
+        } else if (displayName !== UNKNOWN_DISPLAY_NAME) {
+          map.set(id, {
+            id,
+            username: id,
+            displayName,
+            profileImageUrl: null,
+            accountType: "country",
+          });
+        }
       }
     }
   }

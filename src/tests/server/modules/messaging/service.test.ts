@@ -28,6 +28,9 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       country: {
         findMany: jest.fn().mockResolvedValue([]),
       },
+      thinkpagesAccount: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       thinkshareConversation: {
         findMany: jest.fn().mockResolvedValue([]),
         findFirst: jest.fn().mockResolvedValue({ id: "c_1" }),

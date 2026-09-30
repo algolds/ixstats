@@ -9,7 +9,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 
@@ -177,7 +177,7 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
    * Increment component usage count
    * This tracks how often components are used across all countries
    */
-  incrementComponentUsage: publicProcedure
+  incrementComponentUsage: rateLimitedPublicProcedure
     .input(incrementUsageSchema)
     .mutation(async ({ ctx, input }) => {
       try {

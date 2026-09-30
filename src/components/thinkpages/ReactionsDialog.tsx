@@ -140,10 +140,7 @@ export function ReactionsDialog({
               </div>
 
               {/* Content Portal */}
-              {discordMsgUrl &&
-              (!allReactions || allReactions.length === 0) &&
-              !isLoading &&
-              false ? (
+              {discordMsgUrl && (!allReactions || allReactions.length === 0) && !isLoading ? (
                 <div className="relative flex flex-1 flex-col items-center justify-center space-y-6 p-8 text-center">
                   {/* Glowing Discord Icon container */}
                   <div className="border-discord/30 bg-discord/15 shadow-discord/25 relative flex h-16 w-16 items-center justify-center rounded-2xl border shadow-lg">

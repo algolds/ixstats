@@ -33,8 +33,16 @@ export {
   setupForumCustomFields,
   lookupForumUser,
   syncUserToForum,
-  linkForumAccount,
 } from "./services/xenforo-user-sync";
+
+export {
+  createForumLinkService,
+  forumVerificationCode,
+  ForumLinkError,
+  FORUM_CODE_WINDOW_MS,
+  type ForumLinkDeps,
+  type ForumProfileProof,
+} from "./services/forum-link-verification";
 
 export {
   requireForumUser,

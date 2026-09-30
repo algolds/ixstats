@@ -16,7 +16,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
@@ -191,7 +191,7 @@ export const economicComponentsCatalogRouter = createTRPCRouter({
    * Increment component usage count for analytics
    * Tracks which components are most frequently selected
    */
-  incrementComponentUsage: publicProcedure
+  incrementComponentUsage: rateLimitedPublicProcedure
     .input(incrementUsageSchema)
     .mutation(async ({ ctx, input }) => {
       try {

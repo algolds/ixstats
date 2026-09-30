@@ -3,7 +3,7 @@
 // Provides CRUD operations and analytics for economic archetype system
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
@@ -164,7 +164,7 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
    * Increment archetype usage count
    * Called when user selects an archetype
    */
-  incrementArchetypeUsage: publicProcedure
+  incrementArchetypeUsage: rateLimitedPublicProcedure
     .input(z.object({ archetypeId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {

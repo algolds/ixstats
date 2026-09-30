@@ -2,8 +2,17 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { env } from "~/env";
+import { isSystemOwner } from "~/lib/auth";
 import { linkDiscordAccount } from "~/lib/discord/user-sync";
-import { linkForumAccount } from "~/server/modules/forum";
+import {
+  createForumLinkService,
+  ForumLinkError,
+  lookupForumUser,
+  syncUserToForum,
+  xfFetch,
+  type ForumProfileProof,
+} from "~/server/modules/forum";
 import {
   fetchUserPageHistory,
   fetchWikiUser,
@@ -13,6 +22,29 @@ import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/
 
 const wikiSourceInput = z.enum(PROOF_SOURCES);
 const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
+
+const forumLinks = () =>
+  createForumLinkService(db, {
+    secret: env.FORUM_VERIFICATION_SECRET || env.CRON_SECRET || null,
+    lookupUser: lookupForumUser,
+    fetchProfile: async (forumUserId) =>
+      (await xfFetch<{ user: ForumProfileProof }>(`/users/${forumUserId}/`))?.user ?? null,
+    syncProfile: syncUserToForum,
+    isSystemOwner,
+  });
+
+function forumTrpcError(error: Error): never {
+  if (error instanceof ForumLinkError) {
+    const code =
+      error.code === "FORUM_UNREACHABLE" || error.code === "NOT_CONFIGURED"
+        ? "SERVICE_UNAVAILABLE"
+        : error.code === "FORUM_USER_NOT_FOUND"
+          ? "NOT_FOUND"
+          : "BAD_REQUEST";
+    throw new TRPCError({ code, message: error.message });
+  }
+  throw error;
+}
 
 function toTrpcError(error: Error): never {
   if (error instanceof WikiLinkError) {
@@ -78,22 +110,24 @@ export const ixnayidLinkingRouter = createTRPCRouter({
   }),
 
   // =========================================================================
-  // FORUM LINKING
+  // VERIFIED FORUM LINKING (code-on-forum-profile proof, WK-1)
   // =========================================================================
 
-  linkForum: protectedProcedure
-    .input(z.object({ forumUsername: z.string().min(1).max(100) }))
+  /** Issue a short-lived code for the player to put on their XenForo profile. */
+  startForumVerification: lightMutationProcedure
+    .input(z.object({ forumUsername: z.string().trim().min(1).max(100) }))
+    .mutation(({ ctx, input }) =>
+      forumLinks().start(ctx.user.id, input.forumUsername).catch(forumTrpcError)
+    ),
+
+  /** Read the XenForo profile, check the code, then link the forum account. */
+  confirmForumVerification: lightMutationProcedure
+    .input(z.object({ forumUsername: z.string().trim().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
-      const result = await linkForumAccount(ctx.user.id, input.forumUsername, ctx.auth.userId);
-
-      if (!result.success) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error ?? "Failed to link forum account",
-        });
-      }
-
-      return { success: true, forumUserId: result.forumUserId };
+      const result = await forumLinks()
+        .confirm(ctx.user.id, ctx.auth.userId, input.forumUsername)
+        .catch(forumTrpcError);
+      return { success: true, ...result };
     }),
 
   unlinkForum: protectedProcedure.mutation(async ({ ctx }) => {
