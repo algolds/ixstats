@@ -41,6 +41,17 @@ function normalise(value: Descendant[], inline: (type: string | undefined) => bo
   return editor.children as PlateNode[];
 }
 
+/** Every list item, table row and link that carries a fingerprint still matches it after normalising. */
+function expectNestedFingerprints(after: PlateNode, before: PlateNode): void {
+  const afterChildren = after.children ?? [];
+  const beforeChildren = before.children ?? [];
+  beforeChildren.forEach((child, index) => {
+    const twin = afterChildren.find((candidate, at) => at === index && candidate.type === child.type) ?? afterChildren[index];
+    if (child.wikiFp !== undefined && twin) expect(plateFingerprint(twin)).toBe(child.wikiFp);
+    if (twin && child.children) expectNestedFingerprints(twin, child);
+  });
+}
+
 describe("Slate normalisation of a freshly loaded page", () => {
   it.each(fixtures)("%s keeps every block's fingerprint and saves byte-identical", (name) => {
     const input = readFileSync(join(FIXTURE_DIR, name), "utf8");
@@ -50,6 +61,7 @@ describe("Slate normalisation of a freshly loaded page", () => {
     expect(normalised).toHaveLength(loaded.length);
     normalised.forEach((node, index) => {
       expect(plateFingerprint(node)).toBe((loaded[index] as PlateNode).wikiFp);
+      expectNestedFingerprints(node, (loaded[index] as PlateNode));
     });
     expect(serializePlateToWikitext(normalised as Descendant[]).wikitext).toBe(input);
   });

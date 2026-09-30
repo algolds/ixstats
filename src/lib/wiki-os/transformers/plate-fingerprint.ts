@@ -33,6 +33,9 @@ const IGNORED_NODE_KEYS = new Set([
   "wikiSrc",
   "wikiLead",
   "wikiTrail",
+  "wikiTableHead",
+  "wikiTableHeadFp",
+  "wikiTableTail",
   "id",
 ]);
 

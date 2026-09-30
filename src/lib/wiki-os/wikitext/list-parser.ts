@@ -20,6 +20,7 @@ export function parseWikiList(lines: string[]): ListBlock {
       type: "list-item" as const,
       level,
       prefix,
+      raw: line,
       children: parseInlineLinksAndFormatting(content),
     };
   });

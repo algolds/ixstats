@@ -52,6 +52,10 @@ export interface PlateNode {
   metric?: string;
   lat?: number;
   lng?: number;
+  /** Template/infobox fields set by the field editor: label and new value of a parameter. */
+  fields?: Array<{ label: string; value: string }>;
+  /** The template was changed through `fields`; its wikitext is rebuilt from its parameters. */
+  edited?: boolean;
   /** Every pipe parameter of a `wiki-file` element, verbatim and in order. */
   fileParams?: string[];
   /** Why a `raw-wikitext` element is read-only (`redirect`, `comment`, `tag`, …). */
@@ -71,4 +75,10 @@ export interface PlateNode {
   wikiLead?: string;
   /** On the last block: the text after it. */
   wikiTrail?: string;
+  /** On a table: its `{|` line and caption lines, exactly as written. */
+  wikiTableHead?: string;
+  /** Fingerprint of the table's attributes and caption when it was loaded; `wikiTableHead` is valid while it matches. */
+  wikiTableHeadFp?: string;
+  /** On a table: what follows its last row (empty rows, the `|}` line), exactly as written. */
+  wikiTableTail?: string;
 }

@@ -9,8 +9,8 @@
 
 import type { Descendant } from "slate";
 import type { PlateNode } from "~/lib/wiki-os/transformers/plate-node";
-import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 import { isUnmodified, serializeInline } from "./wiki-inline-wikitext";
+import { headingWikitext, listWikitext, tableWikitext, templateWikitext } from "./wiki-structure-wikitext";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -19,54 +19,6 @@ function esc(s: string): string {
 export interface WikitextSerializeResult {
   wikitext: string;
   complete: boolean;
-}
-
-const templateWikitext = (el: PlateNode, fallbackName: string): string =>
-  el.rawWikitext ||
-  el.wikitext ||
-  serializeTemplateToWikitext({
-    templateName: el.templateName || el.name || fallbackName,
-    params: el.params,
-    positional: el.positional,
-    paramList: el.paramList,
-  });
-
-function headingWikitext(el: PlateNode, level: number): string {
-  const marks = "=".repeat(level);
-  return `${marks} ${serializeInline(el.children)} ${marks}`;
-}
-
-function listWikitext(el: PlateNode): string {
-  const defaultMarker = el.type === "ol" ? "#" : "*";
-  const lines = (el.children ?? []).map((li) => {
-    const marker = li.prefix || defaultMarker.repeat(Math.max(1, li.level || 1));
-    if (typeof li.text === "string") return `${marker} ${li.text.trim()}`;
-    let kids = li.children ?? [];
-    if (kids.length === 1 && kids[0]?.type === "lic") kids = kids[0].children ?? [];
-    return `${marker} ${serializeInline(kids).trim()}`;
-  });
-  return lines.join("\n");
-}
-
-function cellWikitext(cell: PlateNode): string {
-  const head = cell.type === "th" ? "!" : "|";
-  const attributes = cell.attributes ? ` ${cell.attributes} |` : "";
-  const content = serializeInline(cell.children);
-  // Content that starts on its own line (a list in a cell) must keep that line break.
-  return content.startsWith("\n") ? `${head}${attributes}${content.trimEnd()}` : `${head}${attributes} ${content.trim()}`;
-}
-
-function tableWikitext(el: PlateNode): string {
-  // A table loaded from wikitext without attributes has none; only a new table gets the default class.
-  const attributes = el.attributes ? ` ${el.attributes}` : el.wikiRaw === undefined ? ' class="wikitable"' : "";
-  const lines = [`{|${attributes}`];
-  if (el.caption) lines.push(`|+ ${el.caption}`);
-  for (const row of el.children ?? []) {
-    lines.push(`|-${row.attributes ? ` ${row.attributes}` : ""}`);
-    for (const cell of row.children ?? []) lines.push(cellWikitext(cell));
-  }
-  lines.push("|}");
-  return lines.join("\n");
 }
 
 function mediaWikitext(el: PlateNode): string {

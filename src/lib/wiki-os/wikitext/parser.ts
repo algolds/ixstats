@@ -366,6 +366,8 @@ function scanList(
     lines.push(next);
     lineEnd = nextEnd;
   }
+  // The whitespace after the last item belongs to the page, not to the block.
+  lines[lines.length - 1] = lines[lines.length - 1]!.trimEnd();
   return { node: parseWikiList(lines), lineEnd };
 }
 

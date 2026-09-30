@@ -44,3 +44,24 @@ export function isTemplateOnlyLine(line: string): boolean {
   const close = findMatchingClosingBraces(trimmed, 0);
   return close !== -1 && trimmed.slice(close + 2).trim() === "";
 }
+
+export interface LogicalLine {
+  text: string;
+  /** Offset of the first character. */
+  start: number;
+  /** Offset just after the last character (the line break is not part of the line). */
+  end: number;
+}
+
+/** `text` as logical lines with their offsets: `lines.map((l) => l.text).join("\n")` is `text`. */
+export function splitLogicalLines(text: string): LogicalLine[] {
+  const braces = matchBraces(text);
+  const lines: LogicalLine[] = [];
+  let start = 0;
+  while (start <= text.length) {
+    const end = logicalLineEnd(text, start, braces);
+    lines.push({ text: text.slice(start, end), start, end });
+    start = end + 1;
+  }
+  return lines;
+}

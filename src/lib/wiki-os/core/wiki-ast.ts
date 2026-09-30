@@ -301,6 +301,8 @@ export interface TableCellNode {
 export interface TableRowNode {
   type: "table-row" | "tr";
   attributes?: string;
+  /** The row's lines exactly as written (from its `|-` line to its last cell line). */
+  raw?: string;
   children: TableCellNode[];
 }
 
@@ -310,6 +312,10 @@ export interface WikiTableBlock extends WikiBlockProvenance {
   caption?: string;
   attributes?: string;
   rawWikitext?: string;
+  /** The `{|` line and the caption lines after it, exactly as written. */
+  headRaw?: string;
+  /** What follows the last row (empty rows, the `|}` line), exactly as written. */
+  tailRaw?: string;
   children: TableRowNode[];
 }
 
@@ -321,6 +327,8 @@ export interface ListBlock extends WikiBlockProvenance {
     type: "list-item" | "li";
     level?: number;
     prefix?: string;
+    /** The item's line exactly as written. */
+    raw?: string;
     children: (WikiParagraphBlock | WikiInlineNode)[];
   }>;
 }

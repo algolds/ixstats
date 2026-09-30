@@ -266,6 +266,11 @@ function tryCoordChip(ctx: InlineContext, i: number): InlineSpan | null {
   );
 }
 
+/** The label of a link as text with its own quote marks: `[[A|''b'']]` has the italic text "b". */
+function labelNodes(label: string): WikiInlineNode[] {
+  return applyQuoteMarks([{ kind: "text", text: label, literal: false }]);
+}
+
 /** Standard wiki link: `[[Target|Label]]` or `[[Target]]`. */
 function tryWikiLink(ctx: InlineContext, i: number): InlineSpan | null {
   const { text } = ctx;
@@ -281,7 +286,7 @@ function tryWikiLink(ctx: InlineContext, i: number): InlineSpan | null {
       target,
       label: label !== target ? label : undefined,
       raw: text.slice(i, closeIdx + 2),
-      children: [{ text: label }],
+      children: labelNodes(label),
     },
     closeIdx + 2
   );
@@ -300,7 +305,7 @@ function tryExternalLink(text: string, i: number): InlineSpan | null {
       type: "external-link",
       url,
       raw: text.slice(i, closeIdx + 1),
-      children: [{ text: label }],
+      children: labelNodes(label),
     },
     closeIdx + 1
   );

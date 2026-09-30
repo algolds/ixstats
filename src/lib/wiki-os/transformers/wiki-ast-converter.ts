@@ -157,7 +157,6 @@ function parserFunctionToPlate(node: WikiBlockNode): PlateNode {
     type: "template-block",
     templateName: pfn.functionName,
     name: pfn.functionName,
-    params: {},
     positional: pfn.branches || [],
     classification: "standard",
     rawWikitext: pfn.raw || pfn.rawWikitext,
@@ -193,37 +192,54 @@ function mediaToPlate(node: WikiBlockNode): PlateNode {
 
 function tableToPlate(node: WikiBlockNode): PlateNode {
   const tb = node as WikiTableBlock;
-  return {
+  const table = {
     type: "table",
     caption: tb.caption,
     attributes: tb.attributes,
     rawWikitext: tb.rawWikitext,
-    children: tb.children?.map((row) => ({
-      type: "tr",
-      attributes: row.attributes,
-      children: row.children?.map((cell) => ({
-        type: cell.isHeader ? "th" : "td",
-        attributes: cell.attributes,
-        children: ensureSlateInlineSurroundings(
-          astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
-        ),
-      })),
-    })) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
+    children: tb.children?.map((row) =>
+      keepSource(
+        {
+          type: "tr",
+          attributes: row.attributes,
+          children: row.children?.map((cell) => ({
+            type: cell.isHeader ? "th" : "td",
+            attributes: cell.attributes,
+            children: ensureSlateInlineSurroundings(
+              astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
+            ),
+          })),
+        } as PlateNode,
+        row.raw
+      )
+    ) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
   } as PlateNode;
+  if (tb.headRaw !== undefined && tb.tailRaw !== undefined) {
+    // The table's own markup: valid while its attributes and caption are unchanged; the rows carry their own.
+    table.wikiTableHead = tb.headRaw;
+    table.wikiTableHeadFp = plateFingerprint({ attributes: tb.attributes, caption: tb.caption });
+    table.wikiTableTail = tb.tailRaw;
+  }
+  return table;
 }
 
 function listToPlate(node: WikiBlockNode): PlateNode {
   const lb = node as ListBlock;
   return {
     type: lb.ordered ? "ol" : "ul",
-    children: lb.children?.map((li) => ({
-      type: "li",
-      level: li.level || 1,
-      prefix: li.prefix,
-      children: ensureSlateInlineSurroundings(
-        astInlinesToPlateLeaves(li.children as WikiInlineNode[])
-      ),
-    })) || [{ type: "li", children: [{ text: "" }] }],
+    children: lb.children?.map((li) =>
+      keepSource(
+        {
+          type: "li",
+          level: li.level || 1,
+          prefix: li.prefix,
+          children: ensureSlateInlineSurroundings(
+            astInlinesToPlateLeaves(li.children as WikiInlineNode[])
+          ),
+        } as PlateNode,
+        li.raw
+      )
+    ) || [{ type: "li", children: [{ text: "" }] }],
   } as PlateNode;
 }
 
@@ -501,9 +517,15 @@ function inlineMarks(marks: WikiInlineMarks): { bold?: true; italic?: true } {
   return { ...(marks.bold ? { bold: true as const } : {}), ...(marks.italic ? { italic: true as const } : {}) };
 }
 
-/** A text leaf carrying the bold/italic state of the inline construct it labels. */
-function markedText(text: string, marks: WikiInlineMarks): { text: string; bold?: true; italic?: true } {
-  return { text, ...inlineMarks(marks) };
+/** The label of a link as text leaves, each with the bold/italic it had inside the label. */
+function labelLeaves(
+  children: WikiInlineNode[] | undefined,
+  fallback: string
+): Array<{ text: string; bold?: true; italic?: true }> {
+  const leaves = (children ?? []).flatMap((child) =>
+    "type" in child ? [] : [{ text: child.text, ...inlineMarks(child) }]
+  );
+  return leaves.length > 0 ? leaves : [{ text: fallback }];
 }
 
 /** Keeps the construct's source text on its element, valid while the element's content is unchanged. */
@@ -544,7 +566,8 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
                 url: wikiLinkUrl(inline.target),
                 target: inline.target,
                 internal: true,
-                children: [markedText(inline.label || inline.target, inline)],
+                ...inlineMarks(inline),
+                children: labelLeaves(inline.children, inline.label || inline.target),
               },
               inline.raw
             )
@@ -577,7 +600,8 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
                 type: "link",
                 url: inline.url,
                 internal: false,
-                children: [markedText(textVal, inline)],
+                ...inlineMarks(inline),
+                children: labelLeaves(inline.children, textVal),
               },
               inline.raw
             )

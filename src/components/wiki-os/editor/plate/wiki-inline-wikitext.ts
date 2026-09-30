@@ -43,15 +43,11 @@ function leafItem(leaf: PlateNode): MarkedSegment | null {
 const textLeaves = (children: PlateNode[]): PlateNode[] =>
   children.filter((child) => typeof child.text === "string" && child.text !== "");
 
-/** The label of a link: its text with only the marks that are not already written around the link. */
-function labelText(children: PlateNode[], outerBold: boolean, outerItalic: boolean): string {
+/** The label of a link: its text leaves, each with its own bold, italic and HTML marks. */
+function labelText(children: PlateNode[]): string {
   return textLeaves(children)
     .map((leaf) =>
-      wrapQuotes(
-        withHtmlMarks(leaf, leaf.text ?? ""),
-        Boolean(leaf.bold) && !outerBold,
-        Boolean(leaf.italic) && !outerItalic
-      )
+      wrapQuotes(withHtmlMarks(leaf, leaf.text ?? ""), Boolean(leaf.bold), Boolean(leaf.italic))
     )
     .join("");
 }
@@ -68,18 +64,21 @@ function linkTarget(el: PlateNode): string {
 }
 
 function linkItem(el: PlateNode): MarkedSegment {
-  const leaves = textLeaves(el.children ?? []);
-  const bold = leaves.length > 0 && leaves.every((leaf) => leaf.bold);
-  const italic = leaves.length > 0 && leaves.every((leaf) => leaf.italic);
+  // The marks around the link (bold across it) are properties of the element; the marks inside its
+  // label are on its text leaves.
+  const bold = Boolean(el.bold);
+  const italic = Boolean(el.italic);
   if (isUnmodified(el) && el.wikiRaw !== undefined) {
     return { text: el.wikiRaw, bold, italic, isText: false };
   }
 
-  const label = labelText(el.children ?? [], bold, italic);
+  const label = labelText(el.children ?? []);
   let text: string;
   if (isInternalLink(el)) {
     const target = linkTarget(el);
-    text = target === label ? `[[${target}]]` : `[[${target}|${label}]]`;
+    // A link whose label was emptied is [[Target]]: [[Target|]] would be MediaWiki's pipe trick.
+    if (target === "") text = label;
+    else text = label === "" || label === target ? `[[${target}]]` : `[[${target}|${label}]]`;
   } else {
     text = label === "" || label === el.url ? `[${el.url}]` : `[${el.url} ${label}]`;
   }
