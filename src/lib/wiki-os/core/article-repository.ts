@@ -191,27 +191,16 @@ async function insertRevisions(
   }
 }
 
-/** Apply a plan: the article first (its id is needed), then the revision rows. Returns the id. */
-async function writeImport(
+/** Create the page, or bring an existing one up to date; resolves to its id. */
+async function writeArticle(
   client: ImportClient,
   input: ImportPageInput,
   article: ExistingArticle | null,
-  plan: RevisionPlan,
   head: ImportedHead | null
 ): Promise<string> {
   const protection = input.protectionLevel ?? undefined;
-  let articleId: string;
-  if (article) {
-    articleId = article.id;
-    const data = {
-      ...(head ? headColumns(input, head) : {}),
-      ...(article.mwPageId === null && input.mwPageId !== null ? { mwPageId: input.mwPageId } : {}),
-      ...(protection && article.protectionLevel === "ALL" ? { protectionLevel: protection } : {}),
-    };
-    if (Object.keys(data).length > 0) {
-      await client.wikiArticle.update({ where: { id: article.id }, data });
-    }
-  } else {
+  const headData = head ? headColumns(input, head) : {};
+  if (!article) {
     const created = await client.wikiArticle.create({
       data: {
         title: input.title,
@@ -224,13 +213,33 @@ async function writeImport(
         mwPageId: input.mwPageId,
         protectionLevel: protection,
         wikitext: "",
-        ...(head ? headColumns(input, head) : {}),
+        ...headData,
       },
       select: { id: true },
     });
-    articleId = created.id;
+    return created.id;
   }
 
+  const data = {
+    ...headData,
+    ...(article.mwPageId === null && input.mwPageId !== null ? { mwPageId: input.mwPageId } : {}),
+    ...(protection && article.protectionLevel === "ALL" ? { protectionLevel: protection } : {}),
+  };
+  if (Object.keys(data).length > 0) {
+    await client.wikiArticle.update({ where: { id: article.id }, data });
+  }
+  return article.id;
+}
+
+/** Apply a plan: the article first (its id is needed), then the revision rows. Returns the id. */
+async function writeImport(
+  client: ImportClient,
+  input: ImportPageInput,
+  article: ExistingArticle | null,
+  plan: RevisionPlan,
+  head: ImportedHead | null
+): Promise<string> {
+  const articleId = await writeArticle(client, input, article, head);
   await insertRevisions(client, articleId, input.source, plan.inserts);
   for (const { rowId, revision } of plan.fills) {
     await client.wikiRevision.update({

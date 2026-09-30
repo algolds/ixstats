@@ -11,7 +11,7 @@
  */
 
 import { z } from "zod/v4";
-import { createExportWriter, type ExportSink } from "./export-writer";
+import { createExportWriter, type ExportSink, type ExportWriter } from "./export-writer";
 import { chunksOfStream, readExport } from "./import-reader";
 import { sha1HexToBase36 } from "./sha1";
 import type { Contributor, SiteInfo, XmlRevision } from "./types";
@@ -144,6 +144,32 @@ const chunked = <T>(items: T[], size: number): T[][] =>
     items.slice(i * size, (i + 1) * size)
   );
 
+/** A response that is not a success: retried when the wiki is overloaded or failing. */
+class HttpError extends Error {
+  constructor(
+    readonly status: number,
+    /** Milliseconds the wiki asked us to wait (`Retry-After`), or 0. */
+    readonly retryAfterMs: number
+  ) {
+    super(`MediaWiki returned HTTP ${status}`);
+  }
+
+  get retryable(): boolean {
+    return this.status === 429 || this.status >= 500;
+  }
+}
+
+/** The wait before retry number `attempt` (1-based): the wiki's own request, else doubling from 2 s. */
+const backoffMs = (attempt: number, requestedMs: number): number =>
+  requestedMs > 0 ? requestedMs : RETRY_BASE_MS * 2 ** (attempt - 1);
+
+/** How long to wait before trying again after `failure`, or null when it is final. */
+function retryDelay(failure: Error, attempt: number): number | null {
+  if (attempt >= MAX_ATTEMPTS) return null;
+  if (!(failure instanceof HttpError)) return backoffMs(attempt, 0); // dropped connection, timeout
+  return failure.retryable ? backoffMs(attempt, failure.retryAfterMs) : null;
+}
+
 /** A client that paces, retries and parses: every request the dump makes goes through it. */
 function createClient(options: FetchDumpOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -156,14 +182,19 @@ function createClient(options: FetchDumpOptions) {
   }
   let lastRequestAt = Number.NEGATIVE_INFINITY;
 
+  /** Wait until `delayMs` has passed since the previous request. */
+  async function pace(): Promise<void> {
+    const wait = lastRequestAt + delayMs - now();
+    if (wait > 0) await sleep(wait);
+    lastRequestAt = now();
+  }
+
   async function get(params: Record<string, string>): Promise<Response> {
     const url = new URL(endpoint);
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
 
     for (let attempt = 1; ; attempt++) {
-      const wait = lastRequestAt + delayMs - now();
-      if (wait > 0) await sleep(wait);
-      lastRequestAt = now();
+      await pace();
       try {
         const res = await fetchImpl(url, {
           method: "GET",
@@ -171,20 +202,12 @@ function createClient(options: FetchDumpOptions) {
           signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         });
         if (res.ok) return res;
-        if (res.status !== 429 && res.status < 500) {
-          throw new Error(`MediaWiki returned HTTP ${res.status} for ${url.origin}${url.pathname}`);
-        }
-        if (attempt >= MAX_ATTEMPTS) throw new Error(`MediaWiki kept answering HTTP ${res.status}`);
-        const retryAfter = Number(res.headers.get("retry-after"));
-        await sleep(retryAfter > 0 ? retryAfter * 1000 : RETRY_BASE_MS * 2 ** (attempt - 1));
+        throw new HttpError(res.status, Number(res.headers.get("retry-after")) * 1000 || 0);
       } catch (error) {
-        if (
-          attempt >= MAX_ATTEMPTS ||
-          (error instanceof Error && error.message.startsWith("MediaWiki"))
-        ) {
-          throw error;
-        }
-        await sleep(RETRY_BASE_MS * 2 ** (attempt - 1));
+        const failure = error instanceof Error ? error : new Error("Request failed");
+        const delay = retryDelay(failure, attempt);
+        if (delay === null) throw failure;
+        await sleep(delay);
       }
     }
   }
@@ -288,6 +311,54 @@ function createClient(options: FetchDumpOptions) {
   };
 }
 
+type Client = ReturnType<typeof createClient>;
+type ListedPage = { pageid: number; ns: number; title: string };
+
+/** Full history: each page with every revision, fetched lazily as the writer consumes them. */
+async function writeHistories(
+  writer: ExportWriter,
+  client: Client,
+  listed: ListedPage[],
+  redirects: Map<string, string>
+): Promise<number> {
+  for (const page of listed) {
+    await writer.page({
+      title: page.title,
+      ns: page.ns,
+      pageId: page.pageid,
+      redirectTitle: redirects.get(page.title) ?? null,
+      revisions: client.revisionsOf(page.title),
+    });
+  }
+  return listed.length;
+}
+
+/** Current revisions: MediaWiki's own export of 50 titles at a time, read back and re-written. */
+async function writeCurrent(
+  writer: ExportWriter,
+  client: Client,
+  listed: ListedPage[],
+  namespace: number
+): Promise<number> {
+  let written = 0;
+  for (const batch of chunked(listed, TITLE_BATCH)) {
+    const stream = await client.exportStream(batch.map((page) => page.title));
+    for await (const event of readExport(chunksOfStream(stream))) {
+      if (event.type !== "page") continue;
+      const { page } = event;
+      await writer.page({
+        title: page.title,
+        ns: page.ns ?? namespace,
+        pageId: page.id,
+        redirectTitle: page.redirectTitle,
+        revisions: page.revisions,
+      });
+      written += 1;
+    }
+  }
+  return written;
+}
+
 /**
  * Write a dump of the wiki at `options.api` through `options.write`; resolves to the number of
  * pages written. Rejects on the first request that cannot be completed (after retries).
@@ -306,39 +377,12 @@ export async function fetchDump(options: FetchDumpOptions): Promise<number> {
   for (const namespace of namespaces) {
     const listed = await client.allPages(namespace, "all");
     options.onProgress?.(`namespace ${namespace}: ${listed.length} pages`);
-    const redirects = options.history
-      ? await client.redirectTargets(
-          (await client.allPages(namespace, "redirects")).map((page) => page.title)
-        )
-      : new Map<string, string>();
-
     if (options.history) {
-      for (const page of listed) {
-        await writer.page({
-          title: page.title,
-          ns: page.ns,
-          pageId: page.pageid,
-          redirectTitle: redirects.get(page.title) ?? null,
-          revisions: client.revisionsOf(page.title),
-        });
-        written += 1;
-      }
+      const redirectPages = await client.allPages(namespace, "redirects");
+      const redirects = await client.redirectTargets(redirectPages.map((page) => page.title));
+      written += await writeHistories(writer, client, listed, redirects);
     } else {
-      for (const batch of chunked(listed, TITLE_BATCH)) {
-        const stream = await client.exportStream(batch.map((page) => page.title));
-        for await (const event of readExport(chunksOfStream(stream))) {
-          if (event.type !== "page") continue;
-          const { page } = event;
-          await writer.page({
-            title: page.title,
-            ns: page.ns ?? namespace,
-            pageId: page.id,
-            redirectTitle: page.redirectTitle,
-            revisions: page.revisions,
-          });
-          written += 1;
-        }
-      }
+      written += await writeCurrent(writer, client, listed, namespace);
     }
     options.onProgress?.(`namespace ${namespace} done (${written} pages so far)`);
   }

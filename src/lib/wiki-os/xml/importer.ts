@@ -121,7 +121,7 @@ function resolveIdentity(page: ImportPage, source: string) {
 
 /** Fill `authors` with the verified WikiOS account of each username not seen yet. */
 async function linkAuthors(page: ImportPage, ctx: ImportContext): Promise<void> {
-  const unknown = [
+  const unseen = [
     ...new Set(
       page.revisions.flatMap(({ contributor }) =>
         "username" in contributor && !ctx.authors.has(contributor.username)
@@ -130,14 +130,14 @@ async function linkAuthors(page: ImportPage, ctx: ImportContext): Promise<void> 
       )
     ),
   ];
-  if (unknown.length === 0) return;
+  if (unseen.length === 0) return;
 
   const links = await db.wikiAccountLink.findMany({
-    where: { source: ctx.source, username: { in: unknown }, verifiedAt: { not: null } },
+    where: { source: ctx.source, username: { in: unseen }, verifiedAt: { not: null } },
     select: { username: true, userId: true },
-    take: unknown.length,
+    take: unseen.length,
   });
-  for (const name of unknown) ctx.authors.set(name, null);
+  for (const name of unseen) ctx.authors.set(name, null);
   for (const link of links) ctx.authors.set(link.username, link.userId);
 }
 

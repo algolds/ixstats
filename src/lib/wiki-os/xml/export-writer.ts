@@ -57,7 +57,7 @@ const ATTRIBUTE_ESCAPES: Readonly<Record<string, string>> = {
 };
 
 /** `text` without the characters XML cannot carry. */
-export function toXmlSafe(text: string): string {
+function toXmlSafe(text: string): string {
   return text.replace(XML_FORBIDDEN, "");
 }
 

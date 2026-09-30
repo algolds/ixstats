@@ -85,6 +85,26 @@ function takeTwin(
   return twin;
 }
 
+/** A dump revision whose rev id is already stored: conflict, fill a placeholder, or skip. */
+function planKnown(
+  plan: RevisionPlan,
+  known: ExistingRevisionRow,
+  articleId: string | null,
+  revision: ImportedRevision
+): void {
+  if (known.articleId !== articleId) plan.conflicts += 1;
+  else if (known.isPlaceholder && hasText(revision)) plan.fills.push({ rowId: known.id, revision });
+  else plan.skipped += 1;
+}
+
+/** A dump revision that is a stored WikiOS revision's twin: it only gives that row its rev id. */
+function planTwin(plan: RevisionPlan, twin: ExistingRevisionRow, revision: ImportedRevision): void {
+  if (revision.mwRevId !== null && twin.mwRevId === null) {
+    plan.stamps.push({ rowId: twin.id, mwRevId: revision.mwRevId });
+  }
+  plan.skipped += 1;
+}
+
 /**
  * Plan the import of `revisions` (oldest first) into the page `articleId` (null: the page does not
  * exist yet). `existing` holds every stored row of that page plus any row, on any page, that
@@ -106,26 +126,21 @@ export function planRevisionImport(
   for (const revision of revisions) {
     const known = revision.mwRevId === null ? undefined : byMwRevId.get(revision.mwRevId);
     if (known) {
-      if (known.articleId !== articleId) plan.conflicts += 1;
-      else if (known.isPlaceholder && hasText(revision))
-        plan.fills.push({ rowId: known.id, revision });
-      else plan.skipped += 1;
+      planKnown(plan, known, articleId, revision);
       continue;
     }
-    if (revision.mwRevId !== null && seenInDump.has(revision.mwRevId)) {
-      plan.skipped += 1;
-      continue;
+    if (revision.mwRevId !== null) {
+      // The same rev id twice in one dump: the second one is a repeat, not a new revision.
+      if (seenInDump.has(revision.mwRevId)) {
+        plan.skipped += 1;
+        continue;
+      }
+      seenInDump.add(revision.mwRevId);
     }
-    if (revision.mwRevId !== null) seenInDump.add(revision.mwRevId);
 
     const twin = takeTwin(twins, revision);
-    if (!twin) plan.inserts.push(revision);
-    else {
-      if (revision.mwRevId !== null && twin.mwRevId === null) {
-        plan.stamps.push({ rowId: twin.id, mwRevId: revision.mwRevId });
-      }
-      plan.skipped += 1;
-    }
+    if (twin) planTwin(plan, twin, revision);
+    else plan.inserts.push(revision);
   }
   return plan;
 }
