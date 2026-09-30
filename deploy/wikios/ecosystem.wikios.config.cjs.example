@@ -1,0 +1,54 @@
+/**
+ * PM2 ecosystem for the WikiOS standalone process (plan 417): ixwiki.com/wiki/* served by its own
+ * lean Next.js server, like IxWorld at maps.ixwiki.com.
+ *
+ * Install once on the server (this file is operator-owned; scripts/deploy-wikios.sh never
+ * overwrites it):
+ *
+ *   cp deploy/wikios/ecosystem.wikios.config.cjs.example /ixwiki/public/wikios/ecosystem.wikios.config.cjs
+ *
+ * Runtime secrets (DATABASE_URL, Clerk keys, WIKI_SYNC_WEBHOOK_SECRET, WIKIOS_MEDIAWIKI_BOT_*,
+ * ...) are NOT listed here. Next.js loads /ixwiki/public/wikios/.env.production.local at startup:
+ * copy or symlink the IxStats production env file there, then add the WikiOS-specific values
+ * documented in docs/operations/wikios-v1-cutover.md.
+ *
+ * The start command is the one `scripts/deploy-ixworld.sh` relies on: the `output: "standalone"`
+ * bundle that deploy-wikios.sh rsyncs into `cwd` ships its own `server.js`.
+ */
+const WIKIOS_DIR = "/ixwiki/public/wikios";
+
+module.exports = {
+  apps: [
+    {
+      name: "wikios",
+      cwd: WIKIOS_DIR,
+      script: "server.js",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      max_restarts: 10,
+      min_uptime: "30s",
+      kill_timeout: 10000,
+      // Standalone server.js never calls process.send("ready"): do not enable wait_ready.
+      // Restart before the V8 heap limit below turns a leak into an OOM crash.
+      max_memory_restart: "1400M",
+      time: true,
+      merge_logs: true,
+      // Same directory the server's logrotate rule already covers (/var/log/pm2/*.log @50M x5).
+      out_file: "/var/log/pm2/wikios-out.log",
+      error_file: "/var/log/pm2/wikios-error.log",
+      env: {
+        NODE_ENV: "production",
+        PORT: "3560",
+        // Loopback only: nginx (scripts/ops/nginx/wikios-takeover.conf) is the public entry.
+        HOSTNAME: "127.0.0.1",
+        NODE_OPTIONS: "--max-old-space-size=1536",
+        NEXT_PUBLIC_WIKIOS_STANDALONE: "true",
+        BASE_PATH: "",
+        NEXT_PUBLIC_BASE_PATH: "",
+        // Private MediaWiki render engine (scripts/ops/nginx/wikios-render-internal.conf).
+        WIKIOS_MEDIAWIKI_INTERNAL_URL: "http://127.0.0.1:8081/api.php",
+      },
+    },
+  ],
+};
