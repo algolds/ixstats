@@ -108,6 +108,21 @@ function textNodesOf(document: Document, root: HTMLElement): Text[] {
   return nodes;
 }
 
+let windowDocument: Document | null = null;
+
+/**
+ * One jsdom window for the life of the process, created on first use (like the sanitizer's). A
+ * window costs ~0.5 MB that the process keeps for good: one per call leaked 1.5 GB over 2,000
+ * renders. Nodes made from it are detached and collected as usual.
+ */
+function sharedDocument(): Document {
+  if (!windowDocument) {
+    const { JSDOM } = require("jsdom") as typeof import("jsdom");
+    windowDocument = new JSDOM("").window.document;
+  }
+  return windowDocument;
+}
+
 /**
  * `html` with every chip link and raw chip replaced by a marker, using the DOM: parse, replace
  * nodes, serialize. HTML with no chip in it comes back byte for byte. Server-side only (jsdom).
@@ -115,8 +130,7 @@ function textNodesOf(document: Document, root: HTMLElement): Text[] {
 export function markTemplateChips(html: string): string {
   if (!CHIP_SIGNS.test(html)) return html;
 
-  const { JSDOM } = require("jsdom") as typeof import("jsdom");
-  const { document } = new JSDOM("").window;
+  const document = sharedDocument();
   const holder = document.createElement("div");
   holder.innerHTML = html;
 
