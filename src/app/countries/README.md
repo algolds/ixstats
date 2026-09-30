@@ -57,7 +57,7 @@ The profile renders one model built by `_hooks/useCountryProfileLayer.ts`, which
 **Visibility: public record only, enforced on the server.** Visitors — signed in or not — see lore, stats, enacted directives (`active`/`completed`), resolved national issues (`responded`/`auto_resolved`) with the decision taken, its outcome and when it was resolved, the World Census, relations and embassies, all from **`countries.getPublicRecord`** (a `publicProcedure`; rules in `src/lib/country/public-record.ts`). Drafts, abandoned directives, open/expired/dismissed issues, package line items, CivCap, budgets and applied consequences never leave the server. The other readers were tightened to match:
 
 - `intent.getTree` returns the full tree only to the nation's owner (the user acting as it or its `ownerUserId`) and privileged roles; anyone else gets enacted directives only, with `changesJson`, `civCapCost` and `cooldownUntil` redacted.
-- `nationalIssues.getHistory` is FORBIDDEN unless the caller owns the nation or holds a privileged role (`assertCountryWriteAccess`).
+- `nationalIssues.getHistory`, and every other National Issues inbox procedure (`getMyIssues`, `getIssue`, `getPendingCount`, recon, `intent.getLinkedIssues`), is FORBIDDEN unless the caller owns the nation or holds a privileged role (`assertCountryWriteAccess`; see the MyCountry doc's Issue visibility section).
 
 Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the signed-in viewer owns the country (`userProfile.countryId === country.id`), a tinted "Only you can see this" strip adds open-issue, draft and in-force directive counts (from the owner's own `intent.getTree` and `nationalIssues.getPendingCount`) and a link to MyCountry.
 
