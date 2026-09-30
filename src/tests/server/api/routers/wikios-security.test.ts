@@ -11,6 +11,8 @@ jest.mock("~/server/db", () => ({
     wikiAccountLink: { findFirst: jest.fn() },
     wikiArticle: { upsert: jest.fn() },
     wikiRevision: { findFirst: jest.fn(), create: jest.fn() },
+    stash: { findFirst: jest.fn(), create: jest.fn() },
+    stashItem: { upsert: jest.fn() },
     auditLog: { create: jest.fn() },
     $transaction: jest.fn(),
   },
@@ -67,6 +69,7 @@ jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
+import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
@@ -76,6 +79,8 @@ const mockDb = db as unknown as {
   wikiAccountLink: { findFirst: jest.Mock };
   wikiArticle: { upsert: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
+  stash: { findFirst: jest.Mock; create: jest.Mock };
+  stashItem: { upsert: jest.Mock };
   $transaction: jest.Mock;
 };
 
@@ -177,5 +182,37 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
     expect(mockDb.wikiRevision.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ authorId: "db1" }) })
     );
+  });
+});
+
+describe("S5: stashPage only writes into the caller's own stashes", () => {
+  const stashCaller = () => createCallerFactory(wikiosStashRouter)(asCtx(userCtx()));
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.stashItem.upsert.mockResolvedValue({});
+  });
+
+  it("answers NOT_FOUND for another user's stashId and never upserts", async () => {
+    mockDb.stash.findFirst.mockResolvedValue(null);
+
+    await expect(
+      stashCaller().stashPage({ pageTitle: "Caphiria", stashId: "someone_elses_stash" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    expect(mockDb.stash.findFirst).toHaveBeenCalledWith({
+      where: { id: "someone_elses_stash", userId: { in: ["db1", "user_1"] } },
+      select: { id: true },
+    });
+    expect(mockDb.stashItem.upsert).not.toHaveBeenCalled();
+  });
+
+  it("upserts into an owned stashId", async () => {
+    mockDb.stash.findFirst.mockResolvedValue({ id: "mine" });
+
+    const result = await stashCaller().stashPage({ pageTitle: "Caphiria", stashId: "mine" });
+
+    expect(result).toEqual({ success: true, stashId: "mine" });
+    expect(mockDb.stashItem.upsert).toHaveBeenCalledTimes(1);
   });
 });

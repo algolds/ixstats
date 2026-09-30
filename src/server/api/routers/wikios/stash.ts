@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 
@@ -104,8 +105,15 @@ export const wikiosStashRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
       const userIds = requireWikiUserIds(ctx);
-      let stashId = input.stashId;
-      if (!stashId) {
+      let stashId: string;
+      if (input.stashId) {
+        const owned = await db.stash.findFirst({
+          where: { id: input.stashId, userId: { in: userIds } },
+          select: { id: true },
+        });
+        if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Stash not found" });
+        stashId = owned.id;
+      } else {
         let defaultStash = await db.stash.findFirst({
           where: { userId: { in: userIds }, isDefault: true },
           orderBy: { createdAt: "asc" },
