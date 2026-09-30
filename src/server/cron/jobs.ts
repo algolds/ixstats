@@ -188,6 +188,16 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     exportName: "runAutoSyncCycle",
     load: async () => (await import("~/lib/wiki-os/services/auto-sync-service")).runAutoSyncCycle,
   },
+  {
+    // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
+    name: "db-backup",
+    defaultSchedule: "17 3 * * *",
+    lockName: "db-backup",
+    timeoutMs: 60 * MINUTE,
+    modulePath: "~/lib/system/db-backup",
+    exportName: "runDatabaseBackup",
+    load: async () => (await import("~/lib/system/db-backup")).runDatabaseBackup,
+  },
 ];
 
 /** `"*"` enables every job; unset or empty enables none. Names are comma-separated. */
