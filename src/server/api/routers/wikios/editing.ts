@@ -22,11 +22,7 @@ import {
   resolveWikiUsername,
   type WikiAuthContext,
 } from "~/lib/wiki-os/auth";
-import {
-  authorizeAction,
-  requireCanonicalTitle,
-  requireRight,
-} from "~/lib/wiki-os/permissions";
+import { authorizeAction, requireCanonicalTitle, requireRight } from "~/lib/wiki-os/permissions";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
@@ -253,7 +249,11 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await authorizeAction(ctx, "upload", `File:${input.filename.replace(/^(?:File|Image):/i, "")}`);
+      await authorizeAction(
+        ctx,
+        "upload",
+        `File:${input.filename.replace(/^(?:File|Image):/i, "")}`
+      );
 
       // Validate file size (10MB max)
       const fileBuffer = Buffer.from(input.fileBase64, "base64");
