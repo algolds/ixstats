@@ -2,18 +2,12 @@
  * src/lib/wiki-os/wikitext/link-parser.ts — MediaWiki Link & Media Tokenizer.
  */
 
+import { canonicalizeTitle } from "../core/title";
+import { parseFileLinkInner } from "./file-params";
 import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
+import { findTagClose, matchOpenTag, skipProtectedAt } from "./protected-regions";
 import { classifyTemplate } from "./resolver";
-import type {
-  WikiInlineNode,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  WikiExternalLinkInline,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  EngineDataChipInline,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  MediaBlock,
-  WikiInlineTemplateNode,
-} from "./types";
+import type { WikiInlineNode, WikiTextNode } from "./types";
 
 export interface ParsedMediaLink {
   filename: string;
@@ -161,288 +155,319 @@ export function parseMediaLink(raw: string): ParsedMediaLink | null {
   return { filename, caption, align, width, height, raw };
 }
 
-export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
-  const nodes: WikiInlineNode[] = [];
-  let i = 0;
+type InlinePart =
+  | { kind: "text"; text: string; literal: boolean }
+  | { kind: "node"; node: WikiInlineNode };
 
-  while (i < text.length) {
-    // 1. Media: [[File:...]] or [[Image:...]]
-    if (text.startsWith("[[File:", i) || text.startsWith("[[Image:", i)) {
-      const closeIdx = findMatchingClosingBrackets(text, i);
-      if (closeIdx !== -1) {
-        const raw = text.slice(i, closeIdx + 2);
-        const media = parseMediaLink(raw);
-        if (media) {
-          nodes.push({
-            type: "wiki-link",
-            target: `File:${media.filename}`,
-            label: media.caption || media.filename,
-            children: [{ text: media.caption || media.filename }],
-          });
-          i = closeIdx + 2;
-          continue;
-        }
-      }
-    }
-
-    // 2. Engine Data Chips: [[CountryData:slug|metric]]
-    if (
-      text.startsWith("[[CountryData:", i) ||
-      text.startsWith("[[BusinessData:", i) ||
-      text.startsWith("[[DefenseData:", i)
-    ) {
-      const closeIdx = findMatchingClosingBrackets(text, i);
-      if (closeIdx !== -1) {
-        const raw = text.slice(i, closeIdx + 2);
-        const inner = raw.slice(2, -2);
-        const colonIdx = inner.indexOf(":");
-        const pipeIdx = inner.indexOf("|");
-        const connector = inner.slice(0, colonIdx) as
-          "CountryData" | "BusinessData" | "DefenseData";
-        const slug =
-          pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
-        const metric = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : "name";
-
-        nodes.push({
-          type: "chip-engine-data",
-          connector,
-          slug,
-          metric,
-          wikitext: raw,
-          children: [{ text: "" }],
-        });
-        i = closeIdx + 2;
-        continue;
-      }
-    }
-
-    // 3. Coordinate Chips: [[Coords:lat,lng|label]] or [[Coord:...]]
-    if (text.startsWith("[[Coords:", i) || text.startsWith("[[Coord:", i)) {
-      const closeIdx = findMatchingClosingBrackets(text, i);
-      if (closeIdx !== -1) {
-        const raw = text.slice(i, closeIdx + 2);
-        const inner = raw.slice(2, -2);
-        const colonIdx = inner.indexOf(":");
-        const pipeIdx = inner.indexOf("|");
-        const coords =
-          pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
-        const label = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : undefined;
-        const [latStr, lngStr] = coords.split(",");
-        const lat = latStr ? parseFloat(latStr) : undefined;
-        const lng = lngStr ? parseFloat(lngStr) : undefined;
-
-        nodes.push({
-          type: "chip-coord",
-          lat,
-          lng,
-          label: label || coords,
-          wikitext: raw,
-          children: [{ text: "" }],
-        });
-        i = closeIdx + 2;
-        continue;
-      }
-    }
-
-    // 4. Standard Wiki Link: [[Target|Label]] or [[Target]]
-    if (text.startsWith("[[", i)) {
-      const closeIdx = findMatchingClosingBrackets(text, i);
-      if (closeIdx !== -1) {
-        const raw = text.slice(i + 2, closeIdx);
-        const pipeIdx = raw.indexOf("|");
-        const target = pipeIdx !== -1 ? raw.slice(0, pipeIdx).trim() : raw.trim();
-        const label = pipeIdx !== -1 ? raw.slice(pipeIdx + 1).trim() : target;
-
-        nodes.push({
-          type: "wiki-link",
-          target,
-          label: label !== target ? label : undefined,
-          children: [{ text: label }],
-        });
-        i = closeIdx + 2;
-        continue;
-      }
-    }
-
-    // 5. External Link: [URL Title] or [URL]
-    if (text.startsWith("[", i) && !text.startsWith("[[", i)) {
-      const closeIdx = text.indexOf("]", i);
-      if (closeIdx !== -1 && /^https?:\/\//i.test(text.slice(i + 1))) {
-        const inner = text.slice(i + 1, closeIdx).trim();
-        const spaceIdx = inner.indexOf(" ");
-        const url = spaceIdx !== -1 ? inner.slice(0, spaceIdx) : inner;
-        const label = spaceIdx !== -1 ? inner.slice(spaceIdx + 1) : url;
-
-        nodes.push({
-          type: "external-link",
-          url,
-          children: [{ text: label }],
-        });
-        i = closeIdx + 1;
-        continue;
-      }
-    }
-
-    // 6. Citations: <ref>...</ref> or <ref name="foo" />
-    if (text.startsWith("<ref", i)) {
-      const closeTagIdx = text.indexOf("</ref>", i);
-      const selfCloseIdx = text.indexOf("/>", i);
-      if (closeTagIdx !== -1 && (selfCloseIdx === -1 || closeTagIdx < selfCloseIdx)) {
-        const rawRef = text.slice(i, closeTagIdx + 6);
-        const openTagEnd = rawRef.indexOf(">");
-        const openTag = rawRef.slice(0, openTagEnd);
-        const nameMatch = /name=["']([^"']+)["']/i.exec(openTag);
-        const refContent = rawRef.slice(openTagEnd + 1, -6);
-
-        nodes.push({
-          type: "citation-ref",
-          name: nameMatch ? nameMatch[1] : undefined,
-          rawWikitext: rawRef,
-          children: [{ text: refContent }],
-        });
-        i = closeTagIdx + 6;
-        continue;
-      } else if (
-        selfCloseIdx !== -1 &&
-        selfCloseIdx < (closeTagIdx === -1 ? Infinity : closeTagIdx)
-      ) {
-        const rawRef = text.slice(i, selfCloseIdx + 2);
-        const nameMatch = /name=["']([^"']+)["']/i.exec(rawRef);
-
-        nodes.push({
-          type: "citation-ref",
-          name: nameMatch ? nameMatch[1] : undefined,
-          rawWikitext: rawRef,
-          children: [{ text: "" }],
-        });
-        i = selfCloseIdx + 2;
-        continue;
-      }
-    }
-
-    // 7. Inline Templates & Chips: {{TemplateName|...}}
-    if (text.startsWith("{{", i)) {
-      const closeIdx = findMatchingClosingBraces(text, i);
-      if (closeIdx !== -1) {
-        const raw = text.slice(i, closeIdx + 2);
-        const inner = text.slice(i + 2, closeIdx);
-        const parts = splitBalancedPipes(inner);
-        if (parts.length > 0) {
-          const rawHead = parts[0]?.trim() ?? "";
-          if (rawHead) {
-            const { params, paramList, positional } = parseParameterList(parts);
-            const classification = classifyTemplate(rawHead, params);
-
-            if (classification === "chip-coord") {
-              const [latStr, lngStr] = (positional[0] || "").split(",");
-              const lat = latStr ? parseFloat(latStr) : undefined;
-              const lng = lngStr ? parseFloat(lngStr) : undefined;
-              nodes.push({
-                type: "chip-coord",
-                lat,
-                lng,
-                label: positional[1] || positional[0],
-                wikitext: raw,
-                children: [{ text: "" }],
-              });
-            } else if (classification === "chip-engine") {
-              nodes.push({
-                type: "chip-engine-data",
-                connector: "CountryData",
-                slug: positional[0] || "",
-                metric: positional[1] || "name",
-                wikitext: raw,
-                children: [{ text: "" }],
-              });
-            } else {
-              nodes.push({
-                type: "inline-template",
-                templateName: rawHead,
-                name: rawHead,
-                params,
-                paramList,
-                positional,
-                raw,
-                rawWikitext: raw,
-                children: [{ text: "" }],
-              });
-            }
-            i = closeIdx + 2;
-            continue;
-          }
-        }
-      }
-    }
-
-    // 8. Regular text chunk up to next special syntax
-    let nextSpecial = text.length;
-    const candidates = [
-      text.indexOf("[[", i),
-      text.indexOf("[", i),
-      text.indexOf("<ref", i),
-      text.indexOf("{{", i),
-      text.indexOf("'''", i),
-      text.indexOf("''", i),
-    ].filter((pos) => pos > i);
-
-    if (candidates.length > 0) {
-      nextSpecial = Math.min(...candidates);
-    }
-
-    const chunk = text.slice(i, nextSpecial);
-    if (chunk) {
-      // Parse bold/italic marks inside chunk
-      parseFormattedText(chunk, nodes);
-    }
-    i = nextSpecial;
-  }
-
-  if (nodes.length === 0) {
-    nodes.push({ text: "" });
-  }
-
-  return nodes;
+interface InlineSpan {
+  part: InlinePart;
+  /** Index just after the construct. */
+  end: number;
 }
 
-function parseFormattedText(text: string, nodes: WikiInlineNode[]): void {
-  // Simple regex tokenizer for bold (''') and italic ('')
-  const tokenRegex = /('''''|'''|'')/g;
-  let lastIndex = 0;
+const nodeSpan = (node: WikiInlineNode, end: number): InlineSpan => ({
+  part: { kind: "node", node },
+  end,
+});
+
+/** `[[File:…]]` and its aliases (`Image:`, any case): an embedded file, every parameter kept. */
+function tryFileLink(text: string, i: number): InlineSpan | null {
+  const closeIdx = findMatchingClosingBrackets(text, i);
+  if (closeIdx === -1) return null;
+  const parsed = parseFileLinkInner(text.slice(i + 2, closeIdx));
+  if (!parsed.target.includes(":") || parsed.target.startsWith(":")) return null;
+  if (canonicalizeTitle(parsed.target)?.namespaceId !== 6) return null;
+  return nodeSpan(
+    {
+      type: "wiki-file",
+      target: parsed.target,
+      params: parsed.params,
+      caption: parsed.caption,
+      raw: text.slice(i, closeIdx + 2),
+      children: [{ text: "" }],
+    },
+    closeIdx + 2
+  );
+}
+
+const ENGINE_CONNECTORS = ["[[CountryData:", "[[BusinessData:", "[[DefenseData:"];
+
+/** `[[CountryData:slug|metric]]` engine data chips. */
+function tryEngineChip(text: string, i: number): InlineSpan | null {
+  if (!ENGINE_CONNECTORS.some((prefix) => text.startsWith(prefix, i))) return null;
+  const closeIdx = findMatchingClosingBrackets(text, i);
+  if (closeIdx === -1) return null;
+  const raw = text.slice(i, closeIdx + 2);
+  const inner = raw.slice(2, -2);
+  const colonIdx = inner.indexOf(":");
+  const pipeIdx = inner.indexOf("|");
+  const connector = inner.slice(0, colonIdx) as "CountryData" | "BusinessData" | "DefenseData";
+  const slug = pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
+  const metric = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : "name";
+  return nodeSpan(
+    { type: "chip-engine-data", connector, slug, metric, wikitext: raw, children: [{ text: "" }] },
+    closeIdx + 2
+  );
+}
+
+/** `[[Coords:lat,lng|label]]` coordinate chips. */
+function tryCoordChip(text: string, i: number): InlineSpan | null {
+  if (!text.startsWith("[[Coords:", i) && !text.startsWith("[[Coord:", i)) return null;
+  const closeIdx = findMatchingClosingBrackets(text, i);
+  if (closeIdx === -1) return null;
+  const raw = text.slice(i, closeIdx + 2);
+  const inner = raw.slice(2, -2);
+  const colonIdx = inner.indexOf(":");
+  const pipeIdx = inner.indexOf("|");
+  const coords = pipeIdx !== -1 ? inner.slice(colonIdx + 1, pipeIdx) : inner.slice(colonIdx + 1);
+  const label = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : undefined;
+  const [latStr, lngStr] = coords.split(",");
+  return nodeSpan(
+    {
+      type: "chip-coord",
+      lat: latStr ? parseFloat(latStr) : undefined,
+      lng: lngStr ? parseFloat(lngStr) : undefined,
+      label: label || coords,
+      wikitext: raw,
+      children: [{ text: "" }],
+    },
+    closeIdx + 2
+  );
+}
+
+/** Standard wiki link: `[[Target|Label]]` or `[[Target]]`. */
+function tryWikiLink(text: string, i: number): InlineSpan | null {
+  const closeIdx = findMatchingClosingBrackets(text, i);
+  if (closeIdx === -1) return null;
+  const inner = text.slice(i + 2, closeIdx);
+  const pipeIdx = inner.indexOf("|");
+  const target = pipeIdx !== -1 ? inner.slice(0, pipeIdx).trim() : inner.trim();
+  const label = pipeIdx !== -1 ? inner.slice(pipeIdx + 1).trim() : target;
+  return nodeSpan(
+    {
+      type: "wiki-link",
+      target,
+      label: label !== target ? label : undefined,
+      raw: text.slice(i, closeIdx + 2),
+      children: [{ text: label }],
+    },
+    closeIdx + 2
+  );
+}
+
+/** External link: `[https://url Title]` or `[https://url]`. */
+function tryExternalLink(text: string, i: number): InlineSpan | null {
+  const closeIdx = text.indexOf("]", i);
+  if (closeIdx === -1 || !/^https?:\/\//i.test(text.slice(i + 1, i + 9))) return null;
+  const inner = text.slice(i + 1, closeIdx).trim();
+  const spaceIdx = inner.indexOf(" ");
+  const url = spaceIdx !== -1 ? inner.slice(0, spaceIdx) : inner;
+  const label = spaceIdx !== -1 ? inner.slice(spaceIdx + 1) : url;
+  return nodeSpan(
+    {
+      type: "external-link",
+      url,
+      raw: text.slice(i, closeIdx + 1),
+      children: [{ text: label }],
+    },
+    closeIdx + 1
+  );
+}
+
+const REF_NAME = /name\s*=\s*["']?([^"'\s>/]+)/i;
+
+/** `<ref>…</ref>` and `<ref name="a" />`; an unclosed `<ref>` is left as text. */
+function tryRef(text: string, i: number): InlineSpan | null {
+  const tag = matchOpenTag(text, i);
+  if (tag?.name !== "ref") return null;
+  const end = findTagClose(text, tag);
+  if (end === -1) return null;
+  const rawRef = text.slice(i, end);
+  const nameMatch = REF_NAME.exec(text.slice(i, tag.openEnd));
+  const content = tag.selfClosing ? "" : rawRef.slice(tag.openEnd - i, rawRef.lastIndexOf("</"));
+  return nodeSpan(
+    {
+      type: "citation-ref",
+      name: nameMatch ? nameMatch[1] : undefined,
+      rawWikitext: rawRef,
+      children: [{ text: content }],
+    },
+    end
+  );
+}
+
+/** Inline template or chip: `{{TemplateName|…}}`. */
+function tryInlineTemplate(text: string, i: number): InlineSpan | null {
+  const closeIdx = findMatchingClosingBraces(text, i);
+  if (closeIdx === -1) return null;
+  const raw = text.slice(i, closeIdx + 2);
+  const parts = splitBalancedPipes(text.slice(i + 2, closeIdx));
+  const rawHead = parts[0]?.trim() ?? "";
+  if (!rawHead) return null;
+
+  const { params, paramList, positional } = parseParameterList(parts);
+  const classification = classifyTemplate(rawHead, params);
+  const end = closeIdx + 2;
+
+  if (classification === "chip-coord") {
+    const [latStr, lngStr] = (positional[0] || "").split(",");
+    return nodeSpan(
+      {
+        type: "chip-coord",
+        lat: latStr ? parseFloat(latStr) : undefined,
+        lng: lngStr ? parseFloat(lngStr) : undefined,
+        label: positional[1] || positional[0],
+        wikitext: raw,
+        children: [{ text: "" }],
+      },
+      end
+    );
+  }
+  if (classification === "chip-engine") {
+    return nodeSpan(
+      {
+        type: "chip-engine-data",
+        connector: "CountryData",
+        slug: positional[0] || "",
+        metric: positional[1] || "name",
+        wikitext: raw,
+        children: [{ text: "" }],
+      },
+      end
+    );
+  }
+  return nodeSpan(
+    {
+      type: "inline-template",
+      templateName: rawHead,
+      name: rawHead,
+      params,
+      paramList,
+      positional,
+      raw,
+      rawWikitext: raw,
+      children: [{ text: "" }],
+    },
+    end
+  );
+}
+
+/** The inline construct that starts at `text[i]`, or null when `text[i]` is ordinary text. */
+function tryInlineConstruct(text: string, i: number): InlineSpan | null {
+  switch (text[i]) {
+    case "[":
+      if (text.startsWith("[[", i)) {
+        return (
+          tryFileLink(text, i) ??
+          tryEngineChip(text, i) ??
+          tryCoordChip(text, i) ??
+          tryWikiLink(text, i)
+        );
+      }
+      return tryExternalLink(text, i);
+    case "<": {
+      // Comments and literal tags are copied as they are: nothing inside them is wikitext.
+      const end = skipProtectedAt(text, i);
+      if (end !== null) {
+        return { part: { kind: "text", text: text.slice(i, end), literal: true }, end };
+      }
+      return tryRef(text, i);
+    }
+    case "{":
+      return text.startsWith("{{", i) ? tryInlineTemplate(text, i) : null;
+    default:
+      return null;
+  }
+}
+
+/** Splits `text` into inline nodes and the plain text between them (quote marks still in the text). */
+function tokenizeInline(text: string): InlinePart[] {
+  const parts: InlinePart[] = [];
+  const special = /[[<{]/g;
+  let i = 0;
+  while (i < text.length) {
+    const span = tryInlineConstruct(text, i);
+    if (span) {
+      parts.push(span.part);
+      i = span.end;
+      continue;
+    }
+    // Plain text up to the next character that may start a construct (this one failed to).
+    special.lastIndex = i + 1;
+    const next = special.exec(text);
+    const end = next ? next.index : text.length;
+    parts.push({ kind: "text", text: text.slice(i, end), literal: false });
+    i = end;
+  }
+  return parts;
+}
+
+function withMarks(node: WikiInlineNode, bold: boolean, italic: boolean): WikiInlineNode {
+  if (!bold && !italic) return node;
+  return { ...node, ...(bold ? { bold: true } : {}), ...(italic ? { italic: true } : {}) };
+}
+
+const isPlainText = (node: WikiInlineNode): node is WikiTextNode => !("type" in node);
+
+function pushMarkedText(out: WikiInlineNode[], text: string, bold: boolean, italic: boolean): void {
+  if (text === "") return;
+  const prev = out[out.length - 1];
+  if (prev && isPlainText(prev) && Boolean(prev.bold) === bold && Boolean(prev.italic) === italic) {
+    prev.text += text;
+    return;
+  }
+  out.push({ text, ...(bold ? { bold: true } : {}), ...(italic ? { italic: true } : {}) });
+}
+
+/**
+ * MediaWiki quote marks over a whole inline sequence: two quotes toggle italic, three bold, five both
+ * (four are an apostrophe and bold; more than five leave the extra apostrophes as text). The state
+ * runs across links, chips and references and is reset at every line break.
+ */
+function applyQuoteMarks(parts: InlinePart[]): WikiInlineNode[] {
+  const out: WikiInlineNode[] = [];
   let bold = false;
   let italic = false;
-  let m;
 
-  while ((m = tokenRegex.exec(text)) !== null) {
-    const rawMatch = m[0];
-    const matchStart = m.index;
-
-    if (matchStart > lastIndex) {
-      const slice = text.slice(lastIndex, matchStart);
-      nodes.push({
-        text: slice,
-        ...(bold ? { bold: true } : {}),
-        ...(italic ? { italic: true } : {}),
-      });
+  for (const part of parts) {
+    if (part.kind === "node") {
+      out.push(withMarks(part.node, bold, italic));
+      continue;
     }
-
-    if (rawMatch === "'''''") {
-      bold = !bold;
-      italic = !italic;
-    } else if (rawMatch === "'''") {
-      bold = !bold;
-    } else if (rawMatch === "''") {
-      italic = !italic;
+    if (part.literal) {
+      pushMarkedText(out, part.text, bold, italic);
+      continue;
     }
-
-    lastIndex = matchStart + rawMatch.length;
+    const runs = /'{2,}|\n/g;
+    let last = 0;
+    let match: RegExpExecArray | null;
+    while ((match = runs.exec(part.text)) !== null) {
+      pushMarkedText(out, part.text.slice(last, match.index), bold, italic);
+      if (match[0] === "\n") {
+        // The marks end before the line break; the break itself belongs to the next slice.
+        bold = false;
+        italic = false;
+        last = match.index;
+        continue;
+      }
+      const quotes = match[0].length;
+      if (quotes === 2) {
+        italic = !italic;
+      } else if (quotes === 3) {
+        bold = !bold;
+      } else {
+        pushMarkedText(out, "'".repeat(quotes === 4 ? 1 : quotes - 5), bold, italic);
+        bold = !bold;
+        italic = quotes === 4 ? italic : !italic;
+      }
+      last = match.index + quotes;
+    }
+    pushMarkedText(out, part.text.slice(last), bold, italic);
   }
 
-  if (lastIndex < text.length) {
-    const slice = text.slice(lastIndex);
-    nodes.push({
-      text: slice,
-      ...(bold ? { bold: true } : {}),
-      ...(italic ? { italic: true } : {}),
-    });
-  }
+  return out.length > 0 ? out : [{ text: "" }];
+}
+
+export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
+  return applyQuoteMarks(tokenizeInline(text));
 }

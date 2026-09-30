@@ -23,6 +23,20 @@ export interface Diagnostic {
 
 export type ParseState = "complete" | "incomplete";
 
+/**
+ * Where a top-level block came from, so an untouched block can be saved back byte for byte
+ * (plan 414, selective serialisation). For every block of a parsed document,
+ * `sepBefore + raw` over all blocks, followed by `WikiDocument.trailing`, reproduces the input.
+ */
+export interface WikiBlockProvenance {
+  /** Half-open offsets of the block in the wikitext it was parsed from. */
+  src?: WikiSourceSpan;
+  /** The exact text of that slice (for template blocks: the template, as `raw` always was). */
+  raw?: string;
+  /** The text between the previous block (or the start of the page) and this block. */
+  sepBefore?: string;
+}
+
 // ─── Inline Text & Marks ───────────────────────────────────────────────────
 
 export interface WikiTextMark {
@@ -41,21 +55,51 @@ export interface WikiTextNode extends WikiTextMark {
 
 // ─── Inline Entities ───────────────────────────────────────────────────────
 
-export interface WikiLinkInline {
+/**
+ * Bold/italic state at an inline element. MediaWiki quote runs ('''bold''', ''italic'') span links,
+ * chips and references, so the state lives on every inline element, not only on text.
+ */
+export interface WikiInlineMarks {
+  bold?: boolean;
+  italic?: boolean;
+}
+
+export interface WikiLinkInline extends WikiInlineMarks {
   type: "wiki-link";
   target: string;
   label?: string;
   exists?: boolean;
+  /** The link exactly as written, so an untouched link is saved back unchanged. */
+  raw?: string;
   children: [WikiTextNode] | WikiInlineNode[];
 }
 
-export interface WikiExternalLinkInline {
+export interface WikiExternalLinkInline extends WikiInlineMarks {
   type: "external-link";
   url: string;
+  /** The link exactly as written, so an untouched link is saved back unchanged. */
+  raw?: string;
   children: [WikiTextNode] | WikiInlineNode[];
 }
 
-export interface CoordChipInline {
+/**
+ * `[[File:…]]` / `[[Image:…]]` (any case or alias of namespace 6): an embedded file. Every pipe
+ * parameter is kept in order and untrimmed, so the image is saved back unchanged unless the
+ * caption (the last parameter that is not a display option) is edited.
+ */
+export interface WikiFileInline extends WikiInlineMarks {
+  type: "wiki-file";
+  /** The file title as written (`File:x.png`). */
+  target: string;
+  /** Every pipe parameter after the target, in order, exactly as written. */
+  params: string[];
+  /** The caption text, "" when the image has none. */
+  caption: string;
+  raw: string;
+  children: [{ text: "" }];
+}
+
+export interface CoordChipInline extends WikiInlineMarks {
   type: "chip-coord";
   lat?: number;
   lng?: number;
@@ -67,7 +111,7 @@ export interface CoordChipInline {
   children: [{ text: "" }];
 }
 
-export interface EngineDataChipInline {
+export interface EngineDataChipInline extends WikiInlineMarks {
   type: "chip-engine-data";
   connector: "CountryData" | "BusinessData" | "DefenseData" | "MyCountry";
   slug: string;
@@ -79,7 +123,7 @@ export interface EngineDataChipInline {
   children: [{ text: "" }];
 }
 
-export interface CitationInline {
+export interface CitationInline extends WikiInlineMarks {
   type: "citation-ref";
   refId?: string;
   name?: string;
@@ -88,7 +132,7 @@ export interface CitationInline {
   children: WikiInlineNode[];
 }
 
-export interface WikiInlineTemplateNode {
+export interface WikiInlineTemplateNode extends WikiInlineMarks {
   type: "inline-template";
   templateName: string;
   name?: string;
@@ -104,6 +148,7 @@ export type WikiInlineNode =
   | WikiTextNode
   | WikiLinkInline
   | WikiExternalLinkInline
+  | WikiFileInline
   | CoordChipInline
   | EngineDataChipInline
   | CitationInline
@@ -122,7 +167,7 @@ export interface WikiParameter {
   raw?: string;
 }
 
-export interface WikiTemplateNode {
+export interface WikiTemplateNode extends WikiBlockProvenance {
   type: "template";
   id?: string;
   templateName: string;
@@ -140,7 +185,7 @@ export interface WikiTemplateNode {
   children: [{ text: "" }];
 }
 
-export interface WikiInfoboxBlock {
+export interface WikiInfoboxBlock extends WikiBlockProvenance {
   type: "infobox";
   id?: string;
   templateName: string;
@@ -160,7 +205,7 @@ export interface WikiInfoboxBlock {
   children: [{ text: "" }];
 }
 
-export interface TemplateBlock {
+export interface TemplateBlock extends WikiBlockProvenance {
   type: "template";
   id?: string;
   templateName: string;
@@ -175,7 +220,7 @@ export interface TemplateBlock {
   children: [{ text: "" }];
 }
 
-export interface WikiParserFunctionBlock {
+export interface WikiParserFunctionBlock extends WikiBlockProvenance {
   type: "parser-function";
   id?: string;
   functionName: string;
@@ -188,12 +233,27 @@ export interface WikiParserFunctionBlock {
   children: [{ text: "" }];
 }
 
-export interface WikiRawNode {
+/** Why a block is kept as source text the visual editor cannot edit (an atomic raw block). */
+export type WikiRawConstruct =
+  | "redirect"
+  | "comment"
+  | "magic-word"
+  | "tag"
+  | "nested-table"
+  | "table-template"
+  | "table-orphan-line"
+  | "malformed";
+
+export interface WikiRawNode extends WikiBlockProvenance {
   type: "raw";
   id?: string;
   raw: string;
   rawWikitext?: string;
   reason?: "unrecognized" | "malformed";
+  /** What kind of source this block holds; absent for a table the table parser rejected. */
+  construct?: WikiRawConstruct;
+  /** The tag name when `construct` is "tag" (`pre`, `nowiki`, `gallery`, …). */
+  tag?: string;
   source?: WikiSourceSpan;
   kind?: "infobox" | "generic";
   name?: string;
@@ -205,20 +265,20 @@ export interface WikiRawNode {
 
 // ─── Content Block Elements ─────────────────────────────────────────────────
 
-export interface WikiParagraphBlock {
+export interface WikiParagraphBlock extends WikiBlockProvenance {
   type: "paragraph" | "p";
   id?: string;
   children: WikiInlineNode[];
 }
 
-export interface WikiHeadingBlock {
+export interface WikiHeadingBlock extends WikiBlockProvenance {
   type: "heading" | "h2" | "h3" | "h4";
   id?: string;
   level?: 1 | 2 | 3 | 4 | 5 | 6;
   children: WikiInlineNode[];
 }
 
-export interface MediaBlock {
+export interface MediaBlock extends WikiBlockProvenance {
   type: "media";
   id?: string;
   filename: string;
@@ -244,7 +304,7 @@ export interface TableRowNode {
   children: TableCellNode[];
 }
 
-export interface WikiTableBlock {
+export interface WikiTableBlock extends WikiBlockProvenance {
   type: "table";
   id?: string;
   caption?: string;
@@ -253,7 +313,7 @@ export interface WikiTableBlock {
   children: TableRowNode[];
 }
 
-export interface ListBlock {
+export interface ListBlock extends WikiBlockProvenance {
   type: "list" | "ul" | "ol";
   id?: string;
   ordered?: boolean;
@@ -265,7 +325,7 @@ export interface ListBlock {
   }>;
 }
 
-export interface QuoteBlock {
+export interface QuoteBlock extends WikiBlockProvenance {
   type: "quote" | "blockquote";
   id?: string;
   author?: string;
@@ -273,7 +333,7 @@ export interface QuoteBlock {
   children: WikiParagraphBlock[] | WikiInlineNode[];
 }
 
-export interface CodeBlock {
+export interface CodeBlock extends WikiBlockProvenance {
   type: "code-block";
   id?: string;
   language?: string;
@@ -281,13 +341,13 @@ export interface CodeBlock {
   children: [{ text: string }];
 }
 
-export interface DividerBlock {
+export interface DividerBlock extends WikiBlockProvenance {
   type: "divider" | "hr";
   id?: string;
   children: [{ text: "" }];
 }
 
-export interface WikiMapEmbedBlock {
+export interface WikiMapEmbedBlock extends WikiBlockProvenance {
   type: "map-embed" | "chip-mapembed";
   id?: string;
   lat?: number;
@@ -325,6 +385,8 @@ export interface WikiDocument {
   slug: string;
   version: number;
   nodes: WikiBlockNode[];
+  /** The text after the last block (whitespace only); with `sepBefore` + `raw` per block it rebuilds the input. */
+  trailing?: string;
   diagnostics?: Diagnostic[];
   metadata?: {
     categories?: string[];
