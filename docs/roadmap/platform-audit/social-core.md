@@ -1,5 +1,8 @@
 # Social & Core Apps Audit — ThinkPages / ThinkShare / ThinkTanks, notifications, Halo, Facet, IxTime, MyLeague/MyClub, forum, help/admin, Labs
 
+> **Snapshot of `rose-garden` @ `e91e6b0b2` (2026-09-30).** Many findings here were fixed the same day in PR #48;
+> see [README §0](README.md#0-status-since-the-audit-updated-2026-09-30-after-48) for current status.
+
 **Repo:** `/home/user/ixstats` · branch `rose-garden` @ `e91e6b0b2` (Merge PR #46) · audited 2026-09-30 · read-only.
 **Method:** read docs listed in the brief, then verified against `prisma/schema/*.prisma`, routers, modules, components and pages with grep, line counts and caller counts. Where code and docs disagree, the code wins. Items already in `docs/roadmap/code-audit-2026-09-30.md` are cited by their ID (SL-*, PL-*, WK-*). Items marked **NEW** are not in that audit or in pending-features.md.
 

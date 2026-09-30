@@ -1,5 +1,8 @@
 # MyCountry / Statecraft / Concord: read-only platform audit
 
+> **Snapshot of `rose-garden` @ `e91e6b0b2` (2026-09-30).** Many findings here were fixed the same day in PR #48;
+> see [README §0](README.md#0-status-since-the-audit-updated-2026-09-30-after-48) for current status.
+
 Branch `rose-garden`, 2026-09-30. Nothing in the repo was modified. Code is treated as the source of truth; every claim
 below cites a path. The code audit rows (MC-1 to MC-21) and SYSTEM_STATUS (audited 2026-09-29) were spot-checked, not
 taken on trust. Findings marked **NEW** do not appear in SYSTEM_STATUS, pending-features or code-audit-2026-09-30.

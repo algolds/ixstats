@@ -1,5 +1,8 @@
 # Audit: Vault / Economy, Cards, Achievements, IxnayID / Passport, Realms
 
+> **Snapshot of `rose-garden` @ `e91e6b0b2` (2026-09-30).** Many findings here were fixed the same day in PR #48;
+> see [README §0](README.md#0-status-since-the-audit-updated-2026-09-30-after-48) for current status.
+
 **Scope:** `rose-garden` @ `e91e6b0b2` (2026-09-30), read-only. Where the code and the docs disagree, the code is taken as correct.
 **Method:** read the docs listed in the brief, then checked each claim against the routers, libs and schema with grep and caller counts.
 **Main sources:** `src/lib/{vault,cards,achievements,lorewards,nationstates,realms}`, `src/lib/economy/{auction-service,passive-income-distribution-cron,budget-vault-calculator}.ts`, `src/server/api/routers/{vault,cards,card-packs,card-market,lore-cards,trading,crafting,ns-import,achievements,lorewards,ixnayid,realms,users}`, `src/server/modules/{identity,realms}`, `prisma/schema/{core,cards,maps,exchange}.prisma`.

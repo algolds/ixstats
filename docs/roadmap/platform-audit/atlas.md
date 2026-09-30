@@ -1,5 +1,8 @@
 # Atlas / geospatial / maps audit (IxStats, branch `rose-garden`, 2026-09-30)
 
+> **Snapshot of `rose-garden` @ `e91e6b0b2` (2026-09-30).** Many findings here were fixed the same day in PR #48;
+> see [README §0](README.md#0-status-since-the-audit-updated-2026-09-30-after-48) for current status.
+
 Read-only audit. Nothing in the repo was changed. Scratch scripts used for the measurements are in this folder
 (`wg*.ts`). Where docs and code disagree, the code wins.
 

@@ -20,6 +20,69 @@ environment has no bot token and its network policy blocks `discord.com`; see [t
 
 ---
 
+## 0. Status since the audit (updated 2026-09-30, after #48)
+
+The audit describes `rose-garden` @ `e91e6b0b2`. The same day, PR #48 merged ten parallel fix branches and the
+owner's 17-item bug list into `rose-garden` (`67e937a3f`). Items below are marked **✅ fixed**, **◐ partly fixed**
+or left as found. The area reports are unchanged snapshots; this page tracks status.
+
+**Fixed:**
+
+- **Security (section 2):** all ten items. Two owner actions remain: check the IxWiki bot's grants on
+  Special:BotPasswords, and rotate the MariaDB password that was committed.
+- **Screens that lied:**
+  - the Approval and Stability bands;
+  - the fake ribbons;
+  - the daily-roll copy and the multiplier row;
+  - the "connected wiki" status;
+  - the Caphiria mock-up as the country-profile default;
+  - the ThinkShare encryption claim.
+- **Economy:** entry packs no longer junk for more than their price (EV is now under 0.5× the price, and under 0.85×
+  at the admin ceiling). Packs, junk and lore cards go through the ledger. The lore gallery is live and is the
+  default Cards tab, and NationStates import is secondary.
+- **Loops:**
+  - Directives now move GDP (a growth modifier) and stability.
+  - Hostile foreign-policy actions apply their effects.
+  - Cooperative proposals and alliance invites can be accepted, through the API only.
+  - Like and reply notifications reach the right person.
+  - ThinkTank Chat and Docs tabs are mounted, with invites by username.
+  - Sports predictions can be placed.
+  - Diplomatic DMs are reachable.
+- **Atlas:** feature IDs are stored as strings, terrain sampling is realm-scoped, the city fallback no longer
+  overwrites national figures, the 14 `@turf/*` packages are declared, and the MapLibre worker is always shipped.
+  These last two are the likely causes of the maps build error and the "map offline" reports.
+- **WikiOS:** a namespace edit policy, stale-render fixes (sync clears `contentHtml`; edits render the submitted
+  text), cached author lookups, and per-article canonical URLs.
+- **Docs:** SYSTEM_STATUS ratings were corrected and the "Gold Master" badges removed (section 9).
+
+**Still open, in priority order:**
+
+1. **Issue consequences → stats.** Resolving an issue still creates no `StorytellerEffect`. There are still two
+   sources of stat truth and no progression job. Rankings refresh only from the admin button.
+2. **First elections** (MC-2). Bills still can't pass.
+3. **Inbox UI** for foreign-policy proposals and alliance invites (the backend now exists).
+4. **Social pull:**
+   - mention notifications (the href is still `/content/<id>` and the text says "Someone");
+   - person follows;
+   - the trending job;
+   - post-as-yourself.
+5. **IxnayID-first economy:**
+   - account-level welcome bonus and achievements;
+   - background achievement evaluation;
+   - a passport showcase;
+   - ribbons as real records (the rack is now empty until they exist).
+6. **Realms as places** and a realm-aware builder.
+7. **Remaining truth fixes:**
+   - Diplomatic Standing is fixed at 70;
+   - the Trending tab is empty;
+   - passport privacy is still session-only (now labelled so);
+   - the "Capacity" band shows directive slots, and directives don't consume CivCap.
+
+The decisions the owner still owes (crafting pacing, FP expiry, passport privacy model, WikiOS Template/Category
+policy, prediction stakes, premium for staff) are listed in PR #48.
+
+---
+
 ## 1. Verdict
 
 IxStates is large and mostly real: about **650k lines** of app code, **50k lines** of tests (348 files), **961**
@@ -32,22 +95,23 @@ loops don't close, several screens show numbers that aren't true, and the platfo
 single country.** Concretely:
 
 - **A player's decisions don't reach the numbers they watch.** The Command Surface's Approval and Stability bands
-  read fields that don't exist and show 68% / 78% for everyone ✔. Issue consequences mostly write fields no
+  read fields that don't exist and show 68% / 78% for everyone ✔ *(fixed in #48; directives now move GDP and stability too)*. Issue consequences mostly write fields no
   progression reads; only `StorytellerEffect`s move GDP, and resolving an issue never creates one. Rankings read
   stored stats that only an admin button refreshes. (mycountry §1.2–1.3)
 - **Politics and cooperative diplomacy are dead ends.** No first election is ever created, so no bill can pass;
   free-trade and alliance proposals can never be accepted because plan 312 deleted the accept procedure. (mycountry)
-- **The social layer posts but doesn't pull people back.** Like/reply/mention notifications are all broken, there are
-  no person follows, trending is always empty, and nothing is realm-scoped. (social-core §0, §3)
+  *(Accept/decline restored in #48, still without UI; elections unchanged.)*
+- **The social layer posts but doesn't pull people back.** Like/reply/mention notifications are all broken *(like and reply fixed in #48)*,
+  there are no person follows, trending is always empty, and nothing is realm-scoped. (social-core §0, §3)
 - **The platform economy is country-bound and leaky.** The dividend, the 5,000 IxC welcome bonus and all 76
   achievements need a country; a player without one earns ~1–60 IxC a day. Entry packs are worth more junked than
-  they cost ✔. (vault-identity §1.2–1.3)
+  they cost ✔ *(fixed in #48)*. (vault-identity §1.2–1.3)
 - **The "standalone products" are hostname switches.** maps.ixwiki.com is the whole IxStates build; WikiOS renders
   through MediaWiki's copy of every page. Onoma is the one module that could ship on its own soon. (atlas §5,
   wikios-onoma §3–4)
 - **The docs overstate.** Many system docs still carry "Gold Master (100% Ready)" badges from an earlier pass;
   SYSTEM_STATUS marks Politics, Diplomacy, Economy, National Issues, Worldgen, ThinkShare and the ledger ✅ Live
-  where the code says partial.
+  where the code says partial. *(Corrected in #48.)*
 
 The good news is structural: most gaps are wiring, not missing systems. The per-realm nation cap, the
 active-nation pointer, the event spine, the Stash service, the media picker, the transport→economy loop and the
@@ -61,18 +125,18 @@ Ranked by risk. All are small (S) unless noted.
 
 | # | Finding | Where | Status |
 |---|---|---|---|
-| 1 | **WikiOS pushes every signed-in user's edit to MediaWiki under one bot account.** Page protection can't be set (WK-3), so every title is editable, including `Template:`, `Module:` and `MediaWiki:` pages. What that reaches depends on the bot's grants. **Check Special:BotPasswords on IxWiki today**, then allowlist editable namespaces server-side. | `routers/wikios/editing.ts:32-43,81+`; `src/env.ts:92` | ✔ code path |
-| 2 | **Sending a message joins you to any group or ThinkTank chat**; ThinkTank group ids are public. | `modules/messaging/message-operations.ts:57-68` | ✔ |
-| 3 | **Personas can be created for any country** (no ownership check). | `routers/thinkpages/accounts.ts:104-150` | ✔ |
-| 4 | **Buy → open → junk mints credits**: five entry packs return 1.01–1.55× their price, uncapped; packs and junking also bypass the ledger (VT-4). | `lib/cards/valuation.ts:48`; `card-packs.json` | ✔ (floors, prices, 5-card packs) |
-| 5 | **Viewing a public passport writes an unverified `wikiUsername`** (and a fake `wikiUserId = 1`); Lorewards pays its 2,500 IxC bonus to whoever holds that name. | `identity.service.ts:67-86`; `lorewards/sync.ts:569-576` | report |
-| 6 | Users can **self-grant the verified badge** on personas. | `thinkpages/accounts.ts`; `AccountSettingsModal.tsx` | report |
-| 7 | Public `messages.searchUsers` returns full user rows (`clerkUserId`, `discordUserId`, `lastSeenAt`); `thinkpages.getPost` ignores visibility. | `messages/participants.ts:127-147`; `posts/queries.ts:132-166` | report |
-| 8 | A **real-looking MariaDB password** is committed as a script fallback. Rotate it if it was ever real; remove the fallback. | `scripts/sync-ixwiki-full.ts:35`; `scripts/audit/audit-wikios-parity.ts:31` | report |
-| 9 | Public `previewWikitext` lets anonymous users run MediaWiki's parser on 200k characters. | `wikios/editing.ts:59-79` | report |
-| 10 | Narrator LLM client has no SSRF guard and silently reuses the sports keys. | `lib/narrator/client.ts` | report |
+| 1 | **WikiOS pushes every signed-in user's edit to MediaWiki under one bot account.** Page protection can't be set (WK-3), so every title is editable, including `Template:`, `Module:` and `MediaWiki:` pages. What that reaches depends on the bot's grants. **Check Special:BotPasswords on IxWiki today**, then allowlist editable namespaces server-side. | `routers/wikios/editing.ts:32-43,81+`; `src/env.ts:92` | ✅ fixed (namespace policy); **bot grants still to check** |
+| 2 | **Sending a message joins you to any group or ThinkTank chat**; ThinkTank group ids are public. | `modules/messaging/message-operations.ts:57-68` | ✅ fixed |
+| 3 | **Personas can be created for any country** (no ownership check). | `routers/thinkpages/accounts.ts:104-150` | ✅ fixed |
+| 4 | **Buy → open → junk mints credits**: five entry packs return 1.01–1.55× their price, uncapped; packs and junking also bypass the ledger (VT-4). | `lib/cards/valuation.ts:48`; `card-packs.json` | ✅ fixed (`junkRate` 0.25, cap 0.5; ledger) |
+| 5 | **Viewing a public passport writes an unverified `wikiUsername`** (and a fake `wikiUserId = 1`); Lorewards pays its 2,500 IxC bonus to whoever holds that name. | `identity.service.ts:67-86`; `lorewards/sync.ts:569-576` | ✅ fixed (verified links only); legacy data cleanup pending |
+| 6 | Users can **self-grant the verified badge** on personas. | `thinkpages/accounts.ts`; `AccountSettingsModal.tsx` | ✅ fixed (admin-only) |
+| 7 | Public `messages.searchUsers` returns full user rows (`clerkUserId`, `discordUserId`, `lastSeenAt`); `thinkpages.getPost` ignores visibility. | `messages/participants.ts:127-147`; `posts/queries.ts:132-166` | ✅ fixed |
+| 8 | A **real-looking MariaDB password** is committed as a script fallback. Rotate it if it was ever real; remove the fallback. | `scripts/sync-ixwiki-full.ts:35`; `scripts/audit/audit-wikios-parity.ts:31` | ✅ fallback removed; **rotation still to do** |
+| 9 | Public `previewWikitext` lets anonymous users run MediaWiki's parser on 200k characters. | `wikios/editing.ts:59-79` | ✅ fixed (protected) |
+| 10 | Narrator LLM client has no SSRF guard and silently reuses the sports keys. | `lib/narrator/client.ts` | ✅ fixed |
 
-"✔" = re-checked by hand for this page; "report" = from the area audit, with evidence there.
+Original evidence: items 1–4 were re-checked by hand; items 5–10 come from the area reports. All ten were fixed in #36–#48 (see section 0).
 
 ---
 
@@ -80,17 +144,17 @@ Ranked by risk. All are small (S) unless noted.
 
 | App / system | What works | Where the loop breaks | Standalone readiness |
 |---|---|---|---|
-| **Atlas** (maps, IxWorld) | Viewer, embeds, border/subdivision editor, SVG/PNG whole-map + province + city import, transport network → economy | Worldgen is a Labs demo that freezes the browser and saves nothing; procedural import into a realm likely fails (numeric ids into a string column); geography modifiers are displayed but never read by the economy; every map feature needs a country | Low — same build and DB as IxStates; no user-owned worlds; no GeoJSON/Azgaar import or export; no terrain raster |
-| **MyCountry** | Builder (+ wiki prefill), issues and directives generate/resolve/log, politics drift, embassies | Decisions don't move headline stats; two sources of truth for stats; elections/bills inert; cooperative foreign policy can't be accepted; Defense premium is hollow | n/a (the core game) |
-| **Vault** | Atomic ledger with locks and idempotency, store (server-priced), pack opening, auctions/trades with escrow, NS import | Credits depend on a country; pack/junk arbitrage; settlement crons off by default; crafting broken; lore gallery hidden in production; fake ribbons | n/a (platform service) |
-| **Achievements / Lorewards** | 76 definitions, Lorewards scoring and calendars | Need a country; evaluated only on page visit (the background worker has 0 publishers); not shown on the passport; Lorewards pays via an unverified column | — |
-| **IxnayID / Passport** | Identity module, verified wiki/forum links, 5-tab passport, "Play as" | No first-class handle or profile record; personas live in ThinkPages; premium has 3 definitions; not in the version registry or main nav | — |
+| **Atlas** (maps, IxWorld) | Viewer, embeds, border/subdivision editor, SVG/PNG whole-map + province + city import, transport network → economy | Worldgen is a Labs demo that freezes the browser and saves nothing; ~~procedural import into a realm likely fails (numeric ids into a string column)~~ ✅ ids fixed; geography modifiers are displayed but never read by the economy; every map feature needs a country | Low — same build and DB as IxStates; no user-owned worlds; no GeoJSON/Azgaar import or export; no terrain raster |
+| **MyCountry** | Builder (+ wiki prefill), issues and directives generate/resolve/log, politics drift, embassies | Issue decisions don't move headline stats (directives now do ✅; bands real ✅); two sources of truth for stats; elections/bills inert; cooperative foreign policy accept is API-only ◐; Defense premium is hollow (test switch `NEXT_PUBLIC_PREMIUM_FOR_ALL`) | n/a (the core game) |
+| **Vault** | Atomic ledger with locks and idempotency, store (server-priced), pack opening, auctions/trades with escrow, NS import | Credits depend on a country; ~~pack/junk arbitrage~~ ✅; settlement crons off by default; crafting ◐ (ids fixed, pacing undecided); ~~lore gallery hidden~~ ✅; ~~fake ribbons~~ ✅ (rack empty until real ribbons) | n/a (platform service) |
+| **Achievements / Lorewards** | 76 definitions, Lorewards scoring and calendars | Need a country; evaluated only on page visit (the background worker has 0 publishers); not shown on the passport; ~~Lorewards pays via an unverified column~~ ✅ | — |
+| **IxnayID / Passport** | Identity module, verified wiki/forum links, 5-tab passport, "Play as" | No first-class handle or profile record; personas live in ThinkPages; premium ◐ one definition (`hasPremiumTier`) but staff pass the client check and fail the server gate; not in the version registry or main nav | — |
 | **Realms** | Claims, per-realm nation cap, Play-as, realm-scoped map | Builder always uses the default realm; no directory; feed/sports/ThinkTanks ignore realms; geo leaks (terrain sampling, currents, planet scale) | — |
-| **WikiOS** | Postgres storage, revisions/history/diff, links, special-page equivalents, Plate editor, Margin | Rendering, templates, Lua, images and uploads are MediaWiki's; edits can render stale; category drift; no rights model, protection, move/delete, edit conflicts | Low — needs a renderer contract, native media, tenancy, auth adapter, XML import/export |
-| **Onoma** | Markov naming, IPA, declension, sound shifts, Kokoro bridge; phases match its roadmap | Language packs can't be published | **High** — 8.5k lines with two external imports |
-| **Narrator** | Read-aloud (restricted) | LLM narration has no production caller since plan 312 | — |
-| **ThinkPages / ThinkShare / ThinkTanks** | Personas, posts, polls, reactions, real-time DMs, ThinkTank feed and roster, IxTwitter bridge | Notifications broken; no follows; can't post as yourself; diplomatic DMs unreachable; ThinkTank chat/docs not surfaced; trending empty | — |
-| **MyLeague / MyClub** | 5 sport resolvers + F1, aging, transfers, promotion/relegation, World Cup, franchise claiming | Predictions/rivalries not placeable; create pages 404; no league community; not realm-scoped | Medium — `lib/sports` (9.3k lines) is mostly pure |
+| **WikiOS** | Postgres storage, revisions/history/diff, links, special-page equivalents, Plate editor, Margin | Rendering, templates, Lua, images and uploads are MediaWiki's; ~~edits can render stale~~ ✅; category drift; rights model ◐ (namespace policy only); no protection, move/delete, edit conflicts | Low — needs a renderer contract, native media, tenancy, auth adapter, XML import/export |
+| **Onoma** | Markov naming, IPA, declension, sound shifts, Kokoro bridge; phases match its roadmap | Language packs can't be published; stash ownership now accepts both user ids ✅ | **High** — 8.5k lines with two external imports |
+| **Narrator** | Read-aloud (restricted) | LLM narration has no production caller since plan 312; SSRF guard added ✅ | — |
+| **ThinkPages / ThinkShare / ThinkTanks** | Personas, posts, polls, reactions, real-time DMs, ThinkTank feed and roster, IxTwitter bridge | Notifications ◐ (like/reply ✅, mention still broken); no follows; can't post as yourself; ~~diplomatic DMs unreachable~~ ✅; ~~ThinkTank chat/docs not surfaced~~ ✅; trending empty | — |
+| **MyLeague / MyClub** | 5 sport resolvers + F1, aging, transfers, promotion/relegation, World Cup, franchise claiming | ~~Predictions not placeable~~ ✅ (rivalries still not); ~~create pages 404~~ ✅ links removed; no league community; not realm-scoped | Medium — `lib/sports` (9.3k lines) is mostly pure |
 | **IxTime** | Clean shared library (91 importers), bot as source of truth | `ixTimeTimestamp` columns hold real time in some writers and game time in others | High |
 | **Facet / Halo** | Facet primitives are a true leaf layer; Halo command palette and plugins | Halo imports builder, wiki and tRPC — it's a platform shell, not part of the design system | — |
 
@@ -98,14 +162,15 @@ Ranked by risk. All are small (S) unless noted.
 
 ## 4. Cross-cutting patterns
 
-1. **Loops that stop one step short.** Issue → consequence → *stat*; post → *notification*; achievement →
+1. **Loops that stop one step short.** Issue → consequence → *stat*; post → *notification* (◐ like/reply fixed); achievement →
    *background evaluation*; worldgen → *saved world*; auction/trade → *settlement cron (off)*; election → *first
-   election*; foreign-policy proposal → *accept*. Each has the first half built.
-2. **Two sources of truth.** Projected vs stored country stats; three premium definitions; a heuristic passport
+   election*; foreign-policy proposal → *accept* (◐ API restored, no UI). Each has the first half built.
+2. **Two sources of truth.** Projected vs stored country stats; ~~three premium definitions~~ (◐ one now); a heuristic passport
    handle; `ixTimeTimestamp` with two meanings; Clerk ids and internal ids mixed across tables.
-3. **Screens that aren't true.** Approval/Stability bands, 3 fake ribbons on every country page, a daily roll that
-   promises 10,000 but pays ≤100, a reward multiplier that does nothing, session-only passport privacy switches,
-   "connected" wiki whenever you own a country, an empty Trending tab, Diplomatic Standing fixed at 70. The roadmap's
+3. **Screens that aren't true.** ~~Approval/Stability bands, 3 fake ribbons on every country page, a daily roll that
+   promises 10,000 but pays ≤100, a reward multiplier that does nothing, "connected" wiki whenever you own a
+   country~~ (all ✅ fixed in #48); still open: session-only passport privacy switches (now labelled), an empty
+   Trending tab, Diplomatic Standing fixed at 70. The roadmap's
    M2 rule ("nothing on screen lies") is the right priority.
 4. **Country where the platform should be.** Credits, achievements, personas and every map feature require a
    country. The owner's model (one IxnayID; countries live in realms) needs account-level earning, identity and
@@ -122,11 +187,11 @@ Ranked by risk. All are small (S) unless noted.
 
 | Seam | State |
 |---|---|
-| Wiki ↔ Maps embeds (`/maps?embed`, `CountryMapEmbed`, 10 consumers) | ✅ works (but see the maps build error in the bug queue) |
+| Wiki ↔ Maps embeds (`/maps?embed`, `CountryMapEmbed`, 10 consumers) | ✅ works; the maps build error and dead maps are fixed in #48 (undeclared `@turf/*`, MapLibre worker, embed CSP nonce) |
 | Transport network → economy (`transport-sync` → StorytellerEffects) | ✅ the one real geography→economy loop |
 | Discord ↔ ThinkPages (IxTwitter bridge) | ✅ works; `#thinkpages` mirror has no admin save (WK-10) |
 | Forum DMs → ThinkShare; forum SSO | ✅ |
-| Stash across WikiOS, Forum, Onoma, Messages, Lore Cards | ✅ (collision bug NEW-10) |
+| Stash across WikiOS, Forum, Onoma, Messages, Lore Cards | ✅ (collision bug NEW-10; old stashes hidden by the id switch are visible again ✅) |
 | Shared media picker across 6 apps | ✅ (lives in WikiOS) |
 | MyCountry → Vault dividends | ✅ but it's the coupling the owner wants to loosen |
 | Sports → ThinkPages bulletins, saints → StorytellerEffect | ✅ |
@@ -212,17 +277,17 @@ No schema change is strictly required.
 
 This reorders the existing [ROADMAP](../ROADMAP.md) milestones around what the audits found; M0 is done in code.
 
-1. **Fix now** — section 2 (days).
-2. **Make it true** (M2's rule, pulled forward): remove or fix every fabricated number and switch listed in
-   section 4.3; correct SYSTEM_STATUS and strip "Gold Master" badges from system docs.
-3. **Close the MyCountry loop**: bands read real fields; issue GDP effects go through `StorytellerEffect`; one stat
-   source of truth with a progression job (MC-7); first elections (MC-2); restore the foreign-policy accept path;
-   rankings from existing fields.
-4. **Close the social loop**: notifications, follows, trending job, post-as-yourself via an IxnayID "acting-as"
+1. ✅ **Fix now** — section 2. Done in #36–#48; owner actions remain (bot grants, password rotation).
+2. ◐ **Make it true** (M2's rule, pulled forward): most fabricated numbers are fixed and the docs are corrected
+   (#48). Left: Diplomatic Standing, Trending, the Capacity band, passport privacy.
+3. ◐ **Close the MyCountry loop**: ~~bands read real fields~~ ✅; directives ✅ but issue GDP effects still need to go
+   through `StorytellerEffect`; one stat source of truth with a progression job (MC-7); first elections (MC-2);
+   foreign-policy accept path ✅ backend, needs an inbox UI; rankings from existing fields. **Next up.**
+4. **Close the social loop**: notifications (◐ like/reply done; mention left), follows, trending job, post-as-yourself via an IxnayID "acting-as"
    identity.
-5. **IxnayID-first economy**: welcome bonus at account creation, account-level achievements, background
-   evaluation, passport showcase, ribbons as real records, lore gallery in production, NS import moved to "one more
-   thing", fix pack/junk economics.
+5. ◐ **IxnayID-first economy**: welcome bonus at account creation, account-level achievements, background
+   evaluation, passport showcase, ribbons as real records; ~~lore gallery in production, NS import moved to "one
+   more thing", fix pack/junk economics~~ ✅ done in #48.
 6. **Realms as places**: Spaces (ThinkTanks) as realm boards; realm-scoped feed, leagues and geo config; realm-aware
    builder; nation switcher.
 7. **Atlas persistence**: saved procedural worlds imported into realms; map features without a country; geography
@@ -235,7 +300,8 @@ This reorders the existing [ROADMAP](../ROADMAP.md) milestones around what the a
 
 ## 9. Docs that need correcting
 
-The area reports list each wrong claim with file and line. The most visible:
+✅ **Done in #48:** system docs corrected against the code, Gold Master badges removed, SYSTEM_STATUS ratings
+fixed, and statements updated for the fixes that merged with them. The list below is what the audit found:
 
 - "Gold Master (100% Ready)" status headers in `maps.md`, `social.md`, `halo.md`, `ixtime.md` and other system docs.
 - `SYSTEM_STATUS.md`: Politics, Diplomacy, Economy, National Issues, Worldgen/procedural pipeline, ThinkShare,
@@ -265,7 +331,7 @@ From [ponytail.md](ponytail.md), dead-code items verified by hand (path, exports
 - **Monoliths:** `audit:arch` fails with 15 files over ceiling; 52 files are 800+ lines; split proposals for the top
   15.
 - **Dependencies:** nothing declared is unused, but ~20 packages are imported without being declared (resolve by
-  hoisting only: 14 `@turf/*`, `sharp`, `slate-react`, …). **`audit:wiring` is broken** by the `minimatch: ^3`
+  hoisting only: 14 `@turf/*` ✅ declared in #48; `sharp`, `slate-react`, … still undeclared). **`audit:wiring` is broken** by the `minimatch: ^3`
   override (`export 'escape' not found`) ✔.
 - **`ponytail:` markers:** 21 fine, 10 to revisit, 5 wrong or moot (e.g. `realms.access.ts` said "share it if a third
   caller appears" — the rule now exists in 7 places).

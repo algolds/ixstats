@@ -1,5 +1,8 @@
 # Platform audit: WikiOS, Stash, Onoma, Narrator
 
+> **Snapshot of `rose-garden` @ `e91e6b0b2` (2026-09-30).** Many findings here were fixed the same day in PR #48;
+> see [README §0](README.md#0-status-since-the-audit-updated-2026-09-30-after-48) for current status.
+
 Branch `rose-garden` @ `e91e6b0b2` (2026-09-30). Read-only audit: nothing was changed or run against a database.
 Where the code and the docs disagree, the code wins. Row counts in the docs (4,685 articles, 48,200 links,
 7,555 assets) could not be checked because there was no database access. They are marked *unverified*.
