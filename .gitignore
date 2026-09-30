@@ -244,3 +244,4 @@ scripts/reports/
 data/political-audit/
 scripts/*.json
 scripts/*_report.md
+scripts/ops/wikios-test-mediawiki/.env.test-mediawiki
