@@ -248,6 +248,35 @@ The area reports list each wrong claim with file and line. The most visible:
 
 ---
 
+## 10. Ponytail (simplification) summary
+
+From [ponytail.md](ponytail.md), dead-code items verified by hand (path, exports, dynamic and string references):
+
+- **~21,100 lines in 134 `src/` files are unreachable** from any production root, plus ~2,300 lines reached only by
+  tests. Biggest clusters: the demo-seed service (3,722; its only caller is an archived script with a broken import,
+  so the "seed-only" models in the code audit's §8 have no working writer), the intelligence chain (2,668 —
+  `calculator.ts`, `engine.ts` and `live-data-transformers.ts` all have zero importers outside the folder ✔),
+  `components/analytics` (2,286), `lib/builder/client-calculations.ts` (1,472), `user-analytics` + `recommender`
+  (1,433), the home-page trio (1,206).
+- **tRPC:** 8 of 961 procedures have no caller, 8 more only from dead files; the `autosaveHistory` router goes whole.
+- **Duplication:** 16 patterns with a proposed single home — user lookup by id/Clerk id (13 copies), wiki
+  title→slug (85 sites), the `spendByCategory` → `deriveBrokers` loop (6), the "staff = level ≤ 20" rule (7),
+  ~40 direct SystemConfig reads.
+- **Monoliths:** `audit:arch` fails with 15 files over ceiling; 52 files are 800+ lines; split proposals for the top
+  15.
+- **Dependencies:** nothing declared is unused, but ~20 packages are imported without being declared (resolve by
+  hoisting only: 14 `@turf/*`, `sharp`, `slate-react`, …). **`audit:wiring` is broken** by the `minimatch: ^3`
+  override (`export 'escape' not found`) ✔.
+- **`ponytail:` markers:** 21 fine, 10 to revisit, 5 wrong or moot (e.g. `realms.access.ts` said "share it if a third
+  caller appears" — the rule now exists in 7 places).
+- **Archive:** `scripts/archive` holds 97 files / 19,488 lines, several unrunnable.
+
+Suggested order: fix the `minimatch` override, then the low-risk deletions (intelligence, analytics,
+client-calculations, home-page trio, user-analytics/recommender) with a full non-incremental typecheck after each
+batch. Straight deletions total ~24,500 lines in `src/` plus ~19,500 in `scripts/archive`.
+
+---
+
 ## Discord audit
 
 Not run. This session has no Discord bot token and the environment's network policy denies `discord.com`

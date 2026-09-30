@@ -335,7 +335,7 @@ flywheel the owner describes.
 
 ## Appendix A: worldgen measurements
 
-Run in this container with bun, default params (`scratchpad/audit/wg*.ts`):
+Run with bun, default params (throwaway timing scripts, not committed):
 
 | seed | ms | cells | countries | rivers | lakes | continents | land % |
 |---|---|---|---|---|---|---|---|
