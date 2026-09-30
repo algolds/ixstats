@@ -86,6 +86,7 @@ const adminCtx = () =>
 const revision = (wikitext: string | null, title = "Foo bar") => ({
   wikitext,
   title,
+  source: "ixwiki",
   timestamp: "2026-06-01T00:00:00.000Z",
   fromShadow: true as const,
 });

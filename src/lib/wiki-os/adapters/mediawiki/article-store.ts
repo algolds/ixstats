@@ -77,6 +77,7 @@ export async function getRevisionWikitextShadow(
 ): Promise<{
   wikitext: string | null;
   title: string;
+  source: string;
   timestamp: string;
   fromShadow: boolean;
 } | null> {

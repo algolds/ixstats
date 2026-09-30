@@ -57,10 +57,10 @@ const mockRows: MockRevisionRow[] = [
   mockRow("csyncedrev00001", 5001, "first body", 1, 10),
 ];
 
+// Both reference kinds must be scoped to IxWiki's revisions (a row id of another wiki is no match).
 const mockMatches = (row: MockRevisionRow, where: MockRevisionWhere): boolean =>
-  where.id !== undefined
-    ? row.id === where.id
-    : row.source === where.source && row.mwRevId === where.mwRevId;
+  row.source === where.source &&
+  (where.id !== undefined ? row.id === where.id : row.mwRevId === where.mwRevId);
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -74,6 +74,8 @@ jest.mock("~/server/db", () => ({
           ? {
               wikitext: row.wikitext,
               byteSize: row.byteSize,
+              mwRevId: row.mwRevId,
+              source: row.source,
               createdAt: row.createdAt,
               article: { title: "Foo Bar" },
             }
@@ -95,6 +97,7 @@ test("every history revid round-trips through getRevisionWikitext", async () => 
     await expect(getRevisionWikitext(entry.revid)).resolves.toEqual({
       wikitext: row.wikitext,
       title: "Foo Bar",
+      source: "ixwiki",
       timestamp: row.createdAt.toISOString(),
     });
   }

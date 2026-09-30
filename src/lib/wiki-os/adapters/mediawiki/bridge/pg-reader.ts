@@ -78,12 +78,15 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
 
 export interface RevisionContent {
   /**
-   * The revision's text; null when it is unknown: an imported history row holds "" as a placeholder
-   * while `byteSize` says the revision had content. Never treat null as an empty page.
+   * The revision's text; null when it is unknown: an imported history row holds "" as a
+   * placeholder, which a synced MediaWiki revision (it has an `mwRevId`) or a non-zero `byteSize`
+   * gives away. Never treat null as an empty page.
    */
   wikitext: string | null;
   /** Title of the article the revision belongs to. */
   title: string;
+  /** The wiki the revision belongs to (always "ixwiki" here). */
+  source: string;
   timestamp: string;
 }
 
@@ -92,19 +95,25 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
   const key = parseRevisionRef(ref);
   try {
     const rev = await db.wikiRevision.findFirst({
-      where: "mwRevId" in key ? { source: "ixwiki", mwRevId: key.mwRevId } : { id: key.id },
+      where: {
+        source: "ixwiki",
+        ...("mwRevId" in key ? { mwRevId: key.mwRevId } : { id: key.id }),
+      },
       select: {
         wikitext: true,
         byteSize: true,
+        mwRevId: true,
+        source: true,
         createdAt: true,
         article: { select: { title: true } },
       },
     });
     if (rev) {
-      const isPlaceholder = rev.wikitext === "" && rev.byteSize > 0;
+      const isPlaceholder = rev.wikitext === "" && (rev.mwRevId !== null || rev.byteSize > 0);
       return {
         wikitext: isPlaceholder ? null : rev.wikitext,
         title: rev.article.title,
+        source: rev.source,
         timestamp: rev.createdAt.toISOString(),
       };
     }
@@ -216,12 +225,7 @@ export interface ResolvedRedirect {
 /** MediaWiki follows one redirect; IxWiki has some double redirects, so two hops are safe. */
 const MAX_REDIRECT_HOPS = 2;
 
-const REDIRECT_SELECT = {
-  title: true,
-  redirectTargetSlug: true,
-  redirectTargetFragment: true,
-  wikitext: true,
-} as const;
+const REDIRECT_SELECT = { wikitext: true } as const;
 
 /** The IxWiki row for a canonical title: the exact title, else the one row whose slug matches. */
 async function findRedirectRow(title: string) {
@@ -240,17 +244,14 @@ async function findRedirectRow(title: string) {
 }
 
 /**
- * Where the page `title` (canonical) redirects to, from its stored redirect columns; a row written
- * before they were filled is read from its wikitext. Null when the page is missing or not a redirect.
+ * Where the page `title` (canonical) redirects to. The wikitext decides: the `redirectTargetSlug`
+ * columns are a cache that any write path that skips `saveArticle` leaves stale, so a column that
+ * disagrees with the text (or that names a target for a page that is no longer a redirect) must
+ * never be followed. Null when the page is missing or its text is not a redirect.
  */
 async function redirectTargetOf(title: string): Promise<ResolvedRedirect | null> {
   const row = await findRedirectRow(title);
-  if (!row) return null;
-
-  const stored = row.redirectTargetSlug ? canonicalizeTitle(row.redirectTargetSlug) : null;
-  if (stored) return { title: stored.title, fragment: row.redirectTargetFragment };
-
-  const parsed = parseRedirect(row.wikitext);
+  const parsed = row ? parseRedirect(row.wikitext) : null;
   return parsed ? { title: parsed.title, fragment: parsed.fragment } : null;
 }
 
@@ -258,7 +259,8 @@ async function redirectTargetOf(title: string): Promise<ResolvedRedirect | null>
  * Follow IxWiki redirects from Postgres alone (at most two hops). A title that is not a redirect,
  * has no row, or cannot be a title is returned as given, and a database error ends the walk where
  * it is (the reader then serves whatever page it reached). On a loop (A to B to A) the walk stops
- * before revisiting a page, so it ends on B when started at A.
+ * before revisiting a page, so it ends on B when started at A. The fragment is the most recent one
+ * any followed hop carried: a last hop without a section keeps the section of an earlier hop.
  */
 export async function ixwikiResolveRedirect(title: string): Promise<ResolvedRedirect> {
   const start = canonicalizeTitle(title);
@@ -273,7 +275,7 @@ export async function ixwikiResolveRedirect(title: string): Promise<ResolvedRedi
       if (!target || visited.has(target.title)) break;
 
       visited.add(target.title);
-      resolved = target;
+      resolved = { title: target.title, fragment: target.fragment ?? resolved.fragment };
       current = target.title;
     }
   } catch (err) {

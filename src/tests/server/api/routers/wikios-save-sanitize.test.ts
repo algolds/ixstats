@@ -137,7 +137,13 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     });
     jest
       .mocked(getRevisionWikitextShadow)
-      .mockResolvedValue({ wikitext: "old", title: "X", timestamp: "", fromShadow: true });
+      .mockResolvedValue({
+        wikitext: "old",
+        title: "X",
+        source: "ixwiki",
+        timestamp: "",
+        fromShadow: true,
+      });
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
         {
@@ -220,6 +226,7 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
       wikitext: "old",
       title: "MediaWiki:Sidebar",
+      source: "ixwiki",
       timestamp: "",
       fromShadow: true,
     });

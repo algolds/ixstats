@@ -32,7 +32,7 @@ const page = (title: string, wikitext = "Body."): Row => ({
   wikitext,
 });
 const redirectTo = (title: string, target: string, fragment: string | null = null): Row => ({
-  ...page(title, `#REDIRECT [[${target}]]`),
+  ...page(title, `#REDIRECT [[${target}${fragment ? `#${fragment}` : ""}]]`),
   redirectTargetSlug: target,
   redirectTargetFragment: fragment,
 });
@@ -59,7 +59,7 @@ afterAll(() => {
 });
 
 describe("ixwikiResolveRedirect", () => {
-  it("follows a stored redirect and reports its fragment", async () => {
+  it("follows a redirect and reports its fragment", async () => {
     add(redirectTo("Old", "New", "Sec one"), page("New"));
 
     await expect(ixwikiResolveRedirect("Old")).resolves.toEqual({
@@ -68,11 +68,7 @@ describe("ixwikiResolveRedirect", () => {
     });
     expect(mockFindUnique.mock.calls[0]?.[0]).toMatchObject({
       where: { source_title: { source: "ixwiki", title: "Old" } },
-      select: {
-        redirectTargetSlug: true,
-        redirectTargetFragment: true,
-        wikitext: true,
-      },
+      select: { wikitext: true },
     });
   });
 
@@ -94,6 +90,47 @@ describe("ixwikiResolveRedirect", () => {
     await expect(ixwikiResolveRedirect("A")).resolves.toEqual({ title: "B", fragment: null });
   });
 
+  it("never follows a stale column: the wikitext decides", async () => {
+    const staleColumn: Row = {
+      ...page("Article", "Now a real article."),
+      redirectTargetSlug: "Elsewhere",
+      redirectTargetFragment: "Old",
+    };
+    add(staleColumn);
+
+    await expect(ixwikiResolveRedirect("Article")).resolves.toEqual({
+      title: "Article",
+      fragment: null,
+    });
+  });
+
+  it("follows the wikitext's target when the column names another page", async () => {
+    add({ ...redirectTo("Old", "Right"), redirectTargetSlug: "Wrong", redirectTargetFragment: "X" });
+
+    await expect(ixwikiResolveRedirect("Old")).resolves.toEqual({
+      title: "Right",
+      fragment: null,
+    });
+  });
+
+  it("keeps the most recent fragment of an earlier hop when the last hop has none", async () => {
+    add(redirectTo("A", "B", "Part one"), redirectTo("B", "C"), page("C"));
+
+    await expect(ixwikiResolveRedirect("A")).resolves.toEqual({
+      title: "C",
+      fragment: "Part one",
+    });
+  });
+
+  it("prefers the last hop's own fragment", async () => {
+    add(redirectTo("A", "B", "Part one"), redirectTo("B", "C", "Part two"), page("C"));
+
+    await expect(ixwikiResolveRedirect("A")).resolves.toEqual({
+      title: "C",
+      fragment: "Part two",
+    });
+  });
+
   it("reads a redirect from its wikitext when the columns are not backfilled yet", async () => {
     add(page("Old", "#redirect [[new_page#Part]]"), page("New page"));
 
@@ -112,7 +149,7 @@ describe("ixwikiResolveRedirect", () => {
     });
   });
 
-  it("canonicalizes the target a stored column holds", async () => {
+  it("canonicalizes the target the wikitext names", async () => {
     add(redirectTo("Old", "new_page"));
 
     await expect(ixwikiResolveRedirect("Old")).resolves.toEqual({
