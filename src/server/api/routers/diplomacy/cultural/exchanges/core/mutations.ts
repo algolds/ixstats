@@ -49,9 +49,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId || ctx.user.countryId !== input.hostCountryId) {
-        throw new Error("You can only create cultural exchanges for your own country.");
-      }
+      await assertCountryWriteAccess(ctx, input.hostCountryId);
 
       // Validate embassy mission if provided
       if (input.embassyMissionId) {

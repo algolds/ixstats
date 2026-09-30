@@ -7,6 +7,7 @@ import { generateBlazon } from "~/lib/heraldry/blazon";
 import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const heraldryMutationsRouter = createTRPCRouter({
   saveAchievement: protectedProcedure
@@ -229,19 +230,7 @@ export const heraldryMutationsRouter = createTRPCRouter({
         });
       }
 
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-      });
-
-      if (
-        !isSystemOwner(ctx.auth.userId) &&
-        (!userProfile || userProfile.countryId !== input.countryId)
-      ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to edit this country.",
-        });
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const coatOfArmsUrl = achievement.thumbnailUrl || achievement.largeUrl || "";
 

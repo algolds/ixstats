@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import {
   ensureUpcomingElection,
   type EnsureElectionResult,
 } from "~/lib/government/election-lifecycle";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -110,12 +110,7 @@ export const electionsLegislatureRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only manage legislature for your own country",
-        });
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const chambers = parseChambers(
         input.chamberType,

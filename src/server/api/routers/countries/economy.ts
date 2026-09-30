@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
 import {
   publicProcedure,
   protectedProcedure,
@@ -21,6 +20,7 @@ import {
   getCountryComponentsStatsData,
   resolveCountryRefId,
 } from "./utils";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
 
@@ -354,17 +354,7 @@ export const economyProcedures = {
   getEditorRelations: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        include: { role: true },
-      });
-      const role = user?.role?.name;
-      if (user?.countryId !== input.countryId && role !== "admin" && role !== "system-owner") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to load this country's editor data.",
-        });
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const [
         demographics,

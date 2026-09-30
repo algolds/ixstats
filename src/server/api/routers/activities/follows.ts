@@ -11,6 +11,7 @@ import {
   ensurePersonalAccount,
   findPersonalAccount,
 } from "~/server/api/routers/thinkpages/personal-account";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 /** Persona follow input: the persona to follow, and optionally which of the caller's personas follows. */
 const PersonaFollowInput = z.object({
@@ -57,9 +58,7 @@ export const activitiesFollowsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the follower country
-      if (ctx.user?.countryId !== input.followerCountryId) {
-        throw new Error("You can only follow countries from your own country");
-      }
+      await assertCountryWriteAccess(ctx, input.followerCountryId);
 
       // Cannot follow yourself
       if (input.followerCountryId === input.followedCountryId) {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreInfluenceRouter = createTRPCRouter({
@@ -37,9 +38,7 @@ export const diplomaticCoreInfluenceRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the follower country
-      if (!ctx.user?.countryId || ctx.user.countryId !== input.followerCountryId) {
-        throw new Error("You can only follow countries with your own country.");
-      }
+      await assertCountryWriteAccess(ctx, input.followerCountryId);
 
       // Create follow relationship
       const follow = await ctx.db.countryFollow.create({
@@ -86,9 +85,7 @@ export const diplomaticCoreInfluenceRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the follower country
-      if (!ctx.user?.countryId || ctx.user.countryId !== input.followerCountryId) {
-        throw new Error("You can only unfollow countries with your own country.");
-      }
+      await assertCountryWriteAccess(ctx, input.followerCountryId);
 
       // Delete follow relationship
       await ctx.db.countryFollow.delete({

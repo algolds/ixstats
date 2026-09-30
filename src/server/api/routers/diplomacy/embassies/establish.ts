@@ -6,6 +6,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { vaultService } from "~/lib/vault/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
   establishEmbassy: protectedProcedure
@@ -19,14 +20,8 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId) {
-        throw new Error("You must be associated with a country to establish embassies.");
-      }
-
-      // Verify user owns the guest country (the one establishing the embassy)
-      if (ctx.user.countryId !== input.guestCountryId) {
-        throw new Error("You can only establish embassies for your own country.");
-      }
+      // Verify user owns the guest country (the one establishing the embassy); any owned nation counts
+      await assertCountryWriteAccess(ctx, input.guestCountryId);
 
       // One embassy per guest↔host pair (enforced by a composite unique). Guard here
       // so a re-try / double-submit returns a clear message instead of a raw P2002.
