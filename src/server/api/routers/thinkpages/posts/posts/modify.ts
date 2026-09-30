@@ -231,6 +231,20 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
         where: { id: input.postId },
       });
 
+      // Keep the parent / original post's engagement counters in step (never below zero).
+      if (post.parentPostId) {
+        await db.thinkpagesPost.updateMany({
+          where: { id: post.parentPostId, replyCount: { gt: 0 } },
+          data: { replyCount: { decrement: 1 } },
+        });
+      }
+      if (post.repostOfId) {
+        await db.thinkpagesPost.updateMany({
+          where: { id: post.repostOfId, repostCount: { gt: 0 } },
+          data: { repostCount: { decrement: 1 } },
+        });
+      }
+
       // If the post had an associated poll, delete it
       if ((post as any).pollId) {
         await db.poll

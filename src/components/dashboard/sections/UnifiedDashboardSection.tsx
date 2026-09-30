@@ -9,6 +9,7 @@ import {
   OpenBook as BookOpen,
   Settings,
   Globe,
+  FireFlame as Flame,
 } from "iconoir-react";
 import {
   CutoutCard,
@@ -61,17 +62,19 @@ const RepostModal = dynamic(
 );
 
 import { UnifiedFeedContent, FollowingFeedContent } from "./UnifiedFeedContent";
+import { TrendingFeedContent } from "./TrendingFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";
 import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 
 // ─── Config ──────────────────────────────────────────────────────
 
-type FeedTab = "all" | "following" | "community";
+type FeedTab = "all" | "following" | "trending" | "community";
 
 const BASE_TABS: { id: FeedTab; label: string; icon: typeof Rss }[] = [
   { id: "all", label: "All Activity", icon: Rss },
   { id: "following", label: "Following", icon: Users },
+  { id: "trending", label: "Trending", icon: Flame },
   { id: "community", label: "Community", icon: BookOpen },
 ];
 
@@ -293,6 +296,24 @@ export function UnifiedDashboardSection({
 
             {activeTab === "following" ? (
               <FollowingFeedContent
+                currentUserAccountId={selectedAccount?.id || ""}
+                accounts={accounts}
+                countryId={userProfile?.countryId || ""}
+                isOwner={hasCountry}
+                onAccountSelectAction={setSelectedAccount}
+                onAccountSettingsAction={(account: any) => {
+                  setSettingsAccount(account);
+                  setShowAccountSettings(true);
+                }}
+                onCreateAccountAction={() => setShowAccountCreation(true)}
+                onLikeAction={handleLike}
+                onRepostAction={handleRepost}
+                onReactionAction={handleReaction}
+                onReplyAction={handleReply}
+                onShareAction={handleShare}
+              />
+            ) : activeTab === "trending" ? (
+              <TrendingFeedContent
                 currentUserAccountId={selectedAccount?.id || ""}
                 accounts={accounts}
                 countryId={userProfile?.countryId || ""}

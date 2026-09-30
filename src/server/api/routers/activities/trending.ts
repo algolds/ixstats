@@ -5,93 +5,50 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getForumTrendingThreads } from "~/server/modules/forum";
+import { TRENDING_CONFIG, topicRank } from "~/lib/thinkpages/trending";
 
 // Input schemas
 export const activitiesTrendingRouter = createTRPCRouter({
-  // Get trending topics based on activity data
+  /**
+   * Trending hashtags, as written to `TrendingTopic` by the thinkpages-trending cron job over
+   * its engagement window. Empty when nothing qualifies (no fallback content).
+   */
   getTrendingTopics: publicProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(10).default(5),
-        timeRange: z.enum(["1h", "6h", "24h", "7d"]).default("24h"),
-      })
+      z
+        .object({
+          limit: z.number().min(1).max(10).default(5),
+        })
+        .default({ limit: 5 })
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Calculate time range
-        const now = new Date();
-        let fromDate: Date;
-
-        switch (input.timeRange) {
-          case "1h":
-            fromDate = new Date(now.getTime() - 60 * 60 * 1000);
-            break;
-          case "6h":
-            fromDate = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-            break;
-          case "24h":
-            fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            break;
-          case "7d":
-            fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-        }
-
-        // Get trending activities with weighted engagement scoring
-        const activities = await ctx.db.activityFeed.findMany({
-          where: {
-            createdAt: { gte: fromDate },
-            visibility: "public",
-          },
+        const rows = await ctx.db.trendingTopic.findMany({
+          where: { isActive: true },
           select: {
             id: true,
-            title: true,
-            type: true,
-            likes: true,
-            comments: true,
-            shares: true,
-            views: true,
-            createdAt: true,
+            hashtag: true,
+            postCount: true,
+            engagement: true,
+            peakTimestamp: true,
           },
-          take: 200,
+          take: TRENDING_CONFIG.maxTopics,
         });
-
-        // Calculate engagement score with weighted metrics
-        const trendingActivities = activities
-          .map((activity) => {
-            // Weighted scoring: reshares worth 3x, comments worth 2x, likes worth 1x
-            const engagementScore =
-              activity.shares * 3 +
-              activity.comments * 2 +
-              activity.likes * 1 +
-              activity.views * 0.1; // Views have minimal weight
-
-            // Time decay factor (newer content gets bonus)
-            const hoursSinceCreated =
-              (Date.now() - activity.createdAt.getTime()) / (1000 * 60 * 60);
-            const timeDecayFactor = Math.max(0.1, 1 - hoursSinceCreated / 24); // Decay over 24 hours
-
-            const finalScore = engagementScore * timeDecayFactor;
-
-            return {
-              ...activity,
-              engagementScore: finalScore,
-              participants: activity.likes + activity.comments + activity.shares,
-            };
-          })
-          .sort((a, b) => b.engagementScore - a.engagementScore)
-          .slice(0, input.limit);
-
-        // Transform to trending topics format
-        const topics = trendingActivities.map((activity) => ({
-          id: activity.id,
-          title: activity.title,
-          category: activity.type.charAt(0).toUpperCase() + activity.type.slice(1),
-          participants: activity.participants,
-          trend: "up" as const,
-        }));
-
-        return topics;
+        const risingSince = Date.now() - TRENDING_CONFIG.risingHours * 60 * 60 * 1000;
+        return (rows ?? [])
+          .sort((a, b) => topicRank(b) - topicRank(a) || a.hashtag.localeCompare(b.hashtag))
+          .slice(0, input.limit)
+          .map((topic) => ({
+            id: topic.id,
+            hashtag: topic.hashtag,
+            title: `#${topic.hashtag}`,
+            category: "Hashtag",
+            postCount: topic.postCount,
+            engagement: topic.engagement,
+            // "up" while the topic hit a new high recently; otherwise holding steady.
+            trend: (topic.peakTimestamp.getTime() >= risingSince ? "up" : "steady") as
+              "up" | "steady",
+          }));
       } catch (error) {
         console.error("Error fetching trending topics:", error);
         return [];
@@ -136,9 +93,11 @@ export const activitiesTrendingRouter = createTRPCRouter({
 
       // ── 1. ThinkPages trending posts ──
       try {
+        // Scored by the thinkpages-trending cron (engagement-decay over real reactions, replies
+        // and reposts); posts with no engagement from other users do not appear.
         const posts = await ctx.db.thinkpagesPost.findMany({
-          where: { visibility: "public", createdAt: { gte: last48h } },
-          orderBy: { impressions: "desc" },
+          where: { visibility: "public", trendingScore: { gt: 0 } },
+          orderBy: { trendingScore: "desc" },
           take: 30,
           include: {
             account: { select: { username: true, displayName: true, verified: true } },
@@ -146,9 +105,7 @@ export const activitiesTrendingRouter = createTRPCRouter({
         });
 
         for (const post of posts) {
-          const raw =
-            post.repostCount * 3 + post.replyCount * 2 + post.likeCount + post.impressions * 0.01;
-          const score = raw * timeDecay(post.createdAt);
+          const score = post.trendingScore;
           let title = `@${post.account?.username ?? "unknown"}`;
           const cleanContent = post.content
             .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")

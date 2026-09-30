@@ -44,3 +44,11 @@ export function resolveReactionCounts(
     return acc;
   }, {});
 }
+
+/** A persona's name as shown in notification titles: display name, else `@username`. */
+export function personaDisplayName(account: {
+  displayName?: string | null;
+  username?: string | null;
+}): string | undefined {
+  return account.displayName?.trim() || (account.username ? `@${account.username}` : undefined);
+}
