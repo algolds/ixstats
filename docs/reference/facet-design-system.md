@@ -153,6 +153,20 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 Hero identity (e.g. MyCountry's `FlagWatermark` corner flag and `TintHairline`) may add a small corner image watermark, a
 tint glow and a tint hairline behind a card's content — never a full-width image wash; it must be `aria-hidden`, not printed, and sit behind the content.
 
+**Swipe actions** (`FacetRow` `swipeActions`, `SwipeableRow` in `src/components/ui/facet/swipeable`) are a pointer
+shortcut, never the only way to an action. Keyboard model:
+
+- The row adds no tab stop around a focusable child (a `FacetRow` button or link): Tab lands on the child and
+  Enter/Space activate it. Only keys pressed on the row itself are handled by the row; keys from children are theirs.
+- **Shift+F10 / ContextMenu** on the focused row (or anything inside it, text fields excepted) opens an **Actions**
+  menu with the swipe actions under the same labels (a commit action appears when no button carries its label).
+  Focus returns to where it was when the menu closes.
+- A row with nothing focusable inside is itself the single tab stop (`role="group"`, `aria-keyshortcuts`): Enter/Space
+  toggle `SwipeableRow.Expanded` (or open the menu), Delete/Backspace run the trailing commit, Escape closes.
+- Tray buttons stay in the accessibility tree for screen-reader browse mode but out of the tab order. A plain click on
+  a child is never swallowed (the pointer is captured only once a drag passes the dead zone); a click that ends a drag
+  or taps a swiped-open row is.
+
 ## 4. Controls
 
 | Component | Notes |

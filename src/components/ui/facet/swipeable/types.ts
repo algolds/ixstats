@@ -83,6 +83,13 @@ export interface SwipeableRowProps {
   expanded?: boolean;
   /** Callback fired when expanded state changes */
   onExpandedChange?: (expanded: boolean) => void;
+  /**
+   * Accessible name for the row. Only used when the row itself is a tab stop, i.e. when its
+   * content has no focusable element of its own.
+   */
+  "aria-label"?: string;
+  /** Accessible name of the keyboard actions menu (default: "Actions"). */
+  actionsLabel?: string;
   /** Children (compound component sub-elements) */
   children: ReactNode;
 }

@@ -11,8 +11,8 @@
  * - RTL-aware direction flipping
  *
  * Based on the pointer-capture pattern from apple-switch.tsx:
- * - onPointerDown  → capture pointer, record start position
- * - onPointerMove  → update motion value, track velocity
+ * - onPointerDown  → record start position
+ * - onPointerMove  → past the dead zone, capture the pointer; update motion value, track velocity
  * - onPointerUp    → evaluate snap point, spring to target
  */
 
@@ -211,7 +211,9 @@ export function useSwipePhysics({
       if (e.pointerType === "mouse" && e.button !== 0) return;
 
       e.stopPropagation();
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      // Capture only once a real drag starts (see handlePointerMove): capturing on press would
+      // retarget the click to this element, so a plain click on an interactive child (a row's
+      // button or link) would never reach it.
       activePointerId.current = e.pointerId;
       isDragging.current = false;
       wasDrag.current = false;
@@ -230,7 +232,8 @@ export function useSwipePhysics({
       if (disabled) return;
       if (activePointerId.current === null) return;
       if (e.pointerId !== activePointerId.current) return;
-      if (!(e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) return;
+      const el = e.currentTarget as HTMLElement;
+      if (isDragging.current && el.hasPointerCapture?.(e.pointerId) === false) return;
 
       e.stopPropagation();
       const deltaX = e.clientX - dragStartX.current;
@@ -242,6 +245,11 @@ export function useSwipePhysics({
         if (Math.abs(deltaX) < DRAG_DEAD_ZONE) return;
         isDragging.current = true;
         wasDrag.current = true;
+        try {
+          el.setPointerCapture?.(e.pointerId);
+        } catch {
+          // The pointer is no longer active; the drag continues on bubbled events.
+        }
         setState("dragging");
       }
 
@@ -316,7 +324,7 @@ export function useSwipePhysics({
       if (e.pointerId !== activePointerId.current) return;
 
       e.stopPropagation();
-      if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
+      if ((e.currentTarget as HTMLElement).hasPointerCapture?.(e.pointerId)) {
         (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
       }
 
@@ -390,7 +398,7 @@ export function useSwipePhysics({
     (e: React.PointerEvent) => {
       e.stopPropagation();
       if (activePointerId.current !== null) {
-        if ((e.currentTarget as HTMLElement).hasPointerCapture(activePointerId.current)) {
+        if ((e.currentTarget as HTMLElement).hasPointerCapture?.(activePointerId.current)) {
           (e.currentTarget as HTMLElement).releasePointerCapture(activePointerId.current);
         }
       }

@@ -18,7 +18,6 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
-import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useIxTimeStore } from "~/stores/ixtime-store";
@@ -60,8 +59,6 @@ function ExecutiveAgendaComponent({
   const [openId, setOpenId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const archivedId = useId();
-  // Swipe actions are for touch; mouse and keyboard users act from the opened item.
-  const coarsePointer = useMediaQuery("(pointer: coarse)");
 
   // IxTime "now", quantised so derivation does not re-run every tick.
   const nowIxTime = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 60_000) * 60_000);
@@ -122,42 +119,42 @@ function ExecutiveAgendaComponent({
     setOpenId(view.item.id);
   };
 
-  const swipeFor = (view: InboxView): FacetRowSwipeActions | undefined =>
-    coarsePointer
-      ? {
-          leading: [
-            {
-              id: "read",
-              icon: view.read ? Mail : MailOpen,
-              label: view.read ? "Unread" : "Read",
-              color: "blue",
-              onClick: () => inbox.setRead([view.item], !view.read),
-            },
-          ],
-          trailing: [
-            {
-              id: "snooze",
-              icon: Clock,
-              label: "Snooze",
-              "aria-label": "Snooze for a day",
-              color: "amber",
-              onClick: () => inbox.snooze(view.item, SNOOZE_DAY_MS),
-            },
-            {
-              id: "done",
-              icon: Archive,
-              label: "Done",
-              color: "green",
-              onClick: () => inbox.markDone(view.item),
-            },
-          ],
-          trailingCommit: {
-            label: "Done",
-            icon: Archive,
-            action: () => inbox.markDone(view.item),
-          },
-        }
-      : undefined;
+  // Swipe on touch or trackpad; Shift+F10 / the ContextMenu key on a focused row opens the same
+  // actions as a menu (SwipeableRow), and every action is also in the opened item.
+  const swipeFor = (view: InboxView): FacetRowSwipeActions => ({
+    leading: [
+      {
+        id: "read",
+        icon: view.read ? Mail : MailOpen,
+        label: view.read ? "Unread" : "Read",
+        "aria-label": view.read ? "Mark as unread" : "Mark as read",
+        color: "blue",
+        onClick: () => inbox.setRead([view.item], !view.read),
+      },
+    ],
+    trailing: [
+      {
+        id: "snooze",
+        icon: Clock,
+        label: "Snooze",
+        "aria-label": "Snooze for a day",
+        color: "amber",
+        onClick: () => inbox.snooze(view.item, SNOOZE_DAY_MS),
+      },
+      {
+        id: "done",
+        icon: Archive,
+        label: "Done",
+        color: "green",
+        onClick: () => inbox.markDone(view.item),
+      },
+    ],
+    trailingCommit: {
+      label: "Done",
+      icon: Archive,
+      action: () => inbox.markDone(view.item),
+    },
+  });
 
   return (
     <>

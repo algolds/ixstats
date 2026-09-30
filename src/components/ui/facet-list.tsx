@@ -134,7 +134,7 @@ export interface FacetRowSwipeActions {
   trailing?: SwipeAction[];
   /** Full swipe right. */
   leadingCommit?: SwipeCommitAction;
-  /** Full swipe left (also Delete/Backspace on the focused row). */
+  /** Full swipe left (also Delete/Backspace when the row itself is focused, i.e. a static row). */
   trailingCommit?: SwipeCommitAction;
 }
 
@@ -155,7 +155,10 @@ interface FacetRowBaseProps {
   disabled?: boolean;
   /** Destructive action (red title and icon). */
   destructive?: boolean;
-  /** Optional swipe actions (`SwipeableRow`). */
+  /**
+   * Optional swipe actions (`SwipeableRow`). Keyboard users open the same actions as a menu with
+   * Shift+F10 or the ContextMenu key on the focused row.
+   */
   swipeActions?: FacetRowSwipeActions;
   className?: string;
   /** Classes for the `<li>`. */

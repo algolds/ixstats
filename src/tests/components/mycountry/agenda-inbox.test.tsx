@@ -263,6 +263,21 @@ describe("ExecutiveAgenda inbox", () => {
     expect(within(inboxList()).getByText("Issue a")).toBeTruthy();
   });
 
+  it("offers the swipe actions from the keyboard (Shift+F10) on any pointer", () => {
+    render(<ExecutiveAgenda countryId="c1" />);
+    const row = screen.getByRole("button", { name: /Issue a/ });
+    fireEvent.keyDown(row, { key: "F10", shiftKey: true });
+    const menu = screen.getByRole("menu", { name: "Actions" });
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((i) => i.getAttribute("aria-label") ?? i.textContent)
+    ).toEqual(["Mark as read", "Snooze for a day", "Done"]);
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Done" }));
+    expect(within(inboxList()).queryByText("Issue a")).toBeNull();
+    expect(readInboxStore("c1")["issue:a"]?.done).toBe(true);
+  });
+
   it("shows Inbox zero with Declare Directive when nothing is waiting", () => {
     mockIssues = [];
     mockIntents = [];
