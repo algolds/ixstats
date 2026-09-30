@@ -4,9 +4,6 @@
  * MediaWiki's copy of the page (`&page=`), which is stale until the background export lands.
  */
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
-  saveArticleHtmlShadow: jest.fn(),
-}));
 
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 

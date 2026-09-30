@@ -86,54 +86,6 @@ export async function getRevisionWikitextShadow(
 }
 
 /**
- * Fetch pre-rendered HTML from PostgreSQL
- */
-export async function getArticleHtmlShadow(
-  title: string,
-  source: WikiSource = "ixwiki"
-): Promise<{ html: string; timestamp?: string } | null> {
-  const article = await ArticleRepository.findBySlug(title, source);
-  if (article && article.contentHtml) {
-    return {
-      html: article.contentHtml,
-      timestamp: article.updatedAt.toISOString(),
-    };
-  }
-  return null;
-}
-
-/**
- * Save pre-rendered HTML to PostgreSQL article record.
- *
- * `renderedFromWikitext`: the wikitext the HTML was rendered from. When given, the write only
- * lands if the article still holds that wikitext, so a slow render cannot overwrite the cache of a
- * newer save.
- */
-export async function saveArticleHtmlShadow(
-  title: string,
-  html: string,
-  source: WikiSource = "ixwiki",
-  renderedFromWikitext?: string
-): Promise<void> {
-  try {
-    const slug = toArticleSlug(title);
-    await db.wikiArticle.updateMany({
-      where: {
-        source,
-        OR: [{ slug }, { title: title.replace(/_/g, " ") }],
-        ...(renderedFromWikitext !== undefined ? { wikitext: renderedFromWikitext } : {}),
-      },
-      data: {
-        contentHtml: html,
-        updatedAt: new Date(),
-      },
-    });
-  } catch {
-    // Best-effort
-  }
-}
-
-/**
  * Fetch revision history from PostgreSQL, falling back to MediaWiki.
  */
 export async function getPageHistoryShadow(
