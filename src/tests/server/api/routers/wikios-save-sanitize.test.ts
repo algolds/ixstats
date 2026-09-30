@@ -381,7 +381,13 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
     });
     jest
       .mocked(getRevisionWikitextShadow)
-      .mockResolvedValue({ wikitext: "old", title: "Caphiria", timestamp: "", fromShadow: true });
+      .mockResolvedValue({
+        wikitext: "old",
+        title: "Caphiria",
+        source: "ixwiki",
+        timestamp: "",
+        fromShadow: true,
+      });
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
         {
@@ -482,6 +488,41 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
       createCaller(userCtx("Linked") as never).uploadFile({ ...upload, filename: "File:Flag.png" })
     ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
     expect(executeMediaWikiWrite).toHaveBeenCalledTimes(1);
+  });
+
+  it("will not save over a deleted page: an administrator restores it first", async () => {
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
+    mockGroups("rollbacker");
+    const caller = createCaller(userCtx("Linked") as never);
+    const refused = {
+      code: "PRECONDITION_FAILED",
+      message: "This page was deleted; ask an administrator to restore it",
+    };
+
+    await expect(caller.saveWikitext({ title: "Gone", wikitext: "x" })).rejects.toMatchObject(
+      refused
+    );
+    await expect(caller.revertToRevision({ title: "Gone", revid: "r1" })).rejects.toMatchObject(
+      refused
+    );
+    await expect(caller.rollback({ title: "Gone" })).rejects.toMatchObject(refused);
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+    expect(MediaWikiExportWorker.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("checks the caller's rights on a deleted title before telling them it was deleted", async () => {
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
+    const caller = createCaller(userCtx("Linked") as never);
+
+    await expect(
+      caller.saveWikitext({ title: "Template:Gone", wikitext: "x" })
+    ).rejects.toMatchObject({
+      message: expect.stringMatching(/^namespaceprotected: /),
+    });
+    mockBlocks({ reason: "spam", allowUserTalk: true });
+    await expect(caller.saveWikitext({ title: "Gone", wikitext: "x" })).rejects.toMatchObject({
+      message: expect.stringMatching(/^blocked: /),
+    });
   });
 
   it("lets the IxStates admin role act as a sysop: edit Template:, roll back, but not edit site JS", async () => {

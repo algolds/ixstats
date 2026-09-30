@@ -30,9 +30,21 @@ import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
 /**
+ * The refusal for saving over a deleted (archived) page. Its old revisions stay in the table and the
+ * history readers do not hide them by deletion date, so a save must not quietly republish them: an
+ * administrator restores the page first.
+ */
+const deletedPage = () =>
+  new TRPCError({
+    code: "PRECONDITION_FAILED",
+    message: "This page was deleted; ask an administrator to restore it",
+  });
+
+/**
  * Throws FORBIDDEN unless the caller may edit `title` (or create it, when it does not exist): not
  * blocked, allowed in its namespace, past its protection, and holding the right (see
- * `authorizeAction`). A deleted (archived) page counts as missing, as in MediaWiki.
+ * `authorizeAction`). A deleted (archived) page counts as missing for those checks, as in MediaWiki,
+ * but cannot be saved over (PRECONDITION_FAILED).
  */
 async function assertCanEditArticle(
   ctx: WikiAuthContext,
@@ -40,8 +52,9 @@ async function assertCanEditArticle(
   realm = "ixwiki"
 ): Promise<void> {
   const existing = await ArticleRepository.findBySlug(title, realm);
-  const exists = existing !== null && existing.status !== "ARCHIVED";
-  await authorizeAction(ctx, exists ? "edit" : "create", title, realm);
+  const archived = existing?.status === "ARCHIVED";
+  await authorizeAction(ctx, existing && !archived ? "edit" : "create", title, realm);
+  if (archived) throw deletedPage();
 }
 
 /**
@@ -230,6 +243,7 @@ export const wikiosEditingRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
       await authorizeAction(ctx, "rollback", title);
+      if ((await ArticleRepository.findBySlug(title))?.status === "ARCHIVED") throw deletedPage();
 
       // Read-through: serve from shadow history with MySQL fallback
       const history = await getArticleHistoryShadow(title, 50);
