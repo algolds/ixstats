@@ -58,8 +58,8 @@ export function VaultShowcaseGrid({
                 Start your collection
               </h4>
               <p className="text-muted-foreground text-xs leading-relaxed">
-                Browse the lore Card Gallery, collect the nations and figures of the world, and
-                earn IxCredits as your collection grows.
+                Browse the lore Card Gallery, collect the nations and figures of the world, and earn
+                IxCredits as your collection grows.
               </p>
               <button
                 onClick={() => onNavigate?.("cards")}
