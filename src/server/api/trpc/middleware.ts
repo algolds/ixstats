@@ -178,15 +178,25 @@ export const rateLimitMiddleware = createRateLimitMiddleware({
   namespace: "default",
 });
 
-export const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+/**
+ * Audit log for admin procedures (applied in `adminProcedure`, after the admin check).
+ *
+ * tRPC v11 `next()` resolves `{ ok: false, error }` instead of throwing when the procedure fails,
+ * so the outcome is read from the result; a throw is still handled for safety. Every admin
+ * mutation, every failed call and every HIGH-sensitivity path is written to `AuditLog`
+ * (skipped in read-only mode). The IP comes from trusted headers only (see
+ * resolveRateLimitIdentifier), never the client-controlled `x-forwarded-for`.
+ */
+export const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input, type }) => {
   const startTime = Date.now();
-  let result;
-  let error = null;
+  let result: Awaited<ReturnType<typeof next>> | undefined;
+  let thrown: unknown = null;
 
   try {
     result = await next();
+    return result;
   } catch (err) {
-    error = err as Error;
+    thrown = err;
     throw err;
   } finally {
     const endTime = Date.now();
@@ -195,71 +205,85 @@ export const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }
       console.log(`[TRPC] ${path} took ${duration}ms to execute`);
     }
 
-    const shouldAudit =
-      path.includes("execute") ||
-      path.includes("Action") ||
-      path.includes("executive") ||
-      path.includes("Intelligence") ||
-      path.includes("sensitive") ||
-      error;
+    const failure: unknown = thrown ?? (result && !result.ok ? result.error : null);
+    const failed = failure !== null && failure !== undefined;
+    const errorMessage = failed
+      ? failure instanceof Error
+        ? failure.message
+        : String(failure)
+      : null;
+    const isMutation = type === "mutation";
 
-    if (shouldAudit) {
-      const auditEntry = {
-        timestamp: new Date().toISOString(),
-        userId: ctx.auth?.userId || "anonymous",
-        action: path,
-        method: "tRPC",
-        success: !error,
-        duration: endTime - startTime,
-        errorMessage: error?.message || null,
-        countryId: (input as any)?.countryId || ctx.user?.countryId || null,
-        userAgent: ctx.headers?.get("user-agent")?.slice(0, 200) || null,
-        ip: ctx.headers?.get("x-forwarded-for") || ctx.headers?.get("x-real-ip") || null,
-        inputSummary: input ? Object.keys(input as object).join(",") : null,
-        securityLevel: path.includes("execute")
-          ? "HIGH"
-          : path.includes("Intelligence")
-            ? "MEDIUM"
-            : "LOW",
-        impersonatorId: (ctx as any).impersonatorId || null,
-      };
+    const securityLevel = path.includes("execute")
+      ? "HIGH"
+      : isMutation
+        ? "MEDIUM"
+        : path.includes("Intelligence")
+          ? "MEDIUM"
+          : "LOW";
 
-      if (auditEntry.securityLevel === "HIGH" || error) {
+    const shouldPersist = isMutation || failed || securityLevel === "HIGH";
+
+    const auditEntry = {
+      timestamp: new Date().toISOString(),
+      userId: ctx.auth?.userId || "anonymous",
+      action: path,
+      method: "tRPC",
+      type,
+      success: !failed,
+      duration,
+      errorMessage,
+      countryId: (input as any)?.countryId || ctx.user?.countryId || null,
+      userAgent: ctx.headers?.get("user-agent")?.slice(0, 200) || null,
+      ip: ctx.headers?.get("cf-connecting-ip") || ctx.headers?.get("x-real-ip") || null,
+      inputSummary:
+        input && typeof input === "object" ? Object.keys(input as object).join(",") : null,
+      securityLevel,
+      impersonatorId: (ctx as any).impersonatorId || null,
+    };
+
+    if (shouldPersist) {
+      if (failed || securityLevel === "HIGH") {
         console.error("[SECURITY_AUDIT]", auditEntry);
-
-        if (!isDatabaseReadOnly) {
-          try {
-            await ctx.db.auditLog.create({
-              data: {
-                userId: auditEntry.userId || "anonymous",
-                action: auditEntry.action,
-                details: JSON.stringify({
-                  method: auditEntry.method,
-                  duration: auditEntry.duration,
-                  securityLevel: auditEntry.securityLevel,
-                  ip: auditEntry.ip,
-                  userAgent: auditEntry.userAgent,
-                  inputSummary: auditEntry.inputSummary,
-                  impersonatorId: auditEntry.impersonatorId,
-                }),
-                success: auditEntry.success,
-                error: auditEntry.errorMessage,
-                timestamp: new Date(),
-              },
-            });
-          } catch (dbError) {
-            console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
-          }
-        } else if (VERBOSE) {
-          console.log("[AUDIT_DB] Skipping database write (read-only mode)");
-        }
       } else if (VERBOSE) {
         console.log("[AUDIT]", auditEntry);
       }
+
+      if (!isDatabaseReadOnly) {
+        try {
+          await ctx.db.auditLog.create({
+            data: {
+              userId: auditEntry.userId,
+              action: auditEntry.action,
+              entityType: "trpc_admin",
+              ipAddress: auditEntry.ip,
+              userAgent: auditEntry.userAgent,
+              details: JSON.stringify({
+                method: auditEntry.method,
+                type: auditEntry.type,
+                duration: auditEntry.duration,
+                securityLevel: auditEntry.securityLevel,
+                ip: auditEntry.ip,
+                userAgent: auditEntry.userAgent,
+                countryId: auditEntry.countryId,
+                inputSummary: auditEntry.inputSummary,
+                impersonatorId: auditEntry.impersonatorId,
+              }),
+              success: auditEntry.success,
+              error: auditEntry.errorMessage,
+              timestamp: new Date(),
+            },
+          });
+        } catch (dbError) {
+          console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
+        }
+      } else if (VERBOSE) {
+        console.log("[AUDIT_DB] Skipping database write (read-only mode)");
+      }
+    } else if (VERBOSE) {
+      console.log("[AUDIT]", auditEntry);
     }
   }
-
-  return result;
 });
 
 export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
