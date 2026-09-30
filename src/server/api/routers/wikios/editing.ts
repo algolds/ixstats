@@ -69,7 +69,8 @@ function requireCanonicalTitle(rawTitle: string): string {
 /**
  * The wikitext a revert or rollback may save over `title`, from the revision it restores. Throws
  * when the text was never imported (a placeholder must not blank the page), when the revision
- * belongs to another page, or when it would blank a page that has text (admins may).
+ * belongs to another page, or when it would blank a page that has text (admins may). Text that is
+ * only whitespace counts as blank on both sides.
  */
 async function requireRestorableWikitext(
   ctx: WikiAuthContext,
@@ -89,9 +90,9 @@ async function requireRestorableWikitext(
       message: "That revision belongs to a different page.",
     });
   }
-  if (wikitext === "" && !isWikiAdmin(ctx)) {
+  if (wikitext.trim() === "" && !isWikiAdmin(ctx)) {
     const current = await ArticleRepository.findBySlug(title);
-    if (current?.wikitext) {
+    if ((current?.wikitext ?? "").trim() !== "") {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",
         message: "Restoring this revision would blank the page. Only administrators can do that.",

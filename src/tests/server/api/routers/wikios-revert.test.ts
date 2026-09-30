@@ -198,6 +198,24 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
     );
   });
 
+  it("treats whitespace-only text as blank: a revision of it cannot blank a page that has text", async () => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(" \n\t  \n"));
+
+    await expect(
+      createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "r1" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expectNothingSaved();
+  });
+
+  it("lets anyone restore a blank revision over a page that is only whitespace", async () => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(""));
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(currentArticle("  \n "));
+
+    await createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "r1" });
+
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+  });
+
   it("lets anyone restore an empty revision over a page that is already empty", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(""));
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(currentArticle(""));
