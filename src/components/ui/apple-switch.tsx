@@ -1,9 +1,22 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotionConfig,
+  useSpring,
+  useTransform,
+} from "motion/react";
 import { forwardRef, useEffect, useId, useRef, useState } from "react";
 import { cn } from "~/lib/utils/cn";
 import { clamp } from "~/lib/utils/math";
+import { DURATION_FAST, springSnappy } from "~/lib/design/motion";
+
+/**
+ * Switch (spec §7.2): `role="switch"` + `aria-checked`. Off track `fill-2`, on track the tint
+ * (`tone` picks another on colour); the white thumb follows `spring-snappy`, can be dragged, and
+ * widens while held. Under Reduce Motion the thumb moves in a 150ms tween. 44px hit area on touch.
+ */
 
 const switchSizes = {
   sm: {
@@ -29,37 +42,16 @@ const switchSizes = {
   },
 } as const;
 
+/** On-track colour per tone. `neutral` and `accent` follow the app tint (§2.2). */
 const switchTones = {
-  neutral: {
-    off: "color-mix(in srgb, var(--muted) 82%, transparent)",
-    on: "#34c759",
-    thumb: "var(--color-white)",
-    glow: "color-mix(in srgb, #34c759 32%, transparent)",
-  },
-  accent: {
-    off: "color-mix(in srgb, var(--muted) 82%, transparent)",
-    on: "var(--foreground)",
-    thumb: "var(--color-white)",
-    glow: "var(--facet-halo-glow-color, color-mix(in srgb, var(--accent) 42%, transparent))",
-  },
-  discord: {
-    off: "color-mix(in srgb, var(--muted) 82%, transparent)",
-    on: "var(--color-discord, #5865F2)",
-    thumb: "var(--color-white)",
-    glow: "color-mix(in srgb, var(--color-discord, #5865F2) 32%, transparent)",
-  },
+  neutral: "bg-tint",
+  accent: "bg-tint",
+  success: "bg-success",
+  discord: "bg-discord",
 } as const;
 
-const thumbSpring = {
-  stiffness: 700,
-  damping: 48,
-  mass: 0.55,
-};
-
-const grabSpring = {
-  stiffness: 500,
-  damping: 25,
-};
+const thumbSpring = { stiffness: springSnappy.stiffness, damping: springSnappy.damping };
+const reducedThumbSpring = { visualDuration: DURATION_FAST, bounce: 0 };
 
 interface AppleSwitchProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -109,26 +101,22 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
     const [uncontrolledChecked, setUncontrolledChecked] = useState(Boolean(defaultChecked));
     const currentChecked = checked ?? uncontrolledChecked;
     const metrics = switchSizes[size];
-    const colors = switchTones[tone];
+    const onTrack = switchTones[tone];
+    // Follows MotionConfig (FacetMotionConfig: OS + in-app Reduce Motion).
+    const reduceMotion = useReducedMotionConfig();
     const thumbTravel = metrics.trackX - metrics.thumbX - metrics.padding * 2;
     const targetX = useMotionValue(currentChecked ? thumbTravel : 0);
-    const thumbX = useSpring(targetX, thumbSpring);
+    const thumbX = useSpring(targetX, reduceMotion ? reducedThumbSpring : thumbSpring);
     const grabTarget = useMotionValue(0);
-    const grabProgress = useSpring(grabTarget, grabSpring);
+    const grabProgress = useSpring(grabTarget, reduceMotion ? reducedThumbSpring : thumbSpring);
+    // While held, the thumb stretches (never taller than the track).
     const thumbWidth = useTransform(
       grabProgress,
       [0, 1],
-      [metrics.thumbX, metrics.thumbX + metrics.padding * 4.5]
+      [metrics.thumbX, metrics.thumbX + metrics.padding * 2]
     );
-    const thumbHeight = useTransform(
-      grabProgress,
-      [0, 1],
-      [metrics.thumbY, metrics.thumbY + metrics.padding * 2.3]
-    );
+    const thumbHeight = metrics.thumbY;
     const thumbOffsetX = useTransform(() => thumbX.get() - (thumbWidth.get() - metrics.thumbX) / 2);
-    const liquidOpacity = useTransform(grabProgress, [0, 1], [0, 0.76]);
-    const liquidScale = useTransform(grabProgress, [0, 1], [0.82, 1.08]);
-    const thumbOpacity = useTransform(grabProgress, [0, 1], [1, 0.2]);
     const dragStartX = useRef(0);
     const dragStartThumbX = useRef(0);
     const isDragging = useRef(false);
@@ -136,8 +124,6 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
     const suppressNextClick = useRef(false);
     const activeProgress = useTransform(thumbX, [0, thumbTravel], [0, 1]);
     const fillOpacity = useTransform(activeProgress, [0, 1], [0, 1]);
-    const glowOpacity = useTransform(activeProgress, [0, 0.7, 1], [0, 0.18, 0.2]);
-    const glowScale = useTransform(activeProgress, [0, 1], [0.82, 1]);
 
     useEffect(() => {
       if (activePointerId.current !== null) return;
@@ -261,8 +247,9 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
         ref={ref}
         type={type}
         role="switch"
-        data-cuelume-toggle=""
         aria-checked={currentChecked}
+        data-slot="switch"
+        data-state={currentChecked ? "checked" : "unchecked"}
         disabled={disabled}
         onClick={handleClick}
         onPointerCancel={handlePointerCancel}
@@ -275,9 +262,9 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
         aria-label={typeof label === "string" ? label : props["aria-label"]}
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full active:cursor-grabbing",
-          "border border-white/35 bg-white/10 shadow-inner backdrop-blur-md",
-          "focus-visible:ring-ring focus-visible:ring-offset-background outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-          "disabled:cursor-not-allowed disabled:opacity-45",
+          "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          "pointer-coarse:after:absolute pointer-coarse:after:top-1/2 pointer-coarse:after:left-1/2 pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 pointer-coarse:after:-translate-x-1/2 pointer-coarse:after:-translate-y-1/2",
           className
         )}
         style={{
@@ -288,65 +275,22 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
         }}
         {...props}
       >
-        <motion.span
-          className="pointer-events-none absolute -inset-1 rounded-full blur-md"
-          style={{
-            backgroundColor: colors.glow,
-            opacity: glowOpacity,
-            scale: glowScale,
-          }}
-        />
-
-        <span className="absolute inset-0 overflow-hidden rounded-full">
-          <span
-            className="absolute inset-0 rounded-full"
-            style={{
-              backgroundColor: colors.off,
-              boxShadow:
-                "inset 0 1px 1px rgba(255,255,255,0.34), inset 0 -1px 2px rgba(0,0,0,0.08)",
-            }}
-          />
-
+        <span aria-hidden className="absolute inset-0 overflow-hidden rounded-full bg-fill-2">
           <motion.span
-            className="absolute inset-0 rounded-full"
-            style={{
-              backgroundColor: colors.on,
-              opacity: fillOpacity,
-            }}
+            className={cn("absolute inset-0 rounded-full", onTrack)}
+            style={{ opacity: fillOpacity }}
           />
         </span>
 
         <motion.span
-          className="pointer-events-none absolute left-0 z-9 block rounded-full"
-          style={{
-            width: thumbWidth,
-            height: thumbHeight,
-            x: thumbOffsetX,
-            top: "50%",
-            y: "-50%",
-            marginLeft: metrics.padding,
-            background: "color-mix(in srgb, var(--background) 82%, transparent)",
-            opacity: liquidOpacity,
-            scale: liquidScale,
-            filter: "blur(9px)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-          }}
-        />
-
-        <motion.span
-          className="pointer-events-none z-10 block rounded-full"
+          aria-hidden
+          className="pointer-events-none relative block rounded-full bg-white"
           style={{
             width: thumbWidth,
             height: thumbHeight,
             x: thumbOffsetX,
             marginLeft: metrics.padding,
-            backgroundColor: colors.thumb,
-            opacity: thumbOpacity,
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            boxShadow:
-              "0 3px 11px rgba(0,0,0,0.24), 0 1px 1px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.78), inset 0 -1px 1px rgba(0,0,0,0.05)",
+            boxShadow: "0 2px 6px rgb(0 0 0 / 0.2), 0 1px 1px rgb(0 0 0 / 0.1)",
           }}
         />
       </button>
@@ -364,15 +308,19 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
       >
         {labelSide === "left" && (
           <span className="flex flex-col gap-0.5 text-right">
-            <span className="text-foreground text-sm font-medium">{label}</span>
-            {description && <span className="text-muted-foreground text-xs">{description}</span>}
+            <span className="text-body font-medium text-label">{label}</span>
+            {description && (
+              <span className="text-footnote text-label-secondary">{description}</span>
+            )}
           </span>
         )}
         {switchEl}
         {labelSide === "right" && (
           <span className="flex flex-col gap-0.5">
-            <span className="text-foreground text-sm font-medium">{label}</span>
-            {description && <span className="text-muted-foreground text-xs">{description}</span>}
+            <span className="text-body font-medium text-label">{label}</span>
+            {description && (
+              <span className="text-footnote text-label-secondary">{description}</span>
+            )}
           </span>
         )}
       </label>
