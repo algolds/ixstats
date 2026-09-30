@@ -12,18 +12,19 @@ export type HistoryItem = PassportOutputs["getHistory"]["items"][number];
 
 export type PassportWiki = PassportPayload["wiki"];
 
-export type PassportVault = PassportPayload["vault"];
+/** The Vault section; the payload carries null instead when the owner hides it. */
+export type PassportVault = NonNullable<PassportPayload["vault"]>;
+
+export type PassportAchievements = NonNullable<PassportPayload["showcase"]["achievements"]>;
+
+export type PassportRibbon = PassportAchievements["ribbons"][number];
+
+export type PassportSettings = PassportOutputs["getPassportSettings"];
 
 export type PassportTabType = "overview" | "realms" | "work" | "vault" | "history";
 
 /**
- * Owner's display toggles on the passport's back face. Session-only view preview: not persisted, and they
- * do not change what other viewers see (the public passport always includes these sections).
+ * Owner's passport visibility, saved in `PassportPreference`. A hidden section is stripped from the
+ * public passport server-side, so it is absent for every viewer (owner included).
  */
-export interface PassportVisibility {
-  accolades: boolean;
-  impact: boolean;
-  forumStats: boolean;
-  vaultCards: boolean;
-  historyStream: boolean;
-}
+export type PassportVisibility = PassportPayload["privacy"];

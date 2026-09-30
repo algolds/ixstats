@@ -11,7 +11,7 @@ import { PassportStatGrid } from "./document/PassportStatGrid";
 import { PassportTabRibbon } from "./document/PassportTabRibbon";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
-import type { PassportPayload, PassportTabType, PassportVisibility } from "./types";
+import type { PassportPayload, PassportTabType } from "./types";
 
 interface MidRibbonPassportDocumentProps {
   cleanUsername: string;
@@ -47,14 +47,6 @@ function getHighResolutionAvatar(url: string | null, size = 600): string | null 
   }
 }
 
-const DEFAULT_VISIBILITY: PassportVisibility = {
-  accolades: true,
-  impact: true,
-  forumStats: true,
-  vaultCards: true,
-  historyStream: true,
-};
-
 export function MidRibbonPassportDocument({
   cleanUsername,
   displayName,
@@ -77,16 +69,11 @@ export function MidRibbonPassportDocument({
   // High-Resolution Avatar for physical passport biometric rendering
   const highResAvatarUrl = getHighResolutionAvatar(avatarUrl, 800);
 
-  // Editable Signature State
-  const [signature, setSignature] = useState(displayName);
+  // Saved signature inscription (PassportPreference.signature); the display name when unset.
+  const signature = data.account.signature || displayName;
 
-  // Passport presentation & privacy preferences
-  const [visibility, setVisibility] = useState<PassportVisibility>(DEFAULT_VISIBILITY);
-  const handleVisibilityChange = useCallback(
-    (key: keyof PassportVisibility, value: boolean) =>
-      setVisibility((current) => ({ ...current, [key]: value })),
-    []
-  );
+  // Saved section visibility: hidden sections are already absent from `data`.
+  const visibility = data.privacy;
 
   const handleCopyHandle = useCallback(async () => {
     try {
@@ -112,7 +99,7 @@ export function MidRibbonPassportDocument({
     : "RECENT";
 
   const vault = data.vault;
-  const ribbonCounts = { realms: data.realmCount, vault: vault.totalCards };
+  const ribbonCounts = { realms: data.realmCount, vault: vault?.totalCards };
 
   // Apple §4 springs: flip is interruptible, from presentation value
   const flipTransition = shouldReduceMotion
@@ -179,7 +166,7 @@ export function MidRibbonPassportDocument({
                       SIGNATURE
                     </span>
                     <span className="text-foreground/90 block truncate font-serif text-sm font-medium tracking-wider italic select-none">
-                      {signature || displayName}
+                      {signature}
                     </span>
                   </div>
                 </div>
@@ -246,7 +233,7 @@ export function MidRibbonPassportDocument({
                   <PassportStatGrid
                     visibility={visibility}
                     lorewards={data.wiki.lorewards}
-                    forum={data.forum}
+                    forumStats={data.forum.stats}
                     vault={vault}
                     onOpenLorewards={handleOpenLorewards}
                     onOpenVault={handleOpenVault}
@@ -299,7 +286,7 @@ export function MidRibbonPassportDocument({
                     activeTab={activeTab}
                     handle={cleanUsername}
                     data={data}
-                    showHistory={visibility.historyStream}
+                    onOpenVault={handleOpenVault}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -314,10 +301,7 @@ export function MidRibbonPassportDocument({
           isFlipped={isFlipped}
           shouldReduceMotion={Boolean(shouldReduceMotion)}
           displayName={displayName}
-          signature={signature}
-          onSignatureChange={setSignature}
-          visibility={visibility}
-          onVisibilityChange={handleVisibilityChange}
+          isOwner={isOwner}
           onDone={handleDone}
         />
       </motion.div>

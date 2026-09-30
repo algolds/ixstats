@@ -1,5 +1,6 @@
 /**
- * Vault summary for a passport: collector level, credits, deck value and the newest cards.
+ * Vault summary for a passport: collector level, credits, deck value, category focus and the
+ * collection highlight (the most valuable live cards).
  * (Moved from routers/ixnayid/passport-vault.ts, now typed.)
  */
 import type { Prisma } from "@prisma/client";
@@ -37,13 +38,51 @@ type OwnershipRow = Prisma.CardOwnershipGetPayload<{
   include: { cards: { select: typeof CARD_SELECT } };
 }>;
 
+/** Lore card categories a collection can span (every `LoreCategory` except `NS_IMPORT`). */
+export const LORE_CATEGORY_COUNT = 12;
+
+/** How many cards the collection highlight shows. */
+export const COLLECTION_HIGHLIGHT_SIZE = 6;
+
+export interface PassportVaultFocus {
+  /** Distinct lore categories across the live collection (NationStates imports excluded). */
+  categoryCount: number;
+  /** Of `LORE_CATEGORY_COUNT`. */
+  categoryTotal: number;
+  /** The category holding the most cards, or null for an NS-only or empty collection. */
+  topCategory: string | null;
+}
+
 export interface PassportVaultSummary {
   totalCards: number;
   deckValue: number;
   collectorLevel: number;
   collectorXp: number;
   credits: number;
+  /** Collection breadth; null when the owner hides it. */
+  focus: PassportVaultFocus | null;
+  /** Collection highlight: the most valuable live cards, highest market value first. */
   topCards: CardInstance[];
+}
+
+/** Category breadth of a collection. Pure. */
+export function toVaultFocus(
+  categories: ReadonlyArray<string | null | undefined>
+): PassportVaultFocus {
+  const counts = new Map<string, number>();
+  for (const category of categories) {
+    if (!category || category === "NS_IMPORT") continue;
+    counts.set(category, (counts.get(category) ?? 0) + 1);
+  }
+  let topCategory: string | null = null;
+  let topCount = 0;
+  for (const [category, count] of counts) {
+    if (count > topCount) {
+      topCategory = category;
+      topCount = count;
+    }
+  }
+  return { categoryCount: counts.size, categoryTotal: LORE_CATEGORY_COUNT, topCategory };
 }
 
 function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
@@ -108,25 +147,26 @@ export async function resolvePassportVault(
     collectorLevel: 1,
     collectorXp: 0,
     credits: 0,
+    focus: toVaultFocus([]),
     topCards: [],
   };
   if (!userId) return summary;
 
   const live = { ownerId: userId, cards: { isRetired: false } };
   try {
-    const [vault, liveOwnerships, newest] = await Promise.all([
+    const [vault, liveOwnerships, mostValuable] = await Promise.all([
       db.myVault.findUnique({
         where: { userId },
         select: { credits: true, vaultLevel: true, vaultXp: true },
       }),
       db.cardOwnership.findMany({
         where: live,
-        select: { quantity: true, cards: { select: { marketValue: true } } },
+        select: { quantity: true, cards: { select: { marketValue: true, category: true } } },
       }),
       db.cardOwnership.findMany({
-        where: { ownerId: userId },
-        take: 6,
-        orderBy: [{ createdAt: "desc" }],
+        where: live,
+        take: COLLECTION_HIGHLIGHT_SIZE,
+        orderBy: [{ cards: { marketValue: "desc" } }, { acquiredAt: "asc" }],
         include: { cards: { select: CARD_SELECT } },
       }),
     ]);
@@ -141,7 +181,8 @@ export async function resolvePassportVault(
       (sum, o) => sum + o.cards.marketValue * o.quantity,
       0
     );
-    summary.topCards = newest.map(toCardInstance);
+    summary.focus = toVaultFocus(liveOwnerships.map((o) => o.cards.category));
+    summary.topCards = mostValuable.map(toCardInstance);
   } catch (err) {
     console.warn("[PassportVault] Failed to resolve vault summary for user", userId, err);
   }
