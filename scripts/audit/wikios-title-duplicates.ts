@@ -1,35 +1,36 @@
 /**
  * scripts/audit/wikios-title-duplicates.ts — read-only audit of WikiOS title identity (plan 403)
  *
- * Every WikiOS title now has one MediaWiki-canonical form (`canonicalizeTitle`). Rows written
- * before that may differ from it. This prints, for `wiki_articles`:
- *   1. rows whose `title` is not its canonical title (and titles MediaWiki would refuse),
- *   2. groups of rows that canonicalize to the same title (they need a manual merge),
- *   3. rows whose `namespace` is not the canonical namespace.
+ * Every WikiOS title has one MediaWiki-canonical form (`canonicalizeTitle`). Rows written before
+ * that may differ from it. By default this prints, for `wiki_articles`:
+ *   (a) rows whose `title` is not its canonical title (and titles MediaWiki would refuse),
+ *   (b) groups of rows that canonicalize to the same title (they need a manual merge),
+ *   (c) rows whose `namespace` is not the canonical namespace,
+ *   (d) rows with a canonical title whose slug or namespace prefix is wrong.
  *
- * It only reads, and it only runs against a local database: if DATABASE_URL does not point at
- * localhost:5433 it prints why and exits 0 without connecting. The fixes live in
- * prisma/manual-migrations/2026-09-30-wikios-canonical-titles.sql (applied by an operator).
+ * With --emit-sql it instead prints, to stdout and nothing else, the idempotent SQL that fixes
+ * every row whose canonical title is free, plus a commented list of the collisions and invalid
+ * titles it leaves for manual handling (logs go to stderr):
  *
- * Usage: bun scripts/audit/wikios-title-duplicates.ts
+ *   bun scripts/audit/wikios-title-duplicates.ts --emit-sql > fix.sql   # then review, then apply
+ *
+ * The script only reads (`findMany`, with the app's read-only guard on), and it only runs against
+ * a database at localhost:5433 (the dev DB, or production through its local port): anything else
+ * is skipped with a message and exit 0, without connecting.
+ *
+ * Usage: bun scripts/audit/wikios-title-duplicates.ts [--emit-sql]
  */
 
-import { canonicalizeTitle } from "../../src/lib/wiki-os/core/title";
+import {
+  auditTitles,
+  renderFixSql,
+  type AuditRow,
+  type TitleAudit,
+} from "../../src/lib/wiki-os/core/title-audit";
 
 const PAGE_SIZE = 5000;
 const SAMPLE_LIMIT = 50;
-
-interface ArticleRow {
-  id: string;
-  source: string;
-  title: string;
-  namespace: number;
-}
-
-interface Finding {
-  row: ArticleRow;
-  detail: string;
-}
+const EMIT_SQL = process.argv.includes("--emit-sql");
 
 /** `host:port` of DATABASE_URL, or null when it is missing or unparsable (never the credentials). */
 function databaseHost(): string | null {
@@ -41,82 +42,101 @@ function databaseHost(): string | null {
   }
 }
 
-function printSection(heading: string, total: number, findings: Finding[]): void {
+function printRows(heading: string, total: number, lines: string[]): void {
   console.log(`\n## ${heading}: ${total}`);
-  for (const { row, detail } of findings.slice(0, SAMPLE_LIMIT)) {
-    console.log(`  [${row.source}] ${JSON.stringify(row.title)} (${row.id}) ${detail}`);
-  }
+  for (const line of lines.slice(0, SAMPLE_LIMIT)) console.log(`  ${line}`);
   if (total > SAMPLE_LIMIT) console.log(`  ... and ${total - SAMPLE_LIMIT} more`);
 }
 
-async function main(): Promise<void> {
-  const host = databaseHost();
-  if (host !== "localhost:5433" && host !== "127.0.0.1:5433") {
-    console.log(`Skipping: DATABASE_URL points at ${host ?? "no database"}, not the local dev DB.`);
-    return;
-  }
+const describe = (row: AuditRow): string =>
+  `[${row.source}] ${JSON.stringify(row.title)} (${row.id})`;
 
+function printReport(audit: TitleAudit, host: string): void {
+  console.log(`Scanned ${audit.scanned} wiki_articles rows on ${host}.`);
+
+  const nonCanonical = [
+    ...audit.nonCanonical.map((f) => `${describe(f.row)} -> ${JSON.stringify(f.title)}`),
+    ...audit.invalid.map((row) => `${describe(row)} -> not a valid MediaWiki title`),
+  ];
+  printRows("(a) rows whose title is not canonical", nonCanonical.length, nonCanonical);
+
+  printRows(
+    "(b) groups of rows that canonicalize to the same title",
+    audit.collisions.length,
+    audit.collisions.map(
+      (c) =>
+        `[${c.source}] ${JSON.stringify(c.title)}: ` +
+        c.rows.map((r) => `${JSON.stringify(r.title)} (${r.id})`).join(", ")
+    )
+  );
+
+  const wrongNamespace = [...audit.nonCanonical, ...audit.misplaced].filter(
+    (f) => f.namespace !== f.row.namespace
+  );
+  printRows(
+    "(c) rows whose namespace is not the canonical namespace",
+    wrongNamespace.length,
+    wrongNamespace.map((f) => `${describe(f.row)} namespace ${f.row.namespace} -> ${f.namespace}`)
+  );
+
+  printRows(
+    "(d) rows with a canonical title but a wrong slug or namespace prefix",
+    audit.misplaced.length,
+    audit.misplaced.map(
+      (f) =>
+        `${describe(f.row)} slug ${JSON.stringify(f.row.slug)} -> ${JSON.stringify(f.slug)}, ` +
+        `prefix ${JSON.stringify(f.row.namespacePrefix)} -> ${JSON.stringify(f.namespacePrefix)}`
+    )
+  );
+}
+
+async function readAllRows(): Promise<AuditRow[]> {
   // The app's own write guard, belt and braces on top of this script only calling findMany.
   process.env.DATABASE_READONLY = "true";
   const { db } = await import("~/server/db");
 
-  const notCanonical: Finding[] = [];
-  const wrongNamespace: Finding[] = [];
-  const groups = new Map<string, ArticleRow[]>();
-  let scanned = 0;
-
-  for (let cursor: string | undefined; ; ) {
-    const page: ArticleRow[] = await db.wikiArticle.findMany({
+  const rows: AuditRow[] = [];
+  let cursor: string | undefined;
+  for (;;) {
+    const page: AuditRow[] = await db.wikiArticle.findMany({
       orderBy: { id: "asc" },
       take: PAGE_SIZE,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-      select: { id: true, source: true, title: true, namespace: true },
+      select: {
+        id: true,
+        source: true,
+        title: true,
+        slug: true,
+        namespace: true,
+        namespacePrefix: true,
+      },
     });
-    if (page.length === 0) break;
-    scanned += page.length;
+    if (page.length === 0) return rows;
+    rows.push(...page);
     cursor = page[page.length - 1]?.id;
+  }
+}
 
-    for (const row of page) {
-      const canon = canonicalizeTitle(row.title);
-      if (!canon) {
-        notCanonical.push({ row, detail: "-> not a valid MediaWiki title" });
-        continue;
-      }
-      if (canon.title !== row.title) {
-        notCanonical.push({ row, detail: `-> ${JSON.stringify(canon.title)}` });
-      }
-      if (canon.namespaceId !== row.namespace) {
-        wrongNamespace.push({
-          row,
-          detail: `namespace ${row.namespace} -> ${canon.namespaceId}`,
-        });
-      }
-      const key = `${row.source}\u0000${canon.title}`;
-      groups.set(key, [...(groups.get(key) ?? []), row]);
-    }
+async function main(): Promise<void> {
+  // In --emit-sql mode stdout is the SQL file: everything else, the app's logs included, is stderr.
+  if (EMIT_SQL) console.log = console.error;
+
+  const host = databaseHost();
+  if (host !== "localhost:5433" && host !== "127.0.0.1:5433") {
+    console.log(`Skipping: DATABASE_URL points at ${host ?? "no database"}, not localhost:5433.`);
+    return;
   }
 
-  console.log(`Scanned ${scanned} wiki_articles rows on ${host}.`);
-  printSection("(a) rows whose title is not canonical", notCanonical.length, notCanonical);
-
-  const duplicates = [...groups.values()].filter((rows) => rows.length > 1);
-  console.log(`\n## (b) groups of rows that canonicalize to the same title: ${duplicates.length}`);
-  for (const rows of duplicates.slice(0, SAMPLE_LIMIT)) {
-    const canon = canonicalizeTitle(rows[0]?.title ?? "");
-    console.log(
-      `  [${rows[0]?.source}] ${JSON.stringify(canon?.title)}: ` +
-        rows.map((r) => `${JSON.stringify(r.title)} (${r.id})`).join(", ")
+  const audit = auditTitles(await readAllRows());
+  if (EMIT_SQL) {
+    const context = `Database ${host}, generated ${new Date().toISOString()}`;
+    // Wait for the write to flush: the process exits right after, and a pipe may buffer.
+    await new Promise<void>((resolve) =>
+      process.stdout.write(renderFixSql(audit, context), () => resolve())
     );
+  } else {
+    printReport(audit, host);
   }
-  if (duplicates.length > SAMPLE_LIMIT) {
-    console.log(`  ... and ${duplicates.length - SAMPLE_LIMIT} more`);
-  }
-
-  printSection(
-    "(c) rows whose namespace is not the canonical namespace",
-    wrongNamespace.length,
-    wrongNamespace
-  );
 }
 
 main()
