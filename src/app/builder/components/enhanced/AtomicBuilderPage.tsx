@@ -2,8 +2,6 @@
 
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense } from "react";
 import { isEqual } from "~/lib/utils";
-import { motion } from "motion/react";
-import { createUrl } from "~/lib/utils";
 import type { RealCountryData } from "../../lib/economy-data-service";
 import { parseEconomyData } from "../../lib/economy-data-service";
 import type {
@@ -11,21 +9,17 @@ import type {
   BudgetAllocationInput,
   GovernmentBuilderState,
 } from "~/types/government";
-import { cn } from "~/lib/utils";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { ComponentType as PrismaComponentType } from "~/lib/enums";
 import { computeGovernmentWarnings } from "./government-preview/governmentWarnings";
+import { applyGovernmentComponentNudges } from "../../lib/government-component-nudges";
 
 // Import modular architecture
 import { useBuilderContext } from "./context/BuilderStateContext";
 import { StepContent } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
-import {
-  useBuilderSubmit,
-  BuilderConfirmModal,
-  useBuilderTutorials,
-} from "./atomic-builder";
+import { useBuilderSubmit, BuilderConfirmModal, useBuilderTutorials } from "./atomic-builder";
 
 export interface AtomicBuilderPageProps {
   onBackToIntro?: () => void;
@@ -136,40 +130,24 @@ function AtomicBuilderPageInner({
     loadCountries();
   }, []);
 
-  // Track last processed government components to prevent loops
-  const lastProcessedGovComponentsRef = useRef<PrismaComponentType[]>([]);
+  // Government components seen last; null until the first list with economic inputs is seen.
+  const lastProcessedGovComponentsRef = useRef<PrismaComponentType[] | null>(null);
 
-  // Update economic inputs when government components change
+  // Apply the fiscal nudge of a government component when the player adds it. The first list
+  // observed (on mount, after a section switch, or the editor's loaded country) is only recorded:
+  // re-applying it there compounded the tax rate on every visit.
   useEffect(() => {
-    if (builderState.governmentComponents === lastProcessedGovComponentsRef.current) return;
-    if (builderState.economicInputs && builderState.governmentComponents.length > 0) {
-      if (!isEqual(builderState.governmentComponents, lastProcessedGovComponentsRef.current)) {
-        lastProcessedGovComponentsRef.current = builderState.governmentComponents;
+    const components = builderState.governmentComponents;
+    const inputs = builderState.economicInputs;
+    if (!inputs) return;
+    const previous = lastProcessedGovComponentsRef.current;
+    if (previous === components) return;
+    lastProcessedGovComponentsRef.current = components;
+    if (previous === null || isEqual(previous, components)) return;
 
-        const updatedInputs = { ...builderState.economicInputs };
-
-        if (builderState.governmentComponents.includes("SOCIAL_DEMOCRACY" as PrismaComponentType)) {
-          updatedInputs.fiscalSystem.taxRevenueGDPPercent = Math.min(
-            updatedInputs.fiscalSystem.taxRevenueGDPPercent * 1.2,
-            60
-          );
-          updatedInputs.governmentSpending.totalSpending = Math.max(
-            updatedInputs.governmentSpending.totalSpending,
-            25
-          );
-        }
-
-        if (
-          builderState.governmentComponents.includes("FREE_MARKET_SYSTEM" as PrismaComponentType)
-        ) {
-          updatedInputs.fiscalSystem.taxRevenueGDPPercent = Math.max(
-            updatedInputs.fiscalSystem.taxRevenueGDPPercent * 0.8,
-            15
-          );
-        }
-
-        setBuilderState((prev) => ({ ...prev, economicInputs: updatedInputs }));
-      }
+    const nudged = applyGovernmentComponentNudges(inputs, previous, components);
+    if (nudged) {
+      setBuilderState((prev) => ({ ...prev, economicInputs: nudged }));
     }
   }, [builderState.governmentComponents, builderState.economicInputs, setBuilderState]);
 
@@ -184,7 +162,11 @@ function AtomicBuilderPageInner({
       if (!isEqual(govStructure, lastProcessedGovStructureRef.current)) {
         lastProcessedGovStructureRef.current = govStructure;
 
-        const updatedInputs = { ...builderState.economicInputs };
+        // Copy the nested object too: builder state must never be mutated in place.
+        const updatedInputs = {
+          ...builderState.economicInputs,
+          governmentSpending: { ...builderState.economicInputs.governmentSpending },
+        };
 
         if (govStructure.structure?.totalBudget) {
           const totalBudget = govStructure.structure.totalBudget;
@@ -219,8 +201,6 @@ function AtomicBuilderPageInner({
       }
     }
   }, [builderState.governmentStructure, builderState.economicInputs, setBuilderState]);
-
-
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col">

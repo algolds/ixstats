@@ -19,7 +19,7 @@ export const StepContent = memo(function StepContent({ children }: StepContentPr
   return (
     <div className="mx-auto max-w-6xl">
       <CutoutCard
-        className="border-border/30 bg-card/75 overflow-hidden rounded-[24px] backdrop-blur-md"
+        className="border-border bg-card overflow-hidden rounded-2xl"
         texture="dots"
         textureOpacity={0.03}
         trackPointerHover={false}

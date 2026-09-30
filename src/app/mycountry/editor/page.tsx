@@ -1,12 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
-import { GlobalBuilderLoading } from "~/app/builder/components/GlobalBuilderLoading";
+import { EditorSkeleton } from "~/app/builder/components/editor/EditorSkeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -15,42 +16,24 @@ export default function MyCountryEditor() {
 
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const { country, profileLoading, countryLoading, userProfile } = useUserCountry();
+  const { profileLoading, userProfile } = useUserCountry();
+  const countryId = userProfile?.countryId;
 
-  if (!isLoaded || profileLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="Loading profile..." variant="compact" />
-      </div>
-    );
+  const redirectTo =
+    isLoaded && !user
+      ? "/sign-in"
+      : isLoaded && !profileLoading && !countryId
+        ? "/mycountry/builder"
+        : null;
+
+  useEffect(() => {
+    if (redirectTo) router.replace(createUrl(redirectTo));
+  }, [redirectTo, router]);
+
+  // The editor loads the country itself (with its own skeleton and error state).
+  if (!isLoaded || profileLoading || redirectTo || !countryId) {
+    return <EditorSkeleton />;
   }
 
-  if (!user) {
-    router.push(createUrl("/sign-in"));
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="Redirecting to sign in..." variant="compact" />
-      </div>
-    );
-  }
-
-  if (!userProfile?.countryId) {
-    router.push(createUrl("/mycountry/builder"));
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="No country found. Redirecting to builder..." variant="compact" />
-      </div>
-    );
-  }
-
-  if (countryLoading || !country) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="Loading country data..." variant="compact" />
-      </div>
-    );
-  }
-
-  return <BuilderRouter mode="edit" countryId={country.id} />;
+  return <BuilderRouter mode="edit" countryId={countryId} />;
 }
-

@@ -4,6 +4,31 @@ import { safeSetItemSync } from "~/lib/system/local-storage-mutex";
 import { api, type RouterInputs } from "~/trpc/react";
 import { asJsonPayload } from "../lib/json-payload";
 import { type BuilderState, getInitialState, sanitizeEconomicInputs } from "./builderStateTypes";
+import { useInvalidateCountryData } from "./useInvalidateCountryData";
+
+type UpdatePayload = RouterInputs["countries"]["updateCountry"];
+
+/** After the country loads, derived fields settle for this long before edits are autosaved. */
+const EDIT_SETTLE_MS = 600;
+
+/** The countries.updateCountry payload for the editor's current state. */
+function buildUpdatePayload(countryId: string, state: BuilderState): UpdatePayload {
+  return asJsonPayload<UpdatePayload>({
+    id: countryId,
+    name:
+      state.economicInputs?.countryName ||
+      state.economicInputs?.nationalIdentity?.countryName ||
+      "",
+    economicInputs: sanitizeEconomicInputs(state.economicInputs) || undefined,
+    governmentComponents:
+      state.governmentComponents && state.governmentComponents.length > 0
+        ? state.governmentComponents.map((comp) => ({ componentType: comp }))
+        : undefined,
+    taxSystemData: state.taxSystemData || undefined,
+    governmentStructure: state.governmentStructure || undefined,
+    economyBuilderState: state.economyBuilderState || undefined,
+  });
+}
 
 interface UseBuilderPersistenceProps {
   mode: "create" | "edit";
@@ -17,6 +42,11 @@ interface UseBuilderPersistenceProps {
   setHasRestoredState: (val: boolean) => void;
   lastSaved: Date | null;
   setLastSaved: React.Dispatch<React.SetStateAction<Date | null>>;
+  /**
+   * Edit mode: hold the local crash-recovery copy while an unsaved draft from an
+   * earlier visit is waiting for the player to restore or dismiss it.
+   */
+  suspendLocalAutosave?: boolean;
 }
 
 export function useBuilderPersistence({
@@ -31,6 +61,7 @@ export function useBuilderPersistence({
   setHasRestoredState,
   lastSaved,
   setLastSaved,
+  suspendLocalAutosave = false,
 }: UseBuilderPersistenceProps) {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
@@ -48,7 +79,13 @@ export function useBuilderPersistence({
     !!s.economicInputs?.nationalIdentity?.countryName ||
     (Array.isArray(s.completedSteps) && s.completedSteps.length > 0);
 
+  // Edit mode keeps a local copy only of the loaded country: before hydration the state is
+  // empty, and writing it would overwrite the unsaved draft of an earlier visit.
+  const isLocalCopyHeld = () =>
+    mode === "edit" && (!editModeInitialized.current || isLoadingCountry || suspendLocalAutosave);
+
   useEffect(() => {
+    if (isLocalCopyHeld()) return;
     const saveState = async () => {
       const currentState = builderStateRef.current;
       if (isEqual(lastSavedStateRef.current, currentState)) return;
@@ -87,11 +124,15 @@ export function useBuilderPersistence({
 
     const timeoutId = setTimeout(saveState, 500);
     return () => clearTimeout(timeoutId);
-  }, [builderState, mode, countryId, setLastSaved]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [builderState, mode, countryId, setLastSaved, isLoadingCountry, suspendLocalAutosave]);
 
   // Autosave on page unload
+  const isLocalCopyHeldRef = useRef(isLocalCopyHeld);
+  isLocalCopyHeldRef.current = isLocalCopyHeld;
   useEffect(() => {
     const handleBeforeUnload = () => {
+      if (isLocalCopyHeldRef.current()) return;
       try {
         const stateKey =
           mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
@@ -110,18 +151,17 @@ export function useBuilderPersistence({
   }, [mode, countryId]);
 
   // DB Sync for Edit Mode
-  const utils = api.useUtils();
+  const invalidateCountryData = useInvalidateCountryData();
   const updateMutation = api.countries.updateCountry.useMutation({
     onSuccess: () => {
       setLastSaved(new Date());
-      // Flags are resolved by name and cached for an hour on the client: drop the cache so a
-      // new flag / seal shows outside the Editor right away.
-      void utils.countries.flags.resolveBatch.invalidate();
+      invalidateCountryData();
     },
     onError: (err) => {
       console.error("[useBuilderPersistence] DB sync error:", err);
     },
   });
+  const { mutateAsync: updateCountryAsync } = updateMutation;
 
   const syncError = updateMutation.error
     ? updateMutation.error instanceof Error
@@ -130,48 +170,66 @@ export function useBuilderPersistence({
     : null;
   const isSyncing = updateMutation.isPending;
 
-  const lastSyncedStateRef = useRef<Parameters<typeof updateMutation.mutateAsync>[0] | null>(null);
+  /** Last payload sent (or in flight); an unchanged state is not resent. */
+  const lastSyncedStateRef = useRef<UpdatePayload | null>(null);
+  /** Last payload the server accepted. */
+  const lastSuccessfulPayloadRef = useRef<UpdatePayload | null>(null);
+  /** Payload of the current state. */
+  const latestPayloadRef = useRef<UpdatePayload | null>(null);
+  const hydratedAtRef = useRef(0);
+  const [hasUnsyncedChanges, setHasUnsyncedChanges] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+
+  const syncPayload = useCallback(
+    async (payload: UpdatePayload) => {
+      lastSyncedStateRef.current = payload;
+      try {
+        await updateCountryAsync(payload);
+      } catch (error) {
+        // Resend on the next change or retry instead of treating the failed state as saved.
+        lastSyncedStateRef.current = lastSuccessfulPayloadRef.current;
+        throw error;
+      }
+      lastSuccessfulPayloadRef.current = payload;
+      setLastSyncedAt(new Date());
+      if (isEqual(latestPayloadRef.current, payload)) setHasUnsyncedChanges(false);
+    },
+    [updateCountryAsync]
+  );
 
   useEffect(() => {
     if (mode !== "edit" || !countryId || !editModeInitialized.current || isLoadingCountry) {
       return;
     }
 
-    const currentSyncPayload = asJsonPayload<RouterInputs["countries"]["updateCountry"]>({
-      id: countryId,
-      name:
-        builderState.economicInputs?.countryName ||
-        builderState.economicInputs?.nationalIdentity?.countryName ||
-        "",
-      economicInputs: sanitizeEconomicInputs(builderState.economicInputs) || undefined,
-      governmentComponents:
-        builderState.governmentComponents && builderState.governmentComponents.length > 0
-          ? builderState.governmentComponents.map((comp) => ({ componentType: comp }))
-          : undefined,
-      taxSystemData: builderState.taxSystemData || undefined,
-      governmentStructure: builderState.governmentStructure || undefined,
-      economyBuilderState: builderState.economyBuilderState || undefined,
-    });
+    const currentSyncPayload = buildUpdatePayload(countryId, builderState);
+    latestPayloadRef.current = currentSyncPayload;
 
-    if (!lastSyncedStateRef.current) {
+    // The loaded country is the saved state, including what the builder derives from it while
+    // it settles (the same window the editor's change tracking waits): opening the editor
+    // must not write to the country.
+    const now = Date.now();
+    if (!lastSyncedStateRef.current) hydratedAtRef.current = now;
+    if (!lastSyncedStateRef.current || now - hydratedAtRef.current < EDIT_SETTLE_MS) {
       lastSyncedStateRef.current = currentSyncPayload;
+      lastSuccessfulPayloadRef.current = currentSyncPayload;
       return;
     }
 
     if (isEqual(lastSyncedStateRef.current, currentSyncPayload)) {
+      if (isEqual(lastSuccessfulPayloadRef.current, currentSyncPayload))
+        setHasUnsyncedChanges(false);
       return;
     }
 
-    const triggerDbSync = async () => {
-      try {
-        lastSyncedStateRef.current = currentSyncPayload;
-        await updateMutation.mutateAsync(currentSyncPayload);
-      } catch {
-        // Handled by mutation onError
-      }
-    };
-
-    const timer = setTimeout(triggerDbSync, 1500);
+    setHasUnsyncedChanges(true);
+    const timer = setTimeout(() => {
+      // A manual save may have sent this state already.
+      if (isEqual(lastSyncedStateRef.current, currentSyncPayload)) return;
+      syncPayload(currentSyncPayload).catch(() => {
+        // Surfaced through syncError; the editor's save bar offers a retry.
+      });
+    }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -183,6 +241,7 @@ export function useBuilderPersistence({
     mode,
     countryId,
     isLoadingCountry,
+    syncPayload,
   ]);
 
   // Server-side draft persistence (create mode)
@@ -263,29 +322,11 @@ export function useBuilderPersistence({
     }
 
     if (mode === "edit" && countryId && !isLoadingCountry) {
-      const currentSyncPayload = asJsonPayload<RouterInputs["countries"]["updateCountry"]>({
-        id: countryId,
-        name:
-          builderStateRef.current.economicInputs?.countryName ||
-          builderStateRef.current.economicInputs?.nationalIdentity?.countryName ||
-          "",
-        economicInputs: sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
-        governmentComponents:
-          builderStateRef.current.governmentComponents &&
-          builderStateRef.current.governmentComponents.length > 0
-            ? builderStateRef.current.governmentComponents.map((comp) => ({
-                componentType: comp,
-              }))
-            : undefined,
-        taxSystemData: builderStateRef.current.taxSystemData || undefined,
-        governmentStructure: builderStateRef.current.governmentStructure || undefined,
-        economyBuilderState: builderStateRef.current.economyBuilderState || undefined,
-      });
-      lastSyncedStateRef.current = currentSyncPayload;
-      await updateMutation.mutateAsync(currentSyncPayload);
+      const currentSyncPayload = buildUpdatePayload(countryId, builderStateRef.current);
+      latestPayloadRef.current = currentSyncPayload;
+      await syncPayload(currentSyncPayload);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, countryId, isLoadingCountry, setLastSaved]);
+  }, [mode, countryId, isLoadingCountry, setLastSaved, syncPayload]);
 
   const clearDraft = useCallback(() => {
     try {
@@ -318,6 +359,8 @@ export function useBuilderPersistence({
     isAutoSaving,
     isSyncing,
     syncError,
+    hasUnsyncedChanges,
+    lastSyncedAt,
     triggerManualSave,
     clearDraft,
     hasRestoredState,

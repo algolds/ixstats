@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BuilderState } from "./builderStateTypes";
 import {
   getChangedFields,
+  pickTrackedData,
   pushBounded,
   type FieldChange,
   type TrackedData,
@@ -30,6 +31,10 @@ export interface EditChanges {
   discard: () => void;
   /** Runs `persist`, then makes the state it saved the new baseline. */
   save: (persist: () => Promise<void>) => Promise<void>;
+  /** Whether the loaded country has settled into the baseline. */
+  isReady: boolean;
+  /** Fields in which `state` differs from the baseline, or null before the baseline exists. */
+  diffFromBaseline: (state: BuilderState) => FieldChange[] | null;
 }
 
 /**
@@ -127,5 +132,18 @@ export function useEditChanges({
     [baseline, tracked]
   );
 
-  return { changes, canUndo: undoStack.length > 0, undo, discard, save };
+  const diffFromBaseline = useCallback(
+    (state: BuilderState) => (baseline ? getChangedFields(baseline, pickTrackedData(state)) : null),
+    [baseline]
+  );
+
+  return {
+    changes,
+    canUndo: undoStack.length > 0,
+    undo,
+    discard,
+    save,
+    isReady: baseline !== null,
+    diffFromBaseline,
+  };
 }

@@ -11,7 +11,7 @@ All `page.tsx` files below (except `/mycountry/editor`) render `<MyCountryRouter
 | Route | Section | Loading | Notes |
 | --- | --- | --- | --- |
 | `/mycountry` | overview | eager | Default (`ExecutiveHome`). Compliance modal + national-issues toasts fire here. |
-| `/mycountry/executive` | executive | eager | Directive composer (`ExecutiveConsole` / `IntentComposer`). |
+| `/mycountry/executive` | executive | eager | Directives page (`ExecutiveConsole` → `directives/DirectivesWorkspace`): declare, track in force, history. |
 | `/mycountry/economy` | economy | eager | Budget, fiscal and trade consoles (`EconomyDrillDown`). |
 | `/mycountry/diplomacy` | diplomacy | lazy panel | Embassies, relationships, alliances, cultural exchanges, scenarios. |
 | `/mycountry/politics` | politics | eager | Cabinet, parties, legislature, bills, power brokers (`PoliticsDrillDown`). |
@@ -42,7 +42,7 @@ The MyCountry subsystem uses a **4-tier modular domain architecture** located at
 | **Domains** | `domains/` | 5 simulation pillar modules: `defense/`, `diplomacy/`, `economy/`, `government/`, `geography/`. |
 | **Dossier** | `dossier/` | Public country dossier views, factbooks, and Wiki infobox cards. |
 
-The directive composer is `shared/primitives/IntentComposer.tsx`, with the preset catalog in `shared/primitives/composer/DirectivePresetsCatalog.tsx`.
+The Directives page lives in `directives/` (`DirectivesWorkspace`, status strip, directive cards, recorded outcome). Its composer is `shared/primitives/IntentComposer.tsx`, with the steps and preset catalog in `shared/primitives/composer/` (presets in `directive-presets.ts`).
 
 Key hooks (in `src/hooks/`): `useMyCountryCompliance`, `useMyCountryMetrics`, `useNationalIssues`, `useNationalIssuesToast`, `usePremium`, `useUserCountry`.
 
@@ -52,7 +52,7 @@ Verified `api.*` calls used by this route (`src/app/mycountry`, `src/components/
 
 - **Country / economy:** `api.countries.getByIdWithEconomicData` / `getByIdBasic` / `getByIdAtTime` / `getActivityRingsData` / `getAll`, `api.economics.getEconomyConfiguration` / `updateFiscalSystem`, `api.taxSystem.getByCountryId`, `api.wikiCache.getCountryProfile`, `api.transport.getNationalMobilityProfile`
 - **Overview / canon:** `api.mycountry.getCountryDashboard` / `getCanonFeed`, `api.achievements.getRecentByCountry`, `api.thinkpages.createPost`
-- **Executive:** `api.nationalIssues.getMyIssues` / `getIssue` / `markViewed` / `respond` / `dismiss` / `commissionRecon` / `getReconReveal` / `getHistory` / `getPendingCount`, `api.intent.*` (suggest, commit, tree, status, update status, linked issues, summation draft), `api.quickActions.createMeeting`, `api.historical.getCountryHistory`
+- **Executive:** `api.nationalIssues.getMyIssues` / `getIssue` / `markViewed` / `respond` / `dismiss` / `commissionRecon` / `getReconReveal` / `getHistory` / `getPendingCount`, `api.intent.*` (suggest, commit, tree, status, update status, linked issues, outcome, summation draft), `api.policies.getPolicyReconContext` (CivCap), `api.quickActions.createMeeting`, `api.historical.getCountryHistory`
 - **Diplomacy:** `api.diplomaticCore.*` (relationships, shared data, follow, goals), `api.diplomaticEmbassies.*` (establish, close, reopen, delete, profile, cost), `api.diplomaticPolicies.*` (foreign policies, alliances), `api.diplomaticCultural.*` (cultural exchanges), `api.diplomaticScenarios.getAllScenarios` / `recordChoice`
 - **Defense:** `api.security.getSecurityAssessment` / `getMilitaryBranches` / `getBorderSecurity` / `getConflicts` / `getOperations`, plus the military-asset, operation and conflict mutations
 - **Politics:** `api.elections.getElections` / `getCurrentParliament` / `getLegislature` / `getParties`
@@ -63,7 +63,7 @@ Verified `api.*` calls used by this route (`src/app/mycountry`, `src/components/
 
 ## Connections to Other Systems
 
-- **Builder** — `/mycountry/editor` mounts `BuilderRouter`; redirects to `/builder` if the user has no country.
+- **Builder** — `/mycountry/editor` mounts `BuilderRouter` in edit mode (editor header, section tiles with change counts, persistent save bar; see [Country Editor](../../../docs/systems/builder.md#country-editor-edit-mode)); redirects to `/mycountry/builder` if the user has no country.
 - **Maps / IxWorld** — map-editor section and `countryGeo`/`geoCore`/`geoFeatures` routers tie nation territory to the geo system.
 - **ThinkPages / canon** — `getCanonFeed` surfaces narrative output on the overview.
 - **Vault** — budget multipliers and passive income feed executive economics.

@@ -43,7 +43,9 @@ export function pickTrackedData(state: BuilderState): TrackedData {
 }
 
 function isBranch(node: FieldNode): node is object {
-  return typeof node === "object" && node !== null && !Array.isArray(node) && !(node instanceof Date);
+  return (
+    typeof node === "object" && node !== null && !Array.isArray(node) && !(node instanceof Date)
+  );
 }
 
 function toScalar(node: FieldNode): FieldScalar | undefined {
@@ -103,6 +105,64 @@ export function indexChangesByName(changes: readonly FieldChange[]): ChangedFiel
  * the changed fields. Matching the value too keeps same-named fields elsewhere
  * in the state from lighting up.
  */
-export function isFieldChanged(index: ChangedFieldIndex, name: string, value: FieldScalar): boolean {
+export function isFieldChanged(
+  index: ChangedFieldIndex,
+  name: string,
+  value: FieldScalar
+): boolean {
   return index.get(normalizeFieldName(name))?.includes(value) ?? false;
+}
+
+// ─── Editor sections ───
+
+/** The editor's sections that hold saved fields (Review only reads them). */
+export type EditorSection = "identity" | "government" | "economics";
+
+export const EDITOR_SECTIONS: readonly EditorSection[] = ["identity", "government", "economics"];
+
+/** `economicInputs` keys edited on the Identity section (the rest belong to Economics or Government). */
+const IDENTITY_INPUT_KEYS = new Set([
+  "countryName",
+  "flagUrl",
+  "coatOfArmsUrl",
+  "flagExtractedColors",
+  "nationalIdentity",
+  "geography",
+  "coreIndicators",
+]);
+
+/** Which editor section a changed field is edited on. */
+export function sectionOfChange(path: string): EditorSection {
+  const [root, key] = path.split(".");
+  if (root === "governmentComponents" || root === "governmentStructure") return "government";
+  if (root === "economicInputs") {
+    if (key && IDENTITY_INPUT_KEYS.has(key)) return "identity";
+    if (key === "governmentSpending") return "government";
+  }
+  // Remaining economic inputs, the tax system and the economy builder.
+  return "economics";
+}
+
+/** Changed fields per editor section. */
+export function countChangesBySection(
+  changes: readonly FieldChange[]
+): Record<EditorSection, number> {
+  const counts: Record<EditorSection, number> = { identity: 0, government: 0, economics: 0 };
+  for (const change of changes) counts[sectionOfChange(change.path)] += 1;
+  return counts;
+}
+
+const ACRONYMS: Record<string, string> = { gdp: "GDP", tld: "TLD", url: "URL", id: "ID" };
+
+/** "economicInputs.nationalIdentity.capitalCity" → "Capital city"; "…nominalGDP" → "Nominal GDP". */
+export function describeChangePath(path: string): string {
+  const leaf = path.slice(path.lastIndexOf(".") + 1);
+  const words = leaf
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .split(/[\s_]+/)
+    .filter(Boolean)
+    .map((word) => ACRONYMS[word.toLowerCase()] ?? word.toLowerCase());
+  const label = words.join(" ");
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }

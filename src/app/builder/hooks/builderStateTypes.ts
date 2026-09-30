@@ -6,6 +6,7 @@ import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { GovernmentBuilderState } from "~/types/government";
 import { registerCustomCurrency } from "~/lib/utils";
 import { safeGetItemSync } from "~/lib/system/local-storage-mutex";
+import type { RecoveredDraft } from "../lib/recovered-draft";
 
 /**
  * Complete state structure for the country builder workflow.
@@ -71,6 +72,20 @@ export interface UseBuilderStateReturn {
   isSyncing: boolean;
   /** Sync error if DB sync failed */
   syncError: Error | null;
+  /** Edit mode: the state differs from the last version the server accepted (pending, in flight or failed). */
+  hasUnsyncedChanges: boolean;
+  /** Edit mode: when the server last accepted a save in this visit. */
+  lastSyncedAt: Date | null;
+  /** Edit mode: why the country could not be loaded, or null. */
+  countryLoadError: string | null;
+  /** Edit mode: loads the country again after a load error. */
+  retryCountryLoad: () => void;
+  /** Edit mode: an unsaved local copy from an earlier visit, newer than the saved country. */
+  recoveredDraft: RecoveredDraft | null;
+  /** Edit mode: applies the recovered copy on top of the loaded country (its fields become changes). */
+  applyRecoveredDraft: () => void;
+  /** Edit mode: keeps the loaded country and drops the recovered copy. */
+  dismissRecoveredDraft: () => void;
   /** Selected archetype ID */
   selectedArchetypeId?: string | null;
   /** Update selected archetype ID */
@@ -143,8 +158,7 @@ export const baseInitialState: BuilderState = {
  */
 export function readStoredViewMode(): "standard" | "expert" | null {
   if (typeof window === "undefined") return null;
-  const saved =
-    safeGetItemSync("ixstates:builder-advanced-mode") || safeGetItemSync("editor-mode");
+  const saved = safeGetItemSync("ixstates:builder-advanced-mode") || safeGetItemSync("editor-mode");
   if (!saved) return null;
   return saved === "advanced" || saved === "expert" ? "expert" : "standard";
 }

@@ -9,10 +9,7 @@ import type { RealCountryData, EconomicInputs } from "../lib/economy-data-servic
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import type {
-  GovernmentBuilderState,
-  GovernmentType,
-} from "~/types/government";
+import type { GovernmentBuilderState, GovernmentType } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import { modernArchetypes } from "~/lib/economy/archetypes/modern";
 import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
@@ -49,6 +46,11 @@ export function useBuilderState(
   const {
     isLoadingCountry,
     editModeInitialized,
+    countryLoadError,
+    retryCountryLoad,
+    recoveredDraft,
+    applyRecoveredDraft,
+    dismissRecoveredDraft,
   } = useBuilderEditMode({
     mode,
     countryId,
@@ -71,6 +73,8 @@ export function useBuilderState(
     isAutoSaving,
     isSyncing,
     syncError,
+    hasUnsyncedChanges,
+    lastSyncedAt,
     triggerManualSave,
     clearDraft,
   } = useBuilderPersistence({
@@ -85,6 +89,7 @@ export function useBuilderState(
     setHasRestoredState,
     lastSaved,
     setLastSaved,
+    suspendLocalAutosave: recoveredDraft !== null,
   });
 
   // Update handlers
@@ -409,7 +414,9 @@ export function useBuilderState(
                 newState.governmentStructure = {
                   structure: {
                     governmentName: `Government of ${countryData.name}`,
-                    governmentType: (archetype?.name || countryData.governmentType || "Other") as GovernmentType,
+                    governmentType: (archetype?.name ||
+                      countryData.governmentType ||
+                      "Other") as GovernmentType,
                     headOfState: "",
                     headOfGovernment: "",
                     legislatureName: "",
@@ -540,6 +547,13 @@ export function useBuilderState(
     enabledSteps: getStepsForMode(mode, isScratchOrImportOrigin(builderState)),
     isSyncing,
     syncError,
+    hasUnsyncedChanges,
+    lastSyncedAt,
+    countryLoadError,
+    retryCountryLoad,
+    recoveredDraft,
+    applyRecoveredDraft,
+    dismissRecoveredDraft,
     selectedArchetypeId: builderState.selectedArchetypeId,
     updateArchetypeId,
     updateEconomicInputs,

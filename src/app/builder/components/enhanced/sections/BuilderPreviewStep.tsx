@@ -12,18 +12,14 @@ import {
   Industry as Factory,
 } from "iconoir-react";
 import { useBuilderContext } from "../context/BuilderStateContext";
-import {
-  PreviewIdentity,
-  PreviewGovernment,
-  PreviewEconomy,
-} from "./preview";
+import { PreviewIdentity, PreviewGovernment, PreviewEconomy } from "./preview";
 
 /**
  * BuilderPreviewStep - Comprehensive preview of all builder configuration data.
  * Composes domain-specific preview sub-components into a balanced Bento layout.
  */
 export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
-  const { builderState } = useBuilderContext();
+  const { builderState, mode } = useBuilderContext();
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
@@ -64,13 +60,13 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         >
           <div
             onClick={() => toggleSection("identity")}
-            className="flex cursor-pointer items-center justify-between border-b border-border/40 bg-muted/10 px-4 py-3 transition-colors hover:bg-muted/20 active:scale-[0.99]"
+            className="border-border/40 bg-muted/10 hover:bg-muted/20 flex cursor-pointer items-center justify-between border-b px-4 py-3 transition-colors active:scale-[0.99]"
           >
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
                 <Flag className="h-4 w-4" />
               </div>
-              <h3 className="text-sm font-semibold tracking-tight text-foreground">
+              <h3 className="text-foreground text-sm font-semibold tracking-tight">
                 National Identity
               </h3>
             </div>
@@ -83,9 +79,9 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                 {nationalIdentity?.countryName || "Unspecified"}
               </Badge>
               {collapsedSections.identity ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="text-muted-foreground h-4 w-4" />
               )}
             </div>
           </div>
@@ -106,13 +102,13 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         >
           <div
             onClick={() => toggleSection("government")}
-            className="flex cursor-pointer items-center justify-between border-b border-border/40 bg-muted/10 px-4 py-3 transition-colors hover:bg-muted/20 active:scale-[0.99]"
+            className="border-border/40 bg-muted/10 hover:bg-muted/20 flex cursor-pointer items-center justify-between border-b px-4 py-3 transition-colors active:scale-[0.99]"
           >
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-500">
                 <Building2 className="h-4 w-4" />
               </div>
-              <h3 className="text-sm font-semibold tracking-tight text-foreground">Government</h3>
+              <h3 className="text-foreground text-sm font-semibold tracking-tight">Government</h3>
             </div>
             <div className="flex items-center gap-2">
               <Badge
@@ -122,9 +118,9 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
                 {governmentComponents.length} Institutions
               </Badge>
               {collapsedSections.government ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="text-muted-foreground h-4 w-4" />
               )}
             </div>
           </div>
@@ -150,13 +146,13 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
       >
         <div
           onClick={() => toggleSection("economy")}
-          className="flex cursor-pointer items-center justify-between border-b border-border/40 bg-muted/10 px-4 py-3 transition-colors hover:bg-muted/20 active:scale-[0.99]"
+          className="border-border/40 bg-muted/10 hover:bg-muted/20 flex cursor-pointer items-center justify-between border-b px-4 py-3 transition-colors active:scale-[0.99]"
         >
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
               <Factory className="h-4 w-4" />
             </div>
-            <h3 className="text-sm font-semibold tracking-tight text-foreground">Economy</h3>
+            <h3 className="text-foreground text-sm font-semibold tracking-tight">Economy</h3>
           </div>
           <div className="flex items-center gap-2">
             <Badge
@@ -166,9 +162,9 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
               {coreIndicators ? "Configured" : "Default"}
             </Badge>
             {collapsedSections.economy ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
             ) : (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              <ChevronUp className="text-muted-foreground h-4 w-4" />
             )}
           </div>
         </div>
@@ -180,13 +176,15 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
       </FacetCard>
 
       {/* ─── Row 3: Ready to Create Strip ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/40 bg-card/50 p-4 shadow-sm backdrop-blur-xl">
+      <div className="border-border/40 bg-card/50 flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-xl">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div className="flex items-center gap-2.5">
-            <span className="text-sm font-semibold text-foreground">Ready to Create</span>
+            <span className="text-foreground text-sm font-semibold">
+              {mode === "edit" ? "Country profile" : "Ready to Create"}
+            </span>
             <Badge
               variant="outline"
               className={
@@ -200,14 +198,14 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5">
-            <span className="font-semibold text-foreground">{governmentComponents.length}</span>
+        <div className="text-muted-foreground flex items-center gap-3 text-xs">
+          <div className="border-border/40 bg-muted/20 flex items-center gap-1.5 rounded-lg border px-3 py-1.5">
+            <span className="text-foreground font-semibold">{governmentComponents.length}</span>
             <span>Institutions</span>
           </div>
           {coreIndicators?.totalPopulation ? (
-            <div className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5">
-              <span className="font-semibold text-foreground">
+            <div className="border-border/40 bg-muted/20 flex items-center gap-1.5 rounded-lg border px-3 py-1.5">
+              <span className="text-foreground font-semibold">
                 {coreIndicators.totalPopulation >= 1e6
                   ? `${(coreIndicators.totalPopulation / 1e6).toFixed(1)}M`
                   : coreIndicators.totalPopulation.toLocaleString()}
@@ -215,8 +213,8 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
               <span>Population</span>
             </div>
           ) : null}
-          <div className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5">
-            <span className="font-semibold text-foreground">{currency}</span>
+          <div className="border-border/40 bg-muted/20 flex items-center gap-1.5 rounded-lg border px-3 py-1.5">
+            <span className="text-foreground font-semibold">{currency}</span>
             <span>Currency</span>
           </div>
         </div>

@@ -1,18 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "~/trpc/react";
-import { useNotify } from "~/hooks/useNotify";
-import {
-  safeGetItemSync,
-  safeRemoveItemSync,
-} from "~/lib/system/local-storage-mutex";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import {
-  createDefaultEconomicInputs,
-  type EconomicInputs,
-} from "../lib/economy-data-service";
+import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
 import type {
-  GovernmentDepartment,
   GovernmentBuilderState,
   GovernmentType,
   DepartmentInput,
@@ -22,12 +13,7 @@ import type {
 } from "~/types/government";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { createDefaultEconomyBuilderState } from "../components/enhanced/economy-builder/economyStateUtils";
-import type {
-  EconomyBuilderState,
-  SectorConfiguration,
-  RegionDistribution,
-  DemographicsConfiguration,
-} from "~/types/economy-builder";
+import type { EconomyBuilderState } from "~/types/economy-builder";
 
 function toRevenueCategory(cat: string | null | undefined): RevenueCategory {
   switch (cat) {
@@ -51,7 +37,6 @@ function toRevenueCategory(cat: string | null | undefined): RevenueCategory {
 }
 import type {
   NationalIdentityData,
-  DemographicData,
   AgeGroup,
   EducationLevel,
   Region,
@@ -60,10 +45,13 @@ import type {
 import type { SpendingCategoryData } from "../utils/governmentValidation";
 import type { ComponentType } from "~/lib/enums";
 import type { EconomicComponentType } from "~/lib/economy/atomic-data";
+import type { BuilderState } from "./builderStateTypes";
 import {
-  type BuilderState,
-  sanitizeEconomicInputs,
-} from "./builderStateTypes";
+  mergeRecoveredDraft,
+  readStoredDraft,
+  removeStoredDraft,
+  type RecoveredDraft,
+} from "../lib/recovered-draft";
 
 interface UseBuilderEditModeProps {
   mode: "create" | "edit";
@@ -107,56 +95,78 @@ export function useBuilderEditMode({
   setHasRestoredState,
   setLastSaved,
 }: UseBuilderEditModeProps) {
-  const notify = useNotify();
   const editModeInitialized = useRef(false);
   const editRestoreDone = useRef(false);
+  const isEditing = mode === "edit" && !!countryId && countryId.trim() !== "";
 
-  // Edit mode: Load existing country data
-  const { data: existingCountry, isLoading: countryLoading } = api.countries.getByIdAtTime.useQuery(
+  // The editor always loads the country fresh (refetchOnMount "always", and hydration waits
+  // for that fetch): a cached copy from before the last save would otherwise become the
+  // editor's starting point. Once loaded, the data is not refetched underneath the edits.
+  const editorQueryOptions = {
+    enabled: isEditing,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+  } as const;
+
+  const countryQuery = api.countries.getByIdAtTime.useQuery(
     { id: countryId || "" },
-    {
-      enabled: mode === "edit" && !!countryId && countryId.trim() !== "",
-      retry: false,
-      staleTime: 5 * 60 * 1000,
-      gcTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
-    }
+    { ...editorQueryOptions, retry: false, gcTime: 30 * 60 * 1000 }
+  );
+  const governmentQuery = api.government.getByCountryId.useQuery(
+    { countryId: countryId || "" },
+    editorQueryOptions
+  );
+  const taxSystemQuery = api.taxSystem.getByCountryId.useQuery(
+    { countryId: countryId || "" },
+    editorQueryOptions
+  );
+  const relationsQuery = api.countries.getEditorRelations.useQuery(
+    { countryId: countryId || "" },
+    editorQueryOptions
   );
 
-  const { data: existingGovernment, isLoading: governmentLoading } =
-    api.government.getByCountryId.useQuery(
-      { countryId: countryId || "" },
-      {
-        enabled: mode === "edit" && !!countryId,
-        staleTime: 5 * 60 * 1000,
-      }
-    );
+  const existingCountry = countryQuery.data;
+  const existingGovernment = governmentQuery.data;
+  const existingTaxSystem = taxSystemQuery.data;
+  const editorRelations = relationsQuery.data;
 
-  const { data: existingTaxSystem, isLoading: taxSystemLoading } =
-    api.taxSystem.getByCountryId.useQuery(
-      { countryId: countryId || "" },
-      {
-        enabled: mode === "edit" && !!countryId,
-        staleTime: 5 * 60 * 1000,
-      }
-    );
-
-  const { data: editorRelations, isLoading: relationsLoading } =
-    api.countries.getEditorRelations.useQuery(
-      { countryId: countryId || "" },
-      {
-        enabled: mode === "edit" && !!countryId,
-        staleTime: 5 * 60 * 1000,
-      }
-    );
-
+  const editorQueries = [countryQuery, governmentQuery, taxSystemQuery, relationsQuery];
   const isLoadingCountry =
-    mode === "edit" &&
-    (countryLoading || governmentLoading || taxSystemLoading || relationsLoading);
+    isEditing &&
+    editorQueries.some(
+      (query) =>
+        (!query.isFetchedAfterMount && !query.isError) || (query.isError && query.isFetching)
+    );
+
+  // A missing government, tax system or relation record hydrates defaults, but a failed load
+  // must stop the editor: autosave would otherwise write those defaults over the real data.
+  const failedQuery = editorQueries.find((query) => query.isError);
+  const countryLoadError =
+    isEditing && !isLoadingCountry && (failedQuery || !existingCountry)
+      ? (failedQuery?.error?.message ?? "The country could not be loaded.")
+      : null;
+  const refetchers = editorQueries.map((query) => query.refetch);
+  const refetchersRef = useRef(refetchers);
+  refetchersRef.current = refetchers;
+  const retryCountryLoad = useCallback(() => {
+    for (const refetch of refetchersRef.current) void refetch();
+  }, []);
+
+  // The local copy of an earlier visit, read before this visit's autosave can replace it.
+  const [storedDraft] = useState<RecoveredDraft | null>(() =>
+    isEditing && countryId ? readStoredDraft(countryId) : null
+  );
+  const [recoveredDraft, setRecoveredDraft] = useState<RecoveredDraft | null>(null);
 
   // Initialize edit mode with existing data
   useEffect(() => {
-    if (mode === "edit" && existingCountry && !editModeInitialized.current && !isLoadingCountry) {
+    if (
+      mode === "edit" &&
+      existingCountry &&
+      !editModeInitialized.current &&
+      !isLoadingCountry &&
+      !countryLoadError
+    ) {
       editModeInitialized.current = true;
 
       const typedCountry = existingCountry as CountryWithEditorFields;
@@ -409,7 +419,8 @@ export function useBuilderEditMode({
                 color: dept.color ?? undefined,
                 priority: dept.priority ?? undefined,
                 parentDepartmentId: dept.parentDepartmentId ?? undefined,
-                organizationalLevel: (dept.organizationalLevel || "Department") as OrganizationalLevel,
+                organizationalLevel: (dept.organizationalLevel ||
+                  "Department") as OrganizationalLevel,
                 functions: (() => {
                   try {
                     return Array.isArray(dept.functions)
@@ -506,149 +517,53 @@ export function useBuilderEditMode({
     existingTaxSystem,
     editorRelations,
     isLoadingCountry,
+    countryLoadError,
     setBuilderState,
   ]);
 
-  // Load saved edits from localStorage after initial DB load
+  // After the country loads: offer the local copy of an earlier visit when it is newer than
+  // the saved country (the editor shell hides the offer when the copy changes nothing).
   useEffect(() => {
     if (
-      mode === "edit" &&
-      editModeInitialized.current &&
-      !isLoadingCountry &&
-      !editRestoreDone.current
+      mode !== "edit" ||
+      !countryId ||
+      !editModeInitialized.current ||
+      isLoadingCountry ||
+      editRestoreDone.current
     ) {
-      editRestoreDone.current = true;
-      try {
-        const stateKey = `builder_state_${countryId}`;
-        const savedKey = `builder_last_saved_${countryId}`;
-
-        const savedState = safeGetItemSync(stateKey);
-        const savedLastSaved = safeGetItemSync(savedKey);
-
-        const localSavedAt = savedLastSaved ? new Date(savedLastSaved).getTime() : 0;
-        const dbUpdatedAt = (existingCountry as { updatedAt?: string | Date })?.updatedAt
-          ? new Date((existingCountry as { updatedAt?: string | Date }).updatedAt!).getTime()
-          : 0;
-        const localIsNewer = localSavedAt > dbUpdatedAt;
-
-        if (savedState && !localIsNewer) {
-          safeRemoveItemSync(stateKey);
-          safeRemoveItemSync(savedKey);
-        } else if (savedState) {
-          let parsedState: BuilderState;
-          try {
-            parsedState = JSON.parse(savedState);
-          } catch {
-            return;
-          }
-          if (parsedState.economicInputs && parsedState.economicInputs.countryName) {
-            setBuilderState((prev): BuilderState => {
-              const sanitizedSaved = sanitizeEconomicInputs(parsedState.economicInputs);
-              if (!sanitizedSaved) return prev;
-
-              const baseInputs: EconomicInputs = prev.economicInputs ?? createDefaultEconomicInputs();
-              const baseIdentity = baseInputs.nationalIdentity;
-              const savedIdentity = sanitizedSaved.nationalIdentity;
-
-              const mergedInputs: EconomicInputs = {
-                ...baseInputs,
-                ...sanitizedSaved,
-                countryName:
-                  sanitizedSaved.countryName ||
-                  baseInputs.countryName ||
-                  parsedState.economicInputs?.countryName ||
-                  "",
-                flagUrl: sanitizedSaved.flagUrl || baseInputs.flagUrl || "",
-                coatOfArmsUrl:
-                  sanitizedSaved.coatOfArmsUrl || baseInputs.coatOfArmsUrl || "",
-                nationalIdentity: {
-                  ...baseIdentity,
-                  ...savedIdentity,
-                  countryName:
-                    savedIdentity?.countryName ||
-                    baseIdentity?.countryName ||
-                    parsedState.economicInputs?.countryName ||
-                    "",
-                  officialName:
-                    savedIdentity?.officialName || baseIdentity?.officialName || "",
-                  governmentType:
-                    savedIdentity?.governmentType ||
-                    baseIdentity?.governmentType ||
-                    "Republic",
-                  motto: savedIdentity?.motto || baseIdentity?.motto || "",
-                  mottoNative: savedIdentity?.mottoNative || baseIdentity?.mottoNative || "",
-                  capitalCity: savedIdentity?.capitalCity || baseIdentity?.capitalCity || "",
-                  largestCity: savedIdentity?.largestCity || baseIdentity?.largestCity || "",
-                  demonym: savedIdentity?.demonym || baseIdentity?.demonym || "",
-                  currency: savedIdentity?.currency || baseIdentity?.currency || "USD",
-                  officialLanguages:
-                    savedIdentity?.officialLanguages || baseIdentity?.officialLanguages || "",
-                  nationalLanguage:
-                    savedIdentity?.nationalLanguage || baseIdentity?.nationalLanguage || "",
-                  nationalAnthem:
-                    savedIdentity?.nationalAnthem || baseIdentity?.nationalAnthem || "",
-                  nationalDay: savedIdentity?.nationalDay || baseIdentity?.nationalDay || "",
-                  callingCode: savedIdentity?.callingCode || baseIdentity?.callingCode || "",
-                  internetTLD: savedIdentity?.internetTLD || baseIdentity?.internetTLD || "",
-                  drivingSide:
-                    savedIdentity?.drivingSide === "left" || baseIdentity?.drivingSide === "left"
-                      ? "left"
-                      : "right",
-                },
-                coreIndicators: sanitizedSaved.coreIndicators || baseInputs.coreIndicators,
-                laborEmployment: sanitizedSaved.laborEmployment || baseInputs.laborEmployment,
-                fiscalSystem: sanitizedSaved.fiscalSystem || baseInputs.fiscalSystem,
-                incomeWealth: sanitizedSaved.incomeWealth || baseInputs.incomeWealth,
-                governmentSpending: sanitizedSaved.governmentSpending || baseInputs.governmentSpending,
-                demographics: sanitizedSaved.demographics || baseInputs.demographics,
-              };
-
-              return {
-                ...prev,
-                economicInputs: mergedInputs,
-                governmentStructure: parsedState.governmentStructure || prev.governmentStructure,
-                taxSystemData: parsedState.taxSystemData || prev.taxSystemData,
-                governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
-                economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
-                activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
-                activeIdentitySubTab: "basic",
-                activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
-                activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
-              };
-            });
-            setHasRestoredState(true);
-
-            const savedTab = parsedState.activeIdentitySubTab;
-            if (savedTab && savedTab !== "archetype") {
-              notify.info(
-                "Session restored",
-                `Starting at Archetype/Preset tab (was on "${savedTab}").`,
-                { duration: 4000 }
-              );
-            }
-          }
-        }
-
-        if (savedLastSaved) {
-          setLastSaved(new Date(savedLastSaved));
-        }
-      } catch (error) {
-        console.warn("[useBuilderEditMode] Failed to restore saved edits:", error);
-      }
+      return;
     }
-  }, [
-    mode,
-    countryId,
-    existingCountry,
-    isLoadingCountry,
-    notify,
-    setBuilderState,
-    setHasRestoredState,
-    setLastSaved,
-  ]);
+    editRestoreDone.current = true;
+    if (!storedDraft) return;
+
+    const updatedAt = (existingCountry as { updatedAt?: string | Date } | undefined)?.updatedAt;
+    const dbUpdatedAt = updatedAt ? new Date(updatedAt).getTime() : 0;
+    if (storedDraft.savedAt.getTime() <= dbUpdatedAt) {
+      removeStoredDraft(countryId);
+      return;
+    }
+    setRecoveredDraft(storedDraft);
+  }, [mode, countryId, existingCountry, isLoadingCountry, storedDraft]);
+
+  const applyRecoveredDraft = useCallback(() => {
+    if (!recoveredDraft) return;
+    setBuilderState((prev) => mergeRecoveredDraft(prev, recoveredDraft.state));
+    setHasRestoredState(true);
+    setLastSaved(recoveredDraft.savedAt);
+    setRecoveredDraft(null);
+  }, [recoveredDraft, setBuilderState, setHasRestoredState, setLastSaved]);
+
+  const dismissRecoveredDraft = useCallback(() => {
+    setRecoveredDraft(null);
+  }, []);
 
   return {
     isLoadingCountry,
+    countryLoadError,
+    retryCountryLoad,
+    recoveredDraft,
+    applyRecoveredDraft,
+    dismissRecoveredDraft,
     existingCountry,
     existingGovernment,
     existingTaxSystem,

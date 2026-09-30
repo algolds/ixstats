@@ -97,7 +97,7 @@ export function BuilderSidebarLayout({
 
       {/* Alerts */}
       {alerts && (
-        <div className="container mx-auto px-4 pt-2 empty:hidden">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-2 empty:hidden">
           <div className="space-y-2 empty:hidden">{alerts}</div>
         </div>
       )}

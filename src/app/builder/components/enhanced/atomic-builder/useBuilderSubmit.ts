@@ -9,6 +9,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { createUrl } from "~/lib/utils";
 import { sanitizeEconomicInputs } from "../../../hooks/useBuilderState";
 import { useBuilderContext } from "../context/BuilderStateContext";
+import { useInvalidateCountryData } from "../../../hooks/useInvalidateCountryData";
 
 export function useBuilderSubmit({
   isEditMode,
@@ -84,11 +85,11 @@ export function useBuilderSubmit({
     },
   });
 
-  const utils = api.useUtils();
+  const invalidateCountryData = useInvalidateCountryData();
   const updateCountryMutation = api.countries.updateCountry.useMutation({
     onSuccess: (country) => {
-      // Flags are resolved by name and cached for an hour on the client.
-      void utils.countries.flags.resolveBatch.invalidate();
+      // MyCountry and the country page must not show the pre-save data (flags included).
+      invalidateCountryData();
       try {
         if (typeof window !== "undefined") {
           localStorage.removeItem(`builder_state_${countryId}`);
@@ -102,7 +103,7 @@ export function useBuilderSubmit({
 
       notify.success(
         "Country Updated Successfully!",
-        `${country.name} has been updated. Redirecting to your dashboard...`
+        `${country.name} has been updated. Taking you back to MyCountry…`
       );
 
       setTimeout(() => {

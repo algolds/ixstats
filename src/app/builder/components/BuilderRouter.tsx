@@ -26,6 +26,13 @@ import { BuilderStudioHeader } from "./BuilderStudioHeader";
 import { BuilderStepFooter } from "./BuilderStepFooter";
 import { BuilderResetConfirmDialog } from "./BuilderResetConfirmDialog";
 import { EditorSaveBar } from "./EditorSaveBar";
+import { EditorHeader } from "./editor/EditorHeader";
+import { EditorSkeleton } from "./editor/EditorSkeleton";
+import { EditorLeaveGuard } from "./editor/EditorLeaveGuard";
+import { EditorDraftBanner } from "./editor/EditorDraftBanner";
+import { EditorChangeSummary } from "./editor/EditorChangeSummary";
+import { EditorSectionFooter } from "./editor/EditorSectionFooter";
+import type { EditorSaveStatus } from "./editor/editor-sections";
 import { EditChangesProvider } from "../primitives/ChangedFieldDot";
 import { SectionAlerts } from "../primitives/SectionAlert";
 import { useBuilderActions } from "../hooks/useBuilderActions";
@@ -33,6 +40,11 @@ import { useBuilderAlerts } from "../hooks/useBuilderAlerts";
 import { useStepCompletion } from "../hooks/useStepCompletion";
 import { useBuilderKeyboardShortcuts } from "../hooks/useBuilderKeyboardShortcuts";
 import { useEditChanges } from "../hooks/useEditChanges";
+import { countChangesBySection } from "../lib/edit-changes";
+import { mergeRecoveredDraft } from "../lib/recovered-draft";
+import { useNotify } from "~/hooks/useNotify";
+import { Skeleton } from "~/components/ui/skeleton";
+import { WarningTriangle, NavArrowLeft, Refresh } from "iconoir-react";
 import {
   type BuilderSection,
   BUILD_STEPS,
@@ -47,12 +59,12 @@ import { withBasePath } from "~/lib/base-path";
 
 function SectionSkeleton() {
   return (
-    <div className="animate-pulse space-y-4 p-6">
-      <div className="h-8 w-48 rounded bg-emerald-500/5" />
-      <div className="h-64 rounded-xl bg-emerald-500/5" />
+    <div className="space-y-4 p-6" role="status" aria-label="Loading section">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-64 rounded-xl" />
       <div className="grid grid-cols-2 gap-4">
-        <div className="h-32 rounded-lg bg-emerald-500/5" />
-        <div className="h-32 rounded-lg bg-emerald-500/5" />
+        <Skeleton className="h-32 rounded-lg" />
+        <Skeleton className="h-32 rounded-lg" />
       </div>
     </div>
   );
@@ -77,6 +89,14 @@ const SECTION_TITLES: Record<BuilderSection, string> = {
   import: "Import from Wiki",
 };
 
+/** Section names in the page title; the editor's final section reviews rather than creates. */
+function pageTitle(section: BuilderSection, mode: "create" | "edit"): string {
+  const title = mode === "edit" && section === "preview" ? "Review" : SECTION_TITLES[section];
+  return `${title} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
+}
+
+const NO_SECTIONS = new Set<BuilderSection>();
+
 interface BuilderRouterProps {
   mode?: "create" | "edit";
   countryId?: string;
@@ -89,7 +109,8 @@ function getSectionFromUrl(mode?: "create" | "edit"): BuilderSection {
   const params = new URLSearchParams(window.location.search);
   const section = params.get("section");
   if (section && (section === "import" || SECTION_TITLES[section as BuilderSection])) {
-    if (mode === "edit" && section === "foundation") {
+    // Foundation and wiki import only exist while creating a country.
+    if (mode === "edit" && (section === "foundation" || section === "import")) {
       return "identity";
     }
     return section as BuilderSection;
@@ -108,12 +129,7 @@ function buildSectionUrl(section: BuilderSection, mode?: "create" | "edit"): str
 
 function WelcomeModalWrapper() {
   const { welcomeModalOpen, setWelcomeModalOpen } = useBuilderFilter();
-  return (
-    <BuilderWelcomeModal
-      open={welcomeModalOpen}
-      onOpenChange={setWelcomeModalOpen}
-    />
-  );
+  return <BuilderWelcomeModal open={welcomeModalOpen} onOpenChange={setWelcomeModalOpen} />;
 }
 
 // ─── Inner Router (consumes BuilderStateContext) ───
@@ -130,7 +146,18 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     clearDraft,
     isLoadingCountry,
     triggerManualSave,
+    isSyncing,
+    syncError,
+    hasUnsyncedChanges,
+    lastSyncedAt,
+    countryLoadError,
+    retryCountryLoad,
+    recoveredDraft,
+    applyRecoveredDraft,
+    dismissRecoveredDraft,
   } = useBuilderContext();
+  const isEdit = mode === "edit";
+  const notify = useNotify();
 
   const editChanges = useEditChanges({
     enabled: mode === "edit",
@@ -178,11 +205,86 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     }));
   }, [builderState.showAdvancedMode, filter, setBuilderState]);
 
+  // ─── Editor: save, discard, autosave status ───
+
+  const [isEditorSaving, setIsEditorSaving] = useState(false);
+  const isEditorSavingRef = useRef(false);
+
+  const handleEditorSave = useCallback(async () => {
+    if (isEditorSavingRef.current) return;
+    isEditorSavingRef.current = true;
+    setIsEditorSaving(true);
+    try {
+      await editChanges.save(triggerManualSave);
+      notify.success("Changes saved");
+    } catch (error) {
+      notify.error(
+        "Couldn't save your changes",
+        error instanceof Error ? error.message : "Check your connection and try again."
+      );
+    } finally {
+      isEditorSavingRef.current = false;
+      setIsEditorSaving(false);
+    }
+  }, [editChanges, triggerManualSave, notify]);
+
+  const handleRetrySync = useCallback(async () => {
+    try {
+      await triggerManualSave();
+    } catch (error) {
+      notify.error(
+        "Still couldn't save",
+        error instanceof Error ? error.message : "Check your connection and try again."
+      );
+    }
+  }, [triggerManualSave, notify]);
+
+  const handleEditorDiscard = useCallback(() => {
+    const count = editChanges.changes.length;
+    if (count === 0) return;
+    editChanges.discard();
+    notify.info(
+      count === 1 ? "1 change discarded" : `${count} changes discarded`,
+      "Use Undo to bring them back."
+    );
+  }, [editChanges, notify]);
+
+  const saveStatus: EditorSaveStatus = isSyncing
+    ? "saving"
+    : hasUnsyncedChanges
+      ? syncError
+        ? "error"
+        : "pending"
+      : "saved";
+
+  const changeCounts = useMemo(
+    () => countChangesBySection(editChanges.changes),
+    [editChanges.changes]
+  );
+
+  // An unsaved copy from an earlier visit: offer it only if it differs from the loaded country.
+  const [draftChangeCount, setDraftChangeCount] = useState(0);
+  const evaluatedDraftRef = useRef<typeof recoveredDraft>(null);
+  useEffect(() => {
+    if (!recoveredDraft || !editChanges.isReady) return;
+    if (evaluatedDraftRef.current === recoveredDraft) return;
+    evaluatedDraftRef.current = recoveredDraft;
+    const diff = editChanges.diffFromBaseline(
+      mergeRecoveredDraft(builderState, recoveredDraft.state)
+    );
+    if (!diff || diff.length === 0) {
+      dismissRecoveredDraft();
+      return;
+    }
+    setDraftChangeCount(diff.length);
+  }, [recoveredDraft, editChanges, builderState, dismissRecoveredDraft]);
+  const showDraftBanner = isEdit && recoveredDraft !== null && draftChangeCount > 0;
+
   useBuilderKeyboardShortcuts({
-    onSave: submitFn,
-    onReset: handleOpenResetDialog,
+    onSave: isEdit ? handleEditorSave : submitFn,
+    onReset: isEdit ? handleEditorDiscard : handleOpenResetDialog,
     onToggleAdvanced: handleToggleAdvanced,
-    isSubmitting: isSubmittingGlobal,
+    isSubmitting: isSubmittingGlobal || isEditorSaving,
   });
 
   const [heroCollapsed, setHeroCollapsed] = useState(false);
@@ -222,15 +324,12 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       ) {
         setActiveSection(mappedSection);
         window.history.pushState(null, "", withBasePath(buildSectionUrl(mappedSection, mode)));
-        document.title = `${SECTION_TITLES[mappedSection]} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
+        document.title = pageTitle(mappedSection, mode);
       }
     }
   }, [builderState.step, activeSection, mode]);
 
-  const isScratchOrImport = useMemo(
-    () => isScratchOrImportOrigin(builderState),
-    [builderState]
-  );
+  const isScratchOrImport = useMemo(() => isScratchOrImportOrigin(builderState), [builderState]);
 
   // Compute completed and accessible steps from builder state
   const completedSteps = useMemo(() => {
@@ -242,7 +341,8 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     return set;
   }, [builderState.completedSteps, mode, isScratchOrImport]);
 
-  useStepCompletion(completedSteps, SECTION_TITLES, BUILD_STEPS.length);
+  // Step-completion toasts belong to the creation wizard; the editor has nothing to complete.
+  useStepCompletion(isEdit ? NO_SECTIONS : completedSteps, SECTION_TITLES, BUILD_STEPS.length);
 
   const accessibleSteps = useMemo(() => {
     const set = new Set<BuilderSection>();
@@ -301,7 +401,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Navigate to a section — also briefly flashes the section name in DI
   const handleNavigate = useCallback(
     (section: BuilderSection) => {
-      if (mode === "edit" && section === "foundation") return;
+      if (mode === "edit" && (section === "foundation" || section === "import")) return;
       if (section === activeSection) return;
 
       setActiveSection(section);
@@ -310,7 +410,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       window.history.pushState(null, "", withBasePath(buildSectionUrl(section, mode)));
 
       // Update document title
-      document.title = `${SECTION_TITLES[section]} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
+      document.title = pageTitle(section, mode);
 
       // Scroll to top
       window.scrollTo({ top: 0, behavior: "instant" });
@@ -354,7 +454,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
 
   // Set initial page title
   useEffect(() => {
-    document.title = `${SECTION_TITLES[activeSection]} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
+    document.title = pageTitle(activeSection, mode);
   }, [activeSection, mode]);
 
   // Guard against landing on foundation when in scratch or import mode
@@ -366,8 +466,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       window.history.pushState(null, "", withBasePath(buildSectionUrl("identity", mode)));
     }
   }, [isScratchOrImport, activeSection, mode, setBuilderState]);
-
-
 
   // Manual save now lives in the Dynamic Island (BuilderDIPlugin → triggerManualSave).
 
@@ -423,6 +521,45 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     );
   }
 
+  // Editor: the country is loading, or could not be loaded.
+  if (isEdit && isLoadingCountry) {
+    return <EditorSkeleton />;
+  }
+  if (isEdit && countryLoadError) {
+    return (
+      <div className="flex w-full flex-1 items-start justify-center px-4 pt-24 sm:pt-28 lg:pt-32">
+        <div
+          role="alert"
+          className="border-border bg-card w-full max-w-md space-y-4 rounded-2xl border p-6 text-center shadow-sm"
+        >
+          <span className="bg-destructive/10 text-destructive mx-auto flex h-12 w-12 items-center justify-center rounded-full">
+            <WarningTriangle aria-hidden="true" className="h-6 w-6" />
+          </span>
+          <div className="space-y-1">
+            <h1 className="text-foreground text-lg font-semibold">Couldn't open your country</h1>
+            <p className="text-muted-foreground text-sm">{countryLoadError}</p>
+          </div>
+          <div className="flex flex-col-reverse justify-center gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => router.push(createUrl("/mycountry"))}>
+              <NavArrowLeft aria-hidden="true" className="h-4 w-4" />
+              Back to MyCountry
+            </Button>
+            <Button onClick={retryCountryLoad}>
+              <Refresh aria-hidden="true" className="h-4 w-4" />
+              Try again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const sectionAlerts = alertResult.forSection(activeSection);
+  const editorCountryName =
+    builderState.economicInputs?.nationalIdentity?.countryName ||
+    builderState.economicInputs?.countryName ||
+    "";
+
   // Render the active section
   const renderSection = () => {
     if (activeSection === "import") {
@@ -465,7 +602,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
         {/* Tactile Paper Texture Background Overlay */}
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-0 select-none opacity-[0.06] dark:opacity-[0.04]"
+          className="pointer-events-none fixed inset-0 z-0 opacity-[0.06] select-none dark:opacity-[0.04]"
           style={{
             backgroundImage: `url(${withBasePath("/textures/groovepaper.png")})`,
             backgroundRepeat: "repeat",
@@ -482,41 +619,73 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           heroSection={null}
           onReset={handleOpenResetDialog}
           alerts={
-            alertResult.forSection(activeSection).length > 0 ? (
-              <SectionAlerts alerts={alertResult.forSection(activeSection)} />
+            showDraftBanner || sectionAlerts.length > 0 ? (
+              <>
+                {showDraftBanner && recoveredDraft && (
+                  <EditorDraftBanner
+                    changeCount={draftChangeCount}
+                    savedAt={recoveredDraft.savedAt}
+                    onRestore={applyRecoveredDraft}
+                    onDismiss={dismissRecoveredDraft}
+                  />
+                )}
+                {sectionAlerts.length > 0 && <SectionAlerts alerts={sectionAlerts} />}
+              </>
             ) : null
           }
           studioHeader={
-            activeSection !== "foundation" &&
-            activeSection !== "import" && (
-              <BuilderStudioHeader
+            isEdit ? (
+              <EditorHeader
+                countryName={editorCountryName}
+                flagUrl={builderState.economicInputs?.flagUrl}
                 activeSection={activeSection}
-                completedSteps={completedSteps}
-                accessibleSteps={accessibleSteps}
-                mode={mode}
                 onNavigate={handleNavigate}
-                onBack={handlePreviousStep}
-                onContinue={handleContinue}
-                onSubmit={submitFn ?? undefined}
-                isSubmitting={isSubmittingGlobal}
+                changeCounts={changeCounts}
                 alertResult={alertResult}
-                onReset={handleOpenResetDialog}
+                saveStatus={saveStatus}
+                lastSyncedAt={lastSyncedAt}
               />
+            ) : (
+              activeSection !== "foundation" &&
+              activeSection !== "import" && (
+                <BuilderStudioHeader
+                  activeSection={activeSection}
+                  completedSteps={completedSteps}
+                  accessibleSteps={accessibleSteps}
+                  mode={mode}
+                  onNavigate={handleNavigate}
+                  onBack={handlePreviousStep}
+                  onContinue={handleContinue}
+                  onSubmit={submitFn ?? undefined}
+                  isSubmitting={isSubmittingGlobal}
+                  alertResult={alertResult}
+                  onReset={handleOpenResetDialog}
+                />
+              )
             )
           }
           stepFooter={
-            activeSection !== "foundation" &&
-            activeSection !== "import" && (
-              <BuilderStepFooter
+            isEdit ? (
+              <EditorSectionFooter
                 activeSection={activeSection}
-                mode={mode}
                 onNavigate={handleNavigate}
-                onBack={handlePreviousStep}
-                onContinue={handleContinue}
-                onSubmit={submitFn ?? undefined}
-                isSubmitting={isSubmittingGlobal}
-                onReset={handleOpenResetDialog}
+                onFinish={submitFn ?? undefined}
+                isFinishing={isSubmittingGlobal}
               />
+            ) : (
+              activeSection !== "foundation" &&
+              activeSection !== "import" && (
+                <BuilderStepFooter
+                  activeSection={activeSection}
+                  mode={mode}
+                  onNavigate={handleNavigate}
+                  onBack={handlePreviousStep}
+                  onContinue={handleContinue}
+                  onSubmit={submitFn ?? undefined}
+                  isSubmitting={isSubmittingGlobal}
+                  onReset={handleOpenResetDialog}
+                />
+              )
             )
           }
         >
@@ -531,13 +700,36 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
             >
               <Suspense fallback={<SectionSkeleton />}>
                 <EditChangesProvider changes={editChanges.changes}>
+                  {isEdit && activeSection === "preview" && (
+                    <div className="mb-6">
+                      <EditorChangeSummary
+                        changes={editChanges.changes}
+                        onNavigate={handleNavigate}
+                      />
+                    </div>
+                  )}
                   {renderSection()}
                 </EditChangesProvider>
               </Suspense>
             </motion.div>
           </AnimatePresence>
         </BuilderSidebarLayout>
-        {mode === "edit" && <EditorSaveBar edit={editChanges} onPersist={triggerManualSave} />}
+        {isEdit && (
+          <>
+            <EditorSaveBar
+              changeCount={editChanges.changes.length}
+              canUndo={editChanges.canUndo}
+              onUndo={editChanges.undo}
+              onDiscard={handleEditorDiscard}
+              onSave={() => void handleEditorSave()}
+              isSaving={isEditorSaving}
+              status={saveStatus}
+              lastSyncedAt={lastSyncedAt}
+              onRetry={() => void handleRetrySync()}
+            />
+            <EditorLeaveGuard hasUnsavedChanges={hasUnsyncedChanges} onSave={triggerManualSave} />
+          </>
+        )}
       </div>
       <BuilderResetConfirmDialog
         open={isResetDialogOpen}

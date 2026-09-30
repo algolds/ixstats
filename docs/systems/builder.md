@@ -64,6 +64,20 @@ graph LR
 
 ---
 
+## Country Editor (edit mode)
+
+`/mycountry/editor` renders `BuilderRouter mode="edit"` for the player's country. It reuses the builder's sections but not the wizard chrome:
+
+- **Shell** (`src/app/builder/components/editor/`): `EditorHeader` shows a link back to MyCountry, the country's flag and name (live from the edit state), the autosave status, the guided/expert toggle and the guide. Its section tiles (Identity, Government, Economy, Review) jump straight to any section; each shows how many of its fields changed (`countChangesBySection`, `lib/edit-changes.ts`) and an icon when the section has errors. `EditorSectionFooter` links the previous and next section; on Review it offers **Save and return to MyCountry** (the confirmation dialog with GDP/currency warnings, then `countries.updateCountry`). Foundation and wiki import are creation-only (`?section=foundation|import` opens Identity). Step-completion toasts are off in edit mode.
+- **Saving**: edit mode autosaves to `countries.updateCountry` 1.5 s after the last change (owner decision, plan 004). `useBuilderPersistence` tracks whether the server has the current state (`hasUnsyncedChanges`, `lastSyncedAt`); a failed save is retried on the next change or from the save bar instead of being treated as saved. What the builder derives from the loaded country in its first 600 ms is part of the loaded state, so opening the editor does not write to the country. After each save the `countries`, `mycountry`, `government`, `taxSystem` and `economics` queries are marked stale (`useInvalidateCountryData`, no immediate refetch) and flag lookups refetch, so MyCountry and the country page show the new data.
+- **Save bar** (`EditorSaveBar`): always visible. It counts the fields changed since the country was opened or last saved with **Save**, says whether the autosave landed (with **Try again** on failure), and offers Undo (50 steps), Discard (back to that version; undoable) and Save. ⌘S saves and ⌘⇧D discards in the editor.
+- **Leaving**: while the server lacks the latest changes, `EditorLeaveGuard` asks before leaving — the browser prompt on reload/close, and a *Save and leave / Leave without saving / Stay* dialog for in-app links.
+- **Loading and errors**: the editor always refetches the country, government, tax system and editor relations on open and waits for that fetch before hydrating, so it never starts from a cached pre-save copy. `EditorSkeleton` (also the route's `loading.tsx`) matches the layout; if any of those loads fails, the editor shows a retry card instead of hydrating defaults that autosave could write over the real data.
+- **Recovered edits**: the local copy (`builder_state_<countryId>`) is read before this visit's autosave can replace it. When it is newer than the country and differs from it, `EditorDraftBanner` offers **Restore** (the fields become changes and autosave sends them) or **Discard** (`lib/recovered-draft.ts`).
+- **Government component nudges**: adding Social Democracy or a Free Market System adjusts tax revenue once, when added (`lib/government-component-nudges.ts`). It no longer re-applies on every section switch or when the editor loads a country that already has the component.
+
+---
+
 ## Key Optimizations & Stability Guardrails
 
 - **Wiki API Compliance**: All MediaWiki infobox imports strictly use the centralized user-agent `IxStats-Builder` (`DEFAULT_USER_AGENT` in `src/lib/wiki-os/config.ts`). Never make ad-hoc fetch calls.

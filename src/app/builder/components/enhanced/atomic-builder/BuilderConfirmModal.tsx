@@ -42,8 +42,8 @@ export function BuilderConfirmModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="border-border/60 bg-background/95 max-w-md border p-0 shadow-2xl backdrop-blur-3xl">
-        <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+      <DialogContent className="border-border bg-card max-w-md border p-0 shadow-2xl">
+        <div className="border-border/40 bg-muted/40 border-b px-6 py-4">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
               <Shield className="h-5 w-5 text-primary" />
@@ -107,7 +107,7 @@ export function BuilderConfirmModal({
           )}
         </div>
 
-        <div className="border-border/40 flex justify-end gap-2 border-t bg-white/[0.01] px-6 py-4 dark:bg-black/[0.05]">
+        <div className="border-border/40 bg-muted/40 flex justify-end gap-2 border-t px-6 py-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
