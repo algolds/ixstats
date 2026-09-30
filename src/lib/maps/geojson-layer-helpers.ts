@@ -9,6 +9,20 @@ import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
 import type { FeatureCollection, Geometry } from "geojson";
 
 /**
+ * Whether the map's style has finished its initial load, so sources and layers can be added.
+ *
+ * Deliberately not `map.isStyleLoaded()`: that also returns false while any source is
+ * re-tiling (after every `setData`, and while tiles stream in during a pan). Overlays guarded by
+ * it silently skipped their setup — or their cleanup, leaving layers behind — whenever they
+ * were toggled mid-pan.
+ */
+export function isMapStyleReady(map: MapLibreMap | null | undefined): map is MapLibreMap {
+  if (!map) return false;
+  const style = (map as unknown as { style?: { _loaded?: boolean } }).style;
+  return !!style && style._loaded !== false;
+}
+
+/**
  * Sets or updates a GeoJSON source on the given MapLibre instance.
  */
 export function setOrUpdateGeoJSONSource(
@@ -16,7 +30,7 @@ export function setOrUpdateGeoJSONSource(
   sourceId: string,
   data: FeatureCollection<Geometry, any> | object
 ): boolean {
-  if (!map || !map.isStyleLoaded()) return false;
+  if (!isMapStyleReady(map)) return false;
 
   const source = map.getSource(sourceId);
   if (source && "setData" in source) {
@@ -44,7 +58,7 @@ export function ensureMapLayer(
   layerConfig: LayerSpecification,
   beforeLayerId?: string
 ): boolean {
-  if (!map || !map.isStyleLoaded()) return false;
+  if (!isMapStyleReady(map)) return false;
 
   if (!map.getLayer(layerConfig.id)) {
     try {
@@ -65,7 +79,7 @@ export function removeLayerAndSource(
   layerId: string,
   sourceId?: string
 ): void {
-  if (!map || !map.isStyleLoaded()) return;
+  if (!isMapStyleReady(map)) return;
 
   if (map.getLayer(layerId)) {
     try {

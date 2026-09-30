@@ -43,3 +43,30 @@ export function createStarImage(size: number, fillColor: string, strokeColor: st
 
   return ctx.getImageData(0, 0, size, size);
 }
+
+/** True when two feature arrays hold the same feature objects in the same order. */
+export function sameFeatureList(a: readonly unknown[] | null, b: readonly unknown[]): boolean {
+  if (!a || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * Push a filtered feature list to a GeoJSON source only when it differs from the list pushed
+ * last time. Zoom-driven filters run on every `zoom` frame; re-sending an unchanged
+ * FeatureCollection makes MapLibre's worker re-tile the whole source each frame, which is
+ * what made zooming stutter. `lastRef` holds the list last sent to this source.
+ */
+export function setFilteredSourceData(
+  source: { setData: (data: GeoJSON.GeoJSON) => unknown } | undefined,
+  features: GeoJSON.Feature[],
+  lastRef: { current: GeoJSON.Feature[] | null },
+  base?: Partial<GeoJSON.FeatureCollection>
+): void {
+  if (!source) return;
+  if (sameFeatureList(lastRef.current, features)) return;
+  lastRef.current = features;
+  source.setData({ ...base, type: "FeatureCollection", features });
+}

@@ -225,12 +225,19 @@ export function useMeasureToolState({ mapRef, onActiveChange }: UseMeasureToolSt
       return null;
     };
 
+    // Dragging a vertex fires mousemove/touchmove faster than the screen refreshes; apply the
+    // latest points once per animation frame (one state update + one setData) instead of per event.
+    let frame = 0;
+    const flush = () => {
+      frame = 0;
+      const pts = pointsRef.current;
+      setPoints(pts);
+      setTotalDistance(computeDistances(pts).total);
+      updateMapLayers(pts);
+    };
     const applyUpdate = (pts: [number, number][]) => {
       pointsRef.current = pts;
-      setPoints(pts);
-      const { total } = computeDistances(pts);
-      setTotalDistance(total);
-      requestAnimationFrame(() => updateMapLayers(pts));
+      if (!frame) frame = requestAnimationFrame(flush);
     };
 
     const onClick = (e: any) => {
@@ -302,6 +309,7 @@ export function useMeasureToolState({ mapRef, onActiveChange }: UseMeasureToolSt
     map.on("touchend", onTouchEnd);
 
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       map.off("click", onClick);
       map.off("mousedown", POINT_LAYER_ID, onMouseDown);
       map.off("mousemove", onMouseMove);
@@ -319,6 +327,8 @@ export function useMeasureToolState({ mapRef, onActiveChange }: UseMeasureToolSt
       // Ignore when typing in inputs
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      // Leave browser/OS shortcuts (Ctrl/Cmd+M minimises on macOS) alone.
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       if (e.key === "m" || e.key === "M") {
         e.preventDefault();

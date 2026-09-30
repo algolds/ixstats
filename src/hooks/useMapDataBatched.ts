@@ -43,6 +43,25 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
 /** Decorative layers load in a deferred second request */
 const DECORATIVE_LAYERS: MapLayerType[] = [];
 
+/** Merge per-layer `getWorldMap` results into one record (undefined until any arrives). */
+function mergeLayerResults(
+  results: ReadonlyArray<{ data?: unknown }>
+): Record<string, unknown> | undefined {
+  let merged: Record<string, unknown> | undefined;
+  for (const r of results) {
+    if (r.data) merged = { ...merged, ...(r.data as Record<string, unknown>) };
+  }
+  return merged;
+}
+
+/** Server LOD bucket for a zoom level (mirrors `getZoomBucket` in geo/core/cache.ts). */
+export function getMapZoomBucket(zoom: number | undefined): 0 | 1 | 2 | undefined {
+  if (zoom === undefined) return undefined;
+  if (zoom < 4) return 0;
+  if (zoom < 7) return 1;
+  return 2;
+}
+
 /** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
 export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number, realm?: string) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
@@ -68,30 +87,26 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     };
   }, [cacheScope]);
 
-  // Compute zoom bucket — only re-fetches on bucket change
-  const zoomBucket = useMemo(() => {
-    if (zoom === undefined) return undefined;
-    if (zoom < 4) return 0;
-    if (zoom < 7) return 1;
-    return 2;
-  }, [zoom]);
+  // Level of detail. The first bundle is requested without a zoom (the server's mid-zoom LOD,
+  // the same key MapPrefetcher warms), which is already the most detail the viewer can show
+  // below zoom 7. Requesting a coarser globe bundle after the first zoom, then the mid bundle
+  // again past zoom 4, re-downloaded and re-tiled every layer mid-gesture for no visual gain,
+  // so only the detail bucket (zoom >= 7, when the max zoom allows it) gets its own request.
+  const zoomParam = getMapZoomBucket(zoom) === 2 ? 8 : undefined;
 
-  const zoomParam = useMemo(
-    () =>
-      zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
-    [zoomBucket]
-  );
-
-  // Determine which extra layers to include (e.g. user toggled climate on)
-  const extraDecorativeLayers = useMemo(() => {
-    const extra: MapLayerType[] = [];
-    for (const layer of visibleLayers) {
-      if (!CRITICAL_LAYERS.includes(layer) && !DECORATIVE_LAYERS.includes(layer)) {
-        extra.push(layer);
-      }
-    }
-    return extra;
-  }, [visibleLayers]);
+  // Extra (non-critical) layers the user has switched on this session, e.g. climate. The set
+  // only grows: switching a layer off hides it on the map but keeps its data, so switching it
+  // back on is instant and never re-sends the GeoJSON to the map worker.
+  const [requestedExtraLayers, setRequestedExtraLayers] = useState<MapLayerType[]>([]);
+  useEffect(() => {
+    const missing = [...visibleLayers].filter(
+      (layer) =>
+        !CRITICAL_LAYERS.includes(layer) &&
+        !DECORATIVE_LAYERS.includes(layer) &&
+        !requestedExtraLayers.includes(layer)
+    );
+    if (missing.length > 0) setRequestedExtraLayers((prev) => [...prev, ...missing]);
+  }, [visibleLayers, requestedExtraLayers]);
 
   // ── Phase 1: Critical layers + overlays + capitals (fast) ──
   const {
@@ -111,20 +126,21 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     }
   );
 
-  // ── Phase 2: Decorative layers (deferred) ──
+  // ── Phase 2: Decorative / extra layers (deferred, one request per layer) ──
+  // One query per layer so turning on a second extra layer fetches only that layer instead of
+  // re-downloading the first one under a new combined cache key. No zoom in the key, so
+  // zooming never re-fetches them.
   const decorativeLayersToFetch = useMemo(
-    () => [...DECORATIVE_LAYERS, ...extraDecorativeLayers],
-    [extraDecorativeLayers]
+    () => [...DECORATIVE_LAYERS, ...requestedExtraLayers],
+    [requestedExtraLayers]
   );
 
-  const { data: decorativeData, isLoading: _decorativeLoading } = api.geoCore.getWorldMap.useQuery(
-    { layers: decorativeLayersToFetch, realm }, // Exclude zoom parameter to keep cache key stable and prevent re-fetching on zoom
-    {
-      ...MAP_QUERY_OPTIONS,
-      // Don't block the map from rendering — load in background
-      placeholderData: undefined,
-      enabled: decorativeLayersToFetch.length > 0,
-    }
+  const decorativeData = api.useQueries(
+    (t) =>
+      decorativeLayersToFetch.map((layer) =>
+        t.geoCore.getWorldMap({ layers: [layer], realm }, { ...MAP_QUERY_OPTIONS })
+      ),
+    { combine: mergeLayerResults }
   );
 
   // Merge both phases into a single world map record

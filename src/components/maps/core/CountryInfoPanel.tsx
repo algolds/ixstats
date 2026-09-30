@@ -31,9 +31,11 @@ const GdpDetailsModal = dynamic(
 );
 const PopulationDetailsModal = dynamic(
   () =>
-    import("~/components/mycountry/shared/modals/metric-details/PopulationDetailsModal").then((m) => ({
-      default: m.PopulationDetailsModal,
-    })),
+    import("~/components/mycountry/shared/modals/metric-details/PopulationDetailsModal").then(
+      (m) => ({
+        default: m.PopulationDetailsModal,
+      })
+    ),
   { ssr: false }
 );
 
@@ -69,12 +71,14 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
+      role="complementary"
+      aria-label={`${state.displayName} details`}
       className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
       style={{ animation: "slideInRight 0.25s ease-out" }}
     >
-      <div className="bg-card h-full shadow-xl">
+      <div className="bg-card border-border/50 flex h-full flex-col border-l shadow-xl">
         {/* Header */}
-        <div className="border-border/50 flex items-center justify-between border-b px-4 py-3">
+        <div className="border-border/50 flex shrink-0 items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2.5 overflow-hidden">
             {state.flagUrl ? (
               <img
@@ -93,10 +97,13 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 rounded-full p-1.5 transition-colors"
+            aria-label="Close country panel"
+            title="Close (Esc)"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring shrink-0 rounded-full p-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
 

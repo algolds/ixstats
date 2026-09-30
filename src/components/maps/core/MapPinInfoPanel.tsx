@@ -8,6 +8,7 @@
  * by server-side PostGIS query when it arrives.
  */
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { useMemo } from "react";
 import {
   Xmark as X,
@@ -89,7 +90,7 @@ function InfoRow({
           {label}
         </Eyebrow>
         {loading ? (
-          <div className="bg-muted mt-0.5 h-4 w-24 animate-pulse rounded" />
+          <Skeleton className="mt-0.5 h-4 w-24 rounded" />
         ) : (
           <div className="flex items-center gap-1.5">
             {color && (
@@ -156,8 +157,10 @@ export default function MapPinInfoPanel({
           <span className="text-foreground text-xs font-semibold">Pin Info</span>
         </div>
         <button
+          type="button"
           onClick={onClose}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1 transition-colors"
+          aria-label="Close pin info"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring rounded-lg p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
           <X className="h-4 w-4" />
         </button>

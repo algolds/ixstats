@@ -12,14 +12,44 @@ import { CountryOverviewTab } from "./components/CountryOverviewTab";
 import { CountryInfoTab } from "./components/CountryInfoTab";
 import { UnclaimedTerritoryView } from "./components/UnclaimedTerritoryView";
 import { formatCompactCurrency, formatCompactNumber } from "~/lib/utils/format-utils";
+import { Skeleton } from "~/components/ui/skeleton";
+
+function PanelTab({
+  label,
+  active,
+  accent,
+  onSelect,
+}: {
+  label: string;
+  active: boolean;
+  accent: string;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onSelect}
+      className={`focus-visible:ring-ring relative px-3 py-2.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset ${
+        active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {label}
+      {active && <span className={`absolute inset-x-0 bottom-0 h-0.5 rounded-full ${accent}`} />}
+    </button>
+  );
+}
 
 const GeoProfileContent = dynamic(
   () => import("./GeoProfileContent").then((m) => ({ default: m.GeoProfileContent })),
   {
     ssr: false,
     loading: () => (
-      <div className="flex justify-center py-12">
-        <div className="border-muted-foreground/20 h-5 w-5 animate-spin rounded-full border-2 border-t-emerald-500" />
+      <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading geography">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-4 w-2/3 rounded" />
+        <Skeleton className="h-4 w-1/2 rounded" />
       </div>
     ),
   }
@@ -43,52 +73,35 @@ export function CountryInfoContent({
   return (
     <>
       {/* Tab bar */}
-      <div className="border-border/50 flex border-b px-4">
-        <button
-          onClick={() => state.setActiveTab("overview")}
-          className={`relative px-3 py-2 text-xs font-medium transition-colors ${
-            state.activeTab === "overview"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Overview
-          {state.activeTab === "overview" && (
-            <span className="bg-primary absolute inset-x-0 bottom-0 h-0.5 rounded-full" />
-          )}
-        </button>
-        <button
-          onClick={() => state.setActiveTab("info")}
-          className={`relative px-3 py-2 text-xs font-medium transition-colors ${
-            state.activeTab === "info"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Info
-          {state.activeTab === "info" && (
-            <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-amber-500" />
-          )}
-        </button>
+      <div
+        role="tablist"
+        aria-label="Country details"
+        className="border-border/50 flex shrink-0 border-b px-4"
+      >
+        <PanelTab
+          label="Overview"
+          active={state.activeTab === "overview"}
+          accent="bg-primary"
+          onSelect={() => state.setActiveTab("overview")}
+        />
+        <PanelTab
+          label="Info"
+          active={state.activeTab === "info"}
+          accent="bg-amber-500"
+          onSelect={() => state.setActiveTab("info")}
+        />
         {state.hasGeoTab && (
-          <button
-            onClick={() => state.setActiveTab("geography")}
-            className={`relative px-3 py-2 text-xs font-medium transition-colors ${
-              state.activeTab === "geography"
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Geography
-            {state.activeTab === "geography" && (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-emerald-500" />
-            )}
-          </button>
+          <PanelTab
+            label="Geography"
+            active={state.activeTab === "geography"}
+            accent="bg-emerald-500"
+            onSelect={() => state.setActiveTab("geography")}
+          />
         )}
       </div>
 
       {/* Body */}
-      <div className="overflow-y-auto p-4" style={{ maxHeight: "calc(100% - 90px)" }}>
+      <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
         {state.activeTab === "info" ? (
           <CountryInfoTab
             wikiRichIntro={state.wikiRichIntro}
@@ -109,13 +122,13 @@ export function CountryInfoContent({
             setIntroExpanded={state.setIntroExpanded}
           />
         ) : state.isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-3" aria-busy="true" aria-label="Loading country details">
             <div className="grid grid-cols-2 gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-muted h-14 animate-pulse rounded-lg" />
+                <Skeleton key={i} className="h-14 rounded-lg" />
               ))}
             </div>
-            <div className="bg-muted h-6 w-32 animate-pulse rounded" />
+            <Skeleton className="h-6 w-32 rounded" />
           </div>
         ) : state.summary ? (
           <CountryOverviewTab
@@ -131,7 +144,11 @@ export function CountryInfoContent({
             setActiveTab={state.setActiveTab}
             setActiveModal={state.setActiveModal}
           />
-        ) : null}
+        ) : (
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            Details for this country aren&apos;t available right now.
+          </p>
+        )}
       </div>
     </>
   );
@@ -157,7 +174,10 @@ export function CountryPeekContent({ state }: { state: PanelState }) {
         <h3 className="text-foreground truncate text-sm font-semibold">{state.displayName}</h3>
         {state.summary && (
           <div className="text-muted-foreground flex gap-3 text-xs">
-            <span>GDP: {formatCompactCurrency(state.summary.totalGdp ?? (state.summary as any).gdp, "—")}</span>
+            <span>
+              GDP:{" "}
+              {formatCompactCurrency(state.summary.totalGdp ?? (state.summary as any).gdp, "—")}
+            </span>
             <span>Pop: {formatCompactNumber(state.summary.population, "—")}</span>
           </div>
         )}

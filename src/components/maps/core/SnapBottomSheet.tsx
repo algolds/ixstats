@@ -1,21 +1,28 @@
 "use client";
 
 /**
- * SnapBottomSheet — Physics-based bottom sheet with 3 snap positions.
+ * SnapBottomSheet — Physics-based bottom sheet with 3 snap positions (mobile only).
  *
  * Positions:
  * - Peek (~140px): Summary content visible over the map
  * - Half (~50vh): Scrollable content
  * - Full (~90vh): Full tabbed content
  *
+ * Performance: the sheet has a fixed height and moves with a GPU `transform`. While dragging,
+ * the transform is written straight to the DOM from a native (non-passive) touch listener, so a
+ * drag re-renders nothing — the old version set React state on every `touchmove` and animated
+ * `top`/`height`, re-rendering the whole panel and forcing layout each frame.
+ *
  * Gesture physics:
  * - Velocity-based snap (>500px/s fast swipe)
- * - Spring animation via CSS transitions
- * - Inner scroll lock at peek, scrollable at half/full
- * - Swipe down from top of scroll → transitions to sheet drag
+ * - Inner scroll lock at peek; at half/full the content scrolls, and a downward drag from the
+ *   top of the scroll area (or any drag on the handle) moves the sheet instead
+ *
+ * Keyboard: the handle is a button that steps peek → half → full → peek; Escape (handled by the
+ * map's keyboard controls) closes the panel.
  */
 
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useRef, useCallback, useState, useEffect, useLayoutEffect } from "react";
 import { NavArrowUp as ChevronUp } from "iconoir-react";
 
 export type SnapPosition = "dismissed" | "peek" | "half" | "full";
@@ -31,9 +38,16 @@ interface SnapBottomSheetProps {
 }
 
 const VELOCITY_THRESHOLD = 500; // px/s — fast swipe
-const DRAG_HANDLE_HEIGHT = 48;
+const DRAG_HANDLE_HEIGHT = 44;
+const SNAP_TRANSITION = "transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)";
 
-function getSnapY(
+function parseHeight(h: string, windowHeight: number): number {
+  if (h.endsWith("vh") || h.endsWith("dvh")) return (parseFloat(h) / 100) * windowHeight;
+  return parseFloat(h);
+}
+
+/** Visible height of the sheet at a snap position. */
+function visibleHeight(
   snap: SnapPosition,
   windowHeight: number,
   peekHeight: number,
@@ -42,48 +56,34 @@ function getSnapY(
 ): number {
   switch (snap) {
     case "dismissed":
-      return windowHeight;
+      return 0;
     case "peek":
-      return windowHeight - peekHeight;
+      return peekHeight;
     case "half":
-      return windowHeight - parseHeight(halfHeight, windowHeight);
+      return parseHeight(halfHeight, windowHeight);
     case "full":
-      return windowHeight - parseHeight(fullHeight, windowHeight);
+      return parseHeight(fullHeight, windowHeight);
   }
 }
 
-function parseHeight(h: string, windowHeight: number): number {
-  if (h.endsWith("vh")) return (parseFloat(h) / 100) * windowHeight;
-  if (h.endsWith("px")) return parseFloat(h);
-  return parseFloat(h);
+const NEXT_SNAP: Record<"peek" | "half" | "full", "peek" | "half" | "full"> = {
+  peek: "half",
+  half: "full",
+  full: "peek",
+};
+
+/** Whether `target` sits in a vertically scrollable element (below `root`) that isn't at its top. */
+function isInsideScrolledArea(target: HTMLElement, root: HTMLElement): boolean {
+  let node: HTMLElement | null = target;
+  while (node && node !== root) {
+    if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return true;
+    node = node.parentElement;
+  }
+  return false;
 }
 
-function findClosestSnap(
-  y: number,
-  velocity: number,
-  windowHeight: number,
-  peekHeight: number,
-  halfHeight: string,
-  fullHeight: string
-): SnapPosition {
-  // Fast swipe overrides position
-  if (velocity > VELOCITY_THRESHOLD) return "dismissed";
-  if (velocity < -VELOCITY_THRESHOLD) return "full";
-
-  const snaps: SnapPosition[] = ["dismissed", "peek", "half", "full"];
-  let closest: SnapPosition = "peek";
-  let minDist = Infinity;
-
-  for (const snap of snaps) {
-    const snapY = getSnapY(snap, windowHeight, peekHeight, halfHeight, fullHeight);
-    const dist = Math.abs(y - snapY);
-    if (dist < minDist) {
-      minDist = dist;
-      closest = snap;
-    }
-  }
-
-  return closest;
+function getWindowHeight() {
+  return typeof window !== "undefined" ? window.innerHeight : 800;
 }
 
 export function SnapBottomSheet({
@@ -96,17 +96,34 @@ export function SnapBottomSheet({
   fullHeight = "90vh",
 }: SnapBottomSheetProps) {
   const [snap, setSnap] = useState<SnapPosition>(initialSnap);
-  const [translateY, setTranslateY] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [windowHeight, setWindowHeight] = useState(getWindowHeight);
   const [hintVisible, setHintVisible] = useState(true);
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const startYRef = useRef(0);
-  const startTranslateRef = useRef(0);
-  const velocityTracker = useRef<{ t: number; y: number }[]>([]);
-  const isDraggingRef = useRef(false);
-  const scrollLockedRef = useRef(false);
+  const hasEnteredRef = useRef(false);
+
+  const sheetHeight = visibleHeight("full", windowHeight, peekHeight, halfHeight, fullHeight);
+  const offsetFor = useCallback(
+    (s: SnapPosition) =>
+      sheetHeight - visibleHeight(s, windowHeight, peekHeight, halfHeight, fullHeight),
+    [sheetHeight, windowHeight, peekHeight, halfHeight, fullHeight]
+  );
+
+  // Latest values for the native touch listeners (bound once).
+  const stateRef = useRef({ snap, offsetFor });
+  const sheetHeightRef = useRef(sheetHeight);
+  useEffect(() => {
+    stateRef.current = { snap, offsetFor };
+    sheetHeightRef.current = sheetHeight;
+  }, [snap, offsetFor, sheetHeight]);
+
+  // Track viewport height (rotation, mobile browser chrome showing/hiding).
+  useEffect(() => {
+    const onResize = () => setWindowHeight(getWindowHeight());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Fade hint text after 3 seconds
   useEffect(() => {
@@ -114,149 +131,195 @@ export function SnapBottomSheet({
     return () => clearTimeout(timer);
   }, []);
 
-  // Close when dismissed
+  // Close when dismissed (after the slide-out)
   useEffect(() => {
     if (snap !== "dismissed") return;
     const timer = setTimeout(onClose, 200);
     return () => clearTimeout(timer);
   }, [snap, onClose]);
 
-  const windowHeight = typeof window !== "undefined" ? window.innerHeight : 800;
-  const currentSnapY = getSnapY(snap, windowHeight, peekHeight, halfHeight, fullHeight);
+  // Apply the settled snap position. On first mount, slide in from off-screen.
+  useLayoutEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
+    const target = `translate3d(0, ${offsetFor(snap)}px, 0)`;
+    if (!hasEnteredRef.current) {
+      hasEnteredRef.current = true;
+      el.style.transition = "none";
+      el.style.transform = `translate3d(0, ${sheetHeight}px, 0)`;
+      const frame = requestAnimationFrame(() => {
+        el.style.transition = SNAP_TRANSITION;
+        el.style.transform = target;
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+    el.style.transition = SNAP_TRANSITION;
+    el.style.transform = target;
+    return undefined;
+  }, [snap, offsetFor, sheetHeight]);
 
-  const getVelocity = useCallback((): number => {
-    const points = velocityTracker.current;
-    if (points.length < 2) return 0;
-    const last = points[points.length - 1]!;
-    const prev = points[Math.max(0, points.length - 3)]!;
-    const dt = (last.t - prev.t) / 1000;
-    if (dt === 0) return 0;
-    return (last.y - prev.y) / dt;
-  }, []);
+  // Native touch handling: non-passive so the page doesn't scroll while the sheet drags.
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
 
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent) => {
+    let dragging = false;
+    let decided = false; // whether this gesture has committed to "drag sheet" vs "scroll"
+    let fromHandle = false;
+    let startY = 0;
+    let startOffset = 0;
+    let currentOffset = 0;
+    let samples: { t: number; y: number }[] = [];
+
+    const onTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
-      if (!touch) return;
-
-      // Check if touch is on drag handle or if content is scrolled to top
+      if (!touch || e.touches.length > 1) return;
+      const { snap: s, offsetFor: off } = stateRef.current;
       const target = e.target as HTMLElement;
-      const isHandleArea = target.closest("[data-drag-handle]") !== null;
-      const contentEl = contentRef.current;
-
-      if (!isHandleArea && snap !== "peek") {
-        // Content area touch — check scroll position
-        if (contentEl && contentEl.scrollTop > 0) {
-          scrollLockedRef.current = false;
-          return; // Let content scroll naturally
-        }
-        scrollLockedRef.current = true;
-      } else {
-        scrollLockedRef.current = true;
+      fromHandle = target.closest("[data-drag-handle]") !== null || s === "peek";
+      // Touch inside a scrolled-down scroll area (the sheet's or a nested one): let it scroll.
+      if (!fromHandle && isInsideScrolledArea(target, el)) {
+        dragging = false;
+        return;
       }
 
-      isDraggingRef.current = true;
-      setIsDragging(true);
-      startYRef.current = touch.clientY;
-      startTranslateRef.current = translateY ?? currentSnapY;
-      velocityTracker.current = [{ t: Date.now(), y: touch.clientY }];
-    },
-    [snap, translateY, currentSnapY]
-  );
+      dragging = true;
+      decided = fromHandle;
+      startY = touch.clientY;
+      startOffset = off(s);
+      currentOffset = startOffset;
+      samples = [{ t: e.timeStamp, y: touch.clientY }];
+    };
 
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      if (!isDraggingRef.current || !scrollLockedRef.current) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (!dragging) return;
       const touch = e.touches[0];
       if (!touch) return;
+      const delta = touch.clientY - startY;
+
+      if (!decided) {
+        if (Math.abs(delta) < 4) return;
+        // At full height an upward swipe on the content is a scroll, not a drag.
+        if (stateRef.current.snap === "full" && delta < 0) {
+          dragging = false;
+          return;
+        }
+        decided = true;
+      }
 
       e.preventDefault();
-      const delta = touch.clientY - startYRef.current;
-      const newY = Math.max(
-        getSnapY("full", windowHeight, peekHeight, halfHeight, fullHeight),
-        startTranslateRef.current + delta
-      );
-      setTranslateY(newY);
+      currentOffset = Math.min(sheetHeightRef.current, Math.max(0, startOffset + delta));
+      el.style.transition = "none";
+      el.style.transform = `translate3d(0, ${currentOffset}px, 0)`;
+      samples.push({ t: e.timeStamp, y: touch.clientY });
+      if (samples.length > 5) samples.shift();
+    };
 
-      velocityTracker.current.push({ t: Date.now(), y: touch.clientY });
-      if (velocityTracker.current.length > 5) velocityTracker.current.shift();
-    },
-    [windowHeight, peekHeight, halfHeight, fullHeight]
-  );
+    const onTouchEnd = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (!decided) return; // a tap — let click handlers run
 
-  const handleTouchEnd = useCallback(() => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    setIsDragging(false);
+      const last = samples[samples.length - 1];
+      const prev = samples[Math.max(0, samples.length - 3)];
+      const dt = last && prev ? (last.t - prev.t) / 1000 : 0;
+      const velocity = last && prev && dt > 0 ? (last.y - prev.y) / dt : 0;
 
-    const velocity = getVelocity();
-    const currentY = translateY ?? currentSnapY;
+      const { snap: current, offsetFor: off } = stateRef.current;
+      let next: SnapPosition;
+      if (velocity > VELOCITY_THRESHOLD) next = current === "full" ? "half" : "dismissed";
+      else if (velocity < -VELOCITY_THRESHOLD) next = "full";
+      else {
+        next = "peek";
+        let min = Infinity;
+        for (const s of ["dismissed", "peek", "half", "full"] as SnapPosition[]) {
+          const d = Math.abs(currentOffset - off(s));
+          if (d < min) {
+            min = d;
+            next = s;
+          }
+        }
+      }
 
-    const nextSnap = findClosestSnap(
-      currentY,
-      velocity,
-      windowHeight,
-      peekHeight,
-      halfHeight,
-      fullHeight
-    );
+      // Settle imperatively too: when the snap doesn't change, no effect re-runs.
+      el.style.transition = SNAP_TRANSITION;
+      el.style.transform = `translate3d(0, ${off(next)}px, 0)`;
+      setSnap(next);
+    };
 
-    setSnap(nextSnap);
-    setTranslateY(null);
-  }, [translateY, currentSnapY, getVelocity, windowHeight, peekHeight, halfHeight, fullHeight]);
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, []);
 
   // Tap on peek → open to half
   const handlePeekTap = useCallback(() => {
-    if (snap === "peek") setSnap("half");
-  }, [snap]);
+    setSnap((s) => (s === "peek" ? "half" : s));
+  }, []);
 
-  const displayY = translateY ?? currentSnapY;
-  const sheetHeight = windowHeight - displayY;
+  const handleHandleClick = useCallback(() => {
+    setSnap((s) => (s === "dismissed" ? s : NEXT_SNAP[s]));
+  }, []);
+
+  const expanded = snap === "half" || snap === "full";
+  // Part of the fixed-height sheet sits below the fold at peek/half; pad the scroll area by
+  // that amount so its last items can still be scrolled into view.
+  const hiddenBelow = Math.max(0, offsetFor(snap));
 
   return (
     <div className="fixed inset-0 z-30 sm:hidden" style={{ pointerEvents: "none" }}>
       {/* Backdrop — visible at half/full */}
-      {(snap === "half" || snap === "full") && !isDragging && (
+      {expanded && (
         <div
-          className="absolute inset-0 bg-black/20 transition-opacity duration-200"
+          className="absolute inset-0 bg-black/20 dark:bg-black/40"
           style={{ pointerEvents: "auto" }}
           onClick={onClose}
+          aria-hidden
         />
       )}
 
       {/* Sheet */}
       <div
         ref={sheetRef}
-        className="bg-card absolute inset-x-0 rounded-t-2xl shadow-2xl"
+        role="region"
+        aria-label="Details"
+        className="bg-card ring-border/50 absolute inset-x-0 bottom-0 flex flex-col rounded-t-2xl shadow-2xl ring-1"
         style={{
           pointerEvents: "auto",
-          top: `${displayY}px`,
           height: `${sheetHeight}px`,
-          transition: isDragging ? "none" : "top 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)",
-          willChange: isDragging ? "top" : "auto",
+          willChange: "transform",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
-        {/* Drag handle */}
-        <div
+        {/* Drag handle (also a keyboard/screen-reader control) */}
+        <button
+          type="button"
           data-drag-handle
-          className="flex cursor-grab flex-col items-center pt-3 pb-1 active:cursor-grabbing"
+          onClick={handleHandleClick}
+          aria-expanded={expanded}
+          aria-label={snap === "full" ? "Collapse details" : "Show more details"}
+          className="focus-visible:ring-ring flex w-full shrink-0 cursor-grab touch-none flex-col items-center justify-center rounded-t-2xl focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset active:cursor-grabbing"
           style={{ minHeight: `${DRAG_HANDLE_HEIGHT}px` }}
         >
-          <div className="bg-border h-1 w-10 rounded-full" />
-        </div>
+          <span className="bg-muted-foreground/30 h-1 w-10 rounded-full" />
+        </button>
 
         {/* Peek content — always visible */}
         {peekContent && (
-          <div onClick={handlePeekTap} className="px-4 pb-2">
+          <div onClick={handlePeekTap} className="shrink-0 px-4 pb-2">
             {peekContent}
             {/* Hint text */}
             <div
               className="text-muted-foreground mt-1 flex items-center justify-center gap-1 text-xs transition-opacity duration-500"
-              style={{ opacity: hintVisible ? 0.7 : 0 }}
+              style={{ opacity: hintVisible && snap === "peek" ? 0.7 : 0 }}
+              aria-hidden
             >
               <ChevronUp className="h-3 w-3" />
               Swipe up for details
@@ -264,15 +327,12 @@ export function SnapBottomSheet({
           </div>
         )}
 
-        {/* Scrollable content — visible at half/full */}
+        {/* Scrollable content — rendered at half/full */}
         {snap !== "peek" && (
           <div
             ref={contentRef}
-            className="overflow-y-auto"
-            style={{
-              height: `calc(100% - ${peekHeight}px)`,
-              overscrollBehavior: "contain",
-            }}
+            className="min-h-0 flex-1 overflow-y-auto"
+            style={{ overscrollBehavior: "contain", paddingBottom: `${hiddenBelow}px` }}
           >
             {children}
           </div>

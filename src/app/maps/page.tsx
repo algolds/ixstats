@@ -21,13 +21,12 @@
  * When running on maps.ixwiki.com, renders full-screen (standalone mode).
  */
 
-import { useCallback, useState } from "react";
+import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { MapContainer } from "~/components/maps/core/MapContainer";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/system/standalone-detection";
-import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { MapLayerType } from "~/lib/maps/map-config";
 
 const isStandalone = isStandaloneClient();
@@ -57,34 +56,35 @@ export default function WorldMapPage() {
   const initialCountryId = countryIdParam || resolvedCountry?.id || undefined;
 
   // --- Coordinate deep-linking ---
-  const initialLat = searchParams.get("lat") ? parseFloat(searchParams.get("lat")!) : undefined;
-  const initialLng = searchParams.get("lng") ? parseFloat(searchParams.get("lng")!) : undefined;
-  const initialZoom = searchParams.get("zoom") ? parseFloat(searchParams.get("zoom")!) : undefined;
-  const initialCenter =
-    initialLng !== undefined && initialLat !== undefined && !isNaN(initialLng) && !isNaN(initialLat)
-      ? ([initialLng, initialLat] as [number, number])
-      : undefined;
+  // Memoised so the map container (and its memoised map) doesn't see a new array every render.
+  const latParam = searchParams.get("lat");
+  const lngParam = searchParams.get("lng");
+  const zoomParam = searchParams.get("zoom");
+  const initialZoom = zoomParam ? parseFloat(zoomParam) : undefined;
+  const initialCenter = useMemo(() => {
+    const lat = latParam ? parseFloat(latParam) : NaN;
+    const lng = lngParam ? parseFloat(lngParam) : NaN;
+    return !isNaN(lng) && !isNaN(lat) ? ([lng, lat] as [number, number]) : undefined;
+  }, [latParam, lngParam]);
 
   // --- Layer selection via URL ---
   const layerParam = searchParams.get("layer") as MapLayerType | null;
   const layersParam = searchParams.get("layers");
-  const initialLayers = layersParam
-    ? (["background", ...layersParam.split(",").filter(Boolean)] as MapLayerType[])
-    : layerParam
-      ? (["background", "political", layerParam] as MapLayerType[])
-      : undefined;
+  const initialLayers = useMemo(
+    () =>
+      layersParam
+        ? (["background", ...layersParam.split(",").filter(Boolean)] as MapLayerType[])
+        : layerParam
+          ? (["background", "political", layerParam] as MapLayerType[])
+          : undefined,
+    [layersParam, layerParam]
+  );
 
   // --- Embed with controls override ---
   const embedControls = searchParams.get("controls") === "true";
 
   // --- Realm: whose map this is (ruling E-h) ---
   const realm = searchParams.get("realm") || undefined;
-
-  const [, setSelectedCountry] = useState<SelectedCountry | null>(null);
-
-  const handleCountrySelect = useCallback((country: SelectedCountry | null) => {
-    setSelectedCountry(country);
-  }, []);
 
   // In embed mode: hide navigation, controls, use full viewport
   const containerClass = isEmbed ? "h-dvh w-dvw" : isStandalone ? "h-dvh" : "h-[calc(100dvh-64px)]";
@@ -96,7 +96,6 @@ export default function WorldMapPage() {
         showTools={!isEmbed}
         showPopup={!isEmbed}
         showLoading={!isEmbed}
-        onCountrySelect={handleCountrySelect}
         initialCountryId={initialCountryId}
         initialCenter={initialCenter}
         initialZoom={initialZoom}

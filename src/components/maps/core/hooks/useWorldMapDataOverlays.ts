@@ -1,8 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import type { Feature } from "geojson";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { MapOverlayFeatures, OverlayVisibility } from "../IxWorldMap";
 import { registerStoryPinIcons } from "~/lib/maps/story-pin-icons";
 import type { MapTheme } from "~/lib/map-styles/registry";
+import { setFilteredSourceData } from "../utils/map-core-helpers";
+
+/** Whether a feature belongs to the focused country (matched by id, slug or name). */
+function matchesCountry(f: Feature, countryKey: string): boolean {
+  const p = f.properties;
+  if (!p) return false;
+  return (
+    p.countryId === countryKey ||
+    p.countrySlug === countryKey ||
+    (typeof p.countryName === "string" && p.countryName.toLowerCase() === countryKey.toLowerCase())
+  );
+}
 
 interface UseWorldMapDataOverlaysProps {
   map: MapLibreMap | null;
@@ -23,38 +36,30 @@ export function useWorldMapDataOverlays({
   theme,
   selectedCountryId,
 }: UseWorldMapDataOverlaysProps) {
+  // Last feature lists pushed to each source: zoom handlers only re-send data when the
+  // filtered list changes, not on every animation frame of a zoom.
+  const lastStoryPinsRef = useRef<Feature[] | null>(null);
+  const lastMapLabelsRef = useRef<Feature[] | null>(null);
+
   // 1. Render story pins with dynamic zoom/focus filtering
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures?.storyPins) return;
 
-    const spSource = "source-story-pins";
+    lastStoryPinsRef.current = null;
+    const rawFeatures = overlayFeatures.storyPins.features || [];
+    const focusKey = selectedCountryId || null;
+    const focused = focusKey ? rawFeatures.filter((f) => matchesCountry(f, focusKey)) : [];
+
+    try {
+      registerStoryPinIcons(map);
+    } catch (err) {
+      console.warn("[useWorldMapDataOverlays] story pin icons error:", err);
+    }
 
     const updateStoryPins = () => {
-      const source = map.getSource(spSource) as GeoJSONSource | undefined;
-      if (!source) return;
-
-      const currentZoom = map.getZoom();
-      const hasFocus =
-        selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
-
-      const rawFeatures = overlayFeatures?.storyPins?.features || [];
-      const filteredFeatures = rawFeatures.filter((f: any) => {
-        if (currentZoom >= 4.0) return true;
-        return (
-          hasFocus &&
-          (f.properties?.countryId === selectedCountryId ||
-            f.properties?.countrySlug === selectedCountryId ||
-            (f.properties?.countryName &&
-              f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
-        );
-      });
-
-      registerStoryPinIcons(map);
-
-      source.setData({
-        type: "FeatureCollection",
-        features: filteredFeatures,
-      });
+      const source = map.getSource("source-story-pins") as GeoJSONSource | undefined;
+      const features = map.getZoom() >= 4.0 ? rawFeatures : focused;
+      setFilteredSourceData(source, features, lastStoryPinsRef);
     };
 
     try {
@@ -66,9 +71,7 @@ export function useWorldMapDataOverlays({
     map.on("zoom", updateStoryPins);
 
     return () => {
-      if (map) {
-        map.off("zoom", updateStoryPins);
-      }
+      map.off("zoom", updateStoryPins);
     };
     // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures?.storyPins, selectedCountryId, theme]);
@@ -77,43 +80,24 @@ export function useWorldMapDataOverlays({
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures?.mapLabels) return;
 
-    const mlSource = "source-map-labels";
+    lastMapLabelsRef.current = null;
+    const rawFeatures: Feature[] = overlayFeatures.mapLabels.features || [];
+    const focusKey = selectedCountryId || null;
 
     const updateFilteredLabels = () => {
-      const source = map.getSource(mlSource);
-      if (!source) return;
-
+      const source = map.getSource("source-map-labels") as GeoJSONSource | undefined;
       const currentZoom = map.getZoom();
-      const hasFocus =
-        selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
 
-      const rawFeatures = (overlayFeatures.mapLabels as any)?.features || [];
-
-      const filteredFeatures = rawFeatures.filter((f: any) => {
-        const isZoomVisible = (() => {
-          if (currentZoom >= 4.0) {
-            const minZ = f.properties?.minZoom ?? 4;
-            const maxZ = f.properties?.maxZoom ?? 18;
-            return currentZoom >= minZ && currentZoom <= maxZ;
-          }
-          return false;
-        })();
-
-        if (isZoomVisible) return true;
-
-        return (
-          hasFocus &&
-          (f.properties?.countryId === selectedCountryId ||
-            f.properties?.countrySlug === selectedCountryId ||
-            (f.properties?.countryName &&
-              f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
-        );
+      const features = rawFeatures.filter((f) => {
+        if (currentZoom >= 4.0) {
+          const minZ = f.properties?.minZoom ?? 4;
+          const maxZ = f.properties?.maxZoom ?? 18;
+          if (currentZoom >= minZ && currentZoom <= maxZ) return true;
+        }
+        return focusKey !== null && matchesCountry(f, focusKey);
       });
 
-      (source as any).setData({
-        type: "FeatureCollection",
-        features: filteredFeatures,
-      });
+      setFilteredSourceData(source, features, lastMapLabelsRef);
     };
 
     try {
@@ -125,9 +109,7 @@ export function useWorldMapDataOverlays({
     map.on("zoom", updateFilteredLabels);
 
     return () => {
-      if (map) {
-        map.off("zoom", updateFilteredLabels);
-      }
+      map.off("zoom", updateFilteredLabels);
     };
     // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures?.mapLabels, selectedCountryId, theme]);

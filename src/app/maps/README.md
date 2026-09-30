@@ -38,8 +38,9 @@ The page reads the following query params via `useSearchParams`:
 - **MapLibre GL projection** — `dynamic` (globe at low zoom, flat at high zoom), or locked `globe` / `mercator`. Modes defined in `src/lib/maps/map-config.ts` (`ProjectionMode`, `getProjectionSpec`).
 - **Map layers** — 11 layer types in `MAP_LAYER_TYPES`: `background`, `altitudes`, `climate`, `biomes`, `political`, `lakes`, `rivers`, `icecaps`, `cities`, `trade_routes`, `country_labels`. Per-layer config (color, z-index, default visibility) in `LAYER_CONFIGS`.
 - **Country interaction** — click for an info panel (economic data, wiki intro, neighbors, sovereignty), hover highlight, distance-fade labels, ocean/water-body labels.
-- **Tools** — search overlay, pin/point-info tool, point-to-point measure tool, keyboard navigation (WASD / +/- / R), projection toggle.
-- **Overlays** — choropleth (wealth/population), risk/crisis heatmap, geopolitical relations, transport/trade routes (see overlay components under `src/components/maps/overlays/`).
+- **Tools** — search (⌘K / Ctrl+K; ↑/↓ + Enter pick a result), pin/point-info tool, point-to-point measure tool (M), keyboard navigation (WASD or arrows to pan, +/- zoom, R reset, P cycle projection, Esc close, ? shortcut list), projection toggle. Map shortcuts are ignored while typing, inside dialogs/sliders/menus, and whenever Ctrl/Cmd/Alt is held, so browser shortcuts (Ctrl+R, Ctrl+=, …) still work.
+- **Overlays** — choropleth (wealth, population, economic tier, vitality, health, trade balance, canon density), risk/crisis heatmap, geopolitical relations, transport/trade routes (see overlay components under `src/components/maps/overlays/`). The legend (bottom left) shows "Loading…" until the overlay's data arrives.
+- **Historical timeline** — a "Timeline" pill (bottom right, shown when border history exists) expands into the scrubber that swaps the political layer for its state at a past IxTime.
 - **Story pins** — narrative pins layer (`api.geoFeatures.getAllStoryPins` / `getStoryPinFull` / `createStoryPin` / `updateStoryPin`).
 - **Border / territory editor** — admin + player editing of country geometry and features (cities, subdivisions, POIs), driven by the `geoEditor` / `geoFeatures` routers; the editor UI is `MapEditorOverlay` (`src/components/maps/editor/`), opened in place on `/maps` or at `/admin/maps/editor`.
 
@@ -56,6 +57,21 @@ The page reads the following query params via `useSearchParams`:
 | `useMapData` | `src/hooks/useMapData.ts` | tRPC fetching + IndexedDB two-tier caching + layer visibility |
 
 The page itself only resolves URL params and renders `<MapContainer>` with `showControls` / `showTools` / `showPopup` / `showLoading` flags (all off in `?embed=true` mode). Standalone vs. embedded behavior is decided at runtime by hostname via `src/lib/system/standalone-detection.ts` (`STANDALONE_HOSTNAME = "maps.ixwiki.com"`).
+
+## Viewer layout
+
+| Area | Contents |
+|------|----------|
+| Top centre | Dynamic Island: greeting, search, help & tour, notifications, settings (theme, projection) |
+| Top left | Toolbar: Layers, Analytics, Labels, Measure, Pin, Edit Map / World Editor (panels close on Esc or a click outside) |
+| Right (desktop) | Country / feature panel (`w-96`); the timeline pill and credits move left of it while it is open |
+| Bottom (mobile) | Snap bottom sheet — peek → half → full; drag the handle or tap it (it is also a keyboard button) |
+| Bottom left | Analytics legend and the private-beta notice, stacked (the notice's dismissal is remembered per browser) |
+| Bottom right | Timeline pill, credits and keyboard-shortcut button, left of MapLibre's attribution |
+
+## Performance notes
+
+The viewer is tuned so pan, zoom and hover do no React work and no redundant MapLibre worker work. See "Viewer performance" in [`docs/systems/maps.md`](../../../docs/systems/maps.md#viewer-performance) for the rules (what may update per frame, when `setData` is allowed, LOD requests) before changing the map core.
 
 ## Data sources (tRPC geo routers)
 

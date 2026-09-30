@@ -6,6 +6,7 @@
  */
 
 import { useRef, useMemo, useCallback, useState, useEffect, useDeferredValue } from "react";
+import { Xmark, WarningTriangle } from "iconoir-react";
 import dynamic from "next/dynamic";
 import { useIsAdmin, useIsStaff } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
@@ -13,7 +14,6 @@ import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { MapControls } from "./MapControls";
-import { MapControlsFAB } from "./MapControlsFAB";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { CountryInfoPanel } from "./CountryInfoPanel";
 import { FeatureInfoPanel } from "./FeatureInfoPanel";
@@ -30,7 +30,7 @@ import { TimelineScrubber } from "./TimelineScrubber";
 import { MapRealmProvider } from "./MapRealmContext";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
-import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
+import type { SelectedCountry, IxWorldMapRef, MapLayerData } from "./IxWorldMap";
 
 // MapLibre CSS - imported here so it's in the main bundle
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -38,6 +38,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // Extracted hooks
 import { useMapState } from "./hooks/useMapState";
 import { useMapDataQueries } from "./hooks/useMapDataQueries";
+import { getMapZoomBucket } from "~/hooks/useMapDataBatched";
 import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
 
@@ -49,6 +50,8 @@ const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
 const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEditorOverlay"), {
   ssr: false,
 });
+
+const BETA_DISMISS_KEY = "ixmaps:beta-notice-dismissed";
 
 export interface MapContainerProps {
   className?: string;
@@ -94,6 +97,7 @@ export function MapContainer({
   disableCountrySelect = false,
   realm,
 }: MapContainerProps) {
+  const utils = api.useUtils();
   const isAdmin = useIsAdmin();
   const isStaff = useIsStaff();
   const [showGatekeepingWarning, setShowGatekeepingWarning] = useState(true);
@@ -129,6 +133,11 @@ export function MapContainer({
     retry: false,
   });
   const userCountryId = userProfile?.countryId ?? null;
+
+  // Loaded layers, read lazily by click handlers (pin tool, neighbour lookup). The layers are
+  // fetched after useMapState runs, so they are handed over through a ref-backed getter.
+  const mapLayersRef = useRef<MapLayerData[]>([]);
+  const getMapLayers = useCallback(() => mapLayersRef.current, []);
 
   // 1. Hook: Manage State (selections, controls, UI panels)
   const {
@@ -179,8 +188,7 @@ export function MapContainer({
     onCountrySelect,
     mapRef,
     measureToolRef,
-    mapLayers: [], // will be bound from queries
-    layerDataMap: {}, // will be bound from queries
+    getMapLayers,
     isPinToolActive,
     pinPosition,
     dropPin,
@@ -215,6 +223,10 @@ export function MapContainer({
     userCountryId,
   });
 
+  useEffect(() => {
+    mapLayersRef.current = mapLayers;
+  }, [mapLayers]);
+
   const deferredOverlayData = useDeferredValue(overlayData);
 
   // 1.5 Hook: Tour & Demo Mode State Machine
@@ -237,16 +249,6 @@ export function MapContainer({
     setSelectedCountry,
     mapLayers,
   });
-
-  // Bind aggregated layer properties needed by state handlers
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const layerDataMap = useMemo(() => {
-    const map: Record<string, any> = {};
-    for (const ml of mapLayers) {
-      map[ml.type] = ml.data;
-    }
-    return map;
-  }, [mapLayers]);
 
   // Timeline scrubber: when the user scrubs to a past IxTime, fetch the
   // "as-of" political FeatureCollection and swap it into the political layer.
@@ -290,20 +292,63 @@ export function MapContainer({
     );
   }, [mapLayers, controlledVisibleLayers, historicalIxTime, historicalPolitical]);
 
-  // Setup callbacks/variables that link mapLayers / userCountryId
-  const handleMapClickWithLayers = useCallback(
-    (lng: number, lat: number) => {
-      handleMapClick(lng, lat);
-    },
-    [handleMapClick]
+  // Stable callbacks for the memoised IxWorldMap. Inline arrows here re-rendered the map
+  // component (and re-ran all four of its layer hooks) on every container render.
+  const onMapReadyRef = useRef(onMapReady);
+  useEffect(() => {
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
+  const handleMapReady = useCallback(() => {
+    setMapEngineReady(true);
+    onMapReadyRef.current?.(mapRef.current?.getMap() ?? null);
+  }, [setMapEngineReady]);
+
+  const handleRouteClick = useCallback(
+    (id: string) => setSelectedRouteId(id),
+    [setSelectedRouteId]
   );
 
-  const handleNeighborClickWithLayers = useCallback(
-    (neighbor: any) => {
-      handleNeighborClick(neighbor);
-    },
-    [handleNeighborClick]
+  // Only the LOD bucket matters to data loading, so ignore zoom changes inside a bucket
+  // instead of re-rendering the whole container after every zoom gesture.
+  const handleZoomChange = useCallback(
+    (zoom: number) =>
+      setCurrentZoom((prev) =>
+        prev !== undefined && getMapZoomBucket(prev) === getMapZoomBucket(zoom) ? prev : zoom
+      ),
+    [setCurrentZoom]
   );
+
+  const handleToggleMeasure = useCallback(() => measureToolRef.current?.toggle(), []);
+  const handleOpenWelcome = useCallback(() => setIsWelcomeOpen(true), []);
+  const noopProjectionChange = useCallback(() => {}, []);
+  const effectiveProjection = forceFlatProjection ? "mercator" : projectionMode;
+  const handleProjectionChange = forceFlatProjection ? noopProjectionChange : setProjectionMode;
+
+  // Bottom-left notices: the private-beta banner stays dismissed for this browser.
+  // Read after mount (not in the initialiser) so server and client render the same markup.
+  const [betaDismissed, setBetaDismissed] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(BETA_DISMISS_KEY) === "1") setBetaDismissed(true);
+    } catch {
+      /* storage unavailable — show the notice */
+    }
+  }, []);
+  const dismissBeta = useCallback(() => {
+    setShowGatekeepingWarning(false);
+    setBetaDismissed(true);
+    try {
+      localStorage.setItem(BETA_DISMISS_KEY, "1");
+    } catch {
+      /* storage unavailable (private mode) — dismissal lasts for this visit only */
+    }
+  }, []);
+
+  const countryPanelOpen =
+    showPopup && !!selectedCountry && !selectedFeature && !isPinToolActive && !isEditing;
+  const featurePanelOpen = showPopup && !!selectedFeature && !isPinToolActive && !isEditing;
+  /** A right-hand side panel (desktop) / bottom sheet (mobile) is showing. */
+  const sidePanelOpen = countryPanelOpen || featurePanelOpen;
 
   const handleOpenMyEditorWithUser = useCallback(() => {
     if (userCountryId) {
@@ -316,17 +361,32 @@ export function MapContainer({
   if (error) {
     return (
       <div
-        className={`bg-background absolute inset-0 flex items-center justify-center ${className}`}
+        role="alert"
+        className={`bg-background absolute inset-0 flex items-center justify-center p-6 ${className}`}
       >
-        <div className="text-center">
-          <p className="text-foreground text-lg font-medium">Failed to load map data</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {error.message || "Please try again later."}
+        <div className="max-w-sm space-y-3 text-center">
+          <div className="bg-destructive/10 text-destructive mx-auto flex h-12 w-12 items-center justify-center rounded-full">
+            <WarningTriangle className="h-6 w-6" aria-hidden />
+          </div>
+          <p className="text-foreground text-lg font-medium">Couldn&apos;t load the map</p>
+          <p className="text-muted-foreground text-sm">
+            {error.message || "The map data didn't arrive. Check your connection and try again."}
           </p>
+          <button
+            type="button"
+            onClick={() => void utils.geoCore.getMapBundle.invalidate()}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Try again
+          </button>
         </div>
       </div>
     );
   }
+
+  const tourIdle = tourState === "idle";
+  const showBetaNotice = !isStaff && showGatekeepingWarning && !betaDismissed;
+  const mapReady = !isPreloading && mapEngineReady;
 
   return (
     <div className={`absolute inset-0 pb-[env(safe-area-inset-bottom)] ${className}`}>
@@ -336,65 +396,45 @@ export function MapContainer({
         capitals={capitalsGeoJson}
         overlayFeatures={overlayFeatures ?? undefined}
         overlayVisibility={overlayVisibility}
-        onCountryClick={
-          disableCountrySelect || tourState !== "idle" ? undefined : handleCountryClick
-        }
-        onCountryHover={tourState !== "idle" ? undefined : handleCountryHover}
-        onMapClick={handleMapClickWithLayers}
-        onFeatureClick={tourState !== "idle" ? undefined : handleFeatureClick}
-        onReady={() => {
-          setMapEngineReady(true);
-          onMapReady?.(mapRef.current?.getMap() ?? null);
-        }}
+        onCountryClick={disableCountrySelect || !tourIdle ? undefined : handleCountryClick}
+        onCountryHover={tourIdle ? handleCountryHover : undefined}
+        onMapClick={handleMapClick}
+        onFeatureClick={tourIdle ? handleFeatureClick : undefined}
+        onReady={handleMapReady}
         selectedCountryId={selectedCountry?.countryId || selectedCountry?.featureId}
         isMeasuring={isMeasuring}
         geographyFilter={geographyFilter}
-        projectionMode={forceFlatProjection ? "mercator" : projectionMode}
+        projectionMode={effectiveProjection}
         topCountryNames={topCountrySet}
         labelsVisible={labelsVisible}
-        onZoomChange={setCurrentZoom}
+        onZoomChange={handleZoomChange}
         initialCenter={initialCenter}
         initialZoom={initialZoom}
         overlayData={deferredOverlayData}
-        onRouteClick={(id) => setSelectedRouteId(id)}
+        onRouteClick={handleRouteClick}
       />
 
       {/* Layer controls + tools toolbar */}
-      {showControls &&
-        tourState === "idle" &&
-        (isMobile ? (
-          <MapControlsFAB
-            visibleLayers={controlledVisibleLayers ?? visibleLayers}
-            onToggleLayer={onToggleLayer ?? toggleLayer}
-            overlayVisibility={overlayVisibility}
-            onToggleOverlay={toggleOverlay}
-            labelsVisible={labelsVisible}
-            onToggleLabels={toggleLabels}
-            isMeasuring={isMeasuring}
-            onToggleMeasure={() => measureToolRef.current?.toggle()}
-            isPinActive={isPinToolActive}
-            onTogglePin={togglePinTool}
-            toolsVisible={toolsVisible}
-          />
-        ) : (
-          <MapControls
-            visibleLayers={controlledVisibleLayers ?? visibleLayers}
-            onToggleLayer={onToggleLayer ?? toggleLayer}
-            overlayVisibility={overlayVisibility}
-            onToggleOverlay={toggleOverlay}
-            labelsVisible={labelsVisible}
-            onToggleLabels={toggleLabels}
-            isMeasuring={isMeasuring}
-            onToggleMeasure={() => measureToolRef.current?.toggle()}
-            isPinActive={isPinToolActive}
-            onTogglePin={togglePinTool}
-            toolsVisible={toolsVisible}
-            canEdit={hideEditButtons || isEditing || isWorldEditing ? false : !!userCountryId}
-            onEditMap={handleOpenMyEditorWithUser}
-            showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
-            onOpenWorldEditor={handleOpenWorldEditor}
-          />
-        ))}
+      {showControls && tourIdle && (
+        <MapControls
+          variant={isMobile ? "mobile" : "desktop"}
+          visibleLayers={controlledVisibleLayers ?? visibleLayers}
+          onToggleLayer={onToggleLayer ?? toggleLayer}
+          overlayVisibility={overlayVisibility}
+          onToggleOverlay={toggleOverlay}
+          labelsVisible={labelsVisible}
+          onToggleLabels={toggleLabels}
+          isMeasuring={isMeasuring}
+          onToggleMeasure={handleToggleMeasure}
+          isPinActive={isPinToolActive}
+          onTogglePin={togglePinTool}
+          toolsVisible={toolsVisible}
+          canEdit={hideEditButtons || isEditing || isWorldEditing ? false : !!userCountryId}
+          onEditMap={handleOpenMyEditorWithUser}
+          showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
+          onOpenWorldEditor={handleOpenWorldEditor}
+        />
+      )}
 
       {/* MeasureTool */}
       {toolsVisible && (
@@ -407,25 +447,68 @@ export function MapContainer({
       )}
 
       {/* Dynamic Island */}
-      {toolsVisible && tourState === "idle" && (
+      {toolsVisible && tourIdle && (
         <MapDynamicIsland
-          projectionMode={forceFlatProjection ? "mercator" : projectionMode}
-          onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
+          projectionMode={effectiveProjection}
+          onProjectionChange={handleProjectionChange}
           onSearchResult={handleSearchResult}
-          onOpenWelcome={() => setIsWelcomeOpen(true)}
+          onOpenWelcome={handleOpenWelcome}
           realm={realm}
         />
       )}
 
-      {/* Analytics legend */}
-      <AnalyticsLegend overlayVisibility={overlayVisibility} />
+      {/* Bottom-left stack: analytics legend + private-beta notice. Stacked in one column so
+          they never overlap each other; hidden on mobile while the bottom sheet is up. */}
+      <div
+        className={`pointer-events-none absolute bottom-4 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col-reverse items-start gap-2 sm:bottom-6 ${
+          sidePanelOpen ? "max-sm:hidden" : ""
+        }`}
+      >
+        <AnalyticsLegend overlayVisibility={overlayVisibility} overlayData={overlayData} />
 
-      {/* Keyboard navigation */}
+        {showBetaNotice && (
+          <div
+            role="note"
+            className="border-border bg-card/95 pointer-events-auto w-full max-w-sm rounded-xl border p-3 shadow-lg backdrop-blur-md dark:border-amber-500/20"
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-2.5">
+              <WarningTriangle
+                className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1 space-y-1">
+                <h4 className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  Maps private beta
+                </h4>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Explore the world map, terrain and other nations freely. Adding your own borders
+                  or claiming territory isn&apos;t open to external players yet.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={dismissBeta}
+                className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring -m-1 shrink-0 rounded-full p-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                aria-label="Dismiss private beta notice"
+              >
+                <Xmark className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Keyboard navigation + bottom-right credits (shifted left of the desktop side panel) */}
       <MapKeyboardControls
         mapRef={mapRef}
         onEscapePress={handleEscapePress}
-        projectionMode={forceFlatProjection ? "mercator" : projectionMode}
-        onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
+        projectionMode={effectiveProjection}
+        onProjectionChange={handleProjectionChange}
+        measureAvailable={toolsVisible}
+        sidePanelOpen={sidePanelOpen}
       />
 
       {/* Pin info panel */}
@@ -440,19 +523,19 @@ export function MapContainer({
       )}
 
       {/* Country info panel */}
-      {showPopup && selectedCountry && !selectedFeature && !isPinToolActive && !isEditing && (
+      {countryPanelOpen && selectedCountry && (
         <CountryInfoPanel
           key={selectedCountry.featureId}
           country={selectedCountry}
           onClose={handleClosePanel}
-          onNeighborClick={handleNeighborClickWithLayers}
+          onNeighborClick={handleNeighborClick}
           onGeographyFilter={setGeographyFilter}
           onEditMap={handleEditMap}
         />
       )}
 
       {/* Feature info panel */}
-      {showPopup && selectedFeature && !isPinToolActive && !isEditing && (
+      {featurePanelOpen && selectedFeature && (
         <FeatureInfoPanel
           feature={selectedFeature}
           onClose={() => setSelectedFeature(null)}
@@ -485,31 +568,33 @@ export function MapContainer({
       )}
 
       {/* Full-screen loading overlay */}
-      {showLoading && <MapLoadingScreen isReady={!isPreloading && mapEngineReady} />}
+      {showLoading && <MapLoadingScreen isReady={mapReady} />}
 
       {/* First-visit welcome modal */}
       {showControls && (
         <MapWelcomeModal
-          isMapReady={!isPreloading && mapEngineReady}
+          isMapReady={mapReady}
           onStartTour={startTour}
           isOpen={isWelcomeOpen}
           onClose={() => setIsWelcomeOpen(false)}
         />
       )}
 
-      {/* Tour / Demo Mode HUD overlay */}
-      <TourHUD
-        tourState={tourState}
-        currentStepIndex={currentStepIndex}
-        isPaused={isPaused}
-        progress={progress}
-        exitTour={exitTour}
-        nextStep={nextStep}
-        prevStep={prevStep}
-        togglePause={togglePause}
-        currentStepData={currentStepData}
-        totalSteps={totalSteps}
-      />
+      {/* Tour / Demo Mode HUD overlay (renders nothing while idle) */}
+      {!tourIdle && (
+        <TourHUD
+          tourState={tourState}
+          currentStepIndex={currentStepIndex}
+          isPaused={isPaused}
+          progress={progress}
+          exitTour={exitTour}
+          nextStep={nextStep}
+          prevStep={prevStep}
+          togglePause={togglePause}
+          currentStepData={currentStepData}
+          totalSteps={totalSteps}
+        />
+      )}
 
       {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
           nation's realm — undefined = the viewer's realm — even when opened from /maps?realm=<other> */}
@@ -538,77 +623,54 @@ export function MapContainer({
         )}
       </MapRealmProvider>
 
-      {/* Historical timeline scrubber (read-only) */}
-      {showControls && tourState === "idle" && (
-        <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />
-      )}
-
-      {/* Maps Private Beta Alert Banner for Non-Staff */}
-      {!isStaff && showGatekeepingWarning && (
-        <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex gap-2.5">
-              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-500">
-                ⚠️
-              </span>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-amber-500">Maps Private Beta</h4>
-                <p className="text-xs leading-relaxed text-zinc-300">
-                  External country integration and interactive plotting are under active
-                  development. You can freely explore the world map, topography, and other nations,
-                  but adding your own borders or claiming territory is not yet open to external
-                  players.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowGatekeepingWarning(false)}
-              className="p-0.5 text-xs font-bold text-zinc-400 transition-colors hover:text-white"
-              title="Dismiss warning"
-              type="button"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+      {/* Historical timeline scrubber (read-only). Collapsed to a pill until opened; hidden on
+          mobile while the bottom sheet is up and shifted clear of the desktop side panel. */}
+      {showControls && tourIdle && !isEditing && !isWorldEditing && (
+        <TimelineScrubber
+          value={historicalIxTime}
+          onChange={setHistoricalIxTime}
+          className={sidePanelOpen ? "max-sm:hidden sm:right-[25rem]" : undefined}
+        />
       )}
 
       {/* WebGL/Loading Error Fallback Overlay */}
-      {(webglError || mapLoadTimeout) && (
-        <div className="bg-map-ocean absolute inset-0 z-[60] flex items-center justify-center p-6 text-center">
+      {(webglError || (mapLoadTimeout && !mapEngineReady)) && (
+        <div
+          role="alert"
+          className="bg-map-ocean absolute inset-0 z-[60] flex items-center justify-center p-6 text-center"
+        >
           <div className="facet-hierarchy-child max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="h-8 w-8"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-13.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z"
-                />
-              </svg>
+              <WarningTriangle className="h-8 w-8" aria-hidden />
             </div>
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-white">
                 {webglError ? "WebGL Error Detected" : "Map Loading Timeout"}
               </h3>
-              <p className="text-sm text-white/60">
+              <p className="text-sm text-white/70">
                 {webglError
                   ? "WebGL is either disabled, crashed, or not supported by your browser. Please check your hardware acceleration settings."
                   : "The map engine is taking longer than expected to load. This might be due to slow network speeds or database recovery mode."}
               </p>
             </div>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-blue-500 active:scale-[0.98]"
-            >
-              Reload Page
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {!webglError && (
+                <button
+                  type="button"
+                  onClick={() => setMapLoadTimeout(false)}
+                  className="w-full rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
+                >
+                  Keep waiting
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-lg transition-[background-color,transform] hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none active:scale-[0.98]"
+              >
+                Reload Page
+              </button>
+            </div>
           </div>
         </div>
       )}

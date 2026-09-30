@@ -17,6 +17,11 @@ const profile = { country: { realmId: "r_eurth" } };
 
 jest.mock("~/trpc/react", () => ({
   api: {
+    // Extra (non-critical) layers load through one query per layer; none are on by default.
+    useQueries: (
+      _queries: unknown,
+      opts?: { combine?: (results: Array<{ data?: unknown }>) => unknown }
+    ) => (opts?.combine ? opts.combine([]) : []),
     users: { getProfile: { useQuery: () => ({ data: profile }) } },
     geoCore: {
       getMapBundle: { useQuery: () => bundleResult },

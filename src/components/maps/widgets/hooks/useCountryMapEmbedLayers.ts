@@ -476,6 +476,7 @@ export function useCountryMapEmbedLayers({
           // zooms IN past that baseline, and hide again when zooming back out —
           // like a normal map. `delta` is zoom relative to the fitted baseline.
           const NEVER = 1e15; // sentinel "never" population threshold (Infinity isn't valid in expressions)
+          let lastCityTier: number | null = null; // skip rebuilding the filter on every zoom frame
           updateCityFilter = () => {
             const z = map.getZoom();
             const base = cityBaselineZoom ?? z; // before fit settles, treat current as baseline → capitals only
@@ -496,6 +497,9 @@ export function useCountryMapEmbedLayers({
               popThreshold = NEVER; // default view: capitals only
               showRegionCapitals = false;
             }
+
+            if (lastCityTier === popThreshold) return;
+            lastCityTier = popThreshold;
 
             const anyBranch: any[] = [[">=", ["coalesce", ["get", "population"], 0], popThreshold]];
             if (showRegionCapitals) anyBranch.push(["==", ["get", "isRegionCapital"], true]);

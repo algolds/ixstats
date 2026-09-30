@@ -89,16 +89,27 @@ export function MapControls({
   const [openPanel, setOpenPanel] = useState<PanelId>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Close panel on click outside
+  // Close panel on click/tap outside or Escape
   useEffect(() => {
     if (!openPanel) return;
-    function handleClick(e: MouseEvent) {
+    function handlePointer(e: PointerEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpenPanel(null);
       }
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    function handleKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      // Stop the map's Escape handler from also clearing the selection.
+      e.preventDefault();
+      e.stopPropagation();
+      setOpenPanel(null);
+    }
+    document.addEventListener("pointerdown", handlePointer);
+    window.addEventListener("keydown", handleKey, { capture: true });
+    return () => {
+      document.removeEventListener("pointerdown", handlePointer);
+      window.removeEventListener("keydown", handleKey, { capture: true });
+    };
   }, [openPanel]);
 
   const toggle = useCallback((panel: PanelId) => {
@@ -124,6 +135,8 @@ export function MapControls({
           icon={<Layers className="h-4 w-4" />}
           label="Layers"
           isActive={openPanel === "layers"}
+          controls="map-controls-panel"
+          expanded={openPanel === "layers"}
           onClick={() => toggle("layers")}
         />
 
@@ -132,6 +145,8 @@ export function MapControls({
           icon={<BarChart3 className="h-4 w-4" />}
           label="Analytics"
           isActive={openPanel === "analytics"}
+          controls="map-controls-panel"
+          expanded={openPanel === "analytics"}
           hasIndicator={!!hasActiveAnalytics}
           onClick={() => toggle("analytics")}
         />
@@ -191,7 +206,7 @@ export function MapControls({
 
       {/* Layers panel */}
       {openPanel === "layers" && (
-        <DropdownPanel>
+        <DropdownPanel label="Map layers">
           <PanelSection title="Map Layers">
             {TOGGLEABLE_LAYERS.map((layer) => (
               <CheckboxRow
@@ -241,7 +256,7 @@ export function MapControls({
 
       {/* Analytics panel */}
       {openPanel === "analytics" && overlayVisibility && onToggleOverlay && (
-        <DropdownPanel>
+        <DropdownPanel label="Analytics overlays">
           <PanelSection title="Analytics Overlays">
             {ANALYTICS_OVERLAYS.map((item) => (
               <CheckboxRow
@@ -266,6 +281,8 @@ function IconButton({
   isActive,
   hasIndicator,
   variant = "default",
+  controls,
+  expanded,
   onClick,
 }: {
   icon: React.ReactNode;
@@ -273,10 +290,13 @@ function IconButton({
   isActive?: boolean;
   hasIndicator?: boolean;
   variant?: "default" | "active-tool";
+  /** For panel toggles: id of the panel and whether it is open (disclosure pattern). */
+  controls?: string;
+  expanded?: boolean;
   onClick: () => void;
 }) {
   const base =
-    "relative flex items-center justify-center rounded-lg shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
+    "relative flex items-center justify-center rounded-lg shadow-md transition-[color,background-color,box-shadow,transform] duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-[34px]";
   const colors =
     variant === "active-tool"
       ? "bg-blue-500 text-white hover:bg-blue-600"
@@ -285,7 +305,16 @@ function IconButton({
         : "bg-card text-muted-foreground hover:bg-accent hover:text-foreground";
 
   return (
-    <button onClick={onClick} className={`${base} ${colors}`} title={label}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${base} ${colors}`}
+      title={label}
+      aria-label={label}
+      {...(controls
+        ? { "aria-expanded": !!expanded, "aria-controls": expanded ? controls : undefined }
+        : { "aria-pressed": !!isActive })}
+    >
       {icon}
       {hasIndicator && (
         <span className="ring-card absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-1" />
@@ -294,9 +323,14 @@ function IconButton({
   );
 }
 
-function DropdownPanel({ children }: { children: React.ReactNode }) {
+function DropdownPanel({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <div className="animate-in fade-in slide-in-from-top-1 bg-card mt-1.5 w-48 rounded-lg p-2 shadow-lg duration-150">
+    <div
+      id="map-controls-panel"
+      role="region"
+      aria-label={label}
+      className="animate-in fade-in slide-in-from-top-1 bg-card ring-border/50 mt-1.5 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain rounded-lg p-2 shadow-lg ring-1 duration-150 sm:w-52"
+    >
       {children}
     </div>
   );
@@ -335,15 +369,16 @@ function ToggleAllRow({
 
   return (
     <button
+      type="button"
       onClick={handleToggleAll}
-      className="hover:bg-accent border-border mt-1 flex w-full cursor-pointer items-center gap-2 rounded border-t px-1.5 py-1.5 text-left transition-colors sm:py-1"
+      className="hover:bg-accent border-border focus-visible:ring-ring mt-1 flex w-full cursor-pointer items-center gap-2 rounded border-t px-1.5 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none sm:py-1"
     >
       {anyFeatureOn ? (
         <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
       ) : (
         <Eye className="text-muted-foreground h-3.5 w-3.5" />
       )}
-      <span className="text-foreground text-[12px] font-medium">
+      <span className="text-foreground text-xs font-medium">
         {anyFeatureOn ? "Hide All Markers" : "Show All Markers"}
       </span>
     </button>
@@ -360,14 +395,14 @@ function CheckboxRow({
   onChange: () => void;
 }) {
   return (
-    <label className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded px-1.5 py-1.5 transition-colors sm:py-1">
+    <label className="hover:bg-accent has-[:focus-visible]:ring-ring flex cursor-pointer items-center gap-2 rounded px-1.5 py-2 transition-colors has-[:focus-visible]:ring-2 sm:py-1">
       <input
         type="checkbox"
-        checked={checked}
+        checked={!!checked}
         onChange={onChange}
-        className="border-border h-3.5 w-3.5 rounded text-blue-500 focus:ring-blue-500"
+        className="border-border h-3.5 w-3.5 rounded accent-blue-500 focus:outline-none"
       />
-      <span className="text-foreground text-[12px]">{label}</span>
+      <span className="text-foreground text-xs">{label}</span>
     </label>
   );
 }

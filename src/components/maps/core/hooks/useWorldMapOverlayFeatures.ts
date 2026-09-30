@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
-import type { FeatureCollection } from "geojson";
+import type { Feature } from "geojson";
 import type { CapitalsGeoJson, MapOverlayFeatures } from "../IxWorldMap";
-import { createStarImage } from "../utils/map-core-helpers";
+import { createStarImage, setFilteredSourceData } from "../utils/map-core-helpers";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 interface UseWorldMapOverlayFeaturesProps {
@@ -44,76 +44,80 @@ export function useWorldMapOverlayFeatures({
     // oxlint-disable-next-line
   }, [map, isLoaded, capitals, theme]);
 
-  // 2. Render subdivisions, cities, and POIs with dynamic zoom/focus filtering
+  // 2. Render subdivisions, cities, and POIs with dynamic zoom/focus filtering.
+  // Subdivisions are pushed once per data change; cities/POIs are re-filtered on `zoom`
+  // but only re-sent to the worker when the filtered list actually changes (a handful of
+  // threshold crossings per zoom gesture instead of one full re-tile per animation frame).
+  const lastCitiesRef = useRef<Feature[] | null>(null);
+  const lastPoisRef = useRef<Feature[] | null>(null);
+
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures) return;
 
+    // A dependency changed (new data, focus or theme) — force one fresh push.
+    lastCitiesRef.current = null;
+    lastPoisRef.current = null;
+
+    const focusKey = selectedCountryId ?? null;
+    const focusLower = focusKey ? focusKey.toLowerCase() : "";
+    const rawCities = (overlayFeatures.cities?.features || []).filter(
+      (f) => !f.properties?.isCapital
+    );
+    const rawPois = overlayFeatures.pois?.features || [];
+
+    // --- Subdivisions (not zoom-filtered) ---
+    try {
+      const existing = map.getSource("source-overlay-subdivisions");
+      if (existing) {
+        (existing as GeoJSONSource).setData(
+          overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON
+        );
+      }
+    } catch (err) {
+      console.warn("[useWorldMapOverlayFeatures] overlay subdivisions error:", err);
+    }
+
     const updateOverlayFeatures = () => {
       const currentZoom = map.getZoom();
-      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined;
-
-      // --- Subdivisions ---
-      const subSource = "source-overlay-subdivisions";
-      try {
-        const existing = map.getSource(subSource);
-        if (existing) {
-          (existing as GeoJSONSource).setData(
-            overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON
-          );
-        }
-      } catch (err) {
-        console.warn("[useWorldMapOverlayFeatures] overlay subdivisions error:", err);
-      }
 
       // --- Cities (non-capital) ---
-      const citySource = "source-overlay-cities";
-      const rawCities = overlayFeatures.cities?.features || [];
-      const filteredCitiesFeatures = rawCities.filter((f) => {
-        if (f.properties?.isCapital) return false;
-        const pop = f.properties?.population ?? 0;
-        if (currentZoom >= 6.0) return true;
-        if (currentZoom >= 4.5) return pop >= 100000;
-        if (currentZoom >= 3.0) return pop >= 250000;
-        return pop >= 500000;
-      });
-
-      const nonCapitalCities: FeatureCollection = {
-        ...overlayFeatures.cities,
-        features: filteredCitiesFeatures,
-      };
-
+      const minPop =
+        currentZoom >= 6.0 ? 0 : currentZoom >= 4.5 ? 100000 : currentZoom >= 3.0 ? 250000 : 500000;
+      const cities =
+        minPop === 0
+          ? rawCities
+          : rawCities.filter((f) => (f.properties?.population ?? 0) >= minPop);
       try {
-        const existing = map.getSource(citySource);
-        if (existing) {
-          (existing as GeoJSONSource).setData(nonCapitalCities as unknown as GeoJSON.GeoJSON);
-        }
+        setFilteredSourceData(
+          map.getSource("source-overlay-cities") as GeoJSONSource | undefined,
+          cities,
+          lastCitiesRef,
+          overlayFeatures.cities
+        );
       } catch (err) {
         console.warn("[useWorldMapOverlayFeatures] overlay cities error:", err);
       }
 
       // --- POIs ---
-      const poiSource = "source-overlay-pois";
-      const filteredPoisFeatures = (overlayFeatures.pois?.features || []).filter((f: any) => {
-        if (currentZoom >= 4.0) return true;
-        return (
-          hasFocus &&
-          (f.properties?.countryId === selectedCountryId ||
-            f.properties?.countrySlug === selectedCountryId ||
-            (f.properties?.countryName &&
-              f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
-        );
-      });
-
-      const poisGeoJson: FeatureCollection = {
-        ...overlayFeatures.pois,
-        features: filteredPoisFeatures,
-      };
-
+      const pois =
+        currentZoom >= 4.0
+          ? rawPois
+          : focusKey !== null
+            ? rawPois.filter(
+                (f) =>
+                  f.properties?.countryId === focusKey ||
+                  f.properties?.countrySlug === focusKey ||
+                  (typeof f.properties?.countryName === "string" &&
+                    f.properties.countryName.toLowerCase() === focusLower)
+              )
+            : [];
       try {
-        const existing = map.getSource(poiSource);
-        if (existing) {
-          (existing as GeoJSONSource).setData(poisGeoJson as unknown as GeoJSON.GeoJSON);
-        }
+        setFilteredSourceData(
+          map.getSource("source-overlay-pois") as GeoJSONSource | undefined,
+          pois,
+          lastPoisRef,
+          overlayFeatures.pois
+        );
       } catch (err) {
         console.warn("[useWorldMapOverlayFeatures] overlay POIs error:", err);
       }
@@ -128,9 +132,7 @@ export function useWorldMapOverlayFeatures({
     map.on("zoom", updateOverlayFeatures);
 
     return () => {
-      if (map) {
-        map.off("zoom", updateOverlayFeatures);
-      }
+      map.off("zoom", updateOverlayFeatures);
     };
     // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures, selectedCountryId, theme]);

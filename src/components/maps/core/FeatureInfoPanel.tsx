@@ -7,6 +7,7 @@
  * Shows feature data, wiki intro (fetched on demand), and action links.
  */
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { memo } from "react";
 import {
   Xmark as X,
@@ -116,8 +117,11 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 rounded-full p-1.5 transition-colors"
+            aria-label="Close"
+            title="Close (Esc)"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring shrink-0 rounded-full p-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             <X className="h-4 w-4" />
           </button>
@@ -132,9 +136,9 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         {/* Wiki intro loading skeleton */}
         {wikiLoading && feature.wikiPageTitle && (
           <div className="mb-3 space-y-1.5">
-            <div className="bg-muted h-3 w-full animate-pulse rounded" />
-            <div className="bg-muted h-3 w-4/5 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-3/5 animate-pulse rounded" />
+            <Skeleton className="h-3 w-full rounded" />
+            <Skeleton className="h-3 w-4/5 rounded" />
+            <Skeleton className="h-3 w-3/5 rounded" />
           </div>
         )}
 

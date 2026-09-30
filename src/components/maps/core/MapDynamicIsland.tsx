@@ -130,12 +130,20 @@ export function MapDynamicIsland({
               }}
               onKeyDown={handleKeyDown}
               placeholder="Search countries, cities, places…"
+              aria-label="Search the map"
+              role="combobox"
+              aria-expanded={showResults}
+              aria-controls="map-search-results"
+              aria-autocomplete="list"
+              aria-activedescendant={selectedIdx >= 0 ? `map-search-opt-${selectedIdx}` : undefined}
               className="text-foreground placeholder:text-muted-foreground w-[calc(100vw-120px)] bg-transparent text-sm outline-none"
             />
             {searchLoading && debouncedQueryLength >= 2 && (
               <Loader2 className="text-muted-foreground h-3.5 w-3.5 shrink-0 animate-spin" />
             )}
             <button
+              type="button"
+              aria-label="Close search"
               onClick={closeSearch}
               className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
             >
@@ -157,6 +165,8 @@ export function MapDynamicIsland({
               onClick={openSearch}
               className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
               title="Search (⌘K)"
+              aria-label="Search the map"
+              type="button"
             >
               <Search className="h-3.5 w-3.5" />
             </button>
@@ -165,6 +175,8 @@ export function MapDynamicIsland({
               onClick={onOpenWelcome}
               className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
               title="Help & Tour"
+              aria-label="Help and tour"
+              type="button"
             >
               <HelpCircle className="h-3.5 w-3.5" />
             </button>
@@ -270,12 +282,22 @@ export function MapDynamicIsland({
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Search countries, cities, places…"
+                  aria-label="Search the map"
+                  role="combobox"
+                  aria-expanded={showResults}
+                  aria-controls="map-search-results"
+                  aria-autocomplete="list"
+                  aria-activedescendant={
+                    selectedIdx >= 0 ? `map-search-opt-${selectedIdx}` : undefined
+                  }
                   className="text-foreground placeholder:text-muted-foreground w-64 bg-transparent text-sm outline-none sm:w-80"
                 />
                 {searchLoading && debouncedQueryLength >= 2 && (
                   <Loader2 className="text-muted-foreground h-3.5 w-3.5 shrink-0 animate-spin" />
                 )}
                 <button
+                  type="button"
+                  aria-label="Close search"
                   onClick={closeSearch}
                   className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
                 >
@@ -307,6 +329,8 @@ export function MapDynamicIsland({
                   onClick={openSearch}
                   className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
                   title="Search (⌘K)"
+                  aria-label="Search the map"
+                  type="button"
                 >
                   <Search className="h-3.5 w-3.5" />
                 </button>
@@ -316,6 +340,8 @@ export function MapDynamicIsland({
                   onClick={onOpenWelcome}
                   className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
                   title="Help & Tour"
+                  aria-label="Help and tour"
+                  type="button"
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
@@ -399,7 +425,12 @@ export function MapDynamicIsland({
       {/* ── Search Results Dropdown ── */}
       {isMobile ? (
         showResults && (
-          <div className="bg-card mt-2 max-h-80 w-[calc(100vw-24px)] overflow-y-auto rounded-2xl border border-white/10 py-1 shadow-2xl">
+          <div
+            id="map-search-results"
+            role="listbox"
+            aria-label="Search results"
+            className="bg-card border-border mt-2 max-h-[min(20rem,60dvh)] w-[calc(100vw-24px)] overflow-y-auto overscroll-contain rounded-2xl border py-1 shadow-2xl"
+          >
             {searchLoading && !hasResults && (
               <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -427,6 +458,10 @@ export function MapDynamicIsland({
                     const isHighlighted = flatIdx === selectedIdx;
                     return (
                       <button
+                        type="button"
+                        id={`map-search-opt-${flatIdx}`}
+                        role="option"
+                        aria-selected={isHighlighted}
                         key={`${result.type}-${result.id}`}
                         onClick={() => handleSelect(result)}
                         className={cn(
@@ -463,7 +498,10 @@ export function MapDynamicIsland({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={SPRING_SOFT}
-              className="bg-card ring-border mt-2 max-h-80 overflow-y-auto rounded-2xl py-1 shadow-2xl ring-1"
+              id="map-search-results"
+              role="listbox"
+              aria-label="Search results"
+              className="bg-card ring-border mt-2 max-h-80 overflow-y-auto overscroll-contain rounded-2xl py-1 shadow-2xl ring-1"
             >
               {searchLoading && !hasResults && (
                 <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
@@ -492,6 +530,10 @@ export function MapDynamicIsland({
                       const isHighlighted = flatIdx === selectedIdx;
                       return (
                         <button
+                          type="button"
+                          id={`map-search-opt-${flatIdx}`}
+                          role="option"
+                          aria-selected={isHighlighted}
                           key={`${result.type}-${result.id}`}
                           onClick={() => handleSelect(result)}
                           className={cn(

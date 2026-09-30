@@ -19,6 +19,11 @@ import { api } from "~/trpc/react";
 const SSE_ENDPOINT = "/api/sse/map-updates";
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
+/**
+ * Coalesce bursts of change events (an editor autosave or a bulk import emits many) into one
+ * cache invalidation, so every open map refetches its (multi-MB) bundle once, not per event.
+ */
+const INVALIDATE_DEBOUNCE_MS = 750;
 
 /** Invalidate all map-related React Query caches */
 function invalidateMapCaches(utils: ReturnType<typeof api.useUtils>) {
@@ -38,6 +43,7 @@ export function useMapLiveSync() {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const isMountedRef = useRef(true);
+  const invalidateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
     if (!isMountedRef.current) return;
@@ -58,7 +64,11 @@ export function useMapLiveSync() {
 
       es.addEventListener("map_data_changed", () => {
         reconnectAttemptsRef.current = 0;
-        invalidateMapCaches(utils);
+        if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
+        invalidateTimerRef.current = setTimeout(() => {
+          invalidateTimerRef.current = null;
+          if (isMountedRef.current) invalidateMapCaches(utils);
+        }, INVALIDATE_DEBOUNCE_MS);
       });
 
       es.onerror = () => {
@@ -95,6 +105,7 @@ export function useMapLiveSync() {
     return () => {
       isMountedRef.current = false;
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
       if (esRef.current) {
         esRef.current.close();
         esRef.current = null;

@@ -14,6 +14,7 @@ import {
   setOrUpdateGeoJSONSource,
   ensureMapLayer,
   removeLayerAndSource,
+  isMapStyleReady,
 } from "~/lib/maps/geojson-layer-helpers";
 
 const RELATIONS_SOURCE = "diplo-relations-source";
@@ -35,7 +36,7 @@ export function GeopoliticalOverlay({
   visible,
 }: GeopoliticalOverlayProps) {
   useEffect(() => {
-    if (!map || !map.isStyleLoaded()) return;
+    if (!isMapStyleReady(map)) return;
 
     // Diplomatic relations
     setOrUpdateGeoJSONSource(map, RELATIONS_SOURCE, relations);

@@ -11,8 +11,12 @@ interface UseMapStateProps {
   onCountrySelect?: (country: SelectedCountry | null) => void;
   mapRef: React.RefObject<any>;
   measureToolRef: React.RefObject<any>;
-  mapLayers: any[];
-  layerDataMap: Record<string, any>;
+  /**
+   * Returns the loaded map layers at call time. A getter (backed by a ref in MapContainer)
+   * because the layers are fetched after this hook runs; passing them by value handed the
+   * pin tool and neighbour lookup an empty list.
+   */
+  getMapLayers: () => Array<{ type: string; data: any }>;
   isPinToolActive: boolean;
   pinPosition: any;
   dropPin: (lng: number, lat: number, layerDataMap: any) => void;
@@ -27,8 +31,7 @@ export function useMapState({
   mapRef,
   // oxlint-disable-next-line eslint/no-unused-vars
   measureToolRef,
-  mapLayers,
-  layerDataMap,
+  getMapLayers,
   isPinToolActive,
   pinPosition,
   dropPin,
@@ -44,7 +47,6 @@ export function useMapState({
   }, []);
 
   const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
-  const [hoveredCountry, setHoveredCountry] = useState<HoveredCountry | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<SelectedFeature | null>(null);
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [mapEngineReady, setMapEngineReady] = useState(false);
@@ -133,9 +135,11 @@ export function useMapState({
     [onCountrySelect, mapRef]
   );
 
+  // Hover only warms the query cache. It deliberately does not store the hovered country in
+  // React state: that re-rendered the whole map container (every panel and control) each
+  // time the pointer crossed a border.
   const handleCountryHover = useCallback(
     (country: HoveredCountry | null) => {
-      setHoveredCountry(country);
       if (hoverDebounceRef.current) {
         clearTimeout(hoverDebounceRef.current);
         hoverDebounceRef.current = undefined;
@@ -166,10 +170,12 @@ export function useMapState({
   const handleMapClick = useCallback(
     (lng: number, lat: number) => {
       if (pinToolRef.current) {
+        const layerDataMap: Record<string, any> = {};
+        for (const ml of getMapLayers()) layerDataMap[ml.type] = ml.data;
         dropPin(lng, lat, layerDataMap);
       }
     },
-    [dropPin, layerDataMap]
+    [dropPin, getMapLayers]
   );
 
   const handleClosePanel = useCallback(() => {
@@ -253,7 +259,7 @@ export function useMapState({
       let lat = neighbor.centroidLat ?? 0;
 
       if (lng === 0 && lat === 0) {
-        const politicalLayer = mapLayers.find((l) => l.type === "political");
+        const politicalLayer = getMapLayers().find((l) => l.type === "political");
         if (politicalLayer?.data) {
           const match = politicalLayer.data.features.find(
             (f: any) =>
@@ -285,14 +291,12 @@ export function useMapState({
         mapRef.current.flyTo(lng, lat, targetZoom);
       }
     },
-    [onCountrySelect, mapLayers, mapRef]
+    [onCountrySelect, getMapLayers, mapRef]
   );
 
   return {
     selectedCountry,
     setSelectedCountry,
-    hoveredCountry,
-    setHoveredCountry,
     selectedFeature,
     setSelectedFeature,
     isMeasuring,

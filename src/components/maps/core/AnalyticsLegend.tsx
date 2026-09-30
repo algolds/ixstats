@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * AnalyticsLegend — Floating legend showing the active analytics overlay's
- * color scale and labels. Appears bottom-left when an overlay is active,
- * auto-hides when none are on.
+ * AnalyticsLegend — Legend showing the active analytics overlay's color scale and labels.
+ * Rendered inside MapContainer's bottom-left stack when an overlay is active; auto-hides
+ * when none are on, and says "Loading…" until the overlay's data has arrived.
  *
  * Legends are sourced from the overlay registry (`~/lib/maps/overlay-registry/) so a
  * new overlay's legend ships with its registry entry — no edits here required.
@@ -15,24 +15,34 @@ import type { OverlayVisibility } from "./IxWorldMap";
 
 interface AnalyticsLegendProps {
   overlayVisibility: OverlayVisibility;
+  /** Loaded overlay data keyed by overlay id; a missing entry means it is still loading. */
+  overlayData?: Record<string, unknown>;
 }
 
-export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
+export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLegendProps) {
   // First visible overlay (in registry order) that declares a legend.
   const active = OVERLAY_LIST.find((o) => o.legend && overlayVisibility[o.id]);
   if (!active?.legend) return null;
 
   const legend: OverlayLegend = active.legend;
+  const isLoading = !!overlayData && active.renderProps && overlayData[active.id] == null;
 
   return (
     <div
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
-      className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 absolute bottom-6 left-3 z-10 rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200 sm:bottom-8"
+      role="status"
+      aria-live="polite"
+      className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 pointer-events-auto max-w-[16rem] rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200"
     >
-      <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-        {legend.title}
+      <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs font-semibold tracking-wider uppercase">
+        <span>{legend.title}</span>
+        {isLoading && (
+          <span className="text-muted-foreground/80 font-normal tracking-normal normal-case">
+            Loading…
+          </span>
+        )}
       </div>
 
       {legend.type === "gradient" && (

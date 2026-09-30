@@ -4,13 +4,14 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
-import { useIxTime } from "~/context/IxTimeContext";
+import { useIxTimeStore } from "~/stores/ixtime-store";
+import { keepPreviousData } from "@tanstack/react-query";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { api } from "~/trpc/react";
-import { getGreeting, getTimeDisplay } from "../utils/dynamic-island-helpers";
+import { getGreeting } from "../utils/dynamic-island-helpers";
 import type { MapSearchResult } from "../MapDynamicIsland";
 
 interface UseDynamicIslandStateProps {
@@ -22,18 +23,16 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(-1);
-  const [timeDisplayMode, setTimeDisplayMode] = useState<"time" | "date" | "both">("time");
   const [isFlashing, setIsFlashing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { user, isLoaded } = useUser();
-  const { ixTimeTimestamp } = useIxTime();
+  // Select only the greeting string: subscribing to the raw IxTime timestamp re-rendered the
+  // island (and re-measured its motion `layout` animations) every second.
+  const greeting = useIxTimeStore((st) => getGreeting(st.ixTimeTimestamp));
   const { theme, effectiveTheme, setTheme } = useTheme();
   const router = useRouter();
-
-  const greeting = useMemo(() => getGreeting(ixTimeTimestamp), [ixTimeTimestamp]);
-  const timeDisplay = useMemo(() => getTimeDisplay(ixTimeTimestamp), [ixTimeTimestamp]);
 
   // Profile data for greeting
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
@@ -71,9 +70,15 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
   // Geo Search
   const debouncedQuery = useDebounce(query.trim(), 250);
 
-  const { data: results, isLoading: searchLoading } = api.geoCore.searchFeatures.useQuery(
+  const { data: results, isFetching: searchLoading } = api.geoCore.searchFeatures.useQuery(
     { query: debouncedQuery, limit: 20, realm },
-    { enabled: debouncedQuery.length >= 2, staleTime: 30_000 }
+    {
+      enabled: debouncedQuery.length >= 2,
+      staleTime: 30_000,
+      // Keep the previous results on screen while the next query loads instead of flashing
+      // "Searching…" between keystrokes.
+      placeholderData: keepPreviousData,
+    }
   );
 
   const grouped = useMemo(() => {
@@ -163,21 +168,17 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
     setQuery,
     selectedIdx,
     setSelectedIdx,
-    timeDisplayMode,
-    setTimeDisplayMode,
     isFlashing,
     setIsFlashing,
     containerRef,
     inputRef,
     user,
     isLoaded,
-    ixTimeTimestamp,
     theme,
     effectiveTheme,
     setTheme,
     router,
     greeting,
-    timeDisplay,
     countryName,
     messageUnreadCount,
     unreadNotifications,

@@ -2,8 +2,9 @@ import { useEffect, useCallback, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
-import { DEMOTED_COUNTRY_NAMES, INTERACTION_COLORS } from "~/lib/maps/map-config";
+import { INTERACTION_COLORS } from "~/lib/maps/map-config";
 import { escHtml, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
+import { computeCountryLabelFade } from "../utils/label-fade";
 import { transientMapStore } from "../../editor/utils/transientStore";
 
 interface UseWorldMapInteractionsProps {
@@ -48,6 +49,7 @@ export function useWorldMapInteractions({
   const hoveredFeatureIdRef = useRef<number | null>(null);
   const hoveredOverlayIdRef = useRef<string | null>(null);
   const hoveredSubdivisionIdRef = useRef<number | null>(null);
+  const selectedIdxRef = useRef<{ data: unknown; idx: number }>({ data: null, idx: -1 });
 
   // Keep latest refs to avoid stale callbacks
   const onCountryClickRef = useRef(onCountryClick);
@@ -80,49 +82,13 @@ export function useWorldMapInteractions({
     const viewRadius =
       Math.sqrt(visibleLngSpan * visibleLngSpan + visibleLatSpan * visibleLatSpan) / 2;
 
-    const updated: FeatureCollection = {
-      ...baseFeatures,
-      features: baseFeatures.features.map((f) => {
-        const props = f.properties as Record<string, any>;
-        const name = props?._displayName as string;
-        const isTop = topCountryNames?.has(name);
-        const isDemoted = DEMOTED_COUNTRY_NAMES.includes(name as any);
-
-        if (isTop) {
-          return {
-            ...f,
-            properties: { ...props, _importance: 1, _distFade: 1 },
-          };
-        }
-
-        if (isDemoted) {
-          if (zoom < 5.5) {
-            return { ...f, properties: { ...props, _importance: -1, _distFade: 0 } };
-          }
-        }
-
-        const geometry = f.geometry;
-        if (!("coordinates" in geometry)) return f;
-        const coords = geometry.coordinates as [number, number];
-        const dlng = coords[0] - center.lng;
-        const dlat = coords[1] - center.lat;
-        const dist = Math.sqrt(dlng * dlng + dlat * dlat);
-
-        const normDist = dist / Math.max(viewRadius, 1);
-        const rawFade = Math.max(0, Math.min(1, (1.2 - normDist) / 0.6));
-        const zoomFade = Math.max(0, Math.min(1, (zoom - 2.5) / 1.5));
-        const fade = zoomFade * rawFade;
-
-        return {
-          ...f,
-          properties: {
-            ...props,
-            _importance: isDemoted ? -1 : 0,
-            _distFade: Math.round(fade * 100) / 100,
-          },
-        };
-      }),
-    };
+    const updated = computeCountryLabelFade(baseFeatures, {
+      center,
+      zoom,
+      viewRadius,
+      topCountryNames,
+    });
+    if (!updated) return;
 
     labelFeaturesRef.current = updated;
     (source as any).setData(updated);
@@ -474,7 +440,23 @@ export function useWorldMapInteractions({
       }
     };
 
-    map.on("mousemove", handleMouseMove);
+    // Hit-testing (two queryRenderedFeatures calls) is the costliest part of hover, and
+    // mousemove can fire several times per frame on high-rate pointers. Coalesce to one
+    // hit-test per animation frame using the latest event.
+    let pendingMove: any = null;
+    let moveFrame = 0;
+    const flushMouseMove = () => {
+      moveFrame = 0;
+      const ev = pendingMove;
+      pendingMove = null;
+      if (ev) handleMouseMove(ev);
+    };
+    const scheduleMouseMove = (e: any) => {
+      pendingMove = e;
+      if (!moveFrame) moveFrame = requestAnimationFrame(flushMouseMove);
+    };
+
+    map.on("mousemove", scheduleMouseMove);
     map.on("click", handleClick);
     map.on("dragstart", handleDragStart);
     map.on("dragend", handleDragEnd);
@@ -486,76 +468,40 @@ export function useWorldMapInteractions({
     };
 
     // Capture & stop mouse/pointer events that originate outside the globe disc
-    const handleCaptureMouseDown = (e: MouseEvent) => {
-      if (e.target !== canvas && e.target !== canvasContainer) return;
-      const pt = getCanvasPoint(e.clientX, e.clientY);
-      if (!isPointOnGlobeOrMap(pt)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
+    const stopOffGlobe = (e: Event) => {
+      e.stopPropagation();
+      e.stopImmediatePropagation();
     };
-
-    const handleCapturePointerDown = (e: PointerEvent) => {
+    // Mouse/pointer/wheel/dblclick/contextmenu that start off the globe disc never reach MapLibre.
+    const handleCapturePointerLike = (e: MouseEvent) => {
       if (e.target !== canvas && e.target !== canvasContainer) return;
-      const pt = getCanvasPoint(e.clientX, e.clientY);
-      if (!isPointOnGlobeOrMap(pt)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
+      if (!isPointOnGlobeOrMap(getCanvasPoint(e.clientX, e.clientY))) stopOffGlobe(e);
     };
-
+    // Touches pass through as long as any finger is on the globe (pinch from the edge).
     const handleCaptureTouchStart = (e: TouchEvent) => {
       if (e.target !== canvas && e.target !== canvasContainer) return;
       const touches = Array.from(e.touches || []);
-      const anyTouchOnGlobe =
-        touches.length > 0 &&
-        touches.some((t) => {
-          const pt = getCanvasPoint(t.clientX, t.clientY);
-          return isPointOnGlobeOrMap(pt);
-        });
-      if (!anyTouchOnGlobe) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    const handleCaptureDblClick = (e: MouseEvent) => {
-      if (e.target !== canvas && e.target !== canvasContainer) return;
-      const pt = getCanvasPoint(e.clientX, e.clientY);
-      if (!isPointOnGlobeOrMap(pt)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    const handleCaptureWheel = (e: WheelEvent) => {
-      if (e.target !== canvas && e.target !== canvasContainer) return;
-      const pt = getCanvasPoint(e.clientX, e.clientY);
-      if (!isPointOnGlobeOrMap(pt)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    const handleCaptureContextMenu = (e: MouseEvent) => {
-      if (e.target !== canvas && e.target !== canvasContainer) return;
-      const pt = getCanvasPoint(e.clientX, e.clientY);
-      if (!isPointOnGlobeOrMap(pt)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
+      const anyTouchOnGlobe = touches.some((t) =>
+        isPointOnGlobeOrMap(getCanvasPoint(t.clientX, t.clientY))
+      );
+      if (!anyTouchOnGlobe) stopOffGlobe(e);
     };
 
     const captureOpts: AddEventListenerOptions = { capture: true, passive: false };
-
-    canvasContainer.addEventListener("mousedown", handleCaptureMouseDown, captureOpts);
-    canvasContainer.addEventListener("pointerdown", handleCapturePointerDown, captureOpts);
+    const POINTER_LIKE_EVENTS = ["mousedown", "pointerdown", "dblclick", "wheel", "contextmenu"];
+    for (const type of POINTER_LIKE_EVENTS) {
+      canvasContainer.addEventListener(
+        type,
+        handleCapturePointerLike as EventListener,
+        captureOpts
+      );
+    }
     canvasContainer.addEventListener("touchstart", handleCaptureTouchStart, captureOpts);
-    canvasContainer.addEventListener("dblclick", handleCaptureDblClick, captureOpts);
-    canvasContainer.addEventListener("wheel", handleCaptureWheel, captureOpts);
-    canvasContainer.addEventListener("contextmenu", handleCaptureContextMenu, captureOpts);
 
     const handleMouseLeave = () => {
+      if (moveFrame) cancelAnimationFrame(moveFrame);
+      moveFrame = 0;
+      pendingMove = null;
       tooltipPopupRef.current?.remove();
       hoveredOverlayIdRef.current = null;
       if (
@@ -574,23 +520,28 @@ export function useWorldMapInteractions({
           { hover: false }
         );
       }
+      if (hoveredFeatureIdRef.current !== null) onCountryHoverRef.current?.(null);
       hoveredFeatureIdRef.current = null;
       canvas.style.cursor = "default";
     };
     canvas.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      map.off("mousemove", handleMouseMove);
+      if (moveFrame) cancelAnimationFrame(moveFrame);
+      pendingMove = null;
+      map.off("mousemove", scheduleMouseMove);
       map.off("click", handleClick);
       map.off("dragstart", handleDragStart);
       map.off("dragend", handleDragEnd);
 
-      canvasContainer.removeEventListener("mousedown", handleCaptureMouseDown, captureOpts);
-      canvasContainer.removeEventListener("pointerdown", handleCapturePointerDown, captureOpts);
+      for (const type of POINTER_LIKE_EVENTS) {
+        canvasContainer.removeEventListener(
+          type,
+          handleCapturePointerLike as EventListener,
+          captureOpts
+        );
+      }
       canvasContainer.removeEventListener("touchstart", handleCaptureTouchStart, captureOpts);
-      canvasContainer.removeEventListener("dblclick", handleCaptureDblClick, captureOpts);
-      canvasContainer.removeEventListener("wheel", handleCaptureWheel, captureOpts);
-      canvasContainer.removeEventListener("contextmenu", handleCaptureContextMenu, captureOpts);
 
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
@@ -608,8 +559,9 @@ export function useWorldMapInteractions({
   useEffect(() => {
     if (!map || !isLoaded) return;
 
+    // Every zoom also ends with a `moveend`, so one listener recomputes the label fade once
+    // per gesture (listening to `zoomend` as well pushed the label source twice per zoom).
     map.on("moveend", updateDistanceFade);
-    map.on("zoomend", updateDistanceFade);
 
     const handleZoomChange = () => {
       onZoomChange?.(Math.round(map.getZoom() * 10) / 10);
@@ -618,7 +570,6 @@ export function useWorldMapInteractions({
 
     return () => {
       map.off("moveend", updateDistanceFade);
-      map.off("zoomend", updateDistanceFade);
       map.off("zoomend", handleZoomChange);
     };
   }, [map, isLoaded, onZoomChange, updateDistanceFade]);
@@ -691,20 +642,33 @@ export function useWorldMapInteractions({
 
     const political = layers.find((l) => l.type === "political");
     if (political && map.getSource("source-political")) {
-      for (let i = 0; i < political.data.features.length; i++) {
-        map.setFeatureState({ source: "source-political", id: i }, { selected: false });
+      const idx = selectedCountryId
+        ? political.data.features.findIndex(
+            (f: any) =>
+              (f.properties?._id || f.properties?.id) === selectedCountryId ||
+              (f.properties?._countryId || f.properties?.countryId) === selectedCountryId
+          )
+        : -1;
+
+      // Clear only the previously selected feature (one call) instead of resetting state on
+      // every country polygon each time `layers` changes. When the political data object
+      // changed, generated ids may have shifted, so clear the source's feature state instead
+      // (MapLibre only removes a single key when an id is given).
+      const prev = selectedIdxRef.current;
+      if (prev.data !== political.data) {
+        try {
+          map.removeFeatureState({ source: "source-political" });
+        } catch (err) {
+          console.debug("[useWorldMapInteractions] Reset selected state error:", err);
+        }
+      } else if (prev.idx >= 0 && prev.idx !== idx) {
+        map.setFeatureState({ source: "source-political", id: prev.idx }, { selected: false });
       }
 
-      if (selectedCountryId) {
-        const idx = political.data.features.findIndex(
-          (f: any) =>
-            (f.properties?._id || f.properties?.id) === selectedCountryId ||
-            (f.properties?._countryId || f.properties?.countryId) === selectedCountryId
-        );
-        if (idx >= 0) {
-          map.setFeatureState({ source: "source-political", id: idx }, { selected: true });
-        }
+      if (idx >= 0) {
+        map.setFeatureState({ source: "source-political", id: idx }, { selected: true });
       }
+      selectedIdxRef.current = { data: political.data, idx };
     }
   }, [map, selectedCountryId, isLoaded, layers]);
 

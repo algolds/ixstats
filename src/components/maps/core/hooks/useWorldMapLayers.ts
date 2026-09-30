@@ -13,6 +13,60 @@ import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
 import { COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
+/** Rivers fade in with zoom (thin, faint at globe view). */
+const RIVER_LINE_OPACITY = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  0,
+  0.25,
+  2,
+  0.35,
+  4,
+  0.55,
+  6,
+  0.75,
+  8,
+  0.9,
+];
+
+/** Symbol layer for country names on `source-country-labels` (distance-faded via `_distFade`). */
+function addCountryLabelLayer(map: MapLibreMap) {
+  map.addLayer({
+    id: "country-name-labels",
+    type: "symbol",
+    source: "source-country-labels",
+    layout: {
+      "text-field": ["get", "_displayName"] as unknown as string,
+      "text-font": [...MAP_SYMBOL_FONTS.regular],
+      "text-size": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        1.5,
+        10,
+        3,
+        12,
+        5,
+        14,
+      ] as unknown as number,
+      "text-allow-overlap": false,
+      "text-ignore-placement": false,
+      "text-optional": true,
+      "text-padding": 2,
+      "text-max-width": 8,
+    },
+    paint: {
+      "text-color": "#2c2c2c",
+      "text-halo-color": "#ffffff",
+      "text-halo-width": 1.8,
+      "text-halo-blur": 0.5,
+      "text-opacity": COUNTRY_LABEL_OPACITY as unknown as number,
+    },
+    minzoom: 1.5,
+  });
+}
+
 interface UseWorldMapLayersProps {
   map: MapLibreMap | null;
   isLoaded: boolean;
@@ -24,6 +78,8 @@ interface UseWorldMapLayersProps {
   fullLayerDataRef: React.MutableRefObject<Map<string, FeatureCollection>>;
   theme?: MapTheme;
   showOceanLabels?: boolean;
+  /** The global "Labels" toggle; country names stay hidden while it is off. */
+  labelsVisible?: boolean;
 }
 
 export function useWorldMapLayers({
@@ -37,6 +93,7 @@ export function useWorldMapLayers({
   fullLayerDataRef,
   theme,
   showOceanLabels = true,
+  labelsVisible = true,
 }: UseWorldMapLayersProps) {
   // Update projection spec when mode changes
   useEffect(() => {
@@ -206,6 +263,34 @@ export function useWorldMapLayers({
       const config = LAYER_CONFIGS[layer.type];
       if (!config) continue;
 
+      // Country labels are point features rendered by one symbol layer on their own source.
+      // They used to also get a generic `source-country_labels` + (invisible) fill layer, so the
+      // worker tiled the same points twice; and on a remount of the persistent map the label
+      // source/ref was never refreshed. Handle them here, on data change only.
+      if (layer.type === "country_labels") {
+        try {
+          if (lastLoadedDataRef.current.get(layer.type) !== layer.data) {
+            lastLoadedDataRef.current.set(layer.type, layer.data);
+            labelFeaturesRef.current = layer.data;
+            const labelSource = map.getSource("source-country-labels") as GeoJSONSource | undefined;
+            if (labelSource) {
+              labelSource.setData(layer.data as unknown as GeoJSON.GeoJSON);
+            } else {
+              map.addSource("source-country-labels", {
+                type: "geojson",
+                data: layer.data as unknown as GeoJSON.GeoJSON,
+                generateId: true,
+              });
+            }
+            if (!map.getLayer("country-name-labels")) addCountryLabelLayer(map);
+            updateDistanceFade();
+          }
+        } catch (err) {
+          console.error("[useWorldMapLayers] Failed to add layer", layer.type, err);
+        }
+        continue;
+      }
+
       try {
         if (layer.type === "rivers" || layer.type === "lakes") {
           fullLayerDataRef.current.set(layer.type, layer.data);
@@ -263,29 +348,12 @@ export function useWorldMapLayers({
                       6,
                       (config.strokeWidth ?? 1) * 2,
                     ],
-                "line-opacity": layer.visible
-                  ? isRiver
-                    ? [
-                        "interpolate",
-                        ["linear"],
-                        ["zoom"],
-                        0,
-                        0.25,
-                        2,
-                        0.35,
-                        4,
-                        0.55,
-                        6,
-                        0.75,
-                        8,
-                        0.9,
-                      ]
-                    : 0.9
-                  : 0,
+                "line-opacity": (isRiver ? RIVER_LINE_OPACITY : 0.9) as any,
               },
               layout: {
                 "line-cap": "round",
                 "line-join": "round",
+                visibility: layer.visible ? "visible" : "none",
               },
             });
           }
@@ -372,75 +440,29 @@ export function useWorldMapLayers({
               }
             }
           }
-
-          if (layer.type === "country_labels") {
-            labelFeaturesRef.current = layer.data;
-            const existingLabelSource = map.getSource("source-country-labels") as
-              GeoJSONSource | undefined;
-            if (existingLabelSource) {
-              existingLabelSource.setData(layer.data as unknown as GeoJSON.GeoJSON);
-              updateDistanceFade();
-            } else {
-              map.addSource("source-country-labels", {
-                type: "geojson",
-                data: layer.data as unknown as GeoJSON.GeoJSON,
-                generateId: true,
-              });
-              if (layer.data?.features?.length > 0 && !map.getLayer("country-name-labels")) {
-                map.addLayer({
-                  id: "country-name-labels",
-                  type: "symbol",
-                  source: "source-country-labels",
-                  layout: {
-                    "text-field": ["get", "_displayName"] as unknown as string,
-                    "text-font": [...MAP_SYMBOL_FONTS.regular],
-                    "text-size": [
-                      "interpolate",
-                      ["linear"],
-                      ["zoom"],
-                      1.5,
-                      10,
-                      3,
-                      12,
-                      5,
-                      14,
-                    ] as unknown as number,
-                    "text-allow-overlap": false,
-                    "text-ignore-placement": false,
-                    "text-optional": true,
-                    "text-padding": 2,
-                    "text-max-width": 8,
-                  },
-                  paint: {
-                    "text-color": "#2c2c2c",
-                    "text-halo-color": "#ffffff",
-                    "text-halo-width": 1.8,
-                    "text-halo-blur": 0.5,
-                    "text-opacity": COUNTRY_LABEL_OPACITY as unknown as number,
-                  },
-                  minzoom: 1.5,
-                });
-                updateDistanceFade();
-              }
-            }
-          }
         }
       } catch (err) {
         console.error("[useWorldMapLayers] Failed to add layer", layer.type, err);
       }
     }
 
-    // Update visibilities/opacity for all layers in MAP_LAYER_TYPES
+    // Update visibilities/opacity for all layers in MAP_LAYER_TYPES.
+    // Hidden layers are switched off with `visibility: none` rather than opacity 0: MapLibre
+    // still tiles, builds buckets for and draws a layer at opacity 0, so hidden climate,
+    // biomes, ice caps etc. used to cost worker and GPU time on every pan/zoom. The political
+    // fill is the exception — it stays queryable (hover/click) at opacity 0.
+    const politicalVisible = layers.some((l) => l.type === "political" && l.visible);
     for (const type of MAP_LAYER_TYPES) {
+      if (type === "country_labels") continue; // handled below
       const activeLayer = layers.find((l) => l.type === type);
       const isVisible = activeLayer ? activeLayer.visible : false;
       const fillLayerId = `fill-${type}`;
       const strokeLayerId = `stroke-${type}`;
       const config = LAYER_CONFIGS[type];
       if (!config) continue;
+      const visibility = isVisible ? "visible" : "none";
 
-      const fillLayer = map.getLayer(fillLayerId);
-      if (fillLayer) {
+      if (map.getLayer(fillLayerId)) {
         if (type === "political") {
           map.setPaintProperty(
             fillLayerId,
@@ -449,28 +471,35 @@ export function useWorldMapLayers({
               ? ["case", ["boolean", ["feature-state", "hover"], false], 0.6, config.fillOpacity]
               : 0
           );
-        } else if (type === "altitudes") {
-          const politicalVisible = layers.some((l) => l.type === "political" && l.visible);
-          map.setPaintProperty(
-            fillLayerId,
-            "fill-opacity",
-            isVisible ? (politicalVisible ? config.fillOpacity : 1.0) : 0
-          );
-        } else if (config.type === "line") {
-          map.setPaintProperty(fillLayerId, "line-opacity", isVisible ? 0.9 : 0);
         } else {
-          map.setPaintProperty(fillLayerId, "fill-opacity", isVisible ? config.fillOpacity : 0);
+          if (type === "altitudes") {
+            map.setPaintProperty(
+              fillLayerId,
+              "fill-opacity",
+              politicalVisible ? config.fillOpacity : 1.0
+            );
+          } else if (config.type === "line") {
+            map.setPaintProperty(
+              fillLayerId,
+              "line-opacity",
+              (type === "rivers" ? RIVER_LINE_OPACITY : 0.9) as any
+            );
+          } else {
+            map.setPaintProperty(fillLayerId, "fill-opacity", config.fillOpacity);
+          }
+          map.setLayoutProperty(fillLayerId, "visibility", visibility);
         }
       }
 
-      const strokeLayer = map.getLayer(strokeLayerId);
-      if (strokeLayer) {
-        map.setPaintProperty(strokeLayerId, "line-opacity", isVisible ? 0.8 : 0);
+      if (map.getLayer(strokeLayerId)) {
+        map.setPaintProperty(strokeLayerId, "line-opacity", 0.8);
+        map.setLayoutProperty(strokeLayerId, "visibility", visibility);
       }
 
       if (type === "political") {
         if (map.getLayer("sovereignty-border")) {
-          map.setPaintProperty("sovereignty-border", "line-opacity", isVisible ? 0.7 : 0);
+          map.setPaintProperty("sovereignty-border", "line-opacity", 0.7);
+          map.setLayoutProperty("sovereignty-border", "visibility", visibility);
         }
         if (map.getLayer("sovereignty-labels")) {
           map.setPaintProperty("sovereignty-labels", "text-opacity", isVisible ? 1 : 0);
@@ -483,16 +512,15 @@ export function useWorldMapLayers({
           );
         }
       }
+    }
 
-      if (type === "country_labels") {
-        if (map.getLayer("country-name-labels")) {
-          map.setLayoutProperty(
-            "country-name-labels",
-            "visibility",
-            isVisible ? "visible" : "none"
-          );
-        }
-      }
+    const labelsLayer = layers.find((l) => l.type === "country_labels");
+    if (map.getLayer("country-name-labels")) {
+      map.setLayoutProperty(
+        "country-name-labels",
+        "visibility",
+        labelsLayer?.visible && labelsVisible ? "visible" : "none"
+      );
     }
   }, [
     map,
@@ -503,5 +531,6 @@ export function useWorldMapLayers({
     labelFeaturesRef,
     fullLayerDataRef,
     theme,
+    labelsVisible,
   ]);
 }

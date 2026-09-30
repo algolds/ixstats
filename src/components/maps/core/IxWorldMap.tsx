@@ -209,6 +209,7 @@ const IxWorldMap = memo(
       fullLayerDataRef,
       theme,
       showOceanLabels,
+      labelsVisible,
     });
 
     // ── 3. Hook: Manage Capitals & subdivisions Overlays ──
@@ -333,15 +334,18 @@ const IxWorldMap = memo(
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         />
         {debugError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-red-50 p-4">
-            <div className="max-w-lg rounded-lg bg-white p-4 shadow-lg">
-              <p className="font-bold text-red-600">MapLibre import debug:</p>
+          <div
+            role="alert"
+            className="bg-background absolute inset-0 flex items-center justify-center p-4"
+          >
+            <div className="bg-card ring-border max-w-lg rounded-lg p-4 shadow-lg ring-1">
+              <p className="text-destructive font-bold">The map engine failed to start</p>
               <pre className="text-foreground mt-2 text-xs whitespace-pre-wrap">{debugError}</pre>
             </div>
           </div>
         )}
         {!isLoaded && !debugError && (
-          <div className="bg-muted absolute inset-0 flex items-center justify-center">
+          <div className="bg-muted absolute inset-0 flex items-center justify-center" role="status">
             <div className="flex flex-col items-center gap-3">
               <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-blue-500" />
               <p className="text-muted-foreground text-sm">Loading map...</p>

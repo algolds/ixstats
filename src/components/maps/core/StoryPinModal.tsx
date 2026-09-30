@@ -10,6 +10,7 @@
  * storyline timeline, and related pins.
  */
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { memo } from "react";
 import {
   Xmark as X,
@@ -61,8 +62,10 @@ export const StoryPinModal = memo(function StoryPinModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div className="bg-card w-full max-w-3xl rounded-2xl p-8 shadow-2xl">
           <div className="flex items-center justify-between">
-            <div className="bg-muted h-6 w-48 animate-pulse rounded" />
+            <Skeleton className="h-6 w-48 rounded" />
             <button
+              type="button"
+              aria-label="Close story"
               onClick={onClose}
               className="text-muted-foreground hover:bg-muted rounded-full p-1.5"
             >
@@ -70,9 +73,9 @@ export const StoryPinModal = memo(function StoryPinModal({
             </button>
           </div>
           <div className="mt-6 space-y-3">
-            <div className="bg-muted h-40 w-full animate-pulse rounded-xl" />
-            <div className="bg-muted h-4 w-3/4 animate-pulse rounded" />
-            <div className="bg-muted h-4 w-1/2 animate-pulse rounded" />
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <Skeleton className="h-4 w-3/4 rounded" />
+            <Skeleton className="h-4 w-1/2 rounded" />
           </div>
         </div>
       </div>

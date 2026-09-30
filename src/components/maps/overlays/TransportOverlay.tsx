@@ -20,6 +20,7 @@ import type { Map as MapLibreMap, GeoJSONSource, MapLayerMouseEvent, ExpressionS
 import type { FeatureCollection } from "geojson";
 import { ROUTE_STYLES, ROUTE_COLORS } from "~/lib/maps/map-config";
 import { LazyDeckTransportOverlay } from "~/components/maps/overlays/LazyDeckTransportOverlay";
+import { isMapStyleReady } from "~/lib/maps/geojson-layer-helpers";
 import {
   featuresToSegments,
   calculateNetworkAverageEconomicCoefficient,
@@ -228,6 +229,8 @@ export function TransportOverlay({
   const dashOffsetRef = useRef(0);
 
   const filteredData = useFilteredRouteData(routeData, visibleRouteTypes, maxBuiltYear);
+  const filteredDataRef = useRef(filteredData);
+  filteredDataRef.current = filteredData;
 
   const deckSegments = useMemo(() => {
     if (!enableDeckGl) return [];
@@ -372,13 +375,28 @@ export function TransportOverlay({
       }
     };
 
+    // Runs on every `styledata` event, which MapLibre fires after any style change. It must be
+    // a no-op when all layers already exist: it used to call moveLayer() unconditionally, and
+    // every moveLayer is itself a style change, so the map re-rendered in an endless
+    // styledata → moveLayer loop for as long as the transport overlay was mounted.
+    let eventsBound = false;
     const setupLayers = () => {
-      if (!map.isStyleLoaded()) return;
+      if (!isMapStyleReady(map)) return;
+      const allPresent =
+        ALL_TRANSPORT_LAYERS.every((id) => id === HUBS_LAYER || map.getLayer(id)) &&
+        (!hubData || !!map.getLayer(HUBS_LAYER));
+      if (allPresent) {
+        if (!eventsBound) {
+          bindLayerEvents(true);
+          eventsBound = true;
+        }
+        return;
+      }
 
       try {
         // 1. Sources
         if (!map.getSource(ROUTES_SOURCE)) {
-          map.addSource(ROUTES_SOURCE, { type: "geojson", data: filteredData });
+          map.addSource(ROUTES_SOURCE, { type: "geojson", data: filteredDataRef.current });
         }
         if (hubData && !map.getSource(HUBS_SOURCE)) {
           map.addSource(HUBS_SOURCE, { type: "geojson", data: hubData });
@@ -510,6 +528,7 @@ export function TransportOverlay({
         // 9. Event Listeners
         bindLayerEvents(false);
         bindLayerEvents(true);
+        eventsBound = true;
       } catch (err) {
         console.error("[TransportOverlay] Error during setupLayers:", err);
       }
@@ -517,11 +536,12 @@ export function TransportOverlay({
 
     map.on("styledata", setupLayers);
 
-    if (map.isStyleLoaded()) {
+    const mapInstance: MapLibreMap = map;
+    if (isMapStyleReady(map)) {
       setupLayers();
     } else {
-      map.once("style.load", setupLayers);
-      map.once("load", setupLayers);
+      mapInstance.once("style.load", setupLayers);
+      mapInstance.once("load", setupLayers);
     }
 
     return () => {
@@ -541,7 +561,7 @@ export function TransportOverlay({
   const prevHubDataRef = useRef<FeatureCollection | null>(null);
 
   useEffect(() => {
-    if (!map || !map.isStyleLoaded()) return;
+    if (!isMapStyleReady(map)) return;
 
     try {
       const routeSource = map.getSource(ROUTES_SOURCE) as GeoJSONSource | undefined;
@@ -574,7 +594,7 @@ export function TransportOverlay({
 
   // ── 3. Dynamic Selection & Halo Glow (Pure GPU uniforms, ZERO WebGL tessellation) ──
   useEffect(() => {
-    if (!map || !map.isStyleLoaded()) return;
+    if (!isMapStyleReady(map)) return;
 
     try {
       if (map.getLayer(ROUTES_GLOW_LAYER)) {
@@ -599,7 +619,7 @@ export function TransportOverlay({
 
   // ── 4. Visibility & Animation Toggle ──
   useEffect(() => {
-    if (!map || !map.isStyleLoaded()) return;
+    if (!isMapStyleReady(map)) return;
 
     const vis = visible ? "visible" : "none";
     try {

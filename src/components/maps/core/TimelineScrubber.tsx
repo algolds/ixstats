@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Clock, Xmark } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { Slider } from "~/components/ui/slider";
@@ -21,11 +22,16 @@ export interface TimelineScrubberProps {
   onChange: (value: number | null) => void;
   /** Optional: hide entirely (e.g. when no history exists). */
   hidden?: boolean;
+  /** Extra positioning classes from the host (e.g. shift clear of an open side panel). */
+  className?: string;
 }
 
 const SCRUB_DEBOUNCE_MS = 200;
 
-export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberProps) {
+export function TimelineScrubber({ value, onChange, hidden, className }: TimelineScrubberProps) {
+  // Collapsed to a small pill by default so the card doesn't sit over the map; it stays open
+  // while a past date is selected.
+  const [expanded, setExpanded] = useState(false);
   const { data: range, isLoading: rangeLoading } = api.geoCore.getHistoryRange.useQuery(undefined, {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
@@ -75,26 +81,60 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
 
   if (effectivelyHidden) return null;
 
+  const stopMapEvents = {
+    onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
+    onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+    onTouchStart: (e: React.TouchEvent) => e.stopPropagation(),
+  };
+
+  if (!expanded && isAtNow) {
+    return (
+      <button
+        type="button"
+        {...stopMapEvents}
+        onClick={() => setExpanded(true)}
+        aria-expanded={false}
+        className={`bg-card/95 text-muted-foreground ring-border/50 hover:text-foreground focus-visible:ring-ring absolute right-4 bottom-12 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-lg ring-1 backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-none ${className ?? ""}`}
+      >
+        <Clock className="h-3.5 w-3.5" aria-hidden />
+        Timeline
+      </button>
+    );
+  }
+
   return (
     <div
-      onMouseDown={(e) => e.stopPropagation()}
-      onPointerDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-      className="absolute right-4 bottom-20 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/10 bg-black/60 p-4 shadow-2xl backdrop-blur-xl"
+      {...stopMapEvents}
+      role="group"
+      aria-label="Historical timeline"
+      className={`bg-card/95 ring-border/50 absolute right-4 bottom-12 z-20 w-80 max-w-[calc(100vw-2rem)] rounded-2xl p-4 shadow-2xl ring-1 backdrop-blur-xl ${className ?? ""}`}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-xs font-medium tracking-wide text-white/70 uppercase">
+        <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           Historical Timeline
         </span>
-        {!isAtNow && (
+        <div className="flex items-center gap-1">
+          {!isAtNow && (
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              className="border-border bg-muted/50 text-foreground hover:bg-muted focus-visible:ring-ring rounded-md border px-2 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            >
+              Return to present
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => onChange(null)}
-            className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 transition-colors hover:bg-white/10"
+            onClick={() => {
+              if (!isAtNow) onChange(null);
+              setExpanded(false);
+            }}
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring rounded-full p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            aria-label={isAtNow ? "Close timeline" : "Return to present and close timeline"}
           >
-            Return to present
+            <Xmark className="h-3.5 w-3.5" aria-hidden />
           </button>
-        )}
+        </div>
       </div>
 
       <Slider
@@ -106,7 +146,7 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
         aria-label="Historical timeline scrubber"
       />
 
-      <div className="mt-2 flex items-center justify-between text-xs text-white/50">
+      <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
         <span>{IxTime.formatIxTime(minTime)}</span>
         <span className="mx-2 truncate" title={label}>
           {label}
@@ -114,7 +154,7 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
         <span>{IxTime.formatIxTime(maxTime)}</span>
       </div>
 
-      <p className="mt-2 text-xs leading-snug text-white/40">
+      <p className="text-muted-foreground/80 mt-2 text-xs leading-snug">
         Shows the political layer as of the selected date. Snapshots reflect editor history;
         countries without edits show their current border at every date.
       </p>

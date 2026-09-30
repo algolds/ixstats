@@ -216,6 +216,21 @@ export function useMapDataQueries({
     { enabled: overlayVisibility.vitality, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
 
+  // Registered in the overlay registry (and shown in the Analytics panel) but previously never
+  // fetched here, so toggling them did nothing.
+  const { data: healthData } = api.geoCore.getRegionalChoropleth.useQuery(
+    { metric: "health", groupBy: "country", realm },
+    { enabled: !!overlayVisibility.health, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: tradeBalanceData } = api.geoCore.getRegionalChoropleth.useQuery(
+    { metric: "tradeBalance", groupBy: "country", realm },
+    { enabled: !!overlayVisibility.tradeBalance, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: canonDensityData } = api.geoCore.getCanonDensity.useQuery(
+    { realm },
+    { enabled: !!overlayVisibility.canonDensity, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+
   const overlayData = useMemo(
     () => ({
       wealth: wealthData ?? undefined,
@@ -230,6 +245,9 @@ export function useMapDataQueries({
       transport: transportData ?? undefined,
       economicTier: economicTierData ?? undefined,
       vitality: vitalityData ?? undefined,
+      health: healthData ?? undefined,
+      tradeBalance: tradeBalanceData ?? undefined,
+      canonDensity: canonDensityData ?? undefined,
     }),
     [
       wealthData,
@@ -239,6 +257,9 @@ export function useMapDataQueries({
       transportData,
       economicTierData,
       vitalityData,
+      healthData,
+      tradeBalanceData,
+      canonDensityData,
     ]
   );
 
