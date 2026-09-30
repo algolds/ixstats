@@ -12,8 +12,8 @@
 snippet below is a **proposal to review** and is marked **DO NOT APPLY without sign-off**.
 
 > **Status update (September 29, 2026).** Still not cut over (see §8). A candidate vhost and a
-> checker now exist in this repo: `scripts/ops/stage3-nginx-cutover.conf` and
-> `scripts/ops/verify-stage3-cutover.ts`. The app still defaults to the public host
+> checker existed in this repo (`scripts/ops/stage3-nginx-cutover.conf` and
+> `scripts/ops/verify-stage3-cutover.ts`; both deleted by plan 417). The app still defaults to the public host
 > (`WIKIOS_MEDIAWIKI_API` → `https://ixwiki.com/api.php` in `adapters/mediawiki/write-service.ts`),
 > so prerequisite §8 step 1 is not met in code. File paths in §0–§1 predate the August 2026
 > refactor: `lib/wiki-os/parsoid-client.ts` → `lib/wiki-os/adapters/mediawiki/parsoid.ts`,
