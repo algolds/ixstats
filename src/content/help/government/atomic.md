@@ -1,68 +1,45 @@
 ---
-title: Atomic Government System
-description: Build your nation's government from modular components that shape how power flows, decisions are made, and citizens are governed.
-badge: Government & Structure
+title: Building Your Government
+description: Government components, the effectiveness score, and how to choose a set that works.
+badge: Economy & Government
+nextHref: /help/government/components
+nextLabel: The Component Catalog
 ---
 
-## What Is the Atomic Government System?
+## How government works here
 
-Instead of picking a single government type like "Democracy" or "Monarchy," IxStats lets you assemble your government from individual building blocks called **components**. Each component represents a specific aspect of how your nation operates. Mix and match them to create a government that is uniquely yours — from a decentralized republic with strong judicial oversight to a centralized technocracy driven by expert councils.
+Instead of picking one label like "republic" or "monarchy", you build your government from **components**: building blocks such as Federal System, Democratic Process, Independent Judiciary or Welfare State. You choose up to **15** of them in the Government step of the [Country Builder](/builder), and change them later in the [Country Editor](/help/mycountry/editor). Your choice produces a **government effectiveness** score from 0 to 100.
 
-## The Core Categories
+## How to choose components
 
-Government components are grouped into ten categories. These five define the core of how your nation is run:
+1. Open the Government step (builder or editor) and the **Components** tab.
+2. Browse by category, or search. Each component shows its description and effectiveness.
+3. Select up to 15. As you pick, the builder flags pairs that **synergise** (work well together) and pairs that **conflict**.
+4. Watch your effectiveness score update, then save.
 
-- **Power Distribution** — Determines where authority resides. Is power centralized in a single leader, shared across branches, or spread among regional governments?
-- **Decision Processes** — Defines how laws and policies are created. Does your nation rely on legislative debate, executive decree, popular referendums, or council consensus?
-- **Legitimacy Sources** — Establishes why your government has the right to rule. Is it through free elections, hereditary succession, religious mandate, revolutionary mandate, or constitutional tradition?
-- **Institutions** — The organizations that carry out governance. This includes courts, legislatures, regulatory agencies, advisory bodies, and civil service structures.
-- **Control Mechanisms** — How the government maintains order and enforces its authority. This covers everything from an independent judiciary and free press to censorship boards and secret police.
+Browse every component in [The Component Catalog](/help/government/components).
 
-The other five — Administrative Efficiency, Social Policy, International Relations, Innovation & Development, and Crisis Management — round out how your government delivers. For a full list of every available component, see the [Component Catalog](/help/government/components).
+## How effectiveness is calculated
 
-## Choosing Your Components
+1. Take the average effectiveness of your chosen components.
+2. Add **10** for each synergy pair in your set.
+3. Subtract **15** for each conflicting pair.
+4. Keep the result between 0 and 100.
 
-> **How to Build Your Government**
->
-> 1. Open the **Country Builder** and navigate to the Government section. If you need help getting started, check the [Country Building Guide](/help/gameplay/country-building).
-> 2. Browse components by category. Each one has a description and a preview of its effects, so you can understand what it does before selecting it.
-> 3. Select the components that match the government you envision — up to 15 in total, from any mix of categories.
-> 4. Watch for **synergy** and **conflict** indicators as you build — they appear automatically when certain combinations interact.
-> 5. Save your choices. Your government effectiveness score updates as you build.
+There are 45 synergy pairs and 45 conflict pairs in all. See [Synergies & Conflicts](/help/government/synergy).
 
-## Synergies and Conflicts
+## What effectiveness affects
 
-Not all components work equally well together. The system tracks how your choices interact:
+- **Your Efficiency vitality ring** on the MyCountry home page is your effectiveness score.
+- **Civil service capacity (CivCap)** grows with effectiveness, which lets you run more [directives](/help/mycountry/executive) and policies at once. Your components also use some CivCap themselves.
+- **Previews and fog.** Below 45% effectiveness, policy previews are flagged as unreliable.
+- **National issues** can move effectiveness up or down.
 
-- **Synergies** occur when components naturally complement each other. For example, pairing a strong independent judiciary with constitutional legitimacy creates a synergy bonus — your government becomes more effective because those elements reinforce one another. Synergies boost your overall effectiveness score and can unlock special achievements.
-- **Conflicts** arise when components work against each other. For instance, selecting both "free press oversight" and "state media control" creates a conflict — the contradictory policies reduce your government's efficiency and may trigger compliance warnings. Conflicts lower your effectiveness score.
+Components also add maintenance costs to government spending. They don't change GDP growth directly; see [How Your Economy Is Calculated](/help/economy/calculations).
 
-Conflicts are not always bad from a storytelling perspective. A nation with internal contradictions can make for a more interesting and realistic country. But mechanically, you will want to be aware of the trade-offs.
+## Tips
 
-## Your Government Effectiveness Score
-
-Your effectiveness score reflects how well your government components work together. It factors in:
-
-- **Collection efficiency** — How effectively your government collects taxes and revenue.
-- **Compliance rate** — How willingly citizens follow laws and regulations.
-- **Administrative cost** — How much bureaucratic overhead your government structure requires.
-- **Economic impact** — How your governance choices affect trade, growth, and investment.
-
-Every component you add or remove updates your nation's real numbers — GDP, population growth, political stability, and more — based on its kind, its strength, and how it plays with your other choices. Each change is recorded, so you can trace how a single governance decision shaped your country over time.
-
-You can view your effectiveness score and a breakdown of these factors in the Government step of the builder, which you can reopen any time from the MyCountry editor. Your government efficiency also appears in MyCountry → Economy & Budget.
-
-## Tips for New Players
-
-> **Getting the Most From Your Government**
->
-> - Start simple. Pick components that clearly align with the type of nation you want, and expand later as you learn the system.
-> - Pay attention to the synergy and conflict badges in the selection panel — they give you immediate feedback on your choices.
-> - Use ThinkPages to write about your constitutional reforms and political changes. It adds depth to your nation's story.
-> - Certain government configurations can help you weather crises more effectively and earn special achievements.
-
-> **Related Articles**
->
-> - [Component Catalog](/help/government/components) — Browse every available government component and its effects.
-> - [Government Types](/help/government/traditional) — the quick way to choose how your nation is governed.
-> - [Country Building Guide](/help/gameplay/country-building) — Step-by-step walkthrough for creating your nation.
+- Start with 6 to 10 components that tell a clear story, then add more.
+- One conflict (−15) cancels one and a half synergies (+10 each), so drop clashing pieces unless the story needs them.
+- A deliberately contradictory government can be good roleplay; just know it costs effectiveness.
+- Names and titles (head of state, legislature and so on) are separate from components; see [Government Structure & Departments](/help/government/traditional).

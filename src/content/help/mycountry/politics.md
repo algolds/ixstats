@@ -1,51 +1,50 @@
 ---
 title: Politics & Elections
-description: Your legislature, political parties, and the elections that decide who holds power.
-badge: MyCountry — Your Nation's Home
+description: Cabinet, parties, legislature, bills, power brokers, and how elections are scheduled and counted.
+badge: MyCountry
+prevHref: /help/mycountry/economy
+prevLabel: Economy & Budget
+nextHref: /help/mycountry/intelligence
+nextLabel: Intelligence & Insights
 ---
 
-## How It's Laid Out
+## What this section is for
 
-Everything about who governs your nation lives in **Politics** in the MyCountry command bar, across five tabs:
+The Politics section of MyCountry ([/mycountry/politics](/mycountry/politics)) is where you decide who governs and how laws pass. It has five tabs (**Cabinet**, **Parties**, **Legislature**, **Bills & Reforms** and **Power Brokers**) and an election status card above them showing your next election, the last result and how many seats are filled.
 
-- **Cabinet** — the officials you appoint to run your departments.
-- **Parties** — the political movements you create and shape.
-- **Legislature** — how your parliament is set up, its political metrics, and the results of your latest election.
-- **Bills & Reforms** — draft a bill and call it to a vote.
-- **Power Brokers** — the interest groups whose favor shapes your budget.
+## Set up your politics
 
-## Your Legislature
+Elections only start once you have a legislature and at least two active parties.
 
-> **Setting up parliament**
->
-> - **Chambers** — from a single chamber up to four.
-> - **Voting system** — choose **proportional representation** (D'Hondt — seats roughly match each party’s share of the vote), **first-past-the-post** (the winner in each seat takes it), or a **mixed** 50/50 system. The choice shapes your whole political character.
-> - **Size and terms** — set how many seats your legislature has, its term length, and whether elections run on a fixed term or allow snap elections.
-> - **Business** — track the bills on the floor in **Bills & Reforms**.
+1. **Legislature tab.** Choose your chambers (one or more), seat count (10 to 10,000), term length (1 to 10 years) and how members are chosen. Pick an electoral system: **proportional** (D'Hondt), **first-past-the-post**, or **mixed** (half and half).
+2. **Parties tab.** Create at least two parties. Give each a name, short name, leader, ideology and colour, and set its starting support.
+3. The election card now shows **First election scheduled for** a date 30 IxTime days (15 real days) away.
 
-## Political Parties
+Changing the legislature later empties its seats and brings the next election forward as a **snap election**.
 
-Build the parties that bring your nation’s politics to life:
+## How elections work
 
-- Give each one a name, short name, leader, ideology, and color.
-- Watch them compete for seats at election time.
-- Follow how their fortunes rise and fall across the years.
+- When an election comes due on the IxTime clock, every active party stands, and the votes are counted from each party's support, the economy (growth helps the largest party, recession hurts it) and some randomness.
+- Seats are filled from the result using your electoral system, and the next election is scheduled one term later.
+- The result shifts your stability: a decisive win raises it, a narrow one lowers it. It is also posted to ThinkPages.
+- Due elections are normally counted automatically. If one is due and hasn't been counted yet, you can choose **Count votes** on the election card. You can't hold an election early or re-run one.
 
-## Elections
+## Cabinet
 
-Elections run on the world clock: when a scheduled election comes due it’s decided automatically, and the next one is set for a full term later. There’s no button to call an election yourself right now.
+Appoint the officials who run your departments.
 
-- **Proportional (D'Hondt)** — a party that wins a third of the vote ends up with roughly a third of the seats. Smaller parties get a real voice.
-- **First-past-the-post** — whoever wins each seat takes it outright. Big parties tend to win big.
-- Results show you seat counts, vote shares, and who forms the government.
-- Every election is saved, so you can watch the story of your politics unfold.
+## Bills & Reforms
 
-> [!WARNING]
-> **Before You Can Vote**
->
-> An election needs at least two parties and a legislature. If it comes due before you have them, it waits until you do — sort those out in the Parties and Legislature tabs first.
+1. Choose **Draft Bill**, give it a name, description and lean, and choose **Submit to Committee**.
+2. Check the projected vote alignment of the seated parties (an estimate, not a guarantee).
+3. Choose **Call Vote**. The seated parties vote as blocs, so your election results decide what can pass.
 
-> **Keep Exploring**
->
-> - [The Component Library](/help/government/components) — the building blocks of your government.
-> - [The Executive Desk](/help/mycountry/executive) — where leadership turns into action.
+## Power Brokers
+
+Five interest groups (the Technocrats, the Party, the Generals, the Magnates and the Clergy) and how satisfied each is with your government. A satisfied broker can unlock extra [directive](/help/mycountry/executive) packages, and the Technocrats broker reduces the civil-service load of your government components.
+
+## Tips
+
+- Set up the legislature and two parties early; your first election is 15 real days away once both exist.
+- Proportional systems give smaller parties seats; first-past-the-post tends to hand big majorities to the largest party.
+- Non-elected chambers (appointed, hereditary and so on) are currently filled by the same vote count as elected ones.

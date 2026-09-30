@@ -1,77 +1,44 @@
 ---
 title: NPC Personalities
-description: Every NPC country has a distinct personality shaped by 8 traits and 6 archetypes. Learn how they think so you can predict their moves.
-badge: Diplomacy & Alliances
+description: How computer-run nations are characterised, and where that matters today.
+badge: Diplomacy
+prevHref: /help/diplomacy/scenarios
+prevLabel: Diplomatic Events
 ---
 
-## How NPC Personalities Work
+## What NPC personalities are
 
-NPC countries are not random. Each one has a unique personality defined by eight core traits scored on a 0–100 scale. These traits are calculated automatically based on how the nation actually behaves — their alliances, trade patterns, conflicts, and diplomatic history all feed into the system. You never set these traits manually; they emerge naturally from the world.
+Nations without an active player are run by the computer. Each has a personality: eight traits scored 0 to 100 and worked out from its real record (alliances, relations, trade, embassies, exchanges, defense spending). You don't set these; they come from data. Today personalities are used in one place: deciding whether computer-run nations take part in your [cultural exchanges](/help/diplomacy/cultural). Admins can view and adjust them at `/admin/npc-personalities`.
 
-Understanding an NPC's personality is key to successful diplomacy. Before you respond to a [diplomatic scenario](/help/diplomacy/scenarios), checking the other country's personality profile can tell you what kind of approach is most likely to succeed.
+## The eight traits
 
-## The 8 Core Personality Traits
+| Trait | A high score means |
+| --- | --- |
+| Assertiveness | Takes hard positions, pushes back |
+| Cooperativeness | Seeks alliances and joint action |
+| Economic Focus | Puts trade and growth first |
+| Cultural Openness | Welcomes exchanges and foreign influence |
+| Risk Tolerance | Willing to make bold moves |
+| Ideological Rigidity | Sticks to principle over pragmatism |
+| Militarism | Security first, favours defense pacts |
+| Isolationism | Keeps few ties abroad |
 
-- **Assertiveness:** How willing a country is to take strong stances. High-assertiveness nations are confrontational; low-assertiveness nations are more accommodating.
-- **Cooperativeness:** Preference for working with others. High cooperativeness means the nation seeks alliances and joint solutions; low means they act alone.
-- **Economic Focus:** How much the nation prioritizes economic interests. Trade-driven countries respond well to economic proposals; others prioritize ideology or security.
-- **Cultural Openness:** Receptiveness to foreign influence. Cosmopolitan nations welcome cultural exchange; protectionist ones guard their traditions.
-- **Risk Tolerance:** Comfort with uncertain outcomes. Bold nations attempt ambitious gambits; cautious ones prefer safe, proven approaches.
-- **Ideological Rigidity:** Principles over flexibility. Rigid nations stick to their values even when it costs them; flexible ones shift positions for practical gains.
-- **Militarism:** Preference for security and defense. Militaristic nations prioritize defense alliances and see threats everywhere; others lead with diplomacy.
-- **Isolationism:** Tendency to avoid foreign entanglements. Isolationist nations keep few relationships and embassies; engaged ones build wide networks.
+## The six archetypes
 
-## The 6 Personality Archetypes
+Trait combinations place each nation in an archetype:
 
-> **NPC Behavioral Profiles**
->
-> While every NPC has a unique combination of traits, most fall into one of six recognizable archetypes. Knowing an NPC's archetype gives you a quick read on how they will likely respond to your actions:
->
-> - **Pragmatic Realist:** A balanced actor that adapts to circumstances and pursues practical advantages. Offer them clear, mutual benefits.
-> - **Peaceful Merchant:** Trade-focused and cooperative, putting economic partnerships ahead of military power. They want shared prosperity.
-> - **Aggressive Expansionist:** An assertive, risk-taking power-seeker with a military focus. Expect tough negotiations and be prepared to show resolve.
-> - **Cultural Diplomat:** A soft-power advocate that builds relationships through cultural exchanges. They welcome cooperation and people-to-people ties.
-> - **Ideological Hardliner:** Principled and hard to compromise with. Appeal to shared values — or expect resistance.
-> - **Cautious Isolationist:** Risk-averse and wary of foreign entanglements. Building a relationship takes patience, but once established it tends to be stable.
+- **Aggressive Expansionist:** assertive, militaristic, risk-taking, uncooperative.
+- **Peaceful Merchant:** trade-focused and cooperative, low militarism.
+- **Cautious Isolationist:** isolationist and risk-averse.
+- **Cultural Diplomat:** culturally open and very cooperative.
+- **Ideological Hardliner:** rigid, assertive, uncooperative.
+- **Pragmatic Realist:** the default for balanced profiles.
 
-## How Traits Are Calculated
+## What personalities don't do yet
 
-NPC personality traits are not assigned by hand. They are calculated automatically from a nation's real in-game behavior:
+- They don't yet decide NPC responses to proposals, trade deals, alliances or diplomatic events.
+- They don't drift over time from events. Traits only change when the underlying data (relations, alliances, trade) changes, or when an admin adjusts them.
 
-- A country with many alliances and friendly relationships will naturally score high in **Cooperativeness**.
-- Frequent conflicts and hostile relationships push **Assertiveness** and **Militarism** higher.
-- High trade volume and numerous economic partnerships increase **Economic Focus**.
-- Active cultural exchange programs and openness to foreign influence raise **Cultural Openness**.
+## Tip
 
-This means that as the world evolves, NPC personalities evolve with it. A Cautious Isolationist that starts forming alliances will gradually become more cooperative over time.
-
-## Using Personalities to Your Advantage
-
-> **Strategic Tips for Each Situation**
->
-> - **Diplomatic Proposals:** NPCs weigh your proposals against their personality. A highly cooperative nation is more likely to accept alliance offers, while an economically focused one wants to see clear economic benefits.
-> - **Crisis Events:** When a [crisis scenario](/help/diplomacy/scenarios) hits, NPCs choose their response based on risk tolerance and militarism. Knowing this helps you predict whether they will escalate or seek compromise.
-> - **Trade Negotiations:** NPCs with high economic focus and low ideological rigidity are your best trade partners. They evaluate deals on mutual benefit rather than ideology.
-> - **Alliance Building:** Cooperativeness and isolationism determine how willing an NPC is to enter long-term partnerships. Start with trust-building actions before proposing formal alliances with isolationist nations.
-
-## Personality Drift
-
-NPC personalities are not frozen in place. They gradually shift based on what happens in the world:
-
-- **Successful Diplomacy:** Positive interactions increase cooperativeness over time.
-- **Conflicts & Hostilities:** Failed negotiations or military confrontations push assertiveness and militarism higher.
-- **Economic Shocks:** Crises can make a nation less willing to take risks.
-- Personality changes happen gradually — at most about two points per trait each IxTime year — so you will not see a Cultural Diplomat suddenly become an Aggressive Expansionist overnight. This makes long-term relationship strategies viable and rewarding.
-
-> [!WARNING]
-> **Best Practices**
->
-> - Always review a country's personality profile before launching major diplomatic initiatives.
-> - Track personality drift over time. If a rival is becoming more cooperative, it may be the right moment to extend an olive branch.
-> - Tailor your approach to the archetype. Offer economic deals to Peaceful Merchants, propose cultural ties to Cultural Diplomats, and show strength when dealing with Aggressive Expansionists.
-
-> **Related Guides**
->
-> - [Diplomatic Missions](/help/diplomacy/missions) — Use personality insights to choose the right missions.
-> - [Diplomatic Scenarios](/help/diplomacy/scenarios) — See how NPC personalities shape scenario outcomes.
-> - [Embassy Network](/help/diplomacy/embassies) — Build the diplomatic infrastructure to engage with NPCs.
+When you pick partners for a cultural exchange, culturally open, cooperative nations (Cultural Diplomats, Peaceful Merchants) are the most likely to join.

@@ -1,52 +1,57 @@
 ---
 title: Create Your First Nation
-description: From a blank page to a living country in a few minutes. Here's the whole journey.
+description: Build a nation in the Country Builder, import one from a wiki, or claim one that already exists.
 badge: Start Here
 prevHref: /help/getting-started/welcome
 prevLabel: Welcome to IxStats
-nextHref: /help/getting-started/gameplay-overview
-nextLabel: How It All Fits Together
+nextHref: /help/gameplay/country-building
+nextLabel: The Country Builder in Depth
 ---
 
-## Two Ways to Begin
+## Three ways to get a nation
 
-Open the [Country Builder](/builder) from the top menu. You can start either way:
+You need a nation to use [MyCountry](/mycountry). There are three ways to get one, and all of them start from [Setup](/setup) (you're sent there after signing in if you don't have a nation yet) or directly from the [Country Builder](/builder):
 
-- **From scratch** — shape every part of your nation exactly how you picture it, or start from a real-world template.
-- **Import from a wiki** — already written a factbook? Pull your IIWiki or AltHistory Wiki country page in as a starting point, then refine. Your lore becomes a nation that actually runs.
+- **Build a new nation** in the Country Builder, starting from a real-world template or from scratch.
+- **Import a factbook** from an IIWiki or AltHistory Wiki country page, then adjust it in the builder.
+- **Claim an existing nation** that is already on the roster, for example your IxWiki nation. Choose **Link to Existing Country** in Setup, or use the claim list on a [realm page](/help/world/realms).
 
-If your nation already exists on the IxWiki roster, you don’t need the builder — claim it during [setup](/setup). A moderator reviews the claim, or it’s approved instantly if you’ve verified your wiki account (see [IxnayID](/help/getting-started/ixnayid)).
+## Build a new nation
 
-## Build It, Section by Section
+1. Open the [Country Builder](/builder).
+2. **Foundation.** Pick a real-world country to start from (its population and economy become your starting figures), or start from scratch. Then set your name, official title, motto, leader, capital, flag and coat of arms.
+3. **Government.** Choose up to 15 [government components](/help/government/atomic). The builder shows your effectiveness score and flags [synergies and conflicts](/help/government/synergy) as you pick.
+4. **Economics.** Choose your [economic components](/help/government/components) and check which [economic tier](/help/economy/tiers) you will start in.
+5. **Preview & Create.** Review everything, then create the nation. If more than one realm is open to you, pick the realm here.
 
-The builder walks you through your nation one piece at a time:
+Your draft saves as you go, so you can leave and come back. Switch the builder to **Advanced** for more detail (departments, budget, sectors and workforce); **Standard** keeps it short. Tax rates are set after launch in [Economy & Budget](/help/mycountry/economy).
 
-1. **Foundation** — your starting point and identity: name, flag, motto, and the character of the place.
-2. **Government** — choose how your nation is run. Mix components for [synergy bonuses](/help/government/synergy) when the right parts work together. In expert mode you also set your structure and spending priorities.
-3. **Economics** — set your economic components and see which [economic tier](/help/economy/tiers) your nation starts in. In expert mode you also tune your sectors and workforce.
-4. **Preview & Create** — review the whole nation before it goes live.
+## Import from a wiki
 
-Your [tax rates](/help/economy/tax-system) are fine-tuned after launch, in MyCountry → Economy & Budget.
+1. In the builder, open the import option and choose **IIWiki** or **AltHistory Wiki**.
+2. Search for your country's page and select it.
+3. Check the preview of what was read from the infobox, then continue into the builder to fill in anything missing.
 
-## Review, Then Make It Live
+Importing a country from a wiki pays a one-time 2,500 IxCredit bonus (default amount).
 
-Before you publish, you’ll see a full summary of your nation. Take a minute to read it over and adjust anything that doesn’t feel right. The builder also suggests policies based on your choices — handy starting points you can fine-tune later.
+## Claim an existing nation
 
-## A Few Things That Help
+1. Go to [Setup](/setup) and choose **Link to Existing Country**, or open a realm from the [realm directory](/realms) and use its claim list.
+2. Search for the nation and submit a claim.
+3. A moderator reviews the claim. If you have verified the wiki account that created the nation's wiki page, the claim is approved at once. Verify your wiki account in [Settings → IxnayID & Passport](/settings) first; see [IxnayID & Your Passport](/help/getting-started/ixnayid).
 
-> **Worth knowing as you build**
->
-> - **Nothing is permanent.** You can come back to the builder any time and evolve your nation as its story grows.
-> - **Watch for synergies.** Certain government and economic choices boost each other — the builder flags them as you go. See the [atomic components guide](/help/government/atomic) for the deep version.
-> - **Lean on the advisor.** As you fill in each section, the builder suggests improvements and flags choices that work against each other.
+Each realm limits how many nations one account can own there (usually one; Premium accounts can hold more where the realm allows). The builder and claims tell you if you are at the limit.
 
-## What Happens When You Save
+## After your nation is created
 
-- Your nation goes live right away. Head to [MyCountry](/mycountry) to see it running — your vital signs, suggested next steps, and your agenda.
-- It takes its place on the [world map](/maps) and the [leaderboards](/leaderboards) alongside everyone else’s.
-- From here on, the world keeps moving — and your nation grows with the choices you make.
+- You land in [MyCountry](/mycountry). Start with the [MyCountry overview](/help/mycountry/overview).
+- Your nation appears in [Explore](/countries), on the [leaderboards](/leaderboards) and on [the map](/maps) once it has territory.
+- You can change almost anything later in the [Country Editor](/help/mycountry/editor).
 
-> **Go Deeper**
->
-> - [Shaping Your Nation](/help/gameplay/country-building) — a fuller tour of everything the builder can do.
-> - [Atomic Components](/help/government/atomic) and [Economic Tiers](/help/economy/tiers) — for when you’re ready to optimize.
+## Common questions
+
+**Can I have more than one nation?** Yes, within each realm's limit. Switch the nation you're playing as from the menu under your avatar.
+
+**Does the real-world template lock anything in?** No. It only sets your starting figures; you can change them in the builder and later in the editor.
+
+**My claim is pending. What now?** Wait for a moderator, or verify your wiki account and claim again for an instant approval if you created that nation's wiki page.

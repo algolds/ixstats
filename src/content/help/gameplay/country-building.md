@@ -1,63 +1,60 @@
 ---
-title: Country Building Guide
-description: Complete guide to the builder workflow, atomic components, optimization strategies, and import options.
-badge: Living World
+title: The Country Builder in Depth
+description: Every builder step, Standard vs Advanced mode, wiki import, and editing your nation later.
+badge: Start Here
+prevHref: /help/getting-started/first-country
+prevLabel: Create Your First Nation
+nextHref: /help/getting-started/gameplay-overview
+nextLabel: How It All Fits Together
 ---
 
-## Builder Overview
+## What the builder does
 
-The Country Builder guides you through creating a nation in four structured steps. Each step configures a different aspect of your country:
+The Country Builder at [/builder](/builder) creates a nation in four steps: **Foundation**, **Government**, **Economics** and **Preview & Create**. The same component pickers and forms are used by the [Country Editor](/help/mycountry/editor) at [/mycountry/editor](/mycountry/editor) when you change your nation later (there the sections are called Identity, Government, Economy and Review, and changes autosave). For the short version, see [Create Your First Nation](/help/getting-started/first-country).
 
-1. **Foundation:** Your starting point (a real-world template, a blank slate, or a wiki import), then your country name, flag, motto, symbols, and basic metadata
-2. **Government:** Atomic component configuration; in expert mode, also your government structure and spending
-3. **Economics:** Economic components; in expert mode, also sector distribution and your workforce and demographics
-4. **Preview & Create:** A full review before your nation goes live
+## Standard and Advanced mode
 
-Tax rates are tuned after launch in MyCountry → Economy & Budget → Fiscal Policy.
+The toggle at the top switches between two levels of detail:
 
-## Atomic Components
+| Step | Standard | Advanced adds |
+| --- | --- | --- |
+| Government | **Components** | **Departments** (structure and names) and **Budget** |
+| Economics | **Components** | **Sectors** and **Workforce** |
 
-> **90+ Components Available**
->
-> The atomic component system provides modular building blocks for your nation:
->
-> - **64 Government Components** across ten categories, from power distribution and legitimacy to social policy and crisis management
-> - **27 Economic Components:** Economic model, sector focus, labor system, trade policy, innovation, and resource management
->
-> Each component has an effectiveness score and may have synergies or conflicts with other components.
+You can switch at any time without losing work. The Country Editor always shows every tab.
 
-## Optimization Strategies
+## Step 1: Foundation
 
-- **Synergy Stacking:** Select components that have positive synergies with each other. The synergy system awards bonus effectiveness when complementary components are combined.
-- **Avoid Conflicts:** Some components penalize each other. Check the synergy panel before finalizing your configuration.
-- **Policy Presets:** Use pre-built policy configurations from the preset selector for quick setup based on common governance models.
-- **Mind the Prerequisites:** Some components list prerequisites. Plan your build accordingly.
+- **Starting point.** Pick a real-world country as a template, start from scratch, or import from a wiki. A template only supplies starting figures such as population, GDP per person and land area.
+- **Identity.** Name, official title, motto, leader, capital, flag and coat of arms. You can also set your government's name and the names of its head of state, legislature, cabinet and courts.
 
-## Import Options
+## Step 2: Government
 
-Instead of building from scratch, you can import country data:
+- Choose up to **15** components from the [catalog](/help/government/components) (64 components in 10 categories).
+- The builder calculates your **government effectiveness** (0 to 100) live: the average effectiveness of your components, **+10** for each synergy pair and **−15** for each conflicting pair. See [Synergies & Conflicts](/help/government/synergy).
+- In Advanced mode, set up departments and split your budget between them. See [Government Structure & Departments](/help/government/traditional).
 
-- **Wiki Import:** Search IIWiki or AltHistory Wiki articles and auto-populate country data from wiki infoboxes and structured content. A preview of the parsed data appears before you commit changes.
-- **Claim an existing nation:** If your nation is already on the IxWiki roster, claim it during [setup](/setup) instead of building it from scratch.
+## Step 3: Economics
 
-## After Building
+- Choose economic components (27 available), such as your economic model, sector focus, labor system and trade policy.
+- Your GDP per person sets your [economic tier](/help/economy/tiers), which caps how fast you can grow.
+- In Advanced mode, set sector shares and workforce figures.
 
-Once your country is created:
+## Step 4: Preview & Create
 
-- Your nation appears on the dashboard and leaderboards
-- The MyCountry hub becomes fully active with all sections accessible
-- Achievement tracking begins — early milestones may unlock immediately
-- You can start establishing embassies and engaging in diplomacy
-- IxCredits passive income begins accruing based on your economic performance
+Review the whole nation. When you create it:
 
-> [!WARNING]
-> **Builder Tip**
->
-> The builder opens with a welcome guide that walks through its steps, and your progress autosaves as you go. Guidance from Halo is on hand throughout.
+- Everything is saved in one go and the nation is assigned to you.
+- If several realms are open to you, a picker lets you choose where the nation lives. The builder refuses a name already used in that realm, or a nation beyond your nation limit there.
+- You are taken to [MyCountry](/mycountry).
 
-> **Related Documentation**
->
-> - [Creating Your First Country](/help/getting-started/first-country) — Quick start guide
-> - [Atomic Government System](/help/government/atomic) — Atomic government system details
-> - [Economic Tiers](/help/economy/tiers) — Economic tier system
-> - [Component Synergies](/help/government/synergy) — Component synergy mechanics
+## Importing from a wiki
+
+Choose the import option, pick **IIWiki** or **AltHistory Wiki**, search for the page and select it. The builder reads the infobox (name, capital, population, leader and similar fields), shows you what it found, and fills the matching builder fields. You review and complete the rest. A wiki import pays a one-time 2,500 IxCredit bonus by default.
+
+## Tips
+
+- **Drafts autosave.** Refreshing or leaving the page does not lose your work.
+- **Fewer, better components.** A small set of components that synergise scores higher than a long list with conflicts.
+- **Don't chase a template's numbers.** Starting GDP and population only set the baseline; your tier decides the growth ceiling.
+- **Nothing is permanent.** Identity, government and economy can all be changed later in the [Country Editor](/help/mycountry/editor).

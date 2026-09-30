@@ -1,49 +1,49 @@
 ---
 title: Welcome to IxStats
-description: Build a nation, then watch it come alive in a shared, living world. Here's how to begin.
+description: What IxStats is, what you do here, and where to go first.
 badge: Start Here
 nextHref: /help/getting-started/first-country
 nextLabel: Create Your First Nation
 ---
 
-## What is IxStats?
+## What IxStats is
 
-IxStats is a worldbuilding platform built around one idea: your nation should feel *alive*. You design a country — its economy, government, military, culture, and borders — and it becomes a living part of a shared world that keeps moving, growing, and reacting on its own.
+IxStats is a nation-building and worldbuilding platform. You create a country, run it from [MyCountry](/mycountry), and share a world with other players: a live world map, a shared clock ([IxTime](/help/getting-started/ixtime)), a wiki, a social feed and a forum. Your nation has a modelled economy, a government built from components, politics, diplomacy and (with Premium) a military, and the decisions you make change its numbers and its public record.
 
-You’re not filling out a profile. You’re running a nation, telling its story, and watching the numbers and the map respond to your choices.
+## Your first ten minutes
+
+1. **Sign in.** Your account is your [IxnayID](/help/getting-started/ixnayid). New accounts get a one-time welcome bonus of 5,000 IxCredits (the default amount).
+2. **Get a nation.** Build one in the [Country Builder](/builder), import one from an IIWiki or AltHistory Wiki page, or claim an existing nation. See [Create Your First Nation](/help/getting-started/first-country).
+3. **Open [MyCountry](/mycountry).** This is your nation's home page. Read the [MyCountry overview](/help/mycountry/overview) to learn what each part does.
+4. **Make a decision.** Answer a [national issue](/help/gameplay/national-issues) or declare a [directive](/help/mycountry/executive).
+5. **Look around.** Find yourself on the [world map](/maps), browse [other countries](/countries), and post on the [feed](/dashboard).
 
 ## Coming from NationStates?
 
-> **You'll feel at home — with a lot more under your hands**
->
-> If you’ve built nations on NationStates, the instinct is exactly the same: create a country, give it character, tell its story. Here’s what’s different:
->
-> - Your **economy actually runs the numbers** — GDP, trade, taxes, and growth are modeled and live, not a one-line stat.
-> - Your nation lives on a **real, editable world map** — borders, terrain, and neighbors you can see and shape.
-> - Government, military, diplomacy, and politics are **connected systems**, not separate flavor text — a choice in one shows up in the others.
-> - The world runs on its own clock ([IxTime](/help/getting-started/ixtime)) — things keep happening whether or not you’re watching.
->
-> Less answering issues. More building and running a nation.
+The idea is the same: make a country, give it character, tell its story. The differences:
 
-## Your First Few Minutes
+- **Numbers are modelled.** GDP, population, growth and tax revenue come from an economic model, not a one-line stat. See [How Your Economy Is Calculated](/help/economy/calculations).
+- **Issues are one of several tools.** Alongside [national issues](/help/gameplay/national-issues) you declare your own [directives](/help/mycountry/executive), run [politics and elections](/help/mycountry/politics), and handle [diplomacy](/help/mycountry/diplomacy).
+- **Your nation is on a map.** Every nation has territory on [IxMaps](/help/world/maps), and you can add cities, provinces and routes to yours.
+- **Your NationStates cards can come with you.** [Import your deck](/help/vault/ns-import) into the Vault.
 
-1. **Create your nation** in the [Country Builder](/builder) — from a blank slate, a real-world template, or by importing a country page from IIWiki or AltHistory Wiki. Already on the IxWiki roster? Claim your existing nation during [setup](/setup) instead.
-2. **Give it an identity** — name, flag, motto, and the feel of the place.
-3. **Visit [MyCountry](/mycountry)** — your nation’s home base — and watch it come to life.
-4. **Find your spot** on the [world map](/maps).
+## Where things live
 
-## Where Things Live
+| Menu item | What it's for |
+| --- | --- |
+| [Dashboard](/dashboard) | The activity feed and your quick links |
+| [Explore](/countries) | Browse and compare every nation |
+| [MyCountry](/mycountry) | Run your nation |
+| [Maps](/maps) | The interactive world map |
+| [Forum](/forum) | Community discussion |
+| [Wiki](/wiki) | Read and edit lore |
+| [Vault](/vault) | IxCredits, cards and achievements |
+| [Help](/help) | These guides |
 
-> **The places you'll come back to**
->
-> - [**MyCountry**](/mycountry) — your nation’s home base. Economy, cabinet, military, and diplomacy, all in one place.
-> - [**Country Builder**](/builder) — where you create and reshape your nation, any time.
-> - [**The World Map**](/maps) — the shared world every nation lives on.
-> - [**Community**](/thinkpages) — meet the worldbuilders behind the other nations.
-> - [**Cards & Vault**](/vault) — collect and trade as you play.
+More on menus and shortcuts: [Finding Your Way Around](/help/getting-started/navigation).
 
-## Need a Hand?
+## Getting help
 
-- Ready to build? Walk through [Create Your First Nation](/help/getting-started/first-country) step by step.
-- Curious how it all fits together? See [How It All Fits Together](/help/getting-started/gameplay-overview).
-- Every feature on the platform has its own guide right here in the [Help Center](/help).
+- Search this [Help Center](/help) from the box at the top.
+- Ask other players on the [Forum](/forum) or in a [ThinkTank](/thinktanks).
+- See what changed recently in the [changelog](/changelog).

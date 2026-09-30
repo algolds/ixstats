@@ -1,40 +1,45 @@
 ---
 title: The World Clock (IxTime)
-description: Time here moves at twice real speed. Here's what that means for your nation.
+description: The shared world clock runs at twice real speed. What that means for your nation.
 badge: Start Here
-prevHref: /help/getting-started/gameplay-overview
-prevLabel: How It All Fits Together
-nextHref: /help/getting-started/navigation
-nextLabel: Finding Your Way Around
+prevHref: /help/getting-started/navigation
+prevLabel: Finding Your Way Around
+nextHref: /help/getting-started/ixnayid
+nextLabel: IxnayID & Your Passport
 ---
 
-## A World on Its Own Clock
+## What IxTime is
 
-IxStats keeps its own time, called **IxTime**, and it runs at **twice the speed of real life** — one real hour is two hours in the world. That faster pace is what keeps the world feeling alive: history piles up, economies move, and events arrive at a steady, satisfying clip.
+IxTime is the in-world calendar that every nation shares. It runs at **twice real speed**: one real day is two IxTime days, and six real months is one IxTime year. The current IxTime date is shown in Halo at the top of the screen. The clock is kept by the community's Discord bot, so everyone sees the same date.
 
-- Everything in the world — your economy, events, diplomacy — runs on IxTime, not your local clock.
-- The whole community shares the same clock, so everyone’s nations move through the same moment in history together.
-- You can always see the current date and time at the top of the screen and on your [MyCountry overview](/help/mycountry/overview).
+## Quick conversions
 
-## What It Means for Your Nation
+| Real time | IxTime |
+| --- | --- |
+| 12 hours | 1 day |
+| 3.5 days | 1 week |
+| 15 days | 1 month (about) |
+| 6 months | 1 year |
 
-- **Issues arrive faster** — new [national issues](/help/gameplay/national-issues) show up on the world clock, so they come around about twice as often as you’d expect by your own watch.
-- **Your economy keeps moving** — growth, revenue, and [the numbers](/help/economy/calculations) all advance on IxTime, and your charts are dated in IxTime too.
-- **Diplomacy is quicker** — [missions](/help/diplomacy/missions) and [scenarios](/help/diplomacy/scenarios) resolve on the world clock. A mission that says “one day” finishes in about twelve real-world hours.
-- **Crises feel urgent** — [crises](/help/defense/crisis-events) and disasters unfold on IxTime, so their deadlines arrive sooner than wall-clock time would suggest.
-- **A timeline you can look back on** — every event and headline is stamped with IxTime, so your nation builds a real, readable history over time.
+The clock ran at 4× from October 2020 until July 2025 (when IxTime reached 1 January 2040) and has run at 2× since.
 
-## Where to See the Clock
+## What runs on IxTime
 
-> **Always within reach**
->
-> - **Top of the screen** — the current IxTime date and time, so you always know where you are in the world.
-> - **Your MyCountry overview** — the clock sits right alongside your nation’s vital signs.
-> - **On every event** — notifications, headlines, and diplomatic moments are all stamped with IxTime so you can piece together what happened and when.
-> - **In the community** — the shared world clock keeps everyone’s nations in the same moment.
+- **Economic growth.** Growth rates are per IxTime year, so a 3% growth rate adds about 3% every six real months.
+- **Directives.** You can commit up to 3 [directives](/help/mycountry/executive) per IxTime week (3.5 real days).
+- **Issue effects.** GDP effects from [national issues](/help/gameplay/national-issues) and directives phase in over IxTime (usually one IxTime year).
+- **Elections.** Your first [election](/help/mycountry/politics) is held 30 IxTime days (15 real days) after your legislature and parties are set up, then once per term.
+- **Dates on records.** Events, history charts and news are dated in IxTime.
 
-> [!WARNING]
-> **Good to Know**
->
-> - Because time moves at 2× speed, deadlines sneak up faster than you expect. Check in regularly so you don’t miss a decision or let an event expire.
-> - If the clock ever looks out of step with other players, just refresh the page — it’ll catch right back up.
+## What runs on real time
+
+A few things use the real (UTC) clock instead:
+
+- The Vault [daily reward](/help/vault/ixcredits) and login streak reset at midnight UTC.
+- Daily IxCredit earning caps reset at midnight UTC.
+- Diplomatic proposals and alliance invites expire 14 real days after they're sent.
+- Trade offers expire after 24 real hours; auctions last 30 or 60 real minutes.
+
+## Realms and calendars
+
+All realms share one IxTime clock. A realm can display its own calendar year (an offset), but the simulation uses the shared clock underneath.

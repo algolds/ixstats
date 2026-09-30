@@ -1,13 +1,13 @@
 import React from "react";
 import Link from "next/link";
 import { type Metadata } from "next";
-import { Book, Archery as Target, Crown, Coins, Gamepad as Gamepad2 } from "iconoir-react";
+import { Book, Archery as Target, Crown, Coins, Globe } from "iconoir-react";
 import { HelpExplorer } from "./_components/HelpExplorer";
 
 export const metadata: Metadata = {
   title: "Help Center - IxStats",
   description:
-    "Everything you need to build a nation and bring it to life in a shared, living world.",
+    "Guides to every part of IxStats: building a nation, MyCountry, the Vault, maps, the wiki and the community.",
 };
 
 export default function HelpPage() {
@@ -21,7 +21,8 @@ export default function HelpPage() {
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Help Center</h1>
           </div>
           <p className="max-w-2xl text-slate-600 dark:text-slate-300">
-            Everything you need to build a nation and bring it to life. New here? Start with{" "}
+            Plain guides to every part of IxStats. Search below or pick a topic. New here? Start
+            with{" "}
             <Link
               href="/help/getting-started/welcome"
               className="font-medium text-blue-600 hover:underline dark:text-blue-400"
@@ -42,7 +43,7 @@ export default function HelpPage() {
           <Link
             href="/help/getting-started/welcome"
             data-cuelume-press="tick"
-            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
+            className="group border-border/60 bg-card hover:border-border hover:bg-accent/30 flex items-center gap-3 rounded-xl border p-4 shadow-xs transition-colors active:scale-[0.99]"
           >
             <Target className="h-7 w-7 text-blue-500 transition-transform group-hover:scale-105" />
             <div>
@@ -54,7 +55,7 @@ export default function HelpPage() {
           <Link
             href="/help/getting-started/first-country"
             data-cuelume-press="tick"
-            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
+            className="group border-border/60 bg-card hover:border-border hover:bg-accent/30 flex items-center gap-3 rounded-xl border p-4 shadow-xs transition-colors active:scale-[0.99]"
           >
             <Crown className="h-7 w-7 text-amber-500 transition-transform group-hover:scale-105" />
             <div>
@@ -64,26 +65,26 @@ export default function HelpPage() {
           </Link>
 
           <Link
-            href="/help/getting-started/gameplay-overview"
+            href="/help/mycountry/overview"
             data-cuelume-press="tick"
-            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
+            className="group border-border/60 bg-card hover:border-border hover:bg-accent/30 flex items-center gap-3 rounded-xl border p-4 shadow-xs transition-colors active:scale-[0.99]"
           >
-            <Gamepad2 className="h-7 w-7 text-indigo-500 transition-transform group-hover:scale-105" />
+            <Globe className="h-7 w-7 text-indigo-500 transition-transform group-hover:scale-105" />
             <div>
-              <div className="text-foreground text-sm font-semibold">How It Works</div>
-              <div className="text-muted-foreground text-xs">The big picture</div>
+              <div className="text-foreground text-sm font-semibold">Run Your Nation</div>
+              <div className="text-muted-foreground text-xs">MyCountry overview</div>
             </div>
           </Link>
 
           <Link
-            href="/help/vault/overview"
+            href="/help/vault/ixcredits"
             data-cuelume-press="tick"
-            className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs transition-colors hover:border-border hover:bg-accent/30 active:scale-[0.99]"
+            className="group border-border/60 bg-card hover:border-border hover:bg-accent/30 flex items-center gap-3 rounded-xl border p-4 shadow-xs transition-colors active:scale-[0.99]"
           >
             <Coins className="h-7 w-7 text-emerald-500 transition-transform group-hover:scale-105" />
             <div>
-              <div className="text-foreground text-sm font-semibold">Cards & Vault</div>
-              <div className="text-muted-foreground text-xs">Collect & trade</div>
+              <div className="text-foreground text-sm font-semibold">IxCredits</div>
+              <div className="text-muted-foreground text-xs">Earning & the daily reward</div>
             </div>
           </Link>
         </div>

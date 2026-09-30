@@ -1,59 +1,44 @@
 ---
-title: Reference Data Management
-description: Create, edit, and organize game content catalogs including government components, economic policies, military equipment, and diplomatic scenarios.
+title: Reference Data
+description: The catalogs admins maintain, which of them the game reads live, and how to edit them.
 badge: For Admins
+prevHref: /help/admin/cms-overview
+prevLabel: The Admin Console
 ---
 
-## Government Components
+## What reference data is
 
-- **64 Atomic Components** across 10 categories: DEMOCRATIC_PROCESS, FEDERAL_SYSTEM, INDEPENDENT_JUDICIARY, etc.
-- **Fields:** Name, description, category, effectiveness score (0-100), costs, prerequisites.
-- **Synergies:** Define compatible components that boost effectiveness when combined.
-- **Conflicts:** Mark incompatible combinations that reduce effectiveness or cause instability.
-- Changes immediately reflected in the country builder component selector.
+Reference data is the shared content every nation builds with: component catalogs, archetypes, equipment, diplomatic content, issue templates and personalities. Admins edit it from the admin console, each catalog in its own section (the hub is at `/admin/reference-data`). See [The Admin Console](/help/admin/cms-overview) for access.
 
-## Economic Components
+## The catalogs
 
-> **27 Policy Components**
->
-> - Categories: Economic Model, Sector Focus, Labor System, Trade Policy, Innovation, Resource Management.
-> - Effects: GDP impact, employment, innovation index, sustainability, inequality.
-> - Prerequisites: Prerequisite components and unlock conditions.
-> - Formulas: Custom calculation expressions for dynamic economic modeling.
+| Catalog | Section | Used by |
+| --- | --- | --- |
+| National issue templates | `/admin/national-issues` | The issue engine (live) |
+| Diplomatic scenarios | `/admin/diplomatic-scenarios` | The Diplomatic Events tab (live) |
+| Diplomatic options | `/admin/diplomatic-options` | Choices offered when players edit embassy profiles (live) |
+| NPC personalities | `/admin/npc-personalities` | Cultural-exchange participation by computer-run nations |
+| Achievements | `/admin/achievements` | Achievement unlocks and rewards (live) |
+| Cards and packs | `/admin/cards` | The Vault Shop, packs and card pool (live) |
+| Government components | `/admin/government-components` | See the note below |
+| Economic components (incl. tax impact) | `/admin/economic-components` | See the note below |
+| Economic archetypes | `/admin/economic-archetypes` | See the note below |
+| Military equipment | `/admin/military-equipment` | See the note below |
 
-## Diplomatic Scenarios
+> [!WARNING]
+> **Some catalog edits don't reach players yet.** The Country Builder and Editor use a built-in catalog of government components (64), economic components (27) and archetype presets, and the Defense equipment browser uses a built-in equipment list. Edits in the Government components, Economic components, Economic archetypes and Military equipment sections are saved, but players won't see them until those screens are switched over to read the admin catalogs.
 
-> **100+ Scenario Templates**
->
-> - **Categories:** Trade, cultural, security, crisis mediation, alliances.
-> - **Triggers:** Relationship thresholds, random probability, event-driven.
-> - **Response Options:** 2-5 choices with costs, benefits, NPC personality modifiers.
-> - **Outcomes:** Relationship changes, economic effects, reputation shifts, resource transfers.
+## National issue templates
 
-## Military Equipment
+Each template has conditions (when it can appear for a nation), text with placeholders that are filled in from the nation (such as `{{neighborName}}`, `{{ministerName}}`, `{{capitalCity}}`), and response options with typed consequences. The same section sets issue frequency: issues per session, per week, and the spawn mode.
 
-- **500+ Equipment Items:** Tanks, aircraft, ships, artillery, small arms.
-- **Specifications:** Weight, crew, range, speed, armament, protection levels.
-- **Manufacturers:** Origin country, production dates, license agreements.
-- **Operational Data:** Maintenance costs, reliability, upgrade paths.
+Keep consequences within the game's limits: GDP effects are capped at ±3% per consequence and population effects at ±1%; operations the projection can't represent are dropped.
 
-## NPC Personalities
+## Diplomatic scenarios
 
-- **8 Personality Traits:** Assertiveness, cooperativeness, economic focus, cultural openness, risk tolerance, ideological rigidity, militarism, isolationism.
-- **Calculation Formulas:** Define how traits derive from observable data (alliances, conflicts, trade).
-- **Archetypes:** 6 personality profiles (Pragmatic Realist, Peaceful Merchant, Aggressive Expansionist, Cultural Diplomat, Ideological Hardliner, Cautious Isolationist).
-- **Drift Parameters:** Max annual change rates, influence factors.
+A scenario has a type (border dispute, trade negotiation and so on), a narrative, response options with risk levels and estimated impacts, the nations involved and an expiry date. Players see active, unexpired scenarios in **Diplomatic Events**. See [Diplomatic Events](/help/diplomacy/scenarios).
 
-## CRUD Operations
+## Tips
 
-> **Standard Admin Workflow**
->
-> 1. **Create:** Click "New \[Type\]" button, fill form, validate, save to database.
-> 2. **Read:** Browse list view with filters, search, pagination; click to view details.
-> 3. **Update:** Edit inline or via form; changes logged to audit trail.
-> 4. **Delete:** Soft delete (archived) or hard delete with confirmation; check dependencies first.
-
-> **Related Articles**
->
-> - [Admin CMS Overview](/help/admin/cms-overview) -- Admin system architecture and capabilities.
-> - A rich, interconnected data model sits behind every content type you manage.
+- Test a new issue template or scenario on a test nation before activating it widely.
+- Record significant catalog changes for the other admins; the admin audit log doesn't capture most edits yet.

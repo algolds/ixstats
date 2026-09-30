@@ -1,33 +1,39 @@
 ---
 title: ThinkTanks
-description: Form collaborative groups to plan strategies, build lore together, and coordinate policy work with other players.
+description: Groups with a shared feed, member list, documents and chat.
 badge: Community
+prevHref: /help/social/thinkshare
+prevLabel: Messages
+nextHref: /help/social/forum
+nextLabel: The Forum
 ---
 
-## What Are ThinkTanks?
+## What ThinkTanks are
 
-ThinkTanks are private or public group workspaces where you and other players can collaborate on shared goals. Whether you're planning an alliance strategy, co-authoring lore, or developing economic policy, ThinkTanks give your group a dedicated space to stay organized.
+A ThinkTank is a group space for players working together: a lore collaboration, an alliance's planning room, a research circle. Each has a group feed, a member list, shared documents and a chat. Find and create them at [/thinktanks](/thinktanks). Every realm also has a ThinkTank-style [realm board](/help/world/realms#realm-boards).
 
-- A shared workspace where members can curate posts, upload files, and track progress together.
-- Member roles — owners and admins manage the group, and members take part.
-- Tag your group with focus areas so the right players can discover it.
+## Finding groups
+
+The directory on the left has two tabs: **My Groups** (groups you're in) and **Discover** (public groups you can join). Search by name and filter by category.
 
 ## Creating a ThinkTank
 
-> **How to Get Started**
->
-> 1. Open [ThinkTanks](/thinktanks) and use the create button in the group directory.
-> 2. Give your group a name, description, category, and tags, and set whether it's public or private.
-> 3. Invite members from the group settings, and see who has joined in the **Members** tab.
-> 4. Share posts in the group **Feed** to give your group a clear starting point.
+1. Open [/thinktanks](/thinktanks) and choose the create (**+**) button.
+2. Give the group a name, description and category, add tags, and choose whether it's public or private.
+3. Invite members by searching for their username.
 
-## Getting the Most Out of Your ThinkTank
+## Inside a group
 
-- Use the group feed to track what needs doing and who's responsible.
-- Browse **Discover** to find public groups, and **My Groups** to get back to yours.
-- Celebrate milestones with posts that boost your group's visibility.
+| Tab | What it's for |
+| --- | --- |
+| **Feed** | Group posts. Tag a post as 💡 Note to self, 🤝 Collaborative, 🔍 Critique wanted or 🗺️ Lore & Maps |
+| **Members** | Who's in the group and their roles (owner, admin, member) |
+| **Docs** | Shared documents the group writes together |
+| **Chat** | The group's live conversation (also in [Messages](/help/social/thinkshare)) |
 
-## Related Features
+Owners and admins manage members and group settings.
 
-- [ThinkPages](/help/social/thinkpages) — publish and share content that you can link into your ThinkTank.
-- [ThinkShare Messaging](/help/social/thinkshare) — have private side conversations with individual ThinkTank members.
+## Tips
+
+- Use **Critique wanted** posts to get feedback on lore before publishing it to the [wiki](/help/wiki/wikios).
+- Keep long-form drafts in **Docs** and quick back-and-forth in **Chat**.

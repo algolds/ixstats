@@ -1,62 +1,50 @@
 ---
 title: Economic Tiers
-description: What tier your nation sits in, how it's decided, and how to climb to the next one.
-badge: Economy & Finances
-prevHref: /help/economy/calculations
-prevLabel: How Your Economy Is Measured
-nextHref: /help/economy/modeling
-nextLabel: Planning Ahead
+description: The seven tiers, their GDP-per-person bands, their growth caps, and the population tiers.
+badge: Economy & Government
+nextHref: /help/economy/calculations
+nextLabel: How Your Economy Is Calculated
 ---
 
-## What Tiers Are
+## What tiers are
 
-Every nation sits in an economic tier — a simple way of saying how wealthy and developed it is. Your tier shapes what you can unlock, who you’re ranked against, and how fast your economy can grow. Think of it as your nation’s weight class.
+Every nation sits in one of seven economic tiers, set by its **GDP per person**. Your tier matters mainly because it **caps how fast your GDP per person can grow**: poorer nations can grow quickly, rich ones slowly. It also sets your IxCredit dividend multiplier and is shown on your profile, in Explore and on the leaderboards. Your tier updates automatically when your GDP per person crosses a boundary.
 
-There are seven, measured by your **GDP per person**, from humblest to grandest:
+## The seven tiers
 
-1. **Impoverished** (up to $10k per person) — just getting started, with the most room to grow.
-2. **Developing** ($10k–$25k) — the foundations of a modern economy are going in.
-3. **Developed** ($25k–$35k) — a growing middle class and real industry; trade starts to matter.
-4. **Healthy** ($35k–$45k) — stable and varied, with a comfortable standard of living.
-5. **Strong** ($45k–$55k) — a regional power with well-funded public services.
-6. **Very Strong** ($55k–$65k) — among the wealthiest nations, with real global pull.
-7. **Extravagant** ($65k+) — the summit. Only the most successful nations get here.
+| Tier | GDP per person | Max growth per IxTime year | Dividend multiplier |
+| --- | --- | --- | --- |
+| Impoverished | under $10,000 | 10% | 0.5× |
+| Developing | $10,000 – $24,999 | 7.5% | 1.0× |
+| Developed | $25,000 – $34,999 | 5% | 2.0× |
+| Healthy | $35,000 – $44,999 | 3.5% | 1.5× |
+| Strong | $45,000 – $54,999 | 2.75% | 2.5× |
+| Very Strong | $55,000 – $64,999 | 1.5% | 3.0× |
+| Extravagant | $65,000 and up | 0.5% | 3.5× |
 
-## How Your Tier Is Decided
+The dividend multiplier is one part of your daily IxCredit dividend; see [IxCredits](/help/vault/ixcredits).
 
-One thing sets your tier:
+Above $60,000 per person, growth is damped further (diminishing returns), so the richest nations grow very slowly.
 
-- **GDP per person** — your total output shared across your population. The higher it climbs, the higher your tier.
+## Population tiers
 
-Your **population** earns a separate population tier (1 through 7, then X for 500 million and up). It doesn’t change your economic tier, but big nations have a harder time keeping per-person output high.
+Population has its own tiers. They don't affect growth; they're a quick size label.
 
-Your tier updates on its own as your economy moves. Curious about the math? [How Your Economy Is Measured](/help/economy/calculations) has the details.
+| Population tier | Population |
+| --- | --- |
+| 1 | under 10 million |
+| 2 | 10 – 30 million |
+| 3 | 30 – 50 million |
+| 4 | 50 – 80 million |
+| 5 | 80 – 120 million |
+| 6 | 120 – 350 million |
+| 7 | 350 – 500 million |
+| X | 500 million and up |
 
-## How to Climb
+## Moving between tiers
 
-Moving up the tiers is one of the great long games here. A few ways to do it:
+- **Growth over time.** Your GDP per person grows at your growth rate (up to the tier cap) and moves you up when it crosses a boundary. Crossing into a higher tier lowers your cap.
+- **Directives and issues.** Economy and infrastructure [directives](/help/mycountry/executive) and some [issue](/help/gameplay/national-issues) outcomes add GDP effects that are applied after the cap, so they can push you over a boundary.
+- **Population growth.** Growing population without growing GDP lowers GDP per person.
 
-- **Grow your economy** — invest in productive sectors, set smart taxes, and trade. Test ideas first with the [planning tools](/help/economy/modeling).
-- **Mind your population** — growing too fast can thin out your per-person wealth. Balance growth with prosperity.
-- **Spend wisely** — money put into education, infrastructure, and technology pays off down the road.
-- **Keep things stable** — political turmoil and low approval drag your economy down. A steady hand helps.
-- **Make friends** — trade deals and alliances with prosperous nations can give your economy a lift.
-
-## Why Climbing Is Worth It
-
-> **What higher tiers bring**
->
-> - **Achievements** — many [achievements](/help/gameplay/achievements) ask you to reach a certain tier.
-> - **Fair rankings** — the [leaderboards](/help/gameplay/leaderboards) show each nation’s tier, so you can see who your peers are.
-> - **Resilience** — wealthier nations shrug off shocks and downturns more easily.
-> - **Bragging rights** — your tier shows on your public profile, so the world can see how far you’ve come.
-
-## Where to Check Your Tier
-
-- **Your country profile** — your tier sits right alongside your key numbers.
-- [Leaderboards](/leaderboards) — every entry lists its economic and population tier, so you can find your true peers.
-
-> **Quick Tips**
->
-> - Check **Economy & Budget** in MyCountry now and then to catch trends before they become problems.
-> - If your tier slips, revisit your spending and taxes — small tweaks add up fast.
+Full details: [How Your Economy Is Calculated](/help/economy/calculations).

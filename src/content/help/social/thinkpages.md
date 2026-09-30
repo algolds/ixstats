@@ -1,34 +1,58 @@
 ---
-title: ThinkPages
-description: Share news, research, and story updates with the IxStats community through rich posts, wiki lookups, and a live social feed.
+title: ThinkPages & the Feed
+description: Post to the feed as yourself or a persona, follow and react, use hashtags, and answer Blurbs prompts.
 badge: Community
+nextHref: /help/social/thinkshare
+nextLabel: Messages
 ---
 
-## What Is ThinkPages?
+## What ThinkPages is
 
-ThinkPages is the social publishing platform built into IxStats. Think of it as your country's newsroom — a place to broadcast updates, share analysis, and engage with posts from other players across the game world.
+ThinkPages is IxStats' social feed: short posts, in character or as yourself, about what's happening in your nation and the world. The feed is on the [Dashboard](/dashboard); your personas (the accounts you post as) are managed at [/thinkpages](/thinkpages). Anyone can read public posts.
 
-- Compose rich text posts with embedded wiki lookups, images, and tags.
-- The live event feed highlights featured and trending posts so important news reaches everyone.
-- Your posts connect to achievements and notifications, and each of your first five posts a day earns 1 IxCredit.
+## The feed
 
-## Writing a Post
+The Dashboard feed has four tabs:
 
-> **How to Compose**
->
-> 1. Navigate to ThinkPages from the main menu and tap **Compose**.
-> 2. Use the rich editor to write your content. You can search the IxWiki directly from the composer to pull in references and link to articles.
-> 3. Add tags like **#economy**, **#diplomacy**, or **#military** so other players can discover your post through topic filters.
-> 4. Publish it to the feed for everyone to see. (To work with a smaller group, use a [ThinkTank](/help/social/thinktanks).)
-> 5. Once published, monitor reactions and replies in your feed.
+- **All Activity:** posts and national activity from everyone.
+- **Following:** posts from personas you follow and activity from nations your nation follows (signed-in only).
+- **Trending:** posts with the most reactions, replies and reposts in the last three days, and trending hashtags. If nothing qualifies, it's empty.
+- **Community:** recent wiki edits and forum activity.
 
-## Tips for Great Posts
+The Dashboard also shows current [Blurbs](#blurbs-topic-tuesday) prompts and trending topics beside the feed.
 
-- Use topic tags generously — they make your posts searchable and help them surface in other players' feeds.
-- Link to wiki articles using the built-in search tool to add credibility and context to your writing.
-- Embed policy proposals, mission reports, or diplomatic summaries to keep your allies and team members in the loop.
+A realm-only feed is on each [realm board](/help/world/realms#realm-boards).
 
-## Related Features
+## Personas
 
-- [ThinkShare Messaging](/help/social/thinkshare) — follow up on posts with private conversations.
-- [ThinkTanks](/help/social/thinktanks) — collaborate with groups on shared research and planning.
+You post as a **persona**:
+
+- **Yourself:** one personal persona with no country, created the first time you choose **Post as yourself**. You don't need a nation for it.
+- **Nation personas:** up to 25 accounts tied to nations you own, such as a government, a newspaper or a citizen. Create and manage them at [/thinkpages](/thinkpages).
+
+Switch persona in the composer with one click. Each persona has a profile at `/thinkpages/profile/<username>` with its posts, followers and following. Only admins can mark a persona as verified.
+
+## Posting
+
+1. Open the composer on the [Dashboard](/dashboard) and pick the persona to post as.
+2. Write your post. You can add images, a poll, links to wiki articles (with previews) and live figures from your nation.
+3. Add **#hashtags**. Each hashtag has its own page at `/hashtags/<tag>`.
+4. Publish. Public posts are also shared to the community Discord's IxTwitter channel by default.
+
+Your first 5 original posts each day earn 1 IxCredit each.
+
+## Engaging
+
+- **React** to posts, **reply**, **repost** or **quote** them, and **@mention** other personas.
+- **Follow** a persona from its author card or profile.
+- You're notified when someone likes, replies to, reposts, quotes or mentions your persona, or follows it.
+
+## Blurbs (Topic Tuesday)
+
+[Blurbs](/blurbs) are weekly community prompts about your nation's culture, daily life or history.
+
+1. Open a prompt at [/blurbs](/blurbs).
+2. Write one response (up to 1,000 characters) from your nation's perspective, optionally linking up to five wiki articles. You need a nation, and responses can't be edited after you submit.
+3. Your response is also posted to the feed with **#blurb**.
+
+See your own responses at [/blurbs/mine](/blurbs/mine), and suggest a new prompt at [/blurbs/submit](/blurbs/submit) (an admin reviews it).

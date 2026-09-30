@@ -1,43 +1,38 @@
 ---
-title: Card Packs & Opening
-description: Purchasing packs with IxCredits and the four-stage animated opening experience.
-badge: IxVault & Cards
+title: Card Packs
+description: Buying packs in the Vault Shop, opening them, and how pack odds work.
+badge: Vault, Cards & Rewards
+prevHref: /help/vault/ixcredits
+prevLabel: IxCredits
+nextHref: /help/vault/trading
+nextLabel: Auctions & Trading
 ---
 
-## Pack Store
+## Where packs are
 
-The **Vault Shop** tab of the Vault's **Marketplace** is where you browse and purchase card packs; your unopened packs wait under **My Packs**. Each pack type has a fixed IxCredits price, a guaranteed number of cards, and minimum rarity guarantees.
+Packs are sold in the **Vault Shop**: [Vault → Marketplace](/vault/marketplace?tab=store) → **Vault Shop**. The shop has four tabs: **Marketplace** (packs for sale), **My Packs** (packs you own but haven't opened), **Cosmetics** and **Account Upgrades**. Packs are bought with [IxCredits](/help/vault/ixcredits).
 
-## Purchasing Packs
+## How to buy and open a pack
 
-> **Purchase Flow**
->
-> 1. Browse available packs in the Vault Shop
-> 2. Click a pack to open the Purchase Modal
-> 3. Review pack contents, price, and rarity guarantees
-> 4. Confirm purchase (IxCredits are deducted immediately)
-> 5. Pack is added to your unopened inventory
+1. Open the Vault Shop's **Marketplace** tab and select a pack to see its price, card count and odds.
+2. Buy it. The IxCredits are taken straight away and the pack goes to **My Packs**. (If you don't have enough IxCredits, you can't buy it.)
+3. Open it from **My Packs**. Tap the pack to open it, then reveal each card in turn.
+4. At the end, choose what to do with each card. **Keep** leaves it in your collection; **Junk** recycles it for IxCredits right away.
 
-## Opening Experience
+## Odds
 
-Opening a card pack triggers a four-stage animated sequence:
+Every card in a pack rolls its rarity separately against that pack's odds. As a guide, the default odds are Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9% and Legendary 0.1%; each pack sets its own, and pricier packs have better odds. Some packs mention a guaranteed minimum rarity, but that guarantee isn't applied yet, so every card is a fresh roll.
 
-- **Stage 1 - Pack Reveal:** The pack appears with a holographic cover animation. Click or tap to begin opening.
-- **Stage 2 - Pack Explosion:** The pack bursts open with a glass-splash particle effect, revealing the cards inside.
-- **Stage 3 - Card Reveal:** Each card is revealed one at a time with 3D tilt effects. Higher rarity cards get more dramatic animations. Click through each card to see its details.
-- **Stage 4 - Quick Actions:** After all cards are revealed, choose what to do: keep in collection, mark for trading, or view full card details.
+## Kinds of packs
 
-## Rarity Guarantees
+The seeded line-up (admins can change it) includes:
 
-Each pack type specifies minimum rarity guarantees. For example, a pack might guarantee at least one Rare or better card. The actual rarity is determined by weighted random selection, so you may receive cards better than the minimum guarantee.
+- **Season packs** drawing from one NationStates card season: Recruit (100–200 IxC, 5 cards), Veteran (500–1,000 IxC) and Commander Elite (2,000–4,000 IxC, 8–10 cards).
+- **Cross-pool packs** such as Omni Starter (150), Championship Event (2,500), World Summit (3,500), High Roller Mega (5,000), Lore Master Elite (6,000, lore cards only), Anniversary (8,000), a limited Collector's Edition (12,000) and Founder (15,000).
 
-> [!WARNING]
-> **IxCredits Requirement**
->
-> You must have enough IxCredits to purchase a pack. If your balance is insufficient, the purchase button will be disabled. Earn IxCredits through gameplay actions, daily logins, and achievements.
+## Other ways to get cards
 
-> **Related Articles**
->
-> - [Vault Overview](/help/vault/overview) - Vault system overview
-> - [IxCredits Economy](/help/vault/ixcredits) - How to earn IxCredits
-> - [Trading & Marketplace](/help/vault/trading) - Trading cards on the marketplace
+- The [daily reward](/help/vault/ixcredits#the-daily-reward) card option.
+- [Auctions and trades](/help/vault/trading).
+- [Importing your NationStates deck](/help/vault/ns-import).
+- Some [achievements](/help/gameplay/achievements) award cards or packs.

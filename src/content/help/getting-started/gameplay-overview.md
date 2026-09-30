@@ -1,53 +1,51 @@
 ---
 title: How It All Fits Together
-description: Economy, government, diplomacy, the map — a quick tour of how your nation comes alive.
+description: The main systems, what each one does, and a good first week.
 badge: Start Here
-prevHref: /help/getting-started/first-country
-prevLabel: Create Your First Nation
-nextHref: /help/getting-started/ixtime
-nextLabel: The World Clock (IxTime)
+prevHref: /help/gameplay/country-building
+prevLabel: The Country Builder in Depth
+nextHref: /help/getting-started/navigation
+nextLabel: Finding Your Way Around
 ---
 
-## The Rhythm of Play
+## The short version
 
-There’s no single “win” here — IxStats is about building a nation and living with it over time. Most of what you do falls into a simple rhythm:
+There is no win condition. You build a nation, make decisions for it over time, and tell its story alongside other players. Your decisions move your nation's numbers (GDP, population, approval, stability, relations), those numbers show up in rankings and on your public profile, and the things you do earn IxCredits for the Vault.
 
-1. **Create** your nation in the [builder](/builder) — its government, economy, and people.
-2. **Shape** it — tune policies and [combine choices](/help/government/synergy) that make your nation stronger and more like the place you imagined.
-3. **Decide** — answer [national issues](/help/gameplay/national-issues), weather crises, and take [big actions](/help/mycountry/executive) like stimulus or infrastructure. Every choice leaves a mark on your economy and your story.
-4. **Grow** — watch your economy climb [tiers](/help/economy/tiers), rise up the [leaderboards](/leaderboards), and unlock [achievements](/help/gameplay/achievements).
-5. **Connect** — open [diplomacy](/help/mycountry/diplomacy) with other nations and meet their players in the [community](/help/social/thinkpages).
+## The systems and where they live
 
-## The Systems Behind Your Nation
+| System | What you do | Where | Guide |
+| --- | --- | --- | --- |
+| Directives | State a goal, pick a package, commit it (3 per IxTime week) | [MyCountry](/mycountry) | [Executive Directives](/help/mycountry/executive) |
+| National issues | Respond to situations that arise in your nation | [MyCountry](/mycountry) agenda | [National Issues](/help/gameplay/national-issues) |
+| Economy | Watch growth, set the budget and tax rates, manage trade | [Economy & Budget](/mycountry/economy) | [Economy & Budget](/help/mycountry/economy) |
+| Government | Choose components, departments and budget | [Country Editor](/mycountry/editor) | [Building Your Government](/help/government/atomic) |
+| Politics | Parties, legislature, bills, elections | [Politics](/mycountry/politics) | [Politics & Elections](/help/mycountry/politics) |
+| Diplomacy | Embassies, stances, proposals, alliances, exchanges | [Diplomacy](/mycountry/diplomacy) | [Foreign Affairs](/help/mycountry/diplomacy) |
+| Defense (Premium) | Branches, forces, operations, stability | [Defense](/mycountry/defense) | [Defense & Security](/help/mycountry/defense) |
+| Territory | Cities, provinces, landmarks, routes | [Maps](/maps) | [Editing Your Territory](/help/mycountry/map-editor) |
+| Lore | Write and edit wiki articles | [Wiki](/wiki) | [The Wiki](/help/wiki/wikios) |
+| Community | Posts, messages, groups, forum | [Dashboard](/dashboard), [Messages](/messages) | [ThinkPages](/help/social/thinkpages) |
+| Vault | IxCredits, cards, achievements | [Vault](/vault) | [Your Vault](/help/vault/overview) |
 
-> **The things you steer**
->
-> - **Economy** — GDP, trade, jobs, and tax revenue, all modeled and live. [Learn more](/help/economy/modeling)
-> - **Government** — how your nation is run, and how your choices ripple through everything else. [Learn more](/help/government/atomic)
-> - **Diplomacy** — embassies, missions, and the give-and-take with other nations and their leaders. [Learn more](/help/diplomacy/embassies)
-> - **Defense** — your military, a deep equipment catalog, and how you keep your nation secure (a Premium preview). [Learn more](/help/mycountry/defense)
-> - **Intelligence** — the dashboards and forecasts that turn your numbers into clear next moves (a Premium preview, not yet in MyCountry). [Learn more](/help/mycountry/intelligence)
-> - **Politics** — your legislature, parties, and the elections that decide who holds power. [Learn more](/help/mycountry/politics)
+## What actually moves your numbers
 
-## Rewards as You Play
+- **Growth over time.** GDP per person and population grow from your starting figures at your growth rate, capped by your [economic tier](/help/economy/tiers).
+- **Directives and issue outcomes.** Economic directives and many issue responses add effects that phase in over time (for example, a GDP change spread over one IxTime year). Others change approval or stability straight away.
+- **World events.** Admins can run world events that raise or lower growth for affected nations. See [Crises & World Events](/help/gameplay/world-events).
+- **Things that don't (yet).** Tax rates and budget splits change your revenue and spending figures and your daily IxCredit dividend, but they do not change GDP growth. See [How Your Economy Is Calculated](/help/economy/calculations).
 
-- **Achievements** — milestones across five rarity tiers, each worth [IxCredits](/help/vault/ixcredits). [See them all](/help/gameplay/achievements)
-- **IxCredits** — earned through play, spent on [packs](/help/vault/card-packs), trades, and cosmetics.
-- **Your Vault** — levels up as you go, unlocking more along the way. [Visit your Vault](/help/vault/overview)
-- **Leaderboards** — see how your nation stacks up on economy, demographics, governance, and achievements. [View rankings](/help/gameplay/leaderboards)
+## Rewards
 
-## A Good First Path
+- **IxCredits** come from a daily dividend based on your economy, a once-a-day reward, achievements and some actions. See [IxCredits](/help/vault/ixcredits).
+- **Achievements** unlock automatically and pay IxCredits. See [Achievements & Ribbons](/help/gameplay/achievements).
+- **Cards** come from packs, the daily reward, trades and imports. See [Your Vault](/help/vault/overview).
 
-> **If you're not sure where to go next**
->
-> 1. Build your nation with [Create Your First Nation](/help/getting-started/first-country).
-> 2. Get to know your home base in the [MyCountry overview](/help/mycountry/overview).
-> 3. Answer your first [national issue](/help/gameplay/national-issues) and see the consequences play out.
-> 4. Open your first [embassy](/help/diplomacy/embassies) and start building relationships.
-> 5. Pop into your [Vault](/help/vault/overview) and open a pack.
+## A good first week
 
-> **Related Guides**
->
-> - [How Your Nation Comes Alive](/help/gameplay/simulation) — the living world and its rhythms.
-> - [The World Clock (IxTime)](/help/getting-started/ixtime) — why time moves the way it does here.
-> - [Your National Overview](/help/mycountry/overview) — the vitals you’ll check first each visit.
+1. Create your nation and read the [MyCountry overview](/help/mycountry/overview).
+2. Answer the issues on your agenda and declare your first [directive](/help/mycountry/executive).
+3. Set up a legislature and two parties in [Politics](/help/mycountry/politics) so your first election gets scheduled.
+4. Open an [embassy](/help/diplomacy/embassies) with a neighbour and set your [stance](/help/mycountry/diplomacy) toward a few nations.
+5. Add your capital and a few cities on [the map](/help/mycountry/map-editor).
+6. Claim your [daily reward](/help/vault/ixcredits) and open a pack in the [Vault](/vault).

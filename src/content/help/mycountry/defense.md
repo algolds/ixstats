@@ -1,52 +1,50 @@
 ---
 title: Defense & Security
-description: Command your military, shape your forces, and keep your nation secure.
-badge: MyCountry — Your Nation's Home
+description: Branches and readiness, threats, forces, operations and internal stability.
+badge: Defense
+nextHref: /help/defense/equipment
+nextLabel: The Equipment Catalog
 ---
 
+## What this section is for
+
+The Defense section of MyCountry ([/mycountry/defense](/mycountry/defense)) models your armed forces and internal security: military branches, units and equipment, readiness, border threats, operations, conflicts with other nations, and your stability score. It has five tabs: **Branches & Readiness**, **Threat Vectors**, **Forces & Arsenal**, **Special Operations** and **Internal Stability**.
+
 > [!WARNING]
-> **Preview feature**
->
-> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+> **Defense is a MyCountry Premium feature.** Every player can open it, but without [Premium](/help/getting-started/premium) it's a read-only preview: creating assets, planning operations, conflicts and resolving security events need Premium.
 
-## How It's Laid Out
+## Branches & Readiness
 
-Everything about your nation’s security sits in five tabs:
+Your branches (army, navy, air force and so on), their readiness and your overall defense posture, plus your defense budget. Deployments lower a unit's readiness by 10; recalling it restores 5.
 
-- **Branches & Readiness** — the big-picture read on readiness across your branches.
-- **Threat Vectors** — what’s out there and worth watching.
-- **Forces & Arsenal** — your troops and the gear they carry.
-- **Special Operations** — what your military is actually doing right now.
-- **Internal Stability** — security at home.
+## Threat Vectors
 
-## Readiness & Threats
-
-A clear view of how safe your nation is:
-
-- **Threat level** — where things stand, and what’s driving it.
-- **Readiness** — how prepared your forces are across the board.
-- **Threats** — what’s out there and worth watching.
-- **Needs attention** — the defense matters waiting on a decision from you.
+Threats and border security, including assessments of your neighbours.
 
 ## Forces & Arsenal
 
-> **Building your military**
->
-> - **Branches** — set up your army, navy, air force, and special forces, and decide how many serve in each.
-> - **Equipment** — kit out your forces from a deep, real-world-inspired armory.
-> - **Make-up** — balance active troops, reserves, and the support that keeps them going.
-> - **At a glance** — branch count, average readiness, and your overall security score.
+Your units and the equipment they hold.
+
+1. Open **Forces & Arsenal**.
+2. Add a branch or unit, and set its size.
+3. Add equipment from the [catalog](/help/defense/equipment) to a unit.
 
 ## Special Operations
 
-Plan and follow what your forces are doing:
+Plan and track operations such as peacekeeping, defense pacts, blockades, interventions and training.
 
-- **What’s active** — keep tabs on every deployment in progress.
-- **Plan a deployment** — a step-by-step walk-through for setting objectives, committing forces, and timing your move.
-- **Conflicts** — manage and resolve standoffs with other nations.
+1. Start the deployment wizard, choose the operation type and objective, then pick the units and assets to commit.
+2. While an operation is active it costs money every day: personnel × $200 per day plus 1.5× the maintenance of the assets involved.
+3. Recall forces when you're done.
 
-> **Keep Exploring**
->
-> - [Defense Overview](/help/defense/overview) — where to start with your military.
-> - [Units & Assets](/help/defense/units) — the forces at your command.
-> - [The Equipment Catalog](/help/defense/equipment) — the armory you’ll outfit them from.
+You can also propose a conflict with another player's nation (they're notified and it's posted as news) or resolve a conflict with a computer-run nation.
+
+## Internal Stability
+
+Your stability score and the security events (protests, crime waves and similar) that affect it. Resolve events from here. See [Internal Stability](/help/defense/stability).
+
+## Good to know
+
+- Defense actions are not yet logged to your nation's change log the way directives and issues are.
+- Operations and conflicts don't currently change your GDP.
+- A defense [directive](/help/mycountry/executive) raises stability without needing Premium.

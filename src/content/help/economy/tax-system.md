@@ -1,48 +1,42 @@
 ---
 title: Taxes & Revenue
-description: Set your tax rates — and fund the nation you want to build.
-badge: Economy & Finances
+description: Setting tax rates in Fiscal Policy, what they affect, and what they don't.
+badge: Economy & Government
+prevHref: /help/economy/calculations
+prevLabel: How Your Economy Is Calculated
+nextHref: /help/economy/trade
+nextLabel: Trade & Commerce
 ---
 
-## How Your Tax System Works
+## Where taxes are set
 
-Your tax rates live in **MyCountry → Economy & Budget → Fiscal Policy**. Your starting rates can come from the economic archetype you pick in the builder; after launch you tune them here to fit the nation you want to be.
+Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → **Fiscal Policy**, under **National Tax Rate Controls**. New nations start with default rates; after launch you tune them here.
 
-## Setting Up Taxes
+## How to change a tax rate
 
-> **Tuning Your Rates**
->
-> 1. **Open Fiscal Policy:** In MyCountry, open **Economy & Budget** and choose the **Fiscal Policy** tab.
-> 2. **Adjust a rate:** Use the **National Tax Rate Controls** to set each tax. An optimal zone (15–35%) is marked to guide you.
-> 3. **Watch the projections:** **Tax Revenue Projections** shows how much each tax contributes to your revenue.
-> 4. **That's it:** Changes save automatically.
+1. Open [Economy & Budget](/mycountry/economy) and choose **Fiscal Policy**.
+2. Move a slider or type a value. Changes save automatically.
+3. Check **Tax Revenue Projections** to see what each tax contributes.
+4. Check the insights panel, which places your overall tax burden against an "optimal zone" of 15–35%.
 
-## Tax Types Available
+| Tax | Range | Default |
+| --- | --- | --- |
+| Income tax | 0–60% | 24% |
+| Corporate tax | 0–50% | 21% |
+| VAT / sales tax | 0–30% | 15% |
+| Tariff rate | 0–25% | set by your nation |
+| Wealth tax | 0–10% | set by your nation |
+| Capital gains tax | 0–40% | set by your nation |
 
-- **Income Tax:** 0–60% on personal income
-- **Corporate Tax:** 0–50% on business income
-- **VAT / Sales Tax:** 0–30% on consumption
-- **Tariff Rate:** 0–25% on imports (sector tariff schedules live in the Trade & Commerce tab)
-- **Wealth Tax:** 0–10% on accumulated wealth
-- **Capital Gains Tax:** 0–40% on investment returns
+## What tax rates affect
 
-## How Taxes Connect to Your Nation
+- **Revenue figures:** projected revenue per tax and your total.
+- **The budget picture:** revenue versus department spending in [National Budget](/help/mycountry/economy#national-budget).
 
-Your tax configuration doesn't exist in isolation — it connects to other parts of your nation:
+## What they don't affect (yet)
 
-- **Government:** Your government components affect how effectively your taxes are collected.
-- **Economy:** Tax revenue feeds directly into your economic model, affecting GDP calculations, government spending capacity, and debt management.
+Tax rates don't change your GDP growth, population or approval. Growth comes from your growth rate and tier, [directives](/help/mycountry/executive), [issue](/help/gameplay/national-issues) outcomes and [world events](/help/gameplay/world-events). See [How Your Economy Is Calculated](/help/economy/calculations).
 
-## Revenue Analysis Tools
+## Tax components
 
-Tax Revenue Projections helps you understand and optimize your revenue:
-
-- See how much each tax contributes to your total revenue
-- Try out different rates and see the impact right away
-- Use the **National Budget** tab to see where that revenue goes
-
-> **Related Help Pages**
->
-> - [Economic Calculations](/help/economy/calculations) — How GDP and revenue formulas work
-> - [The Component Library](/help/government/components) — browse the full set of government and economic pieces
-> - [Country Building Guide](/help/gameplay/country-building) — Complete guide to the builder workflow
+The platform also has a catalog of 42 tax components in five groups (collection methods, revenue strategies, compliance systems, incentive structures and administration). Where a nation has them, revenue and compliance components raise tax revenue as a share of GDP and incentive components lower it. There is no player control for choosing tax components at the moment; your tax rates above are the lever you have.

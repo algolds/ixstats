@@ -1,44 +1,61 @@
 ---
-title: Unified Identity (IxnayID)
-description: Connect your simulator country profile with the community wiki and interactive maps.
+title: IxnayID & Your Passport
+description: Your account, your public passport, and linking your wiki, forum and Discord accounts.
 badge: Start Here
 prevHref: /help/getting-started/ixtime
 prevLabel: The World Clock (IxTime)
-nextHref: /help/getting-started/navigation
-nextLabel: Finding Your Way Around
+nextHref: /help/getting-started/premium
+nextLabel: MyCountry Premium
 ---
 
-## What is IxnayID?
+## What IxnayID is
 
-**IxnayID** is the unified authentication service for our simulation platform. It serves as your single sign-on key, linking your country profile across all sub-services:
+IxnayID is your IxStats account. One sign-in covers IxStats, the wiki reader and editor, the forum pages, IxMaps and the Vault. It also gives you a public **passport**: a profile page that gathers your nations, achievements, cards, wiki work and activity in one place. You manage IxnayID in [Settings → IxnayID & Passport](/settings), or from **IxnayID Connections** in the user menu.
 
-- **IxStats Simulator:** Where you manage your nation's laws, budget, and resources.
-- **Interactive Maps (IxWorld):** The live geographic database where your borders, territories, and dynamic map overlays are plotted.
-- **Community Wiki (IxWiki):** The central database for history, lore, and community-edited profiles.
+## Your passport
 
-By using a single identity, your stats and actions in the simulator automatically sync to the maps and community records.
+Your passport lives at `/@yourname` (also `/id/yourname`). Anyone can view it, signed in or not. It has five tabs:
 
-## Connecting Your Accounts
+| Tab | What it shows |
+| --- | --- |
+| Overview | Your featured realm, a showcase (achievements and ribbons, your most valuable cards, Lorewards standing) and affiliations |
+| Realms | Every realm you belong to and the nations you hold |
+| Work | Your wiki pages and edits, Onoma languages, MyLeague clubs and directives |
+| Vault | Collector level, deck value and your most valuable cards |
+| History | Your activity across the platform |
 
-Link your community accounts in **Settings → IxnayID & Passport**, under **Account Credentials → Linked Accounts** (click **Manage**):
+A player's **wiki user profile** now opens their passport on the Work tab (`/id/@username?tab=work`), so wiki links to a user land on their work.
 
-- **Wiki accounts (IxWiki, IIWiki, AltHistory):** enter your wiki username and click **Get code**. Paste the code anywhere on your wiki user page, save it while logged in as that user, then press **Verify**. The code works for 24 hours.
-- **Community Forum and Discord:** connect them from the same list.
-- **Nation claims:** with a verified wiki account, claims for nations you created are approved instantly during setup instead of waiting for a moderator.
+## Edit your passport and privacy
 
-## Managing Connections
+1. Open your own passport and choose **Edit Passport**. The card flips to its settings side.
+2. Switch sections on or off: Achievements, Civic Accolades (Lorewards), Focus, Forum Discussions, IxCredits (your whole Vault) and Activity History. Hidden sections are hidden from everyone, including you, so you see what visitors see.
+3. Write a signature (up to 60 characters) and pin up to three **signature ribbons** from achievements you've unlocked.
+4. Choose **Done** to save.
 
-> **Troubleshooting and Syncing**
->
-> If a linked account ever looks wrong, follow these steps:
->
-> 1. Open **Settings → IxnayID & Passport** and find **Linked Accounts**.
-> 2. Check each account’s status — connected accounts show the username they’re linked to.
-> 3. If a wiki verification code expired before you verified, click **New code** and try again.
-> 4. Use **Unlink** to remove an account, then connect it again.
+Your Realms and Work tabs are always public.
 
-> [!WARNING]
-> **Security Guidelines**
->
-> - Never share your authorization tokens or verification codes with other players or staff.
-> - Only paste a verification code on your own wiki user page.
+## Link your wiki accounts
+
+Linking proves you own a wiki account. It lets you edit your own `User:` page in the wiki, and it makes claims for nations whose wiki page you created approve instantly.
+
+1. Open [Settings](/settings) → **IxnayID & Passport** → **Linked Accounts** and choose **Manage**.
+2. Next to IxWiki, IIWiki or AltHistory, enter your wiki username and choose **Get code**.
+3. Paste the code anywhere on your user page on that wiki and save it while logged in as that user.
+4. Come back and choose **Verify**. The code works for 24 hours; if it expires, choose **New code**.
+
+## Link your forum account
+
+1. In **Linked Accounts**, choose **Connect** next to Community Forum and enter your forum username.
+2. Choose **Get code** and paste the code into the **Location** or **About** field of your forum profile, then save.
+3. Choose **Verify**. The code expires after about 30 minutes; choose **New code** for another.
+
+## Link Discord
+
+Discord is linked by signing in to your account with Discord. Once linked, it shows as Connected and you can unlink it from the same row.
+
+## Keeping your account safe
+
+- Only paste verification codes on your own user page or profile.
+- Nobody from staff will ask you for a code or password.
+- Use **Unlink** if a linked account is wrong, then link it again.

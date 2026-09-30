@@ -1,98 +1,58 @@
 ---
 title: How Your Economy Is Calculated
-description: A plain-language guide to the formulas behind your GDP, growth rate, projections, and economic health scores.
-badge: Economy & Finances
+description: How GDP and population move over time, and which decisions actually change them.
+badge: Economy & Government
 prevHref: /help/economy/tiers
 prevLabel: Economic Tiers
-nextHref: /help/economy/modeling
-nextLabel: Modeling & Projections
+nextHref: /help/economy/tax-system
+nextLabel: Taxes & Revenue
 ---
 
-## GDP: The Big Number
+## The short version
 
-Your country's **Gross Domestic Product (GDP)** is the single most important economic figure. It represents the total value of everything your nation produces and is calculated with a simple formula:
+Your nation has a **baseline** (population, GDP per person and growth rates, set when it was created) and a **baseline date**. Your current figures are projected forward from that baseline to today's IxTime date, using your growth rate (capped by your [tier](/help/economy/tiers)) plus any active effects from directives, issues and world events. Total GDP is population × GDP per person.
 
-**Total GDP = Population × GDP per Capita**
+## GDP per person
 
-**GDP per Capita** is the average economic output per person. A nation of 50 million people with a GDP per Capita of $40,000 has a total GDP of $2 trillion.
+Each IxTime year, GDP per person grows by your effective growth rate:
 
-## What Drives Growth
+1. Start from your nation's real GDP growth rate (set in the builder).
+2. Multiply by the global growth factor (1.0321, set by admins) and by your nation's local growth factor (usually 1).
+3. Apply world-event effects that add to or scale the growth rate.
+4. Cap it at your tier's maximum (10% for Impoverished down to 0.5% for Extravagant), with a floor of −10%.
+5. Above $60,000 per person, damp it further for diminishing returns.
 
-Your GDP does not stay still. Every in-game cycle, your economy is recalculated from several factors:
+Then **level effects** are applied on top, outside the cap. These come from economy and infrastructure [directives](/help/mycountry/executive) and GDP outcomes of [national issues](/help/gameplay/national-issues). Each shifts GDP by a percentage that phases in (usually over one IxTime year) and then stays. Issue effects are capped at ±3% each.
 
-- **Base growth rate** — determined by your country's [economic tier](/help/economy/tiers). Poorer nations can grow faster (up to 10%), while wealthy nations grow more slowly (as low as 0.5%).
-- **Global growth factor** — a world-wide multiplier (1.0321 by default — a 3.21% boost) that raises or lowers everyone's growth to simulate global economic conditions.
-- **Local growth factor** — unique to your nation, reflecting the quality of your government policies, tax system, and infrastructure.
-- **Storyteller events** — trade agreements, natural disasters, economic policies, and special events created by the DM can temporarily boost or reduce your growth.
-- **Diminishing returns** — extremely wealthy nations (those with very high GDP per Capita) see their growth taper off naturally, preventing runaway economies.
+## Population
 
-After all modifiers are applied, your growth rate is capped by your [tier's maximum](/help/economy/tiers) so that no single event can push growth beyond a realistic ceiling.
+Population grows at your population growth rate each IxTime year, plus any population effects from events. Issue outcomes can shift population by up to ±1% each.
 
-## Tier-Based Growth Caps
+## What changes these numbers
 
-Your [economic tier](/help/economy/tiers) sets a hard ceiling on how fast your GDP per Capita can climb each cycle:
+| Changes GDP or population | Doesn't change them (today) |
+| --- | --- |
+| Time passing (growth, capped by tier) | Tax rates |
+| Economy and infrastructure directives | Department budget splits |
+| GDP and population outcomes of national issues | Trade tariffs and agreements |
+| World events run by admins | Government component choices |
+| Admin corrections | Defense operations |
 
-| Tier | GDP per Capita | Max Growth |
-| --- | --- | --- |
-| Impoverished | $0 – $9,999 | 10.0% |
-| Developing | $10,000 – $24,999 | 7.5% |
-| Developed | $25,000 – $34,999 | 5.0% |
-| Healthy | $35,000 – $44,999 | 3.5% |
-| Strong | $45,000 – $54,999 | 2.75% |
-| Very Strong | $55,000 – $64,999 | 1.5% |
-| Extravagant | $65,000+ | 0.5% |
+Taxes, budgets and components do change other figures: revenue, spending, unemployment, inflation, your government effectiveness and your IxCredit dividend. They just don't feed GDP growth yet.
 
-This means a Developing nation can catch up quickly, but growth naturally slows as your economy matures. Strategic policy choices become more important at higher tiers.
+## When stored figures update
 
-## Economic Health Scores
+MyCountry always shows the live projection. Rankings, vitality scores and your IxCredit dividend read the figures stored on your nation, which are refreshed every few hours by a background job (when it's enabled on the server) and whenever an admin runs a recalculation. So a ranking can lag your MyCountry figures by a few hours.
 
-Beyond raw GDP, IxStats tracks several composite scores that measure different dimensions of your economy's health:
+## Vitality scores
 
-- **Economic Resilience Index (ERI)** — how well your economy can absorb shocks like recessions, natural disasters, or diplomatic crises. A high ERI means your nation bounces back faster.
-- **Policy Impact Index (PII)** — measures how effectively your government policies translate into real economic results. Better policy alignment means a higher PII.
-- **Social-Economic Welfare Index (SEWI)** — captures the well-being of your citizens beyond just money, including factors like income equality, public services, and quality of life.
-- **Economic Complexity & Trade Index (ECTI)** — reflects how diversified and sophisticated your economy is. Nations that rely on a single export score lower than those with broad, complex economies.
+The four vitality rings on the [MyCountry home page](/help/mycountry/overview):
 
-These scores are calculated behind the scenes and feed into your nation's numbers; your economic complexity index appears in MyCountry → Economy & Budget. They update automatically as your economy evolves.
+- **Economic:** mostly GDP per person (compared with $50,000), adjusted by growth.
+- **Wellbeing:** population growth and population density.
+- **Diplomatic:** your relations, embassies, alliances and treaties, minus embargoes and sanctions against you. See [Foreign Affairs](/help/mycountry/diplomacy#how-your-diplomatic-score-is-calculated).
+- **Efficiency:** your government effectiveness score. See [Synergies & Conflicts](/help/government/synergy).
 
-## How Projections Work
+## A worked example
 
-IxStats can forecast where your economy is heading over a horizon you choose, from one year up to fifty. Projections use your current growth rate, tier, and active modifiers to estimate future GDP, population, and key indicators.
-
-> **What Affects Projections**
->
-> - **Current growth rate** — your actual rate after all modifiers, not just the tier maximum.
-> - **Population trends** — growing or shrinking population directly shifts your total GDP.
-> - **Active events** — ongoing storyteller effects (wars, trade deals, crises) are factored into projections.
-> - **Tier transitions** — if your growth is about to push you into a higher tier, the projection accounts for the lower growth cap you will face.
-
-You can explore projections in detail using the [Modeling & Projections](/help/economy/modeling) tools, which let you test “what if” scenarios before committing to policy changes.
-
-## The Role of IxTime
-
-All economic calculations run on [IxTime](/help/getting-started/ixtime), the in-game clock that moves at twice the speed of real time. Growth rates, projections, and historical records all reference IxTime months and years rather than real-world dates. This means your economy evolves roughly twice as fast as you might expect from the raw percentage numbers.
-
-## Where to Check Your Numbers
-
-> **Quick Reference**
->
-> - **MyCountry Overview** — shows your population and GDP at a glance in the National Standing card.
-> - **MyCountry → Economy & Budget** — the Economic Report, National Budget, Fiscal Policy, and Trade & Commerce tabs.
-> - **Modeling page** — run projections and compare scenarios. Open **Economic Modeling** from a country profile.
-> - **Leaderboards** — see how your GDP, growth, and other indicators rank against other nations.
-> - **Country profile** — any nation's public profile displays its current economic data and tier.
-
-> [!WARNING]
-> **Tips for Healthy Growth**
->
-> - Diversify your economy. Nations with a broad range of sectors score higher on the ECTI and recover faster from shocks.
-> - Keep an eye on projections after making policy or tax changes — small adjustments compound quickly under IxTime.
-> - Review your [tax system](/help/economy/tax-system) regularly. Tax revenue feeds directly into government spending capacity and debt management, both of which influence your growth rate.
-
-## Related Help Pages
-
-- [Economic Tier System](/help/economy/tiers) — how tiers are assigned and why they matter for growth and achievements.
-- [Modeling & Projections](/help/economy/modeling) — simulate scenarios and forecast your economy's future.
-- [Tax System](/help/economy/tax-system) — configure taxes, brackets, and exemptions that shape your revenue.
-- [Trade & Commerce](/help/economy/trade) — how international trade affects your GDP and ECTI score.
-- [Understanding IxTime](/help/getting-started/ixtime) — the in-game clock that drives all economic cycles.
+A Developing nation with $20,000 GDP per person and a 6% growth rate: 6% × 1.0321 = 6.19%, under the Developing cap of 7.5%, so it grows 6.19% per IxTime year (about every six real months). After one IxTime year, GDP per person is about $21,240. A Moderate economy directive committed that year adds a further level effect on top, phased in over the year.

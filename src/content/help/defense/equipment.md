@@ -1,56 +1,31 @@
 ---
-title: Military Equipment Catalog
-description: Browse and manage 500+ military equipment items across all domains with detailed specifications, manufacturers, and acquisition options.
+title: The Equipment Catalog
+description: Browse real-world aircraft, ships, vehicles and weapons, and add them to your forces.
 badge: Defense
+prevHref: /help/mycountry/defense
+prevLabel: Defense & Security
+nextHref: /help/defense/stability
+nextLabel: Internal Stability
 ---
 
-> [!WARNING]
-> **Preview feature**
->
-> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+## What the catalog is
 
-## Equipment Categories
+The equipment catalog is a shared library of real-world military hardware you can give your forces: aircraft (fighters, attack aircraft, bombers, transports, helicopters), ships (carriers, destroyers, frigates, submarines, amphibious ships), ground vehicles (tanks, infantry fighting vehicles, armoured personnel carriers, artillery, rocket launchers) and weapon systems (air defense, missiles, naval systems), plus a separate small-arms catalog. Each item has its manufacturer, era and specifications. You browse it from [MyCountry → Defense](/mycountry/defense) → **Forces & Arsenal**.
 
-- **Ground Forces:** Main battle tanks, armored vehicles, artillery systems, air defense platforms, infantry weapons (500+ items).
-- **Naval Forces:** Aircraft carriers, destroyers, submarines, patrol craft, amphibious vessels, support ships.
-- **Air Forces:** Fighter jets, bombers, helicopters, transport aircraft, reconnaissance platforms, drones.
-- **Support Systems:** Communications, logistics, medical, engineering, intelligence equipment.
+## How to add equipment
 
-## Equipment Data & Specifications
+1. Open **Forces & Arsenal** in the Defense section.
+2. Open the equipment browser for a unit.
+3. Search by name, or filter by category and era.
+4. Select an item to see its details, then add it with a quantity.
 
-> **What the Catalog Includes**
->
-> - **Technical Specs:** Weight, dimensions, crew size, range, speed, armament, protection levels.
-> - **Manufacturer Info:** Origin country, production dates, variants, license production agreements.
-> - **Operational Data:** Maintenance costs, fuel consumption, reliability ratings, upgrade paths.
-> - **Acquisition Options:** Purchase, license production, joint development, leasing, donations.
+Adding equipment needs [Premium](/help/getting-started/premium); without it you can browse but not add.
 
-## Small Arms Equipment
+## What equipment affects
 
-- **Infantry Weapons:** Rifles, carbines, designated marksman rifles, sniper systems, machine guns.
-- **Crew-Served Weapons:** Heavy machine guns, mortars, anti-tank guided missiles, man-portable air defense.
-- **Sidearms & Special:** Pistols, submachine guns, shotguns, grenade launchers, less-lethal systems.
-- The full small arms catalog is searchable with detailed specifications for every item.
+- Assets appear in your arsenal and can be committed to [operations](/help/mycountry/defense#special-operations).
+- An asset's maintenance cost counts toward the daily cost of any operation it's deployed on.
 
-## How to Browse Equipment
+## For admins
 
-> **Browsing & Filtering**
->
-> - Browse the full catalog with filters by type, origin country, era, and capabilities.
-> - View detailed specs for any specific equipment item.
-> - Search manufacturers and production facilities.
-> - Browse infantry weapons by caliber, weight, and rate of fire.
-> - See your currently equipped units and inventory levels.
-
-## Integration with Defense Systems
-
-- Equipment selections drive force composition calculations in MyCountry defense dashboards.
-- Acquisition costs feed into budget system; maintenance expenses affect operating budgets.
-- Equipment capabilities determine readiness scores and operational effectiveness ratings.
-- Link equipment to specific military branches, units, and deployment zones for comprehensive tracking.
-
-> **Related Documentation**
->
-> - [Reference Data Management](/help/admin/reference-data) — Managing equipment catalogs (admin).
-> - [Military Units & Assets](/help/defense/units) — Assigning equipment to military units.
-> - [Force Customization](/help/defense/customization) — Tailoring your forces with the right equipment.
+The catalog is edited at `/admin/military-equipment`. See [Reference Data](/help/admin/reference-data).

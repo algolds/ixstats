@@ -1,48 +1,49 @@
 ---
-title: National Issues & Decisions
-description: Events that land on your desk and ask what kind of leader you are — and your choices stick.
-badge: Living World
+title: National Issues
+description: Issues that land on your desk, your four ways to respond, and what sticks.
+badge: MyCountry
+prevHref: /help/mycountry/executive
+prevLabel: Executive Directives
+nextHref: /help/mycountry/economy
+nextLabel: Economy & Budget
 ---
 
-## What Are National Issues?
+## What national issues are
 
-National Issues are events that grow out of what's actually happening in your nation. If you've answered issues on NationStates, you'll recognize the spirit — but here your choices ripple straight into your economy, society, diplomacy, and defense. Up to three fresh issues turn up at a time.
+National issues are situations that come up in your nation and ask how you'll respond. If you've played NationStates, the idea is familiar, but here the text is filled in with your own nation's details (your neighbours, your ministers, your capital) and your choice changes your nation's numbers. New issues appear on your agenda in [MyCountry](/mycountry); open one to read its brief.
 
-You'll find them in the agenda on your [MyCountry overview](/help/mycountry/overview) — open an issue to read its brief and respond.
+## Where issues come from
 
-## Where Issues Come From
+- Each issue is picked from a library of templates whose conditions fit your nation right now: its economy, politics, neighbours and relations.
+- Issues related to your active [directives](/help/mycountry/executive) are more likely, representing support or opposition.
+- By default you get up to 3 new issues at a time and up to 5 per week. Admins can change these limits.
 
-> **Always about your nation, right now**
->
-> Issues are never random. When you open your inbox, the game takes a fresh look at your nation and surfaces the situations that fit:
->
-> - It reads your nation as it stands — your economy, politics, and relationships.
-> - It finds the events that genuinely make sense for where you are right now.
-> - The leaders of other nations — and their personalities — shape which ones land on your desk.
-> - You get the few that matter most, written with your own nation's details.
+## Your four ways to respond
 
-## Responding to Issues
+Every issue brief offers four routes:
 
-Each issue presents multiple response options. Each choice has consequences:
+| Option | What happens |
+| --- | --- |
+| **Resolve** | Pick one of the response options. Its consequences apply straight away. |
+| **Delegate** | Hand the issue to the civil service. It's closed with no consequences, but uses 15 [CivCap](/help/mycountry/executive#civil-service-capacity) for 5 IxTime days. Not allowed for high-severity or urgent issues, or when you have less than 15 CivCap free. |
+| **Cabinet meeting** | Schedule a cabinet meeting about it on next week's agenda. The issue stays open for you to resolve. |
+| **Make a directive** | Open the directive composer with the issue as a starting point. |
 
-- **Economic Effects:** Changes to GDP growth, tax revenue, trade balance, or sector performance
-- **Social Effects:** Impact on population satisfaction, stability, healthcare, or education metrics
-- **Diplomatic Effects:** Changes to relationship strength, international reputation, or alliance status
-- **Defense Effects:** Impact on military readiness, security assessment, or equipment condition
+## What your choice changes
 
-## Urgency & Auto-Resolution
+- **Approval and stability** changes apply at once and stay.
+- **GDP and GDP growth** changes become effects that phase in over time (usually one IxTime year) and then stay. Each is capped at ±3% of GDP.
+- **Population** changes are capped at ±1%.
+- Every change is recorded in your nation's change log and history.
 
-Issues come with urgency levels that affect their visual appearance and handling:
+Responses marked as riskier tend to have bigger swings both ways.
 
-- Higher urgency issues are displayed prominently with warning colors
-- Some issues have deadlines — if not addressed, they auto-resolve with default (usually unfavorable) outcomes
+## Deadlines
 
-> [!WARNING]
-> **Strategy Tips**
->
-> Review your country's current snapshot data before making decisions. Higher-risk responses can have significant negative effects on your metrics. Balance short-term gains against long-term national health.
+Some issues show a deadline. Deadlines are not enforced by default: an issue past its deadline stays open until you answer or delegate it.
 
-> **Related Documentation**
->
-> - [The Executive Desk](/help/mycountry/executive) — Where you turn decisions into directives
-> - [How the Simulation Works](/help/gameplay/simulation) — How the simulation engine works
+## Tips
+
+- Read the whole brief before choosing; the option labels don't tell you everything.
+- Delegate small issues when you have spare CivCap, and save your attention for high-severity ones (those can't be delegated).
+- If the same kind of issue keeps appearing, a [directive](/help/mycountry/executive) aimed at the cause can help.

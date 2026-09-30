@@ -1,59 +1,54 @@
 ---
 title: Foreign Affairs
-description: Manage embassies, talk to other nations, and steer your foreign policy.
-badge: MyCountry — Your Nation's Home
+description: The Diplomacy section - inbox, embassies, relations and stances, alliances, exchanges and events.
+badge: Diplomacy
+nextHref: /help/diplomacy/embassies
+nextLabel: Embassies
 ---
 
-## How It's Laid Out
+## What this section is for
 
-Open **Diplomacy** from the MyCountry command bar. Your foreign affairs are split into five tabs:
+The Diplomacy section of MyCountry ([/mycountry/diplomacy](/mycountry/diplomacy)) manages your nation's relations with other nations. It has six tabs: **Inbox** (only for you as the owner), **Embassy Network**, **Bilateral Relations**, **Alliances & Blocs**, **Cultural Exchanges** and **Diplomatic Events**. A side panel counts your embassies, relations and alliances. Your diplomatic record also sets the Diplomatic vitality ring on the [MyCountry home page](/help/mycountry/overview).
 
-- **Embassy Network** — your embassies abroad and the bonuses they earn you.
-- **Bilateral Relations** — every relationship, how it’s doing, and the stance you take toward each nation.
-- **Alliances & Blocs** — the partnerships you form and join.
-- **Cultural Exchanges** — programs that build goodwill.
-- **Diplomatic Events** — situations that need your response.
+## Inbox: proposals and invites
 
-## At a Glance
+Some diplomatic moves need the other nation's consent. They wait in the Inbox:
 
-The side rail gives you a quick read on where you stand in the world:
+- **Incoming:** free trade agreements, military alliances and alliance invites sent to you. Choose **Accept** or **Decline**.
+- **Outgoing:** what you've sent, with the time left. Choose **Withdraw** to cancel.
+- Anything not answered expires **14 real days** after it was sent.
+- You get a notification when something arrives and when your proposal is accepted or declined. A count badge shows on Diplomacy when items are waiting, and the Inbox opens by itself the first time something is waiting.
 
-- **Embassies** — how many are active.
-- **Relationships** — how many nations you have ties with, and how they’re doing.
-- **Alliances & blocs** — the partnerships you belong to.
-- **Active foreign policies** — the moves you currently have in play.
+## Proposing actions to another nation
 
-## Embassies & Relations
+Actions toward a specific nation start from that nation's profile:
 
-> **Building your network**
->
-> - Open new embassies with **Establish Embassy**.
-> - Check each embassy’s staff, budget, influence, and reputation — or close it, and reopen it later.
-> - See your alliances and spot opportunities to join forces.
-> - Watch relationships warm or cool as you act on the world stage.
+1. Open the nation in [Explore](/countries).
+2. Open **Country Actions**.
+3. Choose an action:
+   - **Free trade agreement** or **military alliance**: sent as a proposal to their Inbox.
+   - **Trade embargo** or **sanctions**: take effect immediately, without consent. They count against the target's Diplomatic score.
+   - **Establish embassy**, **Follow Nation**, **request a meeting** or **congratulate** them on an achievement.
 
-## Talking to Other Nations
+## Stances
 
-Diplomatic conversations live in [Messages](/messages) — float proposals, answer theirs, and keep the lines open with allies and rivals alike. From another nation’s profile you can also request a meeting.
+In **Bilateral Relations**, set your stance toward each nation: **Ally**, **Coexist**, **Hegemony** or **Rival**. You also see their stance toward you. Over time, relationship strength drifts toward the stances both sides have chosen.
 
-## Foreign Policy
+## Alliances
 
-Set the stances that shape how the world sees you:
+In **Alliances & Blocs**, create an alliance, invite members (they accept from their Inbox), leave alliances, and take collective actions with other members.
 
-- **Choose a stance** — in **Bilateral Relations**, pick how you approach each nation (Ally, Coexist, Hegemony, or Rival) and see theirs toward you.
-- **Propose a policy action** — from another nation’s profile, put a foreign-policy move on the table.
-- **Track what’s active** — the side rail keeps your standing policies in view.
+## How your Diplomatic score is calculated
 
-## Your Choices Have Consequences
+Your Diplomatic vitality score starts from the average strength of your relations (50 if you have none), then:
 
-Foreign policy isn’t shouting into the void — other nations notice, and they push back. When you make a move, the nation it touches weighs it against their own interests and how they feel about you.
+- **+2** per active embassy (yours abroad or others' in your country), up to +20
+- **+5** per alliance membership, up to +15
+- **+3** per active treaty, up to +15
+- **−8** per embargo, sanction or blockade against you, up to −40
 
-- **Incidents** — a bold or careless move can spark anything from a minor snub to a full-blown international dispute. These land in your issues feed and may need your attention right away.
-- **Different leaders, different reactions** — every nation has a character of its own. A proud, militaristic neighbor will take your policy very differently than a friendly trading partner. Get to know who you’re dealing with.
-- **One running story** — diplomatic moments show up in your news feed alongside your other big decisions, so your nation’s story on the world stage reads as one continuous tale.
+It shows "—" until you have any diplomatic record at all.
 
-> **Keep Exploring**
->
-> - [Embassies](/help/diplomacy/embassies) — building your network abroad.
-> - [Diplomatic Missions](/help/diplomacy/missions) — sending envoys to get things done.
-> - [Meeting Other Leaders](/help/diplomacy/npc-personalities) — who you’re negotiating with, and what makes them tick.
+## Messages
+
+Private conversations with other players happen in [Messages](/help/social/thinkshare).

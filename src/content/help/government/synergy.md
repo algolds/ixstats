@@ -1,34 +1,39 @@
 ---
-title: Component Synergies
-description: Learn how picking the right combination of government components can unlock bonuses — or create conflicts that drag your effectiveness down.
-badge: Government
+title: Synergies & Conflicts
+description: How pairs of government components raise or lower your government effectiveness.
+badge: Economy & Government
+prevHref: /help/government/components
+prevLabel: The Component Catalog
+nextHref: /help/government/traditional
+nextLabel: Government Structure & Departments
 ---
 
-## How Synergies Work
+## What synergies and conflicts are
 
-Every government component you choose carries traits that interact with other components in your setup. When two components complement each other, you earn a **synergy bonus** that boosts your overall effectiveness score. When they clash, you get a **conflict penalty** that lowers it.
+Some pairs of government components reinforce each other and some work against each other. With both halves of a **synergy** pair in your government, your effectiveness goes up by **10**; with both halves of a **conflict** pair, it goes down by **15**. There are 45 of each. The builder and editor flag them as you pick, and the server checks them again when you save.
 
-- Your effectiveness score reflects how well your government collects revenue, maintains compliance, controls administrative costs, and drives economic growth.
-- Compatible components trigger synergy badges in the builder, giving you a preview of the bonus before you commit.
-- Conflicting components trigger warning badges, so you can decide whether the trade-off is worth it for your country's story.
+## Examples
 
-## Spotting Synergies in the Builder
+| Synergy (+10) | Conflict (−15) |
+| --- | --- |
+| Federal System + Democratic Process | Centralized Power ↔ Federal System |
+| Democratic Process + Electoral Legitimacy | Centralized Power ↔ Consensus Process |
+| Technocratic Process + Performance Legitimacy | Federal System ↔ Autocratic Process |
+| Electoral Legitimacy + Independent Judiciary | Unitary System ↔ Federal System |
+| Traditional Legitimacy + Religious Legitimacy | Confederate System ↔ Professional Bureaucracy |
 
-> **Step by Step**
->
-> 1. Open the [Government Components](/help/government/components) section of the builder and start selecting your components.
-> 2. Watch for green synergy badges and red conflict badges that appear next to each component as you build your combination.
-> 3. Check the live effectiveness preview to see how your total score changes with each addition.
-> 4. After saving, check MyCountry → Economy & Budget to track your government efficiency over time.
+## How to use them
 
-> [!WARNING]
-> **Tips and Trade-offs**
->
-> - A high effectiveness score is powerful, but intentional conflicts can make for a more interesting and dramatic country. Balance gameplay strategy with the story you want to tell.
-> - If your score drops unexpectedly, review your component list for hidden conflicts — removing just one clashing piece can sometimes make a big difference.
+1. In the Government step, select a component and look at its synergy and conflict hints.
+2. Add partners that synergise with what you already have.
+3. If your score drops, look for a red conflict marker and consider swapping one side of the pair.
+4. Save. Your effectiveness appears as the Efficiency ring on the [MyCountry home page](/help/mycountry/overview).
 
-## Learn More
+## Worked example
 
-- [Atomic Government System](/help/government/atomic) — understand the building blocks that power synergies.
-- [Government Components Guide](/help/government/components) — browse every available component and its traits.
-- [Country Building Guide](/help/gameplay/country-building) — see how government choices fit into the bigger picture of creating your nation.
+Five components with an average effectiveness of 70, two synergy pairs and one conflict pair: 70 + 20 − 15 = **75**.
+
+## Tips
+
+- One conflict costs more than one synergy gains, so a single clash can wipe out your best pairing.
+- Conflicts can be good storytelling (a centralised state with a federal structure is a real tension); keep them if they matter to your nation's story.

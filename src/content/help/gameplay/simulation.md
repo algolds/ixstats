@@ -1,46 +1,43 @@
 ---
-title: How Your Nation Comes Alive
-description: Your economy and the wider world keep moving even when you're away. Here's the rhythm of it.
-badge: Living World
+title: How the World Moves
+description: What changes on its own, what only changes when someone acts, and how often.
+badge: The World
+prevHref: /help/world/countries
+prevLabel: Exploring Countries
+nextHref: /help/gameplay/world-events
+nextLabel: Crises & World Events
 ---
 
-## A World That Keeps Moving
+## The idea
 
-IxStats never really pauses. The whole world runs on [IxTime](/help/getting-started/ixtime) — a clock that ticks at twice real speed — so your economy grows, events arrive, and conditions shift at a steady, lively pace, whether you’re watching or not.
+The world runs on [IxTime](/help/getting-started/ixtime), at twice real speed. Some things move on their own with the clock, and some only change when a player or admin acts. Knowing which is which tells you when to check in.
 
-One in-world day passes every twelve real hours. Pop in once a day and you’ll always find your nation a little further along its story.
+## What moves on its own
 
-## Your Economy, Always Growing
+| What | How often |
+| --- | --- |
+| Your GDP per person and population, projected from your growth rate | Continuously; MyCountry always shows the current projection |
+| Stored figures used by rankings, vitality and dividends | Refreshed every few hours by a background job |
+| Your daily IxCredit dividend | Once a day; missed days are paid when you next open the Vault |
+| New national issues | Generated regularly, within your weekly limit |
+| Elections that are due | Counted automatically (or with **Count votes**) |
+| Relationship strength drifting toward both sides' stances | Regularly |
+| Trending posts and hashtags | Every 15 minutes |
+| Achievement checks | After your actions, and hourly for recently active players |
+| Auctions ending and trade offers expiring | Regularly |
+| Wiki edits made on the classic wiki being pulled in | Regularly |
 
-> **Climbing the tiers**
->
-> Your wealth per person places your nation in one of seven [tiers](/help/economy/tiers), from Impoverished to Extravagant — and that tier sets the pace of your growth.
->
-> - Up-and-coming nations grow fast; mature ones grow slower but in bigger absolute terms.
-> - Cross a wealth threshold and you move up a tier automatically.
-> - Your taxes, spending, and debt all feed into how quickly you grow.
-> - Good governance and smart choices nudge your growth upward over time.
+These run as background jobs on the server. If an admin has paused one, the related thing won't update until it's switched back on (for example, elections can still be counted with the **Count votes** button).
 
-## Things Happen
+## What only changes when someone acts
 
-The world keeps you on your toes in three ways:
+- **Directives, issue responses, elections, embassies, proposals and alliances** change when you (or the other player) act.
+- **World events** change when an admin runs one. See [Crises & World Events](/help/gameplay/world-events).
+- **Borders** change when a map admin edits them.
+- **Tax rates, budgets and components** change when you edit them, and they don't affect GDP growth. See [How Your Economy Is Calculated](/help/economy/calculations).
 
-- [**Crises**](/help/defense/crisis-events) — disasters, downturns, and unrest, each with a severity.
-- [**National issues**](/help/gameplay/national-issues) — decisions that grow out of your nation’s own situation, with consequences that stick.
-- [**Diplomatic scenarios**](/help/diplomacy/scenarios) — trade, culture, and security situations with other nations, shaped by who you’re dealing with.
+## A good rhythm
 
-## Your Choices, Made Real
-
-The loop is simple, and it’s always turning:
-
-1. **You decide** — through MyCountry, the builder, or your diplomacy.
-2. **Your nation responds** — the numbers update to reflect what you did.
-3. **The world reflects it** — your dashboards, the leaderboards, and your public profile all catch up, almost instantly.
-
-Your IxCredits and the things you check most refresh quickest, so you’re always looking at the latest.
-
-> **Keep Exploring**
->
-> - [The World Clock (IxTime)](/help/getting-started/ixtime) — why time moves the way it does.
-> - [How Your Economy Is Measured](/help/economy/calculations) — the numbers behind your growth.
-> - [National Issues & Decisions](/help/gameplay/national-issues) — the choices that shape your story.
+- **Every few real days:** use your 3 weekly directives, answer issues, check the agenda.
+- **Once a day:** claim the [daily reward](/help/vault/ixcredits) to keep your streak.
+- **Every couple of weeks:** check elections in [Politics](/help/mycountry/politics) and your relations in [Diplomacy](/help/mycountry/diplomacy).

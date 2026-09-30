@@ -1,53 +1,79 @@
 # In-App Help System
 
-**Last updated:** September 2026  
-**Status:** Production (content partially registered, see Known gaps)  
+**Last updated:** 30 September 2026  
+**Status:** Production. Every article is registered in the hub and link-checked by tests.  
 **Hierarchy:** Platform Support & Documentation Suite.
 
-The in-app help system delivers rich, interactive, and contextual documentation directly inside the application at `/help`. It mirrors the technical and gameplay specifications in this repository; article stats are hand-maintained and must be refreshed when systems change.
+The in-app help center at `/help` holds plain, task-oriented player guides. Articles describe what the code does today (checked against the routers, `src/lib/**`, the Prisma schema and [SYSTEM_STATUS.md](SYSTEM_STATUS.md)); planned features are only mentioned to say they aren't built yet. Figures quoted in articles (caps, costs, rates) are hand-maintained copy: update the article when the constant changes.
 
 ---
 
 ## Architecture & Routing
 
 - `src/app/help/page.tsx` – Help center page (header + quick-links footer); renders the client `HelpExplorer`
-- `src/app/help/_components/HelpExplorer.tsx` – Hub: holds the `helpSections` array (the registry of discoverable articles), client-side search over title/description/tags, and category filter buttons
-- `src/components/documents/DocumentPage.tsx` / `DocumentLayout.tsx` – one markdown layout (breadcrumb, table of contents, prev/next links) shared with `/terms` and `/privacy`
-- Articles are markdown files at `src/content/help/<category>/<slug>.md`, served by the single dynamic route `src/app/help/[category]/[slug]/page.tsx` (404 when the file is missing)
-- Headings take an id from a trailing `{#id}` or a slug of their text; `> [!WARNING]` blockquotes render as warning callouts, other blockquotes as info callouts (`src/lib/markdown-document.ts`)
+- `src/app/help/_lib/help-sections.ts` – The registry: `helpSections` (sections → articles: id, title, description, `path`, tags), `retiredHelpArticles` (old paths → replacement), and `filterHelpSections` (search + section filter)
+- `src/app/help/_components/HelpExplorer.tsx` – Client hub: search box (title, description, tags, section title), one filter chip per section, result count, section cards
+- `src/app/help/[category]/[slug]/page.tsx` – Serves `src/content/help/<category>/<slug>.md` through `DocumentPage` (404 when missing), sets the page title from the frontmatter, and permanently redirects retired paths
+- `src/components/documents/DocumentPage.tsx` / `DocumentLayout.tsx` – Shared markdown layout (breadcrumb, table of contents, prev/next) also used by `/terms` and `/privacy`
+- `src/lib/markdown-document.ts` – Frontmatter, heading ids (`{#id}` or a slug of the text), callouts (`> [!WARNING]` → warning, other blockquotes → note)
 - There is no `help` tRPC router; content is static markdown.
 
 ---
 
-## Category Taxonomy
+## Sections
 
-**Coverage (September 2026):** 54 markdown articles in 11 folders under `src/content/help/`; **41** are registered in `helpSections` across 10 hub sections. Filter buttons: All Topics, Start Here, Living World, Your Nation, Admin.
+**Coverage (30 September 2026):** 55 articles in 13 folders, all registered, in 11 hub sections. An article's folder does not have to match its section (for example `gameplay/national-issues` is listed under MyCountry).
 
-| Hub section | Filter category | Articles | Key System Guide |
-| :--- | :--- | :--- | :--- |
-| **Start Here** | `getting-started` | 6 (welcome, first country, gameplay overview, IxTime, IxnayID, navigation) | [`systems/builder.md`](./builder.md) |
-| **Living World** | `gameplay` | 5 (simulation, country building, national issues, achievements, leaderboards) | [`systems/mycountry.md`](./mycountry.md) |
-| **MyCountry — Your Nation's Home** | `features` | 6 (overview, executive, diplomacy, intelligence, defense, politics) | [`systems/mycountry.md`](./mycountry.md) |
-| **Economy & Finances** | `systems` | 4 (tiers, tax system, trade, calculations) | [`systems/economy.md`](./economy.md) |
-| **Government & Structure** | `systems` | 3 (components, atomic, traditional) | [`systems/elections.md`](./elections.md) |
-| **Intelligence & Strategy** | `systems` | 3 (dashboard, alerts, metrics) | [`systems/intelligence.md`](./intelligence.md) |
-| **Diplomacy & Alliances** | `features` | 4 (embassies, missions, cultural, NPC personalities) | [`systems/diplomacy.md`](./diplomacy.md) |
-| **IxVault & Cards** | `features` | 5 (overview, card packs, trading, lore cards, IxCredits) | [`systems/cards.md`](./cards.md) |
-| **Community** | `features` | 3 (ThinkPages, ThinkShare, ThinkTanks) | [`systems/social.md`](./social.md) |
-| **For Admins** | `admin` | 2 (CMS overview, reference data) | [`systems/admin-cms.md`](./admin-cms.md) |
+| Hub section | Articles | Key system guide |
+| :--- | :--- | :--- |
+| **Start Here** | welcome, first-country, gameplay/country-building, gameplay-overview, navigation, ixtime, ixnayid, premium | [builder.md](./builder.md), [ixnayid-passport.md](./ixnayid-passport.md) |
+| **MyCountry** | mycountry/overview, mycountry/executive, gameplay/national-issues, mycountry/economy, mycountry/politics, mycountry/intelligence, mycountry/editor, mycountry/map-editor | [mycountry.md](./mycountry.md), [elections.md](./elections.md) |
+| **Economy & Government** | economy/{tiers, calculations, tax-system, trade, modeling}, government/{atomic, components, synergy, traditional} | [economy.md](./economy.md), [calculations.md](./calculations.md) |
+| **Diplomacy** | mycountry/diplomacy, diplomacy/{embassies, cultural, scenarios, npc-personalities} | [diplomacy.md](./diplomacy.md), [npc-ai.md](./npc-ai.md) |
+| **Defense** | mycountry/defense, defense/{equipment, stability} | [defense.md](./defense.md) |
+| **The World** | world/{maps, realms, countries}, gameplay/{simulation, world-events} | [maps.md](./maps.md), [realms.md](./realms.md), [crisis-events.md](./crisis-events.md) |
+| **Wiki & Lore** | wiki/{wikios, stash} | [wikios.md](./wikios.md), [stash.md](./stash.md) |
+| **Vault, Cards & Rewards** | vault/{overview, ixcredits, card-packs, trading, lore-cards, ns-import}, gameplay/{achievements, leaderboards} | [ixcredits.md](./ixcredits.md), [cards.md](./cards.md), [achievements.md](./achievements.md) |
+| **Community** | social/{thinkpages, thinkshare, thinktanks, forum} | [social.md](./social.md), [forum.md](./forum.md) |
+| **Labs** | labs/overview | [myleague.md](./myleague.md), [onoma-roadmap.md](./onoma-roadmap.md) |
+| **For Admins** | admin/{cms-overview, reference-data} | [admin-cms.md](./admin-cms.md) |
 
-Known gaps:
-- The three `systems` sections have no filter button, so they only appear under **All Topics**.
-- 13 article files are not registered in the hub and can only be reached by direct URL: all of `defense/` (overview, units, equipment, customization, stability, crisis-events), `diplomacy/scenarios`, `economy/modeling`, `government/synergy`, and `intelligence/{executive-operations,forecasting,strategic-intelligence,unified-overview}`.
-- There are no help sections for IxWorld Maps, Onoma, WikiOS, Stash, or the Forum.
+### Retired articles
+
+These were removed because they described features that don't exist, or were merged into another article. The article route permanently redirects each old path (`retiredHelpArticles`):
+
+| Old path | Now | Reason |
+| :--- | :--- | :--- |
+| `diplomacy/missions` | `diplomacy/embassies` | Embassy missions were deleted (plan 312); nothing to play |
+| `defense/overview`, `defense/units`, `defense/customization` | `mycountry/defense` | Merged into one Defense guide |
+| `defense/crisis-events` | `gameplay/world-events` | The crisis response engine isn't built; rewritten around what exists (urgent issues, admin world events) |
+| `intelligence/{alerts, dashboard, executive-operations, forecasting, metrics, strategic-intelligence, unified-overview}` | `mycountry/intelligence` | The intelligence dashboard, alert rules and forecasting were deleted (plans 312/341) |
 
 ---
 
 ## Authoring Workflow
 
-1. **Update System Guide**: Maintain or update the primary Markdown specification under `docs/systems/`.
-2. **Author In-App Article**: Create or update `src/content/help/<category>/<slug>.md` (no React code needed).
-3. **Register in the Hub**: Add the article to the `helpSections` array in `src/app/help/_components/HelpExplorer.tsx` (id, title, description, `path`, tags) so it appears in search and filters.
+1. **Update the system guide** under `docs/systems/` if behaviour changed.
+2. **Write the article** at `src/content/help/<folder>/<slug>.md`:
+   - Frontmatter: `title`, `description`, `badge` (the hub section title), optional `prevHref`/`prevLabel`/`nextHref`/`nextLabel`. Values are not unquoted, so don't wrap them in quotes.
+   - Style: a one-paragraph intro (what it's for, where to find it, linking the real route), then "How to…" steps, key facts, and tips or FAQ. Use the UI's real labels in bold. No marketing copy, no invented numbers.
+   - Describe screens that are still being reworked at a stable level (purpose, where, what you can do) rather than pixel by pixel.
+3. **Register it** in `helpSections` (`src/app/help/_lib/help-sections.ts`), with the same title as the frontmatter.
+4. **Run the tests** (`bunx jest src/tests/content`).
+
+To retire an article, delete the file, remove its registry entry, add the old path to `retiredHelpArticles`, and fix any links to it.
+
+### Tests
+
+- `src/tests/content/help-center.test.ts` – every file is registered exactly once and every registry entry has a file; registry titles match frontmatter; retired paths are gone and redirect to real articles; every in-article link and prev/next link resolves to an app route or an existing article (and heading anchor); search/filter behaviour.
+- `src/tests/content/markdown-documents.test.ts` – every help and legal document renders with the expected heading ids, has a title/description/badge, and renders callouts correctly.
+
+---
+
+## Known gaps
+
+- Articles are not versioned against the code; the tests catch broken links and missing files, not stale facts.
+- A few articles document known product gaps so players aren't misled (trade tab settings not saved, admin catalog edits not reaching the builder, crisis counts empty). Remove those notes when the gaps close.
 
 ---
 
@@ -55,4 +81,4 @@ Known gaps:
 
 - [Documentation Hub](../README.md)
 - [Platform Overview](../overview/platform.md)
-- [API Reference](../reference/api-complete.md)
+- [System Status](./SYSTEM_STATUS.md)

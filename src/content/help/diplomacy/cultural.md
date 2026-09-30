@@ -1,37 +1,35 @@
 ---
 title: Cultural Exchanges
-description: Build goodwill and strengthen relationships through cultural programs, academic partnerships, and shared events.
-badge: Diplomacy & Alliances
+description: Create cultural programs with other nations, invite participants, and share artifacts.
+badge: Diplomacy
+prevHref: /help/diplomacy/embassies
+prevLabel: Embassies
+nextHref: /help/diplomacy/scenarios
+nextLabel: Diplomatic Events
 ---
 
-## What Are Cultural Exchanges?
+## What cultural exchanges are
 
-Cultural exchanges are cooperative programs between your country and another nation. They boost diplomatic relations, unlock achievements, and contribute to your country's reputation on the world stage. You can launch cultural exchanges from the **Cultural Exchanges** tab in [MyCountry → Diplomacy](/mycountry/diplomacy).
+A cultural exchange is a program your nation hosts with other nations: a festival, an exhibition, a student exchange, a sports event, a film season and so on. It's mostly a storytelling and community tool: other nations can join, vote on it and add artifacts (images and descriptions), and it becomes part of your diplomatic record. You run them from [MyCountry → Diplomacy](/mycountry/diplomacy) → **Cultural Exchanges**.
 
-## Program Types
+## How to start an exchange
 
-- **Educational & Youth Exchanges:** Send and receive students to build long-term people-to-people ties.
-- **Research Collaborations:** Partner with another country on joint academic or scientific projects.
-- **Arts & Cultural Festivals:** Host or participate in festivals celebrating shared or contrasting cultural traditions.
-- **Humanitarian Tie-ins:** Combine cultural outreach with humanitarian aid for an even larger positive impact on relations.
+1. Open **Cultural Exchanges** and start a new exchange.
+2. Choose a type: festival, exhibition, education, cuisine, arts, sports, technology, diplomacy, music, film, environmental, science, trade, humanitarian, agriculture, heritage or youth.
+3. Give it a title, description and objectives, set start and end dates, and choose whether it's public.
+4. Optionally name a partner nation and a maximum number of participants.
+5. Create it. You earn 12 IxCredits for organising an exchange (part of the 100 IxC daily active-earning cap).
 
-Each program type carries different modifiers for your diplomatic relations and social metrics.
+## Taking part
 
-## How to Launch a Cultural Exchange
+- **Vote** on an exchange: support, oppose or abstain, with an optional comment.
+- **Upload artifacts** to an exchange you're part of, to document what happened.
+- **Edit** your exchange's details, or **cancel** it.
 
-> **Step by Step**
->
-> 1. Go to [MyCountry → Diplomacy](/mycountry/diplomacy), open the **Cultural Exchanges** tab, and create a new exchange.
-> 2. Select your partner country, set your goals, and choose the program duration. You will also confirm the resource commitment required.
-> 3. Track your program's progress through notifications on your Diplomacy page. You can also share highlights and milestones on [ThinkPages](/help/social/thinkpages).
+Computer-run nations may join based on their [personality](/help/diplomacy/npc-personalities): culturally open, cooperative nations are more likely to take part.
 
-## Benefits
+## Good to know
 
-- **Strengthen Relationships:** Cultural exchanges steadily boost your relationship score with the partner country, and can help soften the impact of negative diplomatic incidents.
-- **Earn Rewards:** Organizing an exchange earns you 12 IxCredits.
-- **Build Cultural Openness:** Active cultural programs can influence the [personality traits](/help/diplomacy/npc-personalities) of NPC partners, gradually increasing their Cultural Openness over time.
-
-> **Related Guides**
->
-> - [Embassy Network](/help/diplomacy/embassies) — Establish the diplomatic presence needed for cultural exchanges.
-> - [ThinkTanks](/help/social/thinktanks) — Continue collaboration through research groups and intellectual partnerships.
+- Cancelling an exchange lowers your relationship strength with the nations taking part.
+- Some analysis figures shown for an exchange are illustrative estimates, not calculated results.
+- To build relations over time, combine exchanges with an [embassy](/help/diplomacy/embassies) and a friendly [stance](/help/mycountry/diplomacy#stances).

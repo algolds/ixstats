@@ -1,33 +1,35 @@
 ---
 title: Messages
-description: The unified messaging system across all IxStats platforms — personal DMs, diplomatic channels, wiki discussions, forum threads, and group chats in one place.
+description: Direct and group messages with other players in one inbox.
 badge: Community
+prevHref: /help/social/thinkpages
+prevLabel: ThinkPages & the Feed
+nextHref: /help/social/thinktanks
+nextLabel: ThinkTanks
 ---
 
-## What Is ThinkShare Messages?
+## What Messages is
 
-ThinkShare Messages is the platform-wide messaging backbone. It unifies all communication across IxStats, WikiOS, the Forum, and diplomatic systems into a single interface at **/messages**.
+[Messages](/messages) (also called ThinkShare) is your inbox for private conversations with other players: one-to-one chats and group chats, delivered live. Two read-only threads are pinned at the top: **System Messages** (announcements and notices) and **LoreBot** (a feed of wiki activity). Forum private conversations open here too.
 
-- **One Inbox** — direct messages, group chats, diplomatic channels, and wiki and system messages all live in one list, with **System Messages** and the **LoreBot** WikiOS feed pinned at the top.
-- **Contextual Identity** — your display name and avatar change based on context. Diplomatic channels show your country name, wiki discussions show your wiki username.
-- **Cross-System** — wiki edit notifications, forum private messages, and diplomatic cables all appear in your unified inbox.
+## Starting a conversation
 
-## Getting Started
+1. Open [Messages](/messages), from the menu or by searching "Messages" with `Ctrl`/`Cmd` + `K`.
+2. Choose **New Conversation**.
+3. Add one or more people. With more than one, it's a group chat.
+4. Write your message and send it.
 
-> **How to Message**
->
-> 1. Open [Messages](/messages) — from the ThinkPages menu, or with the command palette (`Ctrl` + `K`).
-> 2. Scroll your conversation list — System Messages and LoreBot are pinned at the top.
-> 3. Select a conversation to view it, or click **New Conversation** to start a new one. Add people to a direct chat and it becomes a group chat.
-> 4. Use reactions, replies, and rich text to keep discussions organized.
+## In a conversation
 
-> [!WARNING]
-> **Privacy and Security**
->
-> - Only invited participants can view a conversation. Your private discussions stay private.
-> - Diplomatic channels can be tagged with classification levels (Public, Restricted, Confidential, Secret, Top Secret). These are in-world labels for roleplay — they do not encrypt anything, and messages are not end-to-end encrypted.
+- Messages arrive live while the page is open.
+- Reply to a specific message, or react to it.
+- Your ThinkTank's chat is a conversation too; you need to be a member of the ThinkTank to join it.
 
-## Related Features
+## Privacy
 
-- [ThinkPages](/help/social/thinkpages) — publish posts publicly and engage with the broader community.
-- [ThinkTanks](/help/social/thinktanks) — collaborate in group workspaces with shared posts and files.
+- Only the people in a conversation can read it.
+- Messages are **not** end-to-end encrypted. Some diplomatic conversations carry in-world classification labels (such as Confidential or Top Secret); these are roleplay labels only and don't add any protection.
+
+## Diplomacy and messages
+
+Diplomatic proposals (trade agreements, alliances) go through your [Diplomacy Inbox](/help/mycountry/diplomacy), not Messages. Use Messages for the conversation around them.

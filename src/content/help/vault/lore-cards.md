@@ -1,45 +1,35 @@
 ---
 title: Lore Cards
-description: Wiki-generated cards with article content, forum links, and holographic effects.
-badge: IxVault & Cards
+description: Cards made from wiki articles, how they're made, and how to request one.
+badge: Vault, Cards & Rewards
+prevHref: /help/vault/trading
+prevLabel: Auctions & Trading
+nextHref: /help/vault/ns-import
+nextLabel: Importing NationStates Cards
 ---
 
-## What Are Lore Cards?
+## What lore cards are
 
-Lore Cards are a unique card type generated from IxWiki and IIWiki articles. Each card features an excerpt from a wiki article, a link to the source material, and visual effects based on the article's importance and content quality.
+A lore card is a card made from a wiki article (IxWiki or IIWiki): a historical event, a person, an organisation, a place and so on. It shows an excerpt of the article, links back to it, and has a category (military, diplomacy, geography, religion, culture, government, people, economy, science, history and others). Browse them in the [Lore Gallery](/vault/lore-gallery) or the **Card Gallery** tab of [Vault → Cards](/vault/cards).
 
-Unlike nation cards which represent countries, lore cards capture the world-building content of the IxWiki — historical events, cultural phenomena, notable figures, organizations, and more.
+## How lore cards are made
 
-## Finding Articles
+- **Player requests** (below), approved by an admin.
+- **Admin batches**, and a daily job that generates new lore cards from wiki articles.
 
-Use the article search to find wiki articles worth turning into cards. Search by title, category, or keyword, and it'll pull matching articles from across IxWiki.
+A card's rarity is suggested from the article itself: its length, how many links it has, how often it's been edited, how many categories it's in, its images and its age. Admins can override the suggestion.
 
-## Generation Process
+## Requesting a lore card
 
-> **How Lore Cards Are Created**
->
-> 1. Search for a wiki article on the [Lore Card Generator](/vault/lore-generator) page
-> 2. Submit a request — it costs 50 IxCredits (or a Lore Request Token)
-> 3. An admin reviews the request; if it's rejected, your IxCredits are refunded
-> 4. Once approved, the generator extracts key information from the article and composes the card, with rarity assigned based on article quality and content
-> 5. The new card joins the card pool, where it can turn up in packs and trades
+1. Open the [Lore Card Generator](/vault/lore-generator).
+2. Search for a wiki article and select it.
+3. Submit the request. It costs 50 IxCredits.
+4. An admin reviews it. If it's approved, the card is created and joins the card pool; if it's rejected, your 50 IxCredits are refunded.
 
-## Card Display
+## Getting lore cards
 
-- **Wiki Excerpt:** A formatted excerpt from the source article displayed on the card face
-- **Forum Section:** Links to related forum discussions about the article topic
-- **Holographic Effects:** Higher-rarity lore cards feature holographic cover animations with light refraction effects
-- **Source Link:** Direct link back to the original IxWiki article
+- From [packs](/help/vault/card-packs) (the Lore Master Elite pack draws only lore cards).
+- From the [daily reward](/help/vault/ixcredits#the-daily-reward) card option.
+- By [auction or trade](/help/vault/trading).
 
-## Collecting Lore Cards
-
-Lore cards can be obtained in three ways:
-
-- **Card Packs:** Random lore cards may appear in pack openings
-- **Trading:** Trade with other players on the marketplace
-- **Requests:** Ask for a favorite wiki article to become a lore card
-
-> **Related Articles**
->
-> - [Vault Overview](/help/vault/overview) - Vault system overview
-> - [Card Packs & Opening](/help/vault/card-packs) - Pack opening and card acquisition
+Your passport's **Focus** stat counts how many lore categories your collection covers.

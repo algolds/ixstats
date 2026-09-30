@@ -1,73 +1,38 @@
 ---
-title: Embassy Network
-description: Learn how to establish embassies abroad, manage your diplomatic staff, and leverage your embassy network for trade, influence, and intelligence.
-badge: Diplomacy & Alliances
-prevHref: /help/diplomacy/missions
-prevLabel: Diplomatic Missions
-nextHref: /help/mycountry/diplomacy
-nextLabel: Foreign Affairs
+title: Embassies
+description: Open, manage and close embassies, and what they do for your nation.
+badge: Diplomacy
+prevHref: /help/mycountry/diplomacy
+prevLabel: Foreign Affairs
+nextHref: /help/diplomacy/cultural
+nextLabel: Cultural Exchanges
 ---
 
-## What Are Embassies?
+## What embassies do
 
-Embassies are your nation's permanent presence in other countries. Each embassy you establish strengthens your diplomatic ties and opens trade channels, and embassies earn synergy bonuses when your government shares components with the host nation's. A well-maintained embassy network is the foundation of any successful foreign policy.
+An embassy is your nation's permanent mission in another country. Each active embassy raises your Diplomatic vitality score (+2 each, up to +20, counting both your embassies abroad and other nations' embassies in your country), notifies the host nation, gets a news item, and counts toward diplomatic achievements. Opening one also earns 15 IxCredits (part of the 100 IxC daily active-earning cap). You manage them in [MyCountry → Diplomacy](/mycountry/diplomacy) → **Embassy Network**.
 
-### Diplomatic Influence
+## How to open an embassy
 
-Embassies increase your influence with the host nation, improving relationship strength over time.
+1. Go to [MyCountry → Diplomacy](/mycountry/diplomacy) and open **Embassy Network**, then choose **Establish Embassy**. You can also open another nation's profile in [Explore](/countries) and choose **Country Actions** → establish an embassy.
+2. Pick the host nation and give the embassy a name (and optionally an ambassador).
+3. Confirm. The embassy is active straight away.
 
-### Trade Benefits
+You can have one embassy per nation. The estimate of cost and approval time shown while you set it up is informational; opening an embassy doesn't charge you anything.
 
-Active embassies unlock trade bonuses and make economic agreements more favourable for your nation.
+## Managing embassies
 
-### Synergy Bonuses
+- Select an embassy to see its details: ambassador, level, budget, influence and reputation.
+- Edit its profile: description, strategic priorities, partnership goals and key achievements.
+- **Close** an embassy you don't need, **reopen** a closed one later, or sever it entirely.
 
-Embassies earn bonuses based on the government components you share with the host nation.
+## Not available yet
 
-## Where to Find Embassy Management
+- **Embassy upgrades** show as "Coming Soon".
+- **Diplomatic missions** (sending envoys on trade or cultural missions from an embassy) were removed and can't be started. Older guides that described missions now point here.
+- Embassies do not give trade or "shared component" bonuses.
 
-All embassy management is handled from your country's diplomacy hub:
+## Tips
 
-1. Navigate to [MyCountry](/mycountry).
-2. Select **Diplomacy** from the command bar.
-3. Open the **Embassy Network** tab to view your full embassy network.
-
-> **Quick Tip**
->
-> The side rail in Diplomacy shows your active embassies, relationships, and alliances at a glance.
-
-## How to Establish a New Embassy
-
-1. **Choose a target nation.** From the Embassy Network tab, click the **Establish Embassy** button. Browse or search for the country where you want diplomatic presence.
-2. **Review the details.** You will see the establishment cost, broken down by base cost, the host's economic tier, and your current relationship.
-3. **Confirm and establish.** Once you confirm, your embassy will be created and you earn 15 IxCredits. It starts at a basic level; embassy upgrades are marked **Coming Soon**.
-
-## Managing Your Embassy Network
-
-Once your embassies are established, you can manage them to maximise their value:
-
-- **Embassy details** — Click an embassy to see its ambassador, staff, budget, effectiveness, influence, reputation, and any active missions.
-- **Relationship tracking** — Monitor the relationship strength with each host nation in the **Bilateral Relations** tab.
-- **Close, reopen, or sever** — Close an embassy you no longer need; a closed embassy can be reopened, or you can sever relations entirely.
-- **Watch for alerts** — If a diplomatic incident occurs, you will receive alerts. Respond promptly to protect your influence.
-
-## Embassy Benefits at a Glance
-
-| Benefit | How It Helps |
-| --- | --- |
-| Diplomatic Influence | Gradually increases your standing with the host nation, making negotiations and agreements easier. |
-| Trade Bonuses | Provides economic advantages when trading with the host nation, including better terms and access to exclusive resources. |
-| Synergy Bonuses | Shared government components with the host nation boost what the embassy earns you. |
-
-## Best Practices
-
-- **Pair embassy expansion with trade or cultural programmes.** Establishing an embassy alongside a trade agreement or cultural exchange amplifies the benefits of both.
-- **Prioritise nations that matter to your strategy.** You do not need embassies everywhere. Focus on key allies, trading partners, and rivals you want to keep an eye on.
-- **Monitor relationship alerts.** When relationship strength drops, act quickly — a cultural exchange or a change of stance can help stabilise ties.
-- **Chase achievements.** Diplomatic achievements reward a growing embassy network.
-
-> **Related Help Articles**
->
-> - [Diplomatic Missions](/help/diplomacy/missions) — Learn how to plan and launch missions from your embassies.
-> - [Foreign Affairs](/help/mycountry/diplomacy) — the hub for all your diplomacy in MyCountry.
-> - [MyCountry Diplomacy](/help/mycountry/diplomacy) — Full guide to the Diplomacy tab in your MyCountry dashboard.
+- Open embassies with neighbours and with nations you have alliances or trade proposals with; your Diplomatic score counts each one.
+- Pair an embassy with a [cultural exchange](/help/diplomacy/cultural) and a friendly [stance](/help/mycountry/diplomacy#stances) to build relations.

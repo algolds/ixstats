@@ -1,62 +1,47 @@
 ---
-title: Component Catalog
-description: Browse 64 government components across 10 categories, plus economic components, to shape your nation with real gameplay effects.
-badge: Government & Structure
+title: The Component Catalog
+description: The 64 government components, 27 economic components and 42 tax components, and what they do.
+badge: Economy & Government
+prevHref: /help/government/atomic
+prevLabel: Building Your Government
+nextHref: /help/government/synergy
+nextLabel: Synergies & Conflicts
 ---
 
-## What Are Components?
+## What's in the catalog
 
-Components are the building blocks of your nation. When you create or edit a country in the [Country Builder](/help/gameplay/country-building), you pick from a library of pre-designed components — 64 government components across ten categories, plus 27 economic components. Each component represents a real-world policy, institution, or system that defines how your country operates, and each carries real mechanical weight on your nation's stats.
+Components are the building blocks you pick in the [Country Builder](/builder) and [Country Editor](/help/mycountry/editor). There are three kinds: government components (64, up to 15 per nation), economic components (27) and tax components (42). Each shows its description, an effectiveness rating and its costs when you select it.
 
-### 10 Government Categories
+## Government components (10 categories)
 
-Power distribution, decision process, legitimacy sources, institutions, control mechanisms, administrative efficiency, social policy, international relations, innovation & development, and crisis management.
+| Category | Examples |
+| --- | --- |
+| Power Distribution | Centralized Power, Federal System, Confederate System, Unitary System |
+| Decision Process | Democratic, Autocratic, Technocratic, Consensus, Oligarchic |
+| Legitimacy Sources | Electoral, Traditional, Performance, Charismatic, Religious, Institutional |
+| Institutions | Professional Bureaucracy, Military Administration, Independent Judiciary, Partisan Institutions, Technocratic Agencies |
+| Control Mechanisms | Rule of Law, Surveillance System, Economic Incentives, Social Pressure, Military Enforcement |
+| Administrative Efficiency | Digital Government, E-Governance, Merit-Based System, Strategic Planning and more |
+| Social Policy | Welfare State, Universal Healthcare, Public Education, Worker Protection, Minority Rights and more |
+| International Relations | Multilateral Diplomacy, Regional Integration, Trade Agreements, Security Alliances and more |
+| Innovation & Development | Innovation Ecosystem, Research and Development, Smart Cities and more |
+| Crisis Management | Emergency Response, Disaster Preparedness, Cybersecurity, Recovery Planning and more |
 
-### Economic Components
+Government components set your [effectiveness score](/help/government/atomic) through their own ratings and their [synergies and conflicts](/help/government/synergy), and add maintenance costs to government spending.
 
-Economic model, sector focus, labor system, trade policy, innovation, and resource management. Your tax rates are set separately, in MyCountry → Economy & Budget → [Fiscal Policy](/help/economy/tax-system).
+## Economic components (6 categories)
 
-### Effect Types
+**Economic Model**, **Sector Focus**, **Labor System**, **Trade Policy**, **Innovation** and **Resource Management**. Economic components:
 
-Components produce effects on GDP growth, population, political stability, compliance rate, administrative cost, tax revenue, trade balance, and more.
+- add maintenance costs to government spending;
+- shift unemployment, where they have an employment effect;
+- shift inflation (for example, planned and state-capitalist economies raise it; knowledge-economy and free-trade models lower it);
+- in a few cases adjust tax revenue once when added (see [The Country Editor](/help/mycountry/editor#what-changes-when-you-save)).
 
-## What Each Component Shows
+## Tax components (5 groups)
 
-When you select or hover over a component in the Country Builder, you will see:
+Collection methods, revenue strategies, compliance systems, incentive structures and administration. Where a nation has them, revenue and compliance components raise tax revenue as a share of GDP and incentive components lower it. There's no player control for choosing tax components at the moment. See [Taxes & Revenue](/help/economy/tax-system).
 
-- **Effectiveness Score:** A rating that shows how impactful the component is in its category. Higher scores mean stronger effects on your nation.
-- **Costs:** The implementation and maintenance cost of adopting the component. Some choices are cheap to implement while others require significant investment.
-- **Synergies:** Other components that work well alongside this one. Combining synergistic components gives your nation bonus effects.
-- **Conflicts:** Components that clash with your current selection. Picking conflicting components can reduce effectiveness or create penalties.
-- **Prerequisites:** Some components list prerequisites you should have in place first.
+## What components don't do
 
-## Browsing and Searching
-
-> **Finding the Right Components**
->
-> - Open the Country Builder and navigate to the Government or Economics step to see all available components.
-> - Use the search bar to find components by name or keyword (for example, search "trade" to find trade-related policies).
-> - Filter by category to narrow the list — for example, view only "Labor Market" economic components or "Legitimacy" government components.
-> - Click any component to expand its full details, including a description, synergy hints, and conflict warnings.
-
-## How Components Affect Gameplay
-
-Your component choices directly shape your nation's stats and standing through real-time mechanical effects. Here is how:
-
-- **Government components** determine your political structure, stability, and how decisions are made. A centralized system might be efficient but less stable, while a decentralized one spreads power but slows decision-making.
-- **Economic components** shape your GDP growth, trade balance, employment, and development trajectory. Free-trade policies might boost growth but increase inequality, while protectionist ones shield domestic industries at the cost of competitiveness.
-- **Tax rates** (set in Fiscal Policy) control your government revenue and spending capacity. Higher tax rates generate more revenue but can slow economic growth and reduce citizen satisfaction.
-- **Synergy bonuses** reward thoughtful combinations. For example, pairing a strong education system with innovation-focused economic policies can unlock bonus growth multipliers. Conversely, conflicting components incur penalties to effectiveness.
-
-Adding or removing a component isn't cosmetic — it moves real numbers: your GDP, population, political stability, and more. Components that suit each other give each other a boost; ones that clash hold each other back. You can preview exactly how a setup would land before you commit to it.
-
-To learn more about how components combine into a complete government system, see the [Atomic Government System](/help/government/atomic) guide.
-
-> **Related Guides**
->
-> - [Atomic Government System](/help/government/atomic) — how components combine into a working government
-> - [Government Types](/help/government/traditional) — the quick way to set up how your nation is run
-> - [Tax System Guide](/help/economy/tax-system) — detailed breakdown of how taxes work
-> - [Country Building Guide](/help/gameplay/country-building) — step-by-step walkthrough for new players
-
-Platform administrators can add, edit, or remove components through the Admin panel.
+None of the three kinds changes your GDP growth rate directly. See [How Your Economy Is Calculated](/help/economy/calculations).

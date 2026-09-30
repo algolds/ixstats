@@ -1,47 +1,45 @@
 ---
-title: Trading & Marketplace
-description: Auction system, bidding mechanics, and direct player-to-player card trades.
-badge: IxVault & Cards
+title: Auctions & Trading
+description: Auction cards, bid, buy outright, and trade cards and IxCredits directly with other players.
+badge: Vault, Cards & Rewards
+prevHref: /help/vault/card-packs
+prevLabel: Card Packs
+nextHref: /help/vault/lore-cards
+nextLabel: Lore Cards
 ---
 
-## Marketplace Overview
+## Where it happens
 
-The marketplace is where players buy and sell cards through auctions or direct trades. Open **Marketplace** in the Vault and choose the **Auctions** or **Trading** tab. Auctions can be filtered by rarity, card type, and price range, and sorted by newest, price, or ending soon.
+Both live in the Vault's [Marketplace](/vault/marketplace): the **Auctions** tab for public auctions and the **Trading** tab for direct trades with a specific player. A card you've listed at auction or offered in a trade is locked until the auction or trade ends, so it can't be sold, traded or recycled twice.
 
-## Creating Auctions
+## Selling at auction
 
-> **Auction Setup**
->
-> List a card for auction from the Create Auction modal:
->
-> - **Starting Price:** Minimum bid in IxCredits
-> - **Buy-Now Price:** Optional instant-purchase price
-> - **Duration:** 30 minutes (Express) or 60 minutes (Standard)
-> - The card is locked from your collection while the auction is active
+1. Open **Auctions** and create an auction.
+2. Pick a card, set a **starting price** and, optionally, a **buyout price** (it must be higher than the starting price).
+3. Choose a duration: **30 minutes (Express)** or **60 minutes (Standard)**.
+4. Pay the listing fee: 5 IxC, or 10 IxC for a featured listing.
 
-## Bidding
+If nobody bids, the card comes back to you and half the listing fee is refunded. You also get half back if you cancel an auction.
 
-- **Countdown Timer:** Each auction shows remaining time with live countdown
-- **Bid Placement:** Enter your bid amount (must exceed current highest bid)
-- **Outbid Notifications:** Receive alerts when someone outbids you
-- **Buy-Now:** If available, purchase immediately at the listed price
-- **Settlement:** When the auction ends, the highest bidder receives the card and the seller receives IxCredits
+## Buying at auction
 
-## Direct Trading
+- Browse and filter by rarity, card type and price, and sort by newest, price or ending soon.
+- **Bid** more than the current highest bid. You're notified if you're outbid.
+- **Buy out** at the buyout price to end the auction at once.
+- A bid in the last 5 minutes extends the auction by 1 minute, so there's time to respond.
 
-For player-to-player trades outside the auction system:
+When an auction ends, the highest bidder gets the card and the seller gets the price, minus a 10% marketplace fee on sales over 100 IxC. Ended auctions are settled by a regular background job, so there can be a short wait before the card and credits move.
 
-- **Trade Offers:** Send a trade offer specifying cards you want and cards you're offering
-- **Negotiation:** Counter-offers allow back-and-forth negotiation
-- **Trade History:** View past completed and pending trades
-- **Market Value:** Each card shows its market value, so you can check that a trade is balanced
+## Trading directly
 
-> [!WARNING]
-> **Trading Tips**
->
-> Check recent market prices before listing or bidding. Review your trade history to understand card values. Cards in active auctions or pending trades cannot be used in other transactions.
+1. Open **Trading** and start a trade offer with another player.
+2. Choose at least one of your cards to offer and at least one of theirs to ask for. You can add IxCredits on either side, and a message.
+3. Send it. Your offered cards are locked while it's pending.
+4. The other player can **accept**, **reject** or **counter** with different cards or credits.
 
-> **Related Articles**
->
-> - [Card Packs & Opening](/help/vault/card-packs) - Opening packs to get cards
-> - [IxCredits Economy](/help/vault/ixcredits) - IxCredits economy and earning
+Offers expire after 24 hours if nobody answers, and you can cancel one you've sent. Your active trades and trade history are on the same tab.
+
+## Tips
+
+- Check a card's market value before listing or bidding.
+- Express auctions suit popular cards; Standard gives buyers more time to find yours.
