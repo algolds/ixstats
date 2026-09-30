@@ -97,6 +97,7 @@ The National Issues engine (`src/lib/national-issues/`, `src/server/api/routers/
    - `1c. Set Cabinet Meeting`: `quickActions.createMeeting` schedules a cabinet meeting on next week's agenda.
    - `1d. Make Directive`: Promotes the issue directly into the `IntentComposer` to draft a formal national directive.
 3. **Intent ↔ Issues Resistance Rhythm**: Committing extreme directives can spawn linked resistance issues, requiring leaders to manage political pushback before completing national goals.
+4. **Consequences** (`src/lib/national-issues/consequences.ts`): approval, stability and the other `Country` / `GovernmentStructure` / `InternalStabilityMetrics` fields are written through `CountryEventSpine` (bounded, logged to `CountryChangeLog`); `publicApproval` and `stabilityScore` land in the columns the Standing bands read. A stability consequence is skipped when the country has no `InternalStabilityMetrics` row yet. GDP, GDP-growth and population consequences become StorytellerEffects the economy projection applies (see [calculations](./calculations.md#level-effects-national-issue-consequences)) and so move the headline GDP; consequences with no faithful mapping are dropped from the log and the recon preview.
 
 ---
 
@@ -119,7 +120,7 @@ The National Issues engine (`src/lib/national-issues/`, `src/server/api/routers/
 
 - Ownership is realm-scoped (`src/server/modules/realms/realms.ownership.ts`, `maxNationsPerUser` per realm, `users.setActiveNation`, `PlayAsNation.tsx`). The builder creates only in the default realm and is one nation per account; `countries.createCountry` silently returns the user's existing nation (`countries/management/create.ts`) instead of creating another. `users.createCountry` (`users/country-linking.ts`, marked legacy) is a second creation path with no UI.
 - Two gameplay flags default off: `ISSUES_ENFORCE_DEADLINES` and `ISSUES_AWARD_CREDITS`. Issue content comes from `data/national-issues-config.json`.
-- Stat surfaces mix projections and stored values: the economy calculators produce projections, while most player-facing numbers read the stored `current*` columns, so decisions often do not reach headline stats (see SYSTEM_STATUS).
+- Stat surfaces mix projections and stored values: MyCountry shows the projection, while rankings, vitality and passive income read the stored `current*` columns. The `stat-progression` cron job persists the projection into those columns (see [economy](./economy.md)); until it is enabled in `CRON_ENABLED_JOBS` they move only on the admin recalculation.
 - Other statecraft code: `src/lib/statecraft/stability-formulas.ts` (used by `security/stability.ts`), `calendar.ts` and `growth-calculations.ts`.
 
 ---
