@@ -170,13 +170,23 @@ const nodeSpan = (node: WikiInlineNode, end: number): InlineSpan => ({
   end,
 });
 
+/** Whether `target` names a file (namespace 6 under any alias or case) and is not a `[[:File:…]]` link to its page. */
+function isFileTarget(target: string): boolean {
+  if (!target.includes(":") || target.startsWith(":")) return false;
+  try {
+    return canonicalizeTitle(target)?.namespaceId === 6;
+  } catch {
+    // Text that is not valid Unicode (a lone surrogate) is no title; it must not stop the parse.
+    return false;
+  }
+}
+
 /** `[[File:…]]` and its aliases (`Image:`, any case): an embedded file, every parameter kept. */
 function tryFileLink(text: string, i: number): InlineSpan | null {
   const closeIdx = findMatchingClosingBrackets(text, i);
   if (closeIdx === -1) return null;
   const parsed = parseFileLinkInner(text.slice(i + 2, closeIdx));
-  if (!parsed.target.includes(":") || parsed.target.startsWith(":")) return null;
-  if (canonicalizeTitle(parsed.target)?.namespaceId !== 6) return null;
+  if (!isFileTarget(parsed.target)) return null;
   return nodeSpan(
     {
       type: "wiki-file",

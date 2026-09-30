@@ -7,6 +7,7 @@
  * Invariant 7: HTML is never used as serialization intermediary.
  */
 
+import { decodeTitleParam } from "../core/title";
 import { parse } from "../wikitext/parser";
 import { buildFileLink } from "../wikitext/file-params";
 import { plateFingerprint } from "./plate-fingerprint";
@@ -486,6 +487,15 @@ export function plateNodesToAst(nodes: any[], title = "", slug = ""): WikiDocume
   };
 }
 
+/** The reader URL of a page; text that is not valid Unicode cannot be percent-encoded and is left as typed. */
+function wikiLinkUrl(target: string): string {
+  try {
+    return `/wiki/${encodeURIComponent(target)}`;
+  } catch {
+    return `/wiki/${target}`;
+  }
+}
+
 /** The bold/italic state of an inline construct, as properties (none when it is off). */
 function inlineMarks(marks: WikiInlineMarks): { bold?: true; italic?: true } {
   return { ...(marks.bold ? { bold: true as const } : {}), ...(marks.italic ? { italic: true as const } : {}) };
@@ -531,7 +541,7 @@ function astInlinesToPlateLeaves(inlines?: WikiInlineNode[]): any[] {
             keepSource(
               {
                 type: "link",
-                url: `/wiki/${encodeURIComponent(inline.target)}`,
+                url: wikiLinkUrl(inline.target),
                 target: inline.target,
                 internal: true,
                 children: [markedText(inline.label || inline.target, inline)],
@@ -660,7 +670,7 @@ function plateLeavesToAstInlines(leaves?: any[]): WikiInlineNode[] {
       const target =
         leaf.target ||
         (leaf.url
-          ? decodeURIComponent(leaf.url.replace(/^\/wiki\//, "").replace(/_/g, " "))
+          ? decodeTitleParam(leaf.url.replace(/^\/wiki\//, "").replace(/_/g, " "))
           : "");
       const label = leaf.children?.[0]?.text || target;
       const marks = { ...(leaf.bold ? { bold: true } : {}), ...(leaf.italic ? { italic: true } : {}) };

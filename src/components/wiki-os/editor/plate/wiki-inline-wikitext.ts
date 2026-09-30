@@ -7,6 +7,7 @@
  * as it was loaded.
  */
 
+import { decodeTitleParam } from "~/lib/wiki-os/core/title";
 import { plateFingerprint } from "~/lib/wiki-os/transformers/plate-fingerprint";
 import type { PlateNode } from "~/lib/wiki-os/transformers/plate-node";
 import { buildFileLink } from "~/lib/wiki-os/wikitext/file-params";
@@ -63,7 +64,7 @@ function isInternalLink(el: PlateNode): boolean {
 
 function linkTarget(el: PlateNode): string {
   if (el.target) return el.target;
-  return decodeURIComponent((el.url || "").replace(/^\/wiki\//, "").replace(/_/g, " "));
+  return decodeTitleParam((el.url || "").replace(/^\/wiki\//, "").replace(/_/g, " "));
 }
 
 function linkItem(el: PlateNode): MarkedSegment {

@@ -136,19 +136,23 @@ interface Written {
   type: string | undefined;
   /** End offset of the previous block in the loaded page, when it is an original block. */
   srcEnd: number | null;
+  /** The previous block was written back exactly as it was loaded. */
+  verbatim: boolean;
 }
 
 /**
- * The separator to write before `el`. An original block keeps the one it had when it is safe: any
- * blank-line separator, or a single line break when the block before it is still its original
- * neighbour. Everything else gets a blank line, and two paragraphs are always a blank line apart
- * (a single line break would merge them).
+ * The separator to write before `el`. Between two blocks that are both written back unchanged and
+ * were neighbours, it is the one they had. Otherwise an original block keeps its separator when it
+ * is safe (any blank-line separator, or a single line break when the block before it is still its
+ * original neighbour), everything else gets a blank line, and two paragraphs are always a blank
+ * line apart (a single line break would merge them).
  */
-function separatorBefore(el: PlateNode, isOriginal: boolean, prev: Written): string {
+function separatorBefore(el: PlateNode, isOriginal: boolean, verbatim: boolean, prev: Written): string {
   const recorded = isOriginal ? el.wikiSep : undefined;
   let sep = "\n\n";
   if (recorded !== undefined && recorded.includes("\n")) {
     const adjacent = prev.srcEnd !== null && prev.srcEnd === (el.wikiSrc ?? 0) - recorded.length;
+    if (verbatim && prev.verbatim && adjacent) return recorded;
     if (newlineCount(recorded) >= 2 || adjacent) sep = recorded;
   }
   if (prev.type === "p" && el.type === "p" && newlineCount(sep) < 2) sep = "\n\n";
@@ -187,15 +191,17 @@ export function serializePlateToWikitext(value: readonly Descendant[]): Wikitext
 
   for (const [index, el] of nodes.entries()) {
     const isOriginal = el.wikiSrc !== undefined && owners.get(el.wikiSrc) === index;
-    const verbatim = isOriginal && isUnmodified(el) ? el.wikiRaw : undefined;
-    const body = verbatim ?? blockWikitext(el, state);
+    const verbatimRaw = isOriginal && isUnmodified(el) ? el.wikiRaw : undefined;
+    const body = verbatimRaw ?? blockWikitext(el, state);
     if (body === "") continue;
 
     const lead = isOriginal ? (el.wikiLead ?? "") : "";
-    out += (prev === null ? lead : separatorBefore(el, isOriginal, prev)) + body;
+    const verbatim = verbatimRaw !== undefined;
+    out += (prev === null ? lead : separatorBefore(el, isOriginal, verbatim, prev)) + body;
     prev = {
       type: el.type,
       srcEnd: isOriginal && el.wikiRaw !== undefined ? (el.wikiSrc ?? 0) + el.wikiRaw.length : null,
+      verbatim,
     };
   }
 
