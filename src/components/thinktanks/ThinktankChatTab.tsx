@@ -75,7 +75,7 @@ export function ThinktankChatTab({
 
   if (!conversationId) {
     return (
-      <div className="text-muted-foreground flex h-full items-center justify-center p-8 text-xs">
+      <div className="text-label-secondary text-footnote flex h-full items-center justify-center p-8">
         Group chat is not available for this group yet.
       </div>
     );
@@ -83,11 +83,11 @@ export function ThinktankChatTab({
 
   return (
     <div className="flex h-full min-h-[320px] flex-col">
-      <div className="border-border/20 flex items-center justify-between border-b px-4 py-2 md:px-5">
-        <span className="text-foreground text-xs font-semibold">{groupName} chat</span>
+      <div className="border-separator flex items-center justify-between border-b px-4 py-2 md:px-5">
+        <span className="text-subhead text-label">{groupName} chat</span>
         <Link
           href={`/messages?conversation=${encodeURIComponent(conversationId)}`}
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+          className="text-label-secondary hover:text-label text-footnote flex items-center gap-1"
         >
           Open in Messages
           <OpenNewWindow className="h-3 w-3" />
@@ -95,12 +95,14 @@ export function ThinktankChatTab({
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3 md:px-5">
-        {isLoading && <p className="text-muted-foreground text-xs">Loading chat...</p>}
+        {isLoading && <p className="text-label-secondary text-footnote">Loading chat...</p>}
         {error && (
-          <p className="text-xs text-red-500">{error.message || "Could not load the chat."}</p>
+          <p className="text-footnote text-destructive">
+            {error.message || "Could not load the chat."}
+          </p>
         )}
         {!isLoading && !error && messages.length === 0 && (
-          <p className="text-muted-foreground text-xs">No messages yet. Say hello.</p>
+          <p className="text-label-secondary text-footnote">No messages yet. Say hello.</p>
         )}
         {messages.map((m) => {
           const own = m.accountId === currentUserId;
@@ -108,12 +110,12 @@ export function ThinktankChatTab({
             <div key={m.id} className={cn("flex", own ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[80%] rounded-2xl px-3 py-1.5 text-xs leading-snug",
-                  own ? "bg-emerald-600 text-white" : "bg-muted text-foreground"
+                  "text-body rounded-card max-w-[80%] px-3 py-2",
+                  own ? "bg-tint text-on-tint" : "bg-fill-3 text-label"
                 )}
               >
                 {!own && (
-                  <div className="mb-0.5 text-xs font-semibold opacity-70">
+                  <div className="text-caption text-label-secondary mb-0.5">
                     {m.account?.displayName || m.account?.username || "Member"}
                   </div>
                 )}
@@ -127,7 +129,7 @@ export function ThinktankChatTab({
 
       <form
         onSubmit={handleSend}
-        className="border-border/20 flex items-end gap-2 border-t px-4 py-3 md:px-5"
+        className="border-separator flex items-end gap-2 border-t px-4 py-3 md:px-5"
       >
         <Textarea
           value={draft}
@@ -139,17 +141,12 @@ export function ThinktankChatTab({
             }
           }}
           placeholder="Message the group"
-          className="bg-background/50 border-border/40 min-h-[36px] flex-1 resize-none rounded-xl text-xs"
+          className="min-h-[36px] flex-1 resize-none"
           rows={1}
           maxLength={2000}
         />
-        <Button
-          type="submit"
-          size="sm"
-          disabled={sendMutation.isPending || !draft.trim()}
-          className="h-9 rounded-xl bg-emerald-600 px-3 text-xs font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500"
-        >
-          <Send className="mr-1 h-3 w-3" />
+        <Button type="submit" size="sm" disabled={sendMutation.isPending || !draft.trim()}>
+          <Send />
           Send
         </Button>
       </form>

@@ -40,7 +40,7 @@ export function RepostModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Repost</DialogTitle>
+          <DialogTitle className="text-title-3">Repost</DialogTitle>
         </DialogHeader>
         <UnifiedComposerContainer
           countryId={countryId}

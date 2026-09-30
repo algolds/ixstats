@@ -10,8 +10,6 @@ import {
   Suitcase as Briefcase,
   Activity,
 } from "iconoir-react";
-import { Card } from "~/components/ui/card";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
@@ -36,6 +34,41 @@ interface LiveDataCardProps {
     tradeData?: any;
     vitalityData?: any;
   };
+}
+
+/** Inset data panel inside a post: icon + title, a meta caption, the chart and a footer row. */
+function DataCardFrame({
+  icon,
+  title,
+  meta,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  meta: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-surface-secondary rounded-row relative overflow-hidden p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-headline text-label flex items-center gap-2 [&_svg]:size-4 [&_svg]:shrink-0">
+          {icon}
+          {title}
+        </span>
+        <span className="text-footnote text-label-secondary">{meta}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function DataCardFooter({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="border-separator text-footnote text-label-secondary mt-2 flex items-center justify-between border-t pt-2">
+      <span>{label}</span>
+      {children}
+    </div>
+  );
 }
 
 export function LiveDataCard({ type, title, countryId, preloadedData }: LiveDataCardProps) {
@@ -99,8 +132,8 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   if (isLoading) {
     return (
-      <div className="flex h-36 w-full items-center justify-center rounded-xl border border-black/5 bg-black/[0.02] backdrop-blur-md dark:border-white/5 dark:bg-white/[0.02]">
-        <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
+      <div className="bg-surface-secondary rounded-row flex h-36 w-full items-center justify-center">
+        <Loader2 className="text-label-secondary size-5 animate-spin" aria-label="Loading" />
       </div>
     );
   }
@@ -142,16 +175,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const currentGdp = rawHistory[rawHistory.length - 1]?.totalGdp || 0;
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-blue-500/20 bg-blue-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-blue-500/30 dark:bg-blue-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <TrendingUp className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">GDP Growth</span>
-        </div>
-
+      <DataCardFrame icon={<TrendingUp className="text-blue" />} title={title} meta="GDP Growth">
         <div className="h-[125px] w-full">
           <GlassLineChart
             data={chartPoints}
@@ -166,11 +190,12 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Recent Trajectory</span>
-          <span className="text-foreground font-semibold">Current: {formatMoney(currentGdp)}</span>
-        </div>
-      </Card>
+        <DataCardFooter label="Recent Trajectory">
+          <span className="text-label font-semibold tabular-nums">
+            Current: {formatMoney(currentGdp)}
+          </span>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 
@@ -191,18 +216,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     }));
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <Globe className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">
-            {relations.length || 3} Connections
-          </span>
-        </div>
-
+      <DataCardFrame
+        icon={<Globe className="text-teal" />}
+        title={title}
+        meta={`${relations.length || 3} Connections`}
+      >
         <div className="h-[125px] w-full">
           <GlassBarChart
             data={chartData}
@@ -216,13 +234,12 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Global Network</span>
-          <span className="text-foreground font-semibold">
+        <DataCardFooter label="Global Network">
+          <span className="text-label font-semibold tabular-nums">
             Top {activeRelations.length} Relations
           </span>
-        </div>
-      </Card>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 
@@ -237,16 +254,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const netTrade = activeTrade.exports - activeTrade.imports;
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-orange-500/20 bg-orange-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-orange-500/30 dark:bg-orange-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <BarChart3 className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">Flow Dynamics</span>
-        </div>
-
+      <DataCardFrame
+        icon={<BarChart3 className="text-orange" />}
+        title={title}
+        meta="Flow Dynamics"
+      >
         <div className="h-[125px] w-full">
           <GlassPieChart
             data={pieData}
@@ -260,20 +272,17 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Net Balance</span>
+        <DataCardFooter label="Net Balance">
           <span
             className={cn(
-              "font-bold tracking-wider uppercase",
-              netTrade >= 0
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-600 dark:text-red-400"
+              "font-semibold tabular-nums",
+              netTrade >= 0 ? "text-success" : "text-destructive"
             )}
           >
             {netTrade >= 0 ? "Surplus" : "Deficit"}: {formatMoney(Math.abs(netTrade))}
           </span>
-        </div>
-      </Card>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 
@@ -296,16 +305,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-emerald-500/30 dark:bg-emerald-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <TrendingUp className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">Macro Indicators</span>
-        </div>
-
+      <DataCardFrame
+        icon={<TrendingUp className="text-green" />}
+        title={title}
+        meta="Macro Indicators"
+      >
         <div className="h-[125px] w-full">
           <GlassBarChart
             data={barData}
@@ -319,11 +323,10 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Current Total GDP</span>
-          <span className="text-foreground font-semibold">{formatMoney(gdpVal)}</span>
-        </div>
-      </Card>
+        <DataCardFooter label="Current Total GDP">
+          <span className="text-label font-semibold tabular-nums">{formatMoney(gdpVal)}</span>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 
@@ -345,16 +348,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <Users className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">Demographic Split</span>
-        </div>
-
+      <DataCardFrame icon={<Users className="text-teal" />} title={title} meta="Demographic Split">
         <div className="h-[125px] w-full">
           <GlassPieChart
             data={pieData}
@@ -368,11 +362,10 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Population Total</span>
-          <span className="text-foreground font-semibold">{popVal.toLocaleString()}</span>
-        </div>
-      </Card>
+        <DataCardFooter label="Population Total">
+          <span className="text-label font-semibold tabular-nums">{popVal.toLocaleString()}</span>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 
@@ -391,16 +384,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-amber-500/20 bg-amber-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-amber-500/30 dark:bg-amber-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <BarChart3 className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">Fiscal Profile (% of GDP)</span>
-        </div>
-
+      <DataCardFrame
+        icon={<BarChart3 className="text-yellow" />}
+        title={title}
+        meta="Fiscal Profile (% of GDP)"
+      >
         <div className="h-[125px] w-full">
           <GlassBarChart
             data={chartData}
@@ -414,20 +402,17 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Debt Profile</span>
+        <DataCardFooter label="Debt Profile">
           <span
             className={cn(
-              "font-bold",
-              activeEcon.totalDebtGDPRatio > 80
-                ? "text-red-600 dark:text-red-400"
-                : "text-emerald-600 dark:text-emerald-400"
+              "font-semibold",
+              activeEcon.totalDebtGDPRatio > 80 ? "text-destructive" : "text-success"
             )}
           >
             Debt/GDP: {activeEcon.totalDebtGDPRatio || 55}%
           </span>
-        </div>
-      </Card>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 
@@ -446,16 +431,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <Briefcase className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">Labor Dynamics</span>
-        </div>
-
+      <DataCardFrame icon={<Briefcase className="text-teal" />} title={title} meta="Labor Dynamics">
         <div className="h-[125px] w-full">
           <GlassBarChart
             data={barData}
@@ -469,13 +445,12 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Average Annual Income</span>
-          <span className="text-foreground font-semibold">
+        <DataCardFooter label="Average Annual Income">
+          <span className="text-label font-semibold tabular-nums">
             ${(activeEcon.averageAnnualIncome || 35000).toLocaleString()}
           </span>
-        </div>
-      </Card>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 
@@ -496,16 +471,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="facet-hierarchy-child relative overflow-hidden border-red-500/20 bg-red-500/5 p-3 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:border-red-500/30 dark:bg-red-950/10">
-        <TextureOverlay texture="paperGrain" opacity={0.03} />
-        <div className="mb-2.5 flex items-center justify-between">
-          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <Activity className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs">Vitality Indicators</span>
-        </div>
-
+      <DataCardFrame
+        icon={<Activity className="text-red" />}
+        title={title}
+        meta="Vitality Indicators"
+      >
         <div className="h-[125px] w-full">
           <GlassBarChart
             data={chartData}
@@ -519,11 +489,10 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-xs dark:border-white/5">
-          <span>Overall Health Status</span>
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">Active</span>
-        </div>
-      </Card>
+        <DataCardFooter label="Overall Health Status">
+          <span className="text-success font-semibold">Active</span>
+        </DataCardFooter>
+      </DataCardFrame>
     );
   }
 

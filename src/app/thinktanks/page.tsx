@@ -14,8 +14,8 @@ export default function ThinktanksPage() {
       fallback={
         <div className="flex h-[calc(100vh-6rem)] items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <span className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-            <p className="text-muted-foreground text-xs font-semibold">Loading ThinkTanks...</p>
+            <span className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+            <p className="text-footnote text-label-secondary">Loading ThinkTanks...</p>
           </div>
         </div>
       }

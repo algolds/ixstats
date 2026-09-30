@@ -4,98 +4,49 @@ import React from "react";
 import { cn } from "~/lib/utils";
 
 /**
- * Shared Style Constants for the Dynamic Island / Halo glass aesthetic
+ * Shared style constants for surfaces that mimic the Halo island outside Halo itself (e.g. the
+ * WikiOS editor header). Facet 3 (spec §5): this is `material-regular` — surface @ 80% with a
+ * 20px / 170% blur — expressed inline for callers that animate their own box. Prefer the
+ * `material-regular` utility in new code.
  */
 export const DYNAMIC_ISLAND_STYLE = {
-  background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-  backdropFilter: "blur(20px) saturate(190%)",
-  WebkitBackdropFilter: "blur(20px) saturate(190%)",
+  background: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+  backdropFilter: "blur(20px) saturate(170%)",
+  WebkitBackdropFilter: "blur(20px) saturate(170%)",
 } as const;
 
-export const DYNAMIC_ISLAND_BORDER_CLASS =
-  "border border-white/20 dark:border-white/10 shadow-lg shadow-black/20";
+export const DYNAMIC_ISLAND_BORDER_CLASS = "border border-separator-opaque shadow-floating";
 
 export interface DynamicIslandEffectsProps {
-  /** Optional custom class for the outer wrappers */
+  /** Optional custom class for the glow layer */
   className?: string;
-  /** Opacity level for the colorful background glow layers (default: 0.4 / 40%) */
+  /** Opacity of the tint glow (default: 0.4 / 40%) */
   glowOpacity?: number;
-  /** Whether to show the colorful glow layers (default: true) */
+  /** Whether to show the tint glow (default: true) */
   showGlow?: boolean;
-  /** Whether to show the pulse shimmer animation (default: true) */
+  /** @deprecated Ignored — Facet 3 retires looping shimmers (spec §8). */
   showShimmer?: boolean;
-  /** The primary axis orientation of the gradients and shimmers (default: "horizontal") */
+  /** @deprecated Ignored — the glow is uniform. */
   orientation?: "horizontal" | "vertical";
 }
 
 /**
- * Reusable component containing the multi-layer glows, refraction edges,
- * and shimmer animations that form the Dynamic Island / Halo visual style.
+ * A soft app-tint glow behind a Halo-style island. The glass edge highlight now comes from the
+ * material itself, and the looping shimmer is gone (spec §8: only live indicators loop).
  */
 export function DynamicIslandEffects({
   className,
   glowOpacity = 0.4,
   showGlow = true,
-  showShimmer = true,
-  orientation = "horizontal",
 }: DynamicIslandEffectsProps) {
-  const isVertical = orientation === "vertical";
-  const gradientDirection = isVertical ? "bg-gradient-to-b" : "bg-gradient-to-r";
-
+  if (!showGlow) return null;
   return (
-    <>
-      {/* Multi-layer colorful background glow (hero card pattern) */}
-      {showGlow && (
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 z-0 transition-opacity duration-350",
-            className
-          )}
-          style={{ opacity: glowOpacity }}
-        >
-          <div
-            className={cn(
-              "absolute inset-0 blur-xl",
-              gradientDirection,
-              "from-blue-500/20 via-indigo-500/20 to-blue-500/20"
-            )}
-          />
-          <div
-            className={cn(
-              "absolute inset-0 blur-lg",
-              gradientDirection,
-              "from-cyan-400/15 via-indigo-500/15 to-blue-500/15"
-            )}
-          />
-          <div
-            className={cn(
-              "absolute inset-0 blur-md",
-              gradientDirection,
-              "from-blue-300/10 via-indigo-300/10 to-cyan-300/10"
-            )}
-          />
-        </div>
-      )}
-
-      {/* Refraction edges */}
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-        <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-        <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/35 to-transparent" />
-        <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/25 to-transparent" />
-
-        {/* Inner Shimmer */}
-        {showShimmer && (
-          <div
-            className={cn(
-              "absolute inset-0 animate-pulse",
-              gradientDirection,
-              "from-transparent via-white/10 to-transparent"
-            )}
-            style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
-          />
-        )}
-      </div>
-    </>
+    <div
+      aria-hidden="true"
+      className={cn("pointer-events-none absolute inset-0 z-0", className)}
+      style={{ opacity: glowOpacity }}
+    >
+      <div className="bg-tint/20 absolute inset-0 rounded-[inherit] blur-xl" />
+    </div>
   );
 }

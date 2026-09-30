@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Group as Users, Plus, ArrowRight } from "iconoir-react";
-import { Card, CardContent } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -30,8 +31,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
     staleTime: 5 * 60_000,
   });
 
-  const effectiveCountryId: string =
-    (userProfile ? userProfile.countryId : initialCountryId) || "";
+  const effectiveCountryId: string = (userProfile ? userProfile.countryId : initialCountryId) || "";
 
   const { data: countryData } = api.countries.getMapSummary.useQuery(
     { countryId: effectiveCountryId },
@@ -63,18 +63,18 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
   if (!isCountryReady) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-        <Card className="facet-hierarchy-parent">
-          <CardContent className="p-8 text-center">
-            <Users className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <h3 className="mb-2 text-lg font-semibold">Country Setup Required</h3>
-            <p className="text-muted-foreground mb-4 text-sm">
-              You need a country to create ThinkPages accounts.
-            </p>
-            <Link href={"/setup"}>
-              <Button>Complete Setup</Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <FacetCard>
+          <EmptyState
+            icon={<Users />}
+            title="Country Setup Required"
+            message="You need a country to create ThinkPages accounts."
+            action={
+              <Button asChild>
+                <Link href={"/setup"}>Complete Setup</Link>
+              </Button>
+            }
+          />
+        </FacetCard>
       </div>
     );
   }
@@ -82,30 +82,26 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       {/* Feed redirect banner */}
-      <Card className="border-blue-500/20 bg-blue-500/5">
-        <CardContent className="flex items-center justify-between p-4">
-          <div>
-            <p className="text-foreground text-sm font-medium">
-              The social feed has moved to your Dashboard
-            </p>
-            <p className="text-muted-foreground text-xs">
-              Post, browse, and interact from the unified feed.
-            </p>
-          </div>
+      <FacetCard padding="md" className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-headline text-label">The social feed has moved to your Dashboard</p>
+          <p className="text-footnote text-label-secondary">
+            Post, browse, and interact from the unified feed.
+          </p>
+        </div>
+        <Button asChild size="sm" variant="bordered">
           <Link href={"/dashboard"}>
-            <Button size="sm" variant="outline" className="gap-1.5">
-              Go to Dashboard
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+            Go to Dashboard
+            <ArrowRight aria-hidden="true" />
           </Link>
-        </CardContent>
-      </Card>
+        </Button>
+      </FacetCard>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-foreground text-xl font-bold">ThinkPages Accounts</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-title-2 text-label">ThinkPages Accounts</h1>
+          <p className="text-body text-label-secondary">
             Manage your personas — government officials, media outlets, and citizen voices.
           </p>
         </div>
@@ -115,10 +111,9 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
             e.stopPropagation();
             setShowAccountCreation(true);
           }}
-          className="gap-1.5"
           type="button"
         >
-          <Plus className="h-4 w-4" />
+          <Plus aria-hidden="true" />
           New Account
         </Button>
       </div>

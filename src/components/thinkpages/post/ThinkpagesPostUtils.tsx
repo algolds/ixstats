@@ -22,10 +22,10 @@ export const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
 };
 
 export const ACCOUNT_TYPE_COLORS: Record<string, string> = {
-  government: "text-amber-500 bg-amber-500/20",
-  media: "text-blue-500 bg-blue-500/20",
-  citizen: "text-green-500 bg-green-500/20",
-  personal: "text-slate-500 bg-slate-500/20",
+  government: "text-yellow bg-yellow/20",
+  media: "text-blue bg-blue/20",
+  citizen: "text-green bg-green/20",
+  personal: "text-label-secondary bg-fill-2",
 };
 
 export const REACTION_ICONS: Record<string, React.ElementType> = {
@@ -97,7 +97,7 @@ export function RelativeTimestamp({ timestamp }: { timestamp: Date | string | nu
 
   return (
     <span
-      className="text-muted-foreground cursor-help text-sm"
+      className="text-label-secondary text-body cursor-help"
       title={`IxTime: ${date.toLocaleString()}`}
     >
       {hoursDiff > 24 ? date.toLocaleDateString() : relativeTime}

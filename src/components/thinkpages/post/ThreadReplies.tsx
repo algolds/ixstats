@@ -58,7 +58,7 @@ export function ThreadReplies({
       {hasReplies && (
         <button
           onClick={() => setShowReplies(!showReplies)}
-          className="mt-2 text-sm text-blue-500 hover:underline"
+          className="text-body text-blue mt-2 hover:underline"
         >
           {showReplies ? "Hide" : "Show"} {effectiveCount}{" "}
           {effectiveCount === 1 ? "reply" : "replies"}
@@ -66,14 +66,14 @@ export function ThreadReplies({
       )}
 
       {showReplies && (
-        <div className="relative mt-3 ml-5 space-y-3 border-l-2 border-white/10 pl-4 dark:border-white/10">
+        <div className="border-separator relative mt-3 ml-5 space-y-3 border-l-2 pl-4">
           {threadQuery.isLoading ? (
-            <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+            <div className="text-label-secondary text-footnote flex items-center gap-2 py-2">
+              <Loader2 className="text-blue h-3.5 w-3.5 animate-spin" />
               <span>Loading replies...</span>
             </div>
           ) : threadQuery.error ? (
-            <div className="py-1 text-xs text-red-500">Failed to load replies.</div>
+            <div className="text-footnote text-red py-1">Failed to load replies.</div>
           ) : threadQuery.data?.replies && threadQuery.data.replies.length > 0 ? (
             threadQuery.data.replies.map((reply: any) => (
               <ThinkpagesPostComponent
@@ -97,7 +97,7 @@ export function ThreadReplies({
               />
             ))
           ) : (
-            <div className="text-muted-foreground py-1 text-xs">No replies yet.</div>
+            <div className="text-label-secondary text-footnote py-1">No replies yet.</div>
           )}
         </div>
       )}

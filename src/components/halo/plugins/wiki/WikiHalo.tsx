@@ -97,7 +97,7 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105 active:scale-88"
+          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105 active:scale-[0.98]"
           style={{
             backgroundColor: accentColor,
             boxShadow: `0 1px 6px ${getRgbaColor(accentColor, 0.35)}`,
@@ -113,14 +113,14 @@ function WikiBreadcrumb() {
 
         {/* Title in theme color */}
         <span
-          className="truncate text-xs font-semibold tracking-tight transition-colors"
+          className="text-caption truncate font-semibold transition-colors"
           style={{ color: accentColor }}
         >
           {hasSpecificTitle ? articleTitle : "Wiki Narrator"}
         </span>
 
         {activeSectionName && (
-          <span className="text-muted-foreground/75 hidden truncate text-xs sm:inline">
+          <span className="text-label-secondary text-footnote hidden truncate sm:inline">
             · {activeSectionName}
           </span>
         )}
@@ -134,7 +134,7 @@ function WikiBreadcrumb() {
       {/* Title or Personalized Greeting */}
       {hasSpecificTitle ? (
         <span
-          className="max-w-[90px] truncate text-xs font-semibold transition-colors sm:max-w-[120px]"
+          className="text-caption max-w-[90px] truncate font-semibold transition-colors sm:max-w-[120px]"
           style={themeColors?.primary ? { color: themeColors.primary } : undefined}
         >
           {articleTitle}
@@ -145,13 +145,13 @@ function WikiBreadcrumb() {
             <img
               src={user.imageUrl}
               alt=""
-              className="h-4 w-4 shrink-0 rounded-full object-cover ring-1 ring-white/20"
+              className="ring-separator h-4 w-4 shrink-0 rounded-full object-cover ring-1"
             />
           ) : (
-            <span className="text-muted-foreground h-3.5 w-3.5 shrink-0 text-xs">👤</span>
+            <span className="text-label-secondary text-footnote h-3.5 w-3.5 shrink-0">👤</span>
           )}
           <PreText
-            className="text-foreground/90 max-w-[100px] truncate text-xs font-medium sm:max-w-[130px]"
+            className="text-label text-caption max-w-[100px] truncate sm:max-w-[130px]"
             whiteSpace="nowrap"
           >
             {greetingText}
@@ -162,11 +162,11 @@ function WikiBreadcrumb() {
       {/* Section Popover Dropdown when not in narrator mode */}
       {hasSpecificTitle && activeSectionName && (
         <>
-          <span className="text-foreground/25 shrink-0 text-xs">›</span>
+          <span className="text-label-secondary text-footnote shrink-0">›</span>
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <span
-                className="hover:text-foreground text-foreground/50 relative z-[60] inline-block max-w-[70px] cursor-pointer truncate overflow-hidden rounded px-1 py-0.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/20 active:scale-95"
+                className="hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm relative z-10 inline-block max-w-[70px] cursor-pointer truncate overflow-hidden px-1 py-0.5 text-left transition-colors duration-150"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopoverOpen((prev) => !prev);
@@ -178,13 +178,8 @@ function WikiBreadcrumb() {
                 {activeSectionName}
               </span>
             </PopoverTrigger>
-            <PopoverContent
-              side="bottom"
-              align="start"
-              sideOffset={8}
-              className="w-56 rounded-xl border border-white/10 bg-zinc-950/95 p-1.5 backdrop-blur-xl dark:bg-black/90"
-            >
-              <div className="max-h-[200px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto select-none">
+            <PopoverContent side="bottom" align="start" sideOffset={8} className="w-56 p-1.5">
+              <div className="max-h-[200px] scrollbar-thin space-y-0.5 overflow-y-auto select-none">
                 {tocEntries
                   .filter((e) => e.level <= 3)
                   .map((entry) => {
@@ -197,12 +192,12 @@ function WikiBreadcrumb() {
                           setPopoverOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
+                          "text-caption rounded-control-sm flex w-full cursor-pointer items-center px-2.5 py-1.5 text-left transition-colors duration-150 select-none",
                           isActive && !themeColors
-                            ? "bg-white/15 text-white"
+                            ? "bg-fill-3 text-label"
                             : isActive
                               ? ""
-                              : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                              : "text-label-secondary hover:text-label hover:bg-fill-3",
                           entry.level === 3 ? "pl-5" : ""
                         )}
                         style={
@@ -216,7 +211,7 @@ function WikiBreadcrumb() {
                         type="button"
                       >
                         {entry.level === 3 && (
-                          <span className="text-muted-foreground/60 mr-1 text-xs">›</span>
+                          <span className="text-label-tertiary text-footnote mr-1">›</span>
                         )}
                         <span className="truncate">{entry.text}</span>
                       </button>

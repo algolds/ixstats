@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Search, UserPlus } from "iconoir-react";
+import { UserPlus } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
 
@@ -49,36 +49,33 @@ export function MessagesAddParticipantsModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
+            <UserPlus className="text-tint size-5" aria-hidden="true" />
             Add Participant
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Search */}
-          <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search users to add..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-              autoFocus
-            />
-          </div>
+          <SearchField
+            placeholder="Search users to add..."
+            aria-label="Search users to add"
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            autoFocus
+          />
 
           {/* Results */}
           <div className="max-h-64 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center py-6">
-                <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+                <div className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
               </div>
             ) : searchQuery.length <= 2 ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">
+              <p className="text-body text-label-secondary py-6 text-center">
                 Type at least 3 characters to search
               </p>
             ) : filteredUsers.length === 0 ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">No new users found</p>
+              <p className="text-body text-label-secondary py-6 text-center">No new users found</p>
             ) : (
               <div className="space-y-1">
                 {filteredUsers.map((user: any) => (
@@ -86,11 +83,12 @@ export function MessagesAddParticipantsModal({
                     key={user.id || user.clerkUserId}
                     onClick={() => handleAdd(user.clerkUserId || user.id)}
                     disabled={isAdding}
-                    className="hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors"
+                    type="button"
+                    className="hover:bg-fill-4 rounded-control flex w-full items-center gap-3 p-2 text-left transition-colors"
                   >
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="size-8">
                       <AvatarImage src={user.country?.flag ?? undefined} />
-                      <AvatarFallback className="bg-emerald-600 text-xs font-semibold text-white">
+                      <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
                         {(user.country?.name ?? user.displayName ?? "?")
                           .split(" ")
                           .map((n: string) => n[0])
@@ -99,11 +97,11 @@ export function MessagesAddParticipantsModal({
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
+                      <p className="text-headline text-label truncate">
                         {user.country?.name ?? user.displayName ?? "Unknown"}
                       </p>
                       {user.country?.slug && (
-                        <p className="text-muted-foreground truncate text-xs">
+                        <p className="text-footnote text-label-secondary truncate">
                           @{user.country.slug}
                         </p>
                       )}

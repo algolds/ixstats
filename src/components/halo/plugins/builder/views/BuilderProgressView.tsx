@@ -12,6 +12,7 @@ import {
   Globe,
 } from "iconoir-react";
 import { motion } from "motion/react";
+import { Button } from "~/components/ui/button";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 import { cn, formatCurrency, toTitleCase } from "~/lib/utils";
 import { useBuilderActions } from "~/app/builder/hooks/useBuilderActions";
@@ -72,16 +73,16 @@ interface StepTheme {
 }
 
 const STEP_THEMES: Record<string, StepTheme> = {
-  foundation: { color: "text-amber-400 border-amber-500/30", bg: "bg-amber-500/10" },
-  core: { color: "text-cyan-400 border-cyan-500/30", bg: "bg-cyan-500/10" },
-  government: { color: "text-indigo-400 border-indigo-500/30", bg: "bg-indigo-500/10" },
-  economics: { color: "text-emerald-400 border-emerald-500/30", bg: "bg-emerald-500/10" },
-  preview: { color: "text-amber-400 border-amber-500/30", bg: "bg-amber-500/10" },
+  foundation: { color: "text-yellow border-yellow/30", bg: "bg-yellow/10" },
+  core: { color: "text-teal border-teal/30", bg: "bg-teal/10" },
+  government: { color: "text-indigo border-indigo/30", bg: "bg-indigo/10" },
+  economics: { color: "text-green border-green/30", bg: "bg-green/10" },
+  preview: { color: "text-yellow border-yellow/30", bg: "bg-yellow/10" },
 };
 
 const DEFAULT_STEP_THEME: StepTheme = {
-  color: "text-amber-400 border-amber-500/30",
-  bg: "bg-amber-500/10",
+  color: "text-yellow border-yellow/30",
+  bg: "bg-yellow/10",
 };
 
 function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgressViewProps) {
@@ -155,31 +156,29 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
       exit={{ opacity: 0, y: -5 }}
       className="relative z-10 space-y-4"
     >
-      <div className="flex flex-col justify-between gap-2 border-b border-border/40 pb-3 sm:flex-row sm:items-center">
+      <div className="border-separator flex flex-col justify-between gap-2 border-b pb-3 sm:flex-row sm:items-center">
         <div className="space-y-0.5 text-left">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold tracking-wider text-amber-500 uppercase">
-              MyCountry Builder
-            </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-border" />
-            <span className="text-xs font-medium text-muted-foreground">v{BUILDER_VERSION}</span>
+            <span className="text-eyebrow text-yellow">MyCountry Builder</span>
+            <span className="bg-border h-1.5 w-1.5 rounded-full" />
+            <span className="text-caption text-label-secondary">v{BUILDER_VERSION}</span>
           </div>
-          <h2 className="text-lg font-extrabold tracking-tight text-foreground">
-            Building: <span className="text-amber-400">{countryName || "New Country"}</span>
+          <h2 className="text-title-3 text-label font-extrabold">
+            Building: <span className="text-yellow">{countryName || "New Country"}</span>
           </h2>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Autosave status pill */}
-          <div className="flex h-8 items-center gap-1.5 rounded-lg border border-border/40 bg-card/40 px-3 text-xs font-medium text-muted-foreground select-none">
+          <div className="rounded-control border-separator bg-surface text-caption text-label-secondary flex h-8 items-center gap-1.5 border px-3 select-none">
             <span className="relative flex h-1.5 w-1.5">
               {isAutoSaving ? (
                 <>
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  <span className="bg-yellow absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+                  <span className="bg-yellow relative inline-flex h-1.5 w-1.5 rounded-full" />
                 </>
               ) : (
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="bg-green relative inline-flex h-1.5 w-1.5 rounded-full" />
               )}
             </span>
             <span>
@@ -192,11 +191,11 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
           </div>
 
           {isConfirmingRestart ? (
-            <div className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 p-0.5">
-              <span className="px-2 text-xs font-semibold text-red-400">Reset draft?</span>
+            <div className="rounded-control border-red/30 bg-red/10 flex items-center gap-1.5 border p-0.5">
+              <span className="text-caption text-red px-2 font-semibold">Reset draft?</span>
               <button
                 onClick={handleConfirmRestart}
-                className="flex h-7 items-center rounded-md bg-red-500 px-2.5 text-xs font-bold text-white shadow-xs transition-transform active:scale-[0.97]"
+                className="rounded-control-sm bg-red text-caption text-on-red flex h-7 items-center px-2.5 font-semibold transition-transform active:scale-[0.98]"
                 type="button"
                 data-cuelume-press
               >
@@ -204,7 +203,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
               </button>
               <button
                 onClick={() => setIsConfirmingRestart(false)}
-                className="flex h-7 items-center rounded-md border border-border/40 bg-background/80 px-2 text-xs font-bold text-muted-foreground transition-transform hover:text-foreground active:scale-[0.97]"
+                className="rounded-control-sm border-separator bg-surface text-caption text-label-secondary hover:text-label flex h-7 items-center border px-2 font-semibold transition-transform active:scale-[0.98]"
                 type="button"
                 data-cuelume-press
               >
@@ -214,7 +213,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
           ) : (
             <button
               onClick={() => setIsConfirmingRestart(true)}
-              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-border/40 bg-card/40 px-3 text-xs font-bold text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-[0.97]"
+              className="rounded-control border-separator bg-surface text-caption text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red flex h-8 cursor-pointer items-center gap-1.5 border px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               title="Restart Builder"
               type="button"
               data-cuelume-press
@@ -229,9 +228,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
       <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
         {/* Step Progress Tracker */}
         <div className="space-y-2 text-left md:col-span-7">
-          <h3 className="mb-2.5 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-            Progress Checklist
-          </h3>
+          <h3 className="text-eyebrow text-label-secondary mb-2.5">Progress Checklist</h3>
           <div className="space-y-2">
             {BUILDER_STEPS.map((st) => {
               const state = getStepState(st.key);
@@ -242,21 +239,21 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
                 <div
                   key={st.key}
                   className={cn(
-                    "flex items-start gap-3 rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    "rounded-control flex items-start gap-3 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     isActive
                       ? `${theme.bg} ${theme.color} border-current`
                       : isCompleted
-                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400/90"
-                        : "border-border/40 bg-card/20 text-muted-foreground"
+                        ? "border-green/20 bg-green/10 text-green/90"
+                        : "border-separator bg-surface text-label-secondary"
                   )}
                 >
                   <div className="mt-0.5 shrink-0">
                     {isCompleted ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <CheckCircle2 className="text-green h-4 w-4" />
                     ) : isActive ? (
                       <span className="relative flex h-4 w-4">
-                        <span className="duration-1000 absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75" />
-                        <span className="relative inline-flex h-4 w-4 items-center justify-center rounded-full border border-current bg-background">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75 duration-1000" />
+                        <span className="bg-surface relative inline-flex h-4 w-4 items-center justify-center rounded-full border border-current">
                           <span className="h-1.5 w-1.5 rounded-full bg-current" />
                         </span>
                       </span>
@@ -266,8 +263,8 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-xs leading-none font-bold">{st.label}</p>
-                    <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{st.desc}</p>
+                    <p className="text-caption leading-none font-semibold">{st.label}</p>
+                    <p className="text-caption text-label-secondary mt-1 truncate">{st.desc}</p>
                   </div>
                 </div>
               );
@@ -276,50 +273,48 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
         </div>
 
         {/* Configuration Summary Card */}
-        <div className="flex flex-col justify-between rounded-xl border border-border/40 bg-card/30 p-3 text-left shadow-xs md:col-span-5">
+        <div className="rounded-row border-separator bg-surface flex flex-col justify-between border p-3 text-left md:col-span-5">
           <div className="space-y-3">
-            <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              Stats Configured
-            </h3>
+            <h3 className="text-eyebrow text-label-secondary">Stats Configured</h3>
 
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between border-b border-border/20 py-1">
-                <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <div className="text-footnote space-y-2">
+              <div className="border-separator flex items-center justify-between border-b py-1">
+                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                  <Building2 className="text-label-secondary h-3.5 w-3.5" />
                   Government
                 </span>
-                <span className="max-w-[120px] truncate font-bold text-foreground">
+                <span className="text-label max-w-[120px] truncate font-semibold">
                   {builderState?.governmentStructure?.structure?.governmentType
                     ? toTitleCase(builderState.governmentStructure.structure.governmentType)
                     : "Not configured"}
                 </span>
               </div>
-              <div className="flex items-center justify-between border-b border-border/20 py-1">
-                <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-                  <Coins className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="border-separator flex items-center justify-between border-b py-1">
+                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                  <Coins className="text-label-secondary h-3.5 w-3.5" />
                   Total Budget
                 </span>
-                <span className="font-bold text-foreground">
+                <span className="text-label font-semibold">
                   {builderState?.governmentStructure?.structure?.totalBudget
                     ? formatCurrency(builderState.governmentStructure.structure.totalBudget)
                     : "Not configured"}
                 </span>
               </div>
-              <div className="flex items-center justify-between border-b border-border/20 py-1">
-                <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-                  <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="border-separator flex items-center justify-between border-b py-1">
+                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                  <Globe className="text-label-secondary h-3.5 w-3.5" />
                   Capital City
                 </span>
-                <span className="max-w-[120px] truncate font-bold text-foreground">
+                <span className="text-label max-w-[120px] truncate font-semibold">
                   {builderState?.economicInputs?.nationalIdentity?.capitalCity || "Not configured"}
                 </span>
               </div>
-              <div className="flex items-center justify-between border-b border-border/20 py-1">
-                <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-                  <Crown className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="border-separator flex items-center justify-between border-b py-1">
+                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                  <Crown className="text-label-secondary h-3.5 w-3.5" />
                   Currency
                 </span>
-                <span className="max-w-[120px] truncate font-bold text-foreground">
+                <span className="text-label max-w-[120px] truncate font-semibold">
                   {builderState?.economicInputs?.nationalIdentity?.currency
                     ? `${builderState.economicInputs.nationalIdentity.currency} (${builderState.economicInputs.nationalIdentity.currencySymbol || "$"})`
                     : "Not configured"}
@@ -328,15 +323,10 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
             </div>
           </div>
 
-          <button
-            onClick={handleContinue}
-            className="mt-4 flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 text-xs font-bold text-zinc-950 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-amber-400 hover:to-yellow-400 active:scale-[0.98]"
-            type="button"
-            data-cuelume-press
-          >
+          <Button onClick={handleContinue} className="mt-4 w-full" type="button">
             Continue Designing
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
+            <ArrowRight aria-hidden="true" />
+          </Button>
         </div>
       </div>
     </motion.div>

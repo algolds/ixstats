@@ -2,6 +2,8 @@
 
 import { Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 
 export type AccountType = "government" | "media" | "citizen";
 
@@ -57,8 +59,10 @@ export function AccountTypeSelector({
   return (
     <div className={cn("space-y-4", className)}>
       <div className="space-y-1">
-        <h3 className="text-base font-bold tracking-tight text-white">Select Account Type</h3>
-        <p className="text-xs text-slate-400">Choose the role for your new Thinkpages identity.</p>
+        <h3 className="text-headline text-label">Select Account Type</h3>
+        <p className="text-footnote text-label-secondary">
+          Choose the role for your new Thinkpages identity.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3">
@@ -70,42 +74,40 @@ export function AccountTypeSelector({
           return (
             <button
               key={typeKey}
+              type="button"
+              aria-pressed={isSelected}
               onClick={() => onSelectType(typeKey)}
               className={cn(
-                "flex items-start gap-3.5 rounded-2xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
+                "rounded-row flex items-start gap-3 border p-4 text-left transition-[background-color,border-color,scale] duration-150 active:scale-[0.98]",
                 isSelected
-                  ? "border-blue-500/50 bg-blue-500/10 shadow-md"
-                  : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"
+                  ? "border-tint bg-tint-fill"
+                  : "border-separator bg-surface-secondary hover:bg-fill-3"
               )}
             >
               <div
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm",
-                  type.color === "amber" && "border-amber-500/30 bg-amber-500/15 text-amber-400",
-                  type.color === "blue" && "border-blue-500/30 bg-blue-500/15 text-blue-400",
-                  type.color === "green" &&
-                    "border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
+                  "rounded-row flex size-10 shrink-0 items-center justify-center",
+                  type.color === "amber" && "bg-yellow/15 text-yellow",
+                  type.color === "blue" && "bg-blue/15 text-blue",
+                  type.color === "green" && "bg-green/15 text-green"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="size-5" aria-hidden="true" />
               </div>
 
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold tracking-tight text-white">{type.label}</span>
-                  <span className="text-xs font-semibold text-slate-400">
+                  <span className="text-headline text-label">{type.label}</span>
+                  <span className="text-footnote text-label-secondary tabular-nums">
                     Max {type.maxAccounts} accounts
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed text-slate-400">{type.description}</p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <p className="text-callout text-label-secondary">{type.description}</p>
+                <div className="flex flex-wrap gap-1 pt-1">
                   {type.examples.map((ex, i) => (
-                    <span
-                      key={i}
-                      className="rounded-md border border-white/10 bg-black/40 px-2 py-0.5 text-xs font-medium text-slate-300"
-                    >
+                    <Badge key={i} variant="neutral">
                       {ex}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               </div>
@@ -115,13 +117,7 @@ export function AccountTypeSelector({
       </div>
 
       <div className="flex justify-end pt-2">
-        <button
-          onClick={onContinue}
-          data-cuelume-press="tick"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5 py-2 text-xs font-semibold shadow-xs transition-colors active:scale-[0.97]"
-        >
-          Next: Account Details →
-        </button>
+        <Button onClick={onContinue}>Next: Account Details →</Button>
       </div>
     </div>
   );

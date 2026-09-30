@@ -17,7 +17,10 @@ import {
   ChatBubble as MessageSquare,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
+import { springGentle } from "~/lib/design/motion";
 import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
@@ -70,13 +73,13 @@ export function EnhancedAccountManager({
   const getAccountTypeColor = (type: string) => {
     switch (type) {
       case "government":
-        return "border-amber-500/30 bg-amber-500/10 text-amber-400";
+        return "border-yellow/30 bg-yellow/10 text-yellow";
       case "media":
-        return "border-blue-500/30 bg-blue-500/10 text-blue-400";
+        return "border-blue/30 bg-blue/10 text-blue";
       case "citizen":
-        return "border-green-500/30 bg-green-500/10 text-green-400";
+        return "border-green/30 bg-green/10 text-green";
       default:
-        return "border-gray-500/30 bg-gray-500/10 text-gray-400";
+        return "border-separator bg-fill-3 text-label-secondary";
     }
   };
 
@@ -128,12 +131,12 @@ export function EnhancedAccountManager({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
+        transition={{ ...springGentle, delay: index * 0.05 }}
         className={cn(
-          "rounded-lg border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-102",
+          "rounded-row border p-3 transition-[background-color,border-color] duration-150",
           isSelected
-            ? "border-blue-500/50 bg-blue-500/20 shadow-lg shadow-blue-500/25"
-            : "border-border/40 bg-muted/10 hover:bg-muted/20"
+            ? "border-tint bg-tint-fill"
+            : "border-separator bg-surface-secondary hover:bg-fill-3"
         )}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -141,7 +144,7 @@ export function EnhancedAccountManager({
             className="flex min-w-0 flex-1 cursor-pointer items-center gap-2"
             onClick={() => onAccountSelect(account)}
           >
-            <Avatar className="h-8 w-8">
+            <Avatar className="size-8">
               <AvatarImage src={account.profileImageUrl} />
               <AvatarFallback className={colorClasses}>
                 {account.displayName?.charAt(0) || account.username?.charAt(0) || "?"}
@@ -149,38 +152,43 @@ export function EnhancedAccountManager({
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
-                <PreText className="truncate text-sm font-medium">{account.displayName}</PreText>
+                <PreText className="text-headline text-label truncate">
+                  {account.displayName}
+                </PreText>
                 {account.verified && (
                   <span
-                    className="inline-flex h-3 w-3 items-center justify-center text-xs leading-none"
+                    className="text-footnote inline-flex size-3.5 items-center justify-center leading-none"
                     title="Verified"
                   >
                     ✅
                   </span>
                 )}
                 {(account as any).bio?.startsWith("Former Nation") && (
-                  <span className="text-xs text-gray-400">[Former Nation]</span>
+                  <span className="text-footnote text-label-secondary">[Former Nation]</span>
                 )}
-                {isFavorite && <Star className="h-3 w-3 fill-current text-yellow-500" />}
+                {isFavorite && (
+                  <Star className="text-yellow size-3.5 fill-current" aria-label="Favorite" />
+                )}
               </div>
-              <div className="text-muted-foreground text-xs">@{account.username}</div>
+              <div className="text-label-secondary text-footnote">@{account.username}</div>
             </div>
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="hover:bg-accent flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+              className="hover:bg-fill-3 text-label-secondary rounded-control-sm flex size-7 items-center justify-center transition-colors"
+              aria-label={`Actions for ${account.displayName}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreHorizontal className="h-3 w-3" />
+              <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => toggleFavorite(account.id)}>
-                <Star className="mr-2 h-4 w-4" />
+                <Star />
                 {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAccountSettings(account)}>
-                <Settings className="mr-2 h-4 w-4" />
+                <Settings />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -192,11 +200,7 @@ export function EnhancedAccountManager({
                   })
                 }
               >
-                {account.isActive ? (
-                  <EyeOff className="mr-2 h-4 w-4" />
-                ) : (
-                  <Eye className="mr-2 h-4 w-4" />
-                )}
+                {account.isActive ? <EyeOff /> : <Eye />}
                 {account.isActive ? "Deactivate" : "Activate"}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -204,38 +208,23 @@ export function EnhancedAccountManager({
         </div>
 
         <div className="mb-2 flex items-center gap-1">
-          <div className={cn("rounded p-1", colorClasses)}>
-            <Icon className="h-3 w-3" />
+          <div className={cn("rounded-control-sm p-1", colorClasses)}>
+            <Icon className="size-3.5" aria-hidden="true" />
           </div>
-          <Badge variant="outline" className="text-xs">
-            {account.accountType}
-          </Badge>
-          {!account.isActive && (
-            <Badge variant="secondary" className="bg-gray-500/20 text-xs text-gray-400">
-              Inactive
-            </Badge>
-          )}
+          <Badge variant="outline">{account.accountType}</Badge>
+          {!account.isActive && <Badge variant="neutral">Inactive</Badge>}
         </div>
 
         {/* Performance Metrics */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="text-center">
-            <div className="font-medium text-blue-400">{metrics.activity}</div>
-            <div className="text-muted-foreground">Posts</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium text-emerald-400">{metrics.reach}</div>
-            <div className="text-muted-foreground">Reach</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium text-indigo-400">{metrics.influence}%</div>
-            <div className="text-muted-foreground">Influence</div>
-          </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <Stat size="sm" label="Posts" value={metrics.activity} />
+          <Stat size="sm" label="Reach" value={metrics.reach} />
+          <Stat size="sm" label="Influence" value={`${metrics.influence}%`} />
         </div>
 
         {/* Account Bio Preview */}
         {account.bio && (
-          <PreText className="text-muted-foreground mt-2 line-clamp-2 text-xs">
+          <PreText className="text-footnote text-label-secondary mt-2 line-clamp-2">
             {account.bio}
           </PreText>
         )}
@@ -245,7 +234,11 @@ export function EnhancedAccountManager({
 
   const innerContent = (
     <>
-      <div className="bg-muted/50 grid w-full grid-cols-2 gap-1.5 rounded-lg p-1">
+      <div
+        role="radiogroup"
+        aria-label="Filter by account type"
+        className="bg-fill-3 rounded-control grid w-full grid-cols-2 gap-1 p-1"
+      >
         {(["all", "government", "media", "citizen"] as const).map((type) => {
           const Icon = getAccountIcon(type);
           const count = type === "all" ? accounts.length : getAccountTypeCount(type);
@@ -256,22 +249,25 @@ export function EnhancedAccountManager({
             <button
               key={type}
               type="button"
+              role="radio"
+              aria-checked={isActive}
               onClick={() => setFilterType(type)}
               className={cn(
-                "flex flex-1 cursor-pointer items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-xs tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                "text-caption rounded-control-sm flex flex-1 cursor-pointer items-center justify-between gap-1 px-2 py-1.5 transition-[color,background-color] duration-150",
                 isActive
-                  ? "border-primary bg-primary/10 font-bold shadow-xs"
-                  : "border-transparent opacity-75 hover:opacity-100",
-                type !== "all" ? getAccountTypeColor(type) : "border-accent/40 text-foreground"
+                  ? "bg-surface text-label shadow-card"
+                  : "text-label-secondary hover:text-label"
               )}
             >
               <span className="flex items-center gap-1">
-                {type === "all" ? <Users className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
-                <span className="font-medium">
-                  {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
-                </span>
+                {type === "all" ? (
+                  <Users className="size-3.5" aria-hidden="true" />
+                ) : (
+                  <Icon className="size-3.5" aria-hidden="true" />
+                )}
+                <span>{type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}</span>
               </span>
-              <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-xs font-semibold">
+              <span className="bg-fill-3 rounded-full px-1.5 py-0.5 tabular-nums">
                 {count}/{limit}
               </span>
             </button>
@@ -283,16 +279,19 @@ export function EnhancedAccountManager({
       <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
         <AnimatePresence>
           {filteredAccounts.length === 0 ? (
-            <div className="text-muted-foreground py-6 text-center">
-              <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
-              <p className="text-sm">No accounts in this category</p>
-              {isOwner && (
-                <Button variant="outline" size="sm" onClick={onCreateAccount} className="mt-2">
-                  <Plus className="mr-1 h-3 w-3" />
-                  Create Account
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              compact
+              icon={<Users />}
+              title="No accounts in this category"
+              action={
+                isOwner ? (
+                  <Button variant="bordered" size="sm" onClick={onCreateAccount}>
+                    <Plus aria-hidden="true" />
+                    Create Account
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
             filteredAccounts.map((account, index) => (
               <AccountCard key={account.id} account={account} index={index} />
@@ -309,30 +308,32 @@ export function EnhancedAccountManager({
             e.stopPropagation();
             onCreateAccount();
           }}
-          variant="outline"
+          variant="bordered"
           size="sm"
-          className="flex w-full items-center gap-2"
+          className="w-full"
           type="button"
         >
-          <Plus className="h-4 w-4" />
+          <Plus aria-hidden="true" />
           Create New Account ({25 - accounts.length} remaining)
         </Button>
       )}
 
       {/* Quick Stats */}
-      <div className="border-border/40 border-t pt-2">
-        <div className="grid grid-cols-2 gap-4 text-xs">
+      <div className="border-separator border-t pt-2">
+        <div className="text-footnote grid grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-3 w-3 text-green-400" />
-            <span className="text-muted-foreground">Total Posts:</span>
-            <span className="font-medium">
+            <TrendingUp className="text-label-secondary size-3.5" aria-hidden="true" />
+            <span className="text-label-secondary">Total Posts:</span>
+            <span className="text-label font-medium tabular-nums">
               {accounts.reduce((sum, acc) => sum + (acc.postCount || 0), 0)}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-3 w-3 text-blue-400" />
-            <span className="text-muted-foreground">Active:</span>
-            <span className="font-medium">{accounts.filter((acc) => acc.isActive).length}</span>
+            <MessageSquare className="text-label-secondary size-3.5" aria-hidden="true" />
+            <span className="text-label-secondary">Active:</span>
+            <span className="text-label font-medium tabular-nums">
+              {accounts.filter((acc) => acc.isActive).length}
+            </span>
           </div>
         </div>
       </div>
@@ -344,20 +345,22 @@ export function EnhancedAccountManager({
   }
 
   return (
-    <Card className="facet-hierarchy-child">
-      <CardHeader className="pb-3">
+    <FacetCard>
+      <FacetCardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Account Manager</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {accounts.length}/25
-            </Badge>
-          </div>
+          <h3 className="text-title-3 text-label">Account Manager</h3>
+          <Badge variant="outline" className="tabular-nums">
+            {accounts.length}/25
+          </Badge>
         </div>
-        <PreText className="text-muted-foreground text-sm">Manage your Thinkpages personas</PreText>
-      </CardHeader>
+        <PreText className="text-body text-label-secondary">
+          Manage your Thinkpages personas
+        </PreText>
+      </FacetCardHeader>
 
-      <CardContent className="space-y-4 sm:space-y-5">{innerContent}</CardContent>
-    </Card>
+      <FacetCardContent className="space-y-4 px-4 pb-4 sm:space-y-5 md:px-5 md:pb-5">
+        {innerContent}
+      </FacetCardContent>
+    </FacetCard>
   );
 }

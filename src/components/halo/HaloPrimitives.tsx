@@ -11,6 +11,7 @@ import React, {
   useState,
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { cn } from "~/lib/utils/cn";
 
 // Spring physics — Apple HIG fluid spring: critically damped settle (damping ratio ~1.0)
 export const stiffness = 420;
@@ -163,11 +164,7 @@ export const useScheduledAnimations = (animations: Array<{ size: SizePresets; de
 };
 
 export const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
-  return (
-    <div className="z-[10000] flex h-full w-full items-center justify-center bg-transparent">
-      {children}
-    </div>
-  );
+  return <div className="z-raised flex h-full w-full items-center justify-center">{children}</div>;
 };
 
 export const isCompactSize = (size: SizePresets | undefined): boolean => {
@@ -336,17 +333,20 @@ export const DynamicIslandContent = ({
             mass,
           }}
         >
-          <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
-          <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
+          <div className="bg-destructive/35 absolute inset-0 rounded-[inherit] blur-xl" />
         </motion.div>
       )}
 
       <motion.div
         id={id}
         data-expanded={!isCompact ? "true" : undefined}
-        className={`dynamic-island-shell relative mx-auto items-center justify-center text-center transition-colors duration-200 ${
-          isImpersonating ? "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]" : ""
-        }`}
+        // Halo is floating chrome (spec §5): regular glass as the pill, thick glass when expanded
+        // into a panel. Content inside stays on opaque roles.
+        className={cn(
+          "shadow-floating relative mx-auto items-center justify-center text-center",
+          isCompact ? "material-regular" : "material-thick",
+          isImpersonating && "ring-destructive ring-2"
+        )}
         initial={{
           width: dimensions.width,
           height: targetHeight,
@@ -372,28 +372,9 @@ export const DynamicIslandContent = ({
         }}
         {...props}
       >
-        {/* Specular edge highlight (Apple physical acrylic top lip glare) */}
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <div className="absolute top-0 left-0 h-[1.5px] w-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/30" />
-          <div className="absolute top-0 right-1/4 left-1/4 h-[1px] bg-white/40 blur-[0.5px] dark:bg-white/20" />
-        </div>
-
-        <AnimatePresence>
-          {!isCompact && (
-            <motion.div
-              key="card-backdrop-scrim"
-              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-gradient-to-b from-white/[0.04] via-transparent to-black/[0.08] dark:from-white/[0.02] dark:to-black/[0.25]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-            />
-          )}
-        </AnimatePresence>
-
         <div
           ref={contentRef}
-          className={`relative z-[10001] h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
+          className={`z-raised relative h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
         >
           <AnimatePresence>{children}</AnimatePresence>
         </div>
@@ -456,7 +437,7 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
   if (!mounted) {
     return (
       <HaloOuterWrapper>
-        <div className="bg-card/95 border-border relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center backdrop-blur-xl">
+        <div className="material-regular shadow-floating relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
           {children}
         </div>
       </HaloOuterWrapper>

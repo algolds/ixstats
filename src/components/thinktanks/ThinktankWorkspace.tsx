@@ -7,6 +7,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 
 import { ThinktankLayout } from "./ThinktankLayout";
@@ -230,10 +231,8 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         workspacePanel={
           isLoadingActiveGroup && selectedGroupId ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-xs">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-              </div>
-              <p className="text-muted-foreground text-xs font-semibold">Loading group...</p>
+              <span className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
+              <p className="text-footnote text-label-secondary">Loading group...</p>
             </div>
           ) : activeGroup ? (
             <div className="flex h-full flex-col overflow-hidden">
@@ -298,26 +297,23 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
             </div>
           ) : (
             /* Apple-styled Empty State */
-            <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-xs dark:text-emerald-400">
-                <Group className="h-7 w-7" />
-              </div>
-              <h3 className="text-foreground mt-4 text-base font-bold">Select a Group</h3>
-              <p className="text-muted-foreground mt-1.5 max-w-sm text-xs leading-relaxed">
-                Choose a group from the sidebar to view the feed, open discussions, or check the
-                roster.
-              </p>
-              <Button
-                onClick={() => {
-                  soundEffects.press();
-                  setShowCreateModal(true);
-                }}
-                className="mt-4 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Create a Group
-              </Button>
-            </div>
+            <EmptyState
+              className="h-full"
+              icon={<Group />}
+              title="Select a Group"
+              message="Choose a group from the sidebar to view the feed, open discussions, or check the roster."
+              action={
+                <Button
+                  onClick={() => {
+                    soundEffects.press();
+                    setShowCreateModal(true);
+                  }}
+                >
+                  <Plus />
+                  Create a Group
+                </Button>
+              }
+            />
           )
         }
       />

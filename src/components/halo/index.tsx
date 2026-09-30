@@ -298,7 +298,7 @@ function CommandPaletteContent({
           {ringActive && (
             <motion.div
               key="ring"
-              className="pointer-events-none absolute inset-0 rounded-full border-2 border-blue-400/60"
+              className="border-tint/60 pointer-events-none absolute inset-0 rounded-full border-2"
               initial={{ scale: 1, opacity: 0.8 }}
               animate={{ scale: 1.35, opacity: 0 }}
               exit={{ opacity: 0 }}
@@ -315,11 +315,11 @@ function CommandPaletteContent({
             y: pillBounce ? -4 : 0,
             boxShadow: isTourActive
               ? [
-                  "0 0 0px rgba(59, 130, 246, 0)",
-                  "0 0 15px rgba(59, 130, 246, 0.5)",
-                  "0 0 0px rgba(59, 130, 246, 0)",
+                  "0 0 0px color-mix(in srgb, var(--tint) 0%, transparent)",
+                  "0 0 15px color-mix(in srgb, var(--tint) 50%, transparent)",
+                  "0 0 0px color-mix(in srgb, var(--tint) 0%, transparent)",
                 ]
-              : "0 0 0px rgba(0, 0, 0, 0)",
+              : "0 0 0px transparent",
           }}
           transition={
             isTourActive
@@ -345,12 +345,10 @@ function CommandPaletteContent({
             {isNavLoading ? (
               <div
                 key="loading"
-                className="flex h-10 w-full items-center justify-center gap-2 px-3 text-neutral-200"
+                className="text-label flex h-10 w-full items-center justify-center gap-2 px-3"
               >
                 <IOSActivityIndicator size="sm" />
-                <span className="text-xs font-semibold tracking-wide">
-                  Loading...
-                </span>
+                <span className="text-caption">Loading...</span>
               </div>
             ) : !isExpanded ? (
               <div key="compact" className="h-full w-full">
@@ -490,7 +488,7 @@ function CommandPaletteWrapper({
   return (
     <div
       ref={wrapperRef}
-      className={`pointer-events-none relative z-[10000] flex w-full items-center justify-center ${className || ""}`}
+      className={`z-nav pointer-events-none relative flex w-full items-center justify-center ${className || ""}`}
       style={{
         maxWidth: isExpanded ? "100%" : isSticky ? "400px" : "100%",
       }}

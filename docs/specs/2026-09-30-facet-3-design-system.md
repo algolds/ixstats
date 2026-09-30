@@ -392,6 +392,25 @@ values on hover or tap.
    `springSmooth`/`springSnappy`/`tweenFast`. Left for their own apps: `/leaderboards` and `/id/[username]` page shells,
    the shared Settings `SettingsGroup`/`SettingsRow` primitives, the Lorewards details still in a `Dialog` (its two-column
    layout needs more width than a side `Sheet`).
+   **ThinkPages (+ ThinkTanks, blurbs components), Messages, Halo views — ✅ converted 2026-09-30**
+   (`components/thinkpages`, `components/thinktanks`, `app/thinkpages`, `app/thinktanks`, `components/messages`,
+   `app/messages`, `components/halo`; now in `facet-guards`' converted areas). `/messages` joins the emerald
+   `data-app="thinkpages"` scope (it is a ThinkPages section) with its own `PortalTintSync`. Custom `createPortal` /
+   `fixed inset-0` overlays → `Dialog` (reactions, poll, account creation/settings, flag, image lightbox with `instant`
+   presentation so the shared-element motion is the transition), `AlertDialog` (delete post) and `Popover` (reaction
+   picker, composer account switcher); `CutoutCard`/`Card`/`facet-hierarchy-*` panels → opaque `FacetCard` with
+   `surface-secondary` insets; emerald/amber/blue palette, `dark:` pairs, `[Npx]` sizes and `rounded-[…]` → tint,
+   system colours, status roles, text styles and radius tokens; hand-rolled pills → `SegmentedControl`, `ToggleGroup`,
+   `FacetTabs`, `SearchField`, `Badge`, `Button` styles; empty states → `EmptyState`; all decorative gradients and
+   content blurs removed. **Halo** keeps its positioning and z contract with the shell (`ShellHalo` / legacy nav own the
+   stacking context); inside it the island is `material-regular` (pill) / `material-thick` (expanded) instead of the
+   `.dynamic-island-shell` acrylic, internal `z-[10000…]` layers are `z-nav`/`z-raised`/`z-10…40`, the nav tray and
+   walkthrough drop their `fixed inset-0` click-catcher (outside-press listener; the tour reuses the dialog scrim) and
+   section accents use system-colour variables instead of hex. **Remaining:** `x.5` spacing steps; Halo's own spring
+   constants (420/38) and per-button `soundEffects` ticks; WikiOS narrator colours derived from article theme hex
+   (data); `.dynamic-island-shell` CSS still used by `MapDynamicIsland` and the WikiOS editor header; the Discord
+   brand button keeps `text-white`. Primitive gap: no `PopoverAnchor` export (the reaction picker anchors via an inert
+   `PopoverTrigger` span because the like button's own click must not toggle it).
 
 ## 15. Governance
 

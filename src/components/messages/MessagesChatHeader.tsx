@@ -18,7 +18,8 @@ import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
 import { resolveIdentity, MessagesIdentityBadge } from "./MessagesIdentityBadge";
-import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { SearchField } from "~/components/ui/search-field";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -153,65 +154,58 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
     }
   };
 
-  // Dynamic header styling by thread type
-  const headerTheme = isSystemThread
-    ? "bg-amber-500/[0.04] dark:bg-amber-500/10 border-b border-amber-500/20"
-    : isLoreBotThread
-      ? "bg-cyan-500/[0.04] dark:bg-cyan-500/10 border-b border-cyan-500/20"
-      : isDiplomatic
-        ? "bg-amber-500/[0.03] dark:bg-amber-500/[0.07] border-b border-amber-500/20"
-        : isGroup
-          ? "bg-emerald-500/[0.04] border-b border-emerald-500/20 dark:bg-emerald-500/10"
-          : "bg-muted/[0.08] border-b border-border/40";
+  // One opaque header for every thread type; the thread kind shows in its badge.
+  const headerTheme = "border-b border-separator";
 
   return (
     <header
       className={cn(
-        "relative z-10 flex h-14 shrink-0 items-center justify-between px-3 backdrop-blur-xl transition-colors duration-300 md:px-4",
+        "relative flex h-14 shrink-0 items-center justify-between px-3 md:px-4",
         headerTheme
       )}
     >
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         {onBack && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="text-muted-foreground hover:bg-accent/40 hover:text-foreground mr-1 -ml-1 h-8 w-8 shrink-0 rounded-xl active:scale-95"
+            className="text-label-secondary mr-1 -ml-1 size-8 shrink-0"
             title="Back to conversation list"
+            aria-label="Back to conversation list"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft />
           </Button>
         )}
 
         {isSearchVisible ? (
           <div className="flex flex-1 items-center gap-2 pr-2">
-            <Search className="text-muted-foreground h-4 w-4 shrink-0" />
-            <Input
+            <SearchField
               autoFocus
+              containerClassName="flex-1"
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search in conversation..."
-              className="bg-background/50 h-8 flex-1 rounded-xl text-xs"
+              aria-label="Search in conversation"
             />
-            <Button variant="ghost" size="icon" onClick={clearSearch} className="h-7 w-7">
-              <Xmark className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="icon-sm" onClick={clearSearch} aria-label="Close search">
+              <Xmark />
             </Button>
           </div>
         ) : (
           <>
             <div className="relative shrink-0">
               {isSystemThread ? (
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 shadow-inner">
-                  <Shield className="h-4.5 w-4.5 text-amber-500" />
+                <div className="bg-yellow/15 rounded-control flex size-9 items-center justify-center">
+                  <Shield className="text-yellow size-4" aria-hidden="true" />
                 </div>
               ) : isLoreBotThread ? (
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/15 shadow-inner">
-                  <BookOpen className="h-4.5 w-4.5 text-cyan-400" />
+                <div className="bg-teal/15 rounded-control flex size-9 items-center justify-center">
+                  <BookOpen className="text-teal size-4" aria-hidden="true" />
                 </div>
               ) : avatarUrl ? (
                 primaryOther?.countryFlag ? (
-                  <div className="border-border/30 bg-background/50 relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border shadow-xs">
+                  <div className="border-separator bg-fill-4 rounded-control relative flex size-9 items-center justify-center overflow-hidden border">
                     <UnifiedCountryFlag
                       countryName={primaryOther.countryName || displayTitle}
                       flagUrl={normalizeFlagUrl(avatarUrl)}
@@ -222,16 +216,14 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                   <img
                     src={avatarUrl}
                     alt={displayTitle}
-                    className="border-border/30 h-9 w-9 rounded-xl border object-cover shadow-xs"
+                    className="border-separator rounded-control size-9 border object-cover"
                   />
                 )
               ) : (
                 <div
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-xl border font-bold shadow-xs",
-                    isGroup
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                      : "border-border/30 bg-accent/20 text-muted-foreground"
+                    "text-headline rounded-control flex size-9 items-center justify-center",
+                    isGroup ? "bg-tint-fill text-tint" : "bg-fill-3 text-label-secondary"
                   )}
                 >
                   {displayTitle.charAt(0).toUpperCase()}
@@ -242,10 +234,10 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               {!isSystemThread && !isLoreBotThread && !isGroup && (
                 <span
                   className={cn(
-                    "ring-background absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full ring-2",
+                    "ring-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2",
                     participantStatus?.toLowerCase().includes("online")
-                      ? "bg-emerald-500"
-                      : "bg-muted-foreground/40"
+                      ? "bg-success"
+                      : "bg-label-tertiary"
                   )}
                 />
               )}
@@ -253,27 +245,21 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h3 className="text-foreground truncate text-sm font-semibold">{displayTitle}</h3>
+                <h3 className="text-headline text-label truncate">{displayTitle}</h3>
                 {isSystemThread || isLoreBotThread ? (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
-                    Official
-                  </span>
+                  <Badge variant="caution">Official</Badge>
                 ) : (
                   identity && <MessagesIdentityBadge identity={identity} />
                 )}
                 {isDiplomatic && (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
-                    <Shield className="h-2.5 w-2.5" />
+                  <Badge variant="caution">
+                    <Shield aria-hidden="true" />
                     Diplomatic Cable
-                  </span>
+                  </Badge>
                 )}
-                {isGroup && (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 text-xs font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
-                    Group Chat
-                  </span>
-                )}
+                {isGroup && <Badge variant="tinted">Group Chat</Badge>}
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-footnote text-label-secondary truncate">
                 {isSystemThread
                   ? "Platform broadcasts, simulation digests & system dispatches"
                   : isLoreBotThread
@@ -288,16 +274,26 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
       </div>
 
       {!isSearchVisible && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {!isSystemThread && !isLoreBotThread && (
-            <Button variant="ghost" size="icon" onClick={toggleSearch}>
-              <Search className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSearch}
+              aria-label="Search in conversation"
+            >
+              <Search />
             </Button>
           )}
 
           {isGroup && onAddParticipants && (
-            <Button variant="ghost" size="icon" onClick={onAddParticipants}>
-              <UserPlus className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onAddParticipants}
+              aria-label="Add participants"
+            >
+              <UserPlus />
             </Button>
           )}
 
@@ -306,26 +302,26 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               className={buttonVariants({ variant: "ghost", size: "icon" })}
               aria-label="Conversation actions"
             >
-              <MoreVert className="h-4 w-4" />
+              <MoreVert className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel>Conversation</DropdownMenuGroupLabel>
                 {onViewDetails && (
                   <DropdownMenuItem onClick={onViewDetails}>
-                    <InfoCircle className="mr-2 h-4 w-4" />
+                    <InfoCircle />
                     <span>View Details</span>
                   </DropdownMenuItem>
                 )}
                 {onMuteToggle && !isSystemThread && (
                   <DropdownMenuItem onClick={onMuteToggle}>
-                    <BellOff className="mr-2 h-4 w-4" />
+                    <BellOff />
                     <span>{isMuted ? "Unmute Thread" : "Mute Thread"}</span>
                   </DropdownMenuItem>
                 )}
                 {onArchiveToggle && !isSystemThread && (
                   <DropdownMenuItem onClick={onArchiveToggle}>
-                    <Archive className="mr-2 h-4 w-4" />
+                    <Archive />
                     <span>{isArchived ? "Unarchive Thread" : "Archive Thread"}</span>
                   </DropdownMenuItem>
                 )}
@@ -340,7 +336,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                     onClick={onClearSystemMessages}
                     className="text-destructive focus:text-destructive"
                   >
-                    <Refresh className="mr-2 h-4 w-4" />
+                    <Refresh />
                     <span>Clear System Logs</span>
                   </DropdownMenuItem>
                 ) : (
@@ -350,7 +346,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                       onClick={onDeleteConversation}
                       className="text-destructive focus:text-destructive"
                     >
-                      <Trash className="mr-2 h-4 w-4" />
+                      <Trash />
                       <span>{isGroup ? "Leave Group" : "Delete Thread"}</span>
                     </DropdownMenuItem>
                   )

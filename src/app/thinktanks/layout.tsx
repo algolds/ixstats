@@ -13,7 +13,7 @@ export default function ThinktanksLayout({ children }: { children: React.ReactNo
     <Suspense
       fallback={
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-          <div className="border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
         </div>
       }
     >

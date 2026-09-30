@@ -1,10 +1,16 @@
 "use client";
 
 import React from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { CheckSquare as Vote, Xmark as X, InfoCircle as Info, Plus, Minus } from "iconoir-react";
+import { CheckSquare as Vote, InfoCircle as Info, Plus, Minus } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import {
@@ -38,222 +44,194 @@ export function ComposerPollModal({
   isRegularUser,
   notify,
 }: ComposerPollModalProps) {
-  if (typeof window === "undefined" || !showPollModal || !pollDraft) return null;
+  if (!pollDraft) return null;
 
-  return createPortal(
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setShowPollModal(false)}
-          className="absolute inset-0 bg-black/60 backdrop-blur-2xl"
-        />
+  return (
+    <Dialog open={showPollModal} onOpenChange={setShowPollModal}>
+      <DialogContent className="gap-4 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-title-3 flex items-center gap-2">
+            <Vote className="text-tint size-5" aria-hidden="true" />
+            Configure Poll Draft
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Set the poll question, type and options.
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Modal Sheet Container (Apple HIG Control Surface) */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, y: 16 }}
-          transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="text-foreground dark:border-border dark:bg-popover/98 relative z-10 w-full max-w-md space-y-4 rounded-3xl border border-black/10 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
-        >
-          <div className="border-border/60 flex items-center justify-between border-b pb-3">
-            <div className="text-poll flex items-center gap-2 text-sm font-bold tracking-tight">
-              <Vote className="h-4 w-4" />
-              <span>Configure Poll Draft</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowPollModal(false)}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted h-7 w-7 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+        {/* Poll Question */}
+        <div className="space-y-1.5">
+          <label htmlFor="poll-question" className="text-subhead text-label">
+            Question / Topic *
+          </label>
+          <Input
+            id="poll-question"
+            type="text"
+            placeholder="Ask a question..."
+            value={pollDraft.question}
+            onChange={(e) => setPollDraft({ ...pollDraft, question: e.target.value })}
+            required
+          />
+        </div>
 
-          {/* Poll Question */}
+        {/* Poll Type & Multiple Options */}
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Question / Topic *
-            </label>
-            <Input
-              type="text"
-              placeholder="Ask a question..."
-              value={pollDraft.question}
-              onChange={(e) => setPollDraft({ ...pollDraft, question: e.target.value })}
-              className="border-input bg-secondary focus-visible:ring-poll/50 rounded-xl text-xs font-medium"
-              required
-            />
+            <span className="text-subhead text-label block">Poll Type</span>
+            <Select
+              value={pollDraft.pollType}
+              onValueChange={(val: "choice" | "feature-poll") =>
+                setPollDraft({
+                  ...pollDraft,
+                  pollType: val,
+                })
+              }
+            >
+              <SelectTrigger aria-label="Poll type">
+                <SelectValue placeholder="Select Poll Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="choice">Choice Poll</SelectItem>
+                {!isRegularUser && <SelectItem value="feature-poll">Feature Poll</SelectItem>}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Poll Type & Multiple Options */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-muted-foreground mb-1 block text-xs font-bold tracking-wider uppercase">
-                Poll Type
-              </label>
-              <Select
-                value={pollDraft.pollType}
-                onValueChange={(val: "choice" | "feature-poll") =>
-                  setPollDraft({
-                    ...pollDraft,
-                    pollType: val,
-                  })
-                }
+          <div className="flex flex-col justify-end space-y-1 pb-1">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="modal-poll-multiple-toggle"
+                checked={pollDraft.multiple}
+                onCheckedChange={(checked) => setPollDraft({ ...pollDraft, multiple: checked })}
+              />
+              <label
+                htmlFor="modal-poll-multiple-toggle"
+                className="text-body text-label cursor-pointer"
               >
-                <SelectTrigger className="border-input bg-secondary focus:border-poll/50 h-8 rounded-xl text-xs font-semibold">
-                  <SelectValue placeholder="Select Poll Type" />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-popover/98 rounded-xl text-xs shadow-2xl backdrop-blur-2xl">
-                  <SelectItem value="choice">Choice Poll</SelectItem>
-                  {!isRegularUser && <SelectItem value="feature-poll">Feature Poll</SelectItem>}
-                </SelectContent>
-              </Select>
+                Multiple Selection
+              </label>
             </div>
+          </div>
+        </div>
 
-            <div className="flex flex-col justify-end space-y-1 pb-1">
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="modal-poll-multiple-toggle"
-                  checked={pollDraft.multiple}
-                  onCheckedChange={(checked) => setPollDraft({ ...pollDraft, multiple: checked })}
-                  className="scale-90"
+        {/* Blurb Prompt Notice for Regular Users */}
+        {isRegularUser && (
+          <div className="bg-info/10 text-callout text-label rounded-row flex items-start gap-2 p-3">
+            <Info className="text-info mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              Citizen accounts can only launch Choice Polls. To prioritize features, create a
+              structured roadmap, or run custom campaigns, submit a{" "}
+              <a
+                href={withBasePath("/blurbs")}
+                className="text-tint font-medium underline"
+                onClick={() => setShowPollModal(false)}
+              >
+                Blurb prompt
+              </a>{" "}
+              instead.
+            </span>
+          </div>
+        )}
+
+        {/* Poll Options */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-subhead text-label block">Options * (min 2)</span>
+            <span className="text-footnote text-label-secondary tabular-nums">
+              {pollDraft.options.filter((o) => o.trim()).length} / 10
+            </span>
+          </div>
+
+          <div className="max-h-[180px] space-y-2 overflow-y-auto pr-1">
+            {pollDraft.options.map((option, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="text-footnote text-label-secondary w-4 text-center tabular-nums">
+                  {idx + 1}
+                </span>
+                <Input
+                  type="text"
+                  placeholder={`Option ${idx + 1}`}
+                  value={option}
+                  onChange={(e) => {
+                    const updated = [...pollDraft.options];
+                    updated[idx] = e.target.value;
+                    setPollDraft({ ...pollDraft, options: updated });
+                  }}
+                  aria-label={`Option ${idx + 1}`}
+                  className="flex-1"
+                  required
                 />
-                <label
-                  htmlFor="modal-poll-multiple-toggle"
-                  className="text-foreground cursor-pointer text-xs font-semibold"
-                >
-                  Multiple Selection
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Blurb Prompt Notice for Regular Users */}
-          {isRegularUser && (
-            <div className="border-poll/20 bg-poll/5 text-poll flex items-start gap-2 rounded-xl border p-3 text-xs leading-relaxed">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                Citizen accounts can only launch Choice Polls. To prioritize features, create a
-                structured roadmap, or run custom campaigns, submit a{" "}
-                <a
-                  href={withBasePath("/blurbs")}
-                  className="hover:text-poll/80 font-bold underline"
-                  onClick={() => setShowPollModal(false)}
-                >
-                  Blurb prompt
-                </a>{" "}
-                instead.
-              </span>
-            </div>
-          )}
-
-          {/* Poll Options */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
-                Options * (min 2)
-              </label>
-              <span className="text-muted-foreground text-xs font-semibold">
-                {pollDraft.options.filter((o) => o.trim()).length} / 10
-              </span>
-            </div>
-
-            <div className="max-h-[180px] space-y-2 overflow-y-auto pr-1">
-              {pollDraft.options.map((option, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-4 text-center text-xs font-bold">
-                    {idx + 1}
-                  </span>
-                  <Input
-                    type="text"
-                    placeholder={`Option ${idx + 1}`}
-                    value={option}
-                    onChange={(e) => {
-                      const updated = [...pollDraft.options];
-                      updated[idx] = e.target.value;
-                      setPollDraft({ ...pollDraft, options: updated });
+                {pollDraft.options.length > 2 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setPollDraft({
+                        ...pollDraft,
+                        options: pollDraft.options.filter((_, i) => i !== idx),
+                      });
                     }}
-                    className="border-input bg-secondary focus-visible:ring-poll/50 flex-1 rounded-xl text-xs font-medium"
-                    required
-                  />
-                  {pollDraft.options.length > 2 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setPollDraft({
-                          ...pollDraft,
-                          options: pollDraft.options.filter((_, i) => i !== idx),
-                        });
-                      }}
-                      className="h-7 w-7 shrink-0 cursor-pointer rounded-lg text-rose-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/10 hover:text-rose-600 active:scale-95"
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {pollDraft.options.length < 10 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setPollDraft({
-                    ...pollDraft,
-                    options: [...pollDraft.options, ""],
-                  });
-                }}
-                className="border-poll/35 text-poll hover:bg-poll/10 mt-1 h-8 w-full rounded-xl border-dashed text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-              >
-                <Plus className="mr-1 h-3 w-3" /> Add Option
-              </Button>
-            )}
+                    aria-label={`Remove option ${idx + 1}`}
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive size-7 shrink-0"
+                  >
+                    <Minus />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
 
-          {/* Actions */}
-          <div className="border-border/60 mt-3 flex justify-end gap-2 border-t pt-3.5">
+          {pollDraft.options.length < 10 && (
             <Button
               type="button"
-              variant="ghost"
+              variant="bordered"
+              size="sm"
               onClick={() => {
-                setPollDraft(null);
-                setShowPollModal(false);
+                setPollDraft({
+                  ...pollDraft,
+                  options: [...pollDraft.options, ""],
+                });
               }}
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold text-rose-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/10 active:scale-95"
+              className="mt-1 w-full border-dashed"
             >
-              Discard Poll
+              <Plus aria-hidden="true" /> Add Option
             </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                const validOpts = pollDraft.options.map((o) => o.trim()).filter(Boolean);
-                if (!pollDraft.question.trim()) {
-                  notify.error("Please enter a question");
-                  return;
-                }
-                if (validOpts.length < 2) {
-                  notify.error("At least 2 non-empty options are required");
-                  return;
-                }
-                setShowPollModal(false);
-                notify.success("Poll configured successfully!");
-              }}
-              className="bg-poll hover:bg-poll/90 h-8 rounded-xl px-4 text-xs font-bold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
-            >
-              Save & Apply
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>,
-    document.body
+          )}
+        </div>
+
+        {/* Actions */}
+        <DialogFooter className="border-separator border-t pt-4">
+          <Button
+            type="button"
+            variant="plain"
+            onClick={() => {
+              setPollDraft(null);
+              setShowPollModal(false);
+            }}
+            className="text-destructive hover:text-destructive"
+          >
+            Discard Poll
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              const validOpts = pollDraft.options.map((o) => o.trim()).filter(Boolean);
+              if (!pollDraft.question.trim()) {
+                notify.error("Please enter a question");
+                return;
+              }
+              if (validOpts.length < 2) {
+                notify.error("At least 2 non-empty options are required");
+                return;
+              }
+              setShowPollModal(false);
+              notify.success("Poll configured successfully!");
+            }}
+          >
+            Save & Apply
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

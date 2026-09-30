@@ -9,8 +9,14 @@
 
 import React, { useMemo, useRef, useEffect } from "react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
-import { useBuilderFilter, type BuilderFilterState } from "~/app/builder/components/builder-filter-context";
-import { useBuilderContext, type BuilderContextValue } from "~/app/builder/components/enhanced/context/BuilderStateContext";
+import {
+  useBuilderFilter,
+  type BuilderFilterState,
+} from "~/app/builder/components/builder-filter-context";
+import {
+  useBuilderContext,
+  type BuilderContextValue,
+} from "~/app/builder/components/enhanced/context/BuilderStateContext";
 import type { RealCountryData } from "~/app/builder/lib/economy-types";
 import { BuilderView } from "./views";
 import type { DIPlugin, DIViewProps } from "~/components/halo/types";
@@ -47,18 +53,15 @@ function BuilderCompactLabel({ step, countryName }: BuilderCompactLabelProps) {
 
   return (
     <span
-      className="flex min-w-0 max-w-[130px] items-center gap-1.5 overflow-hidden select-none sm:max-w-[180px]"
+      className="flex max-w-[130px] min-w-0 items-center gap-1.5 overflow-hidden select-none sm:max-w-[180px]"
       title={`Builder: ${fullLabel}`}
     >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-      <PreText
-        className="text-foreground/90 shrink-0 text-xs font-semibold tracking-tight"
-        whiteSpace="nowrap"
-      >
+      <span className="bg-yellow h-1.5 w-1.5 shrink-0 rounded-full" />
+      <PreText className="text-label text-caption shrink-0 font-semibold" whiteSpace="nowrap">
         Builder
       </PreText>
-      <span className="text-muted-foreground/50 shrink-0 text-xs">•</span>
-      <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs font-medium [mask-image:linear-gradient(to_right,black_85%,transparent_100%)]">
+      <span className="text-label-tertiary text-footnote shrink-0">•</span>
+      <span className="text-label-secondary text-caption min-w-0 flex-1 truncate [mask-image:linear-gradient(to_right,black_85%,transparent_100%)]">
         {fullLabel}
       </span>
     </span>
@@ -115,8 +118,6 @@ function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
     filter.setSelectedTemplate,
   ]);
 
-
-
   // Fine-grained selector subscribing only to the error count to minimize re-renders
   const errorCount = useToastQueueStore((s) => s.queue.filter((t) => t.type === "error").length);
   const hasError = errorCount > 0;
@@ -160,16 +161,13 @@ function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
     return {
       id: "builder",
       priority: 20, // High priority to override mycountry/wiki default plugins
-      center: (
-        <BuilderCompactLabel
-          step={context.builderState.step}
-          countryName={countryName}
-        />
-      ),
+      center: <BuilderCompactLabel step={context.builderState.step} countryName={countryName} />,
       expandedViews: {
-        builder: BuilderView as React.ComponentType<DIViewProps<BuilderFilterState, BuilderContextValue>>,
+        builder: BuilderView as React.ComponentType<
+          DIViewProps<BuilderFilterState, BuilderContextValue>
+        >,
       },
-      accentColor: hasError ? "var(--color-error)" : "#f59e0b",
+      accentColor: hasError ? "var(--color-error)" : "var(--color-yellow)",
       stickyLabel: "Builder",
       badge: hasError ? { color: "var(--color-error)", pulse: true } : undefined,
       actions: [

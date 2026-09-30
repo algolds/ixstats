@@ -74,25 +74,25 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
 
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-current={isSelected || undefined}
       className={cn(
-        "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
-        isSelected
-          ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
-          : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
+        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-[background-color,scale] duration-150 select-none active:scale-[0.98]",
+        isSelected ? "bg-tint-fill text-label" : "hover:bg-fill-4 text-label hover:text-label"
       )}
     >
       {/* Avatar / Flag */}
       <div className="relative shrink-0">
         {isGroup ? (
-          <Avatar className="ring-border/30 h-10 w-10 ring-1">
+          <Avatar className="border-separator size-10 border">
             <AvatarImage src={conversation.avatar ?? undefined} alt={displayName} />
-            <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
-              <Users className="h-4 w-4 opacity-80" />
+            <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
+              <Users className="size-4" aria-hidden="true" />
             </AvatarFallback>
           </Avatar>
         ) : isDiplomatic && participantCountryFlag ? (
-          <div className="ring-border/30 h-7 w-10 overflow-hidden rounded-md shadow-2xs ring-1">
+          <div className="border-separator rounded-control-sm h-7 w-10 overflow-hidden border">
             <UnifiedCountryFlag
               countryName={participantCountryName || displayName}
               flagUrl={normalizeFlagUrl(participantCountryFlag)}
@@ -101,9 +101,9 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             />
           </div>
         ) : (
-          <Avatar className="ring-border/25 h-10 w-10 ring-1">
+          <Avatar className="border-separator size-10 border">
             <AvatarImage src={participantAvatar ?? undefined} alt={displayName} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
+            <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
               {initials || "?"}
             </AvatarFallback>
           </Avatar>
@@ -111,7 +111,10 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
 
         {/* Crisp unread indicator dot */}
         {hasUnread && (
-          <span className="bg-primary ring-background absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2" />
+          <span
+            className="bg-tint ring-surface absolute -top-0.5 -right-0.5 size-2.5 rounded-full ring-2"
+            aria-hidden="true"
+          />
         )}
       </div>
 
@@ -122,30 +125,30 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           <div className="flex min-w-0 items-center gap-1.5">
             <span
               className={cn(
-                "truncate text-[13px] tracking-[-0.01em]",
+                "text-body truncate",
                 hasUnread
-                  ? "text-foreground font-semibold"
+                  ? "text-label font-semibold"
                   : isSelected
-                    ? "text-foreground font-semibold"
-                    : "text-foreground/90 font-medium"
+                    ? "text-label font-semibold"
+                    : "text-label font-medium"
               )}
             >
               {isSelfMessage ? `${displayName} (You)` : displayName}
             </span>
 
             {/* Subtle contextual glyph for official / community channels */}
-            {isDiplomatic && <Globe className="h-3 w-3 shrink-0 text-amber-500/80" />}
-            {isCommunity && (
-              <span className="text-muted-foreground/60 text-xs font-normal">
-                • Community
-              </span>
+            {isDiplomatic && (
+              <Globe className="text-label-secondary size-3.5 shrink-0" aria-label="Diplomatic" />
             )}
+            {isCommunity && <span className="text-footnote text-label-secondary">• Community</span>}
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            {isMuted && <BellOff className="text-muted-foreground/50 h-3 w-3 shrink-0" />}
+            {isMuted && (
+              <BellOff className="text-label-secondary size-3.5 shrink-0" aria-label="Muted" />
+            )}
             {lastMessage && (
-              <span className="text-muted-foreground/60 text-xs font-normal tabular-nums">
+              <span className="text-footnote text-label-secondary tabular-nums">
                 {formatRelativeTime(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp)}
               </span>
             )}
@@ -156,8 +159,8 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p
             className={cn(
-              "line-clamp-1 text-[12px] leading-normal",
-              hasUnread ? "text-foreground font-medium" : "text-muted-foreground font-normal"
+              "text-footnote line-clamp-1",
+              hasUnread ? "text-label font-medium" : "text-label-secondary"
             )}
           >
             {lastMessage ? (
@@ -166,12 +169,12 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
                 {lastMessage.content.replace(/<[^>]*>/g, "")}
               </>
             ) : (
-              <span className="italic opacity-60">No messages yet</span>
+              <span className="text-label-tertiary italic">No messages yet</span>
             )}
           </p>
 
           {hasUnread && conversation.unreadCount > 0 && (
-            <span className="bg-primary text-primary-foreground flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums shadow-2xs">
+            <span className="bg-tint text-caption text-on-tint flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 tabular-nums">
               {conversation.unreadCount}
             </span>
           )}

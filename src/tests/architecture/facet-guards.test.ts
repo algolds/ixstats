@@ -70,6 +70,14 @@ const FACET_CONVERTED = [
   "app/achievements/",
   "components/passport/",
   "app/settings/_components/panels/AccountIdentityPanel.tsx",
+  // Phase 4 apps: ThinkPages (+ ThinkTanks, blurbs components), Messages, Halo views.
+  "components/thinkpages/",
+  "components/thinktanks/",
+  "app/thinkpages/",
+  "app/thinktanks/",
+  "components/messages/",
+  "app/messages/",
+  "components/halo/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));

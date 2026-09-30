@@ -166,30 +166,24 @@ export function ThinktankPapersTab({
   return (
     <div className="grid h-full w-full grid-cols-1 overflow-hidden bg-transparent md:grid-cols-12">
       {/* ── Left Sidebar: Document List ── */}
-      <div className="border-border/30 bg-muted/20 lg:col-span-3.5 flex h-full flex-col border-r md:col-span-4">
-        <div className="border-border/30 space-y-2.5 border-b p-3.5">
+      <div className="border-separator bg-fill-4 lg:col-span-3.5 flex h-full flex-col border-r md:col-span-4">
+        <div className="border-separator space-y-2.5 border-b p-3.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Docs ({docs.length})
-            </h3>
+            <h3 className="text-subhead text-label-secondary">Docs ({docs.length})</h3>
             {isMember && (
-              <Button
-                size="sm"
-                onClick={handleStartCreate}
-                className="h-7.5 rounded-lg bg-emerald-600 px-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
-              >
-                <Plus className="mr-1 h-3 w-3" /> New Doc
+              <Button size="sm" onClick={handleStartCreate}>
+                <Plus /> New Doc
               </Button>
             )}
           </div>
 
           <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search docs & notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-background/50 placeholder:text-muted-foreground/60 border-border/40 h-8 rounded-lg pl-8 text-xs"
+              className="pl-8"
             />
           </div>
         </div>
@@ -197,11 +191,11 @@ export function ThinktankPapersTab({
         <div className="flex-1 space-y-1 overflow-y-auto p-2">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-              <p className="text-muted-foreground text-xs">Loading documents...</p>
+              <span className="border-tint h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+              <p className="text-label-secondary text-footnote">Loading documents...</p>
             </div>
           ) : filteredDocs.length === 0 ? (
-            <div className="text-muted-foreground p-6 text-center text-xs">No docs found.</div>
+            <div className="text-label-secondary text-footnote p-6 text-center">No docs found.</div>
           ) : (
             filteredDocs.map((doc: any) => {
               const isSelected = activeDoc?.id === doc.id && !isCreating;
@@ -215,21 +209,25 @@ export function ThinktankPapersTab({
                     setIsEditing(false);
                   }}
                   className={cn(
-                    "flex w-full flex-col items-start rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-                    isSelected
-                      ? "bg-emerald-500/15 text-emerald-700 shadow-sm dark:bg-emerald-500/20 dark:text-emerald-300"
-                      : "hover:bg-accent/40 text-foreground"
+                    "rounded-row flex w-full flex-col items-start p-2 text-left transition-colors duration-150",
+                    isSelected ? "bg-tint-fill text-tint" : "hover:bg-fill-4 text-label"
                   )}
                 >
                   <div className="flex w-full items-center justify-between gap-1">
-                    <span className="truncate text-xs font-semibold">{doc.title}</span>
+                    <span className="text-headline truncate">{doc.title}</span>
                     {doc.isPublic ? (
-                      <Globe className="h-3 w-3 shrink-0 text-emerald-500/70" />
+                      <Globe
+                        className="text-label-secondary size-3.5 shrink-0"
+                        aria-label="Public"
+                      />
                     ) : (
-                      <Lock className="h-3 w-3 shrink-0 text-amber-500/70" />
+                      <Lock
+                        className="text-label-secondary size-3.5 shrink-0"
+                        aria-label="Private"
+                      />
                     )}
                   </div>
-                  <div className="text-muted-foreground mt-1 flex w-full items-center justify-between text-xs">
+                  <div className="text-footnote text-label-secondary mt-1 flex w-full items-center justify-between tabular-nums">
                     <span>v{doc.version || 1}</span>
                     <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
                   </div>
@@ -245,28 +243,22 @@ export function ThinktankPapersTab({
         {isCreating || isEditing ? (
           /* Editor View */
           <div className="flex h-full flex-col space-y-4 p-4 md:p-6">
-            <div className="border-border/30 flex items-center justify-between border-b pb-3">
-              <h2 className="text-foreground text-base font-bold">
+            <div className="border-separator flex items-center justify-between border-b pb-3">
+              <h2 className="text-label text-headline">
                 {isCreating ? "New Document" : `Edit: ${activeDoc?.title}`}
               </h2>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsPreviewMode((prev) => !prev)}
-                  className="h-8 rounded-lg text-xs"
-                >
-                  <Eye className="mr-1.5 h-3.5 w-3.5" />
+                <Button variant="ghost" size="sm" onClick={() => setIsPreviewMode((prev) => !prev)}>
+                  <Eye />
                   {isPreviewMode ? "Edit Raw" : "Preview"}
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="gray"
                   size="sm"
                   onClick={() => {
                     setIsCreating(false);
                     setIsEditing(false);
                   }}
-                  className="h-8 rounded-lg text-xs"
                 >
                   Cancel
                 </Button>
@@ -274,9 +266,8 @@ export function ThinktankPapersTab({
                   size="sm"
                   onClick={handleSaveDoc}
                   disabled={createDocMutation.isPending || updateDocMutation.isPending}
-                  className="h-8 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
                 >
-                  <Check className="mr-1.5 h-3.5 w-3.5" />
+                  <Check />
                   {isCreating ? "Save Doc" : "Save Changes"}
                 </Button>
               </div>
@@ -287,11 +278,11 @@ export function ThinktankPapersTab({
                 placeholder="Document Title..."
                 value={docTitle}
                 onChange={(e) => setDocTitle(e.target.value)}
-                className="bg-background/50 border-border/40 h-10 rounded-xl text-sm font-semibold"
+                className="text-headline"
               />
 
-              <div className="bg-muted/30 border-border/30 flex items-center justify-between rounded-xl border px-3.5 py-2">
-                <span className="text-muted-foreground text-xs font-medium">
+              <div className="bg-surface-secondary rounded-row flex items-center justify-between px-4 py-2">
+                <span className="text-callout text-label-secondary">
                   Publicly visible to all group members
                 </span>
                 <Switch checked={docIsPublic} onCheckedChange={setDocIsPublic} />
@@ -299,7 +290,7 @@ export function ThinktankPapersTab({
 
               {isPreviewMode ? (
                 <div
-                  className="border-border/40 bg-background/40 text-foreground min-h-[300px] rounded-xl border p-4 text-xs leading-relaxed"
+                  className="border-separator bg-surface-secondary text-body text-label rounded-row min-h-[300px] border p-4"
                   dangerouslySetInnerHTML={{ __html: sanitizeUserContent(docContent) }}
                 />
               ) : (
@@ -307,7 +298,7 @@ export function ThinktankPapersTab({
                   placeholder="Draft your document content in markdown format..."
                   value={docContent}
                   onChange={(e) => setDocContent(e.target.value)}
-                  className="bg-background/40 border-border/40 min-h-[360px] rounded-xl font-mono text-xs leading-relaxed"
+                  className="min-h-[360px] font-mono"
                 />
               )}
             </div>
@@ -315,22 +306,17 @@ export function ThinktankPapersTab({
         ) : activeDoc ? (
           /* Reader View */
           <div className="flex h-full flex-col p-4 md:p-6">
-            <div className="border-border/30 flex flex-wrap items-start justify-between gap-3 border-b pb-4">
+            <div className="border-separator flex flex-wrap items-start justify-between gap-3 border-b pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-foreground text-lg font-bold md:text-xl">
-                    {activeDoc.title}
-                  </h2>
-                  <Badge
-                    variant="outline"
-                    className="text-xs text-emerald-600 uppercase dark:text-emerald-400"
-                  >
+                  <h2 className="text-title-2 text-label">{activeDoc.title}</h2>
+                  <Badge variant="tinted" className="tabular-nums">
                     v{activeDoc.version || 1}
                   </Badge>
                 </div>
-                <div className="text-muted-foreground mt-1 flex items-center gap-3 text-xs">
+                <div className="text-label-secondary text-footnote mt-1 flex items-center gap-3">
                   <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> Updated{" "}
+                    <Clock className="size-3.5" aria-hidden="true" /> Updated{" "}
                     {new Date(activeDoc.updatedAt).toLocaleDateString()}
                   </span>
                   <span>·</span>
@@ -340,13 +326,8 @@ export function ThinktankPapersTab({
 
               {isMember && (
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleStartEdit}
-                    className="h-8 rounded-lg text-xs"
-                  >
-                    <EditPencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+                  <Button variant="outline" size="sm" onClick={handleStartEdit}>
+                    <EditPencil /> Edit
                   </Button>
                   <Button
                     variant="ghost"
@@ -356,7 +337,7 @@ export function ThinktankPapersTab({
                         deleteDocMutation.mutate({ documentId: activeDoc.id });
                       }
                     }}
-                    className="h-8 rounded-lg text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                    className="text-pink hover:bg-pink/10 hover:text-pink"
                   >
                     <Trash className="h-3.5 w-3.5" />
                   </Button>
@@ -364,9 +345,9 @@ export function ThinktankPapersTab({
               )}
             </div>
 
-            <div className="prose prose-sm dark:prose-invert max-w-none pt-4 text-xs leading-relaxed">
+            <div className="prose prose-sm text-footnote max-w-none pt-4 leading-relaxed">
               <div
-                className="text-foreground/90 font-sans leading-relaxed whitespace-pre-wrap"
+                className="text-label font-sans leading-relaxed whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{
                   __html: sanitizeUserContent(activeDoc.content || "*No content drafted yet.*"),
                 }}
@@ -374,10 +355,10 @@ export function ThinktankPapersTab({
             </div>
           </div>
         ) : (
-          <div className="text-muted-foreground flex h-full flex-col items-center justify-center p-8 text-center">
-            <Book className="text-muted-foreground/40 h-10 w-10" />
-            <h3 className="text-foreground mt-3 text-sm font-semibold">Select a Document</h3>
-            <p className="mt-1 max-w-sm text-xs">
+          <div className="text-label-secondary flex h-full flex-col items-center justify-center p-8 text-center">
+            <Book className="text-label-tertiary h-10 w-10" />
+            <h3 className="text-label text-headline mt-3">Select a Document</h3>
+            <p className="text-footnote mt-1 max-w-sm">
               Choose a document from the list on the left to read or edit.
             </p>
           </div>

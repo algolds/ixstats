@@ -62,7 +62,7 @@ export function WikiWorkspaceTab({
       {localDrafts.length > 0 && (
         <CollapsibleSection
           label="Local Drafts"
-          icon={<FileEdit className="h-3 w-3 text-blue-400" />}
+          icon={<FileEdit className="text-blue h-3 w-3" />}
           count={localDrafts.length}
           open={draftsOpen}
           onToggle={() => setDraftsOpen(!draftsOpen)}
@@ -79,22 +79,22 @@ export function WikiWorkspaceTab({
                     router
                   );
                 }}
-                className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full items-center justify-between px-2 py-1 text-left transition-colors"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
-                    className="truncate text-[13px] font-medium text-inherit"
+                    className="text-callout truncate font-medium text-inherit"
                     whiteSpace="nowrap"
                   >
                     {draft.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
+                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                     {draft.type === "visual"
                       ? "Visual Editor (Canvas) Draft"
                       : "Source Editor Draft"}
                   </PreText>
                 </div>
-                <span className="shrink-0 text-xs font-semibold text-blue-400">Resume ›</span>
+                <span className="text-caption text-blue shrink-0 font-semibold">Resume ›</span>
               </button>
             ))}
           </div>
@@ -105,7 +105,7 @@ export function WikiWorkspaceTab({
       {pausedSessions.length > 0 && (
         <CollapsibleSection
           label="Reading Progress"
-          icon={<Clock className="h-3 w-3 text-emerald-400" />}
+          icon={<Clock className="text-green h-3 w-3" />}
           count={pausedSessions.length}
           open={sessionsOpen}
           onToggle={() => setSessionsOpen(!sessionsOpen)}
@@ -116,20 +116,20 @@ export function WikiWorkspaceTab({
                 key={idx}
                 type="button"
                 onClick={() => onNavigateToArticle(session.title, session.source)}
-                className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full items-center justify-between px-2 py-1 text-left transition-colors"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
-                    className="truncate text-[13px] font-medium text-inherit"
+                    className="text-callout truncate font-medium text-inherit"
                     whiteSpace="nowrap"
                   >
                     {session.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
+                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                     {`Last read ${timeAgo(session.updatedAt)}`}
                   </PreText>
                 </div>
-                <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-xs font-semibold tabular-nums">
+                <span className="text-label-secondary rounded-control-sm border-separator bg-fill-4 text-caption shrink-0 border px-1.5 py-0.5 font-semibold tabular-nums">
                   {session.scrollPercent}%
                 </span>
               </button>
@@ -153,19 +153,19 @@ export function WikiWorkspaceTab({
                   key={idx}
                   type="button"
                   onClick={() => onNavigateToArticle(rc.title ?? "")}
-                  className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
+                  className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-1 text-left transition-colors"
                 >
-                  <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
+                  <PreText className="text-callout truncate text-inherit" whiteSpace="nowrap">
                     {rc.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
+                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                     {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
                   </PreText>
                 </button>
               ))}
             </div>
           ) : (
-            <PreText className="text-muted-foreground px-2 text-xs" whiteSpace="nowrap">
+            <PreText className="text-label-secondary text-footnote px-2" whiteSpace="nowrap">
               Loading...
             </PreText>
           )}
@@ -174,7 +174,7 @@ export function WikiWorkspaceTab({
 
       {/* Page Actions — contextual to current article */}
       {articleTitle && !isMainPage && (
-        <div className="border-border mb-3 border-b pb-3">
+        <div className="border-separator mb-3 border-b pb-3">
           <SectionHeader label="This Page" />
           <div className="space-y-0.5">
             {wikiSource === "ixwiki" && (
@@ -241,7 +241,7 @@ function IxWikiPageActions({
 
 export function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
+    <div className="text-label-secondary text-subhead mb-1.5">
       <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
@@ -263,11 +263,11 @@ export function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-border mb-3 border-b pb-3">
+    <div className="border-separator mb-3 border-b pb-3">
       <button
         type="button"
         onClick={onToggle}
-        className="text-muted-foreground hover:text-foreground mb-1 flex w-full cursor-pointer items-center justify-between text-xs font-semibold tracking-wider uppercase"
+        className="text-label-secondary hover:text-label text-subhead mb-1 flex w-full cursor-pointer items-center justify-between"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -277,7 +277,7 @@ export function CollapsibleSection({
           </PreText>
         </span>
         {count !== undefined && (
-          <PreText className="text-muted-foreground/75 inline-block shrink-0" whiteSpace="nowrap">
+          <PreText className="text-label-secondary inline-block shrink-0" whiteSpace="nowrap">
             {String(count)}
           </PreText>
         )}
@@ -302,17 +302,17 @@ export function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors"
+      className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm text-body flex w-full items-center justify-between px-2 py-1.5 text-left transition-colors"
     >
       <span className="flex items-center gap-2">
-        <span className="text-muted-foreground [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
+        <span className="text-label-secondary [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
         <PreText className="text-inherit" whiteSpace="nowrap">
           {label}
         </PreText>
       </span>
       {shortcut && (
         <PreText
-          className="border-border bg-accent/10 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-xs"
+          className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 border px-1.5 py-0.5"
           whiteSpace="nowrap"
         >
           {shortcut}

@@ -5,7 +5,8 @@ import { useUser } from "~/context/auth-context";
 import { ArrowLeft, SystemRestart as Loader2, ArrowUp } from "iconoir-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { api } from "~/trpc/react";
@@ -83,7 +84,7 @@ export default function PostPage({ params }: PostPageProps) {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <div className="flex min-h-[400px] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <Loader2 className="text-label-secondary size-8 animate-spin" aria-label="Loading" />
         </div>
       </div>
     );
@@ -92,52 +93,45 @@ export default function PostPage({ params }: PostPageProps) {
   if (error || !post) {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8">
-        <Card className="border-white/10 bg-slate-900/40 backdrop-blur-xl">
-          <CardContent className="p-8 text-center">
-            <h2 className="mb-2 text-xl font-semibold text-slate-200">Post Not Found</h2>
-            <p className="mb-6 text-slate-400">
-              This post may have been deleted or the link is incorrect.
-            </p>
-            <Link href="/thinkpages">
-              <Button className="bg-blue-600 text-white hover:bg-blue-500">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Feed
+        <FacetCard>
+          <EmptyState
+            title="Post Not Found"
+            message="This post may have been deleted or the link is incorrect."
+            action={
+              <Button asChild>
+                <Link href="/thinkpages">
+                  <ArrowLeft aria-hidden="true" />
+                  Back to Feed
+                </Link>
               </Button>
-            </Link>
-          </CardContent>
-        </Card>
+            }
+          />
+        </FacetCard>
       </div>
     );
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Absolute background glow circles */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute top-[20%] left-[10%] h-[450px] w-[450px] rounded-full bg-indigo-600/10 blur-[130px]" />
-        <div className="absolute top-[50%] right-[10%] h-[450px] w-[450px] rounded-full bg-purple-600/10 blur-[130px]" />
-      </div>
-
       <div className="relative z-10 container mx-auto max-w-2xl px-4 py-8 pb-32">
         {/* Back Button */}
         <div className="mb-6">
-          <Link href="/thinkpages">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-400 hover:bg-white/5 hover:text-slate-200"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/thinkpages">
+              <ArrowLeft aria-hidden="true" />
               Back to Feed
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
         {/* Thread Structure Wrapper */}
         <div className="relative space-y-6">
           {/* Vertical Thread Connector Line */}
           {replies.length > 0 && (
-            <div className="pointer-events-none absolute top-[108px] bottom-16 left-[48px] z-0 w-[2px] bg-gradient-to-b from-indigo-500/40 via-purple-500/15 to-transparent" />
+            <div
+              aria-hidden="true"
+              className="bg-separator pointer-events-none absolute top-[108px] bottom-16 left-[48px] z-0 w-0.5"
+            />
           )}
 
           {/* Main Hero Post */}
@@ -175,7 +169,7 @@ export default function PostPage({ params }: PostPageProps) {
           {replies.length > 0 && (
             <div className="relative z-10 ml-5 space-y-4">
               {replies.map((reply: any) => (
-                <div key={reply.id} className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+                <div key={reply.id}>
                   <ThinkpagesPost
                     post={reply}
                     currentUserAccountId={currentAccount?.id || ""}
@@ -212,13 +206,13 @@ export default function PostPage({ params }: PostPageProps) {
       </div>
 
       {/* Floating Bottom Composer Capsule */}
-      <div className="fixed bottom-6 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 px-4">
-        <div className="flex w-full items-center gap-3 rounded-full border border-white/10 bg-slate-950/75 px-4 py-2 shadow-2xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
-          <Avatar className="h-8 w-8 shrink-0 border border-white/10">
+      <div className="z-sticky fixed bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-[calc(50%+var(--shell-sidebar-width)/2)] w-full max-w-lg -translate-x-1/2 px-4">
+        <div className="material-regular shadow-floating focus-within:outline-tint flex w-full items-center gap-3 rounded-full px-4 py-2 focus-within:outline-2 focus-within:outline-offset-2">
+          <Avatar className="border-separator size-8 shrink-0 border">
             {currentAccount?.profileImageUrl ? (
               <AvatarImage src={currentAccount.profileImageUrl} />
             ) : null}
-            <AvatarFallback className="bg-slate-800 text-xs font-semibold text-slate-400">
+            <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
               {currentAccount?.displayName
                 ? currentAccount.displayName
                     .split(" ")
@@ -246,14 +240,16 @@ export default function PostPage({ params }: PostPageProps) {
                 : "Select or create an account to reply"
             }
             disabled={!currentAccount || createPostMutation.isPending}
-            className="flex-1 border-none bg-transparent py-1.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none disabled:opacity-50"
+            aria-label="Reply"
+            className="text-body text-label placeholder:text-label-tertiary flex-1 border-none bg-transparent py-1.5 focus:outline-none disabled:opacity-50"
           />
 
           <Button
             size="icon"
             onClick={handleSubmitReply}
             disabled={!replyText.trim() || !currentAccount || createPostMutation.isPending}
-            className="h-8 w-8 shrink-0 rounded-full bg-blue-600 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-blue-500 disabled:opacity-40"
+            aria-label="Send reply"
+            className="size-8 shrink-0 rounded-full"
           >
             {createPostMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -181,10 +181,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               style={{ backgroundColor: themeColors.primary }}
             />
           )}
-          <PreText
-            className="text-foreground max-w-[200px] truncate text-sm font-semibold"
-            whiteSpace="nowrap"
-          >
+          <PreText className="text-label text-headline max-w-[200px] truncate" whiteSpace="nowrap">
             {articleTitle || "IxWiki Workspace"}
           </PreText>
         </div>
@@ -196,7 +193,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               <button
                 type="button"
                 onClick={() => onSwitchMode("search")}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
                 title="Global Search"
               >
                 <Search className="h-3.5 w-3.5" />
@@ -204,7 +201,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               <button
                 type="button"
                 onClick={() => onSwitchMode("notifications")}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
                 title="Notifications"
               >
                 <Bell className="h-3.5 w-3.5" />
@@ -212,7 +209,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               <button
                 type="button"
                 onClick={() => onSwitchMode("settings")}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
                 title="Settings"
               >
                 <Settings className="h-3.5 w-3.5" />
@@ -228,8 +225,8 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               className={cn(
                 "h-7 w-7 rounded-full p-0 transition-colors",
                 isStashed
-                  ? "text-amber-400 hover:text-amber-300"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-yellow hover:text-yellow"
+                  : "text-label-secondary hover:text-label"
               )}
               title={isStashed ? "Remove from Stash" : "Save to Stash"}
             >
@@ -244,7 +241,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             size="sm"
             variant="ghost"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground h-7 w-7 rounded-full p-0"
+            className="text-label-secondary hover:text-label size-7 p-0"
             title="Close"
           >
             <X className="h-3.5 w-3.5" />
@@ -261,15 +258,15 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
       {/* Segmented Tab Switcher (Workspace vs Narrator) */}
       {hasNarratorAccess && narratorState && narratorState.totalBlocks > 0 && (
-        <div className="bg-accent/15 mb-3 flex w-full rounded-lg p-0.5">
+        <div className="bg-fill-4 rounded-control mb-3 flex w-full p-0.5">
           <button
             type="button"
             onClick={() => setWikiTab("workspace")}
             className={cn(
-              "flex-1 cursor-pointer rounded-md py-1 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              "rounded-control-sm text-caption flex-1 cursor-pointer py-1 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               wikiTab === "workspace"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-white/15 dark:text-white"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-surface text-label shadow-card"
+                : "text-label-secondary hover:text-label"
             )}
           >
             Workspace
@@ -278,25 +275,25 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             type="button"
             onClick={() => setWikiTab("narrator")}
             className={cn(
-              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              "rounded-control-sm text-caption flex flex-1 cursor-pointer items-center justify-center gap-1.5 py-1 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               wikiTab === "narrator"
-                ? "bg-white text-blue-600 shadow-sm dark:bg-white/15 dark:text-blue-400"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-surface text-blue shadow-card"
+                : "text-label-secondary hover:text-label"
             )}
           >
             <span>Narrator</span>
             <span
               className={cn(
-                "py-0.2 rounded-full px-1.5 text-xs font-bold tracking-widest uppercase transition-colors",
+                "text-caption rounded-full px-1.5 py-0.5 transition-colors",
                 wikiTab === "narrator"
-                  ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
-                  : "border border-white/5 bg-white/10 text-zinc-400"
+                  ? "border-blue/30 bg-blue/20 text-blue border"
+                  : "border-separator bg-fill-3 text-label-secondary border"
               )}
             >
               BETA
             </span>
             {narratorState?.isPlaying && (
-              <span className="ml-0.5 flex h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+              <span className="bg-blue ml-0.5 flex h-1.5 w-1.5 animate-pulse rounded-full" />
             )}
           </button>
         </div>

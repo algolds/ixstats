@@ -21,6 +21,8 @@ import {
   OpenNewWindow as ExternalLink,
   BellNotification as BellRing,
 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
@@ -56,15 +58,15 @@ function getSystemAlertStyle(content: string, type?: string) {
   ) {
     return {
       icon: Crown,
-      iconColor: "text-amber-500 bg-amber-500/10 ring-amber-500/20",
-      badgeClass: "text-amber-500 bg-amber-500/10",
+      iconColor: "text-yellow bg-yellow/15",
+      badgeClass: "text-yellow bg-yellow/15",
       label: "Dispatch",
     };
   }
   return {
     icon: Radio,
-    iconColor: "text-indigo-500 bg-indigo-500/10 ring-indigo-500/20",
-    badgeClass: "text-indigo-500 bg-indigo-500/10",
+    iconColor: "text-indigo bg-indigo/15",
+    badgeClass: "text-indigo bg-indigo/15",
     label: "System",
   };
 }
@@ -80,64 +82,56 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
   } = getSystemAlertStyle(title + " " + content, item.type || item.category);
 
   return (
-    <div className="border-border/50 bg-card/60 hover:border-border/80 hover:bg-card/90 relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border p-4 shadow-2xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150">
+    <div className="bg-surface-secondary rounded-row relative mx-4 my-2 flex gap-3 p-4">
       <div
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl shadow-2xs ring-1",
+          "rounded-control flex size-9 shrink-0 items-center justify-center self-start",
           iconColor
         )}
       >
-        <Icon className="h-4 w-4" />
+        <Icon className="size-4" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1 pr-6">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
+        <div className="mb-1 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "rounded-md px-1.5 py-0.5 text-xs font-semibold tracking-tight",
-                badgeClass
-              )}
-            >
-              {label}
-            </span>
+            <span className={cn("text-caption rounded-full px-2 py-0.5", badgeClass)}>{label}</span>
             {item.priority && (
-              <span className="text-muted-foreground/70 text-xs font-medium">
-                • {item.priority}
-              </span>
+              <span className="text-footnote text-label-secondary">• {item.priority}</span>
             )}
           </div>
-          <span className="text-muted-foreground/60 text-xs font-normal tabular-nums">
+          <span className="text-footnote text-label-secondary tabular-nums">
             {formatTimestamp(item.createdAt ?? item.ixTimeTimestamp)}
           </span>
         </div>
 
-        <h4 className="text-foreground mb-1 text-[13px] font-semibold tracking-tight">{title}</h4>
+        <h4 className="text-headline text-label mb-1">{title}</h4>
 
         <div
-          className="text-muted-foreground [&>a]:text-primary [&>a]:hover:text-primary/80 text-[12px] leading-relaxed [&>a]:underline [&>p]:mb-0"
+          className="text-callout text-label-secondary [&>a]:text-tint [&>a]:underline [&>p]:mb-0"
           dangerouslySetInnerHTML={{ __html: sanitizeUserContent(content) }}
         />
 
         {item.href && (
-          <div className="mt-2.5 flex items-center gap-2">
-            <Link
-              href={item.href}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-            >
-              <span>Open Details</span>
-              <ExternalLink className="h-3 w-3" />
-            </Link>
+          <div className="mt-2 flex items-center gap-2">
+            <Button asChild variant="tinted" size="sm">
+              <Link href={item.href}>
+                <span>Open Details</span>
+                <ExternalLink aria-hidden="true" />
+              </Link>
+            </Button>
           </div>
         )}
       </div>
 
       {onDismiss && (
         <button
+          type="button"
           onClick={onDismiss}
-          className="text-muted-foreground hover:bg-accent/15 hover:text-foreground absolute top-3 right-3 cursor-pointer rounded-lg p-1 transition-colors"
+          className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm absolute top-3 right-3 cursor-pointer p-1 transition-colors"
           title="Dismiss notification"
+          aria-label="Dismiss notification"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="size-3.5" />
         </button>
       )}
     </div>
@@ -551,20 +545,21 @@ export function MessagesChatPanel({
       <div className="flex-1 scrollbar-none overflow-x-hidden overflow-y-auto">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
-            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+            <div className="border-tint size-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : isSystemThread ? (
           <div className="mx-auto w-full max-w-3xl py-3">
             {systemBroadcasts.length === 0 ? (
-              <div className="flex h-full min-h-[300px] flex-col items-center justify-center p-6 text-center">
-                <BellRing className="text-muted-foreground/40 mb-2 h-10 w-10" />
-                <h4 className="text-foreground text-xs font-semibold">No system broadcasts</h4>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                  {searchQuery
+              <EmptyState
+                className="min-h-[300px]"
+                icon={<BellRing />}
+                title="No system broadcasts"
+                message={
+                  searchQuery
                     ? `No bulletins match "${searchQuery}"`
-                    : "Platform announcements and simulation updates will appear here."}
-                </p>
-              </div>
+                    : "Platform announcements and simulation updates will appear here."
+                }
+              />
             ) : (
               systemBroadcasts.map((item: any) => (
                 <SystemBroadcastCard
@@ -609,11 +604,9 @@ export function MessagesChatPanel({
 
       {/* Footer: Read-only banner for system thread / LoreBot or interactive input bar */}
       {isSystemThread || isLoreBotThread ? (
-        <div className="border-border/40 bg-card/60 text-muted-foreground flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3 text-xs backdrop-blur-md">
-          <Shield className="h-3.5 w-3.5 text-amber-500" />
-          <span className="text-xs font-medium">
-            System Messages is an official broadcast channel. Messages are read-only.
-          </span>
+        <div className="border-separator text-footnote text-label-secondary flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3">
+          <Shield className="text-label-secondary size-3.5" aria-hidden="true" />
+          <span>System Messages is an official broadcast channel. Messages are read-only.</span>
         </div>
       ) : (
         <MessagesInputBar

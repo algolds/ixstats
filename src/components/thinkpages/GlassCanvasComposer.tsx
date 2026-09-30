@@ -3,7 +3,6 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { cn } from "~/lib/utils";
 import {
   Xmark as X,
   Refresh as Repeat2,
@@ -11,8 +10,9 @@ import {
   CheckSquare as Vote,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
+import { springSmooth } from "~/lib/design/motion";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { LiveDataCard } from "./LiveDataCard";
 import { GlassPlateEditor } from "./GlassPlateEditor";
@@ -152,70 +152,58 @@ export function GlassCanvasComposer({
 
   if (accounts.length === 0) {
     return (
-      <Card className="facet-hierarchy-child border-poll/35 bg-poll/5 relative gap-0 overflow-hidden p-5">
-        <TextureOverlay texture="paperGrain" opacity={0.06} />
+      <FacetCard padding="lg">
         <div className="flex items-start justify-between gap-5">
           <div className="flex items-start gap-3">
-            <div className="border-poll/20 bg-poll/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
-              <Newspaper className="text-poll h-5 w-5" />
+            <div className="bg-tint-fill text-tint rounded-control flex size-9 shrink-0 items-center justify-center">
+              <Newspaper className="size-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="text-foreground text-xs font-semibold">
+              <h4 className="text-headline text-label">
                 Post as yourself, or create a ThinkPages Account
               </h4>
-              <p className="text-muted-foreground mt-0.5 text-xs leading-normal">
+              <p className="text-callout text-label-secondary mt-1">
                 Post under your own name, or set up an in-character account for your nation to
                 publish articles and join global community discussions.
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col gap-1.5">
-            <Button
-              size="sm"
-              onClick={postAsYourself}
-              disabled={isPostAsYourselfPending}
-              className="bg-poll hover:bg-poll/90 h-8 cursor-pointer border-0 text-xs text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-            >
+          <div className="flex shrink-0 flex-col gap-2">
+            <Button size="sm" onClick={postAsYourself} disabled={isPostAsYourselfPending}>
               {isPostAsYourselfPending ? "Setting up..." : "Post as yourself"}
             </Button>
             {hasCountry && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onCreateAccount}
-                className="h-8 cursor-pointer text-xs"
-              >
+              <Button size="sm" variant="bordered" onClick={onCreateAccount}>
                 Create Account
               </Button>
             )}
           </div>
         </div>
-      </Card>
+      </FacetCard>
     );
   }
 
   // A personal persona needs no country, so only a missing selection blocks the composer.
   if (!account) {
     return (
-      <Card className="facet-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
-        <TextureOverlay texture="paperGrain" opacity={0.06} />
+      <FacetCard padding="md" aria-busy="true">
         <div className="mb-4 flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-white/10" />
-          <div className="flex-1 space-y-1.5">
-            <div className="h-3 w-24 rounded bg-white/10" />
-            <div className="h-2 w-16 rounded bg-white/5" />
+          <Skeleton className="size-8 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-16" />
           </div>
         </div>
-        <div className="mb-3 h-16 w-full rounded-lg bg-white/5" />
+        <Skeleton className="rounded-control mb-3 h-16 w-full" />
         <div className="flex items-center justify-between">
           <div className="flex gap-2">
-            <div className="h-7 w-7 rounded bg-white/5" />
-            <div className="h-7 w-7 rounded bg-white/5" />
-            <div className="h-7 w-7 rounded bg-white/5" />
+            <Skeleton className="size-7" />
+            <Skeleton className="size-7" />
+            <Skeleton className="size-7" />
           </div>
-          <div className="h-7 w-16 rounded bg-white/10" />
+          <Skeleton className="h-7 w-16" />
         </div>
-      </Card>
+      </FacetCard>
     );
   }
 
@@ -223,17 +211,9 @@ export function GlassCanvasComposer({
     <motion.div
       layout
       ref={composerRef}
-      className={cn(
-        "dark:border-border dark:bg-card/80 relative flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-      )}
-      transition={{
-        type: "spring",
-        stiffness: 380,
-        damping: 30,
-      }}
+      className="border-separator bg-surface rounded-card shadow-card relative flex flex-col gap-0 border p-4"
+      transition={springSmooth}
     >
-      <TextureOverlay texture="paperGrain" opacity={0.04} className="rounded-2xl" />
-
       <div className="relative flex gap-3">
         {/* Left column: Avatar + Floating Switcher */}
         <ComposerAccountSwitcher
@@ -253,35 +233,35 @@ export function GlassCanvasComposer({
         {/* Right column: Editor + Previews + Actions */}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           {repostData && (
-            <Card className="mb-1 border-green-500/30 bg-green-500/5 p-2.5">
-              <div className="mb-1.5 flex items-center gap-2 text-xs text-green-500">
-                <Repeat2 className="h-3 w-3" />
+            <div className="bg-surface-secondary rounded-row mb-1 p-3">
+              <div className="text-footnote text-label-secondary mb-2 flex items-center gap-2">
+                <Repeat2 className="size-3.5" aria-hidden="true" />
                 <span>Reposting</span>
               </div>
               <div className="mb-1.5 flex items-center gap-2">
-                <Avatar className="h-5 w-5">
+                <Avatar className="size-5">
                   <AvatarImage
                     src={repostData.originalPost.account?.profileImageUrl}
                     alt={repostData.originalPost.account?.displayName}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-xs font-semibold text-white">
+                  <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
                     {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-xs font-semibold">
+                <span className="text-headline text-label">
                   {repostData.originalPost.account?.displayName || "Unknown"}
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-label-secondary text-footnote">
                   @{repostData.originalPost.account?.username || "unknown"}
                 </span>
               </div>
-              <div className="text-muted-foreground line-clamp-2 text-xs">
+              <div className="text-label-secondary text-footnote line-clamp-2">
                 {repostData.originalPost.content}
               </div>
-            </Card>
+            </div>
           )}
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <GlassPlateEditor
               ref={editorRef}
               value={content}
@@ -301,13 +281,15 @@ export function GlassCanvasComposer({
               {selectedImages.map((imageUrl, index) => (
                 <div
                   key={imageUrl}
-                  className="relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-500/5 dark:border-white/10 dark:bg-white/5"
+                  className="rounded-control border-separator bg-fill-4 relative aspect-video overflow-hidden border"
                 >
                   <button
+                    type="button"
                     onClick={() => removeImage(imageUrl)}
-                    className="absolute top-1.5 right-1.5 z-10 cursor-pointer rounded-full bg-black/60 p-0.5 transition-colors hover:bg-red-500/80"
+                    aria-label="Remove image"
+                    className="material-thin text-label hover:text-destructive absolute top-1.5 right-1.5 z-10 cursor-pointer rounded-full p-0.5 transition-colors"
                   >
-                    <X className="h-3.5 w-3.5 text-white" />
+                    <X className="size-3.5" />
                   </button>
                   <img
                     src={imageUrl}
@@ -320,20 +302,22 @@ export function GlassCanvasComposer({
           )}
 
           {selectedVisualizations.length > 0 && (
-            <div className="mt-1 space-y-1.5">
+            <div className="mt-1 space-y-2">
               {selectedVisualizations.map((viz) => (
                 <div
                   key={viz.id}
-                  className="relative rounded-lg border border-slate-200 bg-slate-500/5 p-2.5 dark:border-white/10 dark:bg-white/5"
+                  className="border-separator bg-surface-secondary rounded-control relative border p-3"
                 >
                   <button
+                    type="button"
                     onClick={() => removeVisualization(viz.id)}
-                    className="absolute top-1.5 right-1.5 cursor-pointer rounded-full p-0.5 transition-colors hover:bg-red-500/20"
+                    aria-label="Remove chart"
+                    className="text-destructive hover:bg-destructive/10 absolute top-1.5 right-1.5 cursor-pointer rounded-full p-0.5 transition-colors"
                   >
-                    <X className="h-3.5 w-3.5 text-red-400" />
+                    <X className="size-3.5" />
                   </button>
-                  <div className="space-y-1.5">
-                    <div className="text-xs font-medium">{viz.title}</div>
+                  <div className="space-y-2">
+                    <div className="text-caption text-label">{viz.title}</div>
                     {getVisualizationPreview(viz)}
                   </div>
                 </div>
@@ -347,38 +331,39 @@ export function GlassCanvasComposer({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="border-poll/20 bg-poll/5 mt-1.5 flex items-center justify-between rounded-xl border p-3.5"
+              transition={springSmooth}
+              className="bg-surface-secondary rounded-row mt-2 flex items-center justify-between p-3"
             >
               <div className="flex items-center gap-2">
-                <Vote className="text-poll h-4 w-4 shrink-0" />
+                <Vote className="text-tint size-4 shrink-0" aria-hidden="true" />
                 <div className="min-w-0">
-                  <p className="text-foreground truncate text-xs font-semibold">
+                  <p className="text-headline text-label truncate">
                     {pollDraft.question || "Untitled Poll"}
                   </p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-label-secondary text-footnote">
                     {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} •{" "}
                     {pollDraft.options.filter((o) => o.trim()).length} options
                   </p>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="tinted"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
-                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                 >
                   Edit Poll
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon"
+                  size="icon-sm"
                   onClick={() => setPollDraft(null)}
-                  className="h-7 w-7 cursor-pointer text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                  aria-label="Remove poll"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X />
                 </Button>
               </div>
             </motion.div>

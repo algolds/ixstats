@@ -36,42 +36,37 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
   );
 
   const actionButtonClass = (colors: string) =>
-    `flex w-full items-center justify-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
+    `flex w-full items-center justify-start gap-2.5 rounded-row border border-separator bg-fill-4 px-3.5 py-3 text-caption font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
 
   const quickActions = [
     {
       label: "Meetings",
       icon: Briefcase,
-      colors:
-        "border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
+      colors: "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15",
       action: () => navigateToSection("executive"),
     },
     {
       label: "Embassies",
       icon: Globe,
-      colors:
-        "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
+      colors: "border-teal/20 bg-teal/5 text-teal hover:bg-teal/15",
       action: () => navigateToSection("diplomacy"),
     },
     {
       label: "Foreign Policy",
       icon: Globe,
-      colors:
-        "border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
+      colors: "border-teal/20 bg-teal/5 text-teal hover:bg-teal/15",
       action: () => navigateToSection("diplomacy"),
     },
     {
       label: "Domestic Policy",
       icon: Gavel,
-      colors:
-        "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15",
+      colors: "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15",
       action: () => navigateToSection("executive"),
     },
     {
       label: "Operations",
       icon: Shield,
-      colors:
-        "border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15",
+      colors: "border-red/20 bg-red/5 text-red hover:bg-red/15",
       action: () => navigateToSection("defense"),
       isPremium: true,
     },
@@ -87,7 +82,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
     >
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-bold text-amber-500">
+        <div className="text-headline text-yellow flex items-center gap-2">
           <Crown className="h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
             MyCountry® Quick Actions
@@ -99,7 +94,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
             onClose();
           }}
           data-cuelume-press="droplet"
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
+          className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex h-7 w-7 items-center justify-center transition-colors"
           aria-label="Close Quick Actions"
         >
           <X className="h-4 w-4" />
@@ -122,8 +117,8 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1 truncate text-left">{item.label}</span>
               {item.isPremium && (
-                <span className="flex shrink-0 items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs font-bold tracking-wider text-amber-500 uppercase shadow-xs">
-                  <Crown className="h-2.5 w-2.5 text-amber-400" />
+                <span className="rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow flex shrink-0 items-center gap-1 border px-1.5 py-0.5">
+                  <Crown className="text-yellow h-2.5 w-2.5" />
                   Premium
                 </span>
               )}

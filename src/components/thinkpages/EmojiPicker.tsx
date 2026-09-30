@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import {
   Emoji as Smile,
-  Search,
   SystemRestart as Loader2,
   Emoji as Cat,
   Shop as Pizza,
@@ -14,7 +13,8 @@ import {
   WhiteFlag as Flag,
 } from "iconoir-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -531,15 +531,14 @@ export function EmojiPicker({
             variant="ghost"
             size="sm"
             disabled={disabled}
+            aria-label="Insert emoji"
             className={cn(
-              "h-7 w-7 rounded-full p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-              isOpen
-                ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/25 hover:text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 dark:hover:bg-yellow-500/30 dark:hover:text-yellow-300"
-                : "text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-600 dark:text-yellow-400 dark:hover:bg-yellow-500/10 dark:hover:text-yellow-300",
+              "text-tint hover:bg-tint-fill hover:text-tint size-7 rounded-full p-0",
+              isOpen && "bg-tint-fill",
               className
             )}
           >
-            <Smile className="h-3.5 w-3.5" />
+            <Smile className="size-4" />
           </Button>
         )}
       </PopoverTrigger>
@@ -547,47 +546,34 @@ export function EmojiPicker({
         side={side}
         align="center"
         sideOffset={8}
-        className="border-border bg-popover/98 text-popover-foreground z-[200000] w-80 overflow-hidden rounded-2xl border p-0 shadow-2xl backdrop-blur-2xl"
+        className="w-80 overflow-hidden p-0"
       >
         {/* Search */}
-        <div className="border-border/60 relative border-b p-2">
-          <Search className="text-muted-foreground absolute top-4 left-4 h-3.5 w-3.5" />
-          <Input
+        <div className="border-separator border-b p-2">
+          <SearchField
+            size="sm"
             placeholder="Search emojis..."
+            aria-label="Search emojis"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="border-input bg-secondary text-foreground focus:bg-secondary/80 h-8 pl-8 text-xs"
+            onValueChange={setSearchQuery}
           />
         </div>
 
         {/* Tab Selection */}
-        <div className="border-border/60 bg-muted/30 flex border-b p-1">
-          <button
-            type="button"
+        <div className="border-separator border-b p-2">
+          <SegmentedControl
+            size="sm"
+            fullWidth
+            aria-label="Emoji set"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            // Keep focus in the search field / editor while switching sets.
             onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setActiveTab("unicode")}
-            className={cn(
-              "flex-1 rounded-lg py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none",
-              activeTab === "unicode"
-                ? "bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-            )}
-          >
-            Unicode
-          </button>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setActiveTab("discord")}
-            className={cn(
-              "flex-1 rounded-lg py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none",
-              activeTab === "discord"
-                ? "bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-            )}
-          >
-            Discord ({discordEmojisData?.count || 0})
-          </button>
+            options={[
+              { value: "unicode", label: "Unicode" },
+              { value: "discord", label: `Discord (${discordEmojisData?.count || 0})` },
+            ]}
+          />
         </div>
 
         {/* Picker Content Area */}
@@ -601,16 +587,14 @@ export function EmojiPicker({
                     id={`emoji-category-${idx}`}
                     className="scroll-mt-2 space-y-1"
                   >
-                    <div className="text-muted-foreground px-1 text-xs font-bold tracking-wider uppercase">
-                      {category.name}
-                    </div>
+                    <div className="text-subhead text-label-secondary px-1">{category.name}</div>
                     <div className="grid grid-cols-8 gap-1">
                       {category.emojis.map((emoji) => (
                         <button
                           key={emoji.name}
                           onClick={() => handleSelectUnicode(emoji.char)}
                           title={`:${emoji.name}:`}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-[1.35rem] leading-none transition-transform duration-100 hover:scale-125 hover:bg-black/5 dark:hover:bg-white/10"
+                          className="hover:bg-fill-3 rounded-control-sm flex size-8 items-center justify-center text-[1.35rem] leading-none transition-[background-color,scale] duration-100 hover:scale-125"
                         >
                           {emoji.char}
                         </button>
@@ -620,7 +604,7 @@ export function EmojiPicker({
                 ))}
               </div>
             ) : (
-              <div className="text-muted-foreground py-8 text-center text-xs">
+              <div className="text-footnote text-label-secondary py-8 text-center">
                 No matching emojis found
               </div>
             )
@@ -628,18 +612,18 @@ export function EmojiPicker({
             /* Discord Emojis tab */
             <div className="pb-8">
               {isLoadingDiscord ? (
-                <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-xs">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                <div className="text-footnote text-label-secondary flex flex-col items-center justify-center gap-2 py-8">
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   <span>Loading server emojis...</span>
                 </div>
               ) : filteredDiscordEmojis.length > 0 ? (
-                <div className="grid grid-cols-6 gap-1.5 p-1">
+                <div className="grid grid-cols-6 gap-2 p-1">
                   {filteredDiscordEmojis.map((emoji) => (
                     <button
                       key={emoji.id}
                       onClick={() => handleSelectDiscord(emoji)}
                       title={`:${emoji.name}:`}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg p-1 transition-transform duration-100 hover:scale-125 hover:bg-black/5 dark:hover:bg-white/10"
+                      className="hover:bg-fill-3 rounded-control-sm flex size-9 items-center justify-center p-1 transition-[background-color,scale] duration-100 hover:scale-125"
                     >
                       <img
                         src={emoji.url}
@@ -651,7 +635,7 @@ export function EmojiPicker({
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground py-8 text-center text-xs">
+                <div className="text-label-secondary text-footnote py-8 text-center">
                   {searchQuery ? "No matching custom emojis found" : "No server emojis available"}
                 </div>
               )}
@@ -661,7 +645,7 @@ export function EmojiPicker({
 
         {/* Category Navigation Bar (iOS Style) at the Bottom */}
         {activeTab === "unicode" && !searchQuery && (
-          <div className="border-border/60 bg-popover/98 flex items-center justify-around border-t py-1.5 backdrop-blur-md">
+          <div className="border-separator flex items-center justify-around border-t py-2">
             {EMOJI_CATEGORIES.map((category, idx) => {
               const Icon = category.icon;
               return (
@@ -670,10 +654,11 @@ export function EmojiPicker({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => scrollToCategory(idx)}
-                  className="text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+                  className="text-label-secondary hover:text-label transition-colors"
                   title={category.name}
+                  aria-label={category.name}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="size-4" />
                 </button>
               );
             })}

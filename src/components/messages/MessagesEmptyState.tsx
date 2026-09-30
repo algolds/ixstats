@@ -2,6 +2,7 @@
 
 import { ChatBubble as MessageSquare, Plus } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import type { MessageFolder } from "~/types/messages";
 import { MESSAGE_FOLDERS } from "./MessagesFolderNav";
 
@@ -15,23 +16,19 @@ export function MessagesEmptyState({ activeFolder, onNewConversation }: Messages
   const Icon = folderConfig?.icon ?? MessageSquare;
 
   return (
-    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-        <Icon className="text-muted-foreground h-8 w-8" />
-      </div>
-      <h3 className="text-foreground mb-1 text-base font-semibold">Select a conversation</h3>
-      <p className="text-muted-foreground mb-6 max-w-sm text-sm">
-        Choose a conversation from the sidebar, or start a new one to begin messaging.
-      </p>
-      {activeFolder === "conversations" && onNewConversation && (
-        <Button
-          onClick={onNewConversation}
-          className="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98]"
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          New Conversation
-        </Button>
-      )}
-    </div>
+    <EmptyState
+      className="h-full"
+      icon={<Icon />}
+      title="Select a conversation"
+      message="Choose a conversation from the sidebar, or start a new one to begin messaging."
+      action={
+        activeFolder === "conversations" && onNewConversation ? (
+          <Button onClick={onNewConversation}>
+            <Plus />
+            New Conversation
+          </Button>
+        ) : undefined
+      }
+    />
   );
 }

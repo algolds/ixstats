@@ -48,11 +48,11 @@ function ExpandedViewComponent({
       style={{ scrollbarWidth: "thin" }}
     >
       {isImpersonating && (
-        <div className="flex items-center justify-between border-b border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs text-red-600 dark:text-red-400">
+        <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-2.5">
           <div className="flex items-center gap-2 font-medium">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+              <span className="bg-red absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+              <span className="bg-red relative inline-flex h-2 w-2 rounded-full"></span>
             </span>
             <span>
               Playing as: <span className="font-mono">{targetUser}</span>
@@ -60,7 +60,7 @@ function ExpandedViewComponent({
           </div>
           <button
             onClick={handleStopImpersonating}
-            className="rounded bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+            className="rounded-control-sm bg-red text-caption text-on-red hover:bg-red/90 px-2.5 py-1 font-semibold transition-colors"
           >
             Stop
           </button>

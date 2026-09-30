@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Search, ChatBubble as MessageSquare } from "iconoir-react";
+import { ChatBubble as MessageSquare } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Input } from "~/components/ui/input";
+import { Checkbox } from "~/components/ui/checkbox";
+import { SearchField } from "~/components/ui/search-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
 
@@ -47,7 +48,7 @@ export function MessagesNewConversationModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+            <MessageSquare className="text-tint size-5" aria-hidden="true" />
             New Conversation
           </DialogTitle>
         </DialogHeader>
@@ -57,35 +58,31 @@ export function MessagesNewConversationModal({
           <button
             onClick={() => handleCreate(currentUserId)}
             disabled={isCreating}
-            className="border-border/50 hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors"
+            type="button"
+            className="border-separator hover:bg-fill-4 rounded-control flex w-full items-center gap-3 border p-3 text-left transition-colors"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600">
-              <MessageSquare className="h-4 w-4 text-white" />
+            <div className="bg-tint text-on-tint flex size-9 items-center justify-center rounded-full">
+              <MessageSquare className="size-4" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm font-medium">Message Myself</p>
-              <p className="text-muted-foreground text-xs">Save notes and drafts</p>
+              <p className="text-headline text-label">Message Myself</p>
+              <p className="text-footnote text-label-secondary">Save notes and drafts</p>
             </div>
           </button>
 
           {/* Search */}
-          <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-              autoFocus
-            />
-          </div>
+          <SearchField
+            placeholder="Search users..."
+            aria-label="Search users"
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            autoFocus
+          />
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <label className="text-body text-label flex cursor-pointer items-center gap-2">
+            <Checkbox
               checked={diplomatic}
-              onChange={(e) => setDiplomatic(e.target.checked)}
-              className="h-4 w-4"
+              onCheckedChange={(checked) => setDiplomatic(checked === true)}
             />
             <span>Diplomatic channel (country-to-country)</span>
           </label>
@@ -94,14 +91,14 @@ export function MessagesNewConversationModal({
           <div className="max-h-64 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center py-6">
-                <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+                <div className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
               </div>
             ) : searchQuery.length <= 2 ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">
+              <p className="text-body text-label-secondary py-6 text-center">
                 Type at least 3 characters to search
               </p>
             ) : !users || users.length === 0 ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">No users found</p>
+              <p className="text-body text-label-secondary py-6 text-center">No users found</p>
             ) : (
               <div className="space-y-1">
                 {(users as any[]).map((user: any) => (
@@ -109,11 +106,12 @@ export function MessagesNewConversationModal({
                     key={user.id || user.clerkUserId}
                     onClick={() => handleCreate(user.clerkUserId || user.id, diplomatic)}
                     disabled={isCreating}
-                    className="hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors"
+                    type="button"
+                    className="hover:bg-fill-4 rounded-control flex w-full items-center gap-3 p-2 text-left transition-colors"
                   >
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="size-8">
                       <AvatarImage src={user.country?.flag ?? undefined} />
-                      <AvatarFallback className="bg-emerald-600 text-xs font-semibold text-white">
+                      <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
                         {(user.country?.name ?? user.displayName ?? "?")
                           .split(" ")
                           .map((n: string) => n[0])
@@ -122,11 +120,11 @@ export function MessagesNewConversationModal({
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
+                      <p className="text-headline text-label truncate">
                         {user.country?.name ?? user.displayName ?? "Unknown"}
                       </p>
                       {user.country?.slug && (
-                        <p className="text-muted-foreground truncate text-xs">
+                        <p className="text-footnote text-label-secondary truncate">
                           @{user.country.slug}
                         </p>
                       )}

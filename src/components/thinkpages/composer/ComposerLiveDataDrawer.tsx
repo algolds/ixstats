@@ -13,6 +13,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { springSmooth } from "~/lib/design/motion";
 
 export interface ComposerLiveDataDrawerProps {
   showVisualizationPanel: boolean;
@@ -30,6 +31,16 @@ export interface ComposerLiveDataDrawerProps {
   addVisualization: (type: any) => void;
 }
 
+type LiveDataTile = {
+  type: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  /** System colour for the icon (§2.4 data colours). */
+  color: string;
+  loading?: boolean;
+  available: boolean;
+};
+
 export function ComposerLiveDataDrawer({
   showVisualizationPanel,
   isGeneratingVisualization,
@@ -45,6 +56,79 @@ export function ComposerLiveDataDrawer({
   hasVitalityData,
   addVisualization,
 }: ComposerLiveDataDrawerProps) {
+  const tiles: LiveDataTile[] = [
+    {
+      type: "economic_chart",
+      label: "Economic",
+      icon: TrendingUp,
+      color: "text-green",
+      loading: isLoadingHistory,
+      available: hasHistoricalData,
+    },
+    {
+      type: "diplomatic_map",
+      label: "Diplomatic",
+      icon: Globe,
+      color: "text-teal",
+      loading: isLoadingDiplomatic,
+      available: hasDiplomaticData,
+    },
+    {
+      type: "trade_flow",
+      label: "Trade",
+      icon: BarChart3,
+      color: "text-yellow",
+      loading: isLoadingTrade,
+      available: hasTradeData,
+    },
+    {
+      type: "gdp_growth",
+      label: "GDP",
+      icon: BarChart3,
+      color: "text-green",
+      loading: isLoadingEconomic,
+      available: hasEconomicData,
+    },
+    {
+      type: "demographics",
+      label: "Demographics",
+      icon: Users,
+      color: "text-teal",
+      loading: isLoadingEconomic,
+      available: hasEconomicData,
+    },
+    {
+      type: "budget_debt",
+      label: "Budget & Debt",
+      icon: BarChart3,
+      color: "text-red",
+      loading: isLoadingEconomic,
+      available: hasEconomicData,
+    },
+    {
+      type: "labor_market",
+      label: "Labor Market",
+      icon: Briefcase,
+      color: "text-teal",
+      loading: isLoadingEconomic,
+      available: hasEconomicData,
+    },
+    {
+      type: "national_vitality",
+      label: "Vitality Rings",
+      icon: Activity,
+      color: "text-red",
+      loading: isLoadingVitality,
+      available: hasVitalityData,
+    },
+  ];
+  const anyLoading =
+    isLoadingEconomic ||
+    isLoadingHistory ||
+    isLoadingDiplomatic ||
+    isLoadingTrade ||
+    isLoadingVitality;
+
   return (
     <motion.div
       layout
@@ -54,153 +138,41 @@ export function ComposerLiveDataDrawer({
         opacity: showVisualizationPanel ? 1 : 0,
         marginTop: showVisualizationPanel ? 12 : 0,
       }}
-      transition={{
-        type: "spring",
-        stiffness: 380,
-        damping: 30,
-      }}
+      transition={springSmooth}
       className={cn("overflow-hidden", !showVisualizationPanel && "pointer-events-none")}
     >
-      <div className="rounded-2xl border border-black/5 bg-black/[0.03] p-3 shadow-inner backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-        <div className="mb-2.5 flex items-center justify-between px-0.5">
-          <div className="flex items-center gap-1.5">
-            <Activity className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
-            <span className="text-xs font-bold tracking-tight text-slate-800 dark:text-slate-200">
-              Add Live Data
-            </span>
+      <div className="bg-surface-secondary rounded-row p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="text-label-secondary size-4" aria-hidden="true" />
+            <span className="text-subhead text-label">Add live data</span>
           </div>
-          {(isLoadingEconomic ||
-            isLoadingHistory ||
-            isLoadingDiplomatic ||
-            isLoadingTrade ||
-            isLoadingVitality) && (
-            <div className="flex items-center gap-1 text-xs font-semibold text-blue-500 dark:text-blue-400">
-              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+          {anyLoading && (
+            <div className="text-footnote text-label-secondary flex items-center gap-1">
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
               <span>Loading...</span>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-4 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("economic_chart")}
-            disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-emerald-400"
-          >
-            {isLoadingHistory ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-emerald-500" />
-            ) : (
-              <TrendingUp className="mb-1 h-4 w-4 text-emerald-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">Economic</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("diplomatic_map")}
-            disabled={isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
-          >
-            {isLoadingDiplomatic ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-cyan-500" />
-            ) : (
-              <Globe className="mb-1 h-4 w-4 text-cyan-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">Diplomatic</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("trade_flow")}
-            disabled={isGeneratingVisualization || isLoadingTrade || !hasTradeData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-amber-400"
-          >
-            {isLoadingTrade ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-amber-500" />
-            ) : (
-              <BarChart3 className="mb-1 h-4 w-4 text-amber-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">Trade</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("gdp_growth")}
-            disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-emerald-400"
-          >
-            {isLoadingEconomic ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-emerald-500" />
-            ) : (
-              <BarChart3 className="mb-1 h-4 w-4 text-emerald-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">GDP</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("demographics")}
-            disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
-          >
-            {isLoadingEconomic ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-cyan-500" />
-            ) : (
-              <Users className="mb-1 h-4 w-4 text-cyan-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">Demographics</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("budget_debt")}
-            disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-red-400"
-          >
-            {isLoadingEconomic ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-red-500" />
-            ) : (
-              <BarChart3 className="mb-1 h-4 w-4 text-red-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">Budget & Debt</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("labor_market")}
-            disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-cyan-400"
-          >
-            {isLoadingEconomic ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-cyan-500" />
-            ) : (
-              <Briefcase className="mb-1 h-4 w-4 text-cyan-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">Labor Market</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addVisualization("national_vitality")}
-            disabled={isGeneratingVisualization || isLoadingVitality || !hasVitalityData}
-            className="h-auto flex-col rounded-xl border-black/10 bg-white/60 p-2.5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 active:scale-[0.96] dark:border-white/10 dark:bg-black/40 dark:hover:text-red-400"
-          >
-            {isLoadingVitality ? (
-              <Loader2 className="mb-1 h-4 w-4 animate-spin text-red-500" />
-            ) : (
-              <Activity className="mb-1 h-4 w-4 text-red-500" />
-            )}
-            <span className="text-xs font-bold tracking-tight">Vitality Rings</span>
-          </Button>
+          {tiles.map(({ type, label, icon: Icon, color, loading, available }) => (
+            <Button
+              key={type}
+              variant="bordered"
+              size="sm"
+              onClick={() => addVisualization(type)}
+              disabled={isGeneratingVisualization || loading || !available}
+              className="bg-surface h-auto flex-col p-2"
+            >
+              {loading ? (
+                <Loader2 className={cn("size-4 animate-spin", color)} aria-hidden="true" />
+              ) : (
+                <Icon className={cn("size-4", color)} aria-hidden="true" />
+              )}
+              <span className="text-caption">{label}</span>
+            </Button>
+          ))}
         </div>
       </div>
     </motion.div>

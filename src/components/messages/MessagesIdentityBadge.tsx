@@ -39,7 +39,7 @@ export function resolveIdentity(
       displayName: userProfile?.country?.name ?? displayName,
       avatar: userProfile?.country?.flag ?? avatarUrl,
       badgeIcon: Globe,
-      badgeColor: "text-amber-500",
+      badgeColor: "text-yellow",
       sourceLabel: "Diplomatic",
     };
   }
@@ -75,12 +75,8 @@ export function MessagesIdentityBadge({ identity, size = "sm" }: MessagesIdentit
 
   return (
     <span className="inline-flex items-center gap-1">
-      {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-muted-foreground"}`} />}
-      {identity.sourceLabel && (
-        <Eyebrow>
-          {identity.sourceLabel}
-        </Eyebrow>
-      )}
+      {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-label-secondary"}`} />}
+      {identity.sourceLabel && <Eyebrow>{identity.sourceLabel}</Eyebrow>}
     </span>
   );
 }

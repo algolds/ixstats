@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
+import { springSnappy } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
 import { proxyDiscordUrl } from "./ThinkpagesPostUtils";
 
@@ -27,7 +28,7 @@ export function PostMediaGrid({
   return (
     <div
       className={cn(
-        "border-border/50 mb-3 overflow-hidden rounded-xl border shadow-sm dark:border-white/10",
+        "border-separator rounded-row mb-3 overflow-hidden border",
         mediaAttachments.length === 1 && "max-w-xl",
         mediaAttachments.length > 1 && "grid grid-cols-2 gap-0.5"
       )}
@@ -40,7 +41,7 @@ export function PostMediaGrid({
           <div
             key={media.id || index}
             className={cn(
-              "relative flex items-center justify-center overflow-hidden bg-neutral-900/40",
+              "bg-fill-3 relative flex items-center justify-center overflow-hidden",
               isSingle && "aspect-[16/10] max-h-[420px] w-full",
               mediaAttachments.length === 2 && "aspect-square",
               mediaAttachments.length === 3 && index === 0
@@ -55,7 +56,7 @@ export function PostMediaGrid({
               alt={media.filename || `Attachment ${index + 1}`}
               className="h-full w-full cursor-pointer object-cover"
               whileHover={{ scale: 1.02, opacity: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              transition={springSnappy}
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenLightbox({

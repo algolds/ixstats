@@ -225,14 +225,14 @@ export function WikiNarratorPlayer({
     <div className="relative w-full space-y-2.5">
       {/* ── Ambient Background Audio Waveform (Apple Design Subtlety) ── */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-between gap-1 overflow-hidden rounded-xl px-3 py-1.5 select-none"
+        className="rounded-row pointer-events-none absolute inset-0 -z-10 flex items-center justify-between gap-1 overflow-hidden px-3 py-1.5 select-none"
         aria-hidden="true"
       >
         {BG_WAVEFORM_BARS.map((heightPct, idx) => (
           <span
             key={idx}
             className={cn(
-              "block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 ease-out",
+              "block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out",
               isPlaying ? "animate-pulse" : "opacity-30"
             )}
             style={{
@@ -255,21 +255,21 @@ export function WikiNarratorPlayer({
       >
         {/* ── 1. Top HUD Bar (Section Title + Reading Progress) ── */}
         {showHeader && (
-          <div className="flex items-center justify-between gap-2 px-1 text-xs">
+          <div className="text-footnote flex items-center justify-between gap-2 px-1">
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
               <Headphones className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
-              <span className="text-foreground max-w-[170px] truncate font-semibold">
+              <span className="text-label max-w-[170px] truncate font-semibold">
                 {activeSectionTitle}
               </span>
             </div>
 
-            <div className="text-muted-foreground flex shrink-0 items-center gap-1 font-mono text-xs tabular-nums">
+            <div className="text-label-secondary text-footnote flex shrink-0 items-center gap-1 font-mono tabular-nums">
               {hasNarrator && (
                 <span>
                   {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
                 </span>
               )}
-              <span className="text-foreground bg-accent/20 border-border/40 rounded-md border px-1.5 py-0.5 font-bold">
+              <span className="text-label bg-fill-4 border-separator rounded-control-sm border px-1.5 py-0.5 font-semibold">
                 {Math.round(displayPercent)}%
               </span>
             </div>
@@ -309,8 +309,8 @@ export function WikiNarratorPlayer({
                     className={cn(
                       "h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                       isActive
-                        ? "scale-125 border-white shadow-[0_0_6px_rgba(96,165,250,0.9)]"
-                        : "border-border/60 bg-muted group-hover/tick:border-foreground group-hover/tick:scale-125"
+                        ? "border-separator shadow-floating scale-125"
+                        : "border-separator bg-fill-3 group-hover/tick:border-foreground group-hover/tick:scale-125"
                     )}
                     style={
                       isActive
@@ -323,7 +323,7 @@ export function WikiNarratorPlayer({
                     }
                   />
                   {/* Tooltip */}
-                  <span className="border-border/50 bg-popover/95 text-popover-foreground pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 rounded-md border px-2 py-1 text-xs font-bold whitespace-nowrap opacity-0 shadow-2xl backdrop-blur-md transition-opacity duration-150 group-hover/tick:opacity-100">
+                  <span className="border-separator bg-surface-elevated text-label rounded-control-sm text-caption shadow-floating pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 border px-2 py-1 whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover/tick:opacity-100">
                     {entry.text}
                   </span>
                 </div>
@@ -349,7 +349,7 @@ export function WikiNarratorPlayer({
                   narratorActions?.play?.();
                 }
               }}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105 active:scale-92"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105 active:scale-[0.98]"
               style={{
                 backgroundColor: accentColor,
                 boxShadow: `0 2px 8px ${getRgbaColor(accentColor, 0.35)}`,
@@ -365,7 +365,7 @@ export function WikiNarratorPlayer({
               disabled={!hasNarrator || narratorState.activeBlockIndex <= 0}
               size="icon"
               variant="ghost"
-              className="text-muted-foreground hover:text-foreground h-7 w-7 active:scale-92 disabled:opacity-30"
+              className="text-label-secondary hover:text-label h-7 w-7 active:scale-[0.98] disabled:opacity-30"
               tooltipLabel="Previous Section"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -379,7 +379,7 @@ export function WikiNarratorPlayer({
               }
               size="icon"
               variant="ghost"
-              className="text-muted-foreground hover:text-foreground h-7 w-7 active:scale-92 disabled:opacity-30"
+              className="text-label-secondary hover:text-label h-7 w-7 active:scale-[0.98] disabled:opacity-30"
               tooltipLabel="Next Section"
             >
               <ChevronRight className="h-4 w-4" />
@@ -393,10 +393,10 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("voice")}
               className={cn(
-                "flex h-7 cursor-pointer items-center gap-1 rounded-lg px-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
+                "rounded-control text-caption flex h-7 cursor-pointer items-center gap-1 px-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                 activeTray === "voice"
-                  ? "border font-bold shadow-xs"
-                  : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
+                  ? "border font-semibold"
+                  : "bg-fill-4 hover:bg-fill-4 text-label border border-transparent"
               )}
               style={
                 activeTray === "voice"
@@ -424,10 +424,10 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("speed")}
               className={cn(
-                "flex h-7 cursor-pointer items-center gap-0.5 rounded-lg px-2 font-mono text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
+                "rounded-control text-caption flex h-7 cursor-pointer items-center gap-0.5 px-2 font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                 activeTray === "speed"
-                  ? "border font-bold shadow-xs"
-                  : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
+                  ? "border font-semibold"
+                  : "bg-fill-4 hover:bg-fill-4 text-label border border-transparent"
               )}
               style={
                 activeTray === "speed"
@@ -449,10 +449,10 @@ export function WikiNarratorPlayer({
               type="button"
               onClick={() => toggleTray("volume")}
               className={cn(
-                "flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
+                "rounded-control flex h-7 w-7 cursor-pointer items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                 activeTray === "volume"
-                  ? "border shadow-xs"
-                  : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
+                  ? "border"
+                  : "bg-fill-4 hover:bg-fill-4 text-label border border-transparent"
               )}
               style={
                 activeTray === "volume"
@@ -468,9 +468,9 @@ export function WikiNarratorPlayer({
               {currentVolume === 0 ? (
                 <VolumeX className="text-destructive h-3.5 w-3.5" />
               ) : currentVolume < 0.5 ? (
-                <Volume1 className="text-foreground h-3.5 w-3.5" />
+                <Volume1 className="text-label h-3.5 w-3.5" />
               ) : (
-                <Volume2 className="text-foreground h-3.5 w-3.5" />
+                <Volume2 className="text-label h-3.5 w-3.5" />
               )}
             </button>
           </div>
@@ -480,10 +480,10 @@ export function WikiNarratorPlayer({
 
         {/* 4A. Inline Voice Picker Tray */}
         {activeTray === "voice" && (
-          <div className="border-border/50 bg-popover/90 text-popover-foreground animate-in fade-in slide-in-from-top-1 mt-2 space-y-1 rounded-xl border p-2 shadow-md backdrop-blur-xl duration-150 dark:bg-zinc-900/90">
-            <div className="border-border/40 text-muted-foreground flex items-center justify-between border-b px-1 pb-1 text-xs font-bold tracking-wider uppercase">
+          <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-1 border p-2 duration-150">
+            <div className="border-separator text-label-secondary text-subhead flex items-center justify-between border-b px-1 pb-1">
               <span>Narrator Voice</span>
-              <span className="text-xs font-normal opacity-70">Kokoro TTS</span>
+              <span className="text-footnote font-normal opacity-70">Kokoro TTS</span>
             </div>
 
             <div className="scrollbar-thumb-muted max-h-36 scrollbar-thin space-y-0.5 overflow-y-auto">
@@ -494,10 +494,10 @@ export function WikiNarratorPlayer({
                   setActiveTray("none");
                 }}
                 className={cn(
-                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control text-footnote flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   !currentVoiceId
-                    ? "font-bold"
-                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    ? "font-semibold"
+                    : "hover:bg-fill-3 text-label-secondary hover:text-label"
                 )}
                 style={
                   !currentVoiceId
@@ -525,10 +525,10 @@ export function WikiNarratorPlayer({
                       setActiveTray("none");
                     }}
                     className={cn(
-                      "flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                      "rounded-control text-footnote flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       isSelected
-                        ? "font-bold"
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                        ? "font-semibold"
+                        : "hover:bg-fill-3 text-label-secondary hover:text-label"
                     )}
                     style={
                       isSelected
@@ -547,14 +547,14 @@ export function WikiNarratorPlayer({
             </div>
 
             {narratorActions?.clearCache && (
-              <div className="border-border/40 border-t pt-1">
+              <div className="border-separator border-t pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     narratorActions.clearCache();
                     setActiveTray("none");
                   }}
-                  className="text-destructive hover:bg-destructive/10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                  className="text-destructive hover:bg-destructive/10 rounded-control text-footnote flex w-full cursor-pointer items-center gap-1.5 px-2 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   <Trash2 className="h-3 w-3" />
                   <span>Clear Voice Audio Cache</span>
@@ -566,10 +566,10 @@ export function WikiNarratorPlayer({
 
         {/* 4B. Inline Playback Speed Tray */}
         {activeTray === "speed" && (
-          <div className="border-border/50 bg-popover/90 text-popover-foreground animate-in fade-in slide-in-from-top-1 mt-2 space-y-2 rounded-xl border p-2.5 shadow-md backdrop-blur-xl duration-150 dark:bg-zinc-900/90">
-            <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
+          <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-2 border p-2.5 duration-150">
+            <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Playback Speed</span>
-              <span className="font-mono font-bold" style={{ color: accentColor }}>
+              <span className="font-mono font-semibold" style={{ color: accentColor }}>
                 {currentSpeed}×
               </span>
             </div>
@@ -587,10 +587,10 @@ export function WikiNarratorPlayer({
                       setActiveTray("none");
                     }}
                     className={cn(
-                      "flex-1 cursor-pointer rounded-lg py-1 font-mono text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-92",
+                      "rounded-control text-caption flex-1 cursor-pointer py-1 font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                       isActive
-                        ? "border shadow-xs"
-                        : "bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
+                        ? "border"
+                        : "bg-fill-4 text-label-secondary hover:text-label hover:bg-fill-3 border border-transparent"
                     )}
                     style={
                       isActive
@@ -612,10 +612,10 @@ export function WikiNarratorPlayer({
 
         {/* 4C. Inline Volume Slider Tray (audio-ui Fader) */}
         {activeTray === "volume" && (
-          <div className="border-border/50 bg-popover/90 text-popover-foreground animate-in fade-in slide-in-from-top-1 mt-2 space-y-2 rounded-xl border p-2.5 shadow-md backdrop-blur-xl duration-150 dark:bg-zinc-900/90">
-            <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
+          <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-2 border p-2.5 duration-150">
+            <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Volume Gain</span>
-              <span className="font-mono font-bold tabular-nums" style={{ color: accentColor }}>
+              <span className="font-mono font-semibold tabular-nums" style={{ color: accentColor }}>
                 {Math.round(currentVolume * 100)}%
               </span>
             </div>
@@ -624,13 +624,13 @@ export function WikiNarratorPlayer({
               <button
                 type="button"
                 onClick={toggleMute}
-                className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer rounded-md p-1 transition-colors active:scale-90"
+                className="text-label-secondary hover:text-label rounded-control-sm shrink-0 cursor-pointer p-1 transition-colors active:scale-[0.98]"
                 title={currentVolume === 0 ? "Unmute" : "Mute"}
               >
                 {currentVolume === 0 ? (
                   <VolumeX className="text-destructive h-4 w-4" />
                 ) : (
-                  <Volume2 className="text-foreground h-4 w-4" />
+                  <Volume2 className="text-label h-4 w-4" />
                 )}
               </button>
 

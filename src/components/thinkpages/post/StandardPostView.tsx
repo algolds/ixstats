@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { springGentle } from "~/lib/design/motion";
 import { motion } from "motion/react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
@@ -194,41 +195,41 @@ export function StandardPostView({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={springGentle}
       className={cn(
-        "group border-border/50 bg-card/75 hover:border-border/80 hover:bg-card/95 relative overflow-hidden rounded-2xl border shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md",
+        "group border-separator bg-surface rounded-card shadow-card relative overflow-hidden border",
         compact ? "p-3" : "p-4",
-        post.pinned &&
-          "border-amber-500/40 bg-amber-500/5 shadow-amber-500/5 dark:border-amber-500/30 dark:bg-amber-500/5"
+        post.pinned && "border-yellow/40"
       )}
     >
       {post.pinned && (
-        <div className="mb-3 flex items-center gap-2 text-sm text-amber-500">
-          <Pin className="h-4 w-4" />
+        <div className="text-subhead text-yellow mb-3 flex items-center gap-2">
+          <Pin className="size-4" aria-hidden="true" />
           <span>Pinned Post</span>
         </div>
       )}
 
       {post.postType === "repost" && (
-        <div className="mb-3 flex items-center gap-2 text-sm text-green-500">
-          <Repeat2 className="h-4 w-4" />
+        <div className="text-subhead text-label-secondary mb-3 flex items-center gap-2">
+          <Repeat2 className="size-4" aria-hidden="true" />
           <span>@{post.account?.username} reposted</span>
         </div>
       )}
 
       {post.postType === "reply" && post.parentPost && (
         <div className="mb-3">
-          <div className="mb-2 flex items-center gap-2 text-sm text-blue-500">
-            <MessageCircle className="h-4 w-4" />
+          <div className="text-subhead text-label-secondary mb-2 flex items-center gap-2">
+            <MessageCircle className="size-4" aria-hidden="true" />
             <span>Replying to @{post.parentPost.account?.username}</span>
           </div>
-          <div className="ml-4 space-y-2 border-l-2 border-blue-500/30 pl-4">
+          <div className="border-separator ml-4 space-y-2 border-l-2 pl-4">
             <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
+              <Avatar className="size-6">
                 <AvatarImage
                   src={proxyDiscordUrl(post.parentPost.account?.profileImageUrl || "")}
                 />
                 <AvatarFallback
-                  className={`text-xs font-semibold ${ACCOUNT_TYPE_COLORS[post.parentPost.account?.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+                  className={`text-caption ${ACCOUNT_TYPE_COLORS[post.parentPost.account?.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-fill-2 text-label-secondary"}`}
                 >
                   {(post.parentPost.account?.displayName ?? "U")
                     .split(" ")
@@ -237,27 +238,29 @@ export function StandardPostView({
                     .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-semibold">{post.parentPost.account?.displayName}</span>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-headline text-label">
+                {post.parentPost.account?.displayName}
+              </span>
+              <span className="text-label-secondary text-footnote">
                 @{post.parentPost.account?.username}
               </span>
             </div>
             <WikiHtmlContent
               html={formatThinkpagesContentForDisplay(post.parentPost.content)}
-              className="text-muted-foreground line-clamp-3 text-sm"
+              className="text-label-secondary text-body line-clamp-3"
             />
           </div>
         </div>
       )}
 
       {blurbMeta.isBlurb && (
-        <div className="mb-3 flex items-center gap-2 text-sm text-blue-400">
-          <BookOpen className="h-4 w-4" />
-          <span className="font-medium">{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
+        <div className="text-subhead text-tint mb-3 flex items-center gap-2">
+          <BookOpen className="size-4" aria-hidden="true" />
+          <span>{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
             <Link
               href={withBasePath(`/blurbs/${blurbMeta.promptSlug}`)}
-              className="text-blue-400/70 transition-colors hover:text-blue-300"
+              className="hover:underline"
             >
               View prompt →
             </Link>
@@ -267,10 +270,10 @@ export function StandardPostView({
 
       <div className="flex gap-3">
         <button onClick={() => onAccountClick?.(post.account?.id)} className="shrink-0">
-          <Avatar className={compact ? "h-8 w-8" : "h-10 w-10"}>
+          <Avatar className={compact ? "size-8" : "size-10"}>
             <AvatarImage src={proxyDiscordUrl(post.account?.profileImageUrl || "")} />
             <AvatarFallback
-              className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account?.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+              className={`font-medium ${ACCOUNT_TYPE_COLORS[post.account?.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-fill-2 text-label-secondary"}`}
             >
               {(post.account?.displayName ?? "U")
                 .split(" ")
@@ -286,7 +289,7 @@ export function StandardPostView({
             <PersonaAuthorCard username={post.account?.username ?? ""}>
               <button
                 onClick={() => onAccountClick?.(post.account?.id)}
-                className="font-semibold hover:underline"
+                className="text-headline text-label hover:underline"
               >
                 {post.account?.displayName}
               </button>
@@ -294,7 +297,7 @@ export function StandardPostView({
 
             {post.account?.verified && (
               <span
-                className="inline-flex h-4 w-4 items-center justify-center text-sm leading-none"
+                className="text-body inline-flex size-4 items-center justify-center leading-none"
                 title="Verified"
               >
                 ✅
@@ -302,38 +305,31 @@ export function StandardPostView({
             )}
 
             {post.account?.bio?.startsWith("Former Nation") && (
-              <Badge
-                variant="secondary"
-                className="border-gray-500/30 bg-gray-500/20 text-xs text-gray-400"
-              >
-                Former Nation
-              </Badge>
+              <Badge variant="neutral">Former Nation</Badge>
             )}
 
             <div
-              className={`rounded p-1 ${ACCOUNT_TYPE_COLORS[post.account?.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+              className={`rounded-control-sm p-1 ${ACCOUNT_TYPE_COLORS[post.account?.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-fill-2 text-label-secondary"}`}
             >
               {React.createElement(
                 ACCOUNT_TYPE_ICONS[post.account?.accountType as keyof typeof ACCOUNT_TYPE_ICONS] ||
                   Users,
-                { className: "h-3 w-3" }
+                { className: "size-3.5", "aria-hidden": true }
               )}
             </div>
 
-            <span className="text-muted-foreground text-sm">@{post.account?.username}</span>
+            <span className="text-body text-label-secondary">@{post.account?.username}</span>
 
-            <span className="text-muted-foreground text-sm">·</span>
+            <span className="text-body text-label-secondary" aria-hidden="true">
+              ·
+            </span>
 
             <RelativeTimestamp timestamp={post.timestamp} />
 
-            {post.trending && (
-              <Badge variant="secondary" className="bg-orange-500/20 text-xs text-orange-400">
-                Trending
-              </Badge>
-            )}
+            {post.trending && <Badge variant="warning">Trending</Badge>}
           </div>
 
-          <div className={cn("mb-3", compact ? "text-sm" : "text-base")}>
+          <div className="text-body mb-3">
             {post.repostOf ? (
               <RepostCard
                 post={post}
@@ -363,7 +359,7 @@ export function StandardPostView({
 
           {/* Embedded Visualizations */}
           {visualizations && visualizations.length > 0 && (
-            <div className="mt-3 space-y-2.5">
+            <div className="mt-3 space-y-2">
               {visualizations.map((viz: any, index: number) => (
                 <LiveDataCard
                   key={viz.id || index}
@@ -391,7 +387,7 @@ export function StandardPostView({
           {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1">
               {post.hashtags.map((hashtag: string, index: number) => (
-                <button key={index} className="text-sm text-blue-500 hover:underline">
+                <button key={index} type="button" className="text-body text-tint hover:underline">
                   #{hashtag}
                 </button>
               ))}
@@ -448,10 +444,11 @@ export function StandardPostView({
           <div className="flex items-center justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="text-muted-foreground hover:text-foreground rounded-full p-2 transition-colors hover:bg-white/10"
+                className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-full p-2 transition-colors"
+                aria-label="More post actions"
                 onClick={(e) => e.stopPropagation()}
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 {isOwnPost && (
@@ -461,7 +458,7 @@ export function StandardPostView({
                       handlePin();
                     }}
                   >
-                    <Pin className="h-4 w-4" />
+                    <Pin />
                     {post.pinned ? "Unpin" : "Pin"}
                   </DropdownMenuItem>
                 )}
@@ -472,7 +469,7 @@ export function StandardPostView({
                       handleEdit();
                     }}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit />
                     Edit
                   </DropdownMenuItem>
                 )}
@@ -484,7 +481,7 @@ export function StandardPostView({
                     }}
                     variant="destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 />
                     Delete
                   </DropdownMenuItem>
                 )}
@@ -495,7 +492,7 @@ export function StandardPostView({
                     handleBookmark();
                   }}
                 >
-                  <Bookmark className="h-4 w-4" />
+                  <Bookmark />
                   Bookmark
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -504,7 +501,7 @@ export function StandardPostView({
                     handleFlag();
                   }}
                 >
-                  <Flag className="h-4 w-4" />
+                  <Flag />
                   Flag
                 </DropdownMenuItem>
               </DropdownMenuContent>

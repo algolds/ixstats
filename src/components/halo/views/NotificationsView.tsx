@@ -269,14 +269,14 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     <div className="p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-foreground flex items-center gap-2 text-sm font-bold tracking-tight">
-          <BellRing className="h-4 w-4 text-amber-400" />
+        <div className="text-label text-headline flex items-center gap-2">
+          <BellRing className="text-yellow h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
             {isExecutiveMode ? "Intelligence Hub" : "Alert Center"}
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
-              className="min-w-[18px] rounded-full bg-amber-500 px-1.5 py-0.5 text-center text-xs font-bold text-white shadow-xs"
+              className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-1.5 py-0.5 text-center font-semibold"
               whiteSpace="nowrap"
             >
               {String(totalUnreadCount)}
@@ -288,10 +288,10 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
             <button
               onClick={handleMarkAllRead}
               disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 disabled:opacity-40"
+              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-caption flex cursor-pointer items-center gap-1.5 px-2 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-40"
               title="Mark all notifications and messages as read"
             >
-              <CheckCircle className="h-3 w-3 text-emerald-400" />
+              <CheckCircle className="text-green h-3 w-3" />
               <PreText className="text-inherit" whiteSpace="nowrap">
                 Read all
               </PreText>
@@ -303,7 +303,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               onClose();
             }}
             data-cuelume-press="droplet"
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+            className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
             title="Close tray"
           >
             <X className="h-3.5 w-3.5" />
@@ -312,7 +312,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
-      <div className="mb-3 flex items-center gap-1 rounded-xl border border-black/[0.06] bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="rounded-row border-separator bg-fill-4 mb-3 flex items-center gap-1 border p-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isSelected = activeTab === tab.id;
@@ -323,24 +323,22 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               data-cuelume-hover="tick"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
-                isSelected
-                  ? "text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                "rounded-control text-caption relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]",
+                isSelected ? "text-label" : "text-label-secondary hover:text-label hover:bg-fill-3"
               )}
             >
               {isSelected && (
                 <motion.div
                   layoutId="halo-notif-tab-indicator"
-                  className="absolute inset-0 rounded-lg border border-black/[0.08] bg-white/90 shadow-xs backdrop-blur-md dark:border-white/15 dark:bg-white/[0.12]"
+                  className="rounded-control border-separator bg-surface absolute inset-0 border"
                   transition={{ type: "spring", stiffness: 420, damping: 38 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-1.5">
-                <Icon className={cn("h-3.5 w-3.5", isSelected && "text-amber-400")} />
+                <Icon className={cn("h-3.5 w-3.5", isSelected && "text-yellow")} />
                 <span>{tab.label}</span>
                 {tab.unread > 0 && (
-                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-xs font-bold text-white shadow-2xs">
+                  <span className="bg-yellow text-caption text-on-yellow flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 font-semibold">
                     {tab.unread > 9 ? "9+" : tab.unread}
                   </span>
                 )}
@@ -356,7 +354,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
           "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           isUltra ? "max-h-[540px]" : "max-h-80"
         )}
-        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
+        style={{ scrollbarWidth: "thin" }}
       >
         {activeTab === "messages" ? (
           /* Messages View */
@@ -376,11 +374,13 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               </div>
             ) : (
               <div className="py-10 text-center">
-                <MessageCircle className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
-                <p className="text-muted-foreground text-xs font-semibold">No recent messages</p>
+                <MessageCircle className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
+                <p className="text-label-secondary text-caption font-semibold">
+                  No recent messages
+                </p>
                 <Link
                   href="/messages"
-                  className="text-primary mt-2 inline-block text-xs font-semibold hover:underline"
+                  className="text-tint text-caption mt-2 inline-block font-semibold hover:underline"
                 >
                   Start a diplomatic conversation →
                 </Link>
@@ -398,23 +398,20 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                     {/* Group header */}
                     <button
                       onClick={() => toggleGroup(group.label)}
-                      className="hover:bg-accent/5 mb-1 flex w-full items-center justify-between rounded px-1 py-0.5 transition-colors"
+                      className="hover:bg-fill-4 rounded-control-sm mb-1 flex w-full items-center justify-between px-1 py-0.5 transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <motion.div
                           animate={{ rotate: isCollapsed ? 0 : 90 }}
                           transition={{ duration: 0.15 }}
                         >
-                          <ChevronRight className="text-muted-foreground/60 h-3 w-3" />
+                          <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
-                        <PreText
-                          className="text-muted-foreground/90 text-xs font-semibold tracking-wider uppercase"
-                          whiteSpace="nowrap"
-                        >
+                        <PreText className="text-label-secondary text-eyebrow" whiteSpace="nowrap">
                           {group.label}
                         </PreText>
                       </div>
-                      <PreText className="text-muted-foreground/70 text-xs" whiteSpace="nowrap">
+                      <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                         {String(group.items.length)}
                       </PreText>
                     </button>
@@ -465,11 +462,11 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               })
             ) : (
               <div className="py-10 text-center">
-                <Bell className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
-                <PreText className="text-muted-foreground text-sm font-medium" whiteSpace="nowrap">
+                <Bell className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
+                <PreText className="text-label-secondary text-body font-medium" whiteSpace="nowrap">
                   {isExecutiveMode ? "Situation stable" : "All caught up"}
                 </PreText>
-                <PreText className="text-muted-foreground/75 mt-1 text-xs" whiteSpace="nowrap">
+                <PreText className="text-label-secondary text-footnote mt-1" whiteSpace="nowrap">
                   No notifications right now
                 </PreText>
               </div>
@@ -479,19 +476,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Expand / Minimize DI Size Toggle */}
-      <div className="border-border/30 mt-3 flex justify-center border-t pt-2">
+      <div className="border-separator mt-3 flex justify-center border-t pt-2">
         <button
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-muted-foreground hover:text-foreground border-border/40 hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-full border shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+          className="text-label-secondary hover:text-label border-separator hover:bg-fill-4 flex h-7 w-7 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           title={isUltra ? "Standard View" : "Expanded View"}
           aria-label={isUltra ? "Standard View" : "Expanded View"}
         >
           {isUltra ? (
-            <Minimize2 className="text-foreground/70 h-3.5 w-3.5" />
+            <Minimize2 className="text-label-secondary h-3.5 w-3.5" />
           ) : (
-            <Maximize2 className="text-foreground/70 h-3.5 w-3.5" />
+            <Maximize2 className="text-label-secondary h-3.5 w-3.5" />
           )}
         </button>
       </div>

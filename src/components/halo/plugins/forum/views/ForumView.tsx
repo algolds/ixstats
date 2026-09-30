@@ -27,7 +27,7 @@ export interface ForumViewProps extends DIViewProps {}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-muted-foreground px-1 pt-2 pb-1 text-xs font-semibold tracking-wider uppercase">
+    <div className="text-subhead text-label-secondary px-1 pt-2 pb-1">
       {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
     </div>
   );
@@ -54,21 +54,21 @@ function ForumRow({
   return (
     <Component
       onClick={onClick}
-      className={`group hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
+      className={`group hover:bg-fill-4 rounded-control flex w-full items-center gap-3 px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
         onClick ? "cursor-pointer" : "cursor-default"
       }`}
     >
-      <div className={`shrink-0 rounded-md p-1.5 transition-colors ${iconBg}`}>{icon}</div>
+      <div className={`rounded-control-sm shrink-0 p-1.5 transition-colors ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
         <PreText
-          className="text-foreground block truncate text-sm leading-normal font-medium"
+          className="text-label text-body block truncate leading-normal font-medium"
           whiteSpace="nowrap"
         >
           {label}
         </PreText>
         {description && (
           <PreText
-            className="text-foreground/70 block truncate text-xs leading-normal"
+            className="text-label-secondary text-footnote block truncate leading-normal"
             whiteSpace="nowrap"
           >
             {description}
@@ -78,7 +78,7 @@ function ForumRow({
       {rightElement !== undefined ? (
         rightElement
       ) : onClick ? (
-        <ChevronRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-3.5 w-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5" />
+        <ChevronRight className="text-label-tertiary group-hover:text-label-tertiary h-3.5 w-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5" />
       ) : null}
     </Component>
   );
@@ -99,8 +99,8 @@ function ForumHeader({
 }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
-        <MessageSquare className="h-4 w-4 text-orange-400" />
+      <div className="text-label text-headline flex items-center gap-2">
+        <MessageSquare className="text-orange h-4 w-4" />
         <PreText className="text-inherit" whiteSpace="nowrap">
           Forum
         </PreText>
@@ -110,7 +110,7 @@ function ForumHeader({
           <>
             <button
               onClick={() => onSwitchMode("search")}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
               title="Global Search"
               type="button"
             >
@@ -118,7 +118,7 @@ function ForumHeader({
             </button>
             <button
               onClick={() => onSwitchMode("notifications")}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
               title="Notifications"
               type="button"
             >
@@ -126,7 +126,7 @@ function ForumHeader({
             </button>
             <button
               onClick={() => onSwitchMode("settings")}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
               title="Settings"
               type="button"
             >
@@ -139,14 +139,14 @@ function ForumHeader({
             onClick={onRefresh}
             disabled={isRefreshing}
             title="Refresh data"
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40"
+            className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 items-center justify-center transition-colors disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
         )}
         <button
           onClick={onClose}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+          className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -205,8 +205,8 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
             <SectionLabel>Current Context</SectionLabel>
             {currentThread && (
               <ForumRow
-                icon={<MessageSquare className="h-3.5 w-3.5 text-orange-500" />}
-                iconBg="bg-orange-500/15"
+                icon={<MessageSquare className="text-orange h-3.5 w-3.5" />}
+                iconBg="bg-orange/15"
                 label={currentThread.title}
                 description={`Viewing thread in ${currentThread.forumName}`}
                 onClick={() => navigate(`/forum/thread/${currentThread.id}`)}
@@ -214,8 +214,8 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
             )}
             {currentForum && !currentThread && (
               <ForumRow
-                icon={<Layout className="h-3.5 w-3.5 text-orange-500" />}
-                iconBg="bg-orange-500/15"
+                icon={<Layout className="text-orange h-3.5 w-3.5" />}
+                iconBg="bg-orange/15"
                 label={currentForum.title}
                 description="Browsing forum category"
               />
@@ -227,31 +227,31 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
         <SectionLabel>Actions</SectionLabel>
 
         <ForumRow
-          icon={<Layout className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
-          iconBg="bg-blue-500/15"
+          icon={<Layout className="text-blue h-3.5 w-3.5" />}
+          iconBg="bg-blue/15"
           label="All Forums"
           description="Browse categories and boards"
           onClick={() => navigate("/forum")}
         />
 
         <ForumRow
-          icon={<Plus className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />}
-          iconBg="bg-orange-500/15"
+          icon={<Plus className="text-orange h-3.5 w-3.5" />}
+          iconBg="bg-orange/15"
           label="New Thread"
           description="Start a new forum discussion"
           onClick={() => navigate("/forum/new-thread")}
         />
 
         <ForumRow
-          icon={<MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
-          iconBg="bg-blue-500/15"
+          icon={<MessageSquare className="text-blue h-3.5 w-3.5" />}
+          iconBg="bg-blue/15"
           label="Messages"
           description="Private conversations and inbox"
           onClick={() => navigate("/forum/conversations")}
           rightElement={
             unreadAlerts > 0 ? (
               <PreText
-                className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white shadow-sm"
+                className="bg-orange text-caption text-on-orange shadow-card flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 font-semibold"
                 whiteSpace="nowrap"
               >
                 {String(unreadAlerts)}
@@ -266,13 +266,13 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
 
           {/* Segmented control for tabs */}
           {isSignedIn && (
-            <div className="bg-accent/15 flex max-w-[140px] flex-1 rounded-lg p-0.5">
+            <div className="bg-fill-4 rounded-control flex max-w-[140px] flex-1 p-0.5">
               <button
                 onClick={() => setActiveTab("recent")}
-                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                className={`rounded-control-sm text-caption flex-1 py-0.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   activeTab === "recent"
-                    ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-surface text-orange shadow-card"
+                    : "text-label-secondary hover:text-label"
                 }`}
               >
                 <PreText className="text-inherit" whiteSpace="nowrap">
@@ -281,10 +281,10 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
               </button>
               <button
                 onClick={() => setActiveTab("stash")}
-                className={`flex-1 rounded-md py-0.5 text-center text-xs font-bold tracking-wide uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                className={`rounded-control-sm text-caption flex-1 py-0.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   activeTab === "stash"
-                    ? "bg-white text-orange-500 shadow-sm dark:bg-white/10 dark:text-orange-400"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-surface text-orange shadow-card"
+                    : "text-label-secondary hover:text-label"
                 }`}
               >
                 <PreText className="text-inherit" whiteSpace="nowrap">
@@ -305,9 +305,9 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
                     <ForumRow
                       key={thread.id}
                       icon={
-                        <MessageSquare className="text-muted-foreground h-3.5 w-3.5 transition-colors group-hover:text-orange-500" />
+                        <MessageSquare className="text-label-secondary group-hover:text-orange h-3.5 w-3.5 transition-colors" />
                       }
-                      iconBg="bg-accent/10 group-hover:bg-orange-500/10 transition-colors"
+                      iconBg="bg-fill-4 group-hover:bg-orange/10 transition-colors"
                       label={thread.title}
                       description="Recently visited thread"
                       onClick={() => navigate(`/forum/thread/${thread.id}`)}
@@ -315,7 +315,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
                   ))
               ) : (
                 <PreText
-                  className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs"
+                  className="text-label-secondary bg-fill-4 rounded-control border-separator text-footnote border border-dashed py-6 text-center"
                   whiteSpace="nowrap"
                 >
                   No recent threads visited.
@@ -328,7 +328,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
             <>
               {loadingStashed ? (
                 <PreText
-                  className="text-muted-foreground animate-pulse py-8 text-center text-xs"
+                  className="text-label-secondary text-footnote py-8 text-center"
                   whiteSpace="nowrap"
                 >
                   Loading stashed threads…
@@ -340,9 +340,9 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
                     <ForumRow
                       key={item.id}
                       icon={
-                        <Bookmark className="text-muted-foreground h-3.5 w-3.5 transition-colors group-hover:text-orange-500" />
+                        <Bookmark className="text-label-secondary group-hover:text-orange h-3.5 w-3.5 transition-colors" />
                       }
-                      iconBg="bg-accent/10 group-hover:bg-orange-500/10 transition-colors"
+                      iconBg="bg-fill-4 group-hover:bg-orange/10 transition-colors"
                       label={item.title}
                       description={`Saved on ${new Date(item.savedAt).toLocaleDateString()}`}
                       onClick={() => navigate(item.slug)}
@@ -350,7 +350,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
                   ))
               ) : (
                 <PreText
-                  className="text-muted-foreground bg-accent/5 rounded-lg border border-dashed border-white/5 py-6 text-center text-xs"
+                  className="text-label-secondary bg-fill-4 rounded-control border-separator text-footnote border border-dashed py-6 text-center"
                   whiteSpace="nowrap"
                 >
                   Stash is empty. Bookmark threads to see them here!

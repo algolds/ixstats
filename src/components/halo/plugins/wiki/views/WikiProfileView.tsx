@@ -111,16 +111,16 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             transition={{ duration: 0.15, ease: "easeInOut" }}
           >
             {/* Header */}
-            <div className="border-border/50 mb-4 flex items-center justify-between border-b pb-3">
+            <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-3">
-                <div className="bg-foreground/5 flex gap-1.5 rounded-lg p-1">
+                <div className="bg-fill-4 rounded-control flex gap-1.5 p-1">
                   <button
                     onClick={() => setActiveTab("workspace")}
                     className={cn(
-                      "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+                      "rounded-control-sm text-caption flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                       activeTab === "workspace"
-                        ? "bg-foreground/10 text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-fill-3 text-label shadow-card"
+                        : "text-label-secondary hover:text-label"
                     )}
                   >
                     <FileText className="h-3.5 w-3.5" />
@@ -129,10 +129,10 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   <button
                     onClick={() => setActiveTab("profile")}
                     className={cn(
-                      "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+                      "rounded-control-sm text-caption flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                       activeTab === "profile"
-                        ? "bg-foreground/10 text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-fill-3 text-label shadow-card"
+                        : "text-label-secondary hover:text-label"
                     )}
                   >
                     <User className="h-3.5 w-3.5" />
@@ -142,7 +142,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               </div>
               <button
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -153,16 +153,18 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Left Column: Paused/Saved Sessions */}
                 <div className="space-y-3">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                  <div className="text-label-secondary text-eyebrow flex items-center gap-1.5">
                     <History className="h-3 w-3" />
                     <span>Saved & Paused Sessions</span>
                   </div>
 
                   {pausedSessions.length === 0 ? (
-                    <div className="border-foreground/30 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-xl border px-4 py-8 text-center">
-                      <BookOpen className="text-muted-foreground/45 mb-2 h-6 w-6" />
-                      <span className="text-muted-foreground text-xs">No paused sessions yet</span>
-                      <span className="text-muted-foreground/60 mt-1 text-xs">
+                    <div className="border-separator bg-foreground/[0.02] rounded-row flex flex-col items-center justify-center border px-4 py-8 text-center">
+                      <BookOpen className="text-label-tertiary mb-2 h-6 w-6" />
+                      <span className="text-label-secondary text-footnote">
+                        No paused sessions yet
+                      </span>
+                      <span className="text-label-secondary text-footnote mt-1">
                         Your reading/editing progress will appear here.
                       </span>
                     </div>
@@ -171,28 +173,28 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       {pausedSessions.map((session) => (
                         <div
                           key={pageRefPath(session)}
-                          className="border-foreground/30 bg-foreground/[0.02] hover:bg-foreground/[0.04] flex flex-col gap-2 rounded-xl border p-3 transition-colors"
+                          className="border-separator bg-foreground/[0.02] hover:bg-foreground/[0.04] rounded-row flex flex-col gap-2 border p-3 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-foreground truncate text-xs font-semibold">
+                            <span className="text-label text-caption truncate font-semibold">
                               {session.title}
                             </span>
                             <button
                               onClick={() => handleResumeSession(session)}
-                              className="flex cursor-pointer items-center gap-1 rounded bg-blue-500/10 px-2 py-1 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30"
+                              className="rounded-control-sm bg-blue/10 text-caption text-blue hover:bg-blue/20 flex cursor-pointer items-center gap-1 px-2 py-1 font-semibold transition-colors"
                             >
                               Resume
                             </button>
                           </div>
                           {/* Progress indicator */}
                           <div className="flex items-center gap-2">
-                            <div className="bg-foreground/10 h-1 flex-1 rounded-full">
+                            <div className="bg-fill-3 h-1 flex-1 rounded-full">
                               <div
-                                className="h-full rounded-full bg-blue-500 dark:bg-blue-400"
+                                className="bg-blue h-full rounded-full"
                                 style={{ width: `${session.scrollPercent}%` }}
                               />
                             </div>
-                            <span className="text-muted-foreground text-xs font-bold tabular-nums">
+                            <span className="text-label-secondary text-caption font-semibold tabular-nums">
                               {session.scrollPercent}% read
                             </span>
                           </div>
@@ -204,7 +206,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
                 {/* Right Column: Quick Notes / Scratchpad */}
                 <div className="flex flex-col space-y-2">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                  <div className="text-label-secondary text-eyebrow flex items-center gap-1.5">
                     <FileText className="h-3 w-3" />
                     <span>Wiki Scratchpad</span>
                   </div>
@@ -213,7 +215,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       value={scratchpad}
                       onChange={handleScratchpadChange}
                       placeholder="Jot down quick worldbuilding notes, drafts, task lists, or article revisions here... (auto-saves)"
-                      className="border-foreground/30 bg-foreground/[0.02] text-foreground placeholder:text-muted-foreground/55 focus:border-foreground/50 focus:bg-foreground/[0.03] min-h-[140px] w-full resize-none rounded-xl border p-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+                      className="border-separator bg-foreground/[0.02] text-label placeholder:text-label-tertiary focus:border-separator focus:bg-foreground/[0.03] rounded-row text-footnote min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
                       style={{ scrollbarWidth: "thin" }}
                     />
                   </div>
@@ -224,15 +226,15 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             {activeTab === "profile" && (
               <div className="space-y-4">
                 {/* Wiki Profile Stats */}
-                <div className="border-border/50 bg-foreground/[0.02] relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-xl border p-4">
+                <div className="border-separator bg-foreground/[0.02] rounded-row relative flex flex-wrap items-center justify-between gap-4 overflow-hidden border p-4">
                   {/* Neon Frame Overlay */}
-                  <NeonFrameOverlay neonFrame={neonFrame} className="rounded-xl" />
+                  <NeonFrameOverlay neonFrame={neonFrame} className="rounded-row" />
 
                   <div className="relative z-10 flex items-center gap-3">
                     <AvatarGlow
                       avatarGlow={avatarGlow}
                       roundedClass="rounded-full"
-                      className="h-10 w-10 bg-indigo-950/60 shadow-md"
+                      className="bg-indigo/60 shadow-card h-10 w-10"
                     >
                       {user?.imageUrl ? (
                         <img
@@ -241,13 +243,13 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           className="h-full w-full rounded-full object-cover"
                         />
                       ) : (
-                        <div className="bg-foreground/5 flex h-full w-full items-center justify-center rounded-full text-base">
+                        <div className="bg-fill-4 text-body flex h-full w-full items-center justify-center rounded-full">
                           👤
                         </div>
                       )}
                     </AvatarGlow>
                     <div>
-                      <div className="text-foreground flex items-center gap-1.5 text-sm font-bold">
+                      <div className="text-label text-headline flex items-center gap-1.5">
                         <span>{wikiUsername || "Wiki Profile"}</span>
                         {chatBadge.enabled && (
                           <CrownIcon
@@ -256,35 +258,29 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           />
                         )}
                       </div>
-                      <div className="text-muted-foreground/80 text-xs">
-                        Worldbuilding Editor
-                      </div>
+                      <div className="text-label-secondary text-footnote">Worldbuilding Editor</div>
                     </div>
                   </div>
 
                   {lorewardStats && (
-                    <div className="border-border/50 relative z-10 flex gap-4 border-l pl-4">
+                    <div className="border-separator relative z-10 flex gap-4 border-l pl-4">
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-1.5">
-                          <Trophy className="h-4 w-4 text-amber-500" />
-                          <span className="text-foreground text-sm font-bold">
+                          <Trophy className="text-yellow h-4 w-4" />
+                          <span className="text-label text-headline">
                             {lorewardStats.stats?.totalScore ?? 0}
                           </span>
                         </div>
-                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                          Score
-                        </span>
+                        <span className="text-label-secondary text-eyebrow">Score</span>
                       </div>
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-1.5">
-                          <Flame className="h-4 w-4 text-orange-500" />
-                          <span className="text-foreground text-sm font-bold">
+                          <Flame className="text-orange h-4 w-4" />
+                          <span className="text-label text-headline">
                             {lorewardStats.stats?.currentStreak ?? 0}
                           </span>
                         </div>
-                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                          Streak
-                        </span>
+                        <span className="text-label-secondary text-eyebrow">Streak</span>
                       </div>
                     </div>
                   )}
@@ -293,49 +289,42 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 {/* Quick Actions & Recent */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <div className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      Quick Actions
-                    </div>
+                    <div className="text-subhead text-label-secondary">Quick Actions</div>
                     <div className="space-y-1">
                       {wikiUsername && (
                         <button
                           onClick={() => {
                             onClose();
-                            navigateWithBasePath(
-                              getWikiProfilePath(wikiUsername),
-                              router
-                            );
+                            navigateWithBasePath(getWikiProfilePath(wikiUsername), router);
                           }}
-                          className="bg-foreground/[0.02] border-border/50 text-foreground hover:bg-foreground/[0.04] flex w-full cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                          className="bg-foreground/[0.02] border-separator text-label hover:bg-foreground/[0.04] rounded-control text-caption flex w-full cursor-pointer items-center justify-between border px-3 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                         >
                           <div className="flex items-center gap-2">
-                            <User className="h-3.5 w-3.5 text-blue-500" />
+                            <User className="text-blue h-3.5 w-3.5" />
                             <span>My Contributions</span>
                           </div>
-                          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
+                          <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
                         </button>
                       )}
                       {userProfile?.countryId && (
                         <button
                           onClick={() => setView("country-actions")}
-                          className="bg-foreground/[0.02] border-border/50 text-foreground hover:bg-foreground/[0.04] flex w-full cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                          className="bg-foreground/[0.02] border-separator text-label hover:bg-foreground/[0.04] rounded-control text-caption flex w-full cursor-pointer items-center justify-between border px-3 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                         >
                           <div className="flex items-center gap-2">
-                            <Crown className="h-3.5 w-3.5 text-amber-500" />
+                            <Crown className="text-yellow h-3.5 w-3.5" />
                             <span>Country Actions</span>
                           </div>
-                          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
+                          <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
                         </button>
                       )}
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      Recent Pages Visited
-                    </div>
+                    <div className="text-subhead text-label-secondary">Recent Pages Visited</div>
                     {recentArticles.length === 0 ? (
-                      <div className="border-border/50 bg-foreground/[0.01] text-muted-foreground/75 rounded-lg border py-4 text-center text-xs">
+                      <div className="border-separator bg-foreground/[0.01] text-label-secondary rounded-control text-footnote border py-4 text-center">
                         No pages visited recently
                       </div>
                     ) : (
@@ -347,9 +336,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                               onClose();
                               restoreSession(page);
                             }}
-                            className="bg-foreground/[0.02] border-border/50 text-foreground hover:bg-foreground/[0.04] flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                            className="bg-foreground/[0.02] border-separator text-label hover:bg-foreground/[0.04] rounded-control text-caption flex w-full cursor-pointer items-center gap-2 border px-3 py-2 text-left font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                           >
-                            <History className="h-3.5 w-3.5 text-blue-500" />
+                            <History className="text-blue h-3.5 w-3.5" />
                             <span className="truncate">{page.title}</span>
                           </button>
                         ))}
@@ -369,28 +358,26 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             transition={{ duration: 0.15, ease: "easeInOut" }}
           >
             {/* Country Actions Header */}
-            <div className="border-border/50 mb-4 flex items-center justify-between border-b pb-3">
+            <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => setView("tabs")}
-                  className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                  className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
                   aria-label="Back"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
                 <div className="flex flex-col">
-                  <h3 className="text-foreground flex items-center gap-1.5 text-sm font-bold">
-                    <Crown className="h-4 w-4 text-amber-400" />
+                  <h3 className="text-label text-headline flex items-center gap-1.5">
+                    <Crown className="text-yellow h-4 w-4" />
                     Country Management
                   </h3>
-                  <span className="text-muted-foreground/60 text-xs font-semibold">
-                    {countryName}
-                  </span>
+                  <span className="text-label-secondary text-caption">{countryName}</span>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -403,9 +390,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/15 p-4 text-center text-xs font-semibold text-amber-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-amber-500/25 hover:to-orange-500/25 active:scale-95"
+                className="bg-yellow/15 hover:bg-yellow/25 text-caption text-yellow rounded-row flex cursor-pointer flex-col items-center justify-center gap-2 p-4 text-center transition-[background-color,scale] active:scale-[0.98]"
               >
-                <Building2 className="h-5 w-5 text-amber-400" />
+                <Building2 className="text-yellow h-5 w-5" />
                 <span>MyCountry Dashboard</span>
               </button>
 
@@ -414,9 +401,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/executive", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/15 to-indigo-600/15 p-4 text-center text-xs font-semibold text-indigo-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-indigo-500/25 hover:to-indigo-600/25 active:scale-95"
+                className="bg-indigo/15 hover:bg-indigo/25 text-caption text-indigo rounded-row flex cursor-pointer flex-col items-center justify-center gap-2 p-4 text-center transition-[background-color,scale] active:scale-[0.98]"
               >
-                <ScrollText className="h-5 w-5 text-indigo-400" />
+                <ScrollText className="text-indigo h-5 w-5" />
                 <span>Executive Actions</span>
               </button>
 
@@ -425,9 +412,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/diplomacy", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-center text-xs font-semibold text-cyan-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/20 active:scale-95"
+                className="rounded-row border-teal/20 bg-teal/10 text-caption text-teal hover:bg-teal/20 flex cursor-pointer flex-col items-center justify-center gap-2 border p-4 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
-                <Handshake className="h-5 w-5 text-cyan-400" />
+                <Handshake className="text-teal h-5 w-5" />
                 <span>Manage Diplomacy</span>
               </button>
 
@@ -436,9 +423,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/editor", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-center text-xs font-semibold text-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/20 active:scale-95"
+                className="rounded-row border-blue/20 bg-blue/10 text-caption text-blue hover:bg-blue/20 flex cursor-pointer flex-col items-center justify-center gap-2 border p-4 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
-                <Map className="h-5 w-5 text-blue-400" />
+                <Map className="text-blue h-5 w-5" />
                 <span>Map & Editor</span>
               </button>
 
@@ -447,9 +434,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/vault", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-center text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95"
+                className="rounded-row border-yellow/20 bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 flex cursor-pointer flex-col items-center justify-center gap-2 border p-4 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
-                <Wallet className="h-5 w-5 text-amber-400" />
+                <Wallet className="text-yellow h-5 w-5" />
                 <span>IxVault Cards</span>
               </button>
 
@@ -458,9 +445,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onClose();
                   navigateWithBasePath("/mycountry/politics", router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-center text-xs font-semibold text-indigo-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-500/20 active:scale-95"
+                className="rounded-row border-indigo/20 bg-indigo/10 text-caption text-indigo hover:bg-indigo/20 flex cursor-pointer flex-col items-center justify-center gap-2 border p-4 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
-                <Scale className="h-5 w-5 text-indigo-400" />
+                <Scale className="text-indigo h-5 w-5" />
                 <span>Politics & Elections</span>
               </button>
             </div>

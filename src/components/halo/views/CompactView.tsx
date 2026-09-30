@@ -60,7 +60,7 @@ function CompactViewComponent({
     ? ((narratorState.activeBlockIndex + 1) / narratorState.totalBlocks) * 100
     : 0;
 
-  const narratorAccent = themeColors?.primary || activePlugin?.accentColor || "#3b82f6";
+  const narratorAccent = themeColors?.primary || activePlugin?.accentColor || "var(--color-blue)";
 
   const ixTimeTimestamp = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 30000) * 30000);
   const activeSectionName = activeSectionId
@@ -184,8 +184,8 @@ function CompactViewComponent({
                   transition={{ type: "spring", stiffness: 420, damping: 38 }}
                   className="flex items-center gap-1.5 px-2 py-0.5"
                 >
-                  <Bell className="h-3 w-3 text-amber-400" />
-                  <span className="text-foreground/90 max-w-[160px] truncate text-xs font-medium whitespace-nowrap">
+                  <Bell className="text-yellow h-3 w-3" />
+                  <span className="text-label text-caption max-w-[160px] truncate whitespace-nowrap">
                     <PreText whiteSpace="nowrap">{peekText}</PreText>
                   </span>
                 </motion.div>
@@ -217,7 +217,7 @@ function CompactViewComponent({
                       }
                     }
                   }}
-                  className={`flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-white/10 ${
+                  className={`rounded-control-sm hover:bg-fill-2 flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                   title={`Open ${activePlugin.id} mode`}
@@ -246,8 +246,8 @@ function CompactViewComponent({
                     transition={{ type: "spring", stiffness: 420, damping: 38 }}
                     className="flex items-center gap-1.5 px-2 py-1"
                   >
-                    <Bell className="h-3 w-3 text-amber-400" />
-                    <span className="text-foreground/90 max-w-[200px] truncate text-xs font-medium whitespace-nowrap">
+                    <Bell className="text-yellow h-3 w-3" />
+                    <span className="text-label text-caption max-w-[200px] truncate whitespace-nowrap">
                       <PreText whiteSpace="nowrap">{peekText}</PreText>
                     </span>
                   </motion.div>
@@ -283,7 +283,7 @@ function CompactViewComponent({
                               }
                             }
                           }}
-                          className="flex max-w-[160px] min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden rounded px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-white/10 sm:max-w-[200px]"
+                          className="rounded-control-sm hover:bg-fill-2 flex max-w-[160px] min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
@@ -296,16 +296,16 @@ function CompactViewComponent({
                     ) : (
                       <button
                         onClick={() => onSwitchMode("mycountry")}
-                        className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors"
+                        className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption flex cursor-pointer items-center gap-1.5 px-1.5 py-0.5 transition-colors"
                       >
                         {user?.imageUrl ? (
                           <img
                             src={user.imageUrl}
                             alt=""
-                            className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20"
+                            className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
                           />
                         ) : (
-                          <span className="text-muted-foreground h-3 w-3 text-xs">👤</span>
+                          <span className="text-label-secondary text-footnote h-3 w-3">👤</span>
                         )}
                         <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
                           {`${currentTime.greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
@@ -330,7 +330,7 @@ function CompactViewComponent({
                         soundEffects.scan();
                         onSwitchMode("search");
                       }}
-                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -353,7 +353,7 @@ function CompactViewComponent({
                           soundEffects.bloom();
                           onSwitchMode("notifications");
                         }}
-                        className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                        className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                           isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                         }`}
                       >
@@ -361,8 +361,8 @@ function CompactViewComponent({
                           className={cn(
                             "transition-transform hover:scale-110",
                             totalUnreadCount > 0
-                              ? "text-amber-400 dark:text-amber-300"
-                              : "text-muted-foreground hover:text-foreground",
+                              ? "text-yellow"
+                              : "text-label-secondary hover:text-label",
                             isSticky ? "h-3 w-3" : "h-3.5 w-3.5"
                           )}
                         />
@@ -374,7 +374,7 @@ function CompactViewComponent({
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                              className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-xs font-bold text-white shadow-lg ${
+                              className={`bg-yellow text-caption text-on-yellow shadow-floating absolute flex items-center justify-center rounded-full border-0 font-semibold ${
                                 isSticky
                                   ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
                                   : "-top-1 -right-1 h-3 w-3 p-0"
@@ -404,7 +404,7 @@ function CompactViewComponent({
                         soundEffects.bloom();
                         onSwitchMode("settings");
                       }}
-                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -426,7 +426,7 @@ function CompactViewComponent({
                           size="sm"
                           variant="ghost"
                           onClick={action.onClick}
-                          className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                          className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                             isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                           }`}
                         >
@@ -435,7 +435,7 @@ function CompactViewComponent({
                           />
                           {action.badge != null && action.badge > 0 && (
                             <span
-                              className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white ${
+                              className={`bg-yellow text-caption text-on-yellow absolute flex items-center justify-center rounded-full font-semibold ${
                                 isSticky
                                   ? "-top-0.5 -right-0.5 h-2.5 w-2.5"
                                   : "-top-1 -right-1 h-3 w-3"
@@ -463,7 +463,7 @@ function CompactViewComponent({
               {/* Sleek Hairline Narrator Progress Track Underneath the Icons Group */}
               {isNarratorActive && narratorActions && (
                 <div
-                  className="group/narrator-progress bg-foreground/15 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:h-[3.5px] dark:bg-white/15"
+                  className="group/narrator-progress bg-fill-2 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:h-[3.5px]"
                   onClick={(e) => {
                     e.stopPropagation();
                     const rect = e.currentTarget.getBoundingClientRect();

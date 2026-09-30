@@ -1,10 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { Xmark as X, SystemRestart as Loader2 } from "iconoir-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { fieldStyles } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
+
+const SELECT_CLASS = cn(
+  fieldStyles,
+  "rounded-control text-body block h-(--control-height) w-full px-3"
+);
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
@@ -76,176 +88,84 @@ export function AccountSettingsModal({
 
   if (!mounted) return null;
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <div className="hs-overlay-backdrop-open:bg-black/50 fixed inset-0 z-[100000] flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative mx-2 flex max-h-[90vh] w-full max-w-[95vw] flex-col sm:mx-4 sm:max-w-md md:max-w-lg"
-          >
-            <div className="flex flex-col rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[var(--color-border-primary)] px-4 py-3 sm:px-6 sm:py-4">
-                <h3 className="text-base font-bold text-[var(--color-text-primary)] sm:text-lg">
-                  Account Settings
-                </h3>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-full p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-bg-secondary)] sm:p-2"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
-                    Posting Frequency
-                  </label>
-                  <select
-                    value={postingFrequency}
-                    onChange={(e) => setPostingFrequency(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
-                  >
-                    <option
-                      value="low"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Low
-                    </option>
-                    <option
-                      value="moderate"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Moderate
-                    </option>
-                    <option
-                      value="active"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Active
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
-                    Political Lean
-                  </label>
-                  <select
-                    value={politicalLean}
-                    onChange={(e) => setPoliticalLean(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
-                  >
-                    <option
-                      value="left"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Left
-                    </option>
-                    <option
-                      value="center"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Center
-                    </option>
-                    <option
-                      value="right"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Right
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
-                    Personality
-                  </label>
-                  <select
-                    value={personality}
-                    onChange={(e) => setPersonality(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
-                  >
-                    <option
-                      value="serious"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Serious
-                    </option>
-                    <option
-                      value="casual"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Casual
-                    </option>
-                    <option
-                      value="satirical"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Satirical
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
-                    Account Type (Category)
-                  </label>
-                  <select
-                    value={accountType}
-                    onChange={(e) => setAccountType(e.target.value as any)}
-                    className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm"
-                  >
-                    <option
-                      value="government"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Government
-                    </option>
-                    <option
-                      value="media"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Media
-                    </option>
-                    <option
-                      value="citizen"
-                      className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                    >
-                      Citizen
-                    </option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex items-center justify-end border-t border-[var(--color-border-primary)] px-4 py-3 sm:px-6 sm:py-4">
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                  <Button variant="outline" onClick={onClose} className="text-xs sm:text-sm">
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={updateAccountMutation.isPending}
-                    className="text-xs sm:text-sm"
-                  >
-                    {updateAccountMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Save
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] sm:max-w-md md:max-w-lg" aria-describedby={undefined}>
+        <DialogHeader>
+          <DialogTitle className="text-title-3">Account Settings</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="tp-posting-frequency" className="text-subhead text-label mb-2 block">
+              Posting Frequency
+            </label>
+            <select
+              id="tp-posting-frequency"
+              value={postingFrequency}
+              onChange={(e) => setPostingFrequency(e.target.value as any)}
+              className={SELECT_CLASS}
+            >
+              <option value="low">Low</option>
+              <option value="moderate">Moderate</option>
+              <option value="active">Active</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="tp-political-lean" className="text-subhead text-label mb-2 block">
+              Political Lean
+            </label>
+            <select
+              id="tp-political-lean"
+              value={politicalLean}
+              onChange={(e) => setPoliticalLean(e.target.value as any)}
+              className={SELECT_CLASS}
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="tp-personality" className="text-subhead text-label mb-2 block">
+              Personality
+            </label>
+            <select
+              id="tp-personality"
+              value={personality}
+              onChange={(e) => setPersonality(e.target.value as any)}
+              className={SELECT_CLASS}
+            >
+              <option value="serious">Serious</option>
+              <option value="casual">Casual</option>
+              <option value="satirical">Satirical</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="tp-account-type" className="text-subhead text-label mb-2 block">
+              Account Type (Category)
+            </label>
+            <select
+              id="tp-account-type"
+              value={accountType}
+              onChange={(e) => setAccountType(e.target.value as any)}
+              className={SELECT_CLASS}
+            >
+              <option value="government">Government</option>
+              <option value="media">Media</option>
+              <option value="citizen">Citizen</option>
+            </select>
+          </div>
         </div>
-      )}
-    </AnimatePresence>,
-    document.body
+        <DialogFooter>
+          <Button variant="gray" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={updateAccountMutation.isPending}>
+            {updateAccountMutation.isPending && <Loader2 className="animate-spin" />}
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
