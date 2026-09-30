@@ -249,13 +249,32 @@ describe("planChecks", () => {
     ]);
   });
 
-  it("keeps only rows a lone WikiOS process satisfies with --standalone", () => {
-    const plan = planChecks(parseArgs(["--base", "http://127.0.0.1:3560", "--standalone"]));
-    expect(plan.map((p) => p.expectation.path)).toEqual([
+  it("keeps only the pre-takeover rows with --standalone, render engine included when --internal is given", () => {
+    const withoutInternal = planChecks(
+      parseArgs(["--base", "http://127.0.0.1:3560", "--standalone"])
+    );
+    expect(withoutInternal.map((p) => p.expectation.path)).toEqual([
       "/",
       "/wiki/Main_Page",
       "/projects/ixstats",
+      "/api.php?action=parse&text=x&contentmodel=wikitext&format=json",
     ]);
-    expect(plan.every((p) => p.origin === "http://127.0.0.1:3560")).toBe(true);
+    expect(withoutInternal.filter((p) => p.origin === null)).toHaveLength(1);
+
+    const withInternal = planChecks(
+      parseArgs([
+        "--base",
+        "http://127.0.0.1:3560",
+        "--internal",
+        "http://127.0.0.1:8081",
+        "--standalone",
+      ])
+    );
+    expect(withInternal.map((p) => p.origin)).toEqual([
+      "http://127.0.0.1:3560",
+      "http://127.0.0.1:3560",
+      "http://127.0.0.1:3560",
+      "http://127.0.0.1:8081",
+    ]);
   });
 });

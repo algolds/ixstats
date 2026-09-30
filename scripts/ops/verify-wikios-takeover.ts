@@ -17,7 +17,8 @@
  * Notes:
  * - /api.php is still MediaWiki's on the public host; when WikiOS serves its own api.php subset the
  *   expected body here changes.
- * - --standalone keeps only the rows a WikiOS process satisfies on its own (no nginx, no MediaWiki).
+ * - --standalone keeps only the rows that do not need the nginx takeover or classic MediaWiki on --base:
+ *   WikiOS itself, plus the render engine when --internal is given.
  * - --image is a real upload path (for example one listed under /ixwiki/shared/images); without it
  *   the /images/ row is reported as skipped rather than guessed.
  */
@@ -37,7 +38,7 @@ export interface Expectation {
   readonly expectBodyIncludes?: string;
   /** The body must parse as JSON. */
   readonly expectJson?: boolean;
-  /** True when a standalone WikiOS process (no nginx, no MediaWiki) can satisfy the row. */
+  /** True when the row holds before the nginx takeover, against a lone WikiOS process on --base. */
   readonly standalone?: boolean;
 }
 
@@ -200,6 +201,7 @@ export function buildExpectations(options: Pick<Options, "file" | "image">): Exp
       via: "internal",
       expectStatus: 200,
       expectJson: true,
+      standalone: true,
     },
   ];
   if (options.image) {
