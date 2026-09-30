@@ -51,6 +51,8 @@ export const env = createEnv({
     // XenForo Forum API Configuration
     XENFORO_API_KEY: z.string().optional(),
     XENFORO_API_URL: z.string().url().optional().default("https://forum.ixwiki.com/api"),
+    // HMAC key for forum account verification codes (falls back to CRON_SECRET when unset)
+    FORUM_VERIFICATION_SECRET: z.string().optional(),
     // IxWiki MySQL direct access (for wiki-bridge.ts read queries)
     IXWIKI_DB_HOST: z.string().optional().default("localhost"),
     IXWIKI_DB_PORT: z.coerce.number().optional().default(3306),
@@ -224,6 +226,7 @@ export const env = createEnv({
     // XenForo Forum
     XENFORO_API_KEY: process.env.XENFORO_API_KEY,
     XENFORO_API_URL: process.env.XENFORO_API_URL,
+    FORUM_VERIFICATION_SECRET: process.env.FORUM_VERIFICATION_SECRET,
     // IxWiki MySQL
     IXWIKI_DB_HOST: process.env.IXWIKI_DB_HOST,
     IXWIKI_DB_PORT: process.env.IXWIKI_DB_PORT,

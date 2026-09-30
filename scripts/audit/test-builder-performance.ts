@@ -13,6 +13,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 
 const prisma = new PrismaClient();
 
@@ -156,7 +157,7 @@ async function testGovernmentCreatePerformance(countryId: string) {
 
   const budgetAllocations = departments.slice(0, 10).map((_, i) => ({
     departmentId: String(i),
-    budgetYear: 2026,
+    budgetYear: currentBudgetYear(),
     allocatedAmount: 1000000 * (i + 1),
     allocatedPercent: 10,
     notes: `Budget for dept ${i + 1}`,

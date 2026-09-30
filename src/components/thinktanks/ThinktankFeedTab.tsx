@@ -26,6 +26,8 @@ interface ThinktankFeedTabProps {
   groupName: string;
   allowPersonaPosting?: boolean;
   isMember?: boolean;
+  /** Whether the caller may read the feed (public group, or a member). */
+  canReadFeed?: boolean;
   currentUserId: string;
   onJoin?: () => void;
 }
@@ -35,6 +37,7 @@ export function ThinktankFeedTab({
   groupName,
   allowPersonaPosting = false,
   isMember = true,
+  canReadFeed = true,
   currentUserId,
   onJoin,
 }: ThinktankFeedTabProps) {
@@ -49,7 +52,7 @@ export function ThinktankFeedTab({
   // Queries
   const { data: feedData, isLoading: isLoadingFeed } = api.thinkpages.getGroupFeed.useQuery(
     { groupId, limit: 30 },
-    { enabled: Boolean(groupId), staleTime: 15000 }
+    { enabled: Boolean(groupId) && canReadFeed, staleTime: 15000 }
   );
 
   const { data: myAccountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
@@ -418,7 +421,7 @@ export function ThinktankFeedTab({
                   return;
                 }
                 soundEffects.press();
-                joinMutation.mutate({ groupId, userId: currentUserId });
+                joinMutation.mutate({ groupId });
               }}
               className="mt-5 w-full max-w-xs cursor-pointer rounded-xl bg-emerald-600 font-semibold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
             >

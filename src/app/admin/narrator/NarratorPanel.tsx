@@ -41,6 +41,7 @@ export function NarratorPanel() {
   const [enabled, setEnabled] = useState(true);
   const [provider, setProvider] = useState("nvidia");
   const [apiKey, setApiKey] = useState("");
+  const [clearApiKey, setClearApiKey] = useState(false);
   const [apiUrl, setApiUrl] = useState("");
   const [modelName, setModelName] = useState("");
   const [temperature, setTemperature] = useState(0.7);
@@ -67,7 +68,8 @@ export function NarratorPanel() {
     if (settingsData) {
       setEnabled(settingsData.enabled);
       setProvider(settingsData.provider || "nvidia");
-      setApiKey(settingsData.apiKey || "");
+      setApiKey("");
+      setClearApiKey(false);
       setApiUrl(settingsData.apiUrl || "");
       setModelName(settingsData.modelName || "");
       setTemperature(settingsData.temperature ?? 0.7);
@@ -81,6 +83,7 @@ export function NarratorPanel() {
       enabled,
       provider: provider || undefined,
       apiKey: apiKey || undefined,
+      clearApiKey,
       apiUrl: apiUrl || undefined,
       modelName: modelName || undefined,
       temperature,
@@ -275,15 +278,31 @@ export function NarratorPanel() {
                 </Label>
                 <Input
                   type="password"
+                  autoComplete="off"
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    if (e.target.value) setClearApiKey(false);
+                  }}
                   placeholder={
-                    settingsData?.apiKey
-                      ? "••••••••••••••••"
+                    settingsData?.hasApiKey && !clearApiKey
+                      ? `Saved (${settingsData.apiKeyHint}) — leave blank to keep`
                       : "Fallback to SPORTS_LLM_API_KEY if empty"
                   }
                   className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
                 />
+                {settingsData?.hasApiKey && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClearApiKey((v) => !v);
+                      setApiKey("");
+                    }}
+                    className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline"
+                  >
+                    {clearApiKey ? "Keep the saved key" : "Remove the saved key on save"}
+                  </button>
+                )}
               </div>
 
               {/* System Prompt Editor */}

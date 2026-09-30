@@ -8,7 +8,7 @@ import { Label } from "~/components/ui/label";
 import { Slider } from "~/components/ui/slider";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { motion, AnimatePresence } from "motion/react";
@@ -23,6 +23,7 @@ import {
   NavArrowDown as ChevronDown,
   NavArrowRight as ChevronRight,
 } from "iconoir-react";
+import { BUDGET_YEAR_MAX, BUDGET_YEAR_MIN } from "~/types/government";
 import type { BudgetAllocationInput, BudgetStatus } from "~/types/government";
 
 interface BudgetAllocationFormProps {
@@ -298,13 +299,12 @@ export function BudgetAllocationForm({
                       onChange={(e) =>
                         handleChange(
                           "budgetYear",
-                          parseInt(e.target.value) ||
-                            new Date(IxTime.getCurrentIxTime()).getFullYear()
+                          parseInt(e.target.value) || currentBudgetYear()
                         )
                       }
                       disabled={isReadOnly}
-                      min="2020"
-                      max="2035"
+                      min={BUDGET_YEAR_MIN}
+                      max={BUDGET_YEAR_MAX}
                       className="h-8 border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                     />
                   </div>

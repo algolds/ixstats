@@ -11,8 +11,6 @@ import {
   ChatBubble as MessageSquare,
   OpenBook as BookOpen,
   CompactDisc as Disc,
-  Search,
-  SystemRestart as Loader2,
   Eye,
   EyeClosed as EyeOff,
   Check,
@@ -28,8 +26,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
-import { Input } from "~/components/ui/input";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
+import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
 import { cn } from "~/lib/utils";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -52,20 +50,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
   // Forum link state
   const [showForumInput, setShowForumInput] = useState(false);
-  const [forumInput, setForumInput] = useState("");
-  const [forumLookup, setForumLookup] = useState<string | null>(null);
 
   // Mutations
-  const linkForum = api.ixnayid.linkForum.useMutation({
-    onSuccess: () => {
-      notify.success("Forum account linked");
-      setShowForumInput(false);
-      setForumInput("");
-      setForumLookup(null);
-      void utils.ixnayid.getStatus.invalidate();
-    },
-    onError: (err) => notify.error(err.message || "Failed to link Forum"),
-  });
 
   const unlinkForum = api.ixnayid.unlinkForum.useMutation({
     onSuccess: () => {
@@ -82,22 +68,6 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
     },
     onError: (err) => notify.error(err.message || "Failed to unlink Discord"),
   });
-
-  const forumLookupQuery = api.ixnayid.lookupForumUser.useQuery(
-    { username: forumInput.trim() },
-    { enabled: false }
-  );
-
-  const handleForumLookup = async () => {
-    if (!forumInput.trim()) return;
-    const res = await forumLookupQuery.refetch();
-    if (res.data) {
-      setForumLookup(res.data.username);
-    } else {
-      setForumLookup(null);
-      notify.error("User not found on Forum");
-    }
-  };
 
   const passportHandle =
     status?.passportHandle ||
@@ -371,48 +341,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
             {showForumInput && !status?.forum.linked && (
               <div className="bg-muted/20 space-y-3 p-4">
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={forumInput}
-                    onChange={(e) => {
-                      setForumInput(e.target.value);
-                      setForumLookup(null);
-                    }}
-                    placeholder="Enter Forum username..."
-                    className="flex-1 text-xs"
-                    onKeyDown={(e) => e.key === "Enter" && handleForumLookup()}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleForumLookup}
-                    disabled={!forumInput.trim() || forumLookupQuery.isFetching}
-                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {forumLookupQuery.isFetching ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Search className="h-3.5 w-3.5" />
-                    )}
-                    <span>Search</span>
-                  </button>
-                </div>
-
-                {forumLookup && (
-                  <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5">
-                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      Account found: <strong>{forumLookup}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => linkForum.mutate({ forumUsername: forumLookup })}
-                      disabled={linkForum.isPending}
-                      className="facet-interactive rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-700 active:scale-[0.98]"
-                    >
-                      {linkForum.isPending ? "Linking..." : "Link Account"}
-                    </button>
-                  </div>
-                )}
+                {/* A code on the forum profile proves the account (WK-1) */}
+                <ForumAccountVerify onLinked={() => setShowForumInput(false)} />
               </div>
             )}
 

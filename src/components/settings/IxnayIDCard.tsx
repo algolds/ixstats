@@ -9,15 +9,14 @@ import {
   OpenBook as BookOpen,
   SystemRestart as Loader2,
   Check,
-  Search,
   OpenNewWindow as ExternalLink,
   Discord,
   User as UserIcon,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { Input } from "~/components/ui/input";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
+import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
 
 interface ServiceRowProps {
   name: string;
@@ -122,22 +121,9 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   const wikiLinks = api.ixnayid.listWikiLinks.useQuery();
 
   // Linking state
-  const [forumInput, setForumInput] = useState("");
   const [showForumInput, setShowForumInput] = useState(false);
 
-  // Lookup previews
-  const [forumLookup, setForumLookup] = useState<string | null>(null);
-
   // Mutations
-  const linkForum = api.ixnayid.linkForum.useMutation({
-    onSuccess: () => {
-      utils.ixnayid.getStatus.invalidate();
-      setShowForumInput(false);
-      setForumInput("");
-      setForumLookup(null);
-    },
-  });
-
   const unlinkForum = api.ixnayid.unlinkForum.useMutation({
     onSuccess: () => utils.ixnayid.getStatus.invalidate(),
   });
@@ -164,22 +150,6 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
       linkDiscord.mutate();
     }
   }, [hasDiscordAccount, status, linkDiscord]);
-
-  // Lookup queries (manual trigger via refetch)
-  const forumLookupQuery = api.ixnayid.lookupForumUser.useQuery(
-    { username: forumInput },
-    { enabled: false }
-  );
-
-  const handleForumLookup = async () => {
-    if (!forumInput.trim()) return;
-    const result = await forumLookupQuery.refetch();
-    if (result.data) {
-      setForumLookup(result.data.username);
-    } else {
-      setForumLookup(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -234,68 +204,17 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
             lastSync={status?.forum.lastSync ?? null}
             onLink={() => setShowForumInput(true)}
             onUnlink={() => unlinkForum.mutate()}
-            isLinking={linkForum.isPending}
+            isLinking={false}
             isUnlinking={unlinkForum.isPending}
           />
 
-          {/* Forum input */}
+          {/* Forum verification: a code on the forum profile proves the account (WK-1) */}
           {showForumInput && !status?.forum.linked && (
-            <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={forumInput}
-                  onChange={(e) => {
-                    setForumInput(e.target.value);
-                    setForumLookup(null);
-                  }}
-                  placeholder="Forum username..."
-                  className="flex-1"
-                  onKeyDown={(e) => e.key === "Enter" && handleForumLookup()}
-                />
-                <button
-                  onClick={handleForumLookup}
-                  disabled={!forumInput.trim() || forumLookupQuery.isFetching}
-                  className="flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-                >
-                  {forumLookupQuery.isFetching ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Search className="h-3 w-3" />
-                  )}
-                  Look up
-                </button>
-              </div>
-              {forumLookup && (
-                <div className="flex items-center justify-between rounded-md bg-green-50 px-3 py-2 dark:bg-green-900/20">
-                  <span className="text-xs text-green-700 dark:text-green-400">
-                    Found: <strong>{forumLookup}</strong>
-                  </span>
-                  <button
-                    onClick={() => linkForum.mutate({ forumUsername: forumLookup })}
-                    disabled={linkForum.isPending}
-                    className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                  >
-                    {linkForum.isPending ? "Linking..." : "Confirm Link"}
-                  </button>
-                </div>
-              )}
-              {forumLookupQuery.isError && (
-                <p className="text-xs text-red-500">
-                  User not found. Check the username and try again.
-                </p>
-              )}
-              {linkForum.error && <p className="text-xs text-red-500">{linkForum.error.message}</p>}
-              <button
-                onClick={() => {
-                  setShowForumInput(false);
-                  setForumInput("");
-                  setForumLookup(null);
-                }}
-                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                Cancel
-              </button>
+            <div className="ml-14 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
+              <ForumAccountVerify
+                onLinked={() => setShowForumInput(false)}
+                onCancel={() => setShowForumInput(false)}
+              />
             </div>
           )}
 

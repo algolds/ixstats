@@ -106,7 +106,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | IxTime | Concord v2 | platform | `src/lib/ixtime/`, `/api/ixtime/sync-from-bot` | ✅ Live | Discord bot is the source of truth; continuous across multiplier changes |
 | Crisis events | Concord v2 | — | `crisis-events.ts` | 🟡 Partial | Read-only (`getActive`, `getStatistics`); only the demo seed creates rows; no admin UI |
 | NPC personalities | Concord v2 | `/admin/npc-personalities` | `npcPersonalities/`, `src/lib/diplomacy/npc-personality.ts` | 🟡 Partial | Traits drive cultural-exchange responses only; drift has no callers; no event fatigue |
-| Cron | — | — | `cron-runner.mjs`, `src/server/cron/jobs.ts` | ✅ Live | 15 jobs; none run unless listed in `CRON_ENABLED_JOBS` |
+| Cron | — | — | `cron-runner.mjs`, `src/server/cron/jobs.ts` | ✅ Live | 17 jobs (incl. `db-backup`, `budget-year-rollover`); none run unless listed in `CRON_ENABLED_JOBS` |
 
 ## 🎨 Design, Halo & admin
 

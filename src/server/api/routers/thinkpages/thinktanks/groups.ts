@@ -7,9 +7,19 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
+import {
+  pickDisplayName,
+  resolveDisplayName,
+  UNKNOWN_DISPLAY_NAME,
+} from "~/server/shared/display-names";
+import {
+  requireGroupManager,
+  requireGroupMember,
+  requireGroupReader,
+  requirePersonaAccount,
+} from "./access";
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   // Create a new ThinkTank group
@@ -22,19 +32,11 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         type: z.enum(["public", "private", "invite_only"]).default("public"),
         category: z.string().optional(),
         tags: z.array(z.string()).optional(),
-        createdBy: z.string(), // userId (clerkUserId)
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-
-      // Verify the creator user exists
-      if (!input.createdBy || input.createdBy.trim() === "") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "User ID is required",
-        });
-      }
+      const createdBy = ctx.auth.userId;
 
       // Automatically create the linked ThinkShare group conversation
       const conversation = await db.thinkshareConversation.create({
@@ -45,7 +47,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           source: "thinktank",
           participants: {
             create: {
-              userId: input.createdBy,
+              userId: createdBy,
               role: "admin",
             },
           },
@@ -61,12 +63,12 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           type: input.type,
           category: input.category,
           tags: input.tags ? JSON.stringify(input.tags) : null,
-          createdBy: input.createdBy,
+          createdBy,
           memberCount: 1,
           conversationId: conversation.id,
           members: {
             create: {
-              userId: input.createdBy,
+              userId: createdBy,
               role: "owner",
             },
           },
@@ -80,21 +82,14 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       // Send activity notification for public groups
       if (input.type === "public") {
         try {
-          const creatorUser = await db.user.findUnique({
-            where: { clerkUserId: input.createdBy },
-            include: { country: true },
-          });
-          const creatorName =
-            creatorUser?.country?.name ||
-            creatorUser?.forumUsername ||
-            `User ${input.createdBy.slice(0, 8)}`;
+          const creatorName = await resolveDisplayName(db, createdBy);
           await notificationHooks.onThinktankActivity({
             activityType: "settings_changed",
             groupId: group.id,
 
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: input.createdBy,
+            actorUserId: createdBy,
             actorUserName: creatorName,
           });
         } catch (e) {
@@ -105,22 +100,21 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       return group;
     }),
 
-  // Get ThinkTanks globally (no country restriction)
+  // Get ThinkTanks globally (no country restriction). Membership is the caller's own.
   getThinktanks: publicProcedure
     .input(
       z
         .object({
-          userId: z.string().optional().default(""),
           type: z.enum(["all", "joined", "created"]).optional().default("all"),
         })
         .optional()
-        .default(() => ({ userId: "", type: "all" as const }))
+        .default(() => ({ type: "all" as const }))
     )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
       try {
-        const targetUserId = input?.userId || ctx.auth?.userId || ctx.user?.id || "";
+        const targetUserId = ctx.auth?.userId || "";
 
         const whereClause: any = {
           isActive: true,
@@ -209,6 +203,8 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
           return {
             ...group,
+            // Member lists of non-public groups are visible to their members only.
+            members: group.type === "public" || isMember ? group.members : [],
             tags: group.tags ? JSON.parse(group.tags) : [],
             isMember,
             isJoined: isMember,
@@ -239,7 +235,10 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const actorId = ctx.auth.userId;
       const { groupId, ...updateData } = input;
+
+      await requireGroupManager(db, groupId, actorId);
 
       const group = await db.thinktankGroup.update({
         where: { id: groupId },
@@ -255,25 +254,19 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           where: {
             groupId: groupId,
             isActive: true,
-            userId: { not: ctx.user?.clerkUserId },
+            userId: { not: actorId },
           },
           select: { userId: true },
         });
 
-        const actor = await db.user.findUnique({
-          where: { clerkUserId: ctx.user?.clerkUserId },
-        });
-
-        if (members.length > 0 && actor) {
-          const actorDisplayName = ctx.user?.clerkUserId
-            ? `User ${ctx.user.clerkUserId.slice(0, 8)}`
-            : "System";
+        if (members.length > 0) {
+          const actorDisplayName = await resolveDisplayName(db, actorId);
           await notificationHooks.onThinktankActivity({
             activityType: "settings_changed",
             groupId: groupId,
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: ctx.user?.clerkUserId || "system",
+            actorUserId: actorId,
             actorUserName: actorDisplayName,
             targetUserIds: members.map((m) => m.userId),
           });
@@ -289,14 +282,11 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     .input(z.object({ groupId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      const group = await db.thinktankGroup.findUnique({
-        where: { id: input.groupId },
-        select: { conversationId: true },
-      });
+      const { group } = await requireGroupManager(db, input.groupId, ctx.auth.userId);
       await db.thinktankGroup.delete({
         where: { id: input.groupId },
       });
-      if (group?.conversationId) {
+      if (group.conversationId) {
         await db.thinkshareConversation
           .delete({
             where: { id: group.conversationId },
@@ -310,7 +300,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
    * Get single ThinkTank by ID with rich metadata, members, and settings
    */
   getThinktankById: publicProcedure
-    .input(z.object({ groupId: z.string(), userId: z.string().optional() }))
+    .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
       const group = await db.thinktankGroup.findUnique({
@@ -409,11 +399,8 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
                 ...u,
                 avatarUrl: acc?.profileImageUrl || null,
                 displayName:
-                  u.country?.name ||
-                  u.forumUsername ||
-                  u.wikiUsername ||
-                  acc?.displayName ||
-                  `User ${m.userId.slice(-6)}`,
+                  pickDisplayName({ ...u, thinkpagesDisplayName: acc?.displayName }) ??
+                  UNKNOWN_DISPLAY_NAME,
               }
             : acc
               ? {
@@ -453,7 +440,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         }
       }
 
-      const targetUserId = input.userId || ctx.auth?.userId || ctx.user?.id || "";
+      const targetUserId = ctx.auth?.userId || "";
 
       const isMember = targetUserId
         ? group.createdBy === targetUserId ||
@@ -467,9 +454,13 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
             (isMember ? "member" : null)
         : null;
 
+      // Members and documents of non-public groups are for members only (SL-2).
+      const canRead = group.type === "public" || isMember;
+
       return {
         ...group,
-        members: enrichedMembers,
+        collaborativeDocs: canRead ? group.collaborativeDocs : [],
+        members: canRead ? enrichedMembers : [],
         settings: parsedSettings,
         tags: parsedTags,
         isMember,
@@ -495,14 +486,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const { db } = ctx;
       const { groupId, ...settingsUpdate } = input;
 
-      const group = await db.thinktankGroup.findUnique({
-        where: { id: groupId },
-        select: { settings: true, createdBy: true },
-      });
-
-      if (!group) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "ThinkTank group not found" });
-      }
+      const { group } = await requireGroupManager(db, groupId, ctx.auth.userId);
 
       let existingSettings = {};
       if (group.settings) {
@@ -546,6 +530,9 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
       const limit = input.limit ?? 20;
+
+      // Signed-out callers and non-members see public groups only (SL-2).
+      await requireGroupReader(db, input.groupId, ctx.auth?.userId);
 
       const posts = await db.thinkpagesPost.findMany({
         where: {
@@ -615,9 +602,16 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const { db, auth } = ctx;
       const currentUserId = auth.userId;
 
+      const { group } = await requireGroupMember(db, input.groupId, currentUserId);
+
       let targetAccountId = input.accountId;
 
-      // If no persona account specified or Multi-Persona is disabled, resolve real user account
+      // A persona account must belong to the caller, and the group must allow persona posting.
+      if (targetAccountId) {
+        await requirePersonaAccount(db, group, targetAccountId, currentUserId);
+      }
+
+      // If no persona account specified, resolve the caller's primary account
       if (!targetAccountId) {
         let primaryAcc = await db.thinkpagesAccount.findFirst({
           where: { clerkUserId: currentUserId, isActive: true },
@@ -689,43 +683,39 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     .input(
       z.object({
         groupId: z.string(),
-        userIds: z.array(z.string()),
-        invitedBy: z.string(),
+        userIds: z.array(z.string().min(1)).min(1).max(50),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const invitedBy = ctx.auth.userId;
 
-      // Get group details for notifications
-      const group = await db.thinktankGroup.findUnique({
-        where: { id: input.groupId },
-        select: { name: true, type: true },
-      });
-
-      const inviter = await db.user.findUnique({
-        where: { clerkUserId: input.invitedBy },
-      });
+      // Only the owner or a group admin can invite (the invite form is in group settings).
+      const { group } = await requireGroupManager(db, input.groupId, invitedBy);
+      const userIds = [...new Set(input.userIds.map((id) => id.trim()))].filter(
+        (id) => id && id !== invitedBy
+      );
 
       const invites = await db.thinktankInvite.createMany({
-        data: input.userIds.map((userId) => ({
+        data: userIds.map((userId) => ({
           groupId: input.groupId,
           invitedUser: userId,
-          invitedBy: input.invitedBy,
+          invitedBy,
         })),
       });
 
       // Send notifications to all invited users
-      if (group && inviter) {
-        const inviterName = `User ${input.invitedBy.slice(0, 8)}`;
+      if (userIds.length > 0) {
+        const inviterName = await resolveDisplayName(db, invitedBy);
         await notificationHooks
           .onThinktankActivity({
             activityType: "group_invite",
             groupId: input.groupId,
             groupName: group.name,
             groupType: group.type as "public" | "private" | "invite_only",
-            actorUserId: input.invitedBy,
+            actorUserId: invitedBy,
             actorUserName: inviterName,
-            targetUserIds: input.userIds,
+            targetUserIds: userIds,
           })
           .catch((e) => console.warn("[ThinkTanks] Failed to send invite notifications:", e));
       }

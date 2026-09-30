@@ -34,11 +34,12 @@ This is destructive. It will:
 - Add `ownerUserId` and `lastSeenAt` columns.
 - Change `MapLayer`'s unique key to `(worldId, layerType, featureId)` (per-realm map features).
 
-There is no undo short of a DB restore — take a backup first (`bun run db:backup` is not implemented for
-Postgres; use `pg_dump` against the Docker container):
+There is no undo short of a DB restore — take a backup first. `bun run db:backup` dumps the Docker
+container (`pg_dump -Fc`) to `backups/ixstats-<UTC timestamp>.dump`; `bun run db:restore` restores one
+(see [deployment.md](../operations/deployment.md#backups-and-restore)):
 
 ```bash
-docker exec ixstats-postgres pg_dump -U postgres -Fc ixstats > ~/ixstats-pre-realms-$(date +%F).dump
+bun run db:backup
 ```
 
 Prisma asks you to confirm the data-loss warnings (the `world_configs` drop and the two new unique

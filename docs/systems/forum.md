@@ -13,7 +13,7 @@ IxForum delivers native community deliberation and archival debate inside IxStat
 
 - **XenForo REST API Proxy**: All forum requests route through server-side tRPC endpoints with caching.
 - **BBCode Transformation**: Server-side BBCode $\to$ HTML parsing with fallback rendering.
-- **Account Linking**: Clerk user accounts link to a XenForo account by username via **IxnayID** (`api.ixnayid.linkForum` / `unlinkForum`); stored on `User.forumUserId` / `forumUsername`. There is no XenForo single sign-on.
+- **Account Linking**: Clerk user accounts link to a XenForo account via **IxnayID** with proof: `api.ixnayid.startForumVerification` issues a short-lived code (HMAC over the user, the forum account and a 30-minute window; key `FORUM_VERIFICATION_SECRET`, falling back to `CRON_SECRET`), the player saves it in the Location or About field of their forum profile, and `confirmForumVerification` reads the profile through the XenForo API before linking (a proven owner takes the link over from an unproven holder). `unlinkForum` removes it. Stored on `User.forumUserId` / `forumUsername`. There is no XenForo single sign-on. `bun run audit:forum-links` lists existing links (read-only); links made before verification codes had no proof.
 - **Shared Stash Integration**: Bookmark and save forum threads using the platform-wide Stash system.
 - **Unified Messaging**: Private conversations route through ThinkShare (`/forum/conversations*` redirects to `/messages`).
 - **Not exposed**: admin moderation, XenForo alerts, and account-sync procedures were removed as zero-caller code in plan 312.
@@ -24,7 +24,7 @@ IxForum delivers native community deliberation and archival debate inside IxStat
 
 ### Backend Routers
 - `src/server/api/routers/forum/` (`index.ts`, `reading.ts`, `writing.ts`, `stash.ts`, `account.ts`), merged with `mergeRouters`
-- `src/server/api/routers/ixnayid/linking.ts` – forum account linking (`linkForum`, `unlinkForum`)
+- `src/server/api/routers/ixnayid/linking.ts` – forum account linking (`startForumVerification`, `confirmForumVerification`, `unlinkForum`); proof logic in `src/server/modules/forum/services/forum-link-verification.ts`
 
 ### Module & Services
 - `src/server/modules/forum/lib/bbcode-transformer.ts` – BBCode to HTML parser

@@ -25,10 +25,16 @@ export const narratorRouter = createTRPCRouter({
         },
       });
 
+      // The API key never leaves the server: the client gets whether one is saved plus its
+      // last 4 characters (same contract as onoma.getKokoroAdminConfig).
+      const savedApiKey = configs.find((c) => c.key === "narrator:llm:apiKey")?.value || "";
+
       return {
         enabled: configs.find((c) => c.key === "narrator:flavor:enabled")?.value !== "false",
         provider: configs.find((c) => c.key === "narrator:llm:provider")?.value || "",
-        apiKey: configs.find((c) => c.key === "narrator:llm:apiKey")?.value || "",
+        hasApiKey: savedApiKey.length > 0,
+        apiKeyHint:
+          savedApiKey.length > 4 ? `••••${savedApiKey.slice(-4)}` : savedApiKey ? "••••" : "",
         apiUrl: configs.find((c) => c.key === "narrator:llm:apiUrl")?.value || "",
         modelName: configs.find((c) => c.key === "narrator:llm:modelName")?.value || "",
         temperature: configs.find((c) => c.key === "narrator:llm:temperature")?.value
@@ -50,7 +56,10 @@ export const narratorRouter = createTRPCRouter({
       z.object({
         enabled: z.boolean(),
         provider: z.string().optional(),
+        /** New key to save; omitted or empty keeps the saved key. */
         apiKey: z.string().optional(),
+        /** Remove the saved key. */
+        clearApiKey: z.boolean().optional(),
         apiUrl: z.string().optional(),
         modelName: z.string().optional(),
         temperature: z.number().optional(),
@@ -63,7 +72,6 @@ export const narratorRouter = createTRPCRouter({
         const keys = [
           { key: "narrator:flavor:enabled", value: String(input.enabled) },
           { key: "narrator:llm:provider", value: input.provider || "" },
-          { key: "narrator:llm:apiKey", value: input.apiKey || "" },
           { key: "narrator:llm:apiUrl", value: input.apiUrl || "" },
           { key: "narrator:llm:modelName", value: input.modelName || "" },
           {
@@ -73,6 +81,10 @@ export const narratorRouter = createTRPCRouter({
           { key: "narrator:llm:systemPrompt", value: input.systemPrompt || "" },
           { key: "narrator:llm:reasoning", value: String(input.reasoning === true) },
         ];
+        const newApiKey = input.apiKey?.trim() ?? "";
+        if (input.clearApiKey || newApiKey) {
+          keys.push({ key: "narrator:llm:apiKey", value: input.clearApiKey ? "" : newApiKey });
+        }
 
         for (const item of keys) {
           await ctx.db.systemConfig.upsert({
