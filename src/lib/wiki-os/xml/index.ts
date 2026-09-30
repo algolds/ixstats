@@ -3,6 +3,8 @@
  */
 
 export * from "./export-writer";
+export * from "./content-model";
+export * from "./dump-input";
 export * from "./export-request";
 export * from "./exporter";
 export * from "./fetch-dump";

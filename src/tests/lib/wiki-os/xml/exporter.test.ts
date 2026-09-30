@@ -243,6 +243,101 @@ describe("writeExport", () => {
     expect(page?.revisions[1]?.sha1).toBe("abc");
   });
 
+  it("exports the head of a page that has no revision rows, in history mode too", async () => {
+    seedPage({
+      title: "Alpha",
+      wikitext: "only text",
+      updatedAt: new Date("2026-05-05T05:05:05.900Z"),
+    });
+
+    const [page] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true })
+    );
+
+    expect(page?.revisions).toHaveLength(1);
+    expect(page?.revisions[0]).toMatchObject({
+      id: null,
+      timestamp: "2026-05-05T05:05:05Z",
+      contributor: { deleted: true },
+      text: "only text",
+      textDeleted: false,
+    });
+  });
+
+  it("does not add the synthetic head when the page has revision rows", async () => {
+    seedPage({ title: "Alpha", wikitext: "head" }, [{ mwRevId: 7, wikitext: "head" }]);
+
+    const [page] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true })
+    );
+
+    expect(page?.revisions.map((r) => r.id)).toEqual([7]);
+  });
+
+  it("writes the content model of the page's title on every revision", async () => {
+    seedPage(
+      { title: "Module:Foo", wikitext: "return {}", namespace: 828, namespacePrefix: "Module" },
+      [{ mwRevId: 1, wikitext: "return {}" }]
+    );
+    seedPage(
+      {
+        title: "MediaWiki:Common.css",
+        wikitext: "a{}",
+        namespace: 8,
+        namespacePrefix: "MediaWiki",
+      },
+      [
+        { mwRevId: 2, wikitext: "a{}" },
+        { mwRevId: 3, wikitext: "b{}" },
+      ]
+    );
+    seedPage({ title: "Node.js", wikitext: "x" }, [{ mwRevId: 4, wikitext: "x" }]);
+
+    const pages = await readXml(await exportXml({ source: "ixwiki", history: true }));
+
+    const models = (title: string) =>
+      pages.find((p) => p.title === title)?.revisions.map((r) => `${r.model} ${r.format}`);
+    expect(models("Module:Foo")).toEqual(["Scribunto text/plain"]);
+    expect(models("MediaWiki:Common.css")).toEqual(["css text/css", "css text/css"]);
+    expect(models("Node.js")).toEqual(["wikitext text/x-wiki"]);
+  });
+
+  it("exports a section redirect with its fragment, from the wikitext", async () => {
+    seedPage(
+      {
+        title: "Duncala city",
+        wikitext: "#REDIRECT [[Duncala#History of Duncala]]\n[[Category:Redirects]]",
+        redirectTargetSlug: "Duncala",
+        redirectTargetFragment: "History of Duncala",
+      },
+      [{ wikitext: "#REDIRECT [[Duncala#History of Duncala]]" }]
+    );
+
+    const [page] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Duncala city"], history: false })
+    );
+
+    expect(page?.redirectTitle).toBe("Duncala#History of Duncala");
+  });
+
+  it("never exports a redirect the wikitext does not make, whatever stale columns say", async () => {
+    seedPage(
+      {
+        title: "Was redirect",
+        wikitext: "now an article",
+        redirectTargetSlug: "Old target",
+        redirectTargetFragment: "x",
+      },
+      [{ wikitext: "now an article" }]
+    );
+
+    const [page] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Was redirect"], history: false })
+    );
+
+    expect(page?.redirectTitle).toBeNull();
+  });
+
   it("pages through histories longer than one batch", async () => {
     seedPage(
       { title: "Alpha" },
@@ -305,9 +400,9 @@ describe("writeExport", () => {
     });
   });
 
-  it("exports a redirect's target by its canonical title", async () => {
-    seedPage({ title: "Old", redirectTargetSlug: "New name" }, [
-      { wikitext: "#REDIRECT [[New name]]" },
+  it("exports a redirect's target by its canonical title, read from the wikitext", async () => {
+    seedPage({ title: "Old", wikitext: "#REDIRECT [[new_name]]" }, [
+      { wikitext: "#REDIRECT [[new_name]]" },
     ]);
 
     const [page] = await readXml(
@@ -315,6 +410,25 @@ describe("writeExport", () => {
     );
 
     expect(page?.redirectTitle).toBe("New name");
+  });
+
+  it("uses the stored target for another wiki's redirects, fragment included", async () => {
+    seedPage(
+      {
+        title: "Old",
+        source: "iiwiki",
+        wikitext: "#REDIRECT [[New name#Part]]",
+        redirectTargetSlug: "New name",
+        redirectTargetFragment: "Part",
+      },
+      [{ source: "iiwiki", wikitext: "x" }]
+    );
+
+    const [page] = await readXml(
+      await exportXml({ source: "iiwiki", titles: ["Old"], history: false })
+    );
+
+    expect(page?.redirectTitle).toBe("New name#Part");
   });
 
   it("without titles, exports every published page of the namespaces asked for, in batches", async () => {

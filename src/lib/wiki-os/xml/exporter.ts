@@ -12,7 +12,9 @@
 
 import { isIP } from "node:net";
 import { db } from "~/server/db";
+import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle } from "../core/title";
+import { contentModelFor, type ContentModel } from "./content-model";
 import {
   createExportWriter,
   toXmlTimestamp,
@@ -42,6 +44,7 @@ interface PageRow {
   mwPageId: number | null;
   wikitext: string;
   redirectTargetSlug: string | null;
+  redirectTargetFragment: string | null;
   updatedAt: Date;
 }
 
@@ -68,6 +71,7 @@ const PAGE_SELECT = {
   mwPageId: true,
   wikitext: true,
   redirectTargetSlug: true,
+  redirectTargetFragment: true,
   updatedAt: true,
 } as const;
 
@@ -100,7 +104,11 @@ export function contributorOf(author: string | null): Contributor {
  * placeholder (empty text, but a recorded size: history that was never fetched) as text that is
  * not available, carrying its size. Both keep the size and hash they had.
  */
-function toXmlRevision(row: RevisionRow, parentId: number | null): XmlRevision {
+function toXmlRevision(
+  row: RevisionRow,
+  parentId: number | null,
+  { model, format }: ContentModel
+): XmlRevision {
   const unavailable = row.textDeleted || (row.wikitext === "" && row.byteSize > 0);
   return {
     id: row.mwRevId,
@@ -110,33 +118,41 @@ function toXmlRevision(row: RevisionRow, parentId: number | null): XmlRevision {
     minor: row.minor,
     comment: row.commentDeleted ? null : row.summary,
     commentDeleted: row.commentDeleted,
-    model: "wikitext",
-    format: "text/x-wiki",
+    model,
+    format,
     text: unavailable ? null : row.wikitext,
     textDeleted: row.textDeleted,
     ...(unavailable ? { bytes: row.byteSize, sha1: row.sha1 ?? null } : {}),
   };
 }
 
-/** Every stored revision of a page, oldest first, in batches. */
-async function* historyOf(articleId: string): AsyncGenerator<XmlRevision> {
+/**
+ * Every stored revision of a page, oldest first, in batches. A page with no revision rows at all
+ * (written before revisions were kept) still has its head: it is exported as one revision, the
+ * same as a current-only export would.
+ */
+async function* historyOf(page: PageRow): AsyncGenerator<XmlRevision> {
+  const contentModel = contentModelFor(page.title);
   let cursor: string | undefined;
   let parentId: number | null = null;
+  let exported = false;
   for (;;) {
     const batch: RevisionRow[] = await db.wikiRevision.findMany({
-      where: { articleId },
+      where: { articleId: page.id },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: REVISION_BATCH,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       select: HISTORY_REVISION_SELECT,
     });
     for (const row of batch) {
-      yield toXmlRevision(row, parentId);
+      yield toXmlRevision(row, parentId, contentModel);
       parentId = row.mwRevId;
+      exported = true;
     }
-    if (batch.length < REVISION_BATCH) return;
+    if (batch.length < REVISION_BATCH) break;
     cursor = batch[batch.length - 1]?.id;
   }
+  if (!exported) yield currentRevision(page, undefined);
 }
 
 /**
@@ -154,6 +170,7 @@ async function newestRevision(articleId: string): Promise<RevisionRow | undefine
 
 /** The page's head as one revision: its wikitext with the newest revision's attribution. */
 function currentRevision(page: PageRow, newest: RevisionRow | undefined): XmlRevision {
+  const contentModel = contentModelFor(page.title);
   if (!newest) {
     return {
       id: null,
@@ -163,19 +180,34 @@ function currentRevision(page: PageRow, newest: RevisionRow | undefined): XmlRev
       minor: false,
       comment: null,
       commentDeleted: false,
-      model: "wikitext",
-      format: "text/x-wiki",
+      ...contentModel,
       text: page.wikitext,
       textDeleted: false,
     };
   }
-  return { ...toXmlRevision(newest, null), text: page.wikitext, textDeleted: false };
+  return { ...toXmlRevision(newest, null, contentModel), text: page.wikitext, textDeleted: false };
 }
 
+/**
+ * The page's redirect target for `<redirect title>`, fragment included ("Target#Section"). For
+ * IxWiki the wikitext decides (the columns are a cache that can be stale); another wiki's pages
+ * use the columns, since WikiOS only knows IxWiki's namespaces.
+ */
 function redirectTitleOf(page: PageRow, source: string): string | null {
-  return page.redirectTargetSlug
-    ? (canonicalizeTitle(page.redirectTargetSlug, { source })?.title ?? null)
+  const target =
+    source === "ixwiki" ? parseRedirect(page.wikitext) : redirectFromColumns(page, source);
+  if (!target) return null;
+  return target.fragment ? `${target.title}#${target.fragment}` : target.title;
+}
+
+function redirectFromColumns(
+  page: PageRow,
+  source: string
+): { title: string; fragment: string | null } | null {
+  const canon = page.redirectTargetSlug
+    ? canonicalizeTitle(page.redirectTargetSlug, { source })
     : null;
+  return canon ? { title: canon.title, fragment: page.redirectTargetFragment } : null;
 }
 
 /** Published pages matching `selection`, in batches (ordered by title for a title list). */
@@ -226,7 +258,7 @@ export async function writeExport(write: ExportSink, selection: ExportSelection)
         pageId: page.mwPageId,
         redirectTitle: redirectTitleOf(page, selection.source),
         revisions: selection.history
-          ? historyOf(page.id)
+          ? historyOf(page)
           : [currentRevision(page, await newestRevision(page.id))],
       };
       await writer.page(exportPage);
