@@ -4,10 +4,10 @@
 import React from "react";
 import type { ReactNode } from "react";
 import { Group as Users, Shield, Activity, Heart, Eye } from "iconoir-react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { StabilityHelpDialog } from "./StabilityHelpDialog";
@@ -34,77 +34,107 @@ interface StabilityMetrics {
 
 interface StabilityMetricsCardProps {
   metrics: StabilityMetrics | undefined;
+  /** Kept for API compatibility; the card maps the score to semantic status tones itself. */
   getStabilityColor: (score: number) => string;
+  /** Kept for API compatibility; the card no longer tints its whole surface by score. */
   getStabilityBg: (score: number) => string;
   getTrendIcon: (trend: string) => ReactNode;
 }
 
+/** Stability score → semantic status text colour (stable / strained / unstable). */
+function scoreTone(score: number): string {
+  if (score >= 60) return "text-emerald-600";
+  if (score >= 40) return "text-amber-600";
+  return "text-destructive";
+}
+
+/** One labelled percentage with its bar. */
+function PercentMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="min-w-0 space-y-2">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <span className="text-muted-foreground truncate" title={label}>
+          {label}
+        </span>
+        <span className="text-foreground shrink-0 font-medium tabular-nums">
+          <NumberFlowDisplay value={value} format="decimal" decimalPlaces={0} />%
+        </span>
+      </div>
+      <Progress value={value} className="h-1.5" />
+    </div>
+  );
+}
+
+function MetricSection({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-border/60 space-y-3 border-t pt-4">
+      <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
+        <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+        {title}
+      </h4>
+      {children}
+    </section>
+  );
+}
+
 export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
   metrics,
-  getStabilityColor,
-  getStabilityBg,
+  getStabilityColor: _getStabilityColor,
+  getStabilityBg: _getStabilityBg,
   getTrendIcon,
 }: StabilityMetricsCardProps) {
+  const score = metrics?.stabilityScore ?? 75;
+
   return (
-    <Card
-      className={cn(
-        "facet-hierarchy-child border-2",
-        metrics ? getStabilityBg(metrics.stabilityScore) : ""
-      )}
-    >
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              Internal Stability
-              <StabilityHelpDialog />
-            </CardTitle>
-          </div>
+    <FacetCard depth={1} surface="solid">
+      <FacetCardHeader className="p-5 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+            <Users aria-hidden="true" className="h-4 w-4 text-rose-500" />
+            Internal stability
+            <StabilityHelpDialog />
+          </h3>
           <div className="flex items-center gap-2">
             {metrics && getTrendIcon(metrics.stabilityTrend)}
-            <Badge variant="outline" className="text-xs">
-              <Activity className="mr-1 h-3 w-3" />
-              Auto-Generated Events
+            <Badge variant="outline">
+              <Activity aria-hidden="true" />
+              Auto-generated events
             </Badge>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </FacetCardHeader>
+      <FacetCardContent className="space-y-4 px-5 pb-5">
         {/* Stability Score */}
         <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium">Overall Stability Score</span>
+          <div className="mb-2 flex items-end justify-between">
+            <Eyebrow>Overall stability score</Eyebrow>
             <span
               className={cn(
-                "text-2xl font-bold",
-                metrics ? getStabilityColor(metrics.stabilityScore) : ""
+                "font-mono text-2xl font-semibold tabular-nums",
+                metrics ? scoreTone(metrics.stabilityScore) : "text-foreground"
               )}
             >
-              <NumberFlowDisplay
-                value={metrics?.stabilityScore ?? 75}
-                format="decimal"
-                decimalPlaces={1}
-              />
+              <NumberFlowDisplay value={score} format="decimal" decimalPlaces={1} />
               <span className="text-muted-foreground text-sm">/100</span>
             </span>
           </div>
-          <Progress value={metrics?.stabilityScore ?? 75} className="h-3" />
+          <Progress value={score} className="h-2" />
         </div>
 
-        <Separator />
-
-        {/* Crime & Law Enforcement */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 font-semibold">
-            <Shield className="h-4 w-4" />
-            Crime & Law Enforcement
-          </h4>
-          <div className="grid grid-cols-2 gap-4">
+        <MetricSection title="Crime & law enforcement" icon={Shield}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Overall Crime Rate</span>
-                <span className="font-medium">
+                <span className="text-foreground font-medium tabular-nums">
                   <NumberFlowDisplay
                     value={metrics?.crimeRate ?? 5}
                     format="decimal"
@@ -115,221 +145,61 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
               </div>
               <div className="text-muted-foreground flex items-center justify-between text-xs">
                 <span>Violent Crime</span>
-                <span>
+                <span className="tabular-nums">
                   <NumberFlowDisplay value={metrics?.violentCrimeRate ?? 2} />
                 </span>
               </div>
               <div className="text-muted-foreground flex items-center justify-between text-xs">
                 <span>Property Crime</span>
-                <span>
+                <span className="tabular-nums">
                   <NumberFlowDisplay value={metrics?.propertyCrimeRate ?? 10} />
                 </span>
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Organized Crime</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.organizedCrimeLevel ?? 3}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.organizedCrimeLevel ?? 3} className="h-2" />
-            </div>
+            <PercentMetric label="Organized Crime" value={metrics?.organizedCrimeLevel ?? 3} />
+            <PercentMetric
+              label="Policing Effectiveness"
+              value={metrics?.policingEffectiveness ?? 60}
+            />
+            <PercentMetric
+              label="Justice System Efficiency"
+              value={metrics?.justiceSystemEfficiency ?? 50}
+            />
           </div>
+        </MetricSection>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Policing Effectiveness</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.policingEffectiveness ?? 60}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.policingEffectiveness ?? 60} className="h-2" />
+        <MetricSection title="Public order" icon={Activity}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">Protest Frequency</span>
+              <span className="text-foreground font-medium tabular-nums">
+                <NumberFlowDisplay value={metrics?.protestFrequency ?? 5} /> /year
+              </span>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Justice System Efficiency</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.justiceSystemEfficiency ?? 50}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.justiceSystemEfficiency ?? 50} className="h-2" />
-            </div>
+            <PercentMetric label="Riot Risk" value={metrics?.riotRisk ?? 10} />
+            <PercentMetric label="Civil Disobedience" value={metrics?.civilDisobedience ?? 5} />
           </div>
-        </div>
+        </MetricSection>
 
-        <Separator />
-
-        {/* Public Order */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 font-semibold">
-            <Activity className="h-4 w-4" />
-            Public Order
-          </h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Protest Frequency</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay value={metrics?.protestFrequency ?? 5} /> /year
-                </span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Riot Risk</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.riotRisk ?? 10}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.riotRisk ?? 10} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Civil Disobedience</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.civilDisobedience ?? 5}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.civilDisobedience ?? 5} className="h-2" />
-            </div>
+        <MetricSection title="Social cohesion" icon={Heart}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <PercentMetric label="Social Cohesion" value={metrics?.socialCohesion ?? 70} />
+            <PercentMetric label="Ethnic Tension" value={metrics?.ethnicTension ?? 20} />
+            <PercentMetric
+              label="Political Polarization"
+              value={metrics?.politicalPolarization ?? 40}
+            />
           </div>
-        </div>
+        </MetricSection>
 
-        <Separator />
-
-        {/* Social Cohesion */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 font-semibold">
-            <Heart className="h-4 w-4" />
-            Social Cohesion
-          </h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Social Cohesion</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.socialCohesion ?? 70}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.socialCohesion ?? 70} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Ethnic Tension</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.ethnicTension ?? 20}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.ethnicTension ?? 20} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Political Polarization</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.politicalPolarization ?? 40}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.politicalPolarization ?? 40} className="h-2" />
-            </div>
+        <MetricSection title="Public confidence" icon={Eye}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <PercentMetric label="Trust in Government" value={metrics?.trustInGovernment ?? 50} />
+            <PercentMetric label="Trust in Police" value={metrics?.trustInPolice ?? 55} />
+            <PercentMetric label="Fear of Crime" value={metrics?.fearOfCrime ?? 35} />
           </div>
-        </div>
-
-        <Separator />
-
-        {/* Public Confidence */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 font-semibold">
-            <Eye className="h-4 w-4" />
-            Public Confidence
-          </h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Trust in Government</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.trustInGovernment ?? 50}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.trustInGovernment ?? 50} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Trust in Police</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.trustInPolice ?? 55}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.trustInPolice ?? 55} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Fear of Crime</span>
-                <span className="font-medium">
-                  <NumberFlowDisplay
-                    value={metrics?.fearOfCrime ?? 35}
-                    format="decimal"
-                    decimalPlaces={0}
-                  />
-                  %
-                </span>
-              </div>
-              <Progress value={metrics?.fearOfCrime ?? 35} className="h-2" />
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </MetricSection>
+      </FacetCardContent>
+    </FacetCard>
   );
 });

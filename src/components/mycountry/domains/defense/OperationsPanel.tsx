@@ -22,8 +22,8 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Swords className="h-4 w-4 text-red-600" />
-          <h3 className="text-sm font-semibold">Military Operations</h3>
+          <Swords aria-hidden="true" className="h-4 w-4 text-rose-500" />
+          <h3 className="text-foreground text-sm font-semibold">Military operations</h3>
         </div>
         <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />
       </div>

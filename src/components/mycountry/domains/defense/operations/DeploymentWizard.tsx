@@ -29,6 +29,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
+import { Toggle } from "~/components/ui/toggle";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
@@ -167,9 +169,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
-          Deploy Forces
-        </Button>
+        <Button size="sm">Deploy Forces</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
@@ -200,7 +200,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                   {OP_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
                       <div className="flex items-center gap-2">
-                        <t.icon className="h-4 w-4" />
+                        <t.icon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
                         <span>{t.label}</span>
                       </div>
                     </SelectItem>
@@ -255,20 +255,18 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
               <Label>Deploy Units ({selectedUnitIds.length} selected)</Label>
               <div className="mt-1 grid max-h-32 grid-cols-2 gap-2 overflow-y-auto">
                 {allUnits.map((unit) => (
-                  <button
+                  <Toggle
                     key={unit.id}
-                    onClick={() => toggleUnit(unit.id)}
-                    className={`rounded-lg border p-2 text-left text-xs transition-colors ${
-                      selectedUnitIds.includes(unit.id)
-                        ? "border-red-500 bg-red-500/10"
-                        : "border-muted hover:border-red-500/50"
-                    }`}
+                    variant="outline"
+                    pressed={selectedUnitIds.includes(unit.id)}
+                    onPressedChange={() => toggleUnit(unit.id)}
+                    className="h-auto min-w-0 flex-col items-start gap-0 p-2 text-left text-xs data-[state=on]:border-rose-500/50"
                   >
-                    <span className="font-medium">{unit.name}</span>
-                    <span className="text-muted-foreground block">
+                    <span className="w-full truncate font-medium">{unit.name}</span>
+                    <span className="text-muted-foreground block w-full truncate font-normal">
                       {unit.personnel?.toLocaleString() ?? 0} personnel
                     </span>
-                  </button>
+                  </Toggle>
                 ))}
               </div>
             </div>
@@ -280,37 +278,37 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
               <Label>Deploy Assets ({selectedAssetIds.length} selected)</Label>
               <div className="mt-1 grid max-h-32 grid-cols-2 gap-2 overflow-y-auto">
                 {allAssets.map((asset) => (
-                  <button
+                  <Toggle
                     key={asset.id}
-                    onClick={() => toggleAsset(asset.id)}
-                    className={`rounded-lg border p-2 text-left text-xs transition-colors ${
-                      selectedAssetIds.includes(asset.id)
-                        ? "border-red-500 bg-red-500/10"
-                        : "border-muted hover:border-red-500/50"
-                    }`}
+                    variant="outline"
+                    pressed={selectedAssetIds.includes(asset.id)}
+                    onPressedChange={() => toggleAsset(asset.id)}
+                    className="h-auto min-w-0 flex-col items-start gap-0 p-2 text-left text-xs data-[state=on]:border-rose-500/50"
                   >
-                    <span className="font-medium">{asset.name}</span>
-                    <span className="text-muted-foreground block">Qty: {asset.quantity ?? 0}</span>
-                  </button>
+                    <span className="w-full truncate font-medium">{asset.name}</span>
+                    <span className="text-muted-foreground block w-full truncate font-normal">
+                      Qty: {asset.quantity ?? 0}
+                    </span>
+                  </Toggle>
                 ))}
               </div>
             </div>
           )}
 
           {/* Cost preview */}
-          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+          <div className="border-border rounded-lg border p-3">
             <div className="mb-2 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium">Cost Estimate</span>
+              <AlertTriangle aria-hidden="true" className="h-4 w-4 text-amber-600" />
+              <span className="text-foreground text-sm font-medium">Cost estimate</span>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-muted-foreground text-xs">Daily Cost</p>
-                <p className="font-medium">{formatCurrency(estimatedDailyCost)}</p>
+                <Eyebrow className="block">Daily cost</Eyebrow>
+                <p className="font-medium tabular-nums">{formatCurrency(estimatedDailyCost)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">Annual Cost</p>
-                <p className="font-medium text-red-500">{formatCurrency(estimatedAnnualCost)}</p>
+                <Eyebrow className="block">Annual cost</Eyebrow>
+                <p className="font-medium tabular-nums">{formatCurrency(estimatedAnnualCost)}</p>
               </div>
             </div>
           </div>

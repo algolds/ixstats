@@ -2,7 +2,7 @@
 
 import React from "react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { cn } from "~/lib/utils";
+import { FacetTabs } from "~/components/ui/facet";
 import {
   PieChart,
   Pie,
@@ -18,11 +18,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import type {
-  DepartmentChartItem,
-  RevenueChartItem,
-  BudgetTrendItem,
-} from "./budgetTypes";
+import type { DepartmentChartItem, RevenueChartItem, BudgetTrendItem } from "./budgetTypes";
 
 interface BudgetOverviewChartsProps {
   overviewChartMode: "allocation" | "trend";
@@ -44,42 +40,23 @@ export function BudgetOverviewCharts({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Togglable Budget Allocation vs Historical Trend Chart */}
-      <FacetCard
-        depth={1}
-        className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 flex items-center justify-between border-b pb-2">
-          <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
+        <div className="border-border/60 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <h4 className="text-foreground text-sm font-semibold">
             {overviewChartMode === "allocation"
-              ? "Budget Allocation by Department"
-              : "Budget vs Revenue Historical Trend"}
+              ? "Budget allocation by department"
+              : "Budget vs revenue trend"}
           </h4>
-          <div className="bg-muted/20 border-border/30 flex items-center gap-1 rounded-lg border p-0.5">
-            <button
-              type="button"
-              onClick={() => setOverviewChartMode("allocation")}
-              className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                overviewChartMode === "allocation"
-                  ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Allocation
-            </button>
-            <button
-              type="button"
-              onClick={() => setOverviewChartMode("trend")}
-              className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                overviewChartMode === "trend"
-                  ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Trend
-            </button>
-          </div>
+          <FacetTabs
+            size="sm"
+            tone="mycountry"
+            tabs={[
+              { id: "allocation", label: "Allocation" },
+              { id: "trend", label: "Trend" },
+            ]}
+            activeTab={overviewChartMode}
+            onChange={(id) => setOverviewChartMode(id as "allocation" | "trend")}
+          />
         </div>
 
         <div className="h-72">
@@ -118,21 +95,21 @@ export function BudgetOverviewCharts({
                 <Line
                   type="monotone"
                   dataKey="budget"
-                  stroke="#38bdf8"
+                  stroke="var(--color-amber-500)"
                   name="Budget"
                   strokeWidth={2}
                 />
                 <Line
                   type="monotone"
                   dataKey="spent"
-                  stroke="#f43f5e"
+                  stroke="var(--color-muted-foreground)"
                   name="Spending"
                   strokeWidth={2}
                 />
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#34d399"
+                  stroke="var(--color-emerald-500)"
                   name="Revenue"
                   strokeWidth={2}
                 />
@@ -143,14 +120,9 @@ export function BudgetOverviewCharts({
       </FacetCard>
 
       {/* Revenue Sources Chart */}
-      <FacetCard
-        depth={1}
-        className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 border-b pb-2">
-          <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-            Revenue Sources
-          </h4>
+      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
+        <div className="border-border/60 border-b pb-3">
+          <h4 className="text-foreground text-sm font-semibold">Revenue sources</h4>
         </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">

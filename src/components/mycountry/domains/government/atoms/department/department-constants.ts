@@ -99,6 +99,10 @@ export const categoryIcons: Record<string, React.ComponentType<{ className?: str
   Other: MoreHorizontal,
 };
 
+/**
+ * Default department identity colours. These are stored data (a department's `color`, editable
+ * in the colour picker, which needs hex) rather than UI styling, so they stay as hex values.
+ */
 export const categoryColors: Record<string, string> = {
   Defense: "#dc2626",
   Education: "#2563eb",
@@ -124,31 +128,32 @@ export const categoryColors: Record<string, string> = {
   Other: "#6b7280",
 };
 
+/** `color` is the outline-badge tone: a low priority is flagged as a risk, not decorated. */
 export const getPriorityDetails = (level: number) => {
   if (level <= 3) {
     return {
       label: "Low (Reactive)",
       desc: "Vulnerability to crises increased by +15%. Emergent sector issues resolve slowly.",
-      color: "text-red-400 bg-red-500/10 border-red-500/20",
+      color: "border-amber-500/30 text-amber-600",
     };
   }
   if (level <= 6) {
     return {
       label: "Standard (Active)",
       desc: "Balanced operational stance. Baseline event occurrence. Regular response times.",
-      color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+      color: "text-muted-foreground",
     };
   }
   if (level <= 8) {
     return {
       label: "High (Strategic)",
       desc: "Vulnerability to crises reduced by -20%. Fast resolution of events.",
-      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+      color: "text-foreground",
     };
   }
   return {
     label: "Critical (Executive)",
     desc: "Vulnerability to crises reduced by -50%. Instant crisis resolution.",
-    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    color: "border-emerald-500/30 text-emerald-600",
   };
 };

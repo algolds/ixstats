@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetTabs } from "~/components/ui/facet";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   Check,
   Xmark as X,
-  SystemRestart as Loader2,
   Clock,
   Page as FileText,
   StatUp as TrendingUp,
@@ -24,28 +25,24 @@ interface AutosaveHistoryPanelProps {
   onClose?: () => void;
 }
 
-interface StatCardProps {
+interface StatProps {
   label: string;
   value: string | number | null | undefined;
   icon?: React.ReactNode;
-  className?: string;
+  valueClassName?: string;
 }
 
-function StatCard({ label, value, icon, className }: StatCardProps) {
+function Stat({ label, value, icon, valueClassName }: StatProps) {
   return (
-    <Card className={cn("flex-1", className)}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-sm">{label}</p>
-            <p className="text-2xl font-bold">
-              {value !== null && value !== undefined ? value : "-"}
-            </p>
-          </div>
-          {icon && <div className="text-muted-foreground">{icon}</div>}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center justify-between p-4">
+      <div className="space-y-1">
+        <Eyebrow className="block">{label}</Eyebrow>
+        <p className={cn("text-foreground text-2xl font-semibold tabular-nums", valueClassName)}>
+          {value !== null && value !== undefined ? value : "-"}
+        </p>
+      </div>
+      {icon && <div className="text-muted-foreground">{icon}</div>}
+    </div>
   );
 }
 
@@ -71,23 +68,21 @@ function AutosaveItem({ autosave }: AutosaveItemProps) {
   }
 
   return (
-    <div
-      className={cn(
-        "rounded-lg border p-4 transition-colors",
-        isSuccess
-          ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30"
-          : "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30"
-      )}
+    <FacetContainer
+      depth={3}
+      surface="solid"
+      enableRefraction={false}
+      className={cn("rounded-lg p-4", !isSuccess && "border-destructive/40")}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isSuccess ? (
-            <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <Check aria-label="Saved" className="h-5 w-5 text-emerald-600" />
           ) : (
-            <X className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <X aria-label="Failed" className="text-destructive h-5 w-5" />
           )}
           <div>
-            <span className="font-medium">{getSectionName(autosave.action)}</span>
+            <span className="text-foreground font-medium">{getSectionName(autosave.action)}</span>
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <Clock className="h-3 w-3" />
               <span>{formatDistanceToNow(new Date(autosave.timestamp))} ago</span>
@@ -100,22 +95,25 @@ function AutosaveItem({ autosave }: AutosaveItemProps) {
       </div>
 
       {showDetails && (
-        <div className="mt-3 space-y-2 border-t pt-3">
+        <div className="border-border/60 mt-3 space-y-2 border-t pt-3">
           <div className="text-sm">
             <p className="mb-2 font-medium">Changes:</p>
-            <pre className="max-h-48 overflow-auto rounded bg-gray-100 p-2 text-xs dark:bg-gray-900">
+            <pre className="bg-muted max-h-48 overflow-auto rounded-md p-2 text-xs">
               {JSON.stringify(parsedDetails, null, 2)}
             </pre>
           </div>
           {autosave.error && (
-            <div className="rounded bg-red-100 p-2 text-sm text-red-900 dark:bg-red-950/50 dark:text-red-200">
+            <div
+              role="alert"
+              className="border-destructive/30 text-destructive rounded-md border p-2 text-sm"
+            >
               <p className="font-medium">Error:</p>
               <p className="mt-1">{autosave.error}</p>
             </div>
           )}
         </div>
       )}
-    </div>
+    </FacetContainer>
   );
 }
 
@@ -190,76 +188,85 @@ export function AutosaveHistoryPanel({
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+            <FileText aria-hidden="true" className="text-muted-foreground h-5 w-5" />
             Autosave History
           </DialogTitle>
         </DialogHeader>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatCard
-            label="Total Saves"
+        {/* Summary stats */}
+        <FacetContainer
+          depth={3}
+          surface="solid"
+          enableRefraction={false}
+          className="divide-border/60 grid grid-cols-1 divide-y rounded-lg sm:grid-cols-3 sm:divide-x sm:divide-y-0"
+        >
+          <Stat
+            label="Total saves"
             value={stats?.totalAutosaves ?? 0}
             icon={<TrendingUp className="h-5 w-5" />}
           />
-          <StatCard
-            label="Success Rate"
+          <Stat
+            label="Success rate"
             value={`${successRate}%`}
             icon={<Check className="h-5 w-5" />}
-            className={
+            valueClassName={
               successRate >= 90
-                ? "border-green-200 dark:border-green-800"
+                ? "text-emerald-600"
                 : successRate >= 70
-                  ? "border-yellow-200 dark:border-yellow-800"
-                  : "border-red-200 dark:border-red-800"
+                  ? "text-amber-600"
+                  : "text-destructive"
             }
           />
-          <StatCard label="Last Save" value={lastSaveText} icon={<Clock className="h-5 w-5" />} />
-        </div>
+          <Stat label="Last save" value={lastSaveText} icon={<Clock className="h-5 w-5" />} />
+        </FacetContainer>
 
-        {/* Section Breakdown (if stats available) */}
+        {/* Section breakdown */}
         {stats && stats.totalAutosaves > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <p className="mb-3 text-sm font-medium">Section Breakdown</p>
-              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-                <div className="rounded bg-blue-500/10 p-2">
-                  <p className="text-muted-foreground">Identity</p>
-                  <p className="text-lg font-bold">{stats.sectionBreakdown.identity}</p>
+          <div className="space-y-2">
+            <h3 className="text-foreground text-sm font-semibold">Section breakdown</h3>
+            <dl className="border-border/60 divide-border/60 grid grid-cols-2 divide-x rounded-lg border text-sm sm:grid-cols-4">
+              {[
+                { label: "Identity", value: stats.sectionBreakdown.identity },
+                { label: "Government", value: stats.sectionBreakdown.government },
+                { label: "Tax", value: stats.sectionBreakdown.tax },
+                { label: "Economy", value: stats.sectionBreakdown.economy },
+              ].map((item) => (
+                <div key={item.label} className="p-3">
+                  <dt>
+                    <Eyebrow>{item.label}</Eyebrow>
+                  </dt>
+                  <dd className="text-foreground text-lg font-semibold tabular-nums">
+                    {item.value}
+                  </dd>
                 </div>
-                <div className="rounded bg-indigo-500/10 p-2">
-                  <p className="text-muted-foreground">Government</p>
-                  <p className="text-lg font-bold">{stats.sectionBreakdown.government}</p>
-                </div>
-                <div className="rounded bg-amber-500/10 p-2">
-                  <p className="text-muted-foreground">Tax</p>
-                  <p className="text-lg font-bold">{stats.sectionBreakdown.tax}</p>
-                </div>
-                <div className="rounded bg-emerald-500/10 p-2">
-                  <p className="text-muted-foreground">Economy</p>
-                  <p className="text-lg font-bold">{stats.sectionBreakdown.economy}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </dl>
+          </div>
         )}
 
-        {/* Section Filter */}
-        <Tabs value={selectedSection} onValueChange={handleSectionChange}>
-          <TabsList className="w-full flex-wrap justify-start gap-1">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="identity">Identity</TabsTrigger>
-            <TabsTrigger value="government">Government</TabsTrigger>
-            <TabsTrigger value="tax">Tax</TabsTrigger>
-            <TabsTrigger value="economy">Economy</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Section filter */}
+        <FacetTabs
+          size="sm"
+          tone="neutral"
+          className="w-full"
+          tabs={[
+            { id: "all", label: "All" },
+            { id: "identity", label: "Identity" },
+            { id: "government", label: "Government" },
+            { id: "tax", label: "Tax" },
+            { id: "economy", label: "Economy" },
+          ]}
+          activeTab={selectedSection}
+          onChange={handleSectionChange}
+        />
 
         {/* Timeline */}
         <div className="space-y-3">
           {statsLoading || historyLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+            <div className="space-y-3" aria-busy="true" aria-label="Loading autosave history">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
             </div>
           ) : filteredAutosaves.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -281,14 +288,7 @@ export function AutosaveHistoryPanel({
         {historyData?.hasMore && selectedSection === "all" && (
           <div className="flex justify-center pt-2">
             <Button onClick={handleLoadMore} variant="outline" disabled={historyLoading}>
-              {historyLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                "Load More"
-              )}
+              {historyLoading ? "Loading…" : "Load More"}
             </Button>
           </div>
         )}

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { Badge } from "~/components/ui/badge";
-import { Label } from "~/components/ui/label";
+import { Toggle } from "~/components/ui/toggle";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { Plus, Xmark as X, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
@@ -20,8 +20,6 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
   onGovernmentComponentsChange,
   isReadOnly,
 }: DepartmentAtomicSelectorProps) {
-  if (!onGovernmentComponentsChange) return null;
-
   const relevantAtomics = useMemo(() => {
     return Object.values(ATOMIC_COMPONENTS).filter((ac) => {
       return (
@@ -32,7 +30,7 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
   }, [data.category]);
 
   const toggleComponent = (type: ComponentType) => {
-    if (isReadOnly) return;
+    if (isReadOnly || !onGovernmentComponentsChange) return;
     if (governmentComponents.includes(type)) {
       onGovernmentComponentsChange(governmentComponents.filter((c) => c !== type));
     } else {
@@ -54,18 +52,28 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
     return list;
   }, [governmentComponents]);
 
+  if (!onGovernmentComponentsChange) return null;
+
   return (
-    <div className="border-border/40 bg-card/60 space-y-3 rounded-xl border p-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Contextual Policy Components ({data.category})
-        </Label>
+    <FacetContainer
+      depth={3}
+      surface="solid"
+      enableRefraction={false}
+      className="space-y-3 rounded-lg p-4"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-foreground text-sm font-semibold">
+          Contextual policy components ({data.category})
+        </h4>
         <span className="text-muted-foreground text-xs">{governmentComponents.length} Active</span>
       </div>
 
       {conflicts.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-400">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
+        <div
+          role="alert"
+          className="border-destructive/30 text-destructive flex items-center gap-2 rounded-lg border p-2.5 text-xs"
+        >
+          <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span>{conflicts[0]}</span>
         </div>
       )}
@@ -75,15 +83,18 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
           const type = ac.type as ComponentType;
           const isSelected = governmentComponents.includes(type);
           return (
-            <Badge
+            <Toggle
               key={ac.type}
-              variant={isSelected ? "default" : "outline"}
-              className="cursor-pointer transition-colors"
-              onClick={() => toggleComponent(type)}
+              variant="outline"
+              size="sm"
+              pressed={isSelected}
+              onPressedChange={() => toggleComponent(type)}
+              disabled={isReadOnly}
+              className="h-auto min-h-8 rounded-full px-3 py-1 text-xs"
             >
               {ac.name}
-              {isSelected ? <X className="ml-1 h-3 w-3" /> : <Plus className="ml-1 h-3 w-3" />}
-            </Badge>
+              {isSelected ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+            </Toggle>
           );
         })}
         {relevantAtomics.length === 0 && (
@@ -92,6 +103,6 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
           </p>
         )}
       </div>
-    </div>
+    </FacetContainer>
   );
 });

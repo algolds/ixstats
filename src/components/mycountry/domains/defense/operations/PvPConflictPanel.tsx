@@ -5,15 +5,16 @@ import {
   Tournament as Swords,
   Check,
   Xmark as X,
-  SystemRestart as Loader2,
   Trophy,
-  Emoji as Skull,
   Community as HandshakeIcon,
 } from "iconoir-react";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Dialog,
   DialogContent,
@@ -114,9 +115,9 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold">
-          <Swords className="h-4 w-4" />
-          Military Conflicts
+        <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
+          <Swords aria-hidden="true" className="h-4 w-4 text-rose-500" />
+          Military conflicts
         </h3>
         <div className="flex gap-2">
           {/* PvNPC quick action */}
@@ -166,7 +167,9 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   />
                 </div>
                 {npcTargetsQuery.error && (
-                  <div className="text-sm text-red-500">{npcTargetsQuery.error.message}</div>
+                  <div role="alert" className="text-destructive text-sm">
+                    {npcTargetsQuery.error.message}
+                  </div>
                 )}
                 {npcTargets?.length === 0 && (
                   <p className="text-muted-foreground text-xs">
@@ -175,7 +178,9 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   </p>
                 )}
                 {resolvePvNPCMutation.error && (
-                  <div className="text-sm text-red-500">{resolvePvNPCMutation.error.message}</div>
+                  <div role="alert" className="text-destructive text-sm">
+                    {resolvePvNPCMutation.error.message}
+                  </div>
                 )}
                 <Button
                   onClick={() =>
@@ -187,10 +192,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   disabled={!targetId || resolvePvNPCMutation.isPending}
                   className="w-full"
                 >
-                  {resolvePvNPCMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Engage
+                  {resolvePvNPCMutation.isPending ? "Engaging…" : "Engage"}
                 </Button>
               </div>
             </DialogContent>
@@ -199,7 +201,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
           {/* PvP challenge */}
           <Dialog open={challengeOpen} onOpenChange={setChallengeOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="border-red-500/50 text-red-500">
+              <Button variant="outline" size="sm">
                 PvP Challenge
               </Button>
             </DialogTrigger>
@@ -236,7 +238,9 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   />
                 </div>
                 {proposeMutation.error && (
-                  <div className="text-sm text-red-500">{proposeMutation.error.message}</div>
+                  <div role="alert" className="text-destructive text-sm">
+                    {proposeMutation.error.message}
+                  </div>
                 )}
                 <Button
                   onClick={() =>
@@ -248,10 +252,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   disabled={!targetId || proposeMutation.isPending}
                   className="w-full"
                 >
-                  {proposeMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Send Challenge
+                  {proposeMutation.isPending ? "Sending…" : "Send Challenge"}
                 </Button>
               </div>
             </DialogContent>
@@ -262,11 +263,12 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       {strikeResult && (
         <div
           role="status"
-          className={
+          className={cn(
+            "rounded-lg border p-3 text-sm",
             strikeResult.won
-              ? "rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-sm text-green-600 dark:text-green-400"
-              : "rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-600 dark:text-red-400"
-          }
+              ? "border-emerald-500/30 text-emerald-600"
+              : "border-destructive/30 text-destructive"
+          )}
         >
           {strikeResult.won
             ? `Victory: your strike on ${strikeResult.target} succeeded. Both economies take a hit; see Past Conflicts.`
@@ -277,12 +279,20 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       {/* Pending challenges that need response */}
       {pendingForMe.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-yellow-500">Incoming Challenges</h4>
+          <Eyebrow className="block">Incoming challenges</Eyebrow>
           {pendingForMe.map((c) => (
-            <div key={c.id} className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
-              <div className="flex items-center justify-between">
+            <FacetContainer
+              key={c.id}
+              depth={3}
+              surface="solid"
+              enableRefraction={false}
+              className="rounded-lg border-amber-500/40 p-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-sm font-medium">{c.initiator?.name ?? "Unknown"}</span>
+                  <span className="text-foreground text-sm font-medium">
+                    {c.initiator?.name ?? "Unknown"}
+                  </span>
                   <span className="text-muted-foreground ml-2 text-xs">challenges you</span>
                   {c.reason && (
                     <p className="text-muted-foreground mt-1 text-xs">&quot;{c.reason}&quot;</p>
@@ -291,8 +301,6 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="border-green-500/50 text-green-500"
                     onClick={() => respondMutation.mutate({ conflictId: c.id, accept: true })}
                     disabled={respondMutation.isPending}
                   >
@@ -301,7 +309,6 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-red-500/50 text-red-500"
                     onClick={() => respondMutation.mutate({ conflictId: c.id, accept: false })}
                     disabled={respondMutation.isPending}
                   >
@@ -309,7 +316,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   </Button>
                 </div>
               </div>
-            </div>
+            </FacetContainer>
           ))}
         </div>
       )}
@@ -317,27 +324,31 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       {/* Active conflicts */}
       {activeConflicts.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-red-500">Active Conflicts</h4>
+          <Eyebrow className="block">Active conflicts</Eyebrow>
           {activeConflicts
             .filter((c) => !pendingForMe.some((p) => p.id === c.id))
             .map((c) => {
               const isInitiator = c.initiatorId === countryId;
               const opponent = isInitiator ? c.defender : c.initiator;
               return (
-                <div key={c.id} className="rounded-lg border border-red-500/20 p-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Swords className="h-3 w-3 text-red-500" />
+                <FacetContainer
+                  key={c.id}
+                  depth={3}
+                  surface="solid"
+                  enableRefraction={false}
+                  className="rounded-lg p-3 text-sm"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Swords aria-hidden="true" className="h-3.5 w-3.5 text-rose-500" />
                     <span>
                       vs <span className="font-medium">{opponent?.name ?? "Unknown"}</span>
                     </span>
-                    <Badge variant="outline" className="text-xs">
-                      {c.type.toUpperCase()}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline">{c.type.toUpperCase()}</Badge>
+                    <Badge variant="outline" className="capitalize">
                       {c.status}
                     </Badge>
                   </div>
-                </div>
+                </FacetContainer>
               );
             })}
         </div>
@@ -346,7 +357,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       {/* Resolved conflicts */}
       {resolvedConflicts.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-muted-foreground text-xs font-semibold">Past Conflicts</h4>
+          <Eyebrow className="block">Past conflicts</Eyebrow>
           {resolvedConflicts.slice(0, 3).map((c) => {
             const isInitiator = c.initiatorId === countryId;
             const opponent = isInitiator ? c.defender : c.initiator;
@@ -354,22 +365,29 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
             const draw = c.winner === "draw" || c.winner === "declined";
 
             return (
-              <div key={c.id} className="rounded-lg border p-3 text-sm opacity-70">
+              <div key={c.id} className="border-border rounded-lg border p-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {draw ? (
-                      <HandshakeIcon className="h-3 w-3 text-gray-500" />
+                      <HandshakeIcon
+                        aria-hidden="true"
+                        className="text-muted-foreground h-3.5 w-3.5"
+                      />
                     ) : won ? (
-                      <Trophy className="h-3 w-3 text-yellow-500" />
+                      <Trophy aria-hidden="true" className="h-3.5 w-3.5 text-emerald-600" />
                     ) : (
-                      <Skull className="h-3 w-3 text-red-500" />
+                      <X aria-hidden="true" className="text-destructive h-3.5 w-3.5" />
                     )}
                     <span>vs {opponent?.name ?? "Unknown"}</span>
                     <Badge
                       variant="outline"
-                      className={`text-xs ${
-                        draw ? "text-gray-500" : won ? "text-green-500" : "text-red-500"
-                      }`}
+                      className={cn(
+                        draw
+                          ? "text-muted-foreground"
+                          : won
+                            ? "border-emerald-500/30 text-emerald-600"
+                            : "border-destructive/30 text-destructive"
+                      )}
                     >
                       {draw
                         ? c.winner === "declined"

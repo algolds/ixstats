@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetTabs } from "~/components/ui/facet";
 import {
   Package,
   Flash as Zap,
   WarningTriangle as AlertTriangle,
   Archery as Target,
   Dollar as DollarSign,
-  StatUp as TrendingUp,
   CheckCircle,
 } from "iconoir-react";
 import { SelectedComponentsList } from "~/components/mycountry/domains/government/atomic";
@@ -84,13 +85,7 @@ export function GovernmentMetricModals({
     else if (interactionsOpen) setActiveTab("interactions");
     else if (effectivenessOpen) setActiveTab("effectiveness");
     else if (implementationOpen || maintenanceOpen) setActiveTab("costs");
-  }, [
-    selectedListOpen,
-    interactionsOpen,
-    effectivenessOpen,
-    implementationOpen,
-    maintenanceOpen,
-  ]);
+  }, [selectedListOpen, interactionsOpen, effectivenessOpen, implementationOpen, maintenanceOpen]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -102,88 +97,39 @@ export function GovernmentMetricModals({
     }
   };
 
+  const TITLES: Record<MetricTab, { icon: typeof Package; label: string }> = {
+    components: {
+      icon: Package,
+      label: `Selected Components (${selectedComponentObjects.length})`,
+    },
+    interactions: { icon: Zap, label: "Component Interactions" },
+    effectiveness: { icon: Target, label: "Effectiveness Breakdown" },
+    costs: { icon: DollarSign, label: "Financial Impact & Costs" },
+  };
+  const TitleIcon = TITLES[activeTab].icon;
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-xl overflow-hidden border-border bg-background/95 p-0 text-foreground shadow-2xl backdrop-blur-2xl sm:max-w-xl">
-        <DialogHeader className="border-b border-border/50 px-6 pt-5 pb-3">
-          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            {activeTab === "components" && (
-              <>
-                <Package className="h-5 w-5 text-blue-500" />
-                Selected Components ({selectedComponentObjects.length})
-              </>
-            )}
-            {activeTab === "interactions" && (
-              <>
-                <Zap className="h-5 w-5 text-amber-500" />
-                Component Interactions
-              </>
-            )}
-            {activeTab === "effectiveness" && (
-              <>
-                <Target className="h-5 w-5 text-indigo-500" />
-                Effectiveness Breakdown
-              </>
-            )}
-            {activeTab === "costs" && (
-              <>
-                <DollarSign className="h-5 w-5 text-emerald-500" />
-                Financial Impact & Costs
-              </>
-            )}
+      <DialogContent className="max-h-[85vh] max-w-xl gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="border-border/60 border-b px-6 pt-5 pb-3">
+          <DialogTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
+            <TitleIcon aria-hidden="true" className="h-5 w-5 text-amber-500" />
+            {TITLES[activeTab].label}
           </DialogTitle>
 
-          {/* Segmented Tab Navigation */}
-          <div className="mt-3 flex rounded-lg border border-border/60 bg-muted/30 p-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab("components")}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                activeTab === "components"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Package className="h-3.5 w-3.5" />
-              Components
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("interactions")}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                activeTab === "interactions"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Zap className="h-3.5 w-3.5" />
-              Interactions
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("effectiveness")}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                activeTab === "effectiveness"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Target className="h-3.5 w-3.5" />
-              Effectiveness
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("costs")}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                activeTab === "costs"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <DollarSign className="h-3.5 w-3.5" />
-              Costs
-            </button>
-          </div>
+          <FacetTabs
+            size="sm"
+            tone="mycountry"
+            className="mt-3 w-full"
+            tabs={[
+              { id: "components", label: "Components", icon: Package },
+              { id: "interactions", label: "Interactions", icon: Zap },
+              { id: "effectiveness", label: "Effectiveness", icon: Target },
+              { id: "costs", label: "Costs", icon: DollarSign },
+            ]}
+            activeTab={activeTab}
+            onChange={(id) => setActiveTab(id as MetricTab)}
+          />
         </DialogHeader>
 
         <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
@@ -202,241 +148,230 @@ export function GovernmentMetricModals({
           {activeTab === "interactions" && (
             <div className="space-y-6">
               {/* Active Synergies */}
-              <div>
-                <h4 className="mb-3 flex items-center gap-2 text-xs font-bold tracking-wider text-green-500 uppercase">
-                  <Zap className="h-4 w-4" />
-                  Active Synergies ({synergies.length})
+              <section>
+                <h4 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
+                  <Zap aria-hidden="true" className="h-4 w-4 text-emerald-600" />
+                  Active synergies ({synergies.length})
                 </h4>
                 {synergies.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">No active synergies.</p>
+                  <p className="text-muted-foreground text-xs">No active synergies.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <ul className="divide-border/60 border-border/60 divide-y rounded-lg border">
                     {synergies.map(({ comp1, comp2, score }, index) => {
                       const component1 = ATOMIC_COMPONENTS[comp1];
                       const component2 = ATOMIC_COMPONENTS[comp2];
                       if (!component1 || !component2) return null;
                       return (
-                        <div
+                        <li
                           key={`${comp1}-${comp2}-${index}`}
-                          className="rounded-xl border border-green-500/20 bg-green-500/5 p-3 transition-colors hover:bg-green-500/10"
+                          className="flex items-center justify-between gap-3 p-3"
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold text-foreground">
-                                {component1.name} + {component2.name}
-                              </p>
-                              <p className="mt-0.5 text-xs text-green-500">
-                                Complementary systems boost administrative output.
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 border-green-500/30 bg-green-500/10 font-bold text-green-500"
-                            >
-                              +{score}%
-                            </Badge>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground text-xs font-semibold">
+                              {component1.name} + {component2.name}
+                            </p>
+                            <p className="text-muted-foreground mt-0.5 text-xs">
+                              Complementary systems boost administrative output.
+                            </p>
                           </div>
-                        </div>
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 border-emerald-500/30 font-mono text-emerald-600"
+                          >
+                            +{score}%
+                          </Badge>
+                        </li>
                       );
                     })}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
 
               {/* Active Conflicts */}
-              <div>
-                <h4 className="mb-3 flex items-center gap-2 text-xs font-bold tracking-wider text-red-500 uppercase">
-                  <AlertTriangle className="h-4 w-4" />
-                  Active Conflicts ({conflicts.length})
+              <section>
+                <h4 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
+                  <AlertTriangle aria-hidden="true" className="text-destructive h-4 w-4" />
+                  Active conflicts ({conflicts.length})
                 </h4>
                 {conflicts.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">No active conflicts.</p>
+                  <p className="text-muted-foreground text-xs">No active conflicts.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <ul className="divide-border/60 border-border/60 divide-y rounded-lg border">
                     {conflicts.map(({ comp1, comp2 }, index) => {
                       const component1 = ATOMIC_COMPONENTS[comp1];
                       const component2 = ATOMIC_COMPONENTS[comp2];
                       if (!component1 || !component2) return null;
                       return (
-                        <div
+                        <li
                           key={`${comp1}-${comp2}-${index}`}
-                          className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 transition-colors hover:bg-red-500/10"
+                          className="flex items-center justify-between gap-3 p-3"
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold text-foreground">
-                                {component1.name} vs {component2.name}
-                              </p>
-                              <p className="mt-0.5 text-xs text-red-500">
-                                Incompatible policies drag down performance.
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 border-red-500/30 bg-red-500/10 font-bold text-red-500"
-                            >
-                              -15%
-                            </Badge>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground text-xs font-semibold">
+                              {component1.name} vs {component2.name}
+                            </p>
+                            <p className="text-muted-foreground mt-0.5 text-xs">
+                              Incompatible policies drag down performance.
+                            </p>
                           </div>
-                        </div>
+                          <Badge
+                            variant="outline"
+                            className="border-destructive/30 text-destructive shrink-0 font-mono"
+                          >
+                            -15%
+                          </Badge>
+                        </li>
                       );
                     })}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
 
               {/* Enacted Directives */}
-              <div>
-                <h4 className="mb-3 flex items-center gap-2 text-xs font-bold tracking-wider text-primary uppercase">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  Enacted Directives ({directives.length})
+              <section>
+                <h4 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
+                  <CheckCircle aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+                  Enacted directives ({directives.length})
                 </h4>
                 {directives.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">
+                  <p className="text-muted-foreground text-xs">
                     No policy directives active. Select components to unlock state directives.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {directives.map((dir) => (
-                      <div
+                      <li
                         key={dir.id}
-                        className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/20 p-2.5 transition-colors hover:bg-muted/30"
+                        className="border-border/60 flex items-center justify-between gap-2 rounded-lg border p-2.5"
                       >
-                        <span className="truncate text-xs font-medium text-foreground">
+                        <span className="text-foreground truncate text-xs font-medium">
                           {dir.name}
                         </span>
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 border-border/40 text-xs text-muted-foreground"
-                        >
+                        <Badge variant="outline" className="text-muted-foreground shrink-0">
                           {dir.category}
                         </Badge>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
             </div>
           )}
 
           {/* Tab 3: Effectiveness */}
           {activeTab === "effectiveness" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 text-center">
+              <dl className="border-border/60 grid grid-cols-2 gap-4 rounded-lg border p-4 text-center">
                 <div className="space-y-1">
-                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                    Base Score
-                  </p>
-                  <p className="text-xl font-extrabold text-foreground">
+                  <dt>
+                    <Eyebrow>Base score</Eyebrow>
+                  </dt>
+                  <dd className="text-foreground font-mono text-xl font-semibold tabular-nums">
                     {effectiveness.baseEffectiveness.toFixed(1)}%
-                  </p>
+                  </dd>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                    Synergy Bonus
-                  </p>
-                  <p className="text-xl font-extrabold text-green-500">
+                  <dt>
+                    <Eyebrow>Synergy bonus</Eyebrow>
+                  </dt>
+                  <dd className="font-mono text-xl font-semibold text-emerald-600 tabular-nums">
                     +{effectiveness.synergyBonus.toFixed(1)}%
-                  </p>
+                  </dd>
                 </div>
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                    Conflict Penalty
-                  </p>
-                  <p className="text-xl font-extrabold text-red-500">
+                <div className="space-y-1">
+                  <dt>
+                    <Eyebrow>Conflict penalty</Eyebrow>
+                  </dt>
+                  <dd className="text-destructive font-mono text-xl font-semibold tabular-nums">
                     -{effectiveness.conflictPenalty.toFixed(1)}%
-                  </p>
+                  </dd>
                 </div>
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                    Total Score
-                  </p>
-                  <p className="text-xl font-extrabold text-indigo-500">
+                <div className="space-y-1">
+                  <dt>
+                    <Eyebrow>Total score</Eyebrow>
+                  </dt>
+                  <dd className="text-foreground font-mono text-xl font-semibold tabular-nums">
                     {effectiveness.totalEffectiveness.toFixed(1)}%
-                  </p>
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Component Contributions
-                </h4>
+              <section className="space-y-3">
+                <h4 className="text-foreground text-sm font-semibold">Component contributions</h4>
                 {selectedComponentObjects.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">No components selected.</p>
+                  <p className="text-muted-foreground text-xs">No components selected.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <ul className="divide-border/60 divide-y">
                     {selectedComponentObjects.map((comp) => (
-                      <div
+                      <li
                         key={comp.type}
-                        className="flex items-center justify-between border-b border-border/40 pb-2 text-xs"
+                        className="flex items-center justify-between py-2 text-xs"
                       >
-                        <span className="font-medium text-foreground">{comp.name}</span>
-                        <span className="font-mono font-bold text-muted-foreground">
+                        <span className="text-foreground font-medium">{comp.name}</span>
+                        <span className="text-muted-foreground font-mono font-semibold tabular-nums">
                           {comp.effectiveness}% base
                         </span>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
             </div>
           )}
 
           {/* Tab 4: Costs */}
           {activeTab === "costs" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
-                  <p className="text-xs font-semibold tracking-wider text-emerald-500 uppercase">
-                    Total Setup Cost
-                  </p>
-                  <p className="mt-1 font-mono text-xl font-bold tracking-tight text-foreground tabular-nums">
+              <dl className="border-border/60 divide-border/60 grid grid-cols-2 divide-x rounded-lg border text-center">
+                <div className="p-4">
+                  <dt>
+                    <Eyebrow>Total setup cost</Eyebrow>
+                  </dt>
+                  <dd className="text-foreground mt-1 font-mono text-xl font-semibold tracking-tight tabular-nums">
                     ${implementationCost.toLocaleString()}
-                  </p>
+                  </dd>
                 </div>
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-                  <p className="text-xs font-semibold tracking-wider text-amber-500 uppercase">
-                    Annual Maintenance
-                  </p>
-                  <p className="mt-1 font-mono text-xl font-bold tracking-tight text-foreground tabular-nums">
+                <div className="p-4">
+                  <dt>
+                    <Eyebrow>Annual maintenance</Eyebrow>
+                  </dt>
+                  <dd className="text-foreground mt-1 font-mono text-xl font-semibold tracking-tight tabular-nums">
                     ${maintenanceCost.toLocaleString()}/yr
-                  </p>
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Per-Component Breakdown
-                </h4>
+              <section className="space-y-3">
+                <h4 className="text-foreground text-sm font-semibold">Per-component breakdown</h4>
                 {selectedComponentObjects.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">No components selected.</p>
+                  <p className="text-muted-foreground text-xs">No components selected.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <ul className="divide-border/60 divide-y">
                     {selectedComponentObjects.map((comp) => (
-                      <div
+                      <li
                         key={comp.type}
-                        className="flex items-center justify-between border-b border-border/40 pb-2 text-xs"
+                        className="flex items-center justify-between gap-3 py-2 text-xs"
                       >
-                        <div className="flex flex-col">
-                          <span className="font-medium text-foreground">{comp.name}</span>
-                          <span className="text-xs text-muted-foreground capitalize">
+                        <div className="flex min-w-0 flex-col">
+                          <span className="text-foreground font-medium">{comp.name}</span>
+                          <span className="text-muted-foreground text-xs capitalize">
                             {comp.category}
                           </span>
                         </div>
-                        <div className="text-right">
-                          <span className="font-mono font-bold text-emerald-500">
+                        <div className="shrink-0 text-right font-mono tabular-nums">
+                          <span className="text-foreground font-semibold">
                             ${comp.implementationCost.toLocaleString()}
                           </span>
-                          <span className="mx-1.5 text-muted-foreground">•</span>
-                          <span className="font-mono font-medium text-amber-500">
+                          <span className="text-muted-foreground mx-1.5">•</span>
+                          <span className="text-muted-foreground">
                             ${comp.maintenanceCost.toLocaleString()}/yr
                           </span>
                         </div>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
             </div>
           )}
         </div>

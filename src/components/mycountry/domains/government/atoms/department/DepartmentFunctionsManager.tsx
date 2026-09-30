@@ -3,6 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { Plus, Xmark as X } from "iconoir-react";
 import type { DepartmentInput } from "~/types/government";
 
@@ -31,10 +32,15 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
   };
 
   return (
-    <div className="border-border/40 bg-card/60 space-y-3 rounded-xl border p-4">
+    <FacetContainer
+      depth={3}
+      surface="solid"
+      enableRefraction={false}
+      className="space-y-3 rounded-lg p-4"
+    >
       <div className="flex items-center justify-between">
-        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Core Operational Functions
+        <Label htmlFor="dept-new-function" className="text-foreground text-sm font-semibold">
+          Core operational functions
         </Label>
         <span className="text-muted-foreground text-xs">{functions.length} Defined</span>
       </div>
@@ -42,6 +48,7 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
       {!isReadOnly && (
         <div className="flex gap-2">
           <Input
+            id="dept-new-function"
             value={newFunction}
             onChange={(e) => setNewFunction(e.target.value)}
             onKeyDown={(e) => {
@@ -75,7 +82,8 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
               <button
                 type="button"
                 onClick={() => removeFunction(idx)}
-                className="text-muted-foreground transition-colors hover:text-red-400"
+                aria-label={`Remove ${fn}`}
+                className="text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -89,6 +97,6 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
           </p>
         )}
       </div>
-    </div>
+    </FacetContainer>
   );
 });

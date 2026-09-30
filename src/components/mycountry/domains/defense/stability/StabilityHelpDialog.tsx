@@ -27,14 +27,19 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-          <HelpCircle className="text-muted-foreground hover:text-primary h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label="About internal stability metrics"
+        >
+          <HelpCircle className="text-muted-foreground h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5 text-blue-600" />
+            <Info aria-hidden="true" className="text-muted-foreground h-5 w-5" />
             Understanding Internal Stability Metrics
           </DialogTitle>
           <DialogDescription>
@@ -247,7 +252,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           {/* Improvement Tips */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-green-600">How to Improve Stability</h4>
+            <h4 className="text-foreground font-semibold">How to Improve Stability</h4>
             <div className="space-y-2 pl-4 text-xs">
               <p>
                 <strong>Reduce unemployment</strong> - Biggest factor in crime and unrest

@@ -11,7 +11,8 @@ import {
 } from "~/components/ui/select";
 import { City as Building2 } from "iconoir-react";
 import { safeFormatCurrency, cn } from "~/lib/utils";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
 import { EnhancedNumberInput } from "~/app/builder/primitives/enhanced/EnhancedNumberInput";
 import { FieldHelpTooltip } from "~/app/builder/components/help/FieldHelpTooltip";
 import { AdvancedFieldsDisclosure } from "~/app/builder/primitives/AdvancedFieldsDisclosure";
@@ -54,9 +55,7 @@ export function BudgetConfigurationSection({
   gdpData,
   asGlassCard = false,
 }: BudgetConfigurationSectionProps) {
-  const parts = data.fiscalYear.includes(" | ")
-    ? data.fiscalYear.split(" | ")
-    : [data.fiscalYear];
+  const parts = data.fiscalYear.includes(" | ") ? data.fiscalYear.split(" | ") : [data.fiscalYear];
 
   let fiscalStance = "Balanced Budget Directive";
   let auditLevel = ADVANCED_BUDGET_DEFAULTS.auditLevel;
@@ -101,16 +100,16 @@ export function BudgetConfigurationSection({
   let colorClass = "";
   let statusText = "";
   if (deficitSurplus <= 0) {
-    colorClass = "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20";
+    colorClass = "border-emerald-500/30 text-emerald-600";
     statusText = `Fully Funded (Surplus: ${Math.abs(deficitSurplus).toFixed(1)}% of GDP)`;
   } else if (deficitSurplus <= 5) {
-    colorClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+    colorClass = "border-amber-500/30 text-amber-600";
     statusText = `Mild Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
   } else if (deficitSurplus <= 15) {
-    colorClass = "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20";
+    colorClass = "border-orange-500/30 text-orange-600";
     statusText = `Moderate Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
   } else {
-    colorClass = "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
+    colorClass = "border-destructive/30 text-destructive";
     statusText = `Critical Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
   }
 
@@ -132,24 +131,17 @@ export function BudgetConfigurationSection({
             dynamicStep={true}
             sectionId="spending"
             size="sm"
-            format={(val) =>
-              safeFormatCurrency(Number(val), data.budgetCurrency || "USD", false)
-            }
+            format={(val) => safeFormatCurrency(Number(val), data.budgetCurrency || "USD", false)}
             placeholder="Enter budget limit..."
-            className="animate-fade-in text-zinc-900 dark:text-white"
+            className="text-foreground"
           />
           <div className="flex flex-col gap-1">
             {gdpData?.nominalGDP && gdpData.nominalGDP > 0 && (
               <>
-                <span
-                  className={cn(
-                    "mt-0.5 w-max rounded-full border px-2 py-0.5 text-xs font-semibold",
-                    colorClass
-                  )}
-                >
+                <Badge variant="outline" className={cn("mt-0.5", colorClass)}>
                   {ratio.toFixed(1)}% of GDP ({gdpData.countryName || "Baseline"})
-                </span>
-                <span className="text-muted-foreground/80 px-0.5 text-xs leading-relaxed font-medium">
+                </Badge>
+                <span className="text-muted-foreground px-0.5 text-xs leading-relaxed font-medium">
                   Tax Revenue: {taxPercent.toFixed(1)}% • {statusText}
                 </span>
               </>
@@ -161,7 +153,7 @@ export function BudgetConfigurationSection({
         <div className="space-y-2">
           <Label
             htmlFor="fiscalStance"
-            className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+            className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
           >
             Fiscal Stance & Strategy
             <FieldHelpTooltip
@@ -174,18 +166,12 @@ export function BudgetConfigurationSection({
             onValueChange={(value) => handleConfigChange("stance", value)}
             disabled={isReadOnly}
           >
-            <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+            <SelectTrigger>
               <SelectValue placeholder="Select budget stance" />
             </SelectTrigger>
-            <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+            <SelectContent>
               {Object.entries(stanceDetails).map(([val, info]) => (
-                <SelectItem
-                  key={val}
-                  value={val}
-                  className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                  title={info.tooltip}
-                  description={info.desc}
-                >
+                <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
                   {val}
                 </SelectItem>
               ))}
@@ -206,7 +192,7 @@ export function BudgetConfigurationSection({
           <div className="space-y-2">
             <Label
               htmlFor="auditLevel"
-              className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+              className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
             >
               Auditing & Transparency
               <FieldHelpTooltip
@@ -219,18 +205,12 @@ export function BudgetConfigurationSection({
               onValueChange={(value) => handleConfigChange("audit", value)}
               disabled={isReadOnly}
             >
-              <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+              <SelectTrigger>
                 <SelectValue placeholder="Select transparency level" />
               </SelectTrigger>
-              <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+              <SelectContent>
                 {Object.entries(auditDetails).map(([val, info]) => (
-                  <SelectItem
-                    key={val}
-                    value={val}
-                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                    title={info.tooltip}
-                    description={info.desc}
-                  >
+                  <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
                     {val}
                   </SelectItem>
                 ))}
@@ -242,7 +222,7 @@ export function BudgetConfigurationSection({
           <div className="space-y-2">
             <Label
               htmlFor="reserveTarget"
-              className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+              className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
             >
               Emergency Reserve Target
               <FieldHelpTooltip
@@ -255,18 +235,12 @@ export function BudgetConfigurationSection({
               onValueChange={(value) => handleConfigChange("reserve", value)}
               disabled={isReadOnly}
             >
-              <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+              <SelectTrigger>
                 <SelectValue placeholder="Select reserve target" />
               </SelectTrigger>
-              <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+              <SelectContent>
                 {Object.entries(reserveDetails).map(([val, info]) => (
-                  <SelectItem
-                    key={val}
-                    value={val}
-                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                    title={info.tooltip}
-                    description={info.desc}
-                  >
+                  <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
                     {info.label}
                   </SelectItem>
                 ))}
@@ -278,7 +252,7 @@ export function BudgetConfigurationSection({
           <div className="space-y-2">
             <Label
               htmlFor="debtLimit"
-              className="flex items-center gap-1.5 text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+              className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
             >
               Debt Financing Limit
               <FieldHelpTooltip
@@ -291,18 +265,12 @@ export function BudgetConfigurationSection({
               onValueChange={(value) => handleConfigChange("debt", value)}
               disabled={isReadOnly}
             >
-              <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+              <SelectTrigger>
                 <SelectValue placeholder="Select debt limit" />
               </SelectTrigger>
-              <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+              <SelectContent>
                 {Object.entries(debtDetails).map(([val, info]) => (
-                  <SelectItem
-                    key={val}
-                    value={val}
-                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                    title={info.tooltip}
-                    description={info.desc}
-                  >
+                  <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
                     {info.label}
                   </SelectItem>
                 ))}
@@ -316,26 +284,21 @@ export function BudgetConfigurationSection({
 
   if (asGlassCard) {
     return (
-      <FacetCard
-        depth={1}
-        className="facet-surface facet-refraction border-cyan-500/20 bg-card/60 backdrop-blur-md"
-      >
-        <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-          <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-            <Building2 className="h-5 w-5 text-cyan-400" />
+      <FacetCard depth={1}>
+        <FacetCardHeader className="border-border/60 border-b px-6 py-4">
+          <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+            <Building2 aria-hidden="true" className="text-muted-foreground h-5 w-5" />
             Budget Configuration
           </h3>
-        </div>
+        </FacetCardHeader>
         <FacetCardContent className="p-6">{content}</FacetCardContent>
       </FacetCard>
     );
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] p-4">
-      <h4 className="mb-3 text-lg font-medium text-[var(--color-text-primary)]">
-        Budget Configuration
-      </h4>
+    <div className="border-border/60 space-y-4 rounded-lg border p-4">
+      <h4 className="text-foreground mb-3 text-base font-semibold">Budget Configuration</h4>
       {content}
     </div>
   );

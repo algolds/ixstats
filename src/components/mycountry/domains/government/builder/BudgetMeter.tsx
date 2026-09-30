@@ -2,14 +2,15 @@
 /**
  * Budget Meter Component
  *
- * Visual meter showing budget allocation progress with premium glassmorphic styling
+ * Meter showing budget allocation progress; colour is used only for the fiscal status.
  */
 
 import React from "react";
 import type { BudgetSummary } from "~/lib/government/builder-validation";
 import { cn } from "~/lib/utils";
 import { WarningTriangle as AlertTriangle, CheckCircle, StatUp as TrendingUp } from "iconoir-react";
-import { motion } from "motion/react";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Progress } from "~/components/ui/progress";
 
 export interface BudgetMeterProps {
   budgetSummary: BudgetSummary;
@@ -18,114 +19,80 @@ export interface BudgetMeterProps {
 export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: BudgetMeterProps) {
   const { totalAllocatedPercent, remainingPercent, isOverBudget } = budgetSummary;
 
-  // Determine current status configuration
-  // Stable: < 90% (Cyan gradient, cyan glow)
-  // Warning: 90% - 100% (Amber gradient, amber glow)
-  // Danger: > 100% (Red/Crimson gradient, red glow)
+  // Stable: < 90%; warning: 90–100%; over budget: > 100%.
   const isWarning = totalAllocatedPercent >= 90 && totalAllocatedPercent <= 100;
 
-  const statusColor = isOverBudget
-    ? "bg-red-500"
+  const status = isOverBudget
+    ? {
+        icon: AlertTriangle,
+        text: "text-destructive",
+        bar: "bg-destructive",
+        border: "border-destructive/40",
+        message:
+          "Budget Alert: Total allocated spending exceeds 100%. Please scale back department funding to restore structural balance.",
+      }
     : isWarning
-      ? "bg-amber-500"
-      : "bg-emerald-500";
-
-  const glowColor = isOverBudget
-    ? "bg-red-500/5 border-red-500/20 text-red-700 dark:text-red-300"
-    : isWarning
-      ? "bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-300"
-      : "bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300";
-
-  const textColor = isOverBudget
-    ? "text-red-600 dark:text-red-400 font-bold"
-    : isWarning
-      ? "text-amber-600 dark:text-amber-400 font-semibold"
-      : "text-emerald-600 dark:text-emerald-400 font-semibold";
+      ? {
+          icon: TrendingUp,
+          text: "text-amber-600",
+          bar: "bg-amber-500",
+          border: "border-amber-500/40",
+          message:
+            "Fiscal Precaution: Approaching maximum target budget. Maintain tight control over operational margins.",
+        }
+      : {
+          icon: CheckCircle,
+          text: "text-emerald-600",
+          bar: "bg-emerald-500",
+          border: "",
+          message:
+            "Fiscal Health: Allocation structure is optimal and conforms to stability directives.",
+        };
+  const StatusIcon = status.icon;
 
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-xl border p-5 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-        glowColor
-      )}
-    >
-      {/* Decorative background gradients */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent" />
-      <div className="pointer-events-none absolute top-0 right-0 h-40 w-40 rounded-full bg-cyan-500/[0.02] blur-3xl" />
-
+    <FacetCard depth={1} className={cn("p-5", status.border)}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
-            {isOverBudget ? (
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-            ) : isWarning ? (
-              <TrendingUp className="h-5 w-5 text-amber-500" />
-            ) : (
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
-            )}
-            <span className="text-sm font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-              Fiscal Allocation Status
-            </span>
+            <StatusIcon aria-hidden="true" className={cn("h-5 w-5", status.text)} />
+            <h3 className="text-foreground text-sm font-semibold">Fiscal allocation status</h3>
           </div>
-          <div className="text-xs font-medium sm:text-sm">
-            <span className={cn("mr-1 text-base font-extrabold", textColor)}>
+          <div className="text-xs font-medium tabular-nums sm:text-sm">
+            <span className={cn("mr-1 font-mono text-base font-semibold", status.text)}>
               {totalAllocatedPercent.toFixed(1)}%
             </span>
-            <span className="text-zinc-500 dark:text-zinc-400">allocated</span>
-            <span className="mx-2 text-zinc-400 dark:text-zinc-600">•</span>
+            <span className="text-muted-foreground">allocated</span>
+            <span aria-hidden="true" className="text-muted-foreground mx-2">
+              •
+            </span>
             <span
               className={cn(
-                "mr-1 font-bold",
-                remainingPercent < 0
-                  ? "text-red-600 dark:text-red-400"
-                  : "text-zinc-700 dark:text-zinc-300"
+                "mr-1 font-mono font-semibold",
+                remainingPercent < 0 ? "text-destructive" : "text-foreground"
               )}
             >
               {remainingPercent.toFixed(1)}%
             </span>
-            <span className="text-zinc-500 dark:text-zinc-400">remaining</span>
+            <span className="text-muted-foreground">remaining</span>
           </div>
         </div>
 
-        {/* Dynamic dual-track track bar */}
-        <div className="relative h-3 w-full overflow-hidden rounded-full border border-zinc-200 bg-zinc-200 dark:border-white/5 dark:bg-zinc-950/60">
-          <motion.div
-            className={cn(
-              "h-full rounded-full shadow-sm",
-              statusColor
-            )}
-            initial={{ width: 0 }}
-            animate={{ width: `${Math.min(100, Math.max(0, totalAllocatedPercent))}%` }}
-            transition={{ type: "spring", stiffness: 60, damping: 15 }}
-          />
-        </div>
+        <Progress
+          value={Math.min(100, Math.max(0, totalAllocatedPercent))}
+          className="bg-muted h-3"
+          indicatorClassName={status.bar}
+          aria-label="Budget allocated"
+        />
 
-        {/* Warning / status messages */}
-        {isOverBudget ? (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              Budget Alert: Total allocated spending exceeds 100%. Please scale back department
-              funding to restore structural balance.
-            </span>
-          </div>
-        ) : isWarning ? (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-            <TrendingUp className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              Fiscal Precaution: Approaching maximum target budget. Maintain tight control over
-              operational margins.
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              Fiscal Health: Allocation structure is optimal and conforms to stability directives.
-            </span>
-          </div>
-        )}
+        <div
+          role="status"
+          className={cn("flex items-center gap-1.5 text-xs font-medium", status.text)}
+        >
+          <StatusIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          <span>{status.message}</span>
+        </div>
       </div>
-    </div>
+    </FacetCard>
   );
 });

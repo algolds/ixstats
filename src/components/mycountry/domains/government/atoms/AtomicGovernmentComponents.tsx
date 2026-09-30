@@ -11,7 +11,7 @@
 
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
-import { Card, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
 import {
   FloppyDisk as Save,
   Undo as RotateCcw,
@@ -212,7 +212,7 @@ export function AtomicGovernmentComponents({
     <div className="space-y-6">
       {/* Filter and Search Bar */}
       {!hideCategorySelector && (
-        <div className="border-b border-border/40 pb-6">
+        <div className="border-border/60 border-b pb-6">
           <AtomicFilterBar
             searchQuery={builder.searchQuery}
             onSearchChange={builder.setSearchQuery}
@@ -233,10 +233,8 @@ export function AtomicGovernmentComponents({
         <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                Available Components
-              </h3>
-              <Badge variant="outline" className="font-mono text-xs text-muted-foreground">
+              <h3 className="text-foreground text-sm font-semibold">Available components</h3>
+              <Badge variant="outline" className="text-muted-foreground font-mono">
                 {builder.selectedComponents.length} / {maxComponents} selected
               </Badge>
             </div>
@@ -254,7 +252,7 @@ export function AtomicGovernmentComponents({
         </div>
 
         {!hideSelectedList && (
-          <div className="border-t border-border/40 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+          <div className="border-border/60 border-t pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
             <SelectedComponentsList
               selectedComponents={selectedComponentObjects}
               onDeselect={builder.deselectComponent}
@@ -272,70 +270,59 @@ export function AtomicGovernmentComponents({
     <TooltipProvider delayDuration={150}>
       <div className="space-y-6">
         {/* Welcome & Instruction Modal */}
-        {!standalone && (
-          <AtomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
-        )}
+        {!standalone && <AtomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />}
 
         {/* Header Section */}
         {!standalone && (
-          <Card className="border-white/10 shadow-lg backdrop-blur-md">
-            <CardHeader>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
-                    <Blocks className="h-6 w-6 text-amber-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-2xl font-extrabold text-zinc-100">
-                      Atomic Government Builder
-                      <button
-                        type="button"
-                        onClick={() => setWelcomeOpen(true)}
-                        className="text-xs font-semibold text-amber-400 hover:text-amber-300 hover:underline"
-                      >
-                        (Guide)
-                      </button>
-                    </CardTitle>
-                    <p className="text-sm text-zinc-400">
-                      Assemble your governance structure from atomic principles
-                    </p>
-                  </div>
+          <FacetCard depth={1} surface="solid" className="p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <Blocks aria-hidden="true" className="h-6 w-6 shrink-0 text-amber-500" />
+                <div className="min-w-0">
+                  <h2 className="text-foreground flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight">
+                    Atomic Government Builder
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setWelcomeOpen(true)}
+                      aria-label="Open the atomic government guide"
+                    >
+                      <HelpCircle className="text-muted-foreground h-4 w-4" />
+                    </Button>
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    Assemble your governance structure from atomic principles
+                  </p>
                 </div>
-
-                {/* Header Actions */}
-                {!isReadOnly && (
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={builder.clearSelection}
-                      disabled={builder.selectedComponents.length === 0}
-                      className="border-white/10 bg-white/5 hover:bg-white/10"
-                    >
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Reset
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={!builder.validation.isValid}
-                      className="bg-amber-600 font-bold text-white hover:bg-amber-500 shadow-amber-500/20"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Configuration
-                    </Button>
-                  </div>
-                )}
               </div>
-            </CardHeader>
-          </Card>
+
+              {/* Header Actions */}
+              {!isReadOnly && (
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={builder.clearSelection}
+                    disabled={builder.selectedComponents.length === 0}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={!builder.validation.isValid}>
+                    <Save className="h-4 w-4" />
+                    Save Configuration
+                  </Button>
+                </div>
+              )}
+            </div>
+          </FacetCard>
         )}
 
         {/* Info Alert */}
         {!standalone && (
-          <Alert className="border-white/10 bg-white/[0.02] text-zinc-300">
-            <Info className="h-4 w-4 text-amber-400" />
+          <Alert>
+            <Info className="text-muted-foreground h-4 w-4" />
             <AlertDescription className="text-xs leading-normal">
               Select {maxComponents} government components to build your custom governance system.
               Watch for synergies (bonuses) and conflicts (penalties) between components.
@@ -345,7 +332,7 @@ export function AtomicGovernmentComponents({
 
         {/* Validation Errors */}
         {!builder.validation.isValid && builder.validation.errors.length > 0 && (
-          <Alert variant="destructive" className="border-red-500/30 bg-red-500/10 text-red-400">
+          <Alert variant="destructive">
             <AlertDescription>
               <ul className="list-inside list-disc space-y-1 text-xs font-semibold">
                 {builder.validation.errors.map((error, index) => (
@@ -393,9 +380,9 @@ export function AtomicGovernmentComponents({
         {standalone ? (
           workspaceContent
         ) : (
-          <Card className="border-border/60 bg-card/40 shadow-2xl backdrop-blur-xl">
-            <div className="space-y-6 p-6">{workspaceContent}</div>
-          </Card>
+          <FacetCard depth={1} surface="solid" className="p-6">
+            {workspaceContent}
+          </FacetCard>
         )}
 
         {/* Save Button (Bottom) */}
@@ -405,18 +392,17 @@ export function AtomicGovernmentComponents({
               variant="outline"
               onClick={builder.clearSelection}
               disabled={builder.selectedComponents.length === 0}
-              className="border-white/10 text-zinc-300 hover:bg-white/5"
             >
-              <RotateCcw className="mr-2 h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
               Reset Selection
             </Button>
             <Button
               onClick={handleSave}
               disabled={!builder.validation.isValid}
               size="lg"
-              className="bg-amber-600 font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-500"
+              className="bg-amber-500 text-amber-950 hover:bg-amber-400"
             >
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="h-4 w-4" />
               Save Government Configuration
             </Button>
           </div>

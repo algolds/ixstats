@@ -2,7 +2,14 @@
 
 import React, { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { FacetTabs } from "~/components/ui/facet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { formatNumber, safeFormatCurrency, toTitleCase } from "~/lib/utils";
 import { currentBudgetYear, latestBudgetYearUpTo } from "~/lib/government/budget-year";
 import { Button } from "~/components/ui/button";
@@ -108,10 +115,11 @@ export function BudgetManagementDashboard({
         );
         return department ? { department, allocation } : null;
       })
-      .filter((item): item is { department: GovernmentDepartment; allocation: BudgetAllocation } => item !== null)
-      .sort(
-        (a, b) => (b.allocation.allocatedAmount ?? 0) - (a.allocation.allocatedAmount ?? 0)
+      .filter(
+        (item): item is { department: GovernmentDepartment; allocation: BudgetAllocation } =>
+          item !== null
       )
+      .sort((a, b) => (b.allocation.allocatedAmount ?? 0) - (a.allocation.allocatedAmount ?? 0))
       .slice(0, 5);
 
     return {
@@ -187,7 +195,7 @@ export function BudgetManagementDashboard({
           spent: allocation.spentAmount ?? 0,
           available: allocation.availableAmount ?? 0,
           percent: allocation.allocatedPercent ?? 0,
-          color: department?.color || "#6b7280",
+          color: department?.color || "var(--color-muted-foreground)",
         };
       })
       .sort((a, b) => b.allocated - a.allocated);
@@ -198,7 +206,7 @@ export function BudgetManagementDashboard({
       name: item.category,
       value: item.amount,
       percent: item.percent,
-      color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "#34d399",
+      color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "var(--color-amber-500)",
     }));
   }, [revenueSummary.revenueBreakdown]);
 
@@ -212,53 +220,51 @@ export function BudgetManagementDashboard({
     }));
   }, [governmentStructure?.totalBudget, revenueSummary.totalRevenue]);
 
-  const budgetHealth = getBudgetHealthStatus(
-    revenueSummary.totalRevenue,
-    budgetSummary.totalSpent
-  );
+  const budgetHealth = getBudgetHealthStatus(revenueSummary.totalRevenue, budgetSummary.totalSpent);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-foreground text-2xl font-bold tracking-tight">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-foreground text-xl font-semibold tracking-tight">
             {governmentStructure?.governmentName ?? "National"} Fiscal Budget
-          </h1>
+          </h2>
           <p className="text-muted-foreground mt-0.5 text-xs">
             {toTitleCase(governmentStructure?.governmentType ?? "Democratic Republic")} •{" "}
             {selectedYear} {governmentStructure?.fiscalYear ?? "FY"}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-            className="border-border/40 bg-card/60 text-foreground hover:border-border/60 cursor-pointer rounded-xl border px-3 py-1.5 font-mono text-xs font-semibold backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-2 focus:ring-emerald-500/30"
+          <Select
+            value={String(selectedYear)}
+            onValueChange={(value) => setSelectedYear(parseInt(value, 10))}
           >
-            {Array.from({ length: 5 }, (_, i) => currentBudgetYear() - i).map((year) => (
-              <option
-                key={year}
-                value={year}
-                className="bg-popover text-popover-foreground font-mono"
-              >
-                {year}
-              </option>
-            ))}
-          </select>
-          <Badge
-            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${budgetHealth.color}`}
-          >
+            <SelectTrigger className="h-9 w-24 font-mono text-xs" aria-label="Budget year">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 5 }, (_, i) => currentBudgetYear() - i).map((year) => (
+                <SelectItem key={year} value={String(year)} className="font-mono">
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Badge variant="outline" className={budgetHealth.color}>
             {budgetHealth.label}
           </Badge>
         </div>
       </div>
 
       {needsNewYearBudget && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/40 px-4 py-3"
+        >
           <p className="text-foreground text-sm">
-            A new fiscal year has begun. Your FY{effectiveYear} budget stays in effect until you
-            set the FY{currentYear} budget.
+            A new fiscal year has begun. Your FY{effectiveYear} budget stays in effect until you set
+            the FY{currentYear} budget.
           </p>
           {countryId && !isReadOnly && !propAllocations && (
             <Button
@@ -282,43 +288,24 @@ export function BudgetManagementDashboard({
       />
 
       {/* Main Content Tabs */}
-      <Tabs
-        value={selectedView}
-        onValueChange={(value) =>
-          setSelectedView(value as "overview" | "departments" | "revenue" | "analysis")
-        }
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <TabsList className="bg-card/60 border-border/40 grid w-full grid-cols-4 gap-1 rounded-2xl border p-1 shadow-inner backdrop-blur-xl">
-            <TabsTrigger
-              value="overview"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="departments"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Departments
-            </TabsTrigger>
-            <TabsTrigger
-              value="revenue"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Revenue
-            </TabsTrigger>
-            <TabsTrigger
-              value="analysis"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Analysis
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="space-y-4">
+        <FacetTabs
+          size="sm"
+          tone="mycountry"
+          className="w-full"
+          tabs={[
+            { id: "overview", label: "Overview" },
+            { id: "departments", label: "Departments" },
+            { id: "revenue", label: "Revenue" },
+            { id: "analysis", label: "Analysis" },
+          ]}
+          activeTab={selectedView}
+          onChange={(value) =>
+            setSelectedView(value as "overview" | "departments" | "revenue" | "analysis")
+          }
+        />
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        {selectedView === "overview" && (
           <BudgetOverviewCharts
             overviewChartMode={overviewChartMode}
             setOverviewChartMode={setOverviewChartMode}
@@ -327,33 +314,27 @@ export function BudgetManagementDashboard({
             revenueChartData={revenueChartData}
             formatCurrency={formatCurrency}
           />
-        </TabsContent>
+        )}
 
-        {/* Departments Tab */}
-        <TabsContent value="departments" className="space-y-3">
+        {selectedView === "departments" && (
           <BudgetDepartmentList
             departments={budgetSummary.topSpendingDepartments}
             formatNumber={formatNumber}
           />
-        </TabsContent>
+        )}
 
-        {/* Revenue Tab */}
-        <TabsContent value="revenue" className="space-y-4">
-          <BudgetRevenueAnalysis
-            revenueSummary={revenueSummary}
-            formatNumber={formatNumber}
-          />
-        </TabsContent>
+        {selectedView === "revenue" && (
+          <BudgetRevenueAnalysis revenueSummary={revenueSummary} formatNumber={formatNumber} />
+        )}
 
-        {/* Analysis Tab */}
-        <TabsContent value="analysis" className="space-y-4">
+        {selectedView === "analysis" && (
           <BudgetHealthAnalysis
             budgetSummary={budgetSummary}
             revenueSummary={revenueSummary}
             budgetHealth={budgetHealth}
           />
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 }

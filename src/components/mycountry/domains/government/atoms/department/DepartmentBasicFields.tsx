@@ -1,6 +1,8 @@
 import React from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Badge } from "~/components/ui/badge";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { Textarea } from "~/components/ui/textarea";
 import { Slider } from "~/components/ui/slider";
 import {
@@ -44,7 +46,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
             placeholder="e.g. Ministry of Finance"
             disabled={isReadOnly}
           />
-          {errors?.name && <p className="text-xs text-red-400">{errors.name[0]}</p>}
+          {errors?.name && <p className="text-destructive text-xs">{errors.name[0]}</p>}
         </div>
 
         <div className="space-y-1.5">
@@ -127,16 +129,17 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
       </div>
 
       {/* Priority Level Slider */}
-      <div className="border-border/40 bg-card/60 space-y-2 rounded-xl border p-4">
-        <div className="flex items-center justify-between">
-          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Operational Priority
-          </Label>
-          <span
-            className={`rounded-md border px-2 py-0.5 text-xs font-medium ${priorityDetails.color}`}
-          >
+      <FacetContainer
+        depth={3}
+        surface="solid"
+        enableRefraction={false}
+        className="space-y-2 rounded-lg p-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-foreground text-sm font-semibold">Operational priority</h4>
+          <Badge variant="outline" className={priorityDetails.color}>
             {priorityDetails.label} ({data.priority || 5}/10)
-          </span>
+          </Badge>
         </div>
         <Slider
           value={[data.priority || 5]}
@@ -148,7 +151,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
           className="py-2"
         />
         <p className="text-muted-foreground text-xs">{priorityDetails.desc}</p>
-      </div>
+      </FacetContainer>
     </div>
   );
 });

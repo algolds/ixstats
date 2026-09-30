@@ -57,7 +57,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
     <div className="space-y-2">
       <Label>Equipment Image</Label>
       {formData.imageUrl ? (
-        <div className="relative overflow-hidden rounded-lg border-2 border-orange-200 dark:border-orange-900">
+        <div className="border-border overflow-hidden rounded-lg border">
           <img
             src={formData.imageUrl}
             alt="Equipment preview"
@@ -66,10 +66,10 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
               e.currentTarget.style.display = "none";
             }}
           />
-          <div className="absolute right-0 bottom-0 left-0 flex gap-2 bg-gradient-to-t from-black/80 to-transparent p-3">
+          <div className="border-border flex gap-2 border-t p-3">
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               className="flex-1"
               onClick={() => {
@@ -84,8 +84,10 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
             </Button>
             <Button
               type="button"
-              variant="destructive"
+              variant="ghost"
               size="sm"
+              aria-label="Remove image"
+              className="text-muted-foreground hover:text-destructive"
               onClick={() => onChange({ ...formData, imageUrl: "" })}
             >
               <Trash2 className="h-4 w-4" />
@@ -96,7 +98,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
         <Button
           type="button"
           variant="outline"
-          className="h-32 w-full border-2 border-dashed"
+          className="h-32 w-full border-dashed"
           onClick={() => {
             const url = window.prompt(
               "Enter image URL from Wikimedia Commons:",
@@ -108,7 +110,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
           }}
         >
           <div className="flex flex-col items-center gap-2">
-            <Image className="text-muted-foreground h-8 w-8" />
+            <Image aria-hidden="true" className="text-muted-foreground h-8 w-8" />
             <span className="text-sm font-medium">Add Equipment Image</span>
             <span className="text-muted-foreground text-xs">Click to enter image URL</span>
           </div>
@@ -240,7 +242,7 @@ export const AssetFormFields = React.memo(function AssetFormFields({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>Modernization Level</Label>
-          <span className="text-sm font-medium">{formData.modernizationLevel}%</span>
+          <span className="text-sm font-medium tabular-nums">{formData.modernizationLevel}%</span>
         </div>
         <Slider
           value={[formData.modernizationLevel]}

@@ -11,7 +11,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -39,6 +49,7 @@ export function AssetManager({
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
   const [viewingImage, setViewingImage] = useState<{ url: string; name: string } | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const notify = useNotify();
 
@@ -86,15 +97,9 @@ export function AssetManager({
     setShowDialog(true);
   }, []);
 
-  const deleteAssetMutate = deleteAsset.mutate;
-  const handleDelete = useCallback(
-    (assetId: string) => {
-      if (confirm("Are you sure you want to delete this asset?")) {
-        deleteAssetMutate({ id: assetId });
-      }
-    },
-    [deleteAssetMutate]
-  );
+  const handleDelete = useCallback((assetId: string) => {
+    setPendingDeleteId(assetId);
+  }, []);
 
   const assetsList = assets ?? [];
   const filteredAssets =
@@ -114,10 +119,10 @@ export function AssetManager({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h4 className="flex items-center gap-2 text-sm font-semibold">
-            <Target className="h-4 w-4" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
+            <Target aria-hidden="true" className="h-4 w-4 text-rose-500" />
             Assets ({assetsList.length})
           </h4>
           <Select value={filterType} onValueChange={setFilterType}>
@@ -135,7 +140,7 @@ export function AssetManager({
           </Select>
         </div>
         <Button size="sm" onClick={handleCreate}>
-          <Plus className="mr-1 h-3 w-3" />
+          <Plus className="h-4 w-4" />
           Add Asset
         </Button>
       </div>
@@ -149,7 +154,7 @@ export function AssetManager({
             return (
               <div key={type} className="space-y-2">
                 <div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
-                  <Icon className={`h-4 w-4 ${config?.color}`} />
+                  <Icon aria-hidden="true" className="h-4 w-4" />
                   {config?.label} ({typeAssets.length})
                 </div>
 
@@ -169,7 +174,7 @@ export function AssetManager({
           })}
         </div>
       ) : (
-        <div className="text-muted-foreground rounded-lg border border-dashed py-6 text-center text-sm">
+        <div className="text-muted-foreground border-border rounded-lg border border-dashed py-6 text-center text-sm">
           No assets yet. Add your first asset to get started.
         </div>
       )}
@@ -182,7 +187,7 @@ export function AssetManager({
               <DialogTitle>{viewingImage.name}</DialogTitle>
               <DialogDescription>Equipment Image - Click outside to close</DialogDescription>
             </DialogHeader>
-            <div className="relative w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-900">
+            <div className="bg-muted relative w-full overflow-hidden rounded-lg">
               <img
                 src={viewingImage.url}
                 alt={viewingImage.name}
@@ -193,6 +198,34 @@ export function AssetManager({
           </DialogContent>
         </Dialog>
       )}
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this asset?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The asset is removed from this branch. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={() => {
+                if (pendingDeleteId) deleteAsset.mutate({ id: pendingDeleteId });
+                setPendingDeleteId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AssetDialog
         open={showDialog}

@@ -70,12 +70,12 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h2 className="text-foreground text-xl font-semibold tracking-tight">
             Budget Allocation
           </h2>
         </div>
-        <Alert className="border-zinc-200 bg-zinc-100/40 text-zinc-700 dark:border-white/10 dark:bg-zinc-950/40 dark:text-zinc-300">
-          <AlertTriangle className="h-4 w-4 text-amber-400" />
+        <Alert>
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription>
             Add departments first in the Administration tab before setting up budget allocations.
           </AlertDescription>
@@ -88,40 +88,25 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h2 className="text-foreground text-xl font-semibold tracking-tight">
             Budget Allocation
           </h2>
-          <p className="text-zinc-550 mt-1 text-xs dark:text-zinc-400">
+          <p className="text-muted-foreground mt-1 text-xs">
             Distribute funding across active ministries and manage fiscal limits
           </p>
         </div>
         <div className="flex items-center gap-1.5 self-end sm:self-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onExpandAll}
-            className="h-8 border-zinc-200 bg-white text-xs text-zinc-700 hover:bg-zinc-100 dark:border-white/10 dark:bg-transparent dark:text-zinc-300 dark:hover:bg-white/5"
-          >
-            <ChevronDown className="mr-1 h-3 w-3" />
+          <Button variant="outline" size="sm" onClick={onExpandAll}>
+            <ChevronDown className="h-3.5 w-3.5" />
             Expand All
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCollapseAll}
-            className="h-8 border-zinc-200 bg-white text-xs text-zinc-700 hover:bg-zinc-100 dark:border-white/10 dark:bg-transparent dark:text-zinc-300 dark:hover:bg-white/5"
-          >
-            <ChevronRight className="mr-1 h-3.5 w-3.5" />
+          <Button variant="outline" size="sm" onClick={onCollapseAll}>
+            <ChevronRight className="h-3.5 w-3.5" />
             Collapse All
           </Button>
           {!isReadOnly && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onFixAllocations}
-              className="h-8 border-amber-500/30 text-xs text-amber-400 hover:bg-amber-500/10"
-            >
-              <CheckCircle className="mr-1 h-3.5 w-3.5" />
+            <Button variant="outline" size="sm" onClick={onFixAllocations}>
+              <CheckCircle className="h-3.5 w-3.5 text-amber-600" />
               Fix Allocations
             </Button>
           )}
@@ -136,9 +121,13 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
           {vitalWarnings.map((warning, idx) => (
             <div
               key={idx}
-              className="flex items-start gap-2.5 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-xs text-amber-200"
+              role="status"
+              className="text-foreground flex items-start gap-2.5 rounded-lg border border-amber-500/40 p-3 text-xs"
             >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+              />
               <div className="leading-relaxed">{warning}</div>
             </div>
           ))}

@@ -8,9 +8,18 @@ import {
   Tournament as Swords,
   FireFlame as Flame,
   Group as Users,
-  SystemRestart as Loader2,
 } from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
+import { Skeleton } from "~/components/ui/skeleton";
+
+function PanelSkeleton() {
+  return (
+    <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading">
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="h-40 w-full" />
+    </div>
+  );
+}
 
 // Lazy-load heavy panels per active tab
 const CommandPanel = dynamic(
@@ -20,11 +29,7 @@ const CommandPanel = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: PanelSkeleton,
   }
 );
 
@@ -35,11 +40,7 @@ const BorderThreatPanel = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: PanelSkeleton,
   }
 );
 
@@ -50,11 +51,7 @@ const AssetManager = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: PanelSkeleton,
   }
 );
 
@@ -65,11 +62,7 @@ const OperationsPanel = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: PanelSkeleton,
   }
 );
 
@@ -80,11 +73,7 @@ const StabilityPanel = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-      </div>
-    ),
+    loading: PanelSkeleton,
   }
 );
 
@@ -112,7 +101,7 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
         tabs={tabs}
         activeTab={activeTab}
         onChange={setActiveTab}
-        activeClassName="border-red-500/40 bg-red-500/20 text-red-700 dark:text-red-400"
+        activeClassName="border-rose-500/40 bg-rose-500/10 text-foreground"
       />
 
       {activeTab === "branches" && <CommandPanel countryId={countryId} />}

@@ -2,16 +2,12 @@
 // src/components/defense/command/ReadinessOverviewCard.tsx
 
 import React from "react";
-import {
-  Shield,
-  Group as Users,
-  Archery as Target,
-  Activity,
-  HelpCircle,
-  InfoCircle as Info,
-} from "iconoir-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Archery as Target, HelpCircle, InfoCircle as Info } from "iconoir-react";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Toggle } from "~/components/ui/toggle";
 import { Progress } from "~/components/ui/progress";
 import {
   Dialog,
@@ -21,7 +17,6 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface DefconLevelInfo {
   level: number;
@@ -32,12 +27,48 @@ export interface DefconLevelInfo {
   cls: string;
 }
 
+/** `cls` is the status colour for the level's badge: calm → critical, semantic only. */
 export const DEFCON_LEVELS: DefconLevelInfo[] = [
-  { level: 5, label: "DEFCON 5", status: "Peacetime", costMod: "-10% Maint", readinessMod: "Baseline", cls: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
-  { level: 4, label: "DEFCON 4", status: "Nominal", costMod: "Base Maint", readinessMod: "+5% Alert", cls: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
-  { level: 3, label: "DEFCON 3", status: "Elevated", costMod: "+15% Maint", readinessMod: "+12% Alert", cls: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
-  { level: 2, label: "DEFCON 2", status: "High Alert", costMod: "+30% Maint", readinessMod: "+20% Alert", cls: "text-orange-400 border-orange-500/30 bg-orange-500/10" },
-  { level: 1, label: "DEFCON 1", status: "Maximum", costMod: "+50% Maint", readinessMod: "+35% Alert", cls: "text-red-400 border-red-500/30 bg-red-500/10" },
+  {
+    level: 5,
+    label: "DEFCON 5",
+    status: "Peacetime",
+    costMod: "-10% Maint",
+    readinessMod: "Baseline",
+    cls: "border-emerald-500/30 text-emerald-600",
+  },
+  {
+    level: 4,
+    label: "DEFCON 4",
+    status: "Nominal",
+    costMod: "Base Maint",
+    readinessMod: "+5% Alert",
+    cls: "border-border text-muted-foreground",
+  },
+  {
+    level: 3,
+    label: "DEFCON 3",
+    status: "Elevated",
+    costMod: "+15% Maint",
+    readinessMod: "+12% Alert",
+    cls: "border-amber-500/30 text-amber-600",
+  },
+  {
+    level: 2,
+    label: "DEFCON 2",
+    status: "High Alert",
+    costMod: "+30% Maint",
+    readinessMod: "+20% Alert",
+    cls: "border-orange-500/30 text-orange-600",
+  },
+  {
+    level: 1,
+    label: "DEFCON 1",
+    status: "Maximum",
+    costMod: "+50% Maint",
+    readinessMod: "+35% Alert",
+    cls: "border-destructive/30 text-destructive",
+  },
 ];
 
 export const PROJECTION_GOALS = [
@@ -63,6 +94,11 @@ interface ReadinessOverviewCardProps {
   branches: Branch[] | undefined;
 }
 
+/** Normalises a 0–1 or 0–100 score to a 0–100 percentage. */
+function toPercent(value: number): number {
+  return value > 1 ? value : value * 100;
+}
+
 export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   averageReadiness,
   averageTechnology,
@@ -70,25 +106,40 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
 }: ReadinessOverviewCardProps) {
   const [defcon, setDefcon] = React.useState<number>(4);
   const [projection, setProjection] = React.useState<string>("regional");
+  const defconLabelId = React.useId();
+  const projectionLabelId = React.useId();
 
   const activeDefcon = DEFCON_LEVELS.find((d) => d.level === defcon) || DEFCON_LEVELS[1]!;
 
+  const metrics = [
+    { label: "Readiness", title: "Overall Readiness", value: averageReadiness },
+    { label: "Technology", title: "Technology Level", value: averageTechnology },
+    { label: "Morale", title: "Force Morale", value: averageMorale },
+  ];
+
   return (
-    <Card className="facet-hierarchy-child">
-      <CardHeader>
-        <CardTitle className="flex min-w-0 items-center gap-2 leading-snug">
-          <Target className="h-5 w-5 shrink-0 text-red-600" />
-          <span className="min-w-0">Strategic Readiness Overview</span>
+    <FacetCard depth={1} className="rounded-3xl">
+      <FacetCardHeader className="p-4 pb-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Target aria-hidden="true" className="h-4 w-4 shrink-0 text-rose-500" />
+          <h3 className="text-foreground min-w-0 text-sm font-semibold">
+            Strategic readiness overview
+          </h3>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 shrink-0 p-0">
-                <HelpCircle className="text-muted-foreground hover:text-primary h-4 w-4" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto h-8 w-8 shrink-0"
+                aria-label="About strategic readiness metrics"
+              >
+                <HelpCircle className="text-muted-foreground h-4 w-4" />
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Info className="h-5 w-5 text-red-600" />
+                  <Info aria-hidden="true" className="text-muted-foreground h-5 w-5" />
                   Strategic Readiness Metrics
                 </DialogTitle>
               </DialogHeader>
@@ -129,146 +180,98 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
               </div>
             </DialogContent>
           </Dialog>
-        </CardTitle>
-        <CardDescription>Aggregate readiness metrics across all branches</CardDescription>
-      </CardHeader>
-      <CardContent>
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Aggregate readiness metrics across all branches
+        </p>
+      </FacetCardHeader>
+      <FacetCardContent className="space-y-4 px-4 pb-4">
         <div className="grid grid-cols-3 gap-3">
-          <div className="min-w-0 space-y-1.5">
-            <div className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs font-semibold">
-              <Shield className="h-3.5 w-3.5 shrink-0 text-red-400" />
-              <span className="truncate" title="Overall Readiness">Readiness</span>
-            </div>
-            <div className="text-foreground font-mono text-lg font-bold tabular-nums">
-              {Math.min(
-                100,
-                Math.max(
-                  0,
-                  Math.round(averageReadiness > 1 ? averageReadiness : averageReadiness * 100)
-                )
-              )}
-              %
-            </div>
-            <Progress
-              value={averageReadiness > 1 ? averageReadiness : averageReadiness * 100}
-              className="h-1.5"
-            />
-          </div>
-
-          <div className="min-w-0 space-y-1.5">
-            <div className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs font-semibold">
-              <Activity className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
-              <span className="truncate" title="Technology Level">Technology</span>
-            </div>
-            <div className="text-foreground font-mono text-lg font-bold tabular-nums">
-              {Math.min(
-                100,
-                Math.max(
-                  0,
-                  Math.round(averageTechnology > 1 ? averageTechnology : averageTechnology * 100)
-                )
-              )}
-              %
-            </div>
-            <Progress
-              value={averageTechnology > 1 ? averageTechnology : averageTechnology * 100}
-              className="h-1.5"
-            />
-          </div>
-
-          <div className="min-w-0 space-y-1.5">
-            <div className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs font-semibold">
-              <Users className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-              <span className="truncate" title="Force Morale">Morale</span>
-            </div>
-            <div className="text-foreground font-mono text-lg font-bold tabular-nums">
-              {Math.min(
-                100,
-                Math.max(0, Math.round(averageMorale > 1 ? averageMorale : averageMorale * 100))
-              )}
-              %
-            </div>
-            <Progress
-              value={averageMorale > 1 ? averageMorale : averageMorale * 100}
-              className="h-1.5"
-            />
-          </div>
+          {metrics.map((m) => {
+            const pct = toPercent(m.value);
+            return (
+              <div key={m.label} className="min-w-0 space-y-1.5">
+                <Eyebrow className="block truncate" title={m.title}>
+                  {m.label}
+                </Eyebrow>
+                <div className="text-foreground font-mono text-lg font-semibold tabular-nums">
+                  {Math.min(100, Math.max(0, Math.round(pct)))}%
+                </div>
+                <Progress value={pct} className="h-1.5" />
+              </div>
+            );
+          })}
         </div>
 
-        {/* Strategic Defense Posture & DEFCON Selectors */}
-        <div className="mt-4 grid grid-cols-1 gap-2.5 border-t border-white/10 pt-3">
-          {/* DEFCON Level Selector */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
-            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1">
-              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                DEFCON Alert Status
-              </span>
-              <span className={cn("rounded-md border px-1.5 py-0.5 font-mono text-xs font-bold", activeDefcon.cls)}>
+        {/* Strategic defense posture: DEFCON level and force projection goal */}
+        <div className="border-border/60 space-y-4 border-t pt-4">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <Eyebrow id={defconLabelId}>DEFCON alert status</Eyebrow>
+              <Badge variant="outline" className={cn("font-mono", activeDefcon.cls)}>
                 {activeDefcon.status} · {activeDefcon.readinessMod} · {activeDefcon.costMod}
-              </span>
+              </Badge>
             </div>
-            <div className="grid grid-cols-5 gap-1">
+            <div
+              role="radiogroup"
+              aria-labelledby={defconLabelId}
+              className="grid grid-cols-5 gap-1"
+            >
               {DEFCON_LEVELS.map((d) => (
-                <button
+                <Toggle
                   key={d.level}
-                  type="button"
-                  data-cuelume-press="soft"
-                  onClick={() => {
-                    soundEffects.press();
-                    setDefcon(d.level);
-                  }}
-                  className={cn(
-                    "flex min-w-0 cursor-pointer flex-col items-center justify-center rounded-lg border px-0.5 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] text-center select-none active:scale-95",
-                    defcon === d.level
-                      ? `${d.cls} font-bold shadow-xs scale-[1.02]`
-                      : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
-                  )}
+                  role="radio"
+                  aria-checked={defcon === d.level}
+                  aria-pressed={undefined}
+                  variant="outline"
+                  size="sm"
+                  pressed={defcon === d.level}
+                  onPressedChange={() => setDefcon(d.level)}
+                  className="min-w-0 font-mono"
                   title={`${d.label}: ${d.status} (${d.costMod}, ${d.readinessMod})`}
                 >
                   {/* Five columns in the rail are too narrow for the status words; the
-                      selected level's status is shown in the header pill instead. */}
-                  <span className="text-xs font-mono font-bold leading-tight">{d.level}</span>
-                </button>
+                      selected level's status is shown in the badge instead. */}
+                  {d.level}
+                </Toggle>
               ))}
             </div>
           </div>
 
-          {/* Force Projection Goal */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
-            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1">
-              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                Force Projection Goal
-              </span>
-              <span className="text-cyan-400 font-mono text-xs font-bold">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <Eyebrow id={projectionLabelId}>Force projection goal</Eyebrow>
+              <span className="text-foreground text-xs font-medium">
                 {PROJECTION_GOALS.find((p) => p.id === projection)?.label}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-1">
+            <div
+              role="radiogroup"
+              aria-labelledby={projectionLabelId}
+              className="grid grid-cols-2 gap-1"
+            >
               {PROJECTION_GOALS.map((p) => (
-                <button
+                <Toggle
                   key={p.id}
-                  type="button"
-                  data-cuelume-press="soft"
-                  onClick={() => {
-                    soundEffects.press();
-                    setProjection(p.id);
-                  }}
-                  className={cn(
-                    "flex min-w-0 cursor-pointer flex-col items-start rounded-lg border px-2 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
-                    projection === p.id
-                      ? "border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold shadow-xs"
-                      : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
-                  )}
+                  role="radio"
+                  aria-checked={projection === p.id}
+                  aria-pressed={undefined}
+                  variant="outline"
+                  pressed={projection === p.id}
+                  onPressedChange={() => setProjection(p.id)}
+                  className="h-auto min-w-0 flex-col items-start gap-0 px-2 py-1.5 text-left"
                   title={p.desc}
                 >
-                  <span className="w-full truncate text-xs font-semibold leading-tight">{p.label}</span>
-                  <span className="w-full truncate text-xs opacity-70">{p.desc}</span>
-                </button>
+                  <span className="w-full truncate text-xs font-semibold">{p.label}</span>
+                  <span className="text-muted-foreground w-full truncate text-xs font-normal">
+                    {p.desc}
+                  </span>
+                </Toggle>
               ))}
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 });

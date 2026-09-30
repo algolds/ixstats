@@ -28,28 +28,28 @@ export interface Asset {
   imageUrl?: string | null;
 }
 
+/** Asset types share one quiet icon colour; type is carried by the icon and label, not hue. */
 export const ASSET_TYPE_CONFIG = {
-  aircraft: { icon: Plane, color: "text-cyan-600 dark:text-cyan-400", label: "Aircraft" },
-  ship: { icon: Ship, color: "text-blue-600 dark:text-blue-400", label: "Naval Vessel" },
-  vehicle: { icon: Truck, color: "text-emerald-600 dark:text-emerald-400", label: "Vehicle" },
-  installation: { icon: Target, color: "text-indigo-600 dark:text-indigo-400", label: "Installation" },
-  weapon_system: { icon: Radio, color: "text-red-600 dark:text-red-400", label: "Weapon System" },
+  aircraft: { icon: Plane, color: "text-muted-foreground", label: "Aircraft" },
+  ship: { icon: Ship, color: "text-muted-foreground", label: "Naval Vessel" },
+  vehicle: { icon: Truck, color: "text-muted-foreground", label: "Vehicle" },
+  installation: { icon: Target, color: "text-muted-foreground", label: "Installation" },
+  weapon_system: { icon: Radio, color: "text-muted-foreground", label: "Weapon System" },
 } as const satisfies Record<AssetTypeKey, unknown>;
 
+/** `color` is the outline-badge status colour (semantic: ready / degraded / idle). */
 export const STATUS_CONFIG = {
-  operational: { label: "Operational", color: "bg-emerald-500" },
-  maintenance: { label: "Maintenance", color: "bg-amber-500" },
-  reserve: { label: "Reserve", color: "bg-blue-500" },
-  retired: { label: "Retired", color: "bg-muted-foreground" },
+  operational: { label: "Operational", color: "border-emerald-500/30 text-emerald-600" },
+  maintenance: { label: "Maintenance", color: "border-amber-500/30 text-amber-600" },
+  reserve: { label: "Reserve", color: "text-muted-foreground" },
+  retired: { label: "Retired", color: "text-muted-foreground" },
 } as const;
 
 /** Matches the `status` enum of `security.createMilitaryAsset`. */
 type AssetStatusKey = keyof typeof STATUS_CONFIG;
 
-export const isAssetTypeKey = (value: string): value is AssetTypeKey =>
-  value in ASSET_TYPE_CONFIG;
-export const isAssetStatusKey = (value: string): value is AssetStatusKey =>
-  value in STATUS_CONFIG;
+export const isAssetTypeKey = (value: string): value is AssetTypeKey => value in ASSET_TYPE_CONFIG;
+export const isAssetStatusKey = (value: string): value is AssetStatusKey => value in STATUS_CONFIG;
 
 /** Form state; `range` and `payload` are display-only and are not persisted. */
 export interface AssetFormData {

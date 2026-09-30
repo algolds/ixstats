@@ -8,18 +8,16 @@ import type {
 
 export interface BudgetHealthStatus {
   status: "surplus" | "balanced" | "moderate" | "deficit";
+  /** Semantic status classes for an outline `<Badge>` (border + text colour). */
   color: string;
   label: string;
 }
 
-export const REVENUE_CHART_COLORS = [
-  "#34d399",
-  "#38bdf8",
-  "#fbbf24",
-  "#c084fc",
-  "#2dd4bf",
-  "#f43f5e",
-];
+/**
+ * Revenue categories are one measure, so every bar shares the MyCountry accent; the axis label
+ * names the category. Kept as an array so callers can index it by category.
+ */
+export const REVENUE_CHART_COLORS = ["var(--color-amber-500)"];
 
 export function getBudgetHealthStatus(
   totalRevenue: number,
@@ -31,27 +29,27 @@ export function getBudgetHealthStatus(
   if (deficitPercent > 5) {
     return {
       status: "surplus",
-      color: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono",
+      color: "border-emerald-500/30 text-emerald-600",
       label: "Surplus",
     };
   }
   if (deficitPercent > -3) {
     return {
       status: "balanced",
-      color: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono",
+      color: "text-muted-foreground",
       label: "Balanced",
     };
   }
   if (deficitPercent > -10) {
     return {
       status: "moderate",
-      color: "bg-amber-500/10 text-amber-400 border border-amber-500/30 font-mono",
+      color: "border-amber-500/30 text-amber-600",
       label: "Moderate Deficit",
     };
   }
   return {
     status: "deficit",
-    color: "bg-red-500/10 text-red-400 border border-red-500/30 font-mono",
+    color: "border-destructive/30 text-destructive",
     label: "High Deficit",
   };
 }

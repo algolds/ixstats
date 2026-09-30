@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { City as Building2 } from "iconoir-react";
 import type { GovernmentStructureInput } from "~/types/government";
 import { BudgetConfigurationSection } from "./BudgetConfigurationSection";
@@ -109,14 +109,14 @@ export function GovernmentStructureForm({
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center text-xl font-semibold text-[var(--color-text-primary)]">
-          <Building2 className="mr-2 h-6 w-6 text-[var(--color-brand-primary)]" />
+    <FacetCard depth={1} className="w-full">
+      <FacetCardHeader className="pb-4">
+        <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
+          <Building2 aria-hidden="true" className="text-muted-foreground h-5 w-5" />
           Government Structure
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">{fieldsContent}</CardContent>
-    </Card>
+        </h3>
+      </FacetCardHeader>
+      <FacetCardContent className="space-y-6 px-6 pb-6">{fieldsContent}</FacetCardContent>
+    </FacetCard>
   );
 }

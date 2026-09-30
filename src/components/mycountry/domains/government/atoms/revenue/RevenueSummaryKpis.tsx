@@ -3,11 +3,8 @@
 import React from "react";
 import type { RevenueSourceInput } from "~/types/government";
 import { formatNumber } from "~/lib/utils/format-utils";
-import {
-  revenueCategories,
-  revenueCategoryIcons,
-  revenueCategoryColors,
-} from "./revenueConstants";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { revenueCategories, revenueCategoryIcons } from "./revenueConstants";
 
 interface RevenueSummaryKpisProps {
   data: RevenueSourceInput[];
@@ -15,103 +12,72 @@ interface RevenueSummaryKpisProps {
 }
 
 export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpisProps) {
-  const getCategoryStats = () => {
-    const stats = revenueCategories.map((category) => {
+  const categoryStats = revenueCategories
+    .map((category) => {
       const categoryData = data.filter((item) => item.category === category);
       const amount = categoryData.reduce((sum, item) => sum + item.revenueAmount, 0);
       const percent = totalCalculated > 0 ? (amount / totalCalculated) * 100 : 0;
-      return {
-        category,
-        amount,
-        percent,
-        count: categoryData.length,
-      };
-    });
+      return { category, amount, percent, count: categoryData.length };
+    })
+    .filter((stat) => stat.count > 0);
 
-    return stats.filter((stat) => stat.count > 0);
-  };
-
-  const categoryStats = getCategoryStats();
+  const kpis = [
+    { label: "Total revenue", value: formatNumber(totalCalculated) },
+    { label: "Tax sources", value: data.filter((r) => r.category.includes("Tax")).length },
+    { label: "Non-tax sources", value: data.filter((r) => !r.category.includes("Tax")).length },
+    {
+      label: "Avg per channel",
+      value: data.length > 0 ? formatNumber(totalCalculated / data.length) : "0",
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Revenue KPI Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
-          <div className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-            {formatNumber(totalCalculated)}
+      {/* Revenue KPI summary */}
+      <dl className="border-border/60 divide-border/60 grid grid-cols-2 divide-y rounded-lg border md:grid-cols-4 md:divide-x md:divide-y-0">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="p-4 text-center">
+            <dd className="text-foreground font-mono text-xl font-semibold tracking-tight tabular-nums">
+              {kpi.value}
+            </dd>
+            <dt className="mt-1">
+              <Eyebrow>{kpi.label}</Eyebrow>
+            </dt>
           </div>
-          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
-            Total Revenue
-          </div>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
-          <div className="text-xl font-extrabold tracking-tight text-emerald-500 dark:text-emerald-400">
-            {data.filter((r) => r.category.includes("Tax")).length}
-          </div>
-          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
-            Tax Sources
-          </div>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
-          <div className="text-xl font-extrabold tracking-tight text-cyan-500 dark:text-cyan-400">
-            {data.filter((r) => !r.category.includes("Tax")).length}
-          </div>
-          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
-            Non-Tax Sources
-          </div>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-white/5 dark:bg-zinc-950/40">
-          <div className="text-xl font-extrabold tracking-tight text-indigo-500 dark:text-indigo-400">
-            {data.length > 0 ? formatNumber(totalCalculated / data.length) : "0"}
-          </div>
-          <div className="mt-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
-            Avg per Channel
-          </div>
-        </div>
-      </div>
+        ))}
+      </dl>
 
-      {/* Category Breakdown list */}
+      {/* Category breakdown */}
       {categoryStats.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-            Revenue Shares by Category
-          </h4>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <h4 className="text-foreground text-sm font-semibold">Revenue shares by category</h4>
+          <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {categoryStats.map((stat) => {
               const Icon = revenueCategoryIcons[stat.category];
-              const color = revenueCategoryColors[stat.category];
               return (
-                <div
+                <li
                   key={stat.category}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-white/5 dark:bg-zinc-950/20"
-                  style={{ borderLeft: `3px solid ${color}` }}
+                  className="border-border/60 flex items-center justify-between rounded-lg border p-3"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 dark:border-white/5 dark:bg-zinc-900">
-                      <Icon className="h-4 w-4" style={{ color }} />
-                    </div>
+                    <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
                     <div>
-                      <div className="text-xs font-bold text-zinc-900 dark:text-white">
-                        {stat.category}
-                      </div>
-                      <div className="text-xs font-semibold text-zinc-500 uppercase">
+                      <div className="text-foreground text-xs font-semibold">{stat.category}</div>
+                      <div className="text-muted-foreground text-xs">
                         {stat.count} active channels
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-300">
+                  <div className="text-right font-mono tabular-nums">
+                    <div className="text-foreground text-xs font-semibold">
                       {formatNumber(stat.amount)}
                     </div>
-                    <div className="text-xs font-bold text-zinc-500">
-                      {stat.percent.toFixed(1)}%
-                    </div>
+                    <div className="text-muted-foreground text-xs">{stat.percent.toFixed(1)}%</div>
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
       )}
     </div>

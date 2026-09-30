@@ -77,13 +77,7 @@ export const DepartmentForm = React.memo(function DepartmentForm({
       {/* Action Footer */}
       {!isReadOnly && onDelete && (
         <div className="flex justify-end pt-2">
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={onDelete}
-            className="gap-1.5 text-xs"
-          >
+          <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
             <Trash2 className="h-3.5 w-3.5" />
             Delete Department
           </Button>

@@ -5,6 +5,8 @@ import { Plus } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
 import {
   Select,
   SelectContent,
@@ -16,7 +18,6 @@ import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
 import {
   revenueCategories,
   revenueCategoryIcons,
-  revenueCategoryColors,
   commonRevenueSources,
   getCollectionMethodIcon,
   getCollectionMethodsForCategory,
@@ -66,37 +67,33 @@ export function RevenueAddSection({
         <Button
           variant="outline"
           onClick={() => setIsAddingNew(true)}
-          className="h-12 w-full rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-100 text-zinc-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-zinc-900 dark:border-white/10 dark:bg-zinc-950/10 dark:text-zinc-300 dark:hover:text-white"
+          className="h-11 w-full border-dashed"
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Add Custom Revenue Source
         </Button>
 
         {/* Quick Add Presets badges */}
-        <div className="space-y-2.5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-white/5 dark:bg-black/10">
-          <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-            Quick Add Common Channels:
-          </Label>
+        <div className="border-border/60 space-y-3 rounded-lg border p-4">
+          <h4 className="text-foreground text-sm font-semibold">Quick add common channels</h4>
           <div className="space-y-3">
             {revenueCategories.map((category) => (
               <div key={category} className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                <div className="flex items-center gap-1.5">
                   {React.createElement(revenueCategoryIcons[category], {
-                    className: "h-3.5 w-3.5",
-                    style: { color: revenueCategoryColors[category] },
+                    className: "text-muted-foreground h-3.5 w-3.5",
                   })}
-                  {category}
+                  <Eyebrow>{category}</Eyebrow>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {commonRevenueSources[category].map((source) => (
                     <Button
                       key={source}
                       variant="outline"
-                      size="sm"
+                      size="xs"
                       onClick={() => onAddPreset(source, category)}
-                      className="h-7 border-zinc-200 bg-zinc-100 text-xs text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900 dark:border-white/5 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                     >
-                      <Plus className="mr-1 h-3 w-3" />
+                      <Plus className="h-3 w-3" />
                       {source}
                     </Button>
                   ))}
@@ -110,17 +107,19 @@ export function RevenueAddSection({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border-2 border-dashed border-cyan-500/25 bg-cyan-500/5 p-4">
-      <div className="text-xs font-bold tracking-wider text-cyan-500 uppercase dark:text-cyan-400">
-        Configure Custom Revenue Channel
-      </div>
+    <FacetContainer
+      depth={3}
+      surface="solid"
+      enableRefraction={false}
+      className="space-y-4 rounded-lg p-4"
+    >
+      <h4 className="text-foreground text-sm font-semibold">Configure custom revenue channel</h4>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-3">
           <Input
             value={newRevenue.name}
             onChange={(e) => setNewRevenue((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Revenue channel name (e.g. Carbon Levy)"
-            className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
           />
 
           <Select
@@ -129,23 +128,16 @@ export function RevenueAddSection({
               setNewRevenue((prev) => ({ ...prev, category: value }))
             }
           >
-            <SelectTrigger className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+            <SelectContent>
               {revenueCategories.map((category) => {
                 const CategoryIcon = revenueCategoryIcons[category];
                 return (
-                  <SelectItem
-                    key={category}
-                    value={category}
-                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                  >
+                  <SelectItem key={category} value={category}>
                     <div className="flex items-center">
-                      <CategoryIcon
-                        className="mr-2 h-4 w-4"
-                        style={{ color: revenueCategoryColors[category] }}
-                      />
+                      <CategoryIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       {category}
                     </div>
                   </SelectItem>
@@ -168,7 +160,6 @@ export function RevenueAddSection({
             placeholder="Annual yield amount"
             min="0"
             step="1000000"
-            className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
           />
 
           {newRevenue.category.includes("Tax") && (
@@ -185,7 +176,6 @@ export function RevenueAddSection({
               min="0"
               max="100"
               step="0.1"
-              className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
             />
           )}
         </div>
@@ -193,35 +183,26 @@ export function RevenueAddSection({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-            Collection Method
-          </Label>
+          <Label className="text-foreground text-xs font-semibold">Collection Method</Label>
           <Select
             value={newRevenue.collectionMethod || ""}
             onValueChange={(value) =>
               setNewRevenue((prev) => ({ ...prev, collectionMethod: value }))
             }
           >
-            <SelectTrigger className="border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+            <SelectTrigger className="text-xs">
               <SelectValue placeholder="Select collection method" />
             </SelectTrigger>
-            <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+            <SelectContent>
               {getCollectionMethodsForCategory(newRevenue.category).map((method) => {
                 const IconComponent = getCollectionMethodIcon(method.icon);
                 return (
-                  <SelectItem
-                    key={method.id}
-                    value={method.id}
-                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                  >
+                  <SelectItem key={method.id} value={method.id}>
                     <div className="flex items-center gap-2">
-                      <IconComponent
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: method.color }}
-                      />
+                      <IconComponent className="text-muted-foreground h-4 w-4 shrink-0" />
                       <div className="flex flex-col text-left">
                         <span className="text-xs font-bold">{method.name}</span>
-                        <span className="text-xs text-zinc-500">{method.description}</span>
+                        <span className="text-muted-foreground text-xs">{method.description}</span>
                       </div>
                     </div>
                   </SelectItem>
@@ -232,9 +213,7 @@ export function RevenueAddSection({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-            Administrative Authority
-          </Label>
+          <Label className="text-foreground text-xs font-semibold">Administrative Authority</Label>
           {availableDepartments.length > 0 ? (
             <Select
               value={newRevenue.administeredBy || ""}
@@ -242,18 +221,14 @@ export function RevenueAddSection({
                 setNewRevenue((prev) => ({ ...prev, administeredBy: value }))
               }
             >
-              <SelectTrigger className="border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+              <SelectTrigger className="text-xs">
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
-              <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+              <SelectContent>
                 {availableDepartments
                   .filter((dept) => dept.name && dept.name.trim() !== "")
                   .map((dept) => (
-                    <SelectItem
-                      key={dept.id}
-                      value={dept.name}
-                      className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                    >
+                    <SelectItem key={dept.id} value={dept.name}>
                       {dept.name}
                     </SelectItem>
                   ))}
@@ -266,38 +241,29 @@ export function RevenueAddSection({
                 setNewRevenue((prev) => ({ ...prev, administeredBy: e.target.value }))
               }
               placeholder="Department or agency name"
-              className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
             />
           )}
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Description</Label>
+        <Label className="text-foreground text-xs font-semibold">Description</Label>
         <Input
           value={newRevenue.description || ""}
-          onChange={(e) =>
-            setNewRevenue((prev) => ({ ...prev, description: e.target.value }))
-          }
+          onChange={(e) => setNewRevenue((prev) => ({ ...prev, description: e.target.value }))}
           placeholder="Brief description of this revenue source"
-          className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
         />
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={handleAdd} size="sm" className="bg-cyan-500 font-bold text-black hover:bg-cyan-600">
-          <Plus className="mr-1 h-4 w-4" />
+        <Button onClick={handleAdd} size="sm">
+          <Plus className="h-4 w-4" />
           Add Channel
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => setIsAddingNew(false)}
-          size="sm"
-          className="text-zinc-650 border-zinc-200 hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/5"
-        >
+        <Button variant="outline" onClick={() => setIsAddingNew(false)} size="sm">
           Cancel
         </Button>
       </div>
-    </div>
+    </FacetContainer>
   );
 }

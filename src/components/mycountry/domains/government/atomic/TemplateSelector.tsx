@@ -61,7 +61,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "democratic",
     label: "Democratic & Institutional",
     icon: Landmark,
-    iconClassName: "text-blue-600 dark:text-blue-400",
+    iconClassName: "text-muted-foreground",
     keywords: [
       "democracy",
       "republic",
@@ -78,7 +78,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "technocratic",
     label: "Technocratic & Digital",
     icon: FlaskConical,
-    iconClassName: "text-indigo-600 dark:text-indigo-400",
+    iconClassName: "text-muted-foreground",
     keywords: [
       "technocracy",
       "technocratic",
@@ -95,7 +95,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "security",
     label: "Security & Command",
     icon: Shield,
-    iconClassName: "text-red-600 dark:text-red-400",
+    iconClassName: "text-muted-foreground",
     keywords: [
       "authoritarian",
       "security_state",
@@ -111,7 +111,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "social",
     label: "Social & Welfare",
     icon: Heart,
-    iconClassName: "text-red-600 dark:text-red-400",
+    iconClassName: "text-muted-foreground",
     keywords: [
       "welfare",
       "social_",
@@ -126,7 +126,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "economic",
     label: "Economic & Innovation",
     icon: TrendingUp,
-    iconClassName: "text-emerald-600 dark:text-emerald-400",
+    iconClassName: "text-muted-foreground",
     keywords: [
       "innovation_hub",
       "market",
@@ -143,7 +143,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "diplomatic",
     label: "Diplomatic & Global",
     icon: Globe2,
-    iconClassName: "text-cyan-600 dark:text-cyan-400",
+    iconClassName: "text-muted-foreground",
     keywords: [
       "multilateral",
       "regional",
@@ -157,7 +157,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "resilience",
     label: "Crisis & Resilience",
     icon: LifeBuoy,
-    iconClassName: "text-amber-600 dark:text-amber-400",
+    iconClassName: "text-muted-foreground",
     keywords: [
       "resilient_democracy",
       "civil_protection",
@@ -272,9 +272,9 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
 
     return (
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 shrink-0 text-slate-400 dark:text-zinc-500" />
+        <FileText aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
         <Select onValueChange={onSelect} disabled={disabled}>
-          <SelectTrigger className="w-[160px] border-0 border-transparent bg-transparent text-slate-700 shadow-none hover:bg-slate-100/50 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-slate-300 dark:hover:bg-white/5">
+          <SelectTrigger className="text-foreground hover:bg-muted w-[160px] border-0 bg-transparent shadow-none">
             <SelectValue placeholder="Load Template..." />
           </SelectTrigger>
           <SelectContent>
@@ -291,7 +291,7 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
                       event.stopPropagation();
                       toggleGroup(group.id);
                     }}
-                    className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-1.5 transition-colors select-none hover:bg-slate-100/50 dark:hover:bg-white/5"
+                    className="hover:bg-muted flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-1.5 transition-colors select-none"
                   >
                     <span className="flex items-center gap-2">
                       <group.icon className={`h-3.5 w-3.5 ${group.iconClassName}`} />
@@ -323,9 +323,7 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
                               {template.components.length} components
                             </Badge>
                           </div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            {template.description}
-                          </p>
+                          <p className="text-muted-foreground text-xs">{template.description}</p>
                         </div>
                       </SelectItem>
                     ))}

@@ -4,7 +4,7 @@ import React, { useRef, useCallback } from "react";
 import { formatExactCurrency } from "~/lib/utils";
 import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Coins } from "iconoir-react";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
@@ -125,31 +125,24 @@ export function RevenueSourceForm({
   );
 
   return (
-    <FacetCard
-      depth={1}
-      className="facet-surface facet-refraction border-cyan-500/20 bg-card/60 backdrop-blur-md"
-    >
-      <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-        <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-          <Coins className="h-5 w-5 text-cyan-400" />
+    <FacetCard depth={1}>
+      <FacetCardHeader className="border-border/60 flex-row flex-wrap items-center justify-between gap-2 border-b px-6 py-4">
+        <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
+          <Coins aria-hidden="true" className="text-muted-foreground h-5 w-5" />
           Revenue Channels
         </h3>
         <div className="flex items-center gap-2">
           <Badge
-            className={cn(
-              "border font-semibold shadow-none",
-              totalPercent > 100
-                ? "border-red-500/20 bg-red-500/10 text-red-400"
-                : "border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
-            )}
+            variant="outline"
+            className={cn(totalPercent > 100 && "border-destructive/30 text-destructive")}
           >
             {data.length} Channels
           </Badge>
-          <Badge className="border border-zinc-200 bg-zinc-100 font-semibold text-zinc-700 dark:border-white/5 dark:bg-zinc-800 dark:text-zinc-300">
+          <Badge variant="secondary" className="font-mono">
             {formatExactCurrency(totalCalculated, currency)}
           </Badge>
         </div>
-      </div>
+      </FacetCardHeader>
 
       <FacetCardContent className="space-y-6 p-6">
         {/* KPI Summary Cards & Category Breakdown */}

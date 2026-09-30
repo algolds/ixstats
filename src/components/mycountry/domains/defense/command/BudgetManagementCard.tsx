@@ -14,8 +14,9 @@ import {
   HelpCircle,
   InfoCircle as Info,
 } from "iconoir-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
@@ -31,7 +32,7 @@ import {
 import { cn } from "~/lib/utils";
 import { type BudgetData, BUDGET_CATEGORIES } from "~/hooks/useDefenseBudget";
 
-/** Map icon name strings to actual Lucide components */
+/** Map icon name strings to iconoir components */
 const ICON_MAP = {
   Users,
   Wrench,
@@ -63,23 +64,30 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
   currentYear,
 }: BudgetManagementCardProps) {
   return (
-    <Card className="facet-hierarchy-child">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              Defense Budget - FY {currentYear}
+    <FacetCard depth={1} surface="solid">
+      <FacetCardHeader className="p-5 pb-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <DollarSign aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+              <h3 className="text-foreground text-base font-semibold">
+                Defense budget · FY {currentYear}
+              </h3>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <HelpCircle className="text-muted-foreground hover:text-primary h-4 w-4" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    aria-label="About the defense budget"
+                  >
+                    <HelpCircle className="text-muted-foreground h-4 w-4" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                      <Info className="h-5 w-5 text-green-600" />
+                      <Info aria-hidden="true" className="text-muted-foreground h-5 w-5" />
                       Defense Budget Guide
                     </DialogTitle>
                   </DialogHeader>
@@ -142,8 +150,10 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                   </div>
                 </DialogContent>
               </Dialog>
-            </CardTitle>
-            <CardDescription>Allocate resources across defense categories</CardDescription>
+            </div>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Allocate resources across defense categories
+            </p>
           </div>
           {editingBudget ? (
             <div className="flex gap-2">
@@ -156,19 +166,19 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               </Button>
             </div>
           ) : (
-            <Button size="sm" onClick={() => setEditingBudget(true)}>
+            <Button size="sm" variant="outline" onClick={() => setEditingBudget(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Budget
             </Button>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
+      </FacetCardHeader>
+      <FacetCardContent className="space-y-6 px-5 pb-5">
         {/* Total Budget */}
-        <div className="bg-muted/50 rounded-lg border p-4">
+        <div className="border-border/60 rounded-lg border p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-muted-foreground text-sm">Total Defense Budget</Label>
+              <Eyebrow className="block">Total defense budget</Eyebrow>
               {editingBudget ? (
                 <Input
                   type="number"
@@ -177,15 +187,15 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                   className="mt-1"
                 />
               ) : (
-                <div className="mt-1 text-2xl font-bold">
+                <div className="mt-1 font-mono text-2xl font-semibold tabular-nums">
                   $
                   <NumberFlowDisplay value={budgetData.totalBudget} format="compact" />
                 </div>
               )}
             </div>
             <div>
-              <Label className="text-muted-foreground text-sm">% of GDP</Label>
-              <div className="mt-1 text-2xl font-bold">
+              <Eyebrow className="block">% of GDP</Eyebrow>
+              <div className="mt-1 font-mono text-2xl font-semibold tabular-nums">
                 <NumberFlowDisplay
                   value={budgetData.gdpPercent}
                   format="percentage"
@@ -204,10 +214,10 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               className={cn(
                 "text-sm font-medium",
                 allocationPercent > 100
-                  ? "text-red-600"
+                  ? "text-destructive"
                   : allocationPercent < 95
-                    ? "text-orange-600"
-                    : "text-green-600"
+                    ? "text-amber-600"
+                    : "text-emerald-600"
               )}
             >
               <NumberFlowDisplay value={allocationPercent} format="percentage" decimalPlaces={1} />{" "}
@@ -216,7 +226,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
           </div>
           <Progress value={Math.min(allocationPercent, 100)} className="h-2" />
           {allocationPercent > 100 && (
-            <p className="mt-1 text-xs text-red-600">Over budget! Reduce allocations.</p>
+            <p className="text-destructive mt-1 text-xs">Over budget! Reduce allocations.</p>
           )}
         </div>
 
@@ -233,7 +243,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               <div key={category.key} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Icon className={cn("h-4 w-4", category.color)} />
+                    <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
                     <Label className="text-sm">{category.label}</Label>
                   </div>
                   <div className="flex items-center gap-3">
@@ -261,7 +271,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
             );
           })}
         </div>
-      </CardContent>
-    </Card>
+      </FacetCardContent>
+    </FacetCard>
   );
 });

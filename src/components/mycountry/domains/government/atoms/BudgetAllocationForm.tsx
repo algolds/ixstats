@@ -11,9 +11,10 @@ import { Button } from "~/components/ui/button";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
-import { motion, AnimatePresence } from "motion/react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Progress } from "~/components/ui/progress";
+import { Textarea } from "~/components/ui/textarea";
 import {
-  Dollar as DollarSign,
   StatUp as TrendingUp,
   StatDown as TrendingDown,
   WarningTriangle as AlertTriangle,
@@ -40,33 +41,26 @@ interface BudgetAllocationFormProps {
   onToggleCollapse?: () => void;
 }
 
+/** Budget status → semantic outline-badge colour. */
 const budgetStatusConfig = {
-  Allocated: {
-    color: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
-    icon: Clock,
-    label: "Allocated",
-  },
-  "In Use": {
-    color: "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
-    icon: TrendingUp,
-    label: "In Use",
-  },
+  Allocated: { color: "text-muted-foreground", icon: Clock, label: "Allocated" },
+  "In Use": { color: "border-emerald-500/30 text-emerald-600", icon: TrendingUp, label: "In Use" },
   Overspent: {
-    color: "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400",
+    color: "border-destructive/30 text-destructive",
     icon: AlertTriangle,
     label: "Overspent",
   },
   Underutilized: {
-    color: "bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400",
+    color: "border-amber-500/30 text-amber-600",
     icon: TrendingDown,
     label: "Underutilized",
   },
-  Completed: {
-    color: "bg-zinc-500/10 border-zinc-500/20 text-zinc-600 dark:text-zinc-400",
-    icon: CheckCircle,
-    label: "Completed",
-  },
+  Completed: { color: "text-muted-foreground", icon: CheckCircle, label: "Completed" },
 };
+
+/** Compact inline number field used in the allocation header row. */
+const INLINE_NUMBER =
+  "facet-refraction-none border-input bg-background text-foreground focus-visible:ring-ring w-full rounded-md border py-1 text-xs font-semibold tabular-nums outline-none focus-visible:ring-2 disabled:opacity-50";
 
 export function BudgetAllocationForm({
   data,
@@ -74,7 +68,7 @@ export function BudgetAllocationForm({
   departmentName,
   departmentColor,
   parentName,
-  parentColor,
+  parentColor: _parentColor,
   totalBudget,
   currency = "USD",
   isReadOnly = false,
@@ -133,25 +127,18 @@ export function BudgetAllocationForm({
   const StatusIcon = statusConfig.icon;
 
   const cardElement = (
-    <FacetCard
-      depth={1}
-      className={cn(
-        "facet-surface facet-refraction relative overflow-hidden bg-card/60 backdrop-blur-md border-zinc-200/50 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/5",
-        isCollapsed
-          ? "hover:border-cyan-500/20 hover:bg-zinc-50/50 dark:hover:bg-white/[0.01]"
-          : "border-cyan-500/20 shadow-lg dark:border-cyan-500/10"
-      )}
-    >
-      {/* Header Row: Always visible */}
+    <FacetCard depth={1} className={cn("overflow-hidden", !isCollapsed && "border-foreground/20")}>
+      {/* Header row: always visible */}
       <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
-        {/* Left Section: Chevron + Title + Context */}
         <div className="flex items-center gap-3">
           {onToggleCollapse && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onToggleCollapse}
-              className="h-6 w-6 p-1 text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+              aria-expanded={!isCollapsed}
+              aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${departmentName}`}
+              className="text-muted-foreground h-8 w-8"
             >
               {isCollapsed ? (
                 <ChevronRight className="h-4 w-4" />
@@ -161,45 +148,31 @@ export function BudgetAllocationForm({
             </Button>
           )}
 
-          <div className="flex items-center gap-2">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 shadow-inner dark:border-white/5 dark:bg-zinc-950/40"
-              style={{ boxShadow: `inset 0 0 10px ${departmentColor}22` }}
-            >
-              <DollarSign className="h-4.5 w-4.5" style={{ color: departmentColor }} />
-            </div>
+          <div className="flex items-center gap-2.5">
+            {/* The department's own colour (user data) identifies it across the budget views. */}
+            <span
+              aria-hidden="true"
+              className="border-border h-3 w-3 shrink-0 rounded-full border"
+              style={{ backgroundColor: departmentColor }}
+            />
             <div className="flex flex-col">
-              <span className="flex items-center gap-1.5 text-sm font-bold text-zinc-900 dark:text-white">
+              <span className="text-foreground flex flex-wrap items-center gap-1.5 text-sm font-semibold">
                 {departmentName}
-                {parentName && (
-                  <span
-                    className="rounded border px-1.5 py-0.5 text-xs font-medium"
-                    style={{
-                      backgroundColor: `${parentColor}11`,
-                      borderColor: `${parentColor}22`,
-                      color: parentColor,
-                    }}
-                  >
-                    Sub of {parentName}
-                  </span>
-                )}
+                {parentName && <Badge variant="outline">Sub of {parentName}</Badge>}
               </span>
-              <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <span className="text-muted-foreground text-xs">
                 {utilizationRate > 0 ? `Utilization: ${utilizationRate.toFixed(0)}%` : "Unfunded"}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Center Section: Inline amount/percentage controls */}
+        {/* Inline amount / share controls */}
         <div className="flex flex-wrap items-center gap-4 lg:mr-4 lg:ml-auto">
-          {/* Allocated Amount */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-              Amount
-            </span>
-            <div className="relative w-36 sm:w-40">
-              <span className="absolute top-1.5 left-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+          <label className="flex items-center gap-2">
+            <Eyebrow>Amount</Eyebrow>
+            <span className="relative w-36 sm:w-40">
+              <span className="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2 text-xs font-semibold">
                 $
               </span>
               <input
@@ -209,16 +182,13 @@ export function BudgetAllocationForm({
                 disabled={isReadOnly || isLocked("budgetAllocations")}
                 min="0"
                 step="1000000"
-                className="w-full rounded border border-zinc-200 bg-white py-1 pr-2 pl-6 text-xs font-semibold text-zinc-900 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none disabled:opacity-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-white"
+                className={cn(INLINE_NUMBER, "pr-2 pl-6")}
               />
-            </div>
-          </div>
-
-          {/* Allocation Share (Percentage) */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-              Share
             </span>
+          </label>
+
+          <div className="flex items-center gap-2">
+            <Eyebrow id={`share-${data.departmentId}`}>Share</Eyebrow>
             <div className="flex items-center gap-2">
               <div className="hidden w-20 sm:block sm:w-28">
                 <Slider
@@ -228,6 +198,7 @@ export function BudgetAllocationForm({
                   max={50}
                   step={0.1}
                   disabled={isReadOnly || isLocked("budgetAllocations")}
+                  aria-labelledby={`share-${data.departmentId}`}
                   className="w-full cursor-pointer py-1"
                 />
               </div>
@@ -242,9 +213,10 @@ export function BudgetAllocationForm({
                   min="0"
                   max="100"
                   step="0.1"
-                  className="w-full rounded border border-zinc-200 bg-white py-1 pr-4 pl-1.5 text-right text-xs font-semibold text-zinc-900 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none disabled:opacity-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-white"
+                  aria-labelledby={`share-${data.departmentId}`}
+                  className={cn(INLINE_NUMBER, "pr-4 pl-1.5 text-right")}
                 />
-                <span className="absolute top-1.5 right-1 text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                <span className="text-muted-foreground absolute top-1/2 right-1 -translate-y-1/2 text-xs font-semibold">
                   %
                 </span>
               </div>
@@ -252,214 +224,156 @@ export function BudgetAllocationForm({
           </div>
         </div>
 
-        {/* Right Section: Status badge + current value text */}
-        <div className="flex items-center justify-between gap-3 border-t border-zinc-200/50 pt-3 sm:justify-end lg:border-t-0 lg:pt-0 dark:border-white/5">
-          <Badge className={cn("border bg-transparent shadow-none", statusConfig.color)}>
-            <StatusIcon className="mr-1 h-3 w-3 shrink-0" />
+        {/* Status badge + outflow */}
+        <div className="border-border/60 flex items-center justify-between gap-3 border-t pt-3 sm:justify-end lg:border-t-0 lg:pt-0">
+          <Badge variant="outline" className={statusConfig.color}>
+            <StatusIcon aria-hidden="true" />
             {statusConfig.label}
           </Badge>
           <div className="text-right">
-            <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-300">
+            <div className="text-foreground font-mono text-xs font-semibold tabular-nums">
               {formatCurrency(data.allocatedAmount)}
             </div>
-            <div className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-              Calculated Outflow
-            </div>
+            <Eyebrow>Calculated outflow</Eyebrow>
           </div>
         </div>
       </div>
 
-      {/* Expanded section containing advanced tools */}
-      <AnimatePresence initial={false}>
-        {!isCollapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="space-y-4 px-4 pb-4">
-              <div className="h-px bg-zinc-200 dark:bg-white/5" />
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Left side: Inputs */}
-                <div className="space-y-4">
-                  {/* Budget Year */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor={`budgetYear-${data.departmentId}`}
-                      className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-                    >
-                      Budget Cycle Year
-                    </Label>
-                    <Input
-                      id={`budgetYear-${data.departmentId}`}
-                      type="number"
-                      value={data.budgetYear}
-                      onChange={(e) =>
-                        handleChange(
-                          "budgetYear",
-                          parseInt(e.target.value) || currentBudgetYear()
-                        )
-                      }
-                      disabled={isReadOnly}
-                      min={BUDGET_YEAR_MIN}
-                      max={BUDGET_YEAR_MAX}
-                      className="h-8 border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
-                    />
-                  </div>
+      {/* Expanded section */}
+      {!isCollapsed && (
+        <div className="border-border/60 space-y-4 border-t px-4 pt-4 pb-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Inputs */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor={`budgetYear-${data.departmentId}`}
+                  className="text-foreground text-xs font-semibold"
+                >
+                  Budget Cycle Year
+                </Label>
+                <Input
+                  id={`budgetYear-${data.departmentId}`}
+                  type="number"
+                  value={data.budgetYear}
+                  onChange={(e) =>
+                    handleChange("budgetYear", parseInt(e.target.value) || currentBudgetYear())
+                  }
+                  disabled={isReadOnly}
+                  min={BUDGET_YEAR_MIN}
+                  max={BUDGET_YEAR_MAX}
+                  className="h-8"
+                />
+              </div>
 
-                  {/* Notes */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor={`notes-${data.departmentId}`}
-                      className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-                    >
-                      Allocation Directives & Guidelines
-                    </Label>
-                    <textarea
-                      id={`notes-${data.departmentId}`}
-                      value={data.notes || ""}
-                      onChange={(e) => handleChange("notes", e.target.value)}
-                      placeholder="Input additional directives, spending limitations, or policy goals..."
-                      disabled={isReadOnly}
-                      rows={3}
-                      className="w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none dark:border-white/10 dark:bg-zinc-950/40 dark:text-white dark:placeholder:text-zinc-600"
-                    />
-                  </div>
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor={`notes-${data.departmentId}`}
+                  className="text-foreground text-xs font-semibold"
+                >
+                  Allocation Directives & Guidelines
+                </Label>
+                <Textarea
+                  id={`notes-${data.departmentId}`}
+                  value={data.notes || ""}
+                  onChange={(e) => handleChange("notes", e.target.value)}
+                  placeholder="Input additional directives, spending limitations, or policy goals..."
+                  disabled={isReadOnly}
+                  rows={3}
+                  className="resize-none text-xs"
+                />
+              </div>
 
-                  {/* Auto-Balance Helper */}
-                  {!isReadOnly && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleChange("allocatedPercent", 5)}
-                        className="h-7 border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
-                      >
-                        Reset to 5%
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleChange("allocatedPercent", 10)}
-                        className="h-7 border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
-                      >
-                        Reset to 10%
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleChange("allocatedPercent", 15)}
-                        className="h-7 border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
-                      >
-                        Reset to 15%
-                      </Button>
-                    </div>
-                  )}
+              {!isReadOnly && (
+                <div className="flex flex-wrap gap-2">
+                  {[5, 10, 15].map((pct) => (
+                    <Button
+                      key={pct}
+                      variant="outline"
+                      size="xs"
+                      onClick={() => handleChange("allocatedPercent", pct)}
+                    >
+                      Reset to {pct}%
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Utilization & context */}
+            <div className="space-y-4">
+              <div className="border-border/60 space-y-3 rounded-lg border p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-foreground text-sm font-semibold">Budget utilization</h4>
+                  <span className="text-foreground font-mono text-sm font-semibold tabular-nums">
+                    {utilizationRate.toFixed(1)}%
+                  </span>
                 </div>
 
-                {/* Right side: Progress meter & contextual analysis */}
-                <div className="space-y-4">
-                  {/* Budget Utilization Visualizer */}
-                  <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-100/50 p-4 shadow-inner dark:border-white/5 dark:bg-black/15">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                        Budget Utilization
-                      </h4>
-                      <span className="text-sm font-extrabold" style={{ color: departmentColor }}>
-                        {utilizationRate.toFixed(1)}%
-                      </span>
-                    </div>
+                <Progress value={utilizationRate} className="bg-muted h-2" />
 
-                    <div className="relative h-2 w-full overflow-hidden rounded-full border border-zinc-200/50 bg-zinc-200 dark:border-white/5 dark:bg-zinc-950">
-                      <div
-                        className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-                        style={{
-                          width: `${utilizationRate}%`,
-                          backgroundColor: departmentColor,
-                          boxShadow: `0 0 8px ${departmentColor}33`,
-                        }}
-                      />
+                <dl className="border-border/60 grid grid-cols-3 gap-2 border-t pt-2 text-center">
+                  {[
+                    { label: "Allocated", value: data.allocatedAmount },
+                    { label: "Utilized", value: data.allocatedAmount * 0.9 },
+                    { label: "Remaining", value: data.allocatedAmount * 0.1 },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <dd className="text-foreground font-mono text-xs font-semibold tabular-nums">
+                        {formatNumber(item.value)}
+                      </dd>
+                      <dt>
+                        <Eyebrow>{item.label}</Eyebrow>
+                      </dt>
                     </div>
+                  ))}
+                </dl>
+              </div>
 
-                    <div className="grid grid-cols-3 gap-2 border-t border-zinc-200 pt-2 text-center dark:border-white/5">
-                      <div>
-                        <div className="text-xs font-bold text-zinc-800 dark:text-white">
-                          {formatNumber(data.allocatedAmount)}
-                        </div>
-                        <div className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
-                          Allocated
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                          {formatNumber(data.allocatedAmount * 0.9)}
-                        </div>
-                        <div className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
-                          Utilized
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                          {formatNumber(data.allocatedAmount * 0.1)}
-                        </div>
-                        <div className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
-                          Remaining
-                        </div>
-                      </div>
-                    </div>
+              <div className="space-y-2">
+                <h4 className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
+                  <Calculator aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                  Context analytics
+                </h4>
+                <dl className="border-border/60 divide-border/60 grid grid-cols-2 divide-x rounded-lg border">
+                  <div className="flex flex-col justify-between p-3">
+                    <dt>
+                      <Eyebrow>Share of budget</Eyebrow>
+                    </dt>
+                    <dd className="text-foreground mt-2 font-mono text-base font-semibold tabular-nums">
+                      {data.allocatedPercent.toFixed(1)}%
+                    </dd>
+                    <dd className="text-muted-foreground mt-1 text-xs leading-normal">
+                      of {formatNumber(totalBudget)} total outflow
+                    </dd>
                   </div>
-
-                  {/* Context stats */}
-                  <div className="space-y-2">
-                    <h4 className="flex items-center gap-1 text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-400">
-                      <Calculator className="h-3.5 w-3.5" />
-                      Context Analytics
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-100/50 p-3 dark:border-white/5 dark:bg-zinc-950/20">
-                        <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                          Share of Budget
-                        </div>
-                        <div className="mt-2 text-base font-extrabold text-zinc-800 dark:text-white">
-                          {data.allocatedPercent.toFixed(1)}%
-                        </div>
-                        <div className="mt-1 text-xs leading-normal text-zinc-500 dark:text-zinc-400">
-                          of {formatNumber(totalBudget)} total outflow
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-100/50 p-3 dark:border-white/5 dark:bg-zinc-950/20">
-                        <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                          Per Capita Cost
-                        </div>
-                        <div className="mt-2 text-base font-extrabold text-zinc-800 dark:text-white">
-                          {formatNumber(data.allocatedAmount / 100000)}
-                        </div>
-                        <div className="mt-1 text-xs leading-normal text-zinc-500 dark:text-zinc-400">
-                          estimated per citizen
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex flex-col justify-between p-3">
+                    <dt>
+                      <Eyebrow>Per capita cost</Eyebrow>
+                    </dt>
+                    <dd className="text-foreground mt-2 font-mono text-base font-semibold tabular-nums">
+                      {formatNumber(data.allocatedAmount / 100000)}
+                    </dd>
+                    <dd className="text-muted-foreground mt-1 text-xs leading-normal">
+                      estimated per citizen
+                    </dd>
                   </div>
-                </div>
+                </dl>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </FacetCard>
   );
 
-  // Render parent nesting curve line if sub-department
+  // Sub-departments are indented under their parent with a connector line.
   if (parentName) {
     return (
-      <div className="relative ml-2 border-l border-zinc-200 pl-6 md:ml-4 md:pl-8 dark:border-white/10">
-        {/* visual curved line connecting to parent */}
+      <div className="border-border relative ml-2 border-l pl-6 md:ml-4 md:pl-8">
         <div
-          className="absolute top-10 left-0 h-4 w-4 rounded-bl-lg border-b border-l border-zinc-200 dark:border-white/20"
-          style={{ borderColor: parentColor ? `${parentColor}33` : undefined }}
+          aria-hidden="true"
+          className="border-border absolute top-10 left-0 h-4 w-4 rounded-bl-lg border-b border-l"
         />
         {cardElement}
       </div>

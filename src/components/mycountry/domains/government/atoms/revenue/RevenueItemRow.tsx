@@ -11,13 +11,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { Xmark as X } from "iconoir-react";
 import { formatExactCurrency } from "~/lib/utils";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
 import {
   revenueCategories,
   revenueCategoryIcons,
-  revenueCategoryColors,
   getCollectionMethodIcon,
   getCollectionMethodsForCategory,
 } from "./revenueConstants";
@@ -44,19 +45,16 @@ export function RevenueItemRow({
   onRemove,
 }: RevenueItemRowProps) {
   const Icon = revenueCategoryIcons[item.category];
-  const color = revenueCategoryColors[item.category];
 
   return (
-    <div
-      className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-zinc-100/50 dark:border-white/5 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60"
-      style={{ borderLeft: `3px solid ${color}` }}
-    >
+    <FacetContainer depth={3} surface="solid" enableRefraction={false} className="rounded-lg p-4">
       {!isReadOnly && (
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={() => onRemove(index)}
-          className="absolute top-2 right-2 h-7 w-7 rounded-lg p-1 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+          aria-label={`Remove ${item.name || "revenue source"}`}
+          className="text-muted-foreground hover:text-destructive absolute top-2 right-2 h-8 w-8"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -66,15 +64,13 @@ export function RevenueItemRow({
         {/* Column 1: Basic Info */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-zinc-200 bg-zinc-100 dark:border-white/5 dark:bg-zinc-950">
-              <Icon className="h-4 w-4" style={{ color }} />
-            </div>
+            <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
             <Input
               value={item.name}
               onChange={(e) => onUpdate(index, "name", e.target.value)}
               placeholder="Revenue source name"
               disabled={isReadOnly}
-              className="h-8 border-zinc-200 bg-white font-bold text-zinc-900 placeholder:text-zinc-400 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white dark:placeholder:text-zinc-600"
+              className="h-8 font-bold"
             />
           </div>
 
@@ -83,23 +79,16 @@ export function RevenueItemRow({
             onValueChange={(value: RevenueCategory) => onUpdate(index, "category", value)}
             disabled={isReadOnly}
           >
-            <SelectTrigger className="h-8 border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+            <SelectTrigger className="h-8">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+            <SelectContent>
               {revenueCategories.map((category) => {
                 const CategoryIcon = revenueCategoryIcons[category];
                 return (
-                  <SelectItem
-                    key={category}
-                    value={category}
-                    className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                  >
+                  <SelectItem key={category} value={category}>
                     <div className="flex items-center">
-                      <CategoryIcon
-                        className="mr-2 h-3.5 w-3.5"
-                        style={{ color: revenueCategoryColors[category] }}
-                      />
+                      <CategoryIcon className="text-muted-foreground mr-2 h-3.5 w-3.5" />
                       {category}
                     </div>
                   </SelectItem>
@@ -108,37 +97,35 @@ export function RevenueItemRow({
             </SelectContent>
           </Select>
 
-          <textarea
+          <Textarea
             value={item.description || ""}
             onChange={(e) => onUpdate(index, "description", e.target.value)}
             placeholder="Specify funding notes or legislative codes..."
             disabled={isReadOnly}
             rows={2}
-            className="dark:placeholder:text-zinc-650 w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
+            className="min-h-0 resize-none text-xs"
           />
         </div>
 
         {/* Column 2: Financial Details */}
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-              Annual Yield Amount
-            </Label>
+            <Label className="text-muted-foreground text-xs font-medium">Annual Yield Amount</Label>
             <div className="relative">
-              <span className="absolute top-1.5 left-2.5 text-xs text-zinc-500">$</span>
+              <span className="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2 text-xs">
+                $
+              </span>
               <Input
                 type="number"
                 value={item.revenueAmount}
-                onChange={(e) =>
-                  onUpdate(index, "revenueAmount", parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => onUpdate(index, "revenueAmount", parseFloat(e.target.value) || 0)}
                 disabled={isReadOnly || isLocked("revenueSources")}
                 min="0"
                 step="1000000"
-                className="h-8 border-zinc-200 bg-white pl-6 text-zinc-900 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
+                className="h-8 pl-6"
               />
             </div>
-            <p className="mt-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+            <p className="text-muted-foreground mt-1 text-xs font-semibold">
               {formatExactCurrency(item.revenueAmount, currency)} (
               {(item.revenuePercent ?? 0).toFixed(1)}% share)
             </p>
@@ -146,23 +133,23 @@ export function RevenueItemRow({
 
           {item.category.includes("Tax") && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <Label className="text-muted-foreground text-xs font-medium">
                 Active Tax Rate (%)
               </Label>
               <div className="relative">
                 <Input
                   type="number"
                   value={item.rate || 0}
-                  onChange={(e) =>
-                    onUpdate(index, "rate", parseFloat(e.target.value) || 0)
-                  }
+                  onChange={(e) => onUpdate(index, "rate", parseFloat(e.target.value) || 0)}
                   disabled={isReadOnly}
                   min="0"
                   max="100"
                   step="0.1"
-                  className="h-8 border-zinc-200 bg-white pr-6 text-zinc-900 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
+                  className="h-8 pr-6"
                 />
-                <span className="absolute top-1.5 right-2.5 text-xs text-zinc-500">%</span>
+                <span className="text-muted-foreground absolute top-1/2 right-2.5 -translate-y-1/2 text-xs">
+                  %
+                </span>
               </div>
             </div>
           )}
@@ -171,34 +158,27 @@ export function RevenueItemRow({
         {/* Column 3: Administration */}
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-              Collection Channel
-            </Label>
+            <Label className="text-muted-foreground text-xs font-medium">Collection Channel</Label>
             <Select
               value={item.collectionMethod || ""}
               onValueChange={(value) => onUpdate(index, "collectionMethod", value)}
               disabled={isReadOnly}
             >
-              <SelectTrigger className="h-8 border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+              <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Select collection method" />
               </SelectTrigger>
-              <SelectContent className="max-h-80 border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+              <SelectContent className="max-h-80">
                 {getCollectionMethodsForCategory(item.category).map((method) => {
                   const IconComponent = getCollectionMethodIcon(method.icon);
                   return (
-                    <SelectItem
-                      key={method.id}
-                      value={method.id}
-                      className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                    >
+                    <SelectItem key={method.id} value={method.id}>
                       <div className="flex items-center gap-2">
-                        <IconComponent
-                          className="h-3.5 w-3.5 shrink-0"
-                          style={{ color: method.color }}
-                        />
+                        <IconComponent className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                         <div className="flex flex-col text-left">
                           <span className="text-xs font-bold">{method.name}</span>
-                          <span className="text-xs text-zinc-500">{method.description}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {method.description}
+                          </span>
                         </div>
                       </div>
                     </SelectItem>
@@ -209,7 +189,7 @@ export function RevenueItemRow({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <Label className="text-muted-foreground text-xs font-medium">
               Administrative Authority
             </Label>
             {availableDepartments.length > 0 ? (
@@ -218,18 +198,14 @@ export function RevenueItemRow({
                 onValueChange={(value) => onUpdate(index, "administeredBy", value)}
                 disabled={isReadOnly}
               >
-                <SelectTrigger className="h-8 border-zinc-200 bg-white text-xs text-zinc-900 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white">
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
-                <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-white/10 dark:bg-zinc-950/95 dark:text-white">
+                <SelectContent>
                   {availableDepartments
                     .filter((dept) => dept.name && dept.name.trim() !== "")
                     .map((dept) => (
-                      <SelectItem
-                        key={dept.id}
-                        value={dept.name}
-                        className="focus:bg-zinc-100 dark:focus:bg-zinc-800"
-                      >
+                      <SelectItem key={dept.id} value={dept.name}>
                         {dept.name}
                       </SelectItem>
                     ))}
@@ -241,12 +217,12 @@ export function RevenueItemRow({
                 onChange={(e) => onUpdate(index, "administeredBy", e.target.value)}
                 placeholder="Ministry or Agency Name"
                 disabled={isReadOnly}
-                className="h-8 border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
+                className="h-8"
               />
             )}
           </div>
         </div>
       </div>
-    </div>
+    </FacetContainer>
   );
 }

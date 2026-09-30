@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Search } from "iconoir-react";
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -44,56 +43,46 @@ function EquipmentRow({
   const imageUrl = equipment.imageUrl;
 
   return (
-    <div
-      className="hover:border-primary/50 group relative cursor-pointer overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+    <button
+      type="button"
       onClick={() => onSelect(equipment)}
+      className="border-border bg-card hover:border-foreground/30 focus-visible:ring-ring flex w-full cursor-pointer items-start gap-3 rounded-lg border p-3 text-left transition-[border-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.99]"
     >
-      {/* Background Image with Glass Blur Effect */}
       {imageUrl && (
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20 transition-opacity group-hover:opacity-30"
-          style={{
-            backgroundImage: `url(${imageUrl})`,
+        <img
+          src={imageUrl}
+          alt=""
+          className="h-14 w-20 shrink-0 rounded-md object-cover"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
           }}
         />
       )}
-
-      {/* Glass Overlay */}
-      <div className="bg-background/80 relative p-3 backdrop-blur-sm">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="mb-1 flex items-center gap-2">
-              <h5 className="text-sm font-medium">{equipment.name}</h5>
-              <Badge variant="outline" className="text-xs">
-                {equipment.category}
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                {era?.label.split(" ")[0]}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground text-xs">
-              {manufacturer
-                ? `${manufacturer.name} • ${manufacturer.country}`
-                : equipment.manufacturer}
-            </p>
-            <div className="mt-2 flex items-center gap-4 text-xs">
-              <span>
-                <span className="text-muted-foreground">Cost:</span> $
-                <NumberFlowDisplay value={equipment.acquisitionCost ?? 0} format="compact" />
-              </span>
-              {equipment.range && (
-                <span>
-                  <span className="text-muted-foreground">Range:</span> {equipment.range} km
-                </span>
-              )}
-            </div>
-          </div>
-          <Button size="sm" variant="outline">
-            Select
-          </Button>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <h5 className="text-foreground text-sm font-medium">{equipment.name}</h5>
+          <Badge variant="outline">{equipment.category}</Badge>
+          <Badge variant="secondary">{era?.label.split(" ")[0]}</Badge>
+        </div>
+        <p className="text-muted-foreground text-xs">
+          {manufacturer ? `${manufacturer.name} • ${manufacturer.country}` : equipment.manufacturer}
+        </p>
+        <div className="mt-2 flex items-center gap-4 text-xs">
+          <span>
+            <span className="text-muted-foreground">Cost:</span> $
+            <NumberFlowDisplay value={equipment.acquisitionCost ?? 0} format="compact" />
+          </span>
+          {equipment.range && (
+            <span>
+              <span className="text-muted-foreground">Range:</span> {equipment.range} km
+            </span>
+          )}
         </div>
       </div>
-    </div>
+      <span className="text-foreground border-border shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium">
+        Select
+      </span>
+    </button>
   );
 }
 
@@ -117,9 +106,12 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
   return (
     <>
       {/* Search and Filters */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+          />
           <Input
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}

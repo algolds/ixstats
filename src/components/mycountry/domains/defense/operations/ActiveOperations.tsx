@@ -14,6 +14,8 @@ import {
   NavArrowUp as ChevronUp,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import {
   AlertDialog,
@@ -40,12 +42,18 @@ const OP_ICONS: Record<string, typeof Shield> = {
   training: GraduationCap,
 };
 
+/** Operation status → semantic outline-badge colour. */
 const STATUS_COLORS: Record<string, string> = {
-  planned: "border-yellow-500/50 text-yellow-500",
-  active: "border-green-500/50 text-green-500",
-  completed: "border-blue-500/50 text-blue-500",
-  failed: "border-red-500/50 text-red-500",
-  cancelled: "border-gray-500/50 text-gray-500",
+  planned: "border-amber-500/30 text-amber-600",
+  active: "border-emerald-500/30 text-emerald-600",
+  completed: "text-muted-foreground",
+  failed: "border-destructive/30 text-destructive",
+  cancelled: "text-muted-foreground",
+};
+
+const SUCCESS_RATING_COLORS: Record<string, string> = {
+  success: "border-emerald-500/30 text-emerald-600",
+  partial: "border-amber-500/30 text-amber-600",
 };
 
 export function ActiveOperations({ countryId }: ActiveOperationsProps) {
@@ -62,8 +70,8 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
 
   if (!operations || operations.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-red-500/30 p-6 text-center">
-        <Shield className="mx-auto mb-3 h-8 w-8 text-red-500/40" />
+      <div className="border-border rounded-lg border border-dashed p-6 text-center">
+        <Shield aria-hidden="true" className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
         <p className="text-muted-foreground text-sm">
           No active operations. Deploy forces to begin a military operation.
         </p>
@@ -82,7 +90,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Operations ({operations.length})</h3>
+        <h3 className="text-foreground text-sm font-semibold">Operations ({operations.length})</h3>
         <Button variant="ghost" size="sm" onClick={() => setShowCompleted(!showCompleted)}>
           {showCompleted ? (
             <>
@@ -101,17 +109,23 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
         const isActive = op.status === "active" || op.status === "planned";
 
         return (
-          <div
+          <FacetContainer
             key={op.id}
-            className={`rounded-lg border p-3 ${isActive ? "border-red-500/20" : "border-muted opacity-60"}`}
+            depth={3}
+            surface="solid"
+            enableRefraction={false}
+            className={cn("rounded-lg p-3", !isActive && "opacity-60")}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <Icon className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                <Icon
+                  aria-hidden="true"
+                  className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0"
+                />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{op.name}</span>
-                    <Badge variant="outline" className={STATUS_COLORS[op.status] ?? ""}>
+                    <span className="text-foreground text-sm font-medium">{op.name}</span>
+                    <Badge variant="outline" className={cn("capitalize", STATUS_COLORS[op.status])}>
                       {op.status}
                     </Badge>
                   </div>
@@ -138,12 +152,12 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     <Users className="h-3 w-3" />
                     {op.personnelDeployed.toLocaleString()}
                   </div>
-                  <div className="flex items-center gap-1 text-red-500">
-                    <DollarSign className="h-3 w-3" />
+                  <div className="text-foreground flex items-center gap-1 tabular-nums">
+                    <DollarSign aria-hidden="true" className="text-muted-foreground h-3 w-3" />
                     {formatCurrency(op.dailyCost)}/day
                   </div>
                   {op.gdpDrain > 0 && (
-                    <span className="text-xs text-red-500">
+                    <span className="text-destructive text-xs">
                       {(op.gdpDrain * 100).toFixed(3)}% GDP drain
                     </span>
                   )}
@@ -153,7 +167,12 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                 {isActive && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label={`End ${op.name}`}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -194,7 +213,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               <div className="text-muted-foreground mt-2 text-xs">
                 {op.deployments.filter((d) => d.status === "deployed").length} active deployments
                 {op.casualties > 0 && (
-                  <span className="ml-2 text-red-500">{op.casualties} casualties</span>
+                  <span className="text-destructive ml-2">{op.casualties} casualties</span>
                 )}
               </div>
             )}
@@ -203,18 +222,16 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
             {op.successRating && (
               <Badge
                 variant="outline"
-                className={`mt-2 ${
-                  op.successRating === "success"
-                    ? "border-green-500/50 text-green-500"
-                    : op.successRating === "partial"
-                      ? "border-yellow-500/50 text-yellow-500"
-                      : "border-red-500/50 text-red-500"
-                }`}
+                className={cn(
+                  "mt-2 capitalize",
+                  SUCCESS_RATING_COLORS[op.successRating] ??
+                    "border-destructive/30 text-destructive"
+                )}
               >
                 {op.successRating}
               </Badge>
             )}
-          </div>
+          </FacetContainer>
         );
       })}
     </div>

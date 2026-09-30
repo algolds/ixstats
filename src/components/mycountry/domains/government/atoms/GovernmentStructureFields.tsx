@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import {
   Crown,
@@ -57,10 +58,7 @@ export function GovernmentStructureFields({
       {/* Basic Information */}
       {hideGovernmentType ? (
         <div className="space-y-2">
-          <Label
-            htmlFor="governmentName"
-            className="text-sm font-medium text-[var(--color-text-secondary)]"
-          >
+          <Label htmlFor="governmentName" className="text-muted-foreground text-sm font-medium">
             Government Name
           </Label>
           <Input
@@ -75,10 +73,7 @@ export function GovernmentStructureFields({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label
-              htmlFor="governmentName"
-              className="text-sm font-medium text-[var(--color-text-secondary)]"
-            >
+            <Label htmlFor="governmentName" className="text-muted-foreground text-sm font-medium">
               Government Name
             </Label>
             <Input
@@ -92,10 +87,7 @@ export function GovernmentStructureFields({
           </div>
 
           <div className="space-y-2">
-            <Label
-              htmlFor="governmentType"
-              className="text-sm font-medium text-[var(--color-text-secondary)]"
-            >
+            <Label htmlFor="governmentType" className="text-muted-foreground text-sm font-medium">
               Government Type
             </Label>
             <Input
@@ -122,19 +114,20 @@ export function GovernmentStructureFields({
           <div className="flex items-center justify-between">
             <Label
               htmlFor="headOfState"
-              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+              className="text-muted-foreground flex items-center text-sm font-medium"
             >
               <Crown className="mr-1 h-4 w-4" />
               Head of State
             </Label>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               onClick={toggleGovHeadLock}
+              aria-pressed={isGovHeadLocked}
               className={cn(
-                "flex items-center gap-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 focus:outline-none",
-                isGovHeadLocked
-                  ? "text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
-                  : "text-muted-foreground hover:text-foreground"
+                "gap-1 font-semibold",
+                isGovHeadLocked ? "text-amber-600" : "text-muted-foreground"
               )}
               title={
                 isGovHeadLocked
@@ -149,11 +142,11 @@ export function GovernmentStructureFields({
                 </>
               ) : (
                 <>
-                  <Link2Off className="text-muted-foreground/60 h-3 w-3" />
+                  <Link2Off className="h-3 w-3" />
                   <span>Link Gov. Head</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
           <Input
             id="headOfState"
@@ -167,7 +160,7 @@ export function GovernmentStructureFields({
         <div className="space-y-2">
           <Label
             htmlFor="headOfGovernment"
-            className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            className="text-muted-foreground flex items-center text-sm font-medium"
           >
             <Briefcase className="mr-1 h-4 w-4" />
             Head of Government
@@ -199,7 +192,7 @@ export function GovernmentStructureFields({
           <div className="space-y-2">
             <Label
               htmlFor="legislatureName"
-              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+              className="text-muted-foreground flex items-center text-sm font-medium"
             >
               <Users className="mr-1 h-4 w-4" />
               Legislature
@@ -216,7 +209,7 @@ export function GovernmentStructureFields({
           <div className="space-y-2">
             <Label
               htmlFor="executiveName"
-              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+              className="text-muted-foreground flex items-center text-sm font-medium"
             >
               <Briefcase className="mr-1 h-4 w-4" />
               Executive
@@ -233,7 +226,7 @@ export function GovernmentStructureFields({
           <div className="space-y-2">
             <Label
               htmlFor="judicialName"
-              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+              className="text-muted-foreground flex items-center text-sm font-medium"
             >
               <Scale className="mr-1 h-4 w-4" />
               Judiciary

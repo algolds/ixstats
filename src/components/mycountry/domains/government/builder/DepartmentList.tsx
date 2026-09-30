@@ -2,7 +2,7 @@
 /**
  * Department List Component
  *
- * Renders departments in a premium glassmorphic grid layout.
+ * Renders departments as a grid of Facet cards.
  * Clicking a card opens a centered Dialog modal to edit details and link atomic components.
  */
 
@@ -25,8 +25,10 @@ import {
 import { Badge } from "~/components/ui/badge";
 import type { DepartmentInput, ComponentType } from "~/types/government";
 import type { ValidationErrors } from "~/lib/government/builder-validation";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { FacetCard, FacetCardContent, FacetCardFooter } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Progress } from "~/components/ui/progress";
+import { cn } from "~/lib/utils";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 
 export interface DepartmentListProps {
@@ -42,110 +44,6 @@ export interface DepartmentListProps {
   onGovernmentComponentsChange?: (components: ComponentType[]) => void;
 }
 
-type DepartmentTheme = "gold" | "blue" | "indigo" | "red" | "emerald" | "cyan" | "neutral";
-
-const getCategoryTheme = (category?: string): DepartmentTheme => {
-  if (!category) return "neutral";
-  switch (category) {
-    case "Defense":
-    case "Emergency Management":
-    case "Social Services":
-      return "red";
-    case "Education":
-    case "Commerce":
-      return "blue";
-    case "Health":
-    case "Environment":
-    case "Agriculture":
-      return "emerald";
-    case "Foreign Affairs":
-    case "Transportation":
-      return "cyan";
-    case "Finance":
-    case "Interior":
-    case "Energy":
-    case "Housing":
-      return "gold";
-    case "Justice":
-    case "Communications":
-    case "Science and Technology":
-    case "Veterans Affairs":
-    case "Intelligence":
-      return "indigo";
-    default:
-      return "neutral";
-  }
-};
-
-const themeTokens: Record<
-  DepartmentTheme,
-  {
-    badgeBorder: string;
-    badgeText: string;
-    iconBg: string;
-    iconText: string;
-    progressBar: string;
-    text: string;
-  }
-> = {
-  red: {
-    badgeBorder: "border-red-500/25",
-    badgeText: "text-red-400",
-    iconBg: "bg-red-500/10",
-    iconText: "text-red-400",
-    progressBar: "bg-red-500",
-    text: "text-red-400",
-  },
-  blue: {
-    badgeBorder: "border-blue-500/25",
-    badgeText: "text-blue-400",
-    iconBg: "bg-blue-500/10",
-    iconText: "text-blue-400",
-    progressBar: "bg-blue-500",
-    text: "text-blue-400",
-  },
-  emerald: {
-    badgeBorder: "border-emerald-500/25",
-    badgeText: "text-emerald-400",
-    iconBg: "bg-emerald-500/10",
-    iconText: "text-emerald-400",
-    progressBar: "bg-emerald-500",
-    text: "text-emerald-400",
-  },
-  cyan: {
-    badgeBorder: "border-cyan-500/25",
-    badgeText: "text-cyan-400",
-    iconBg: "bg-cyan-500/10",
-    iconText: "text-cyan-400",
-    progressBar: "bg-cyan-500",
-    text: "text-cyan-400",
-  },
-  gold: {
-    badgeBorder: "border-amber-500/25",
-    badgeText: "text-amber-400",
-    iconBg: "bg-amber-500/10",
-    iconText: "text-amber-400",
-    progressBar: "bg-amber-500",
-    text: "text-amber-400",
-  },
-  indigo: {
-    badgeBorder: "border-indigo-500/25",
-    badgeText: "text-indigo-400",
-    iconBg: "bg-indigo-500/10",
-    iconText: "text-indigo-400",
-    progressBar: "bg-indigo-500",
-    text: "text-indigo-400",
-  },
-  neutral: {
-    badgeBorder: "border-zinc-500/25",
-    badgeText: "text-zinc-400",
-    iconBg: "bg-zinc-500/10",
-    iconText: "text-zinc-400",
-    progressBar: "bg-zinc-500",
-    text: "text-zinc-400",
-  },
-};
-
 const getPriorityLabel = (priority: number) => {
   const level = Math.max(1, Math.min(10, Math.round((priority || 50) / 10)));
   if (level <= 3) return "Reactive";
@@ -153,6 +51,28 @@ const getPriorityLabel = (priority: number) => {
   if (level <= 8) return "Strategic";
   return "Executive";
 };
+
+const getPriorityLevel = (priority: number) =>
+  Math.max(1, Math.min(10, Math.round((priority || 50) / 10)));
+
+/** A department's glyph: its chosen named icon, an uploaded logo, or the category icon. */
+function DepartmentGlyph({
+  department,
+  className,
+}: {
+  department: DepartmentInput;
+  className?: string;
+}) {
+  const CategoryIcon = categoryIcons[department.category] || Users;
+  if (department.icon) {
+    const NamedIcon = resolveNamedDepartmentIcon(department.icon);
+    if (NamedIcon) return <NamedIcon aria-hidden="true" className={className} />;
+    if (isImageIconSource(department.icon)) {
+      return <img src={department.icon} alt="" className="h-full w-full rounded-md object-cover" />;
+    }
+  }
+  return <CategoryIcon aria-hidden="true" className={className} />;
+}
 
 export const DepartmentList = React.memo(function DepartmentList({
   departments,
@@ -183,21 +103,18 @@ export const DepartmentList = React.memo(function DepartmentList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h2 className="text-foreground text-xl font-semibold tracking-tight">
             Government Departments
           </h2>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-muted-foreground mt-1 text-xs">
             Configure ministries, priorities, and link institutional components
           </p>
         </div>
         {!isReadOnly && (
-          <Button
-            onClick={handleAddDepartment}
-            className="h-8 rounded-lg bg-primary py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="mr-1 h-3.5 w-3.5" />
+          <Button size="sm" onClick={handleAddDepartment}>
+            <Plus className="h-3.5 w-3.5" />
             Add Department
           </Button>
         )}
@@ -206,9 +123,7 @@ export const DepartmentList = React.memo(function DepartmentList({
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {departments.map((department, index) => {
           const hasError = !!validationErrors.departments?.[index];
-          const Icon = categoryIcons[department.category] || Users;
-          const theme = getCategoryTheme(department.category);
-          const tokens = themeTokens[theme];
+          const priorityLevel = getPriorityLevel(department.priority);
 
           // Find active components linked to this category
           const activeLinkedComponents = governmentComponents.filter((compType) => {
@@ -221,94 +136,59 @@ export const DepartmentList = React.memo(function DepartmentList({
             );
           });
 
+          const parent = department.parentDepartmentId
+            ? departments[parseInt(department.parentDepartmentId)]
+            : undefined;
+
           return (
             <div key={index} className="h-full">
               <FacetCard
                 depth={1}
-                theme={theme}
                 interactive="hover"
-                className="flex h-full cursor-pointer flex-col justify-between border transition-transform duration-75 ease-out active:scale-[0.97]"
+                className={cn(
+                  "flex h-full flex-col justify-between",
+                  hasError && "border-destructive/40"
+                )}
                 onClick={() => handleEditRow(index)}
               >
                 <FacetCardContent className="flex h-full flex-col justify-between space-y-4 p-5">
-                  {/* Header: Title, Acronym, Category Icon */}
+                  {/* Header: title, acronym, category glyph */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border transition-colors ${tokens.iconBg} ${
-                          hasError ? "border-red-500/40" : tokens.badgeBorder
-                        }`}
-                      >
-                        {department.icon ? (
-                          (() => {
-                            const IconComponent = resolveNamedDepartmentIcon(department.icon);
-                            if (IconComponent) {
-                              return (
-                                <span className={`flex items-center justify-center ${tokens.iconText}`}>
-                                  <IconComponent className="h-5 w-5" />
-                                </span>
-                              );
-                            }
-                            if (isImageIconSource(department.icon)) {
-                              return (
-                                <img
-                                  src={department.icon}
-                                  alt="Logo"
-                                  className="h-full w-full object-cover"
-                                />
-                              );
-                            }
-                            return (
-                              <span className={`flex items-center justify-center ${tokens.iconText}`}>
-                                <Icon className="h-5 w-5" />
-                              </span>
-                            );
-                          })()
-                        ) : (
-                          <span
-                            className={`flex items-center justify-center ${
-                              hasError ? "text-destructive" : tokens.iconText
-                            }`}
-                          >
-                            <Icon className="h-5 w-5" />
-                          </span>
+                      <span
+                        className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden",
+                          hasError ? "text-destructive" : "text-muted-foreground"
                         )}
-                      </div>
+                      >
+                        <DepartmentGlyph department={department} className="h-5 w-5" />
+                      </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <h4 className="truncate text-sm font-bold text-zinc-900 group-hover:text-zinc-950 dark:text-zinc-100 dark:group-hover:text-white">
+                          <h4 className="text-foreground truncate text-sm font-semibold">
                             {department.name || `Department ${index + 1}`}
                           </h4>
                           {department.shortName && (
-                            <Badge
-                              variant="outline"
-                              className={`px-1.5 py-0 text-xs font-bold ${tokens.badgeBorder} ${tokens.badgeText}`}
-                            >
-                              {department.shortName}
-                            </Badge>
+                            <Badge variant="outline">{department.shortName}</Badge>
                           )}
                         </div>
-                        <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                          {department.category}
-                        </span>
+                        <Eyebrow>{department.category}</Eyebrow>
                       </div>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-1">
                       {hasError && (
-                        <Badge
-                          variant="outline"
-                          className="flex items-center gap-1 border-red-500/35 bg-red-500/10 px-1.5 py-0.5 text-xs font-bold text-red-400"
-                        >
-                          <AlertTriangle className="h-3 w-3" />
-                          <span>Error</span>
+                        <Badge variant="outline" className="border-destructive/30 text-destructive">
+                          <AlertTriangle aria-hidden="true" />
+                          Error
                         </Badge>
                       )}
                       {!isReadOnly && (
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 rounded-md p-0 text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                          size="icon"
+                          aria-label={`Remove ${department.name || `department ${index + 1}`}`}
+                          className="text-muted-foreground hover:text-destructive h-8 w-8"
                           onClick={(e) => {
                             e.stopPropagation();
                             onRemoveDepartment(index);
@@ -319,8 +199,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                       )}
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 rounded-md p-0 text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-100"
+                        size="icon"
+                        aria-label={`Edit ${department.name || `department ${index + 1}`}`}
+                        className="text-muted-foreground h-8 w-8"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEditRow(index);
@@ -331,72 +212,52 @@ export const DepartmentList = React.memo(function DepartmentList({
                     </div>
                   </div>
 
-                  {/* Description (if exists) */}
                   {department.description && (
-                    <p className="line-clamp-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
                       {department.description}
                     </p>
                   )}
 
-                  {/* Stats & Priority Progress */}
-                  <div className="space-y-2.5 rounded-lg border border-zinc-200/50 bg-zinc-100/50 p-3 dark:border-white/[0.03] dark:bg-black/15">
-                    <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-300">
+                  {/* Minister & priority */}
+                  <div className="border-border/60 space-y-2.5 border-t pt-3">
+                    <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="text-foreground font-medium">
                         {department.ministerTitle || "Minister"}:{" "}
-                        <span className="font-normal text-zinc-600 dark:text-zinc-400">
+                        <span className="text-muted-foreground font-normal">
                           {department.minister || "Vacant"}
                         </span>
                       </span>
-                      {(() => {
-                        const priorityLevel = Math.max(
-                          1,
-                          Math.min(10, Math.round((department.priority || 50) / 10))
-                        );
-                        return (
-                          <span className={`flex items-center gap-1.5 font-bold ${tokens.text}`}>
-                            <span>Priority {priorityLevel}/10</span>
-                            <span className="rounded border border-zinc-200/50 bg-zinc-200/40 px-1 py-0 text-xs uppercase dark:border-white/5 dark:bg-white/5">
-                              {getPriorityLabel(department.priority)}
-                            </span>
-                          </span>
-                        );
-                      })()}
+                      <span className="text-foreground flex items-center gap-1.5 font-medium tabular-nums">
+                        Priority {priorityLevel}/10
+                        <Badge variant="secondary">{getPriorityLabel(department.priority)}</Badge>
+                      </span>
                     </div>
 
-                    {/* Priority Indicator */}
-                    <div className="h-1.5 w-full overflow-hidden rounded-full border border-zinc-200/50 bg-zinc-200 dark:border-white/5 dark:bg-black/40">
-                      <div
-                        className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${tokens.progressBar}`}
-                        style={{
-                          width: `${Math.max(1, Math.min(10, Math.round((department.priority || 50) / 10))) * 10}%`,
-                        }}
-                      />
-                    </div>
+                    <Progress
+                      value={priorityLevel * 10}
+                      className="bg-muted h-1.5"
+                      indicatorClassName="bg-amber-500"
+                      aria-label="Department priority"
+                    />
 
-                    {/* Parent Association */}
-                    {(() => {
-                      if (!department.parentDepartmentId) return null;
-                      const parent = departments[parseInt(department.parentDepartmentId)];
-                      if (!parent) return null;
-                      return (
-                        <div className="mt-1 flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-                          <span>Reporting to:</span>
-                          <span className="truncate font-bold text-zinc-700 dark:text-zinc-300">
-                            {parent.name ||
-                              `Department ${parseInt(department.parentDepartmentId) + 1}`}
-                          </span>
-                        </div>
-                      );
-                    })()}
+                    {parent && department.parentDepartmentId && (
+                      <div className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
+                        <span>Reporting to:</span>
+                        <span className="text-foreground truncate font-medium">
+                          {parent.name ||
+                            `Department ${parseInt(department.parentDepartmentId) + 1}`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </FacetCardContent>
 
-                {/* Footer: Linked Infrastructure */}
-                <FacetCardFooter className="mt-auto border-t border-zinc-200/50 bg-zinc-50/50 px-5 py-2.5 dark:border-white/[0.04] dark:bg-black/25">
+                {/* Footer: linked infrastructure */}
+                <FacetCardFooter className="border-border/60 mt-auto border-t px-5 py-3">
                   <div className="space-y-1.5">
-                    <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                      Linked Infrastructure ({activeLinkedComponents.length})
-                    </div>
+                    <Eyebrow className="block">
+                      Linked infrastructure ({activeLinkedComponents.length})
+                    </Eyebrow>
                     {activeLinkedComponents.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {activeLinkedComponents.map((compType) => {
@@ -404,15 +265,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                           if (!comp) return null;
                           const CompIcon = comp.icon;
                           return (
-                            <Badge
-                              key={compType}
-                              variant="outline"
-                              className="flex items-center gap-1 border-zinc-200 bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 dark:border-white/5 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/5"
-                            >
+                            <Badge key={compType} variant="outline">
                               {CompIcon && (
-                                <span className={`flex shrink-0 ${tokens.iconText}`}>
-                                  <CompIcon className="h-2.5 w-2.5" />
-                                </span>
+                                <CompIcon aria-hidden="true" className="text-muted-foreground" />
                               )}
                               <span className="max-w-[120px] truncate">{comp.name}</span>
                             </Badge>
@@ -420,7 +275,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                         })}
                       </div>
                     ) : (
-                      <span className="block text-xs text-zinc-500 italic dark:text-zinc-400">
+                      <span className="text-muted-foreground block text-xs">
                         No governance components linked
                       </span>
                     )}
@@ -432,21 +287,19 @@ export const DepartmentList = React.memo(function DepartmentList({
         })}
 
         {departments.length === 0 && (
-          <div className="relative col-span-full rounded-xl border border-zinc-200 bg-zinc-100/50 p-12 text-center backdrop-blur-md dark:border-white/[0.08] dark:bg-zinc-950/40">
-            <TextureOverlay texture="chevron" opacity={0.03} />
-            <Users className="mx-auto mb-3 h-10 w-10 text-zinc-400 dark:text-zinc-600" />
-            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-300">
-              No Departments Active
-            </h3>
-            <p className="mx-auto mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
+          <div className="border-border col-span-full rounded-xl border border-dashed p-12 text-center">
+            <Users aria-hidden="true" className="text-muted-foreground mx-auto mb-3 h-10 w-10" />
+            <h3 className="text-foreground text-sm font-semibold">No Departments Active</h3>
+            <p className="text-muted-foreground mx-auto mt-1 max-w-xs text-xs">
               Your nation needs departments to administer services. Add a department to get started.
             </p>
             {!isReadOnly && (
               <Button
                 onClick={handleAddDepartment}
-                className="mt-4 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                size="sm"
+                className="mt-4 bg-amber-500 text-amber-950 hover:bg-amber-400"
               >
-                <Plus className="mr-1 h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" />
                 Add First Department
               </Button>
             )}
@@ -454,53 +307,16 @@ export const DepartmentList = React.memo(function DepartmentList({
         )}
       </div>
 
-      {/* Floating Dialog Modal for Department Details */}
+      {/* Dialog for department details */}
       <Dialog open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <DialogContent className="max-h-[85vh] w-[90vw] overflow-y-auto border-border bg-background p-6 text-foreground shadow-2xl backdrop-blur-2xl sm:max-w-4xl">
-          <DialogHeader className="border-b border-border/60 pb-4">
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-              {currentEditingDept &&
-                (() => {
-                  const Icon = categoryIcons[currentEditingDept.category] || Users;
-                  const theme = getCategoryTheme(currentEditingDept.category);
-                  const tokens = themeTokens[theme];
-                  return (
-                    <div
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg ${tokens.iconBg}`}
-                    >
-                      {currentEditingDept.icon ? (
-                        (() => {
-                          const IconComponent = resolveNamedDepartmentIcon(currentEditingDept.icon);
-                          if (IconComponent) {
-                            return (
-                              <span className={`flex items-center justify-center ${tokens.iconText}`}>
-                                <IconComponent className="h-4 w-4" />
-                              </span>
-                            );
-                          }
-                          if (isImageIconSource(currentEditingDept.icon)) {
-                            return (
-                              <img
-                                src={currentEditingDept.icon}
-                                alt="Logo"
-                                className="h-full w-full object-cover"
-                              />
-                            );
-                          }
-                          return (
-                            <span className={`flex items-center justify-center ${tokens.iconText}`}>
-                              <Icon className="h-4 w-4" />
-                            </span>
-                          );
-                        })()
-                      ) : (
-                        <span className={`flex items-center justify-center ${tokens.iconText}`}>
-                          <Icon className="h-4 w-4" />
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
+        <DialogContent className="max-h-[85vh] w-[90vw] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader className="border-border/60 border-b pb-4">
+            <DialogTitle className="text-foreground flex items-center gap-2 text-lg font-semibold">
+              {currentEditingDept && (
+                <span className="text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden">
+                  <DepartmentGlyph department={currentEditingDept} className="h-4 w-4" />
+                </span>
+              )}
               <span>
                 {editingIndex !== null && departments[editingIndex]?.name
                   ? `Edit ${departments[editingIndex].name}`

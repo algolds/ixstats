@@ -3,6 +3,8 @@
 import React from "react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { cn } from "~/lib/utils";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import type { BudgetHealthStatus } from "./budgetTypes";
 
@@ -10,6 +12,15 @@ interface BudgetHealthAnalysisProps {
   budgetSummary: BudgetSummary;
   revenueSummary: RevenueSummary;
   budgetHealth: BudgetHealthStatus;
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <span className="text-muted-foreground text-xs font-medium">{label}</span>
+      {children}
+    </div>
+  );
 }
 
 export function BudgetHealthAnalysis({
@@ -26,101 +37,76 @@ export function BudgetHealthAnalysis({
         0.8
     )
   );
+  const revenueAdequate = revenueSummary.totalRevenue > budgetSummary.totalAllocated;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <FacetCard
-        depth={1}
-        className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 border-b pb-2">
-          <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
-            Budget Health Indicators
-          </h4>
-        </div>
-        <div className="space-y-2.5 text-xs">
-          <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
-            <span className="text-muted-foreground font-semibold">Fiscal Balance</span>
-            <Badge
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${budgetHealth.color}`}
-            >
+      <FacetCard depth={1} surface="solid" className="space-y-1 p-4">
+        <h4 className="text-foreground border-border/60 border-b pb-3 text-sm font-semibold">
+          Budget health indicators
+        </h4>
+        <div className="divide-border/60 divide-y text-xs">
+          <Row label="Fiscal Balance">
+            <Badge variant="outline" className={budgetHealth.color}>
               {budgetHealth.label}
             </Badge>
-          </div>
-
-          <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
-            <span className="text-muted-foreground font-semibold">Budget Utilization</span>
+          </Row>
+          <Row label="Budget Utilization">
             <span
-              className={`font-mono font-semibold tabular-nums ${
+              className={cn(
+                "font-mono font-semibold tabular-nums",
                 budgetSummary.utilizationRate > 90
-                  ? "text-emerald-400"
+                  ? "text-emerald-600"
                   : budgetSummary.utilizationRate > 70
-                    ? "text-amber-400"
-                    : "text-red-400"
-              }`}
+                    ? "text-amber-600"
+                    : "text-destructive"
+              )}
             >
               {budgetSummary.utilizationRate.toFixed(1)}%
             </span>
-          </div>
-
-          <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
-            <span className="text-muted-foreground font-semibold">Revenue Adequacy</span>
+          </Row>
+          <Row label="Revenue Adequacy">
             <span
-              className={`font-semibold ${
-                revenueSummary.totalRevenue > budgetSummary.totalAllocated
-                  ? "text-emerald-400"
-                  : "text-red-400"
-              }`}
+              className={cn(
+                "font-semibold",
+                revenueAdequate ? "text-emerald-600" : "text-destructive"
+              )}
             >
-              {revenueSummary.totalRevenue > budgetSummary.totalAllocated
-                ? "Adequate"
-                : "Insufficient"}
+              {revenueAdequate ? "Adequate" : "Insufficient"}
             </span>
-          </div>
-
-          <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
-            <span className="text-muted-foreground font-semibold">Departments</span>
+          </Row>
+          <Row label="Departments">
             <span className="text-foreground font-mono font-semibold tabular-nums">
               {budgetSummary.departmentCount} Active
             </span>
-          </div>
+          </Row>
         </div>
       </FacetCard>
 
-      <FacetCard
-        depth={1}
-        className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 border-b pb-2">
-          <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
-            Budget Efficiency Score
-          </h4>
-        </div>
-        <div className="space-y-4 text-center">
-          <div className="font-mono text-4xl font-bold tracking-tight text-emerald-400 tabular-nums">
+      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
+        <h4 className="text-foreground border-border/60 border-b pb-3 text-sm font-semibold">
+          Budget efficiency score
+        </h4>
+        <div className="py-2 text-center">
+          <div className="text-foreground font-mono text-4xl font-semibold tracking-tight tabular-nums">
             {efficiencyScore}
           </div>
-          <p className="text-muted-foreground text-xs font-semibold">
-            Overall Administrative Efficiency Score
-          </p>
-          <div className="space-y-2 text-left text-xs">
-            <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2">
-              <span className="text-muted-foreground font-medium">Utilization Rate</span>
-              <span className="text-foreground font-mono font-bold">
-                {budgetSummary.utilizationRate.toFixed(1)}%
-              </span>
-            </div>
-            <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2">
-              <span className="text-muted-foreground font-medium">Fiscal Health</span>
-              <span className="font-bold text-emerald-400">{budgetHealth.label}</span>
-            </div>
-            <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2">
-              <span className="text-muted-foreground font-medium">Department Coverage</span>
-              <span className="font-mono font-bold text-cyan-400">
-                {budgetSummary.departmentCount} depts
-              </span>
-            </div>
-          </div>
+          <Eyebrow className="mt-1 block">Overall administrative efficiency</Eyebrow>
+        </div>
+        <div className="divide-border/60 divide-y text-xs">
+          <Row label="Utilization Rate">
+            <span className="text-foreground font-mono font-semibold tabular-nums">
+              {budgetSummary.utilizationRate.toFixed(1)}%
+            </span>
+          </Row>
+          <Row label="Fiscal Health">
+            <span className="text-foreground font-semibold">{budgetHealth.label}</span>
+          </Row>
+          <Row label="Department Coverage">
+            <span className="text-foreground font-mono font-semibold tabular-nums">
+              {budgetSummary.departmentCount} depts
+            </span>
+          </Row>
         </div>
       </FacetCard>
     </div>
