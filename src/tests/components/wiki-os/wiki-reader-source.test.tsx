@@ -217,6 +217,68 @@ describe("WikiOS reader ?source=", () => {
     expect(mockEditor).toHaveBeenCalled();
   });
 
+  describe("a busy answer (TOO_MANY_REQUESTS) is not a missing page (plan 404 review)", () => {
+    const busyError = Object.assign(new Error("Importing pages from MediaWiki is busy"), {
+      data: { code: "TOO_MANY_REQUESTS" },
+    });
+
+    it("says WikiOS is busy and offers a retry, never 'does not exist' or 'create this page'", () => {
+      const refetch = jest.fn();
+      mockSlug = "Nowhere";
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: busyError,
+        refetch,
+      });
+      render(<WikiOSArticlePage />);
+
+      expect(screen.getByText("WikiOS is busy")).toBeInTheDocument();
+      expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows a retrying state while the automatic retries run", () => {
+      mockSlug = "Nowhere";
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        error: null,
+        refetch: jest.fn(),
+        failureCount: 1,
+      });
+      render(<WikiOSArticlePage />);
+
+      expect(screen.getByText(/WikiOS is busy — retrying/)).toBeInTheDocument();
+    });
+
+    it("shows plain loading before any failure, and still not-found for any other error", () => {
+      mockSlug = "Nowhere";
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        error: null,
+        refetch: jest.fn(),
+        failureCount: 0,
+      });
+      const { unmount } = render(<WikiOSArticlePage />);
+      expect(screen.getByText("Loading article...")).toBeInTheDocument();
+      unmount();
+
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: Object.assign(new Error("nope"), { data: { code: "NOT_FOUND" } }),
+        refetch: jest.fn(),
+      });
+      render(<WikiOSArticlePage />);
+      expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    });
+  });
+
   it("a missing iiwiki page names iiwiki and offers no ixwiki page creation", () => {
     mockSearch = "source=iiwiki";
     mockUseQuery.mockReturnValue({

@@ -8,6 +8,7 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { ArticleNotFound } from "~/components/wiki-os/reader/ArticleNotFound";
+import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
 import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { withBasePath } from "~/lib/base-path";
@@ -28,6 +29,11 @@ const ARTICLE_STALE_TIME_MS = 10 * 60 * 1000;
 /** How soon a stale article (its render pending) is asked for again. */
 const STALE_ARTICLE_REFETCH_MS = 5_000;
 const BUSY_RETRY_DELAY_MS = 3_000;
+
+/** "Busy" (TOO_MANY_REQUESTS): the page may exist, the lookup was refused for now. Not "no such page". */
+function isBusyError(error: { data?: { code?: string } | null }): boolean {
+  return error.data?.code === "TOO_MANY_REQUESTS";
+}
 
 /**
  * `?source=` reads another wiki's page (e.g. a realm's iiwiki lore), read-only (ruling E-l);
@@ -172,7 +178,7 @@ export default function WikiOSArticlePage() {
   }, [canon, isIxWiki, isCategoryOrSpecialOrMain, decodedSlug, slug, searchParams, router]);
 
   // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
-  const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
+  const { data, isLoading, error, refetch, failureCount } = api.wikios.getArticleHtml.useQuery(
     articleHtmlInput(title, wikiSource),
     {
       enabled: !!title && !isCategoryOrSpecialOrMain,
@@ -181,7 +187,7 @@ export default function WikiOSArticlePage() {
       staleTime: (query) => (query.state.data?.stale ? 0 : ARTICLE_STALE_TIME_MS),
       refetchInterval: (query) => (query.state.data?.stale ? STALE_ARTICLE_REFETCH_MS : false),
       // "Busy" (the page may exist, MediaWiki was not asked yet) is worth a retry; anything else is final.
-      retry: (failureCount, err) => err.data?.code === "TOO_MANY_REQUESTS" && failureCount < 2,
+      retry: (failures, err) => isBusyError(err) && failures < 2,
       retryDelay: BUSY_RETRY_DELAY_MS,
     }
   );
@@ -267,10 +273,15 @@ export default function WikiOSArticlePage() {
             {isLoading && !data && (
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
-                <p className="mt-4 text-sm text-zinc-400">Loading article...</p>
+                <p className="mt-4 text-sm text-zinc-400">
+                  {failureCount > 0 ? "WikiOS is busy — retrying..." : "Loading article..."}
+                </p>
               </div>
             )}
-            {error && !data && (
+            {error && !data && isBusyError(error) && (
+              <ArticleBusy title={title} onRetry={() => void refetch()} />
+            )}
+            {error && !data && !isBusyError(error) && (
               <ArticleNotFound
                 title={title}
                 wikiSource={wikiSource}
