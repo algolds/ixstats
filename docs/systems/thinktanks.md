@@ -76,7 +76,7 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
   - `🔍 Critique wanted` — Requests for feedback and critique
   - `🗺️ Lore & Maps` — Cartographic crops and regional lore drafts
 - **Multi-Persona vs. Authentic User Identity**:
-  - **When Multi-Persona Posting is Disabled (Default)**: Group members post directly as their **authentic user account** (`User` profile, nation name, and sovereignty flag). No persona selector chips or roleplay badges (`CITIZEN`, `MEDIA`) are shown.
+  - **When Multi-Persona Posting is Disabled (Default)**: Group members post as themselves. `createGroupPost` without an `accountId` posts through the caller's **personal persona** (`accountType: "personal"`, no country; created on first use, one per user, see [social.md](./social.md#2-account-manager--discord-bridge)). It never borrows the user's oldest persona (which could be a government account) and never attaches an arbitrary nation. The group feed card shows the real user's name and nation. No persona selector chips or roleplay badges (`CITIZEN`, `MEDIA`) are shown.
   - **When Multi-Persona Posting is Enabled**: Members can switch between distinct ThinkPages personas (the ThinkPages account types `government`, `media` and `citizen`, `accounts.ts`), displaying the persona name and corresponding badge on feed cards.
 
 ### Pillar 2: Members (`ThinktankRosterTab.tsx`)
