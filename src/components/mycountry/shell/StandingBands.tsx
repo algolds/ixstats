@@ -29,6 +29,8 @@ import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
+import { assetUrl } from "~/lib/base-path";
+import { FlagBackdrop } from "./FlagBackdrop";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -98,6 +100,7 @@ function finiteScore(raw: unknown): number | null {
 /** National standing — the calm vitals summary under the title: five vitals + four vitality rings. */
 function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.Element {
   const { country, activityRingsData } = useCountryData();
+  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
   const [showExactPop, setShowExactPop] = useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
 
@@ -202,10 +205,11 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       <FacetCard
         depth={2}
         interactive="none"
-        className="rounded-3xl"
+        className="relative overflow-hidden rounded-3xl"
         aria-labelledby="national-standing-title"
         role="region"
       >
+        <FlagBackdrop src={flagUrl} intensity="subtle" side="left" tintGlow={false} />
         <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
           <div className="min-w-0">
             <h2

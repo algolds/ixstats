@@ -23,6 +23,8 @@ import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/Drill
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
 import { STATUS_TEXT, type StatusTone } from "./status-tone";
+import { FlagBackdrop } from "./FlagBackdrop";
+import { assetUrl } from "~/lib/base-path";
 
 interface Opportunity {
   id: string;
@@ -73,6 +75,7 @@ function ExecutiveOpportunityHeroComponent({
   onOpenIntent,
 }: ExecutiveOpportunityHeroProps): React.JSX.Element | null {
   const { country } = useCountryData();
+  const heroImageUrl = assetUrl(country?.headerImageUrl || country?.flagUrl || country?.flag);
   const storageKey = countryId ? `ixstats:dismissedHero:${countryId}` : null;
 
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
@@ -309,7 +312,12 @@ function ExecutiveOpportunityHeroComponent({
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        <FacetCard depth={2} interactive="none" className="relative rounded-3xl p-4 sm:p-6">
+        <FacetCard
+          depth={2}
+          interactive="none"
+          className="relative overflow-hidden rounded-3xl p-4 sm:p-6"
+        >
+          <FlagBackdrop src={heroImageUrl} intensity="subtle" tintGlow={false} />
           <Button
             type="button"
             variant="ghost"
@@ -323,7 +331,7 @@ function ExecutiveOpportunityHeroComponent({
             <X aria-hidden="true" />
           </Button>
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl min-w-0 space-y-1.5 pr-10">
               <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                 <Eyebrow className={cn("flex items-center gap-1.5", STATUS_TEXT[opportunity.tone])}>

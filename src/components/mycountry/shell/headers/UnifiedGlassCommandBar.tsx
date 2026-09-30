@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { FlagBackdrop } from "../FlagBackdrop";
 import { assetUrl } from "~/lib/base-path";
 import { DOMAIN_TILES, DomainTileButton } from "../ExecutiveActionCards";
 import { CooldownTimer } from "../ExecutiveHome";
@@ -116,9 +117,12 @@ export function UnifiedGlassCommandBar({
       depth={1}
       interactive="none"
       enableRefraction={false}
-      className="relative flex w-full flex-col gap-4 rounded-3xl p-4 sm:gap-5 sm:p-5"
+      texture="dots"
+      textureOpacity={0.035}
+      className="relative flex w-full flex-col gap-4 overflow-hidden rounded-3xl p-4 sm:gap-5 sm:p-5"
     >
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <FlagBackdrop src={flagUrl} />
+      <header className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Large title: flag + country name, with a calm identity footnote */}
         <div className="flex min-w-0 items-center gap-3.5">
           {country?.name ? (
@@ -201,7 +205,7 @@ export function UnifiedGlassCommandBar({
         /* Domain destinations */
         <nav
           aria-label="MyCountry domains"
-          className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
+          className="relative grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
         >
           {DOMAIN_TILES.map((tile) => (
             <DomainTileButton
@@ -221,7 +225,10 @@ export function UnifiedGlassCommandBar({
         </nav>
       ) : (
         /* Section switcher */
-        <nav aria-label="MyCountry sections" className="-mx-1 scrollbar-none overflow-x-auto px-1">
+        <nav
+          aria-label="MyCountry sections"
+          className="relative -mx-1 scrollbar-none overflow-x-auto px-1"
+        >
           <FacetTabs
             size="md"
             tone="mycountry"
