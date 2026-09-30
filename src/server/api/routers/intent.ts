@@ -26,6 +26,7 @@ import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import {
+  assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
   hasCountryWriteAccess,
 } from "~/server/shared/country-authorization";
@@ -568,10 +569,20 @@ export const intentRouter = createTRPCRouter({
       };
     }),
 
-  /** Return resistance issues linked to an intent (progress traceability for the drill sheet). */
+  /**
+   * Return resistance issues linked to an intent (progress traceability for the drill sheet).
+   * The owner (or a privileged role) only: open issues are the nation's private inbox.
+   */
   getLinkedIssues: protectedProcedure
     .input(z.object({ intentId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const intent = await ctx.db.intent.findUnique({
+        where: { id: input.intentId },
+        select: { countryId: true },
+      });
+      await assertCountryResourceWriteAccess(ctx, intent?.countryId, "Intent");
+      if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
+
       const issues = await ctx.db.nationalIssue.findMany({
         where: { intentId: input.intentId },
         orderBy: { createdAt: "asc" },
