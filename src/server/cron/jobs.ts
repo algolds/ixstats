@@ -200,6 +200,18 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/government/budget-year-rollover-cron")).runBudgetYearRollover,
   },
   {
+    // Engagement-decay trending for ThinkPages posts + TrendingTopic hashtags; also reconciles
+    // the posts' like/reply/repost counters.
+    name: "thinkpages-trending",
+    defaultSchedule: "*/15 * * * *",
+    scheduleConfigKey: "cronSchedule_thinkpagesTrending",
+    lockName: "thinkpages-trending",
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/lib/thinkpages/trending-cron",
+    exportName: "runThinkPagesTrending",
+    load: async () => (await import("~/lib/thinkpages/trending-cron")).runThinkPagesTrending,
+  },
+  {
     // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
     name: "db-backup",
     defaultSchedule: "17 3 * * *",

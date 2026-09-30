@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 // Import the wiki search service
 import { globalCache } from "~/lib/cache";
 import { resolveReactionCounts } from "./post-utils";
@@ -91,6 +92,23 @@ const pollInclude = {
     },
   },
 };
+
+/**
+ * Feed ordering. "trending" (posts the thinkpages-trending cron flagged) and "hot" (every post)
+ * rank by the cron's engagement-decay `trendingScore`, newest first among equals; "recent" is
+ * pinned-then-newest.
+ */
+export function feedOrderBy(
+  filter: "recent" | "trending" | "hot"
+): Prisma.ThinkpagesPostOrderByWithRelationInput[] {
+  if (filter === "trending") {
+    return [{ trendingScore: "desc" }, { ixTimeTimestamp: "desc" }];
+  }
+  if (filter === "hot") {
+    return [{ pinned: "desc" }, { trendingScore: "desc" }, { ixTimeTimestamp: "desc" }];
+  }
+  return [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }];
+}
 
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
@@ -245,7 +263,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
             },
           },
         },
-        orderBy: [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }],
+        orderBy: feedOrderBy(input.filter),
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         skip: input.cursor ? 1 : 0,
