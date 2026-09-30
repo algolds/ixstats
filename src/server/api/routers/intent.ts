@@ -35,6 +35,16 @@ const COOLDOWN_MS = WEEK_MS; // decided: weekly cooldown between intents
 const WEEKLY_CAP = 3; // safety ceiling on directives committed per IxTime-week
 const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
 
+/**
+ * updateStatus transitions. A draft becomes active only through commit() (which applies the
+ * package and checks the weekly cap); completed and abandoned are final, so a finished directive
+ * cannot be re-activated to hold CivCap again.
+ */
+const STATUS_TRANSITIONS: Record<string, readonly string[]> = {
+  proposed: ["abandoned"],
+  active: ["completed", "abandoned"],
+};
+
 /** Load active Power Brokers for a country (mirrors elections.getPowerBrokers). */
 async function loadBrokers(db: PrismaClient, countryId: string): Promise<ActiveBroker[]> {
   const [components, allocations] = await Promise.all([
@@ -158,6 +168,13 @@ export const intentRouter = createTRPCRouter({
       if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
       await assertCountryWriteAccess(ctx, intent.countryId);
 
+      if (!STATUS_TRANSITIONS[intent.status]?.includes(input.status)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `An intent cannot move from ${intent.status} to ${input.status}.`,
+        });
+      }
+
       // Phase 3 gate: an intent with open (pending/viewed) linked resistance
       // issues cannot be completed — the player must resolve them first.
       if (input.status === "completed") {
@@ -269,6 +286,25 @@ export const intentRouter = createTRPCRouter({
       const pkg = packages.find((p) => p.tier === (input.tier as Tier));
       if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
 
+      // Upgrading a draft: it must be this country's and still a draft. Only input.countryId is
+      // authorised above, and re-committing an already-active row would re-apply the package
+      // without a new row counting against the weekly cap.
+      if (input.intentId) {
+        const draft = await ctx.db.intent.findUnique({
+          where: { id: input.intentId },
+          select: { countryId: true, status: true },
+        });
+        if (!draft || draft.countryId !== input.countryId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Intent not found." });
+        }
+        if (draft.status !== "proposed") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only a proposed intent can be committed.",
+          });
+        }
+      }
+
       // Weekly cooldown + cap.
       const status = await cooldownStatus(ctx.db, input.countryId);
       if (!status.canCommit) {
@@ -294,9 +330,10 @@ export const intentRouter = createTRPCRouter({
 
       let intent;
       if (input.intentId) {
-        // Upgrade existing proposed intent to active
-        intent = await ctx.db.intent.update({
-          where: { id: input.intentId },
+        // Upgrade existing proposed intent to active. Conditional on it still being this
+        // country's draft, so two concurrent commits of the same draft cannot both apply.
+        const upgraded = await ctx.db.intent.updateMany({
+          where: { id: input.intentId, countryId: input.countryId, status: "proposed" },
           data: {
             tier: input.tier,
             status: "active",
@@ -309,6 +346,13 @@ export const intentRouter = createTRPCRouter({
             civCapCost: pkg.civCapCost,
           },
         });
+        if (upgraded.count !== 1) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only a proposed intent can be committed.",
+          });
+        }
+        intent = await ctx.db.intent.findUniqueOrThrow({ where: { id: input.intentId } });
       } else {
         // Create new active intent directly
         intent = await ctx.db.intent.create({
