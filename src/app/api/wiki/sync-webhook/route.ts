@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { rateLimiter } from "~/lib/cache/rate-limiter";
-import { wikiWebhookAuthFailure } from "~/lib/security/wiki-webhook-auth";
+import { webhookRateLimitScope, wikiWebhookAuthFailure } from "~/lib/security/wiki-webhook-auth";
+import { resolveRateLimitIdentifier } from "~/server/api/trpc/rate-limit-identity";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 
 /**
@@ -10,17 +11,24 @@ import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
  * Instant Webhook endpoint for MediaWiki PageSaveComplete hook or MariaDB change notifications.
  * Immediately syncs the edited page into PostgreSQL in <100ms.
  * Requires WIKI_SYNC_WEBHOOK_SECRET (header x-wiki-webhook-secret or Authorization: Bearer).
+ *
+ * Rate limiting follows authentication: a request with the valid secret counts against a per-secret
+ * bucket with a high ceiling; any other request counts against a strict bucket keyed by the trusted
+ * client identity (never x-forwarded-for) and is then answered 401/503.
  */
 export async function POST(req: NextRequest) {
   const authFailure = wikiWebhookAuthFailure(req.headers, env.WIKI_SYNC_WEBHOOK_SECRET);
-  if (authFailure) {
-    return NextResponse.json({ error: authFailure.error }, { status: authFailure.status });
-  }
-
-  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const rateLimit = await rateLimiter.check(clientIp, "wiki-sync-webhook");
+  const scope = webhookRateLimitScope(
+    authFailure,
+    env.WIKI_SYNC_WEBHOOK_SECRET,
+    resolveRateLimitIdentifier(req.headers, null)
+  );
+  const rateLimit = await rateLimiter.check(scope.identifier, "wiki-sync-webhook", scope.limits);
   if (!rateLimit.success) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+  if (authFailure) {
+    return NextResponse.json({ error: authFailure.error }, { status: authFailure.status });
   }
 
   try {

@@ -12,6 +12,8 @@
 
 import { db } from "~/server/db";
 import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 export interface WikiUserRecord {
   id: string;
@@ -33,4 +35,40 @@ export async function resolveActiveCountryId(ctx: WikiAuthContext): Promise<stri
   if (!userId) return null;
   const user = await findWikiUserByAuthId(userId);
   return user?.countryId ?? null;
+}
+
+/**
+ * The user's VERIFIED wiki account name on `source`, or null. Verified means the user proved control
+ * of the account (`WikiAccountLink.verifiedAt`); `User.wikiUsername` is never consulted because it can
+ * hold an unverified display fallback. This is the only source of wiki identity for authorization.
+ */
+export async function getVerifiedWikiUsername(
+  userId: string,
+  source: WikiSource = "ixwiki"
+): Promise<string | null> {
+  const link = await db.wikiAccountLink.findFirst({
+    where: { userId, source, verifiedAt: { not: null } },
+    select: { username: true },
+  });
+  return link?.username ?? null;
+}
+
+/** What a wiki profile may show about the account's owner: no user, role or Clerk ids. */
+const PROFILE_USER_SELECT = {
+  country: { select: { id: true, name: true, flag: true } },
+  role: { select: { name: true, level: true } },
+} as const;
+
+/**
+ * The platform user a wiki profile named `wikiName` belongs to: the owner of a VERIFIED ixwiki link
+ * first, then the legacy `User.wikiUsername` column. Resolved by name only, so callers never see
+ * their own (or an arbitrary) user's data under someone else's name.
+ */
+export async function findWikiProfileUser(wikiName: string) {
+  const link = await db.wikiAccountLink.findFirst({
+    where: { source: "ixwiki", username: normalizeWikiUsername(wikiName), verifiedAt: { not: null } },
+    select: { user: { select: PROFILE_USER_SELECT } },
+  });
+  if (link) return link.user;
+  return db.user.findFirst({ where: { wikiUsername: wikiName }, select: PROFILE_USER_SELECT });
 }

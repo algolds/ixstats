@@ -1100,7 +1100,7 @@ type Country = RouterOutputs["countries"]["getByIdBasic"];
 | `lightMutationProcedure` | 100 requests/minute |
 | `adminProcedure` | 100 requests/minute |
 
-Plain `publicProcedure` / `protectedProcedure` carry no tRPC rate limit of their own. tRPC responses do not set `X-RateLimit-*` headers (only the `/api/mediawiki` proxy route does).
+Plain `publicProcedure` / `protectedProcedure` carry no tRPC rate limit of their own. tRPC responses do not set `X-RateLimit-*` headers.
 
 ### Error Handling Pattern
 

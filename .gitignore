@@ -247,3 +247,4 @@ scripts/*_report.md
 
 # WikiOS bench / parity / round-trip script output (plan 405)
 .bench-out/
+scripts/ops/wikios-test-mediawiki/.env.test-mediawiki

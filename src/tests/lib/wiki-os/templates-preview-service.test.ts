@@ -1,6 +1,6 @@
 import {
   renderTemplateCached,
-  previewCacheKey,
+  canonicalPreviewInput,
   isKnownInfoboxFamily,
 } from "~/lib/wiki-os/templates/preview-service";
 
@@ -38,8 +38,10 @@ describe("preview-service", () => {
   });
 
   it("param order does not change the cache key", () => {
-    expect(previewCacheKey("T", { a: "1", b: "2" })).toBe(previewCacheKey("T", { b: "2", a: "1" }));
-    expect(previewCacheKey("T", { a: "1" })).not.toBe(previewCacheKey("T", { a: "2" }));
+    expect(canonicalPreviewInput("T", { a: "1", b: "2" })).toBe(
+      canonicalPreviewInput("T", { b: "2", a: "1" })
+    );
+    expect(canonicalPreviewInput("T", { a: "1" })).not.toBe(canonicalPreviewInput("T", { a: "2" }));
   });
 
   it("network failure degrades to empty html without throwing", async () => {

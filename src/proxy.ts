@@ -6,6 +6,11 @@ import {
   NextResponse,
 } from "next/server";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
+import {
+  WikiStandaloneConfigError,
+  isWikiStandalone,
+  wikiStandaloneRedirect,
+} from "~/lib/system/wikios-standalone";
 import { buildCSPTemplate, renderCsp } from "~/lib/security/csp";
 
 // Get base path from environment - should match Next.js basePath
@@ -135,6 +140,25 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
   }
 
   return null;
+}
+
+/**
+ * WikiOS standalone route guard (plan 417). Only active in the WikiOS standalone build: `/` goes to
+ * the Main Page and any path WikiOS does not own goes to IxStates. Relative `Location` values are
+ * valid and keep the public scheme/host that nginx terminates. A build without
+ * NEXT_PUBLIC_IXSTATES_URL cannot redirect: it answers 500 and logs why, instead of guessing a URL.
+ */
+function handleWikiStandaloneRouting(req: NextRequest): NextResponse | null {
+  if (!isWikiStandalone()) return null;
+  try {
+    const target = wikiStandaloneRedirect(req.nextUrl.pathname, req.nextUrl.search);
+    if (!target) return null;
+    return new NextResponse(null, { status: 302, headers: { location: target } });
+  } catch (error) {
+    if (!(error instanceof WikiStandaloneConfigError)) throw error;
+    console.error(`[WikiOS standalone] ${error.message}`);
+    return new NextResponse("WikiOS standalone build is misconfigured", { status: 500 });
+  }
 }
 
 /**
@@ -271,6 +295,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     );
     return new NextResponse("Forbidden", { status: 403 });
   }
+
+  const wikiStandaloneRedirectResponse = handleWikiStandaloneRouting(req);
+  if (wikiStandaloneRedirectResponse) return wikiStandaloneRedirectResponse;
 
   const clerk = getClerkMiddleware();
   if (clerk) {

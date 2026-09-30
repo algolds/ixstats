@@ -3,7 +3,11 @@
 // the hoisted jest.mock() factories rely on the ambient global.
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: { user: { findUnique: jest.fn() }, auditLog: { create: jest.fn() } },
+  db: {
+    user: { findUnique: jest.fn() },
+    wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    auditLog: { create: jest.fn() },
+  },
   isDatabaseReadOnly: true,
 }));
 jest.mock("~/lib/auth", () => ({

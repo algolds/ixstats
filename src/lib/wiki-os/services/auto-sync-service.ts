@@ -11,6 +11,7 @@ import { db } from "~/server/db";
 import { cleanExcerpt, calculateRawTextBytes } from "../transformers/wikitext-parser";
 import { extractLeadImageFromWikitext } from "../transformers/image-url";
 import { toArticleSlug } from "../core/domain-types";
+import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace } from "../core/title";
 import { DEFAULT_USER_AGENT } from "../config";
 
@@ -211,6 +212,9 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
   const cleanSum = cleanExcerpt(wikitext, 300);
   const summary = cleanSum ? cleanSum.substring(0, 480) : null;
   const leadImageUrl = extractLeadImageFromWikitext(wikitext);
+  const redirect = parseRedirect(wikitext);
+  const redirectTargetSlug = redirect?.title ?? null;
+  const redirectTargetFragment = redirect?.fragment ?? null;
   const { slug, title: articleTitle } = canon;
   // MediaWiki's namespace wins where the canonical table has no prefix for it ("Portal:" is ns 100).
   const { namespaceId, namespacePrefix } = storedNamespace(canon, Number(page.ns || 0));
@@ -237,6 +241,8 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
       format: "WIKITEXT",
       wikitext,
       summary,
+      redirectTargetSlug,
+      redirectTargetFragment,
       leadImageUrl: leadImageUrl || null,
       wordCount: words,
       readingTime,
@@ -251,6 +257,8 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
       wikitext,
       ...(wikitextChanged ? { contentHtml: "" } : {}),
       summary,
+      redirectTargetSlug,
+      redirectTargetFragment,
       leadImageUrl: leadImageUrl || null,
       wordCount: words,
       readingTime,

@@ -5,6 +5,7 @@ jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
     user: { findUnique: jest.fn() },
+    wikiAccountLink: { findFirst: jest.fn() },
     auditLog: { create: jest.fn() },
   },
   isDatabaseReadOnly: true,
@@ -68,8 +69,15 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
+import { db } from "~/server/db";
 
 const createCaller = createCallerFactory(wikiosEditingRouter);
+
+/** The verified WikiAccountLink of the signed-in user (null = no verified link). */
+const mockVerifiedLink = (username: string | null) =>
+  (db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }).wikiAccountLink.findFirst.mockResolvedValue(
+    username ? { username } : null
+  );
 
 const userCtx = (wikiUsername: string | null = null) =>
   createMockRouterContext({
@@ -125,6 +133,7 @@ const adminCtx = () =>
 describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockVerifiedLink("Linked");
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
     jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
       article: {} as never,
@@ -133,7 +142,13 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     });
     jest
       .mocked(getRevisionWikitextShadow)
-      .mockResolvedValue({ wikitext: "old", title: "X", timestamp: "", fromShadow: true });
+      .mockResolvedValue({
+        wikitext: "old",
+        title: "X",
+        source: "ixwiki",
+        timestamp: "",
+        fromShadow: true,
+      });
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
         {
@@ -200,10 +215,11 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     );
   });
 
-  it("refuses another user's page and a user page without a linked account", async () => {
+  it("refuses another user's page and a user page without a verified linked account", async () => {
     await expect(
       createCaller(userCtx("Linked") as never).saveWikitext({ title: "User:Other", wikitext: "x" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    mockVerifiedLink(null);
     await expect(
       createCaller(userCtx(null) as never).saveWikitext({ title: "User:Linked", wikitext: "x" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -212,6 +228,13 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
   it("lets a wiki admin edit interface namespaces", async () => {
     const caller = createCaller(adminCtx() as never);
     await caller.saveWikitext({ title: "Template:Infobox", wikitext: "x" });
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
+      wikitext: "old",
+      title: "MediaWiki:Sidebar",
+      source: "ixwiki",
+      timestamp: "",
+      fromShadow: true,
+    });
     await caller.revertToRevision({ title: "MediaWiki:Sidebar", revid: "r1" });
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
   });

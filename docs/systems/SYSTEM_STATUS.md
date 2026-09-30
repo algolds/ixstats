@@ -66,7 +66,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Lorewards & article awards | Achievements v2 | `/util/lorewards` | `lorewards/` | ✅ Live | |
 | Repository (Commons) | v2 | `/util/repository` | `commons.ts` | ✅ Live | |
 | Guardian | — | — | `guardian/cloudflare-guardian.ts` | 🟡 Partial | Turnstile optional; no abuse filter |
-| Stage 3 MediaWiki isolation | — | — | `scripts/ops/stage3-nginx-cutover.conf` | ⛔ Not built | Staged config only; not cut over |
+| WikiOS standalone takeover of `/wiki/*` (replaces Stage 3) | — | `/wiki/*` | `scripts/deploy-wikios.sh`, `scripts/ops/nginx/wikios-takeover.conf`, `scripts/ops/mediawiki/wikios-localsettings.php`, `src/lib/system/wikios-standalone.ts` | ⛔ Not built | Kit written (plan 417), nothing applied; steps in [`docs/operations/wikios-v1-cutover.md`](../operations/wikios-v1-cutover.md) |
 
 ## 💎 Vault — credits, cards, achievements
 

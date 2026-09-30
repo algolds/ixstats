@@ -1,6 +1,6 @@
 # WikiOS Independence & Native Architecture (Stage 2b shipped, Stage 3 pending cutover)
 
-**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**: the nginx/`LocalSettings.php` work is staged in [`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md) and `scripts/ops/stage3-nginx-cutover.conf`, held for a launch decision (Sept 29, 2026).  
+**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**. The old Stage 3 draft ([`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md), and its `stage3-nginx-cutover.conf` vhost, now deleted) is superseded by the WikiOS takeover kit of plan 417 (September 30, 2026); the ordered operator steps are in [`docs/operations/wikios-v1-cutover.md`](../../operations/wikios-v1-cutover.md).  
 **Package:** `src/lib/wiki-os/`  
 **Authority Model:** PostgreSQL Primary Store (`wiki_articles`, `wiki_revisions`, `wiki_links`, `wiki_assets`) with Headless MediaWiki Federation.
 

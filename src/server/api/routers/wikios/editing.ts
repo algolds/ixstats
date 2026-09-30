@@ -7,7 +7,7 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, lightMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import {
@@ -28,6 +28,7 @@ import {
 import { checkEditPolicy } from "~/lib/wiki-os/namespace-policy";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
+import { getVerifiedWikiUsername } from "~/lib/wiki-os/storage";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
@@ -42,15 +43,18 @@ async function assertCanEditArticle(
   realm = "ixwiki"
 ): Promise<WikiAuthIdentity> {
   const identity = getWikiAuth(ctx);
+  const verifiedWikiUsername = identity.internalUserId
+    ? await getVerifiedWikiUsername(identity.internalUserId)
+    : null;
   const policy = checkEditPolicy(title, {
     isAdmin: identity.isAdmin,
-    linkedWikiUsername: identity.hasLinkedWikiAccount ? identity.wikiUsername : null,
+    linkedWikiUsername: verifiedWikiUsername,
   });
   if (!policy.allowed) {
     throw new TRPCError({ code: "FORBIDDEN", message: policy.reason });
   }
   const existing = await ArticleRepository.findBySlug(title, realm);
-  if (!canEditProtectedArticle(existing, identity)) {
+  if (!canEditProtectedArticle(existing, identity, verifiedWikiUsername !== null)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "This page is protected." });
   }
   return identity;
@@ -61,6 +65,42 @@ function requireCanonicalTitle(rawTitle: string): string {
   const canon = canonicalizeTitle(rawTitle);
   if (!canon) throw new TRPCError({ code: "BAD_REQUEST", message: "That page title is not valid." });
   return canon.title;
+}
+
+/**
+ * The wikitext a revert or rollback may save over `title`, from the revision it restores. Throws
+ * when the text was never imported (a placeholder must not blank the page), when the revision
+ * belongs to another page, or when it would blank a page that has text (admins may). Text that is
+ * only whitespace counts as blank on both sides.
+ */
+async function requireRestorableWikitext(
+  ctx: WikiAuthContext,
+  title: string,
+  revision: { wikitext: string | null; title: string }
+): Promise<string> {
+  const { wikitext } = revision;
+  if (wikitext === null) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "This revision's text has not been imported yet.",
+    });
+  }
+  if (canonicalizeTitle(revision.title)?.title !== title) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "That revision belongs to a different page.",
+    });
+  }
+  if (wikitext.trim() === "" && !isWikiAdmin(ctx)) {
+    const current = await ArticleRepository.findBySlug(title);
+    if ((current?.wikitext ?? "").trim() !== "") {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Restoring this revision would blank the page. Only administrators can do that.",
+      });
+    }
+  }
+  return wikitext;
 }
 
 /** Archive/restore mirror MediaWiki delete/undelete, which are sysop rights. */
@@ -78,7 +118,7 @@ export const wikiosEditingRouter = createTRPCRouter({
    * Preview wikitext by converting it to HTML via Parsoid. Signed-in only: it forwards up to 200k
    * characters to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  previewWikitext: protectedProcedure
+  previewWikitext: readOnlyProcedure
     .input(
       z.object({
         wikitext: z.string().max(200_000),
@@ -100,11 +140,12 @@ export const wikiosEditingRouter = createTRPCRouter({
   /**
    * Save wikitext directly (from source editor).
    */
-  saveWikitext: protectedProcedure
+  saveWikitext: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        wikitext: z.string(),
+        // MediaWiki's own page size limit (2 MB).
+        wikitext: z.string().max(2_000_000),
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
         turnstileToken: z.string().optional(),
@@ -131,7 +172,7 @@ export const wikiosEditingRouter = createTRPCRouter({
           slug: title,
           title,
           wikitext: input.wikitext,
-          summary: input.summary,
+          editSummary: input.summary,
           minor: input.minor,
         },
         ctx.auth?.userId ?? undefined,
@@ -163,7 +204,7 @@ export const wikiosEditingRouter = createTRPCRouter({
    * Revert a page to a specific revision.
    * Fetches the old revision's wikitext and saves it as a new edit.
    */
-  revertToRevision: protectedProcedure
+  revertToRevision: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -177,8 +218,9 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       const oldRev = await getRevisionWikitextShadow(input.revid);
       if (!oldRev) {
-        throw new Error(`Revision ${input.revid} not found`);
+        throw new TRPCError({ code: "NOT_FOUND", message: `Revision ${input.revid} not found.` });
       }
+      const restoredWikitext = await requireRestorableWikitext(ctx, title, oldRev);
 
       const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
       const summary = input.summary || `Reverted to revision ${input.revid} via WikiOS`;
@@ -188,8 +230,8 @@ export const wikiosEditingRouter = createTRPCRouter({
         {
           slug: title,
           title,
-          wikitext: oldRev.wikitext,
-          summary,
+          wikitext: restoredWikitext,
+          editSummary: summary,
           minor: false,
         },
         ctx.auth?.userId ?? undefined,
@@ -200,12 +242,14 @@ export const wikiosEditingRouter = createTRPCRouter({
       MediaWikiExportWorker.enqueue({
         slug: title,
         title,
-        wikitext: oldRev.wikitext,
+        wikitext: restoredWikitext,
         summary,
         minor: false,
         authorWikiUsername: authorName,
         revisionId: saveResult.revisionId,
       });
+
+      void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
         success: true,
@@ -218,7 +262,7 @@ export const wikiosEditingRouter = createTRPCRouter({
    * Quick rollback: revert all consecutive edits by the last editor.
    * Finds the most recent revision by a different user and reverts to it.
    */
-  rollback: protectedProcedure
+  rollback: lightMutationProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
@@ -227,14 +271,30 @@ export const wikiosEditingRouter = createTRPCRouter({
       // Read-through: serve from shadow history with MySQL fallback
       const history = await getArticleHistoryShadow(title, 50);
       const revisions = history.revisions;
-      if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
+      if (revisions.length < 2) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Not enough revisions to roll back.",
+        });
+      }
 
       const lastEditor = revisions[0]!.user;
       const targetRev = revisions.find((r) => r.user !== lastEditor);
-      if (!targetRev) throw new Error("All revisions are by the same user");
+      if (!targetRev) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "All revisions are by the same user, so there is nothing to roll back to.",
+        });
+      }
 
       const oldContent = await getRevisionWikitextShadow(targetRev.revid);
-      if (!oldContent) throw new Error("Could not fetch target revision content");
+      if (!oldContent) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "The revision to roll back to could not be found.",
+        });
+      }
+      const restoredWikitext = await requireRestorableWikitext(ctx, title, oldContent);
 
       const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
       const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
@@ -244,8 +304,8 @@ export const wikiosEditingRouter = createTRPCRouter({
         {
           slug: title,
           title,
-          wikitext: oldContent.wikitext,
-          summary,
+          wikitext: restoredWikitext,
+          editSummary: summary,
           minor: false,
         },
         ctx.auth?.userId ?? undefined,
@@ -256,12 +316,14 @@ export const wikiosEditingRouter = createTRPCRouter({
       MediaWikiExportWorker.enqueue({
         slug: title,
         title,
-        wikitext: oldContent.wikitext,
+        wikitext: restoredWikitext,
         summary,
         minor: false,
         authorWikiUsername: authorName,
         revisionId: saveResult.revisionId,
       });
+
+      void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
         success: true,
@@ -273,11 +335,12 @@ export const wikiosEditingRouter = createTRPCRouter({
   /**
    * Upload a file (image/document) with Dual-Ingest (PostgreSQL wiki_assets + MediaWiki Action API).
    */
-  uploadFile: protectedProcedure
+  uploadFile: lightMutationProcedure
     .input(
       z.object({
         filename: z.string().min(1).max(255),
-        fileBase64: z.string(),
+        // ~10 MB decoded; rejected by validation, before anything is decoded.
+        fileBase64: z.string().max(15_000_000),
         description: z.string().max(10000).default(""),
         comment: z.string().max(500).default("Uploaded via WikiOS"),
       })
@@ -336,7 +399,7 @@ export const wikiosEditingRouter = createTRPCRouter({
   /**
    * Restore an Archived Article
    */
-  restoreArticle: protectedProcedure
+  restoreArticle: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
