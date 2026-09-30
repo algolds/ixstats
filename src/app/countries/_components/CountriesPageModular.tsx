@@ -6,6 +6,7 @@ import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import { createAbsoluteUrl } from "~/lib/utils";
+import { matchesTierFilter, type TierFilter } from "~/lib/economic-tier-filter";
 
 interface CountriesPageModularProps {
   countries: CountryCardData[];
@@ -47,6 +48,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [randomSeed, setRandomSeed] = useState(Date.now());
   const [continentFilter, setContinentFilter] = useState<string | null>(null);
+  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 
   // Debounced search
   useEffect(() => {
@@ -75,6 +77,11 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     // Apply continent filter
     if (continentFilter) {
       result = result.filter((c) => (c.continent || "Unknown") === continentFilter);
+    }
+
+    // Apply economic tier filter
+    if (tierFilter !== "all") {
+      result = result.filter((c) => matchesTierFilter(c.economicTier, tierFilter));
     }
 
     // Apply filters
@@ -143,7 +150,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     }
 
     return result;
-  }, [countries, continentFilter, filterBy, searchQuery, sortBy, randomSeed]);
+  }, [countries, continentFilter, tierFilter, filterBy, searchQuery, sortBy, randomSeed]);
 
   // I'm Feeling Lucky function
   const handleImFeelingLucky = useCallback(() => {
@@ -205,6 +212,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     setSearchInput("");
     setFilterBy("all");
     setContinentFilter(null);
+    setTierFilter("all");
   }, []);
 
   return (
@@ -215,6 +223,8 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
           searchInput={searchInput}
           onSearchChange={setSearchInput}
           onImFeelingLucky={handleImFeelingLucky}
+          tierFilter={tierFilter}
+          onTierFilterChange={setTierFilter}
         >
           <CountriesStats
             countries={processedCountries}

@@ -2,11 +2,15 @@
 
 import React from "react";
 import { Search, X, Dices, Globe } from "lucide-react";
+import { TIER_FILTER_OPTIONS, type TierFilter } from "~/lib/economic-tier-filter";
+import { cn } from "~/lib/utils";
 
 interface CountriesHeaderProps {
   searchInput?: string;
   onSearchChange?: (value: string) => void;
   onImFeelingLucky?: () => void;
+  tierFilter?: TierFilter;
+  onTierFilterChange?: (tier: TierFilter) => void;
   children?: React.ReactNode;
 }
 
@@ -14,6 +18,8 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
   searchInput = "",
   onSearchChange,
   onImFeelingLucky,
+  tierFilter = "all",
+  onTierFilterChange,
   children,
 }) => {
   return (
@@ -76,6 +82,36 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
             )}
           </div>
         </div>
+
+        {/* Economic tier filter */}
+        {onTierFilterChange && (
+          <div
+            role="radiogroup"
+            aria-label="Filter by economic tier"
+            className="relative z-10 mb-3 flex flex-wrap gap-1.5"
+          >
+            {TIER_FILTER_OPTIONS.map((opt) => {
+              const selected = tierFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => onTierFilterChange(opt.value)}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                    selected
+                      ? "border-purple-400/50 bg-purple-500/15 text-purple-300"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted border-white/10"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 4 Stat Cards rendered inside the unified sticky container */}
         {children && <div className="relative z-10">{children}</div>}
