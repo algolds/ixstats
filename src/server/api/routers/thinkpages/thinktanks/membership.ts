@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { resolveDisplayName } from "~/server/modules/identity/identity.display-names";
+import { resolveDisplayName } from "~/server/shared/display-names";
 
 export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====

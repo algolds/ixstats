@@ -1,8 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  resolveDisplayNames,
-  UNKNOWN_DISPLAY_NAME,
-} from "~/server/modules/identity/identity.display-names";
+import { resolveDisplayNames, UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 describe("resolveDisplayNames (SL-12)", () => {

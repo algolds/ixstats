@@ -6,7 +6,7 @@
  */
 
 import type { UserAccount } from "./contracts";
-import { UNKNOWN_DISPLAY_NAME } from "~/server/modules/identity/identity.display-names";
+import { UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 
 // ─── Formatters for `api.messages` ───────────────────────────────────────────
 

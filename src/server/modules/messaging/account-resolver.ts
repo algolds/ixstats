@@ -10,7 +10,7 @@ import {
   pickDisplayName,
   resolveDisplayNames,
   UNKNOWN_DISPLAY_NAME,
-} from "~/server/modules/identity/identity.display-names";
+} from "~/server/shared/display-names";
 
 export async function batchResolveMessagingAccounts(
   userIds: string[],

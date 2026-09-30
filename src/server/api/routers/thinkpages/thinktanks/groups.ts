@@ -13,7 +13,7 @@ import {
   pickDisplayName,
   resolveDisplayName,
   UNKNOWN_DISPLAY_NAME,
-} from "~/server/modules/identity/identity.display-names";
+} from "~/server/shared/display-names";
 import {
   requireGroupManager,
   requireGroupMember,

@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
-import { resolveDisplayName } from "~/server/modules/identity/identity.display-names";
+import { resolveDisplayName } from "~/server/shared/display-names";
 import { getGroupAccess, requireGroupMember, requireGroupReader } from "./access";
 
 export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
