@@ -95,6 +95,8 @@ export const usersProfileRouter = createTRPCRouter({
           where: {
             clerkUserId,
             isActive: true,
+            // A personal persona has no country; skip it when looking for a linked nation.
+            countryId: { not: null },
           },
           select: {
             countryId: true,

@@ -21,6 +21,7 @@ import {
   requirePersonaAccount,
 } from "./access";
 import { filterInvitableUserIds } from "./invite-privacy";
+import { ensurePersonalAccount } from "../personal-account";
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   // Create a new ThinkTank group
@@ -615,38 +616,11 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         await requirePersonaAccount(db, group, targetAccountId, currentUserId);
       }
 
-      // If no persona account specified, resolve the caller's primary account
+      // No persona given: post as yourself, through the caller's personal persona (one per user,
+      // tied to no country), never a government/media persona or an arbitrary nation.
       if (!targetAccountId) {
-        let primaryAcc = await db.thinkpagesAccount.findFirst({
-          where: { clerkUserId: currentUserId, isActive: true },
-          orderBy: { createdAt: "asc" },
-        });
-
-        if (!primaryAcc) {
-          const user = await db.user.findUnique({
-            where: { clerkUserId: currentUserId },
-            include: { country: true },
-          });
-
-          const countryId = user?.countryId || (await db.country.findFirst())?.id || "";
-          const username =
-            user?.forumUsername || user?.wikiUsername || `user_${currentUserId.slice(-6)}`;
-          const displayName = user?.country?.name || username;
-
-          primaryAcc = await db.thinkpagesAccount.create({
-            data: {
-              clerkUserId: currentUserId,
-              countryId,
-              accountType: "citizen",
-              username: `${username.toLowerCase().replace(/[^a-z0-9_]/g, "")}_${Date.now().toString().slice(-4)}`,
-              displayName,
-              firstName: displayName,
-              lastName: "",
-              bio: "User Account",
-            },
-          });
-        }
-        targetAccountId = primaryAcc.id;
+        const personal = await ensurePersonalAccount(db, currentUserId);
+        targetAccountId = personal.id;
       }
 
       const groupTag = `group:${input.groupId}`;

@@ -35,7 +35,7 @@ export const ixnayidCoreRouter = createTRPCRouter({
 
     if (!country && user?.clerkUserId) {
       const tpAccount = await db.thinkpagesAccount.findFirst({
-        where: { clerkUserId: user.clerkUserId, isActive: true },
+        where: { clerkUserId: user.clerkUserId, isActive: true, countryId: { not: null } },
         select: { countryId: true },
       });
       if (tpAccount?.countryId) {
