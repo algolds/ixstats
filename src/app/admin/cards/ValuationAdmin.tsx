@@ -21,7 +21,7 @@ const FIELDS: { key: string; label: string; hint: string }[] = [
   },
   { key: "multSpecial", label: "Special type ×", hint: "Multiplier on floor for SPECIAL cards" },
   { key: "multNation", label: "Nation type ×", hint: "Multiplier on floor for NATION cards" },
-  { key: "junkRate", label: "Junk payout rate", hint: "Fraction of floor paid when junking" },
+  { key: "junkRate", label: "Junk payout rate", hint: "Fraction of floor paid when junking (max 0.5)" },
 ];
 
 export function ValuationAdmin() {
