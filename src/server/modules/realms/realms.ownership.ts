@@ -4,7 +4,7 @@
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
-import { realmSettings } from "./realms.settings";
+import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 
 export type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user">;
 
@@ -23,7 +23,8 @@ export class NationOwnershipError extends Error {
 const alreadyOwned = () => new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
 
 /**
- * Give `countryId` to `userId`. It becomes their active nation only when they have none (ruling F-1): a player
+ * Give `countryId` to `userId`, within their nation cap in its realm (min(realm cap, tier cap) — nationCapacity).
+ * It becomes their active nation only when they have none (ruling F-1): a player
  * acting as a nation of another realm keeps acting as it until they choose "Play as" (activateOwnedNation).
  */
 export async function assignNation(tx: OwnershipTx, input: { userId: string; countryId: string }): Promise<void> {
@@ -34,11 +35,12 @@ export async function assignNation(tx: OwnershipTx, input: { userId: string; cou
   if (!country) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
   if (country.ownerUserId && country.ownerUserId !== input.userId) throw alreadyOwned();
   if (!country.ownerUserId) {
-    const held = await tx.country.count({ where: { ownerUserId: input.userId, realmId: country.realmId } });
-    const { maxNationsPerUser } = realmSettings(country.realm?.settings);
-    if (held >= maxNationsPerUser) {
-      throw new NationOwnershipError("CAP_REACHED", `You already hold ${maxNationsPerUser} nation(s) in this realm`);
-    }
+    const capacity = await nationCapacity(tx, {
+      userId: input.userId,
+      realmId: country.realmId,
+      settings: country.realm?.settings,
+    });
+    if (!capacity.canTakeAnother) throw new NationOwnershipError("CAP_REACHED", capReachedMessage(capacity));
     // Conditional write: at READ COMMITTED a concurrent assignment may have taken the nation since the read above.
     const { count } = await tx.country.updateMany({
       where: { id: country.id, ownerUserId: null },
@@ -76,9 +78,10 @@ export async function activateOwnedNation(
 }
 
 /**
- * Admin override: give `countryId` to the user. First the previous owner loses it, and so do the user's other
- * nations in the SAME realm (ruling F-1) — a nation they own in another realm stays theirs, and the active
- * pointer follows assignNation's rule. System owners only move their active pointer.
+ * Admin override: give `countryId` to the user. The previous owner loses it; the user keeps every nation they
+ * already own, in this realm and others, so the assignment must fit their nation cap (CAP_REACHED otherwise —
+ * unassign one first). The active pointer follows assignNation's rule. System owners only move their active
+ * pointer.
  */
 export async function adminAssignNation(
   database: Pick<PrismaClient, "user" | "country" | "$transaction">,
@@ -94,14 +97,9 @@ export async function adminAssignNation(
       await pointActiveNation(tx, user.id, input.countryId);
       return;
     }
-    const target = await tx.country.findUnique({ where: { id: input.countryId }, select: { realmId: true } });
+    const target = await tx.country.findUnique({ where: { id: input.countryId }, select: { id: true } });
     if (!target) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
     await releaseNation(tx, input.countryId);
-    const heldInRealm = await tx.country.findMany({
-      where: { ownerUserId: user.id, realmId: target.realmId, id: { not: input.countryId } },
-      select: { id: true },
-    });
-    for (const held of heldInRealm) await releaseNation(tx, held.id);
     await assignNation(tx, { userId: user.id, countryId: input.countryId });
   });
 }

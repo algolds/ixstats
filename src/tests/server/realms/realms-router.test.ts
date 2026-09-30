@@ -165,6 +165,7 @@ describe("realms.claimNationPage", () => {
         findFirst: jest.fn().mockResolvedValue(null),
         count: jest.fn().mockResolvedValue(0),
       },
+      user: { findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }) },
       wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
       realmClaim: {
         findFirst: jest.fn().mockResolvedValue(null),

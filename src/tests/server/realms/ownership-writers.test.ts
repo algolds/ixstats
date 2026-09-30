@@ -26,6 +26,7 @@ function db(user: any, country: any) {
     $transaction: jest.fn((cb: any) => cb(d)),
     user: {
       upsert: jest.fn().mockResolvedValue(user),
+      findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }),
       update: jest.fn().mockResolvedValue({}),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
@@ -43,47 +44,55 @@ function db(user: any, country: any) {
 describe("adminAssignNation", () => {
   const country = { id: "c2", realmId: "default", ownerUserId: "u_old", realm: { settings: null } };
 
-  it("regular user: previous owner and the user's nations in c2's realm are released, then the user owns c2", async () => {
+  it("regular user: the previous owner loses c2 and the user keeps their other nation in the same realm", async () => {
+    // u1 owns and acts as c1 in IxWorld; the realm allows 2 and u1 is premium, so c2 fits.
     const d = db(
       { id: "u1", clerkUserId: "clerk_u1", countryId: "c1" },
-      { ...country, ownerUserId: null }
+      { ...country, ownerUserId: null, realm: { settings: { maxNationsPerUser: 2 } } }
     );
-    d.country.findMany.mockResolvedValue([{ id: "c1" }]);
+    d.user.findUnique.mockResolvedValue({ membershipTier: "mycountry_premium" });
+    d.country.count.mockResolvedValue(1);
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
+    expect(d.country.update).toHaveBeenCalledTimes(1);
     expect(d.country.update).toHaveBeenCalledWith({
       where: { id: "c2" },
       data: { ownerUserId: null },
     });
-    expect(d.country.findMany).toHaveBeenCalledWith({
-      where: { ownerUserId: "u1", realmId: "default", id: { not: "c2" } },
-      select: { id: true },
-    });
-    expect(d.country.update).toHaveBeenCalledWith({
-      where: { id: "c1" },
-      data: { ownerUserId: null },
-    });
-    expect(d.user.updateMany).toHaveBeenCalledWith({ where: { countryId: "c1" }, data: { countryId: null } });
+    expect(d.country.findMany).not.toHaveBeenCalled();
+    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null } });
+    expect(d.user.updateMany).not.toHaveBeenCalledWith({ where: { countryId: "c1" }, data: { countryId: null } });
     expect(d.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c2", ownerUserId: null },
       data: { ownerUserId: "u1" },
     });
+    // The active pointer follows assignNation's rule: u1 keeps acting as c1.
     expect(d.user.updateMany).toHaveBeenCalledWith({
       where: { id: "u1", countryId: null },
       data: { countryId: "c2" },
     });
   });
 
-  it("cross-realm (ruling F-1): the user's nation in ANOTHER realm stays owned; only c2's realm is searched", async () => {
+  it("a user at their cap in c2's realm is CAP_REACHED; nothing they own is released", async () => {
+    const d = db(
+      { id: "u1", clerkUserId: "clerk_u1", countryId: "c1" },
+      { ...country, ownerUserId: null }
+    );
+    d.country.count.mockResolvedValue(1); // free tier, realm cap 1: already full
+    await expect(adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" })).rejects.toMatchObject({
+      code: "CAP_REACHED",
+    });
+    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null } });
+    expect(d.country.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("cross-realm (ruling F-1): the user's nation in ANOTHER realm stays owned", async () => {
     // u1 owns and acts as e1 in Eurth; the admin gives them IxWorld's c2.
     const d = db(
       { id: "u1", clerkUserId: "clerk_u1", countryId: "e1" },
       { ...country, ownerUserId: null }
     );
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
-    expect(d.country.findMany).toHaveBeenCalledWith({
-      where: { ownerUserId: "u1", realmId: "default", id: { not: "c2" } },
-      select: { id: true },
-    });
+    expect(d.country.count).toHaveBeenCalledWith({ where: { ownerUserId: "u1", realmId: "default" } });
     expect(d.country.update).toHaveBeenCalledTimes(1);
     expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "e1" }, data: { ownerUserId: null } });
     expect(d.user.updateMany).not.toHaveBeenCalledWith({ where: { countryId: "e1" }, data: { countryId: null } });
@@ -195,8 +204,15 @@ describe("admin.unassignUserFromCountry", () => {
     expect(d.user.update).toHaveBeenCalledWith({ where: { id: "u9" }, data: { countryId: null } });
   });
 
-  it("does nothing when the user is not acting as that nation", async () => {
+  it("releases an owned nation the user is not currently acting as (a player may own several)", async () => {
     const { caller, db: d } = setup({ id: "u1", countryId: "other" }, "u1");
+    await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
+    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null } });
+    expect(d.user.update).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when the user neither owns nor acts as that nation", async () => {
+    const { caller, db: d } = setup({ id: "u1", countryId: "other" }, "u2");
     await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
     expect(d.country.update).not.toHaveBeenCalled();
     expect(d.user.update).not.toHaveBeenCalled();
