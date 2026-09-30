@@ -1083,6 +1083,88 @@ describe("options", () => {
   });
 });
 
+describe("legacy <restrictions> become wiki_restrictions rows (plan 409 review)", () => {
+  const rulesOf = (title: string) =>
+    store.restrictions
+      .filter((r) => r.title === title)
+      .map((r) => `${r.action}:${r.level}`)
+      .sort();
+  const dumpWith = (restrictions: string) =>
+    FIXTURE.replace(
+      "<restrictions>edit=sysop:move=sysop</restrictions>",
+      `<restrictions>${restrictions}</restrictions>`
+    );
+
+  it("creates the enforced rows (the table the rights engine reads), next to the legacy mirror", async () => {
+    await importFixture();
+
+    expect(rulesOf("Kingdom of Testia")).toEqual(["edit:sysop", "move:sysop"]);
+    expect(store.restrictions[0]).toMatchObject({
+      source: "ixwiki",
+      title: "Kingdom of Testia",
+      reason: "Imported from a MediaWiki dump",
+    });
+    expect(article("Kingdom of Testia").protectionLevel).toBe("SYSOP");
+    // pages the dump did not protect get none
+    expect(rulesOf("Testia")).toEqual([]);
+  });
+
+  it("reads edit, move and upload rules, autoconfirmed and sysop levels, and ignores the rest", async () => {
+    await importXml(
+      dumpWith("edit=autoconfirmed:move=sysop:upload=sysop:create=sysop:delete=sysop")
+    );
+
+    expect(rulesOf("Kingdom of Testia")).toEqual([
+      "edit:autoconfirmed",
+      "move:sysop",
+      "upload:sysop",
+    ]);
+    expect(article("Kingdom of Testia").protectionLevel).toBe("AUTOCONFIRMED");
+  });
+
+  it("tightens a level it has no counterpart for to sysop and warns", async () => {
+    const summary = await importXml(dumpWith("edit=templateeditor"));
+
+    expect(rulesOf("Kingdom of Testia")).toEqual(["edit:sysop"]);
+    expect(summary.warnings).toContainEqual({
+      title: "Kingdom of Testia",
+      message: "protection edit=templateeditor has no WikiOS counterpart; imported as sysop",
+    });
+  });
+
+  it("is idempotent and never changes a restriction WikiOS already has", async () => {
+    store.restrictions.push({
+      source: "ixwiki",
+      title: "Kingdom of Testia",
+      action: "edit",
+      level: "autoconfirmed",
+      reason: null,
+    });
+
+    await importFixture();
+    await importFixture();
+
+    expect(store.restrictions.filter((r) => r.title === "Kingdom of Testia")).toHaveLength(2);
+    expect(rulesOf("Kingdom of Testia")).toEqual(["edit:autoconfirmed", "move:sysop"]);
+  });
+
+  it("writes none in a dry run, and files another wiki's under its own source", async () => {
+    await importFixture({ dryRun: true });
+    expect(store.restrictions).toEqual([]);
+
+    await importFixture({ source: "iiwiki" });
+    expect(store.restrictions.every((r) => r.source === "iiwiki")).toBe(true);
+    expect(store.restrictions).toHaveLength(2);
+  });
+
+  it("a page that fails to import leaves no restriction behind", async () => {
+    const broken = dumpWith("edit=sysop").replace("2026-01-02T03:04:05Z", "not a timestamp");
+    const summary = await importXml(broken);
+    expect(summary.errors.length).toBeGreaterThan(0);
+    expect(rulesOf("Kingdom of Testia")).toEqual([]);
+  });
+});
+
 describe("per-page authorization (plan 409: canWritePage)", () => {
   const deny = (reason: string) => ({ allowed: false as const, reason });
 

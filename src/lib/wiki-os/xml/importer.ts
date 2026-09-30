@@ -16,6 +16,7 @@ import { db } from "~/server/db";
 import {
   ArticleRepository,
   type ImportedHead,
+  type ImportedRestriction,
   type ImportPageInput,
 } from "../core/article-repository";
 import { parseRedirect } from "../core/redirect";
@@ -100,14 +101,32 @@ function emptySummary(): ImportSummary {
   };
 }
 
-/** `edit=sysop:move=sysop` (old dumps) to the protection level WikiOS stores; other rules are ignored. */
-function protectionFromRestrictions(
-  restrictions: string | null
-): ImportPageInput["protectionLevel"] {
-  const edit = restrictions
-    ?.split(":")
-    .map((rule) => rule.split("="))
-    .find(([type]) => type === "edit")?.[1];
+const PORTABLE_ACTIONS = ["edit", "move", "upload"] as const;
+
+/**
+ * `edit=sysop:move=sysop` (old dumps) as restrictions WikiOS enforces: edit, move and upload rules
+ * (any other type is ignored). A level WikiOS has no counterpart for is tightened to `sysop`, and named
+ * in `unknownLevels`.
+ */
+function restrictionsFromDump(restrictions: string | null): {
+  rules: ImportedRestriction[];
+  unknownLevels: string[];
+} {
+  const rules: ImportedRestriction[] = [];
+  const unknownLevels: string[] = [];
+  for (const rule of restrictions?.split(":") ?? []) {
+    const [type, level] = rule.split("=");
+    const action = PORTABLE_ACTIONS.find((candidate) => candidate === type);
+    if (!action || !level) continue;
+    if (level !== "sysop" && level !== "autoconfirmed") unknownLevels.push(`${type}=${level}`);
+    rules.push({ action, level: level === "autoconfirmed" ? "autoconfirmed" : "sysop" });
+  }
+  return { rules, unknownLevels };
+}
+
+/** The legacy mirror (`WikiArticle.protectionLevel`) of the dump's edit rule. */
+function protectionFromRules(rules: ImportedRestriction[]): ImportPageInput["protectionLevel"] {
+  const edit = rules.find((rule) => rule.action === "edit")?.level;
   if (edit === "sysop") return "SYSOP";
   return edit === "autoconfirmed" ? "AUTOCONFIRMED" : null;
 }
@@ -272,8 +291,12 @@ async function buildPageInput(
 
   await linkAuthors(page, ctx);
   const { revisions, hashMismatches } = toImportedRevisions(page, ctx.authors);
+  const { rules, unknownLevels } = restrictionsFromDump(page.restrictions);
   const warnings = [
     modelWarning(canon.title, page.revisions),
+    unknownLevels.length > 0
+      ? `protection ${unknownLevels.join(", ")} has no WikiOS counterpart; imported as sysop`
+      : null,
     hashMismatches > 0
       ? `${hashMismatches} revision(s) have a sha1 that does not match their text (the recomputed hash is stored)`
       : null,
@@ -286,7 +309,8 @@ async function buildPageInput(
     namespace: namespace.namespaceId,
     namespacePrefix: namespace.namespacePrefix,
     mwPageId: page.id,
-    protectionLevel: protectionFromRestrictions(page.restrictions),
+    protectionLevel: protectionFromRules(rules),
+    restrictions: rules,
     revisions,
     head: headOf(page, revisions, ctx.source),
     dryRun: ctx.dryRun,

@@ -48,6 +48,14 @@ export interface RevisionRow {
   format: string;
 }
 
+export interface RestrictionRow {
+  source: string;
+  title: string;
+  action: string;
+  level: string;
+  reason: string | null;
+}
+
 export interface AccountLinkRow {
   source: string;
   username: string;
@@ -62,6 +70,7 @@ export const store = {
   articles: [] as ArticleRow[],
   revisions: [] as RevisionRow[],
   accountLinks: [] as AccountLinkRow[],
+  restrictions: [] as RestrictionRow[],
   writes: 0,
   nextId: 1,
 };
@@ -70,6 +79,7 @@ export function resetStore(): void {
   store.articles = [];
   store.revisions = [];
   store.accountLinks = [];
+  store.restrictions = [];
   store.writes = 0;
   store.nextId = 1;
 }
@@ -257,12 +267,36 @@ const accountLinkDelegate = {
       .map((row) => pick(row, select)),
 };
 
+/** `wikiRestriction.upsert` by the (source, title, action) key; `update` is applied to an existing row. */
+const restrictionDelegate = {
+  upsert: async ({
+    where,
+    create,
+    update,
+  }: {
+    where: { source_title_action: { source: string; title: string; action: string } };
+    create: RestrictionRow;
+    update: Partial<RestrictionRow>;
+  }) => {
+    const key = where.source_title_action;
+    const row = store.restrictions.find(
+      (r) => r.source === key.source && r.title === key.title && r.action === key.action
+    );
+    if (row) return Object.assign(row, update); // nothing to change: not a write
+    store.writes += 1;
+    const created = { ...create };
+    store.restrictions.push(created);
+    return { ...created };
+  },
+};
+
 /** The `db` module: transactions snapshot the store and restore it if the callback throws. */
 export function createFakeDbModule() {
   const db = {
     wikiArticle: articleDelegate,
     wikiRevision: revisionDelegate,
     wikiAccountLink: accountLinkDelegate,
+    wikiRestriction: restrictionDelegate,
     $transaction: async <T>(
       callback: (tx: typeof db) => Promise<T>,
       options?: { maxWait?: number; timeout?: number }
@@ -271,12 +305,14 @@ export function createFakeDbModule() {
       const snapshot = {
         articles: store.articles.map((a) => ({ ...a })),
         revisions: store.revisions.map((r) => ({ ...r })),
+        restrictions: store.restrictions.map((r) => ({ ...r })),
       };
       try {
         return await callback(db);
       } catch (error) {
         store.articles = snapshot.articles;
         store.revisions = snapshot.revisions;
+        store.restrictions = snapshot.restrictions;
         throw error;
       }
     },

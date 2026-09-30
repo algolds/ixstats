@@ -59,3 +59,28 @@ ALTER TABLE "wiki_account_links" ADD COLUMN IF NOT EXISTS "mwRegisteredAt" TIMES
 ALTER TABLE "wiki_account_links" ADD COLUMN IF NOT EXISTS "mwEditCount" INTEGER;
 
 COMMIT;
+
+-- Plan 409 (security review): pages whose protection was only ever recorded as the legacy
+-- wiki_articles."protectionLevel" (the XML import used to write nothing else) get the edit restriction the
+-- rights engine enforces. Any value other than ALL counts (SYSOP, PROTECTED and unknown values as sysop,
+-- AUTOCONFIRMED as autoconfirmed: fail closed); a protection that has expired is skipped. A restriction
+-- that already exists is left alone, so this can be run again.
+BEGIN;
+
+INSERT INTO "wiki_restrictions" ("id", "source", "title", "action", "level", "expiresAt", "cascade", "reason", "createdAt")
+SELECT
+  gen_random_uuid()::text,
+  a."source",
+  a."title",
+  'edit',
+  CASE a."protectionLevel" WHEN 'AUTOCONFIRMED' THEN 'autoconfirmed' ELSE 'sysop' END,
+  a."protectionExpiry",
+  false,
+  'Backfilled from the page''s protection level',
+  CURRENT_TIMESTAMP
+FROM "wiki_articles" a
+WHERE a."protectionLevel" <> 'ALL'
+  AND (a."protectionExpiry" IS NULL OR a."protectionExpiry" > CURRENT_TIMESTAMP)
+ON CONFLICT ("source", "title", "action") DO NOTHING;
+
+COMMIT;

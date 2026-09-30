@@ -77,6 +77,11 @@ export interface ImportedHead {
   redirectTargetFragment: string | null;
 }
 
+export interface ImportedRestriction {
+  action: "edit" | "move" | "upload";
+  level: "sysop" | "autoconfirmed";
+}
+
 export interface ImportPageInput {
   source: string;
   /** Canonical title (`canonicalizeTitle`). */
@@ -87,6 +92,8 @@ export interface ImportPageInput {
   mwPageId: number | null;
   /** Protection from a dump's legacy `<restrictions>`; only ever applied to an unprotected page. */
   protectionLevel: "SYSOP" | "AUTOCONFIRMED" | null;
+  /** The same rules as `wiki_restrictions` rows (the table that is enforced); an existing row is never changed. */
+  restrictions: ImportedRestriction[];
   /** The dump's revisions, oldest first. */
   revisions: ImportedRevision[];
   /** The newest dump revision that has text, or null when none does. */
@@ -288,6 +295,19 @@ async function writeImport(
   hashed: Map<string, string>
 ): Promise<string> {
   const articleId = await writeArticle(client, input, article, head);
+  for (const { action, level } of input.restrictions) {
+    await client.wikiRestriction.upsert({
+      where: { source_title_action: { source: input.source, title: input.title, action } },
+      create: {
+        source: input.source,
+        title: input.title,
+        action,
+        level,
+        reason: "Imported from a MediaWiki dump",
+      },
+      update: {},
+    });
+  }
   await insertRevisions(client, articleId, input.source, plan.inserts);
   for (const [rowId, sha1] of hashed) {
     await client.wikiRevision.update({ where: { id: rowId }, data: { sha1 } });
