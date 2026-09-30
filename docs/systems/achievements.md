@@ -3,7 +3,7 @@
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 2`, dev codename `IxVault`)  
 **Subsystem:** Achievements & Leaderboards (`ACHIEVEMENTS_VERSION = 2`)  
 **Primary Action:** `PROGRESS` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
-**Routes:** `/achievements`, `/leaderboards` | **Status:** Release Candidate (platform 1.4.0) — ribbons pending, see [Known Gaps](#known-gaps)  
+**Routes:** `/achievements`, `/leaderboards` | **Status:** Release Candidate (platform 1.4.0) — ribbons are derived from unlocks, see [Ribbons](#ribbons)  
 
 The Achievements system rewards milestone progress across economic, military, diplomatic, government, social, and general domains — 76 definitions in `src/lib/achievements/definitions.ts` (Economic 17, Military 10, Diplomatic 12, Government 10, Social 7, General 20). Unlocks grant IxCredits, optional commemorative cards / packs / titles (per `rewardsJson`), and a showcase shelf entry. Wiki authoring medals are recognized through **Wiki Awards** (Lorewards) under WikiOS.
 
@@ -11,13 +11,13 @@ The Achievements system rewards milestone progress across economic, military, di
 
 ## Architecture & Versioning
 
-In accordance with [reference/revision.md](../reference/revision.md), the system operates on **Achievements v2**, which introduces automatic collector resync on page load. User-bound OOC ribbons are specified in [the ribbons design spec](../specs/2026-08-10-achievements-ribbons-design.md) but not yet data-backed.
+In accordance with [reference/revision.md](../reference/revision.md), the system operates on **Achievements v2**, which introduces automatic collector resync on page load. Ribbons are derived from real unlocks (see [Ribbons](#ribbons)); the separate OOC community ribbons in [the ribbons design spec](../specs/2026-08-10-achievements-ribbons-design.md) are not built.
 
 ### Frontend Modules
 - `src/app/achievements/page.tsx` – Header card (Total Unlocked, Achievement Points, Global Rank), optional Showcase shelf, and the full catalog
 - `src/app/leaderboards/page.tsx` – Standalone global leaderboards (`LeaderboardTab`) in `VaultSidebarLayout`
 - `src/components/achievements/tabs/` – `AllAchievementsTab` (category/rarity filters, search, grid/list toggle, secret reveal), `ShowcaseTab`, `LeaderboardTab`
-- `src/components/achievements/FloatingRibbonRack.tsx` – Decorative ribbon rack on country profile headers (static `FORUM_RIBBONS` defaults, not user data)
+- `src/components/achievements/FloatingRibbonRack.tsx` – `RibbonBar`, `FloatingRibbonRack` and `CountryOwnerRibbonRack`: ribbons drawn from the owner's real unlocks (see [Ribbons](#ribbons))
 
 ### Backend Routers
 All achievement operations route through the modularized tRPC API:
@@ -65,17 +65,32 @@ sequenceDiagram
 
 ---
 
+## Ribbons
+
+A ribbon is an unlocked achievement worn as a service ribbon. There is no ribbon table: every `UserAchievement` row (keyed by Clerk id) is one ribbon.
+
+- **Style:** the stripe comes from the achievement's category (Economic emerald, Military red, Diplomatic cyan, Government indigo, Social blue, General amber); the star device from its rarity (bronze Common → white Legendary). Mappings: `ribbonStripe` / `ribbonDevice` in `FloatingRibbonRack.tsx`.
+- **Order:** pinned ribbons first (in pin order), then rarest, then newest (`toRibbons`, `src/server/modules/identity/identity.showcase.ts`).
+- **Signature ribbons:** the owner pins up to 3 on the passport's back face (`PassportPreference.pinnedRibbonKeys`); pins are kept only for achievements the owner has unlocked. Without pins, the rarest three lead.
+- **Queries:** `ixnayid.getRibbons({ handle })` (every ribbon of a passport holder) and `ixnayid.getCountryRibbons({ countrySlug })` (the country owner's top 3 plus the total). Both return nothing when the owner hides achievements on their passport.
+- **Where they show:** the passport showcase (signature shelf and the full ribbon rack) and the `/countries/[slug]` header, which renders nothing for a country with no active owner or an owner with no ribbons.
+
+See [IxnayID Passport](./ixnayid-passport.md).
+
+---
+
 ## Integration Points
 
 - **IxVault**: Unlocking achievements directly awards IxCredits (`EARN_BONUS`) and, where configured, commemorative cards and packs (`UserPack.acquiredMethod = "ACHIEVEMENT"`).
-- **Country profiles**: `FloatingRibbonRack` renders on `/countries/[slug]` headers (decorative defaults until ribbons are data-backed).
+- **Country profiles**: `CountryOwnerRibbonRack` shows the owning user's top 3 ribbons on `/countries/[slug]` headers, or nothing.
+- **IxnayID Passport**: the passport showcase lists unlocked achievements, the ribbon rack and the signature shelf ([IxnayID Passport](./ixnayid-passport.md)).
 - **WikiOS / Wiki Awards**: Editing wiki pages and expanding nation lore awards dedicated **Wiki Awards** (formerly LoreWards) medals displayed on country profiles.
 
 ---
 
 ## Known Gaps
 
-- **Ribbons** (user-bound OOC honors, pinned signature shelf, `?tab=ribbons`) from the [2026-08-10 spec](../specs/2026-08-10-achievements-ribbons-design.md) are not implemented; `FloatingRibbonRack` shows static defaults.
+- The OOC community ribbons from the [2026-08-10 spec](../specs/2026-08-10-achievements-ribbons-design.md) (WikiOS archivist, forum pioneer and so on) and the `/achievements?tab=ribbons` tab are not built; `FORUM_RIBBONS` in `constants.ts` is now unused. Ribbons today are the achievement-derived ones above.
 - Achievements unlock only when the owner visits `/achievements`; there is no background evaluation.
 - `achievements.unlock` (grant a specific achievement to any `userId`) is admin-only; the app itself has no caller.
 
