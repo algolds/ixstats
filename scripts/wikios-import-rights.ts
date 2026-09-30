@@ -17,6 +17,10 @@
  *   bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php            # dry run (default)
  *   bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php --yes      # write
  *
+ * Before `--yes`: a link an administrator confirmed before `wiki_account_links.verifiedById` existed reads as
+ * self-proven (NULL) and would inherit the rights of its wiki account. Set `verifiedById` on those first:
+ * docs/operations/wikios-v1-cutover.md, step 1b.
+ *
  * A dry run only calls the wiki and prints the plan: it never connects to a database. `--yes` prints the
  * database host first, then upserts: a row that already exists is left exactly as it is, so a re-run adds
  * what is missing and never overwrites a decision made in WikiOS. Anything that cannot be mapped exactly
