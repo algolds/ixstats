@@ -17,6 +17,23 @@ The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects t
 - **National Polls**: Real-time polling widgets let rulers gauge international sentiment and domestic approval with instant visual tallying.
 - **Hashtag Indexing**: Hashtags are extracted on submit and each tag has its own page (`/hashtags/[tag]`) aggregating discussions across sovereign borders.
 
+### Trending, Hot & engagement counters
+
+- **`thinkpages-trending` cron job** (`src/lib/thinkpages/trending-cron.ts`, every 15 min, schedule override `cronSchedule_thinkpagesTrending`; off unless listed in `CRON_ENABLED_JOBS`). It scores each post from the real reactions (`PostReaction`), public replies and reposts it received in the last 72 h. Weights are reaction 1, reply 2 and repost/quote 3, and each event halves every 12 h. Engagement from any persona of the post author's own user is ignored, and each user counts once per kind per post. Tunables live in `TRENDING_CONFIG` (`src/lib/thinkpages/trending.ts`).
+- **Trending posts**: public, top-level posts (not replies or plain reposts) with a score of at least 3 are ranked, and the top 25 get `trending = true`; every other post is cleared. Each eligible post's score is stored in `ThinkpagesPost.trendingScore`, and scores outside the window reset to 0.
+- **Feed filters** (`thinkpages.getFeed`): `trending` lists only flagged posts, by score. `hot` lists all posts, pinned first and then by `trendingScore`, newest among equals. `recent` is newest first. The `/dashboard` **Trending** tab shows the flagged posts and trending hashtags. When nothing qualifies it shows an empty state ("Nothing is trending right now"), with no recency fallback.
+- **Trending topics** (`TrendingTopic`): hashtags on public posts from the window, grouped case-insensitively. A hashtag needs at least 2 posts by at least 2 users. The top 10 by `postCount + engagement` are `isActive`; the rest are deactivated. `peakTimestamp` records when a topic last hit a new high. `activities.getTrendingTopics` reads these rows for the `/feed` "Trending Now" list and the Trending tab chips. A topic shows as rising if it peaked in the last 6 h.
+- **Unified trending** (`activities.getUnifiedTrending`, dashboard sidebar): the ThinkPages source is the posts with `trendingScore > 0`, by score.
+- **Engagement counters**: `likeCount` mirrors the `like` entry of the `reactionCounts` tally and is written by every reaction add, change and remove. `createPost` increments the parent's `replyCount` and the original's `repostCount`, and `deletePost` decrements them (never below 0). Other writers (Discord import, ThinkTanks, auto-posts) don't maintain them, so the cron job also reconciles all three counters with the real rows on every run.
+
+### Social notifications
+
+Notifications are keyed by Clerk user id. The recipient is always the **owning user** of the target persona, never the persona id, and a user is never notified about their own personas. Titles name the acting persona (display name, else `@username`), and every link goes to `/thinkpages/post/<id>` (base path applied).
+- **Like** (`reactions/mutations.ts`) and **reply** (`createPost`): "*Persona* liked / commented on your ThinkPage".
+- **Mention** (`createPost`): one notification per mentioned user ("*Persona* mentioned you"), linked to the new post. Mentions are still recorded in `PostMention`.
+- **Repost / quote** (`createPost`): "*Persona* reposted your post" links to the original; "*Persona* quoted your post" links to the quoting post.
+- Mention, repost and quote notifications are sent only for `public` and `unlisted` posts, since only the author can open private and draft posts.
+
 ---
 
 ## 2. Account Manager & Discord Bridge
