@@ -5,6 +5,7 @@
 import { canonicalizeTitle } from "../core/title";
 import { parseFileLinkInner } from "./file-params";
 import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
+import { UNINDEXED, matchBraces, matchBrackets, type MatchIndex } from "./match-index";
 import { findTagClose, matchOpenTag, skipProtectedAt } from "./protected-regions";
 import { classifyTemplate } from "./resolver";
 import type { WikiInlineNode, WikiTextNode } from "./types";
@@ -23,8 +24,13 @@ export interface ParsedMediaLink {
  * Balances nested "[[" and "]]" pairs so that media captions with wikilinks like
  * [[File:Flag.png|thumb|Flag of [[Urcea]]]] are captured in their entirety.
  */
-export function findMatchingClosingBrackets(text: string, startIndex: number): number {
+export function findMatchingClosingBrackets(
+  text: string,
+  startIndex: number,
+  index?: MatchIndex
+): number {
   if (!text.startsWith("[[", startIndex)) return -1;
+  if (index && index[startIndex] !== UNINDEXED) return index[startIndex]!;
   let depth = 0;
   let inComment = false;
   let j = startIndex;
@@ -65,8 +71,13 @@ export function findMatchingClosingBrackets(text: string, startIndex: number): n
  * Finds the index of the matching closing "}}" for a "{{" starting at startIndex.
  * Balances nested braces, wikilinks, and comments.
  */
-export function findMatchingClosingBraces(text: string, startIndex: number): number {
+export function findMatchingClosingBraces(
+  text: string,
+  startIndex: number,
+  index?: MatchIndex
+): number {
   if (!text.startsWith("{{", startIndex)) return -1;
+  if (index && index[startIndex] !== UNINDEXED) return index[startIndex]!;
   let depth = 0;
   let linkDepth = 0;
   let inComment = false;
@@ -159,6 +170,13 @@ type InlinePart =
   | { kind: "text"; text: string; literal: boolean }
   | { kind: "node"; node: WikiInlineNode };
 
+/** The text being tokenised and where each of its `[[` and `{{` closes (built once, so the scan stays linear). */
+interface InlineContext {
+  text: string;
+  brackets?: MatchIndex;
+  braces?: MatchIndex;
+}
+
 interface InlineSpan {
   part: InlinePart;
   /** Index just after the construct. */
@@ -182,8 +200,9 @@ function isFileTarget(target: string): boolean {
 }
 
 /** `[[File:…]]` and its aliases (`Image:`, any case): an embedded file, every parameter kept. */
-function tryFileLink(text: string, i: number): InlineSpan | null {
-  const closeIdx = findMatchingClosingBrackets(text, i);
+function tryFileLink(ctx: InlineContext, i: number): InlineSpan | null {
+  const { text } = ctx;
+  const closeIdx = findMatchingClosingBrackets(text, i, ctx.brackets);
   if (closeIdx === -1) return null;
   const parsed = parseFileLinkInner(text.slice(i + 2, closeIdx));
   if (!isFileTarget(parsed.target)) return null;
@@ -203,9 +222,10 @@ function tryFileLink(text: string, i: number): InlineSpan | null {
 const ENGINE_CONNECTORS = ["[[CountryData:", "[[BusinessData:", "[[DefenseData:"];
 
 /** `[[CountryData:slug|metric]]` engine data chips. */
-function tryEngineChip(text: string, i: number): InlineSpan | null {
+function tryEngineChip(ctx: InlineContext, i: number): InlineSpan | null {
+  const { text } = ctx;
   if (!ENGINE_CONNECTORS.some((prefix) => text.startsWith(prefix, i))) return null;
-  const closeIdx = findMatchingClosingBrackets(text, i);
+  const closeIdx = findMatchingClosingBrackets(text, i, ctx.brackets);
   if (closeIdx === -1) return null;
   const raw = text.slice(i, closeIdx + 2);
   const inner = raw.slice(2, -2);
@@ -221,9 +241,10 @@ function tryEngineChip(text: string, i: number): InlineSpan | null {
 }
 
 /** `[[Coords:lat,lng|label]]` coordinate chips. */
-function tryCoordChip(text: string, i: number): InlineSpan | null {
+function tryCoordChip(ctx: InlineContext, i: number): InlineSpan | null {
+  const { text } = ctx;
   if (!text.startsWith("[[Coords:", i) && !text.startsWith("[[Coord:", i)) return null;
-  const closeIdx = findMatchingClosingBrackets(text, i);
+  const closeIdx = findMatchingClosingBrackets(text, i, ctx.brackets);
   if (closeIdx === -1) return null;
   const raw = text.slice(i, closeIdx + 2);
   const inner = raw.slice(2, -2);
@@ -246,8 +267,9 @@ function tryCoordChip(text: string, i: number): InlineSpan | null {
 }
 
 /** Standard wiki link: `[[Target|Label]]` or `[[Target]]`. */
-function tryWikiLink(text: string, i: number): InlineSpan | null {
-  const closeIdx = findMatchingClosingBrackets(text, i);
+function tryWikiLink(ctx: InlineContext, i: number): InlineSpan | null {
+  const { text } = ctx;
+  const closeIdx = findMatchingClosingBrackets(text, i, ctx.brackets);
   if (closeIdx === -1) return null;
   const inner = text.slice(i + 2, closeIdx);
   const pipeIdx = inner.indexOf("|");
@@ -307,8 +329,9 @@ function tryRef(text: string, i: number): InlineSpan | null {
 }
 
 /** Inline template or chip: `{{TemplateName|…}}`. */
-function tryInlineTemplate(text: string, i: number): InlineSpan | null {
-  const closeIdx = findMatchingClosingBraces(text, i);
+function tryInlineTemplate(ctx: InlineContext, i: number): InlineSpan | null {
+  const { text } = ctx;
+  const closeIdx = findMatchingClosingBraces(text, i, ctx.braces);
   if (closeIdx === -1) return null;
   const raw = text.slice(i, closeIdx + 2);
   const parts = splitBalancedPipes(text.slice(i + 2, closeIdx));
@@ -363,15 +386,16 @@ function tryInlineTemplate(text: string, i: number): InlineSpan | null {
 }
 
 /** The inline construct that starts at `text[i]`, or null when `text[i]` is ordinary text. */
-function tryInlineConstruct(text: string, i: number): InlineSpan | null {
+function tryInlineConstruct(ctx: InlineContext, i: number): InlineSpan | null {
+  const { text } = ctx;
   switch (text[i]) {
     case "[":
       if (text.startsWith("[[", i)) {
         return (
-          tryFileLink(text, i) ??
-          tryEngineChip(text, i) ??
-          tryCoordChip(text, i) ??
-          tryWikiLink(text, i)
+          tryFileLink(ctx, i) ??
+          tryEngineChip(ctx, i) ??
+          tryCoordChip(ctx, i) ??
+          tryWikiLink(ctx, i)
         );
       }
       return tryExternalLink(text, i);
@@ -384,7 +408,7 @@ function tryInlineConstruct(text: string, i: number): InlineSpan | null {
       return tryRef(text, i);
     }
     case "{":
-      return text.startsWith("{{", i) ? tryInlineTemplate(text, i) : null;
+      return text.startsWith("{{", i) ? tryInlineTemplate(ctx, i) : null;
     default:
       return null;
   }
@@ -393,10 +417,15 @@ function tryInlineConstruct(text: string, i: number): InlineSpan | null {
 /** Splits `text` into inline nodes and the plain text between them (quote marks still in the text). */
 function tokenizeInline(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
+  const ctx: InlineContext = {
+    text,
+    brackets: text.includes("[[") ? matchBrackets(text) : undefined,
+    braces: text.includes("{{") ? matchBraces(text) : undefined,
+  };
   const special = /[[<{]/g;
   let i = 0;
   while (i < text.length) {
-    const span = tryInlineConstruct(text, i);
+    const span = tryInlineConstruct(ctx, i);
     if (span) {
       parts.push(span.part);
       i = span.end;

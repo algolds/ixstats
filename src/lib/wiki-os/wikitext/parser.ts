@@ -15,6 +15,7 @@
 import { isTemplateOnlyLine, logicalLineEnd } from "./block-lines";
 import { parseInlineLinksAndFormatting } from "./link-parser";
 import { parseWikiList } from "./list-parser";
+import { matchBraces, type MatchIndex } from "./match-index";
 import { findTagClose, isCommentOnly, matchOpenTag, type OpenTag } from "./protected-regions";
 import { parseWikitable } from "./table-parser";
 import { scanTemplateAt, unclosedTemplateDiagnostic } from "./template-parser";
@@ -33,8 +34,8 @@ import type {
 interface ScanContext {
   input: string;
   diagnostics: Diagnostic[];
-  /** `input.lastIndexOf("}}")`, computed once for the whole scan. */
-  lastClose: number;
+  /** Where every `{{` of the input closes, computed once for the whole scan. */
+  braces: MatchIndex;
 }
 
 /** A block found at a line start: its node and the index of the line break that ends its last line. */
@@ -68,12 +69,12 @@ export function parse(input: string, options?: { title?: string; slug?: string }
     };
   }
 
-  const ctx: ScanContext = { input, diagnostics, lastClose: input.lastIndexOf("}}") };
+  const ctx: ScanContext = { input, diagnostics, braces: matchBraces(input) };
   let cursor = 0; // end of the previous block
   let pos = 0; // start of the line being scanned
 
   while (pos < input.length) {
-    const firstLineEnd = logicalLineEnd(input, pos, ctx.lastClose);
+    const firstLineEnd = logicalLineEnd(input, pos, ctx.braces);
     const firstLine = input.slice(pos, firstLineEnd);
     if (firstLine.trim() === "") {
       pos = firstLineEnd + 1;
@@ -214,7 +215,7 @@ function scanTemplateBlock(ctx: ScanContext, start: number, firstLineEnd: number
     ctx.diagnostics.push(unclosedTemplateDiagnostic(parsed, start, input.length));
     return { node: templateNode(parsed), lineEnd: input.length };
   }
-  const lineEnd = Math.max(firstLineEnd, logicalLineEnd(input, end, ctx.lastClose));
+  const lineEnd = Math.max(firstLineEnd, logicalLineEnd(input, end, ctx.braces));
   if (input.slice(end, lineEnd).trim() === "") return { node: templateNode(parsed), lineEnd };
   // An infobox is a block even when text follows it on its line; the text is the next block.
   if (parsed.classification === "infobox" && !parsed.isParserFunction) {
@@ -288,7 +289,7 @@ function walkTable(ctx: ScanContext, firstLineEnd: number): TableScan {
   let pos = firstLineEnd + 1;
 
   while (depth > 0 && pos < input.length) {
-    lineEnd = logicalLineEnd(input, pos, ctx.lastClose);
+    lineEnd = logicalLineEnd(input, pos, ctx.braces);
     const text = input.slice(pos, lineEnd).trim();
     pos = lineEnd + 1;
     if (OPENS_TABLE.test(text)) {
@@ -357,7 +358,7 @@ function scanList(
   let lineEnd = firstLineEnd;
 
   while (lineEnd < input.length) {
-    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.lastClose);
+    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces);
     const next = input.slice(lineEnd + 1, nextEnd);
     const nextChar = next.trim()[0];
     if (!nextChar || !LIST_LINE.test(nextChar)) break;
@@ -382,7 +383,7 @@ function scanBlockquote(
   while (!BLOCKQUOTE_CLOSE.test(input.slice(segmentStart, lineEnd))) {
     if (lineEnd >= input.length) return null;
     segmentStart = lineEnd + 1;
-    lineEnd = logicalLineEnd(input, segmentStart, ctx.lastClose);
+    lineEnd = logicalLineEnd(input, segmentStart, ctx.braces);
   }
   const raw = input.slice(start, contentEnd(input, start, lineEnd));
   const match = /^<blockquote[^>]*>([\s\S]*?)<\/blockquote>([\s\S]*)$/i.exec(raw);
@@ -416,7 +417,7 @@ function scanParagraph(ctx: ScanContext, start: number, firstLineEnd: number): S
   const { input } = ctx;
   let lineEnd = firstLineEnd;
   while (lineEnd < input.length) {
-    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.lastClose);
+    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces);
     if (startsNewBlock(input, lineEnd + 1, nextEnd)) break;
     lineEnd = nextEnd;
   }

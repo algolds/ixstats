@@ -7,24 +7,21 @@
  */
 
 import { findMatchingClosingBraces } from "./link-parser";
+import { matchBraces, type MatchIndex } from "./match-index";
 import { skipProtectedAt } from "./protected-regions";
 
 /**
  * Index of the line break that ends the logical line starting at `from` (`text.length` for the
- * last line). A `{{` that is never closed is plain text, like in MediaWiki. `lastClose` is
- * `text.lastIndexOf("}}")`; a caller that scans every line passes it once instead of searching per line.
+ * last line). A `{{` that is never closed is plain text, like in MediaWiki. `braces` is
+ * `matchBraces(text)`; a caller that scans every line passes it once so the scan stays linear.
  */
-export function logicalLineEnd(
-  text: string,
-  from: number,
-  lastClose = text.lastIndexOf("}}")
-): number {
+export function logicalLineEnd(text: string, from: number, braces: MatchIndex = matchBraces(text)): number {
   let i = from;
   while (i < text.length) {
     const code = text.charCodeAt(i);
     if (code === 10) return i;
     if (code === 123 && text.charCodeAt(i + 1) === 123) {
-      const close = i + 2 <= lastClose ? findMatchingClosingBraces(text, i) : -1;
+      const close = findMatchingClosingBraces(text, i, braces);
       i = close === -1 ? i + 2 : close + 2;
       continue;
     }
