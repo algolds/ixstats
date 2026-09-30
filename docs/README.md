@@ -21,7 +21,7 @@ comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versionin
 - **Production deployment** — start with the [release guide](operations/release-guide.md) (pre-deploy checklist, build and deploy from `master`, verify, rollback) · reference: [operations/deployment.md](operations/deployment.md) · September runbook: [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md)
 - **API catalog (77 routers, ~960 procedures)** — [reference/api-complete.md](reference/api-complete.md)
 - **Database (18 schema files, 332 models)** — [reference/database.md](reference/database.md)
-- **Facet design system** — [reference/facet-design-system.md](reference/facet-design-system.md) · [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
+- **Facet design system** — [Facet 3 spec](specs/2026-09-30-facet-3-design-system.md) (decided 2026-09-30) · [style audit](audits/FACET_STYLE_AUDIT_2026-09-30.md) · v2: [reference/facet-design-system.md](reference/facet-design-system.md) · [reference/ui-cheatsheet.md](reference/ui-cheatsheet.md)
 
 Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 📐 Design / spec · 🗄️ Historical
 
@@ -132,6 +132,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [superpowers/specs/2026-09-12-route-travel-time-design.md](superpowers/specs/2026-09-12-route-travel-time-design.md) | Route travel time | ✅ Implemented |
 | [superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md](superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md) | Map editor inspector and history | 🟡 Partial |
 | [superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md](superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) | Builder companion guide | 🟡 Mostly implemented |
+| [specs/2026-09-30-facet-3-design-system.md](specs/2026-09-30-facet-3-design-system.md) | Facet 3 unified design system (HIG foundations, roles, type, shape, materials, components, rollout) | 📐 Decided; Phase 1 next |
 | [specs/2026-08-13-ixcards-lore-first-rebuild.md](specs/2026-08-13-ixcards-lore-first-rebuild.md) | IxCards lore-first rebuild | 🟡 Phases 1–5 done; 6–7 pending |
 | [specs/2026-08-10-achievements-ribbons-design.md](specs/2026-08-10-achievements-ribbons-design.md) | Achievements ribbons | 🟡 Ribbons pending |
 | [specs/vexel-prd.md](specs/vexel-prd.md) | Vexel heraldry studio | 🟡 P0 mostly built |

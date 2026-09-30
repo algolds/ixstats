@@ -123,6 +123,10 @@ used hues; `font-mono` ×1,195 for numbers; only 9 `Sheet` uses vs 133 `Dialog`;
 
 ## Open decisions
 
-The foundation choices (identity, materials, colour roles, accent model, type scale and face, shape, spacing, navigation,
-presentation, lists, control sizes, motion model, accessibility preferences, sound policy, default appearance, rollout)
-are being settled with the maintainer; the resulting specification will replace `docs/reference/facet-design-system.md`.
+Settled with the maintainer on 2026-09-30 and written up as the
+[Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md): opaque content with glass chrome; glass + 3
+textures; HIG semantic colour roles with per-app tints; HIG text styles at desktop density in the Swiss face with
+tabular figures; concentric radii; follow-system appearance with a density toggle; sidebar + tab bar with Halo as the
+island; HIG presentation rules; `FacetList`/`FacetRow`; three control sizes plus SegmentedControl/ToggleGroup/Stepper;
+uppercase `Eyebrow` only for data labels; named springs; all four accessibility preferences; restrained Cuelume;
+WikiOS/Forum folded into roles; foundations-first rollout.

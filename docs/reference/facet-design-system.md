@@ -1,5 +1,9 @@
 # Facet Design System & Interaction Bible (v2)
 
+> **Being replaced.** Facet 3 was decided on 2026-09-30 — see the [Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md).
+> This v2 document disagrees with the code in many places; the [Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
+> lists where. Until Phase 2 of Facet 3 lands, prefer the spec's rules for new work.
+
 Welcome to the canonical **Facet Design System & Interaction Bible**. 
 
 **Facet** is the physics-driven, tactile design language powering every interface across the IxStates platform. It unifies volumetric glass materials, dynamic Z-axis depth scaling, edge glare refraction, physical textures, spring-based animations, the **Halo** wayfinding system, and the **Cuelume** audio-tactile engine into a coherent, Apple-inspired human interface experience.
