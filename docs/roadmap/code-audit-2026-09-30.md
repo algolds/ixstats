@@ -186,7 +186,7 @@ audit:vault-exploits` shows them (dry run) and `bun run audit:vault-exploits:app
 | SL-11 | BUG | Mention notifications link to a missing route and read "Someone mentioned you". | `lib/notifications/hooks.ts:294` | S | M |
 | SL-12 | STUB | Nine places show placeholder names like `User ${id.slice(0,8)}`. **Fix: [#38](https://github.com/algolds/ixstats/pull/38)** (messaging and ThinkTanks). | `thinktanks/*`; `messaging/formatters.ts` | S | M |
 | SL-13 | DEAD | ThinkTank invites are write-only (no accept, no invite code). | `thinktanks/groups.ts:688-735` | M | M |
-| SL-14 | SEC | `collectMatchRevenue` can be clicked without limit, each click paying revenue. | `sports/seasons/lifecycle.ts:29-50` | S | M |
+| SL-14 | SEC | `collectMatchRevenue` can be clicked without limit, each click paying revenue. **Fixed: [#43](https://github.com/algolds/ixstats/pull/43)** (paid once per completed match; sponsor win bonus paid). | `sports/seasons/lifecycle.ts:29-50` | S | M |
 | SL-15 | UNFINISHED | The match prediction market settles bets, but nothing lets anyone place one. | `lib/sports/predictions.ts:51-110` | M | M |
 | SL-16 | UNFINISHED | Rivalries are read but never created. | `simulate-and-persist.ts:347-362` | M | L |
 | SL-17 | STUB | The standings form column makes up W/D/L. | `StandingsTable.tsx:192-196` | S | L |

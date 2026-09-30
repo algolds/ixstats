@@ -45,8 +45,9 @@ Split into domain sub-routers:
 
 ## Economic Integration
 
-- **Ticket Revenue**: $\text{capacity} \times \text{ticketPrice} \times 0.6 \times (\text{popularity} / 100)$
-- **Sponsor Income**: Sponsor base fee credited with gate revenue (`collectMatchRevenue`); sponsor packages also define a `winBonus` that is not yet paid out
+- **Ticket Revenue** (per completed home match): $\text{capacity} \times \text{ticketPrice} \times 0.6 \times (\text{popularity} / 100)$
+- **Sponsor Income**: the sponsor's base fee per completed home match and its `winBonus` per win, home or away
+- **Collecting**: `collectMatchRevenue` pays each completed match once (`SportMatch.homeRevenueCollectedAt` / `awayRevenueCollectedAt`); `previewMatchRevenue` shows what's waiting (`src/lib/sports/match-revenue.ts`)
 - **Franchise Claiming**: Requires the **MyClub Team License Token** (Vault Store, 5,000 credits); canonical leagues additionally require the **MyLeague Franchise Pass** (2,500 credits)
 - **Player Training**: Individual drills (25c), team sessions (100c) via `exchangeService`
 - **Patron Saint Invocation**: 100c; writes a `sports_saint_blessing` StorytellerEffect

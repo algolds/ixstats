@@ -173,6 +173,9 @@ model SportMatch {
   homeRatingAfter   Json?
   awayRatingAfter   Json?
   stage             Int             @default(1)
+  /// When each side's club collected its revenue for this match (collectMatchRevenue pays each match once)
+  homeRevenueCollectedAt DateTime?
+  awayRevenueCollectedAt DateTime?
   createdAt         DateTime        @default(now())
 
   season            SportSeason     @relation("SeasonMatches", fields: [seasonId], references: [id], onDelete: Cascade)
