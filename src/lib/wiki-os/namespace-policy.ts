@@ -64,6 +64,14 @@ const TITLE_INVISIBLES = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
 /** MediaWiki decodes HTML character references in titles (`Template&#58;Foo` is `Template:Foo`). */
 const CHARACTER_REFERENCE = /&(?:#\d+|#x[0-9a-f]+|[a-z][a-z0-9]*);/i;
 
+export interface ParseWikiTitleOptions {
+  /**
+   * Whether to recognise a namespace prefix (default true). A wiki other than IxWiki has its own
+   * namespaces, so its titles are only normalised and keep any prefix as plain text.
+   */
+  namespaces?: boolean;
+}
+
 export interface ParsedWikiTitle {
   /** Namespace id (0 = main). */
   namespaceId: number;
@@ -75,7 +83,10 @@ export interface ParsedWikiTitle {
  * Split a page title the way MediaWiki does. Returns null for a title that cannot be judged
  * (empty, or hiding a namespace prefix behind HTML character references).
  */
-export function parseWikiTitle(rawTitle: string): ParsedWikiTitle | null {
+export function parseWikiTitle(
+  rawTitle: string,
+  { namespaces = true }: ParseWikiTitleOptions = {}
+): ParsedWikiTitle | null {
   if (CHARACTER_REFERENCE.test(rawTitle)) return null;
 
   let title = rawTitle
@@ -87,7 +98,7 @@ export function parseWikiTitle(rawTitle: string): ParsedWikiTitle | null {
   title = title.replace(/^(?:\s*:)+\s*/, "");
   if (!title) return null;
 
-  const colon = title.indexOf(":");
+  const colon = namespaces ? title.indexOf(":") : -1;
   if (colon > 0) {
     const prefix = title.slice(0, colon).trim().toLowerCase().replace(/\s+/g, " ");
     const namespaceId = NAMESPACE_IDS.get(prefix);

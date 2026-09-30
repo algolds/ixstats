@@ -229,7 +229,7 @@ export async function getArticleAuthors(
   title: string,
   source: WikiSource = "ixwiki"
 ): Promise<ArticleAuthorInfo> {
-  const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
+  const cleanTitle = title.replace(/_/g, " ").trim();
 
   // 1. Check MediaWiki upstream API for full chronological history & true original creator
   try {

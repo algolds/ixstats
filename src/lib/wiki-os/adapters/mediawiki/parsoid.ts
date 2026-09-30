@@ -89,7 +89,7 @@ export async function renderArticleViaMediaWiki(
  * Fetch rendered HTML for an article directly from PostgreSQL / in-process wikitext compiler (<2ms).
  */
 export async function getArticleHtml(title: string): Promise<ParsoidArticle> {
-  const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
+  const cleanTitle = title.replace(/_/g, " ").trim();
   const isMainPage = cleanTitle.toLowerCase() === "main page";
 
   // If Main Page, fetch pre-rendered parse HTML for the rich featured portal layout

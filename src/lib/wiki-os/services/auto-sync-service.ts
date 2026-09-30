@@ -11,6 +11,7 @@ import { db } from "~/server/db";
 import { cleanExcerpt, calculateRawTextBytes } from "../transformers/wikitext-parser";
 import { extractLeadImageFromWikitext } from "../transformers/image-url";
 import { toArticleSlug } from "../core/domain-types";
+import { canonicalizeTitle, storedNamespace } from "../core/title";
 import { DEFAULT_USER_AGENT } from "../config";
 
 const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
@@ -176,7 +177,8 @@ export async function syncSinglePage(title: string): Promise<boolean> {
  */
 async function syncPageOrThrow(title: string): Promise<boolean> {
   const rawTitle = sanitize(title.replace(/_/g, " ").trim());
-  if (!rawTitle) return false;
+  const canon = canonicalizeTitle(rawTitle);
+  if (!canon) return false;
 
   const url = new URL(API_URL);
   url.searchParams.set("action", "query");
@@ -209,26 +211,28 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
   const cleanSum = cleanExcerpt(wikitext, 300);
   const summary = cleanSum ? cleanSum.substring(0, 480) : null;
   const leadImageUrl = extractLeadImageFromWikitext(wikitext);
-  const slug = toArticleSlug(rawTitle);
-  const ns = Number(page.ns || 0);
+  const { slug, title: articleTitle } = canon;
+  // MediaWiki's namespace wins where the canonical table has no prefix for it ("Portal:" is ns 100).
+  const { namespaceId, namespacePrefix } = storedNamespace(canon, Number(page.ns || 0));
 
   // The reader prefers cached contentHtml, so when the wikitext changes the cache must be cleared
   // or MediaWiki-side edits never show (NEW-2). An empty cache is re-rendered on the next view.
   const previous = await db.wikiArticle.findUnique({
-    where: { source_title: { source: "ixwiki", title: rawTitle } },
+    where: { source_title: { source: "ixwiki", title: articleTitle } },
     select: { wikitext: true },
   });
   const wikitextChanged = !previous || previous.wikitext !== wikitext;
 
   const article = await (db as any).wikiArticle.upsert({
     where: {
-      source_title: { source: "ixwiki", title: rawTitle },
+      source_title: { source: "ixwiki", title: articleTitle },
     },
     create: {
-      title: rawTitle,
+      title: articleTitle,
       slug,
       source: "ixwiki",
-      namespace: ns,
+      namespace: namespaceId,
+      namespacePrefix,
       status: "PUBLISHED",
       format: "WIKITEXT",
       wikitext,
@@ -242,7 +246,8 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
     },
     update: {
       slug,
-      namespace: ns,
+      namespace: namespaceId,
+      namespacePrefix,
       wikitext,
       ...(wikitextChanged ? { contentHtml: "" } : {}),
       summary,

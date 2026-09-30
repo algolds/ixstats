@@ -51,13 +51,15 @@ const change = (title: string, revid: number, second: number): Change => ({
 const jsonResponse = (body: object, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
+let mediaWikiNamespaces: Record<string, number> = {};
+
 const pageResponse = (title: string, revid: number) =>
   jsonResponse({
     query: {
       pages: {
         "1": {
           pageid: 1,
-          ns: 0,
+          ns: mediaWikiNamespaces[title] ?? 0,
           title,
           lastrevid: revid,
           revisions: [
@@ -108,6 +110,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   rcResponses = [];
   failingTitles = new Set();
+  mediaWikiNamespaces = {};
   globalThis.fetch = fetchMock as typeof fetch;
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
@@ -233,4 +236,65 @@ test("skips the bot revision WikiOS exported (article mwLatestRevId matches) (NE
   );
   expect(syncedTitles()).toEqual([]);
   expect(mockWikiArticleUpsert).not.toHaveBeenCalled();
+});
+
+test("stores the canonical title, slug and namespace of a synced page (plan 403)", async () => {
+  rcResponses = [{ changes: [change("user talk:jane_doe", 100, 1)] }];
+
+  await runAutoSyncCycle();
+
+  const args = mockWikiArticleUpsert.mock.calls[0]?.[0];
+  expect(args.where).toEqual({ source_title: { source: "ixwiki", title: "User talk:Jane doe" } });
+  expect(args.create).toMatchObject({
+    title: "User talk:Jane doe",
+    slug: "user_talk:jane_doe",
+    namespace: 3,
+    namespacePrefix: "User talk",
+  });
+  expect(args.update).toMatchObject({
+    slug: "user_talk:jane_doe",
+    namespace: 3,
+    namespacePrefix: "User talk",
+  });
+});
+
+test("skips a change whose title MediaWiki itself would refuse", async () => {
+  rcResponses = [{ changes: [change("a[b", 100, 1)] }];
+
+  await runAutoSyncCycle();
+
+  expect(syncedTitles()).toEqual([]);
+  expect(mockWikiArticleUpsert).not.toHaveBeenCalled();
+});
+
+test("keeps MediaWiki's namespace and the title's prefix when the canonical table lacks it", async () => {
+  mediaWikiNamespaces = { "Portal:Eurth": 100, "Foo: bar": 0 };
+  rcResponses = [{ changes: [change("Portal:Eurth", 100, 1), change("Foo: bar", 101, 2)] }];
+
+  await runAutoSyncCycle();
+
+  const upsertFor = (title: string) =>
+    mockWikiArticleUpsert.mock.calls.find(([args]) => args.create.title === title)?.[0];
+  const portal = upsertFor("Portal:Eurth");
+  expect(portal.create).toMatchObject({
+    title: "Portal:Eurth",
+    slug: "portal:eurth",
+    namespace: 100,
+    namespacePrefix: "Portal",
+  });
+  expect(portal.update).toMatchObject({ namespace: 100, namespacePrefix: "Portal" });
+
+  expect(upsertFor("Foo: bar").create).toMatchObject({ namespace: 0, namespacePrefix: null });
+});
+
+test("a namespace the canonical table knows is not overridden by MediaWiki's id", async () => {
+  mediaWikiNamespaces = { "Talk:x": 1 };
+  rcResponses = [{ changes: [change("Talk:x", 100, 1)] }];
+
+  await runAutoSyncCycle();
+
+  expect(mockWikiArticleUpsert.mock.calls[0]?.[0].create).toMatchObject({
+    namespace: 1,
+    namespacePrefix: "Talk",
+  });
 });

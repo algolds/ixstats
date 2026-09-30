@@ -258,7 +258,8 @@ export async function getArticleSummaryFromShadow(
   title: string,
   source = "ixwiki"
 ): Promise<{ title: string; intro: string; leadImageUrl?: string | null }> {
-  const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
+  // `title` arrives already URL-decoded (a "%" in it is part of the title): never decode again.
+  const cleanTitle = title.replace(/_/g, " ").trim();
   try {
     const slug = toArticleSlug(cleanTitle);
     const article = await db.wikiArticle.findFirst({

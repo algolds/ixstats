@@ -3,21 +3,25 @@
 // Legacy WikiOS Talk Page — redirects to the modern WikiOS Margin split-canvas inspector.
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { withBasePath } from "~/lib/base-path";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
+import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ChatBubble as MessageSquare } from "iconoir-react";
 
 export default function TalkPageRedirect() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const slug = params.slug;
-  const title = decodeURIComponent(slug).replace(/_/g, " ");
+  // The URL segment is decoded once; the redirect is built from the canonical title.
+  const decoded = decodeTitleParam(params.slug);
+  const canon = useMemo(() => canonicalizeTitle(decoded), [decoded]);
+  const title = canon?.title ?? decoded.replace(/_/g, " ");
 
   useEffect(() => {
-    // Redirect to the article with margin inspector triggered
-    router.replace(withBasePath(`/wiki/${encodeURIComponent(slug)}?margin=threads`));
-  }, [slug, router]);
+    // Redirect to the article with margin inspector triggered (a title MediaWiki would refuse has no article)
+    if (canon) router.replace(withBasePath(`${wikiReaderPath(canon.title)}?margin=threads`));
+  }, [canon, router]);
 
   return (
     <WikiOSLayout title={`Margin: ${title}`}>

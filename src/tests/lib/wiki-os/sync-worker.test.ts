@@ -53,6 +53,18 @@ test("stamps the exported Postgres revision with the MediaWiki revision id", asy
   );
 });
 
+test("stamps the article by its canonical title, whatever spelling the job carries (plan 403)", async () => {
+  mockExecuteWrite.mockResolvedValue({ success: true, revisionId: 556 });
+
+  MediaWikiExportWorker.enqueue({ ...job, slug: "foo_bar", title: "foo_bar" });
+  await flush();
+
+  expect(mockArticleUpdateMany).toHaveBeenCalledWith({
+    where: { source: "ixwiki", title: "Foo bar" },
+    data: expect.objectContaining({ mwLatestRevId: 556 }),
+  });
+});
+
 test("does not touch revisions when MediaWiki reports no new revision", async () => {
   mockExecuteWrite.mockResolvedValue({ success: true, noChange: true });
 

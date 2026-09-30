@@ -249,7 +249,8 @@ export async function fetchMediaWikiPageAuthorsAndRevisions(
   contributors: Array<{ username: string; editCount: number; lastContributedAt?: string }>;
   totalContributors: number;
 } | null> {
-  const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
+  // `title` arrives already URL-decoded (a "%" in it is part of the title): never decode again.
+  const cleanTitle = title.replace(/_/g, " ").trim();
   const rawBase =
     wiki === "iiwiki"
       ? getIiwikiApiBaseUrl()

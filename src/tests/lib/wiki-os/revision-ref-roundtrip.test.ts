@@ -64,6 +64,8 @@ const mockMatches = (row: MockRevisionRow, where: MockRevisionWhere): boolean =>
 
 jest.mock("~/server/db", () => ({
   db: {
+    // History resolves the article first (plan 403); "Foo Bar" is the canonical row for Foo_Bar.
+    wikiArticle: { findUnique: async () => ({ id: "art-1", title: "Foo Bar" }) },
     wikiRevision: {
       findMany: async () => mockRows,
       findFirst: async ({ where }: { where: MockRevisionWhere }) => {

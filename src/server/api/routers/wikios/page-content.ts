@@ -35,6 +35,7 @@ import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-se
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -125,7 +126,15 @@ export const wikiosPageContentRouter = createTRPCRouter({
       }
 
       // Default ixwiki flow — direct PostgreSQL / in-process wikitext compiler
-      const rawTitle = decodeURIComponent(input.title).replace(/_/g, " ").trim();
+      // The client sends the title already URL-decoded; canonicalize it (never decode again).
+      const canon = canonicalizeTitle(input.title);
+      if (!canon) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `"${input.title}" is not a valid page title.`,
+        });
+      }
+      const rawTitle = canon.title;
       const rawTitleLower = rawTitle.toLowerCase().replace(/[\s_]+/g, "-");
       const RESERVED_SYSTEM_ROUTES = new Set([
         "utilities",
@@ -457,7 +466,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const cleanTitle = decodeURIComponent(input.title).replace(/_/g, " ").trim();
+      const cleanTitle = input.title.replace(/_/g, " ").trim();
       const resolvedTitle = await resolveRedirect(cleanTitle);
 
       const summary = await getArticleSummaryFromShadow(resolvedTitle, input.wiki);
