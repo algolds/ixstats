@@ -16,7 +16,7 @@ There is no client-side `VaultRouter` — `/vault` uses normal Next.js routes wr
 - `src/components/vault/VaultSidebarLayout.tsx` – Grid layout (adds the Achievements / Leaderboards links)
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): Balance overview, today's earnings breakdown, XP progress bar, yield projections, recent activity
-  - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Inventory (rarity/type filters, bulk junking), Collections; the Card Gallery sub-tab (`/vault/lore-gallery`, `/vault/ns-library`) is currently shown in development builds only
+  - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters, bulk junking), Collections
   - `Marketplace` (`VaultMarketplaceSection.tsx`, `/vault/marketplace?tab=store|auctions|trading`): Vault Shop (packs + cosmetics, cinematic pack opening), Auctions, P2P Trading. `/vault/packs`, `/vault/market` and `/vault/trading` are redirect stubs into this section
   - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard
 - Standalone routes: `/vault/crafting` (`CraftingWorkbench`, not linked from the sidebar), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`, `/vault/admin`

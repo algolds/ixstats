@@ -86,8 +86,8 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
 ---
 
 ### Roadmap Pillars (Deferred / Future Phases)
-- **Group Chat (`ThinktankChatTab.tsx`)** — *UI not built*: Real-time synchronized messaging powered by the ThinkShare messaging infrastructure. The backend exists: each group gets a linked `ThinkshareConversation` (`conversationId`) and `sendMessage` accepts a group ID. There is no chat tab component, and `MessagesConversationPanel.tsx` hides thinktank conversations from `/messages`.
-- **Collaborative Docs (`ThinktankPapersTab.tsx`)** — *partial*: Split-view editor for creating, searching, editing, and versioning group articles and policy drafts. The component and the `getThinktankDocuments` / `create` / `update` / `deleteThinktankDocument` procedures exist, but the tab is not wired into `ThinktankWorkspace` (`ThinktankTab` is `"feed" | "roster"`).
+- **Group Chat (`ThinktankChatTab.tsx`)** — *live*: the workspace's Chat tab uses the group's linked `ThinkshareConversation` (`conversationId`); only active members can join it.
+- **Collaborative Docs (`ThinktankPapersTab.tsx`)** — *live*: Split-view editor for creating, searching, editing, and versioning group articles and policy drafts. It is the workspace's Docs tab.
 
 ---
 
@@ -133,7 +133,7 @@ Group owners and administrators can customize the visual identity of their Think
   - **Group Emblem / Logo**: Pick from Wikimedia Commons, high-resolution web photography, user Stash, or local file upload.
   - **Group Banner Artwork**: Select panoramic headers rendered as a frosted glass backdrop across the workspace header chrome.
 - **Member Invitations**:
-  - Invitation dispatch by raw user ID via `api.thinkpages.inviteToThinktank` (`ThinktankSettingsModal.tsx` passes the typed text as the ID; there is no username lookup, invite list or invite code entry). Joining a private or invite-only group consumes an open invite (`membership.ts`).
+  - Invitations via `api.thinkpages.inviteToThinktank`, choosing the invitee through a username search (`searchInvitableUsers`, which respects invite privacy in `invite-privacy.ts`). Joining a private or invite-only group consumes an open invite (`membership.ts`).
 - **Multi-Persona Posting Toggle**:
   - Switch between authentic sovereign user accounts (default) and multi-persona identity chips (`Government`, `Media`, `Citizen`).
 

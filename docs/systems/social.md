@@ -13,7 +13,7 @@ ThinkPages is the real-time communications and publishing network of IxStates. I
 
 The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects there) is the public town square for national announcements, diplomatic communiqués, breaking news, and community polling:
 - **`[blurb:slug|Title]` Blurb Cross-Posts**: [Blurbs](../../src/app/blurbs/README.md) (Topic Tuesday) responses auto-cross-post to the feed with a `[blurb:slug|Title]` prefix and `#blurb` tag; the post card strips the prefix and renders a chip linking back to the prompt. Inline link previews cover Wiki, Forum, League, and Club URLs.
-- **Official Seals & Sovereign Identity**: Posts display sovereign state seals, leader titles, and verified tags. The verified flag is self-toggled by the account owner (`accounts.ts`, `AccountSettingsModal.tsx`); nothing checks it.
+- **Official Seals & Sovereign Identity**: Posts display sovereign state seals, leader titles, and verified tags. Only admins can set the verified flag, and creating an account tied to a country requires write access to that country (`accounts.ts`).
 - **National Polls**: Real-time polling widgets let rulers gauge international sentiment and domestic approval with instant visual tallying.
 - **Hashtag Indexing**: Hashtags are extracted on submit and each tag has its own page (`/hashtags/[tag]`) aggregating discussions across sovereign borders.
 

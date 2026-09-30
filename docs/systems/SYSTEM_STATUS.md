@@ -1,7 +1,7 @@
 # IxStates System Status
 
 **Platform:** 1.4.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
-**Last verified:** 2026-09-29, by a doc-by-doc audit against the code; ratings corrected 2026-09-30 from the Atlas, MyCountry, Vault/Identity, WikiOS/Onoma and Social/Core audits
+**Last verified:** 2026-09-29, by a doc-by-doc audit against the code; ratings corrected 2026-09-30 from the Atlas, MyCountry, Vault/Identity, WikiOS/Onoma and Social/Core audits and updated for the fix-batch merge
 **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
 **Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../roadmap/code-audit-2026-09-30.md)
 
@@ -33,7 +33,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Economy & fiscal policy | — | `/mycountry/economy` | `economics/`, `taxSystem/`, `src/lib/economy/`, `src/lib/government/` | 🟡 Partial | Decisions do not reach the headline stats: two sources of truth (a projection computed on read vs stored `current*` columns refreshed only by an admin button), no growth tick, tax sliders do not feed GDP growth. 20 built-in archetypes; 6 player tax-rate sliders over 42 engine tax components (the tax builder UI was removed); ERI, PII and GDP projection are reference formulas only |
 | Politics: parties, legislature, bills, brokers | — | `/mycountry/politics` | `elections/`, `legislation.ts` | 🟡 Partial | No first election is ever created, so seats stay party-less and bills can never pass (`holdVote` finds no blocs). Parties and legislature setup work |
 | Elections | — | `/mycountry/politics` | `elections/`, `src/lib/government/election-simulation.ts` | 🟡 Partial | **Broken loop:** candidate registration was deleted (plan 312) and `election.create` runs only in the cron's follow-up branch, so no election is ever started or resolved |
-| Diplomacy | — | `/mycountry/diplomacy` | `diplomacy/`, `diplomaticScenarios/` | 🟡 Partial | Embassies, alliances, cultural exchange, stances with drift cron work. Cooperative foreign policy (`free_trade`, `military_alliance`) cannot be accepted (no accept/decline procedure); alliance invites skip consent; shared data is synthesised; embassy missions are not playable |
+| Diplomacy | — | `/mycountry/diplomacy` | `diplomacy/`, `diplomaticScenarios/` | 🟡 Partial | Embassies, alliances, cultural exchange, stances with drift cron work. Cooperative foreign policy (`free_trade`, `military_alliance`) and alliance invites now need the target's consent, but the accept/decline procedures have no UI yet; shared data is synthesised; embassy missions are not playable |
 | Defense | — | `/mycountry/defense` (also serves `/mycountry/intelligence`) | `security/`, `militaryEquipment/` | 🔒 Premium | |
 | Intelligence | — | — | `intelligence/` (templates), `diplo-intel.ts` | 🟡 Partial | No standalone dashboard; the old stack was deleted in plans 312/341 |
 | Map editor section | — | `/mycountry/map-editor` | — | 🟡 Partial | Premium-gated, but the route falls through to the Executive home |
@@ -72,13 +72,13 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
-| IxCredits ledger | IxVault v2 | `/vault` | `vault/`, `src/lib/vault/` | 🟡 Partial | Passive income + catch-up, daily streak, `EARN_BONUS`. Pack purchases (`PACK_PURCHASE`), junk and lore-card paths (`EXPENSE`) bypass the ledger's spend path |
+| IxCredits ledger | IxVault v2 | `/vault` | `vault/`, `src/lib/vault/` | 🟡 Partial | Passive income + catch-up, daily streak, `EARN_BONUS`. Pack purchases (`SPEND_PACKS`), junk payouts (`EARN_CARDS`) and lore-card requests and refunds (`SPEND_MARKET` / `REFUND`) all go through the ledger |
 | Cards | IxVault v2 | `/vault/cards` | `cards/`, `lore-cards/` | ✅ Live | 5 card types. NATION cards are re-priced daily but not auto-minted |
 | Pack store & opening | IxVault v2 | `/vault/marketplace?tab=store` | `card-packs/` | 🟡 Partial | `guaranteedRarity` and `themeFilter` not enforced; Keep/List quick actions only log |
 | Marketplace (auctions) & trading | IxVault v2 | `/vault/marketplace`, `/vault/trading` | `card-market/`, `trading/` | 🟡 Partial | Escrow-locked, but settlement (auction completion, trade expiry) runs only through crons that are off unless listed in `CRON_ENABLED_JOBS` |
-| Crafting | — | `/vault/crafting` (unlinked) | `crafting/` | 🟡 Partial | **Broken end to end:** wrong ID type, success-rate units, seed/schema mismatch |
+| Crafting | — | `/vault/crafting` (unlinked) | `crafting/` | 🟡 Partial | Now uses ownership IDs and the vault level; success-rate units and level pacing still need a design decision |
 | NationStates import | — | `/vault/import`, `/vault/ns-deck` | `ns-import/` | ✅ Live | Dump sync is admin-triggered |
-| Achievements | v2 | `/achievements`, `/leaderboards` | `achievements/` | ✅ Live | Evaluated only on page visit. The ribbons on country pages (`FloatingRibbonRack`) are fabricated, not the viewed nation's unlocked achievements |
+| Achievements | v2 | `/achievements`, `/leaderboards` | `achievements/` | ✅ Live | Evaluated only on page visit. The ribbon rack on country pages (`FloatingRibbonRack`) renders nothing until real ribbon data is wired into `CountryHeader` |
 | Premium tiers | — | — | `premiumProcedure`, `PremiumPreviewFrame` | 🟡 Partial | Only Defense and 10 security procedures are gated; no payments |
 
 ## 💬 ThinkPages — social
@@ -86,9 +86,9 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
 | Feed | v2 | `/dashboard`, `/thinkpages/post/[id]`, `/hashtags/[tag]` | `thinkpages/`, `polls/` | ✅ Live | `[blurb:slug]` is a Blurbs cross-post prefix |
-| Accounts (personas) | v2 | `/thinkpages` | `thinkpages/accounts.ts` | 🟡 Partial | 25 accounts per user; IxTwitter import. The Discord mirror is off by default and cannot be enabled from the UI; the verified flag and country tag are self-set and unchecked |
-| ThinkTanks | v2 | `/thinktanks` | `thinkpages/thinktanks/` | 🟡 Partial | Feed and Members only; Docs tab built but not mounted; no chat |
-| ThinkShare messages | v2 | `/messages` | `messages/` | 🟡 Partial | Live for 1:1 and group DMs over `/ws/thinkpages`; diplomatic conversation creation from the UI is unreachable, there is an auto-join hole, and encryption fields exist but no cryptography |
+| Accounts (personas) | v2 | `/thinkpages` | `thinkpages/accounts.ts` | 🟡 Partial | 25 accounts per user; IxTwitter import. The Discord mirror is off by default and cannot be enabled from the UI; the verified flag is admin-only; creating an account for a country requires write access to it |
+| ThinkTanks | v2 | `/thinktanks` | `thinkpages/thinktanks/` | 🟡 Partial | Feed, Members, Docs and Chat tabs; invites by username search |
+| ThinkShare messages | v2 | `/messages` | `messages/` | 🟡 Partial | Live for 1:1 and group DMs over `/ws/thinkpages`; diplomatic conversation creation from the UI is unreachable, joining a thinktank-linked conversation requires active membership of that group, and encryption fields exist but no cryptography |
 | Blurbs | — | `/blurbs` | `blurbs/` | ✅ Live | |
 
 ## 🗨️ Forum & identity
@@ -96,7 +96,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
 | IxForum (XenForo bridge) | platform | `/forum` | `forum/` (`reading`, `writing`, `stash`, `account`) | ✅ Live | Moderation and alerts removed (plan 312) |
-| Passport | — | `/@user`, `/id/[username]`, `/r/[realm]/[username]` | `src/server/modules/identity/` | ✅ Live | Five tabs: Overview, Work, Realms, Vault, History. Some tiles are placeholders, wiki linking is heuristic and the privacy toggles are session-only |
+| Passport | — | `/@user`, `/id/[username]`, `/r/[realm]/[username]` | `src/server/modules/identity/` | ✅ Live | Five tabs: Overview, Work, Realms, Vault, History. Some tiles are placeholders, wiki linking uses only verified `WikiAccountLink`s and the privacy toggles are session-only (and labelled so) |
 | Verified wiki accounts | — | `/settings` | `identity.wiki-links.ts` | ✅ Live | Token saved to the user page on ixwiki, iiwiki or althistory |
 
 ## ⚙️ Concord — living world

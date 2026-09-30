@@ -65,8 +65,8 @@ Diplomatic channels are `ThinkshareConversation` / `DiplomaticChannel` records c
 
 ## Known Gaps
 
-- **Cooperative foreign policy cannot be accepted.** `free_trade` and `military_alliance` (`COOPERATIVE_FP` in `diplomacy/policies/foreignPolicy.ts`) are created with status `proposed` and no effects, awaiting the target's consent, but there is no accept/decline procedure and no UI, so they stay proposed. Hostile actions are enacted immediately.
-- **Alliance invites skip consent**: inviting a nation makes it a member at once (`policies/alliances.ts`).
+- **Cooperative foreign policy has no inbox UI yet.** `free_trade` and `military_alliance` (`COOPERATIVE_FP` in `diplomacy/policies/foreignPolicy.ts`) are created with status `proposed`; the target's owner lists them with `getForeignPolicyProposals` and accepts or declines with `respondToForeignPolicyProposal`, but no MyCountry screen calls these yet. Proposals do not expire and cannot be withdrawn. Hostile actions are enacted immediately and now apply their effects.
+- **Alliance invites need consent**: an invite is a pending `AllianceMember` row (`status: "invited"`, inactive) until the invited country's owner calls `respondToAllianceInvite`; `getAllianceInvites` lists them. There is no inbox UI for them yet (`policies/alliances.ts`).
 - **Shared data is synthesised** and the cultural-exchange analysis shows randomised percentages in the UI.
 - Embassy missions and upgrades were deleted (plan 312); no mission is playable.
 

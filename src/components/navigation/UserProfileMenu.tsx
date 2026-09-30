@@ -12,7 +12,7 @@ import {
   Settings,
   Link as Link2,
 } from "iconoir-react";
-import { SignInButton } from "~/context/auth-context";
+import { SignInButton, useAuth } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { getNationUrl } from "~/lib/utils";
@@ -34,6 +34,7 @@ export function UserProfileMenu({
   flagsLoading,
 }: UserProfileMenuProps) {
   const [showUserPopover, setShowUserPopover] = useState(false);
+  const { signOut } = useAuth();
 
   if (!user) {
     return (
@@ -160,9 +161,9 @@ export function UserProfileMenu({
           <div className="px-4 py-2">
             <button
               onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.location.href = createAbsoluteUrl("/sign-out");
-                }
+                void signOut().finally(() => {
+                  window.location.href = createAbsoluteUrl("/");
+                });
               }}
               className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex w-full items-center gap-3 rounded-md px-0 py-2 text-sm transition-colors"
             >

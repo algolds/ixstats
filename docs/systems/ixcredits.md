@@ -24,7 +24,7 @@ Defined in `prisma/schema/cards.prisma`:
 | `todayEarned` | Float | Credits earned today (reset lazily on the first read/earn after midnight UTC) |
 
 ### `VaultTransaction`
-Immutable ledger recording every balance change with `vaultId`, `credits`, `balanceAfter`, `type` (a `VaultTransactionType` value stored as a string: `EARN_PASSIVE`, `EARN_ACTIVE`, `EARN_CARDS`, `EARN_SOCIAL`, `EARN_BONUS`, `REFUND`, `SPEND_*`, `ADMIN_ADJUSTMENT`; the strings `PACK_PURCHASE` (`src/lib/cards/pack-service.ts`) and `EXPENSE` (`lore-cards/user.ts`) are also written, outside the `VaultTransactionType` set), `source`, `metadata` (JSON audit trail), an optional unique `idempotencyKey`, and `createdAt`.
+Immutable ledger recording every balance change with `vaultId`, `credits`, `balanceAfter`, `type` (a `VaultTransactionType` value stored as a string: `EARN_PASSIVE`, `EARN_ACTIVE`, `EARN_CARDS`, `EARN_SOCIAL`, `EARN_BONUS`, `REFUND`, `SPEND_*`, `ADMIN_ADJUSTMENT`), `source`, `metadata` (JSON audit trail), an optional unique `idempotencyKey`, and `createdAt`.
 
 ---
 
@@ -71,7 +71,7 @@ Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that wo
 
 ## Spending IxCredits
 
-- **Card Packs**: Packs bypass the standard spend path: `pack-service.ts` writes a `PACK_PURCHASE` ledger row itself and checks `isPacksEnabled` on its own, so the ledger's `SPEND_PACKS` gate never runs for packs. Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
+- **Card Packs**: `pack-service.ts` spends through `spendCreditsTx` with type `SPEND_PACKS`, so the ledger's kill switch and idempotency apply to packs. Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
 - **Card Crafting & Evolution (`SPEND_CRAFT`)**: Fusion (250–10,000 IxC), Rarity Evolution (200–4,000 IxC)
 - **Marketplace & Trading (`SPEND_MARKET`)**: Listing fee (5 IxC standard, 10 IxC featured; 50% refunded if no bids), marketplace fee (10% on sales $>100$ IxC), P2P credit transfers
 - **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Vault Shop items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, an archetype proposal token (no consumer yet), a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no passive yield boost item, although the passive-income code reads a yield boost if one exists
