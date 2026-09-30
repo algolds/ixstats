@@ -37,7 +37,7 @@ The MyCountry subsystem uses a **4-tier modular domain architecture** located at
 
 | Tier | Path | Description |
 | --- | --- | --- |
-| **Shell** | `shell/` | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `EconomyDrillDown`, `PoliticsDrillDown`, `rails/`, `agenda/`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta.ts`, `status-tone.ts`, legacy `surface-kit.tsx`). |
+| **Shell** | `shell/` | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `EconomyDrillDown`, `PoliticsDrillDown`, `rails/`, `agenda/`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta.ts`, `status-tone.ts`). |
 | **Shared** | `shared/` | Universal reusable primitives (`cards/`, `headers/`, `modals/`, `primitives/`, `tabs/`). |
 | **Domains** | `domains/` | 5 simulation pillar modules: `defense/`, `diplomacy/`, `economy/`, `government/`, `geography/`. |
 | **Dossier** | `dossier/` | Public country dossier views, factbooks, and Wiki infobox cards. |
