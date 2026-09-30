@@ -5,6 +5,52 @@ import { notificationAPI } from "~/lib/notifications/api";
 
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  INVITE_STATUS,
+  expireStaleDiplomaticProposals,
+  inviteIssuedAt,
+  isProposalExpired,
+  proposalExpiresAt,
+} from "~/lib/diplomacy/proposal-lifecycle";
+import { notifyCountryOwners } from "./notify";
+
+const ALLIANCE_LEADER_ROLES = ["founder", "leader"];
+
+/**
+ * The countries that speak for a pending invite: the country that issued it, or — for
+ * invites issued before `invitedByCountryId` was recorded — the alliance's active leadership.
+ */
+async function inviteProposerCountryIds(
+  db: any,
+  invite: { allianceId: string; invitedByCountryId?: string | null }
+): Promise<string[]> {
+  if (invite.invitedByCountryId) return [invite.invitedByCountryId];
+  const leaders: { countryId: string }[] = await db.allianceMember.findMany({
+    where: {
+      allianceId: invite.allianceId,
+      isActive: true,
+      role: { in: ALLIANCE_LEADER_ROLES },
+    },
+    select: { countryId: true },
+  });
+  return leaders.map((l) => l.countryId);
+}
+
+/** Mark a stale pending invite expired and refuse the action with a clear message. */
+async function rejectExpiredInvite(
+  db: any,
+  invite: { id: string; invitedAt?: Date | null; updatedAt: Date }
+): Promise<never> {
+  const expiresAt = proposalExpiresAt(inviteIssuedAt(invite));
+  await db.allianceMember.updateMany({
+    where: { id: invite.id, status: INVITE_STATUS.pending },
+    data: { status: INVITE_STATUS.expired },
+  });
+  throw new TRPCError({
+    code: "BAD_REQUEST",
+    message: `This invitation expired on ${expiresAt.toISOString().slice(0, 10)} without an answer.`,
+  });
+}
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
@@ -226,7 +272,8 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       if (existing?.isActive) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Country is already a member." });
       }
-      if (existing?.status === "invited") {
+      // A stale invite no longer blocks a fresh one (it is re-issued below).
+      if (existing?.status === "invited" && !isProposalExpired(inviteIssuedAt(existing))) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "An invitation to this country is already pending.",
@@ -244,55 +291,38 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       // An invite is a pending row (isActive=false, status="invited"): the target's owner must
       // accept via respondToAllianceInvite before the country becomes a member.
       const votingPower = input.role === "observer" ? 0 : 1.0;
+      const inviteFields = {
+        isActive: false,
+        status: INVITE_STATUS.pending,
+        role: input.role,
+        votingPower,
+        invitedByCountryId: ctx.user.countryId,
+        invitedAt: new Date(),
+      };
       if (existing) {
-        // Previously left or declined: re-issue the invite.
-        await ctx.db.allianceMember.update({
-          where: { id: existing.id },
-          data: { isActive: false, status: "invited", role: input.role, votingPower },
-        });
+        // Previously left, declined, withdrawn or expired: re-issue the invite.
+        await ctx.db.allianceMember.update({ where: { id: existing.id }, data: inviteFields });
       } else {
         await ctx.db.allianceMember.create({
           data: {
             allianceId: input.allianceId,
             countryId: input.targetCountryId,
-            role: input.role,
-            votingPower,
-            isActive: false,
-            status: "invited",
+            ...inviteFields,
           },
         });
       }
 
-      // Notification: notify invited country (fire-and-forget)
-      try {
-        const targetCountry = await ctx.db.country.findUnique({
-          where: { id: input.targetCountryId },
-          select: { owner: { select: { clerkUserId: true } } },
-        });
-        const targetUserId = targetCountry?.owner?.clerkUserId;
-        const alliance = await ctx.db.alliance.findUnique({
-          where: { id: input.allianceId },
-          select: { name: true },
-        });
-        if (targetUserId) {
-          await notificationAPI.create({
-            userId: targetUserId,
-            countryId: input.targetCountryId,
-            title: "Alliance Invitation",
-            message: `You've been invited to join ${alliance?.name ?? "an alliance"}`,
-            type: "info",
-            category: "diplomatic",
-            priority: "high",
-            metadata: { allianceId: input.allianceId },
-          });
-        }
-      } catch (err) {
-        console.warn(
-          "[Alliances] Invitation notification failed for alliance",
-          input.allianceId,
-          err
-        );
-      }
+      // Notification: notify invited country's owner (best effort)
+      const alliance = await ctx.db.alliance.findUnique({
+        where: { id: input.allianceId },
+        select: { name: true },
+      });
+      await notifyCountryOwners(ctx.db, [input.targetCountryId], {
+        title: "Alliance Invitation",
+        message: `You've been invited to join ${alliance?.name ?? "an alliance"}. Review it in your diplomacy inbox.`,
+        priority: "high",
+        metadata: { allianceId: input.allianceId },
+      });
 
       return { success: true, pending: true };
     }),
@@ -302,8 +332,9 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
+      await expireStaleDiplomaticProposals(ctx.db, { countryId: input.countryId });
       const invites = await ctx.db.allianceMember.findMany({
-        where: { countryId: input.countryId, status: "invited", isActive: false },
+        where: { countryId: input.countryId, status: INVITE_STATUS.pending, isActive: false },
         orderBy: { createdAt: "desc" },
         include: {
           alliance: {
@@ -319,13 +350,112 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
           },
         },
       });
-      return invites.map((i) => ({
+      const live = invites.filter((i) => !isProposalExpired(inviteIssuedAt(i)));
+      const inviterIds = [
+        ...new Set(live.map((i) => i.invitedByCountryId).filter((id): id is string => !!id)),
+      ];
+      const inviters = inviterIds.length
+        ? await ctx.db.country.findMany({
+            where: { id: { in: inviterIds } },
+            select: { id: true, name: true, flag: true },
+          })
+        : [];
+      const inviterById = new Map(inviters.map((c) => [c.id, c]));
+      return live.map((i) => ({
         allianceId: i.allianceId,
         countryId: i.countryId,
         role: i.role,
-        invitedAt: i.updatedAt,
+        invitedAt: inviteIssuedAt(i),
+        expiresAt: proposalExpiresAt(inviteIssuedAt(i)),
+        invitedBy: i.invitedByCountryId ? (inviterById.get(i.invitedByCountryId) ?? null) : null,
         alliance: i.alliance,
       }));
+    }),
+
+  // Pending invitations this country has issued (legacy invites with no recorded inviter
+  // are shown to the alliance's founder/leaders).
+  getOutgoingAllianceInvites: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      await expireStaleDiplomaticProposals(ctx.db, { countryId: input.countryId });
+      const invites = await ctx.db.allianceMember.findMany({
+        where: {
+          status: INVITE_STATUS.pending,
+          isActive: false,
+          OR: [
+            { invitedByCountryId: input.countryId },
+            {
+              invitedByCountryId: null,
+              alliance: {
+                members: {
+                  some: {
+                    countryId: input.countryId,
+                    isActive: true,
+                    role: { in: ALLIANCE_LEADER_ROLES },
+                  },
+                },
+              },
+            },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+          alliance: { select: { id: true, name: true, shortName: true, color: true } },
+          country: { select: { id: true, name: true, flag: true } },
+        },
+      });
+      return invites
+        .filter((i) => !isProposalExpired(inviteIssuedAt(i)))
+        .map((i) => ({
+          allianceId: i.allianceId,
+          countryId: i.countryId,
+          role: i.role,
+          invitedAt: inviteIssuedAt(i),
+          expiresAt: proposalExpiresAt(inviteIssuedAt(i)),
+          alliance: i.alliance,
+          country: i.country,
+        }));
+    }),
+
+  // The inviting country withdraws a pending invitation before it is answered.
+  withdrawAllianceInvite: protectedProcedure
+    .input(z.object({ allianceId: z.string(), countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const invite = await ctx.db.allianceMember.findUnique({
+        where: {
+          allianceId_countryId: { allianceId: input.allianceId, countryId: input.countryId },
+        },
+      });
+      if (!invite || invite.status !== INVITE_STATUS.pending || invite.isActive) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No pending invitation found." });
+      }
+
+      if (invite.invitedByCountryId) {
+        await assertCountryWriteAccess(ctx, invite.invitedByCountryId);
+      } else {
+        // Legacy invite with no recorded inviter: the alliance's leadership speaks for it.
+        const leaders = await inviteProposerCountryIds(ctx.db, invite);
+        if (!ctx.user?.countryId || !leaders.includes(ctx.user.countryId)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only the inviting country can withdraw this invitation.",
+          });
+        }
+      }
+
+      if (isProposalExpired(inviteIssuedAt(invite))) {
+        await rejectExpiredInvite(ctx.db, invite);
+      }
+
+      const withdrawn = await ctx.db.allianceMember.updateMany({
+        where: { id: invite.id, status: INVITE_STATUS.pending },
+        data: { isActive: false, status: INVITE_STATUS.withdrawn },
+      });
+      if (withdrawn.count === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invitation is no longer pending." });
+      }
+      return { status: INVITE_STATUS.withdrawn };
     }),
 
   // The invited country's owner accepts (becomes a member) or declines
@@ -348,6 +478,9 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       if (!invite || invite.status !== "invited" || invite.isActive) {
         throw new TRPCError({ code: "NOT_FOUND", message: "No pending invitation found." });
       }
+      if (isProposalExpired(inviteIssuedAt(invite))) {
+        await rejectExpiredInvite(ctx.db, invite);
+      }
 
       // Claim atomically so a double response cannot flip it twice.
       const claimed = await ctx.db.allianceMember.updateMany({
@@ -361,7 +494,23 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invitation is no longer pending." });
       }
 
-      if (input.choice === "decline") return { status: "declined" as const };
+      const [alliance, invitee, proposerIds] = await Promise.all([
+        ctx.db.alliance.findUnique({ where: { id: input.allianceId }, select: { name: true } }),
+        ctx.db.country.findUnique({ where: { id: input.countryId }, select: { name: true } }),
+        inviteProposerCountryIds(ctx.db, invite),
+      ]);
+      const allianceName = alliance?.name ?? "the alliance";
+      const inviteeName = invitee?.name ?? "The invited country";
+
+      if (input.choice === "decline") {
+        await notifyCountryOwners(ctx.db, proposerIds, {
+          title: "Alliance Invitation Declined",
+          message: `${inviteeName} declined the invitation to join ${allianceName}.`,
+          type: "warning",
+          metadata: { allianceId: input.allianceId, countryId: input.countryId },
+        });
+        return { status: "declined" as const };
+      }
 
       const count = await ctx.db.allianceMember.count({
         where: { allianceId: input.allianceId, isActive: true },
@@ -369,6 +518,13 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
       await ctx.db.alliance.update({
         where: { id: input.allianceId },
         data: { memberCount: count },
+      });
+      await notifyCountryOwners(ctx.db, proposerIds, {
+        title: "Alliance Invitation Accepted",
+        message: `${inviteeName} accepted the invitation and joined ${allianceName}.`,
+        type: "success",
+        priority: "high",
+        metadata: { allianceId: input.allianceId, countryId: input.countryId },
       });
       return { status: "active" as const };
     }),

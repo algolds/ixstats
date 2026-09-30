@@ -15,7 +15,11 @@ const createCaller = createCallerFactory(diplomaticPoliciesRouter);
 const matches = (row: any, where: any): boolean =>
   Object.entries(where ?? {}).every(([k, v]) => {
     if (k === "OR") return (v as any[]).some((w) => matches(row, w));
+    if (k === "AND") return (v as any[]).every((w) => matches(row, w));
+    if (v === null) return row[k] == null;
     if (v && typeof v === "object" && "in" in (v as any)) return (v as any).in.includes(row[k]);
+    if (v && typeof v === "object" && "lt" in (v as any)) return row[k] < (v as any).lt;
+    if (v && typeof v === "object" && "gte" in (v as any)) return row[k] >= (v as any).gte;
     return row[k] === v;
   });
 
@@ -72,6 +76,7 @@ function makeDb(opts: { relation?: any; trade?: any } = {}) {
       update: jest.fn().mockResolvedValue({}),
     },
     storytellerEffect: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
+    allianceMember: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     user: {
       findUnique: jest.fn().mockResolvedValue({ countryId: null, role: { name: "member" } }),
     },
@@ -260,7 +265,9 @@ describe("alliances: invite requires consent", () => {
       },
       country: {
         findUnique: jest.fn().mockResolvedValue({ id: "B", owner: null }),
+        findMany: jest.fn().mockResolvedValue([]),
       },
+      foreignPolicyAction: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
       user: {
         findUnique: jest.fn().mockResolvedValue({ countryId: null, role: { name: "member" } }),
       },
