@@ -16,6 +16,7 @@ import { CountryComparisonModal } from "../countries/_components/CountryComparis
 import { useCountryComparison } from "~/hooks/useCountryComparison";
 import { useAllCountriesData } from "~/hooks/useAllCountriesData";
 import { createUrl } from "~/lib/utils";
+import { matchesTierFilter } from "~/lib/economic-tier-filter";
 
 import type { PageCountryData } from "../countries/_components/CountriesGrid";
 
@@ -104,7 +105,7 @@ export default function ExplorePage() {
 
     // Tier filter
     if (tierFilter !== "all") {
-      arr = arr.filter((c) => c.economicTier === tierFilter);
+      arr = arr.filter((c) => matchesTierFilter(c.economicTier, tierFilter));
     }
 
     // Continent filter
@@ -228,13 +229,6 @@ export default function ExplorePage() {
     setSortDirection("asc");
   };
 
-  // Wrapper function to handle tier filter changes
-  const handleTierFilterChange = (
-    tier: string | "all" | "Advanced" | "Developed" | "Emerging" | "Developing"
-  ) => {
-    setTierFilter(tier as TierFilter);
-  };
-
   // Handler for compare button
   const handleCompare = () => {
     setIsComparisonModalOpen(true);
@@ -267,7 +261,7 @@ export default function ExplorePage() {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               tierFilter={tierFilter}
-              onTierFilterChange={handleTierFilterChange}
+              onTierFilterChange={setTierFilter}
               continentFilter={continentFilter}
               onContinentFilterChange={setContinentFilter}
               regionFilter={regionFilter}

@@ -28,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "~/components/ui/dropdown-menu";
+import { TIER_FILTER_OPTIONS, isTierFilter, type TierFilter } from "~/lib/economic-tier-filter";
 
 export type SortField =
   | "name"
@@ -40,7 +41,7 @@ export type SortField =
   | "landArea"
   | "populationDensity";
 export type SortDirection = "asc" | "desc";
-export type TierFilter = "all" | "Advanced" | "Developed" | "Emerging" | "Developing";
+export type { TierFilter };
 
 export interface PopulationRange {
   min?: number;
@@ -98,14 +99,6 @@ export function CountriesSearch({
     { value: "region", label: "Region" },
     { value: "landArea", label: "Land Area" },
     { value: "populationDensity", label: "Population Density" },
-  ] as const;
-
-  const tierOptions = [
-    { value: "all", label: "All Tiers" },
-    { value: "Advanced", label: "Advanced" },
-    { value: "Developed", label: "Developed" },
-    { value: "Emerging", label: "Emerging" },
-    { value: "Developing", label: "Developing" },
   ] as const;
 
   const handleClear = () => {
@@ -232,13 +225,15 @@ export function CountriesSearch({
               </label>
               <Select
                 value={tierFilter}
-                onValueChange={(v) => onTierFilterChangeAction(v as TierFilter)}
+                onValueChange={(v) => {
+                  if (isTierFilter(v)) onTierFilterChangeAction(v);
+                }}
               >
                 <SelectTrigger id="tierFilter">
                   <SelectValue placeholder="Select tier" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border-border backdrop-blur-md">
-                  {tierOptions.map((opt) => (
+                  {TIER_FILTER_OPTIONS.map((opt) => (
                     <SelectItem
                       key={opt.value}
                       value={opt.value}

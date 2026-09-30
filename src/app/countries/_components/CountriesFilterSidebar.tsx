@@ -11,6 +11,7 @@ import {
   SelectItem,
 } from "~/components/ui/select";
 import { Card } from "~/components/ui/card";
+import { TIER_FILTER_OPTIONS, isTierFilter, type TierFilter } from "~/lib/economic-tier-filter";
 // import { Slider } from '~/components/ui/slider'; // Uncomment if you have a slider component
 
 export default function CountriesFilterSidebar({
@@ -30,10 +31,8 @@ export default function CountriesFilterSidebar({
 }: {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  tierFilter: string;
-  onTierFilterChange: (
-    tier: string | "all" | "Advanced" | "Developed" | "Emerging" | "Developing"
-  ) => void;
+  tierFilter: TierFilter;
+  onTierFilterChange: (tier: TierFilter) => void;
   continentFilter: string;
   onContinentFilterChange: (continent: string) => void;
   regionFilter: string;
@@ -51,14 +50,6 @@ export default function CountriesFilterSidebar({
     regionFilter !== "all" ||
     populationRange.min !== undefined ||
     populationRange.max !== undefined;
-
-  const tierOptions = [
-    { value: "all", label: "All Tiers" },
-    { value: "Advanced", label: "Advanced" },
-    { value: "Developed", label: "Developed" },
-    { value: "Emerging", label: "Emerging" },
-    { value: "Developing", label: "Developing" },
-  ];
 
   return (
     <Card className="facet-card space-y-4 p-4">
@@ -99,12 +90,17 @@ export default function CountriesFilterSidebar({
         <label className="text-muted-foreground mb-1 block text-xs font-medium">
           Economic Tier
         </label>
-        <Select value={tierFilter} onValueChange={onTierFilterChange}>
+        <Select
+          value={tierFilter}
+          onValueChange={(value) => {
+            if (isTierFilter(value)) onTierFilterChange(value);
+          }}
+        >
           <SelectTrigger className="glass-input">
             <SelectValue placeholder="Select tier" />
           </SelectTrigger>
           <SelectContent>
-            {tierOptions.map((opt) => (
+            {TIER_FILTER_OPTIONS.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
