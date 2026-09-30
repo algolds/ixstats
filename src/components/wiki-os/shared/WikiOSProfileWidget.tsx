@@ -14,6 +14,7 @@ import { withBasePath } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
 function getInitials(name: string): string {
   const cleaned = name.trim().replace(/_/g, " ");
@@ -82,7 +83,7 @@ export function WikiOSProfileWidget({
     </div>
   );
 
-  const profileHref = withBasePath(`/wiki/user/${encodeURIComponent(displayName)}`);
+  const profileHref = withBasePath(getWikiProfilePath(displayName));
 
   // ── Collapsed rail → avatar + rank badge only ──
   if (!expanded && !isLocalHoverExpanded) {

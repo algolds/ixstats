@@ -20,6 +20,7 @@ import {
 } from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { RESERVED_TOOL_PAGES } from "./reserved-tool-pages";
+import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
 /**
  * `?source=` reads another wiki's page (e.g. a realm's iiwiki lore), read-only (ruling E-l);
@@ -93,7 +94,7 @@ export default function WikiOSArticlePage() {
       );
     } else if (title.startsWith("User:") || title.startsWith("User_talk:")) {
       const userName = title.replace(/^User(_talk)?:/i, "").trim();
-      router.replace(withBasePath(`/wiki/user/${encodeURIComponent(userName.replace(/ /g, "_"))}`));
+      router.replace(withBasePath(getWikiProfilePath(userName.replace(/_/g, " "))));
     } else if (/^Special:/i.test(title)) {
       const spec = title.replace(/^Special:/i, "").trim();
       const specLower = spec.toLowerCase();

@@ -30,6 +30,7 @@ import * as IconoirIcons from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { PausedSession } from "../types";
 import { pageRefPath } from "~/lib/wiki-os/page-ref";
+import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
 export interface WikiProfileViewProps {
   onClose: () => void;
@@ -301,7 +302,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           onClick={() => {
                             onClose();
                             navigateWithBasePath(
-                              `/wiki/user/${encodeURIComponent(wikiUsername)}`,
+                              getWikiProfilePath(wikiUsername),
                               router
                             );
                           }}

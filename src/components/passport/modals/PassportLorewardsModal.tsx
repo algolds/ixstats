@@ -365,12 +365,12 @@ export function PassportLorewardsModal({
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-black/8 pt-4 dark:border-white/10">
           <Link
-            href={`/wiki/user/${encodeURIComponent(wikiUsername)}`}
+            href={`/wiki/contributions/${encodeURIComponent(wikiUsername)}`}
             data-cuelume-press="soft"
             className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
           >
             <BookOpen className="h-3.5 w-3.5" />
-            <span>Open Dedicated WikiOS Profile</span>
+            <span>View Wiki Contributions</span>
           </Link>
 
           <button

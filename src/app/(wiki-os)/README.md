@@ -19,7 +19,7 @@ Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes 
 | `/wiki/[slug]` | `wiki/[slug]/page.tsx` | Article reader + in-place editor bridge. `?action=edit` opens the editor, `?margin=threads` opens Margin, `?source=iiwiki\|althistory` reads another wiki's page read-only |
 | `/wiki/[slug]/edit` | `wiki/[slug]/edit/page.tsx` | Dedicated editor page (visual + source fallback) |
 | `/wiki/[slug]/talk` | `wiki/[slug]/talk/page.tsx` | Legacy redirect → `/wiki/[slug]?margin=threads` |
-| `/wiki/user/[username]` | `wiki/user/[username]/page.tsx` | User profile, streaks & Loreward award showcase |
+| `/wiki/user/[username]` | `wiki/user/[username]/page.tsx` | Redirects to the IxnayID passport Work tab (`/@username?tab=work`) |
 | `/util` | `util/page.tsx` | Special directory & utilities deck (`/wiki/utilities` redirects here) |
 | `/util/search` | `util/search/page.tsx` | Prefix & full-text search |
 | `/util/recent-changes` | `util/recent-changes/page.tsx` | Global append-only edit ledger feed |

@@ -12,6 +12,7 @@ import { OpenBook as BookOpen, Clock, Globe, Map as MapIcon, Group as Users } fr
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { createUrl } from "~/lib/utils";
+import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
 export function WikiAuthorPopover({ username }: { username: string }) {
   const [open, setOpen] = useState(false);
@@ -22,7 +23,7 @@ export function WikiAuthorPopover({ username }: { username: string }) {
     { enabled: open, staleTime: 60_000 }
   );
 
-  const wikiUserUrl = createUrl(`/wiki/user/${username}`);
+  const wikiUserUrl = createUrl(getWikiProfilePath(username));
   const wikiContribsUrl = createUrl(`/wiki/contributions/${username}`);
 
   return (
