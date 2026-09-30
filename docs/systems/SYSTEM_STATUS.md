@@ -135,7 +135,10 @@ found several that are partly built, read-only, or broken, so each row now carri
 - **Security and economy exploits (code audit 2026-09-30).** The store trusts the client's price; the NationStates import bonus can be
   farmed; ThinkTank procedures skip authorization; forum accounts can be linked without proof; the admin audit log
   persists nothing; production deploys have no backups. Details: [code audit §1](../roadmap/code-audit-2026-09-30.md#1-security--economy-exploits);
-  plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
+  plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits). Fixes are open for review in
+  [#36](https://github.com/algolds/ixstats/pull/36) (Vault), [#38](https://github.com/algolds/ixstats/pull/38) (authorization)
+  and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups); still open: the CSP nonce (PL-2) and
+  per-click match revenue (SL-14).
 - **`audit:arch` (non-blocking in CI) reports 15 source files over their line ceiling** (largest:
   `routers/wikios/templates.ts`, 1,298 lines). Split them or add them to `RELAXED_FILES`.
 - **Rotate the `ixstats_readonly` Postgres password** (plan 325): the old one is in git history since 2026-05-31.

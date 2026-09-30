@@ -32,27 +32,31 @@ Security-relevant items marked ★ were re-checked by hand.
 
 Collected here from the area tables so they can be fixed as one batch. Every one is S or M.
 
-| ID | Exploit | Evidence |
-|---|---|---|
-| VT-1 ★ | The store charges whatever price the client sends. `vault.spendCredits` takes `amount`, `type` and `metadata.itemId` from the browser, and perks are granted from `itemId`, not from what was paid. Any upgrade can be bought for 0.01 IxC. | `server/api/routers/vault/balance-credits.ts:60`; `components/vault/sections/marketplace/VaultStoreTab.tsx:226`; `lib/vault/vault-perks.ts:215-275` |
-| VT-2 | The NationStates deck-import bonus can be farmed: the verification is reusable, cards already owned still count, and the bonus is not one-time. Up to 5,000 IxC per call. | `server/api/routers/ns-import/decks.ts:112-145,351-415` |
-| VT-3 | `junkCards` pays out twice under concurrency (the read happens outside the transaction and the delete count is never checked). | `server/api/routers/cards/inventory.ts:423-475` |
-| VT-6 | `grantBonus({ oneTime })` does check-then-pay with no idempotency key, so a race pays the 5,000 IxC new-player bonus twice. | `lib/vault/vault-bonus.ts:141-160` |
-| VT-7 / PL-3 | The public, unrate-limited NationStates takedown matches the card title as a substring in either direction and never checks the card type, so any verified nation can retire LORE or SPECIAL cards for every owner. | `server/api/routers/ns-import/cards.ts:37-110` |
-| SL-1 ★ | ThinkTank procedures skip authorization. Any signed-in user can update or delete any group (`deleteThinktank` has no owner check) and rewrite its settings. Join, leave and document mutations trust `input.userId`, `createdBy` and `invitedBy`, so one user can act as another. | `server/api/routers/thinkpages/thinktanks/groups.ts:228,288,483-500,688`; `membership.ts`; `documents.ts` |
-| SL-2 | Private ThinkTank documents and feeds are readable by anyone: `getThinktankDocuments` is public and checks nothing. | `thinktanks/documents.ts:12-24`; `groups.ts:538` |
-| SL-3 | When the Discord fetch fails, reactions on Discord-mirrored posts are credited to a hard-coded list of 21 real community members. | `thinkpages/posts/reactions/queries.ts:258-373` |
-| WK-1 ★ | `ixnayid.linkForum` links any XenForo username with no proof. That IxStats user then posts, edits and deletes as the forum user, and profile sync overwrites the victim's profile. | `server/modules/forum/services/xenforo-user-sync.ts:240-277`; `routers/ixnayid/linking.ts:84` |
-| WK-9 | Lorewards `triggerSync` and `crossValidate` are open to any signed-in user; `getBlacklist` is public. | `routers/lorewards/admin.ts:20,30,147` |
-| PL-1 ★ | The admin audit log persists nothing. In tRPC v11, `next()` returns `{ ok: false }` rather than throwing, and only paths containing "execute" are written, which no admin path does. | `server/api/trpc/middleware.ts:181-260` |
-| PL-3 | Anonymous callers can reach the Kokoro server with the admin API key (`suggestPhonemes`, `wakeKokoroServer`). Usage counters can be inflated through public mutations. | `routers/onoma/speech.ts:148,261` |
-| WK-12 | `getNarratorSettings` returns the LLM API key unmasked (admin-only). | `routers/narrator/index.ts:145` |
-| VT-22 | `refreshCardValues` lets any user make one NationStates API call per zero-value card, which risks an NS lockout of the shared IP. | `ns-import/cards.ts:475-530` |
-| VT-24 | `createAuction` reads `isLocked:false` and then locks unconditionally, so the same card can be listed twice. | `lib/economy/auction-service.ts:75-170` |
-| PL-2 | The CSP nonce never reaches the page (it is set on the response, not the request headers). Removing the nginx override today would block every inline script. | `src/proxy.ts:90-91`; `app/layout.tsx:125` |
+**Status (2026-09-30):** fixes for everything except PL-2 are open for review in [#36](https://github.com/algolds/ixstats/pull/36) (Vault), [#38](https://github.com/algolds/ixstats/pull/38) (authorization)
+and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups). The Fix column links each one; rows stay here until those PRs merge.
+
+| ID | Exploit | Evidence | Fix |
+|---|---|---|---|
+| VT-1 ★ | The store charges whatever price the client sends. `vault.spendCredits` takes `amount`, `type` and `metadata.itemId` from the browser, and perks are granted from `itemId`, not from what was paid. Any upgrade can be bought for 0.01 IxC. | `server/api/routers/vault/balance-credits.ts:60`; `components/vault/sections/marketplace/VaultStoreTab.tsx:226`; `lib/vault/vault-perks.ts:215-275` | [#36](https://github.com/algolds/ixstats/pull/36) |
+| VT-2 | The NationStates deck-import bonus can be farmed: the verification is reusable, cards already owned still count, and the bonus is not one-time. Up to 5,000 IxC per call. | `server/api/routers/ns-import/decks.ts:112-145,351-415` | [#36](https://github.com/algolds/ixstats/pull/36) |
+| VT-3 | `junkCards` pays out twice under concurrency (the read happens outside the transaction and the delete count is never checked). | `server/api/routers/cards/inventory.ts:423-475` | [#36](https://github.com/algolds/ixstats/pull/36) |
+| VT-6 | `grantBonus({ oneTime })` does check-then-pay with no idempotency key, so a race pays the 5,000 IxC new-player bonus twice. | `lib/vault/vault-bonus.ts:141-160` | [#36](https://github.com/algolds/ixstats/pull/36) |
+| VT-7 / PL-3 | The public, unrate-limited NationStates takedown matches the card title as a substring in either direction and never checks the card type, so any verified nation can retire LORE or SPECIAL cards for every owner. | `server/api/routers/ns-import/cards.ts:37-110` | [#36](https://github.com/algolds/ixstats/pull/36) |
+| SL-1 ★ | ThinkTank procedures skip authorization. Any signed-in user can update or delete any group (`deleteThinktank` has no owner check) and rewrite its settings. Join, leave and document mutations trust `input.userId`, `createdBy` and `invitedBy`, so one user can act as another. | `server/api/routers/thinkpages/thinktanks/groups.ts:228,288,483-500,688`; `membership.ts`; `documents.ts` | [#38](https://github.com/algolds/ixstats/pull/38) |
+| SL-2 | Private ThinkTank documents and feeds are readable by anyone: `getThinktankDocuments` is public and checks nothing. | `thinktanks/documents.ts:12-24`; `groups.ts:538` | [#38](https://github.com/algolds/ixstats/pull/38) |
+| SL-3 | When the Discord fetch fails, reactions on Discord-mirrored posts are credited to a hard-coded list of 21 real community members. | `thinkpages/posts/reactions/queries.ts:258-373` | [#38](https://github.com/algolds/ixstats/pull/38) |
+| WK-1 ★ | `ixnayid.linkForum` links any XenForo username with no proof. That IxStats user then posts, edits and deletes as the forum user, and profile sync overwrites the victim's profile. | `server/modules/forum/services/xenforo-user-sync.ts:240-277`; `routers/ixnayid/linking.ts:84` | [#38](https://github.com/algolds/ixstats/pull/38) |
+| WK-9 | Lorewards `triggerSync` and `crossValidate` are open to any signed-in user; `getBlacklist` is public. | `routers/lorewards/admin.ts:20,30,147` | [#38](https://github.com/algolds/ixstats/pull/38) |
+| PL-1 ★ | The admin audit log persists nothing. In tRPC v11, `next()` returns `{ ok: false }` rather than throwing, and only paths containing "execute" are written, which no admin path does. | `server/api/trpc/middleware.ts:181-260` | [#38](https://github.com/algolds/ixstats/pull/38) |
+| PL-3 | Anonymous callers can reach the Kokoro server with the admin API key (`suggestPhonemes`, `wakeKokoroServer`). Usage counters can be inflated through public mutations. | `routers/onoma/speech.ts:148,261` | [#38](https://github.com/algolds/ixstats/pull/38) (Kokoro, usage counters) |
+| WK-12 | `getNarratorSettings` returns the LLM API key unmasked (admin-only). | `routers/narrator/index.ts:145` | [#38](https://github.com/algolds/ixstats/pull/38) |
+| VT-22 | `refreshCardValues` lets any user make one NationStates API call per zero-value card, which risks an NS lockout of the shared IP. | `ns-import/cards.ts:475-530` | [#36](https://github.com/algolds/ixstats/pull/36) |
+| VT-24 | `createAuction` reads `isLocked:false` and then locks unconditionally, so the same card can be listed twice. | `lib/economy/auction-service.ts:75-170` | [#36](https://github.com/algolds/ixstats/pull/36) |
+| PL-2 | The CSP nonce never reaches the page (it is set on the response, not the request headers). Removing the nginx override today would block every inline script. | `src/proxy.ts:90-91`; `app/layout.tsx:125` | Open |
 
 **After fixing VT-1, VT-2 and VT-6:** audit `vault_transactions` for `SPEND_COSMETIC` / `SPEND_BOOST` rows whose amount doesn't
 match the item price, and for repeated `bonus:ns_deck_import` rows.
+[#36](https://github.com/algolds/ixstats/pull/36) adds the report for this: `bun run audit:vault-exploits` (read-only). Balances are not corrected yet.
 
 ---
 
@@ -60,7 +64,7 @@ match the item price, and for repeated `bonus:ns_deck_import` rows.
 
 | ID | Type | Item | Evidence | Size | Impact |
 |---|---|---|---|---|---|
-| MC-1 ★ | BUG | **Budget-year mismatch.** The builder hard-codes `budgetYear: 2026`; brokers, recon, policies and intent filter on `new Date().getFullYear()`; the Economy dashboard uses the IxTime year (~2038–2042) and shows nothing; the zod bound is `max(2035)`. Everything drops out on 1 January 2027. | `builder/components/enhanced/steps/GovernmentStep.tsx:251-255`; `routers/intent.ts:44`; `national-issues/player.ts:68`; `policies/crud.ts:48`; `elections/brokers.ts:19`; `types/government.ts:79` | S | H |
+| MC-1 ★ | BUG | **Budget-year mismatch.** The builder hard-codes `budgetYear: 2026`; brokers, recon, policies and intent filter on `new Date().getFullYear()`; the Economy dashboard uses the IxTime year (~2038–2042) and shows nothing; the zod bound is `max(2035)`. Everything drops out on 1 January 2027. **Fix: [#37](https://github.com/algolds/ixstats/pull/37).** | `builder/components/enhanced/steps/GovernmentStep.tsx:251-255`; `routers/intent.ts:44`; `national-issues/player.ts:68`; `policies/crud.ts:48`; `elections/brokers.ts:19`; `types/government.ts:79` | S | H |
 | MC-2 | BUG | **Politics dead end.** Nothing creates an `Election` or `ElectionCandidate` outside the demo seed. Legislature seats have no party, so `legislation.holdVote` always throws "No seated legislature" and no bill can pass. | `lib/government/election-cron.ts:65`; `elections/legislature.ts:158-171`; `legislation.ts:162-167` | M–L | H |
 | MC-3 | UNFINISHED | Defense force structure can't be created: branch and unit CRUD was deleted in plan 312. `createMilitaryAsset` returns NOT_FOUND, the Deployment wizard is empty and PvNPC strength is 0. | `security/military.ts:64-74`; `security/conflicts.ts:357-378`; `DeploymentWizard.tsx:136` | M–L | H (Premium) |
 | MC-4 | UNFINISHED | Accepted PvP conflicts never resolve. | `security/conflicts.ts:188-195` | M | M |
@@ -179,7 +183,7 @@ match the item price, and for repeated `bonus:ns_deck_import` rows.
 | SL-9 | DEAD | Follower counts never change, and the "Trending Post" achievement can't be earned. | `social.prisma`; `achievements/service.ts:417` | M | L |
 | SL-10 | UNFINISHED | Bookmarks are write-only and flags have no moderation queue. | `posts/bookmarks.ts`; `flags.ts` | M | M |
 | SL-11 | BUG | Mention notifications link to a missing route and read "Someone mentioned you". | `lib/notifications/hooks.ts:294` | S | M |
-| SL-12 | STUB | Nine places show placeholder names like `User ${id.slice(0,8)}`. | `thinktanks/*`; `messaging/formatters.ts` | S | M |
+| SL-12 | STUB | Nine places show placeholder names like `User ${id.slice(0,8)}`. **Fix: [#38](https://github.com/algolds/ixstats/pull/38)** (messaging and ThinkTanks). | `thinktanks/*`; `messaging/formatters.ts` | S | M |
 | SL-13 | DEAD | ThinkTank invites are write-only (no accept, no invite code). | `thinktanks/groups.ts:688-735` | M | M |
 | SL-14 | SEC | `collectMatchRevenue` can be clicked without limit, each click paying revenue. | `sports/seasons/lifecycle.ts:29-50` | S | M |
 | SL-15 | UNFINISHED | The match prediction market settles bets, but nothing lets anyone place one. | `lib/sports/predictions.ts:51-110` | M | M |
@@ -210,7 +214,7 @@ match the item price, and for repeated `bonus:ns_deck_import` rows.
 | PL-8 | BUG | `policy-maintenance` isn't idempotent and ratchets budgets down 4 times a day. **Don't enable it until fixed.** | `maintenance-cron.ts:224-270` | S | H |
 | PL-9 | DEBT | Each cron run holds a pooled database transaction for up to 60 minutes. | `server/cron/job-lock.ts` | M | M |
 | PL-10 | UNFINISHED | There is no cron monitoring or alerting; health checks are shallow. | `server/cron/scheduler.ts:101` | M | M |
-| PL-11 | DEBT | **Deploys run `prisma db push` with no backup, and nothing schedules backups.** | `scripts/deploy-production.sh:148` | M | H |
+| PL-11 | DEBT | **Deploys run `prisma db push` with no backup, and nothing schedules backups.** **Fix: [#37](https://github.com/algolds/ixstats/pull/37).** | `scripts/deploy-production.sh:148` | M | H |
 | PL-12 | DEBT | `ecosystem.config.cjs` and `next.config.js` aren't tracked, and the web process isn't under PM2. | — | S | M |
 | PL-13 | BUG | The rollback script is incompatible with production. | `scripts/deployment/rollback-deployment.sh` | S | M |
 | PL-14 | BUG | The default branch `master` is 265 commits behind; scheduled workflows fail every run (security scan 442 runs, image validation 329, Gemini triage hourly). | `.github/workflows/*` | S | M |

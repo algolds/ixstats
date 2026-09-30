@@ -63,27 +63,27 @@ code-health track runs throughout.
 
 **Goal:** close every known exploit before rose-garden reaches players. All items are S or M, with regression tests.
 
-| # | Item | Refs | Size | P |
-|---|---|---|---|---|
-| 1 | Server-side `purchaseStoreItem(itemId)` that reads the price and prerequisites from `VaultStoreItem`; remove or admin-gate `spendCredits` | VT-1 | S–M | P0 |
-| 2 | NationStates deck import: consume or expire the verification, count only newly owned cards, grant a one-time bonus per nation | VT-2 | S | P0 |
-| 3 | `junkCards` pays out from the `deleteMany` count inside the transaction | VT-3 | S | P0 |
-| 4 | `grantBonus` one-time payouts through `earnCreditsOnce` with an idempotency key | VT-6 | S | P0 |
-| 5 | NationStates takedown: exact nation match, `NS_IMPORT` cards only, rate-limited; make `refreshCardValues` admin-only or rate-limited | VT-7, VT-22, PL-3 | S | P0 |
-| 6 | `createAuction` locks with a conditional `updateMany` | VT-24 | S | P0 |
-| 7 | ThinkTank authorization: every procedure uses `ctx.auth.userId`; owner, admin and member guards; group type enforced on join; resolve names (not `User abc123`) | SL-1, SL-2, SL-12 | M | P0 |
-| 8 | Delete the made-up Discord reactors fallback; move the guild ID to env | SL-3 | S | P0 |
-| 9 | Forum linking requires proof (a code on the XenForo profile, like wiki verification); audit existing links | WK-1 | S–M | P0 |
-| 10 | Lorewards admin mutations use `adminProcedure`; mask the Narrator LLM key | WK-9, WK-12 | S | P0 |
-| 11 | Anonymous Kokoro access: protect or rate-limit `suggestPhonemes` / `wakeKokoroServer`; rate-limit public usage counters | PL-3 | S | P0 |
-| 12 | The admin audit log actually persists: check `result.ok`, log every admin mutation | PL-1 | S | P0 |
-| 13 | `collectMatchRevenue` pays per home match, not per click (with the sponsor `winBonus` fix) | SL-14 | S | P0 |
-| 14 | Budget year: one IxTime-based year for writers, readers and the zod bound (it breaks on 2027-01-01) | MC-1 | S | P0 |
-| 15 | Backups: a working `db:backup` / `db:restore` for Postgres, a `pg_dump` in `deploy-production.sh` before `db push`, and a tested restore | PL-11 | M | P0 |
-| 16 | Rotate the `ixstats_readonly` password (it's in git history) | pending-features §1 | S | P0 (ops) |
-| 17 | After 1–4: audit `vault_transactions` for exploit rows and correct balances | — | S | P0 |
-| 18 | Small hardening: take the audit IP from `cf-connecting-ip`, drop the `X-RateLimit-Identifier` echo, compare secrets in constant time | PL-20 | S | P1 |
-| 19 | Move the 228 unlimited protected mutations onto `lightMutationProcedure` | PL-3, pending-features §3 | M | P1 |
+| # | Item | Refs | Size | P | Status |
+|---|---|---|---|---|---|
+| 1 | Server-side `purchaseStoreItem(itemId)` that reads the price and prerequisites from `VaultStoreItem`; remove or admin-gate `spendCredits` | VT-1 | S–M | P0 | [#36](https://github.com/algolds/ixstats/pull/36) |
+| 2 | NationStates deck import: consume or expire the verification, count only newly owned cards, grant a one-time bonus per nation | VT-2 | S | P0 | [#36](https://github.com/algolds/ixstats/pull/36) |
+| 3 | `junkCards` pays out from the `deleteMany` count inside the transaction | VT-3 | S | P0 | [#36](https://github.com/algolds/ixstats/pull/36) |
+| 4 | `grantBonus` one-time payouts through `earnCreditsOnce` with an idempotency key | VT-6 | S | P0 | [#36](https://github.com/algolds/ixstats/pull/36) |
+| 5 | NationStates takedown: exact nation match, `NS_IMPORT` cards only, rate-limited; make `refreshCardValues` admin-only or rate-limited | VT-7, VT-22, PL-3 | S | P0 | [#36](https://github.com/algolds/ixstats/pull/36) |
+| 6 | `createAuction` locks with a conditional `updateMany` | VT-24 | S | P0 | [#36](https://github.com/algolds/ixstats/pull/36) |
+| 7 | ThinkTank authorization: every procedure uses `ctx.auth.userId`; owner, admin and member guards; group type enforced on join; resolve names (not `User abc123`) | SL-1, SL-2, SL-12 | M | P0 | [#38](https://github.com/algolds/ixstats/pull/38) |
+| 8 | Delete the made-up Discord reactors fallback; move the guild ID to env | SL-3 | S | P0 | [#38](https://github.com/algolds/ixstats/pull/38) |
+| 9 | Forum linking requires proof (a code on the XenForo profile, like wiki verification); audit existing links | WK-1 | S–M | P0 | [#38](https://github.com/algolds/ixstats/pull/38) |
+| 10 | Lorewards admin mutations use `adminProcedure`; mask the Narrator LLM key | WK-9, WK-12 | S | P0 | [#38](https://github.com/algolds/ixstats/pull/38) |
+| 11 | Anonymous Kokoro access: protect or rate-limit `suggestPhonemes` / `wakeKokoroServer`; rate-limit public usage counters | PL-3 | S | P0 | [#38](https://github.com/algolds/ixstats/pull/38) |
+| 12 | The admin audit log actually persists: check `result.ok`, log every admin mutation | PL-1 | S | P0 | [#38](https://github.com/algolds/ixstats/pull/38) |
+| 13 | `collectMatchRevenue` pays per home match, not per click (with the sponsor `winBonus` fix) | SL-14 | S | P0 | Open |
+| 14 | Budget year: one IxTime-based year for writers, readers and the zod bound (it breaks on 2027-01-01) | MC-1 | S | P0 | [#37](https://github.com/algolds/ixstats/pull/37) |
+| 15 | Backups: a working `db:backup` / `db:restore` for Postgres, a `pg_dump` in `deploy-production.sh` before `db push`, and a tested restore | PL-11 | M | P0 | [#37](https://github.com/algolds/ixstats/pull/37) (restore not yet tested on a scratch DB) |
+| 16 | Rotate the `ixstats_readonly` password (it's in git history) | pending-features §1 | S | P0 (ops) | Open (ops) |
+| 17 | After 1–4: audit `vault_transactions` for exploit rows and correct balances | — | S | P0 | Report in [#36](https://github.com/algolds/ixstats/pull/36); balances not corrected |
+| 18 | Small hardening: take the audit IP from `cf-connecting-ip`, drop the `X-RateLimit-Identifier` echo, compare secrets in constant time | PL-20 | S | P1 | Partly: audit IP in [#38](https://github.com/algolds/ixstats/pull/38) |
+| 19 | Move the 228 unlimited protected mutations onto `lightMutationProcedure` | PL-3, pending-features §3 | M | P1 | Open |
 
 **Exit:** every P0 merged with tests; a backup restored into a scratch database; the exploit audit is done.
 
