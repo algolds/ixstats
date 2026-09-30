@@ -235,3 +235,40 @@ describe("wikiosEditingRouter.previewWikitext (NEW-13)", () => {
     );
   });
 });
+
+describe("wikiosEditingRouter canonical titles (plan 403)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+    jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
+      article: {} as never,
+      revisionId: "rev-1" as never,
+      extractedLinksCount: 0,
+    });
+  });
+
+  it("saves, exports and reports the canonical title whatever spelling was sent", async () => {
+    const caller = createCaller(userCtx("Linked") as never);
+
+    const result = await caller.saveWikitext({ title: "foo_bar", wikitext: "x" });
+
+    expect(result.title).toBe("Foo bar");
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "Foo bar", title: "Foo bar" }),
+      expect.anything(),
+      expect.anything()
+    );
+    expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Foo bar" })
+    );
+  });
+
+  it("refuses a title MediaWiki would refuse before saving anything", async () => {
+    const caller = createCaller(userCtx("Linked") as never);
+
+    await expect(caller.saveWikitext({ title: "a[b", wikitext: "x" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+  });
+});

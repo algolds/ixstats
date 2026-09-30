@@ -8,13 +8,14 @@ const mockRenderer = jest.fn();
 const mockEditor = jest.fn();
 const mockLayout = jest.fn();
 const mockSetActiveModal = jest.fn();
+const mockReplace = jest.fn();
 let mockSearch = "";
 let mockSlug = "Portal%3AEurth";
 
 jest.mock("next/navigation", () => ({
   useParams: () => ({ slug: mockSlug }),
   useSearchParams: () => new URLSearchParams(mockSearch),
-  useRouter: () => ({ replace: jest.fn(), push: jest.fn() }),
+  useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -157,5 +158,66 @@ describe("WikiOS reader ?source=", () => {
     render(<WikiOSArticlePage />);
     expect(screen.getByText(/does not exist on IIWiki/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("WikiOS reader canonical titles (plan 403)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSearch = "";
+    Object.assign(window, { requestIdleCallback: (cb: () => void) => cb() });
+  });
+
+  it("moves a non-canonical URL to the canonical one, keeping the query string", () => {
+    mockSlug = "foo_bar";
+    mockSearch = "source=iiwiki";
+    found("Foo bar");
+    render(<WikiOSArticlePage />);
+
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      { title: "Foo bar", wikiSource: "iiwiki" },
+      expect.anything()
+    );
+    expect(mockReplace).toHaveBeenCalledWith("/wiki/Foo_bar?source=iiwiki");
+  });
+
+  it("keeps a namespace colon literal and carries a fragment typed into the path", () => {
+    mockSlug = "user%20talk%3Ajane%23Notes";
+    found("User talk:Jane");
+    render(<WikiOSArticlePage />);
+
+    expect(mockReplace).toHaveBeenCalledWith("/wiki/User_talk:Jane#Notes");
+  });
+
+  it("does not redirect a URL that already is canonical, however it is percent-encoded", () => {
+    for (const slug of ["Portal%3AEurth", "Portal:Eurth", "100%25_Pure"]) {
+      mockSlug = slug;
+      found();
+      render(<WikiOSArticlePage />);
+    }
+
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockUseQuery).toHaveBeenCalledWith({ title: "100% Pure" }, expect.anything());
+  });
+
+  it("decodes the segment once: a title with '%' reaches the query intact", () => {
+    mockSlug = "100%25_Pure";
+    found("100% Pure");
+    render(<WikiOSArticlePage />);
+
+    expect(mockUseQuery).toHaveBeenCalledWith({ title: "100% Pure" }, expect.anything());
+  });
+
+  it("renders the not-found state for a title MediaWiki would refuse, without querying", () => {
+    mockSlug = "a%5Bb";
+    mockUseQuery.mockReturnValue({ data: undefined, isLoading: false, error: null });
+    render(<WikiOSArticlePage />);
+
+    expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ enabled: false })
+    );
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

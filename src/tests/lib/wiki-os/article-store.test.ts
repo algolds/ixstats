@@ -217,6 +217,18 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
   });
 
+  it("takes the title as already decoded: a '%' in it neither throws nor is decoded again (plan 403)", async () => {
+    mockFetchAuthors.mockResolvedValue(mwData("100% Pure"));
+
+    await expect(getArticleAuthors("100% Pure")).resolves.toMatchObject({
+      creator: { username: "creator-of-100% Pure" },
+    });
+    await getArticleAuthors("100%25 Pure");
+
+    expect(mockFetchAuthors).toHaveBeenCalledWith("100% Pure", "ixwiki", 250, 2500);
+    expect(mockFetchAuthors).toHaveBeenCalledWith("100%25 Pure", "ixwiki", 250, 2500);
+  });
+
   it("still overlays a newer Postgres edit on the cached MediaWiki data", async () => {
     mockFetchAuthors.mockResolvedValue(mwData("OverlayPage"));
     mockWikiRevisionFindFirst.mockResolvedValue({

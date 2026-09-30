@@ -26,6 +26,7 @@ import {
   type WikiAuthIdentity,
 } from "~/lib/wiki-os/auth";
 import { checkEditPolicy } from "~/lib/wiki-os/namespace-policy";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
@@ -52,6 +53,13 @@ async function assertCanEditArticle(
     throw new TRPCError({ code: "FORBIDDEN", message: "This page is protected." });
   }
   return identity;
+}
+
+/** The canonical title of what the client sent; BAD_REQUEST when MediaWiki would refuse it. */
+function requireCanonicalTitle(rawTitle: string): string {
+  const canon = canonicalizeTitle(rawTitle);
+  if (!canon) throw new TRPCError({ code: "BAD_REQUEST", message: "That page title is not valid." });
+  return canon.title;
 }
 
 /** Archive/restore mirror MediaWiki delete/undelete, which are sysop rights. */
@@ -103,7 +111,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await assertCanEditArticle(ctx, input.title);
+      const title = requireCanonicalTitle(input.title);
+      await assertCanEditArticle(ctx, title);
 
       if (input.turnstileToken) {
         await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
@@ -114,8 +123,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       // 1. Primary Save: Direct to PostgreSQL
       const saveResult = await ArticleRepository.saveArticle(
         {
-          slug: input.title,
-          title: input.title,
+          slug: title,
+          title,
           wikitext: input.wikitext,
           summary: input.summary,
           minor: input.minor,
@@ -126,8 +135,8 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       // 2. Background MediaWiki sync & cache purge
       MediaWikiExportWorker.enqueue({
-        slug: input.title,
-        title: input.title,
+        slug: title,
+        title,
         wikitext: input.wikitext,
         summary: input.summary,
         minor: input.minor,
@@ -135,11 +144,11 @@ export const wikiosEditingRouter = createTRPCRouter({
         revisionId: saveResult.revisionId,
       });
 
-      void CloudflareGuardian.purgeArticleEdgeCache(input.title);
+      void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
         success: true,
-        title: input.title,
+        title,
         revisionId: saveResult.revisionId,
         extractedLinksCount: saveResult.extractedLinksCount,
       };
@@ -158,7 +167,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await assertCanEditArticle(ctx, input.title);
+      const title = requireCanonicalTitle(input.title);
+      await assertCanEditArticle(ctx, title);
 
       const oldRev = await getRevisionWikitextShadow(input.revid);
       if (!oldRev) {
@@ -171,8 +181,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       // 1. Primary Save: Direct to PostgreSQL (<10ms)
       const saveResult = await ArticleRepository.saveArticle(
         {
-          slug: input.title,
-          title: input.title,
+          slug: title,
+          title,
           wikitext: oldRev.wikitext,
           summary,
           minor: false,
@@ -183,8 +193,8 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       // 2. Background MediaWiki sync
       MediaWikiExportWorker.enqueue({
-        slug: input.title,
-        title: input.title,
+        slug: title,
+        title,
         wikitext: oldRev.wikitext,
         summary,
         minor: false,
@@ -194,7 +204,7 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       return {
         success: true,
-        title: input.title,
+        title,
         revisionId: saveResult.revisionId,
       };
     }),
@@ -206,10 +216,11 @@ export const wikiosEditingRouter = createTRPCRouter({
   rollback: protectedProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .mutation(async ({ input, ctx }) => {
-      await assertCanEditArticle(ctx, input.title);
+      const title = requireCanonicalTitle(input.title);
+      await assertCanEditArticle(ctx, title);
 
       // Read-through: serve from shadow history with MySQL fallback
-      const history = await getArticleHistoryShadow(input.title, 50);
+      const history = await getArticleHistoryShadow(title, 50);
       const revisions = history.revisions;
       if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
 
@@ -226,8 +237,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       // 1. Primary Save: Direct to PostgreSQL
       const saveResult = await ArticleRepository.saveArticle(
         {
-          slug: input.title,
-          title: input.title,
+          slug: title,
+          title,
           wikitext: oldContent.wikitext,
           summary,
           minor: false,
@@ -238,8 +249,8 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       // 2. Background MediaWiki sync
       MediaWikiExportWorker.enqueue({
-        slug: input.title,
-        title: input.title,
+        slug: title,
+        title,
         wikitext: oldContent.wikitext,
         summary,
         minor: false,
@@ -249,7 +260,7 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       return {
         success: true,
-        title: input.title,
+        title,
         revisionId: saveResult.revisionId,
       };
     }),

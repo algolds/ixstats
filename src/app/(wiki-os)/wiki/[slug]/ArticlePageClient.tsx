@@ -3,7 +3,7 @@
 // WikiOS Article Reader & In-Place Editor with Instant Caching
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
@@ -21,6 +21,7 @@ import {
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { RESERVED_TOOL_PAGES } from "./reserved-tool-pages";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
+import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
 
 /**
  * `?source=` reads another wiki's page (e.g. a realm's iiwiki lore), read-only (ruling E-l);
@@ -44,10 +45,13 @@ export default function WikiOSArticlePage() {
   const { setActiveModal } = useWikiContext();
   const articleRef = useRef<HTMLDivElement>(null);
 
+  // The URL segment is decoded once; everything below works on the canonical title.
   const rawSlug = params.slug || "";
-  const slug = decodeURIComponent(rawSlug);
-  const title = slug.replace(/_/g, " ");
-  const isMainPage = title === "Main Page" || title === "Main_Page" || slug === "Main_Page";
+  const decodedSlug = decodeTitleParam(rawSlug);
+  const canon = useMemo(() => canonicalizeTitle(decodedSlug), [decodedSlug]);
+  const title = canon?.title ?? "";
+  const slug = title.replace(/ /g, "_");
+  const isMainPage = title === "Main Page";
 
   const { wikiSource, isEditAction, isMarginParam } = readerParams(searchParams);
   const isIxWiki = wikiSource === "ixwiki";
@@ -143,6 +147,17 @@ export default function WikiOSArticlePage() {
     /^Special:/i.test(title) ||
     Boolean(targetReservedPath);
 
+  // A URL that is not the canonical spelling (`/wiki/foo_bar` for "Foo bar") moves to the canonical
+  // one, keeping the query string and hash. Compared decoded, so encoding differences never loop.
+  useEffect(() => {
+    if (!canon || isCategoryOrSpecialOrMain || decodedSlug === slug) return;
+    const query = searchParams.toString();
+    const hash =
+      window.location.hash ||
+      (canon.fragment ? `#${encodeURIComponent(canon.fragment.replace(/ /g, "_"))}` : "");
+    router.replace(`${withBasePath(`/wiki/${canon.urlPath}`)}${query ? `?${query}` : ""}${hash}`);
+  }, [canon, isCategoryOrSpecialOrMain, decodedSlug, slug, searchParams, router]);
+
   // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
     articleHtmlInput(title, wikiSource),
@@ -198,6 +213,16 @@ export default function WikiOSArticlePage() {
     void refetch();
     handleExitEdit();
   }, [refetch, handleExitEdit]);
+
+  if (!canon) {
+    return (
+      <WikiOSLayout readOnly={!isIxWiki}>
+        <div className="wikios-article-container min-h-[500px]">
+          <ArticleNotFound title={decodedSlug} wikiSource={wikiSource} onCreate={() => {}} />
+        </div>
+      </WikiOSLayout>
+    );
+  }
 
   // Main Page
   if (isMainPage) {

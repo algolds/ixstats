@@ -6,8 +6,10 @@ const mockReplace = jest.fn();
 const mockEditor = jest.fn();
 let mockSearch = "";
 
+let mockSlug = "Portal%3AEurth";
+
 jest.mock("next/navigation", () => ({
-  useParams: () => ({ slug: "Portal%3AEurth" }),
+  useParams: () => ({ slug: mockSlug }),
   useSearchParams: () => new URLSearchParams(mockSearch),
   useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
@@ -25,6 +27,7 @@ describe("/wiki/[slug]/edit with ?source= (ruling E-l′)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSearch = "";
+    mockSlug = "Portal%3AEurth";
   });
 
   it("another wiki's page is never edited here: back to its read view", () => {
@@ -39,5 +42,28 @@ describe("/wiki/[slug]/edit with ?source= (ruling E-l′)", () => {
     render(<WikiOSEditPage />);
     expect(mockEditor).toHaveBeenCalledWith(expect.objectContaining({ title: "Portal:Eurth" }));
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+});
+
+describe("/wiki/[slug]/edit canonical titles (plan 403)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSearch = "";
+  });
+
+  it("hands the editor the canonical title, decoded once", () => {
+    mockSlug = "user_talk%3Ajane_doe";
+    render(<WikiOSEditPage />);
+    expect(mockEditor).toHaveBeenCalledWith(expect.objectContaining({ title: "User talk:Jane doe" }));
+
+    mockSlug = "100%25_Pure";
+    render(<WikiOSEditPage />);
+    expect(mockEditor).toHaveBeenCalledWith(expect.objectContaining({ title: "100% Pure" }));
+  });
+
+  it("does not open the editor for a title MediaWiki would refuse", () => {
+    mockSlug = "a%5Bb";
+    render(<WikiOSEditPage />);
+    expect(mockEditor).not.toHaveBeenCalled();
   });
 });
