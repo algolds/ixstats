@@ -11,6 +11,8 @@ import { db } from "~/server/db";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { toArticleSlug, parseRevisionRef } from "~/lib/wiki-os/core/domain-types";
+import { parseRedirect } from "~/lib/wiki-os/core/redirect";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import type { WikiArticle } from "./types";
 
 export * from "./pg-search";
@@ -194,12 +196,78 @@ export async function ixwikiGetNamespacedWikitext(
   return null;
 }
 
-export async function ixwikiResolveRedirect(title: string): Promise<string> {
-  const art = await ixwikiGetWikitext(title);
-  if (!art?.wikitext) return title;
-  const match = art.wikitext.match(/#REDIRECT\s*\[\[([^\]]+)\]\]/i);
-  if (match && match[1]) {
-    return match[1].trim();
+export interface ResolvedRedirect {
+  /** The page to show: the input itself when it is not a redirect, else the redirect's target. */
+  title: string;
+  /** The section the redirect points to; null when there is none or nothing was followed. */
+  fragment: string | null;
+}
+
+/** MediaWiki follows one redirect; IxWiki has some double redirects, so two hops are safe. */
+const MAX_REDIRECT_HOPS = 2;
+
+const REDIRECT_SELECT = {
+  title: true,
+  redirectTargetSlug: true,
+  redirectTargetFragment: true,
+  wikitext: true,
+} as const;
+
+/** The IxWiki row for a canonical title: the exact title, else the one row whose slug matches. */
+async function findRedirectRow(title: string) {
+  const exact = await db.wikiArticle.findUnique({
+    where: { source_title: { source: "ixwiki", title } },
+    select: REDIRECT_SELECT,
+  });
+  if (exact) return exact;
+
+  const variants = await db.wikiArticle.findMany({
+    where: { source: "ixwiki", slug: toArticleSlug(title) },
+    take: 2,
+    select: REDIRECT_SELECT,
+  });
+  return variants.length === 1 ? (variants[0] ?? null) : null;
+}
+
+/**
+ * Where the page `title` (canonical) redirects to, from its stored redirect columns; a row written
+ * before they were filled is read from its wikitext. Null when the page is missing or not a redirect.
+ */
+async function redirectTargetOf(title: string): Promise<ResolvedRedirect | null> {
+  const row = await findRedirectRow(title);
+  if (!row) return null;
+
+  const stored = row.redirectTargetSlug ? canonicalizeTitle(row.redirectTargetSlug) : null;
+  if (stored) return { title: stored.title, fragment: row.redirectTargetFragment };
+
+  const parsed = parseRedirect(row.wikitext);
+  return parsed ? { title: parsed.title, fragment: parsed.fragment } : null;
+}
+
+/**
+ * Follow IxWiki redirects from Postgres alone (at most two hops). A title that is not a redirect,
+ * has no row, or cannot be a title is returned as given, and a database error ends the walk where
+ * it is (the reader then serves whatever page it reached). On a loop (A to B to A) the walk stops
+ * before revisiting a page, so it ends on B when started at A.
+ */
+export async function ixwikiResolveRedirect(title: string): Promise<ResolvedRedirect> {
+  const start = canonicalizeTitle(title);
+  if (!start) return { title, fragment: null };
+
+  const visited = new Set([start.title]);
+  let current = start.title;
+  let resolved: ResolvedRedirect = { title, fragment: null };
+  try {
+    for (let hop = 0; hop < MAX_REDIRECT_HOPS; hop++) {
+      const target = await redirectTargetOf(current);
+      if (!target || visited.has(target.title)) break;
+
+      visited.add(target.title);
+      resolved = target;
+      current = target.title;
+    }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
-  return title;
+  return resolved;
 }

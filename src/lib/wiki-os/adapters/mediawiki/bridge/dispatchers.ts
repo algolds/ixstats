@@ -346,7 +346,7 @@ export async function getRandomPage() {
 }
 
 /**
- * Resolve redirects via direct MySQL (up to 5 hops).
+ * Resolve a redirect from Postgres (up to 2 hops): the page to show plus the target fragment.
  */
 export async function resolveRedirect(title: string) {
   return ixwikiResolveRedirect(title);
