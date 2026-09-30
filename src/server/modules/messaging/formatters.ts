@@ -6,6 +6,7 @@
  */
 
 import type { UserAccount } from "./contracts";
+import { UNKNOWN_DISPLAY_NAME } from "~/server/modules/identity/identity.display-names";
 
 // ─── Formatters for `api.messages` ───────────────────────────────────────────
 
@@ -59,7 +60,7 @@ export function formatMessagesConversation(
         ? "Forum User"
         : p.userId.startsWith("wiki:")
           ? "Wiki User"
-          : `User ${p.userId.slice(0, 8)}`,
+          : UNKNOWN_DISPLAY_NAME,
       profileImageUrl: null,
       countryFlag: null,
       countryName: null,
@@ -83,7 +84,7 @@ export function formatMessagesConversation(
         ? "Forum User"
         : firstId.startsWith("wiki:")
           ? "Wiki User"
-          : `User ${firstId.slice(0, 8)}`,
+          : UNKNOWN_DISPLAY_NAME,
       profileImageUrl: null,
       countryFlag: null,
       countryName: null,
