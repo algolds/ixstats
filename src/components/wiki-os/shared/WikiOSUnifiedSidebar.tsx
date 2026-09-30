@@ -24,6 +24,9 @@ import {
   Printer,
   Wrench,
   Folder,
+  Lock,
+  Trash,
+  ArrowRight,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -43,6 +46,10 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import { pageAdminActions, type PageAdminAction } from "~/lib/wiki-os/page-admin-ui";
+
+/** Icon per page-management action in the More Tools menu. */
+const PAGE_ADMIN_ICONS = { move: ArrowRight, protect: Lock, delete: Trash } as const;
 
 const NAV_GROUP_1 = [
   { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main Page" },
@@ -104,6 +111,17 @@ export function WikiOSUnifiedSidebar({
     { enabled: isSignedIn && isArticlePage && !!title, retry: false }
   );
   const isCurrentPageStashed = stashQuery.data?.stashed ?? false;
+
+  // Move / Protect / Delete are offered only to someone holding the matching right.
+  const permissionsQuery = api.wikios.getUserPermissions.useQuery(undefined, {
+    enabled: isSignedIn && isArticlePage && !!title,
+    staleTime: 60_000,
+    retry: false,
+  });
+  const pageAdmin: PageAdminAction[] = pageAdminActions(
+    title.replace(/_/g, " "),
+    permissionsQuery.data?.rights ?? []
+  );
 
   const stashMutation = api.wikios.stashPage.useMutation({
     onSuccess: () => {
@@ -574,6 +592,27 @@ export function WikiOSUnifiedSidebar({
                           </div>
                         </div>
                       </DropdownMenuItem>
+                      {pageAdmin.map((action) => {
+                        const ActionIcon = PAGE_ADMIN_ICONS[action.id];
+                        return (
+                          <DropdownMenuItem key={action.id} asChild>
+                            <Link
+                              href={withBasePath(action.href)}
+                              className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[var(--wikios-border)]/50 focus:bg-[var(--wikios-border)]/50"
+                            >
+                              <ActionIcon className="h-3.5 w-3.5 shrink-0 text-[var(--wikios-text-muted)]" />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold text-[var(--wikios-text)]">
+                                  {action.label}
+                                </div>
+                                <div className="truncate text-xs text-[var(--wikios-text-dim)]">
+                                  {action.description}
+                                </div>
+                              </div>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
                       <DropdownMenuItem asChild>
                         <Link
                           href={withBasePath("/util")}
