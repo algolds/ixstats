@@ -12,7 +12,7 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import { vaultService } from "./vault-service";
+import { earnCreditsOnce, vaultService } from "./vault-service";
 
 export interface VaultBonusConfig {
   /** Master toggle (1 = on, 0 = off). */
@@ -122,14 +122,19 @@ export function nsImportBonus(cfg: VaultBonusConfig, cardCount: number): number 
  * Grant a bonus. `source` is the provenance string (e.g. "bonus:new_player",
  * "bonus:loreward:<id>"). When `oneTime` is set, a prior EARN_BONUS transaction with
  * the same source for this user short-circuits — the call becomes a no-op, so triggers
- * can fire freely without double-paying.
+ * can fire freely without double-paying. The grant itself is idempotent on
+ * `<source>:<userId>`, so concurrent calls can't both pay.
+ *
+ * `onceKey` instead makes the grant one-time per key across all users (e.g. once per
+ * NationStates nation, whichever account imports it), so one user can still earn it
+ * for several different keys.
  */
 export async function grantBonus(
   db: PrismaClient,
   userIdOrClerkId: string,
   source: string,
   amount: number,
-  opts: { oneTime?: boolean; metadata?: Record<string, any> } = {}
+  opts: { oneTime?: boolean; onceKey?: string; metadata?: Record<string, any> } = {}
 ): Promise<{ granted: boolean; amount: number; newBalance?: number; reason?: string }> {
   const cfg = await getBonusConfig(db);
   if (!cfg.enabled) return { granted: false, amount: 0, reason: "bonuses_disabled" };
@@ -141,12 +146,31 @@ export async function grantBonus(
   });
   if (!user) return { granted: false, amount: 0, reason: "user_not_found" };
 
-  if (opts.oneTime) {
-    const existing = await db.vaultTransaction.findFirst({
-      where: { source, type: "EARN_BONUS", vault: { userId: user.id } },
-      select: { id: true },
+  if (opts.oneTime || opts.onceKey) {
+    if (opts.oneTime) {
+      // Grants made before idempotency keys existed carry only the source
+      const existing = await db.vaultTransaction.findFirst({
+        where: { source, type: "EARN_BONUS", vault: { userId: user.id } },
+        select: { id: true },
+      });
+      if (existing) return { granted: false, amount: 0, reason: "already_granted" };
+    }
+
+    const once = await earnCreditsOnce(db, {
+      userId: user.id,
+      amount,
+      type: "EARN_BONUS",
+      source,
+      metadata: opts.metadata,
+      idempotencyKey: opts.onceKey ?? `${source}:${user.id}`,
     });
-    if (existing) return { granted: false, amount: 0, reason: "already_granted" };
+    if (once.alreadyApplied) return { granted: false, amount: 0, reason: "already_granted" };
+    return {
+      granted: once.success,
+      amount: once.success ? amount : 0,
+      newBalance: once.newBalance,
+      reason: once.message,
+    };
   }
 
   const res = await vaultService.earnCredits(

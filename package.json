@@ -20,6 +20,8 @@
     "audit:urls:prod": "BASE_PATH=/projects/ixstates bun scripts/audit-production-urls.ts",
     "audit:v1": "bun scripts/audit/audit-v1.ts",
     "audit:v1:prod": "NODE_ENV=production bun scripts/audit/audit-v1.ts",
+    "audit:vault-exploits": "bun scripts/audit/audit-vault-exploits.ts",
+    "audit:vault-exploits:json": "bun scripts/audit/audit-vault-exploits.ts --json",
     "audit:wikios-db": "bun scripts/audit/audit-wikios-db.ts",
     "audit:wikios-parity": "bun scripts/audit/audit-wikios-parity.ts",
     "audit:wiring": "bun scripts/audit/audit-trpc-wiring.ts",

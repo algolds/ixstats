@@ -453,11 +453,21 @@ export const cardsInventoryRouter = createTRPCRouter({
         }
 
         const result = await ctx.db.$transaction(async (tx) => {
-          await tx.cardOwnership.deleteMany({
+          // Pay only for rows this call actually removes: a concurrent junk (or a lock
+          // taken since the read above) removes fewer, and the whole transaction rolls back.
+          const deleted = await tx.cardOwnership.deleteMany({
             where: {
               id: { in: ownerships.map((o) => o.id) },
+              ownerId: userId,
+              isLocked: false,
             },
           });
+          if (deleted.count !== ownerships.length) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Some of these cards were already junked or locked. Refresh and try again.",
+            });
+          }
 
           const vault = await tx.myVault.findUnique({
             where: { userId },
