@@ -17,7 +17,7 @@ import { scoreDailyWikiOS } from "~/lib/lorewards";
 
 export const lorewardsAdminRouter = createTRPCRouter({
   /** Admin: trigger full sync from state file + OOL page. */
-  triggerSync: protectedProcedure.mutation(async () => {
+  triggerSync: adminProcedure.mutation(async () => {
     const result = await fullSync();
     return result;
   }),
@@ -27,7 +27,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 
   /** Cross-validate: compare bot picks vs WikiOS picks for a date. */
-  crossValidate: protectedProcedure
+  crossValidate: adminProcedure
     .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .mutation(async ({ input }) => {
       // Get bot result from database
@@ -144,7 +144,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
     }),
 
   /** Active Blacklist configuration */
-  getBlacklist: publicProcedure.query(async () => {
+  getBlacklist: protectedProcedure.query(async () => {
     try {
       const statePath = "/ixwiki/shared/bots/discord/lorewards-state.json";
       if (fs.existsSync(statePath)) {
