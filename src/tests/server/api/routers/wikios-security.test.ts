@@ -13,6 +13,7 @@ jest.mock("~/server/db", () => ({
     wikiRevision: { findFirst: jest.fn(), create: jest.fn() },
     stash: { findFirst: jest.fn(), create: jest.fn() },
     stashItem: { upsert: jest.fn() },
+    lorewardUserStats: { findUnique: jest.fn(), count: jest.fn() },
     auditLog: { create: jest.fn() },
     $transaction: jest.fn(),
   },
@@ -61,6 +62,12 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/write-service", () => ({
   __esModule: true,
   executeMediaWikiWrite: jest.fn(),
 }));
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
+  __esModule: true,
+  getUserContribs: jest.fn(),
+  getUserInfo: jest.fn().mockResolvedValue(null),
+  getBacklinks: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
   __esModule: true,
   PageManagementService: { restoreArticle: jest.fn() },
@@ -70,6 +77,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
+import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
@@ -81,6 +89,7 @@ const mockDb = db as unknown as {
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
   stash: { findFirst: jest.Mock; create: jest.Mock };
   stashItem: { upsert: jest.Mock };
+  lorewardUserStats: { findUnique: jest.Mock; count: jest.Mock };
   $transaction: jest.Mock;
 };
 
@@ -214,5 +223,94 @@ describe("S5: stashPage only writes into the caller's own stashes", () => {
 
     expect(result).toEqual({ success: true, stashId: "mine" });
     expect(mockDb.stashItem.upsert).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("S6: getAuthorProfile resolves the requested name only", () => {
+  const CALLER_COUNTRY = { id: "caller_country", name: "Callerland", flag: null };
+  const OTHER_COUNTRY = { id: "other_country", name: "Otherland", flag: null };
+
+  const signedInCtx = () =>
+    createMockRouterContext({
+      auth: { userId: "user_1" },
+      user: {
+        id: "db1",
+        clerkUserId: "user_1",
+        countryId: "caller_country",
+        country: CALLER_COUNTRY,
+        wikiUsername: "Caller",
+        role: { id: "role_caller", name: "user", level: 100 },
+      },
+    });
+  const anonymousCtx = () => createMockRouterContext({ auth: null, user: null });
+
+  const profile = (ctx: unknown, input?: { username?: string }) =>
+    createCallerFactory(wikiosUserTalkRouter)(asCtx(ctx)).getAuthorProfile(input);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mockDb.user.findFirst.mockResolvedValue(null);
+    mockDb.lorewardUserStats.findUnique.mockResolvedValue(null);
+  });
+
+  it("returns no user data to an anonymous caller when nobody matches the name", async () => {
+    const result = await profile(anonymousCtx(), { username: "Nobody" });
+
+    expect(result).toMatchObject({ username: "Nobody", country: null, role: null });
+    // No `OR` with an undefined clerkUserId (which matches every row): the name is the only filter.
+    expect(mockDb.user.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { wikiUsername: "Nobody" } })
+    );
+  });
+
+  it("never gives a signed-in caller their own country under another name", async () => {
+    const result = await profile(signedInCtx(), { username: "Somebody_else" });
+
+    expect(result).toMatchObject({ username: "Somebody_else", country: null, role: null });
+  });
+
+  it("prefers the owner of a verified ixwiki link, by the MediaWiki-normalised name", async () => {
+    mockDb.wikiAccountLink.findFirst.mockResolvedValue({
+      user: { country: OTHER_COUNTRY, role: { name: "member", level: 50 } },
+    });
+
+    const result = await profile(anonymousCtx(), { username: "somebody_else" });
+
+    expect(mockDb.wikiAccountLink.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { source: "ixwiki", username: "Somebody else", verifiedAt: { not: null } },
+      })
+    );
+    expect(mockDb.user.findFirst).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ country: OTHER_COUNTRY, role: { name: "member", level: 50 } });
+  });
+
+  it("returns role name and level only, never a role or user id", async () => {
+    mockDb.user.findFirst.mockResolvedValue({
+      country: OTHER_COUNTRY,
+      role: { name: "member", level: 50 },
+    });
+
+    const result = await profile(anonymousCtx(), { username: "Somebody" });
+
+    expect(result?.role).toEqual({ name: "member", level: 50 });
+    expect(JSON.stringify(result)).not.toMatch(/roleId|clerkUserId|role_caller/);
+  });
+
+  it("uses the caller's own record when no name is requested, without leaking the role id", async () => {
+    const result = await profile(signedInCtx());
+
+    expect(mockDb.user.findFirst).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      username: "Caller",
+      country: CALLER_COUNTRY,
+      role: { name: "user", level: 100 },
+    });
+    expect(result?.role).not.toHaveProperty("id");
+  });
+
+  it("returns null for an anonymous caller who names nobody", async () => {
+    await expect(profile(anonymousCtx())).resolves.toBeNull();
   });
 });

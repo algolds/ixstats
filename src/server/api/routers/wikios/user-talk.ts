@@ -8,6 +8,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getWikiAuth } from "~/lib/wiki-os/auth";
+import { findWikiProfileUser } from "~/lib/wiki-os/storage";
 import {
   getUserContribs,
   getUserInfo,
@@ -32,47 +33,27 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      let wikiName = input?.username?.trim() || null;
-      let internalUser = ctx.user;
-
-      if (!wikiName && ctx.auth?.userId) {
-        wikiName = getWikiAuth(ctx).wikiUsername;
-      }
+      const requestedName = input?.username?.trim() || null;
+      const wikiName =
+        requestedName ?? (ctx.auth?.userId ? getWikiAuth(ctx).wikiUsername : null);
 
       if (!wikiName) {
         return null;
       }
 
-      const userPromise = !internalUser?.id
-        ? db.user.findFirst({
-            where: {
-              OR: [{ wikiUsername: wikiName }, { clerkUserId: ctx.auth?.userId ?? undefined }],
-            },
-            select: {
-              id: true,
-              clerkUserId: true,
-              countryId: true,
-              roleId: true,
-              membershipTier: true,
-              wikiUsername: true,
-              wikiUserId: true,
-              createdAt: true,
-              updatedAt: true,
-              country: { select: { id: true, name: true, flag: true } },
-              role: { select: { id: true, name: true, level: true } },
-            },
-          })
-        : Promise.resolve(internalUser);
+      // A named profile is resolved by that name only. Without a name the profile is the caller's own.
+      const userPromise = requestedName
+        ? findWikiProfileUser(requestedName)
+        : Promise.resolve(ctx.user ?? null);
 
       // Parallel fetch User + Action API user info + Loreward stats
-      const [resolvedUser, mwInfo, loreStatsRecord] = await Promise.all([
+      const [profileUser, mwInfo, loreStatsRecord] = await Promise.all([
         userPromise,
         getUserInfo(wikiName),
         db.lorewardUserStats.findUnique({
           where: { username: wikiName },
         }),
       ]);
-      internalUser = resolvedUser;
 
       // Calculate rank if loreStatsRecord exists
       let rank: number | null = null;
@@ -100,8 +81,8 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         longestStreak: loreStatsRecord?.longestStreak ?? 0,
         totalWins,
         rank,
-        country: internalUser?.country ?? null,
-        role: internalUser?.role ?? null,
+        country: profileUser?.country ?? null,
+        role: profileUser?.role ? { name: profileUser.role.name, level: profileUser.role.level } : null,
       };
     }),
 
