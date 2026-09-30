@@ -8,7 +8,9 @@ import {
   Archery as Target,
 } from "iconoir-react";
 import { MILITARY_ERAS } from "~/lib/military/equipment";
-import { EXPANDED_MILITARY_DATABASE } from "~/lib/military/equipment-extended";
+import type { AssetTypeKey, EquipmentPreset } from "~/lib/military/player-catalog";
+
+export type { EquipmentPreset } from "~/lib/military/player-catalog";
 
 // Define a more specific type for our asset
 export interface Asset {
@@ -26,32 +28,13 @@ export interface Asset {
   imageUrl?: string | null;
 }
 
-/** One entry of `EXPANDED_MILITARY_DATABASE` (see equipment-extended.json). */
-interface EquipmentSpec {
-  name: string;
-  category: string;
-  era?: string;
-  manufacturer?: string;
-  role?: string;
-  /** Kilometres, or a label such as "Unlimited (nuclear)". */
-  range?: number | string;
-  acquisitionCost?: number;
-  maintenanceCost?: number;
-  imageUrl?: string | null;
-}
-
-export interface EquipmentPreset extends EquipmentSpec {
-  key: string;
-  type: AssetTypeKey;
-}
-
 export const ASSET_TYPE_CONFIG = {
   aircraft: { icon: Plane, color: "text-cyan-600 dark:text-cyan-400", label: "Aircraft" },
   ship: { icon: Ship, color: "text-blue-600 dark:text-blue-400", label: "Naval Vessel" },
   vehicle: { icon: Truck, color: "text-emerald-600 dark:text-emerald-400", label: "Vehicle" },
   installation: { icon: Target, color: "text-indigo-600 dark:text-indigo-400", label: "Installation" },
   weapon_system: { icon: Radio, color: "text-red-600 dark:text-red-400", label: "Weapon System" },
-} as const;
+} as const satisfies Record<AssetTypeKey, unknown>;
 
 export const STATUS_CONFIG = {
   operational: { label: "Operational", color: "bg-emerald-500" },
@@ -60,8 +43,6 @@ export const STATUS_CONFIG = {
   retired: { label: "Retired", color: "bg-muted-foreground" },
 } as const;
 
-/** Matches the `assetType` enum of `security.createMilitaryAsset`. */
-type AssetTypeKey = keyof typeof ASSET_TYPE_CONFIG;
 /** Matches the `status` enum of `security.createMilitaryAsset`. */
 type AssetStatusKey = keyof typeof STATUS_CONFIG;
 
@@ -120,28 +101,12 @@ export function applyEquipmentPreset(
     acquisitionCost: equipment.acquisitionCost ?? 0,
     maintenanceCost: equipment.maintenanceCost ?? 0,
     modernizationLevel:
-      MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS]?.techLevel ?? 50,
+      equipment.technologyLevel ??
+      MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS]?.techLevel ??
+      50,
     imageUrl: equipment.imageUrl || "",
   };
 }
-
-const EQUIPMENT_GROUPS: ReadonlyArray<readonly [string, AssetTypeKey]> = [
-  ["fighters_gen5", "aircraft"],
-  ["fighters_gen4_5", "aircraft"],
-  ["attack_aircraft", "aircraft"],
-  ["bombers", "aircraft"],
-  ["transport", "aircraft"],
-  ["helicopters", "aircraft"],
-  ["naval_ships", "ship"],
-  ["ground_vehicles", "vehicle"],
-  ["weapon_systems", "weapon_system"],
-];
-
-// The full equipment catalogue (250+ items with images), flattened once.
-const ALL_EQUIPMENT: EquipmentPreset[] = EQUIPMENT_GROUPS.flatMap(([group, type]) => {
-  const specs: Record<string, EquipmentSpec> = EXPANDED_MILITARY_DATABASE[group] ?? {};
-  return Object.entries(specs).map(([key, spec]) => ({ ...spec, key, type }));
-});
 
 interface EquipmentFilter {
   searchQuery: string;
@@ -151,13 +116,11 @@ interface EquipmentFilter {
 }
 
 /** Catalogue entries matching the search text, era, manufacturer and asset type. */
-export function filterEquipment({
-  searchQuery,
-  era,
-  manufacturer,
-  assetType,
-}: EquipmentFilter): EquipmentPreset[] {
-  return ALL_EQUIPMENT.filter((eq) => {
+export function filterEquipment(
+  equipment: readonly EquipmentPreset[],
+  { searchQuery, era, manufacturer, assetType }: EquipmentFilter
+): EquipmentPreset[] {
+  return equipment.filter((eq) => {
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !q ||

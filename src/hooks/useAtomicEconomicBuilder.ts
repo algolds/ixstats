@@ -25,7 +25,6 @@ import {
   type EconomicMetrics,
   type ValidationResult,
 } from "~/lib/economy/atomic-utils";
-import { useEconomicComponentsData } from "./useEconomicComponentsData";
 import { useAtomicSelectorState } from "./useAtomicSelectorState";
 
 /**
@@ -92,9 +91,6 @@ export function useAtomicEconomicBuilder({
   maxComponents = 15,
   onSelectionChange,
 }: UseAtomicEconomicBuilderProps = {}): UseAtomicEconomicBuilderReturn {
-  // Database Integration
-  const { components: dbComponents } = useEconomicComponentsData();
-
   // Headless state composition
   const state = useAtomicSelectorState<EconomicComponentType>({
     initialSelection,
@@ -104,12 +100,7 @@ export function useAtomicEconomicBuilder({
 
   const { selectedComponents, selectedIds, searchQuery, activeCategory } = state;
 
-  const allComponents = useMemo(() => {
-    if (dbComponents.length > 0) {
-      return dbComponents.map((comp) => comp.type);
-    }
-    return getAllComponents();
-  }, [dbComponents]);
+  const allComponents = useMemo(() => getAllComponents(), []);
 
   const availableComponents = useMemo(() => {
     return filterAndSearchComponents(

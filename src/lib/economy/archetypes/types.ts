@@ -12,6 +12,8 @@ import type { ComponentType } from "@prisma/client";
 export interface EconomicArchetype {
   id: string;
   name: string;
+  /** Set on archetypes served by the economicArchetypes API and the useArchetypes hook. */
+  era?: "modern" | "historical";
   description: string;
   region: string;
   characteristics: string[];

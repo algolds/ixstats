@@ -73,7 +73,7 @@ To retire an article, delete the file, remove its registry entry, add the old pa
 ## Known gaps
 
 - Articles are not versioned against the code; the tests catch broken links and missing files, not stale facts.
-- A few articles document known product gaps so players aren't misled (trade tab settings not saved, admin catalog edits not reaching the builder, crisis counts empty). Remove those notes when the gaps close.
+- A few articles document known product gaps so players aren't misled (trade tab settings not saved, crisis counts empty). Remove those notes when the gaps close.
 
 ---
 

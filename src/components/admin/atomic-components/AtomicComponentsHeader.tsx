@@ -4,7 +4,6 @@
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Checkbox } from "~/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -15,47 +14,42 @@ import {
 import {
   Industry as Factory,
   City as Building2,
-  Plus,
   Page as FileText,
-  Network,
+  InfoCircle as Info,
   Search,
 } from "iconoir-react";
+import { COMPLEXITY_LEVELS } from "~/lib/admin/atomic-component-filters";
 
 interface AtomicComponentsHeaderProps {
   domain: "economy" | "government";
+  categories: readonly string[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   categoryFilter: string;
   setCategoryFilter: (cat: string) => void;
   complexityFilter: string;
   setComplexityFilter: (comp: string) => void;
-  showActiveOnly: boolean;
-  setShowActiveOnly: (active: boolean) => void;
-  onOpenAddDialog: () => void;
   onOpenTemplates?: () => void;
-  onOpenSynergyMatrix: () => void;
 }
 
 export function AtomicComponentsHeader({
   domain,
+  categories,
   searchTerm,
   setSearchTerm,
   categoryFilter,
   setCategoryFilter,
   complexityFilter,
   setComplexityFilter,
-  showActiveOnly,
-  setShowActiveOnly,
-  onOpenAddDialog,
   onOpenTemplates,
-  onOpenSynergyMatrix,
 }: AtomicComponentsHeaderProps) {
   const Icon = domain === "economy" ? Factory : Building2;
   const title = domain === "economy" ? "Economic Components" : "Government Components";
   const subtitle =
     domain === "economy"
-      ? "Manage structural economic building blocks, tax impacts, and market multipliers"
-      : "Manage governance institutions, bureaucratic efficiency, and political structures";
+      ? "Structural economic building blocks, tax impacts, and market multipliers"
+      : "Governance institutions, bureaucratic efficiency, and political structures";
+  const sourcePath = domain === "economy" ? "src/lib/economy/data/" : "src/lib/government/data/";
 
   return (
     <div className="space-y-4">
@@ -81,25 +75,17 @@ export function AtomicComponentsHeader({
               Templates
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenSynergyMatrix}
-            className="h-8 rounded-xl px-3 text-xs transition-transform active:scale-[0.98]"
-          >
-            <Network className="mr-1.5 h-3.5 w-3.5 text-cyan-400" />
-            Synergy Matrix
-          </Button>
-          <Button
-            size="sm"
-            onClick={onOpenAddDialog}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Add Component
-          </Button>
         </div>
       </div>
+
+      <p className="border-border/30 bg-card/25 text-muted-foreground flex items-start gap-2 rounded-xl border p-3 text-xs leading-relaxed">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+          Read-only. These components are defined in code (<code>{sourcePath}</code>), which the
+          Country Builder, the editor and the simulation read directly, so changes ship with a code
+          release rather than from this page.
+        </span>
+      </p>
 
       {/* Filter Rail */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
@@ -121,24 +107,11 @@ export function AtomicComponentsHeader({
             <SelectItem value="all" className="text-xs">
               All Categories
             </SelectItem>
-            <SelectItem value="infrastructure" className="text-xs">
-              Infrastructure
-            </SelectItem>
-            <SelectItem value="industry" className="text-xs">
-              Industry & Commerce
-            </SelectItem>
-            <SelectItem value="finance" className="text-xs">
-              Finance & Banking
-            </SelectItem>
-            <SelectItem value="agriculture" className="text-xs">
-              Agriculture & Resources
-            </SelectItem>
-            <SelectItem value="administration" className="text-xs">
-              Administration
-            </SelectItem>
-            <SelectItem value="welfare" className="text-xs">
-              Welfare & Social
-            </SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category} value={category} className="text-xs">
+                {category}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -150,30 +123,13 @@ export function AtomicComponentsHeader({
             <SelectItem value="all" className="text-xs">
               All Complexities
             </SelectItem>
-            <SelectItem value="basic" className="text-xs">
-              Basic (Tier 1)
-            </SelectItem>
-            <SelectItem value="intermediate" className="text-xs">
-              Intermediate (Tier 2)
-            </SelectItem>
-            <SelectItem value="advanced" className="text-xs">
-              Advanced (Tier 3)
-            </SelectItem>
-            <SelectItem value="expert" className="text-xs">
-              Expert (Tier 4)
-            </SelectItem>
+            {COMPLEXITY_LEVELS.map((level) => (
+              <SelectItem key={level} value={level} className="text-xs">
+                {level}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
-
-        <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
-          <Checkbox
-            id="active-only"
-            checked={showActiveOnly}
-            onCheckedChange={(checked) => setShowActiveOnly(!!checked)}
-            className="h-3.5 w-3.5"
-          />
-          <span>Active only</span>
-        </label>
       </div>
     </div>
   );

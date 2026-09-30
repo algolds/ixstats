@@ -1,16 +1,16 @@
 /**
  * useArchetypes Hook
  *
- * Provides database-backed economic archetypes with fallback to hardcoded data.
- * Integrates with tRPC API for archetype management and usage tracking.
+ * Provides the economic archetypes admins maintain at /admin/economic-archetypes, with
+ * fallback to the built-in archetypes while loading or if the API fails.
  *
  * @module useArchetypes
  */
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
-import { modernArchetypes } from "~/lib/economy/archetypes/modern";
-import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
+import { builtinArchetypes } from "~/lib/economy/archetypes/seed";
+import { rememberArchetypes } from "~/lib/economy/archetypes/registry";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 import { ComponentType } from "~/lib/enums";
 
@@ -29,6 +29,11 @@ const GOVERNMENT_COMPONENT_LEGACY_MAP: Record<string, ComponentType[]> = {
   FREE_MARKET_SYSTEM: [ComponentType.ECONOMIC_INCENTIVES],
   STATE_CAPITALISM: [ComponentType.CENTRALIZED_POWER],
 };
+
+function normalizeComplexity(value: string): EconomicArchetype["implementationComplexity"] {
+  const lower = value.toLowerCase();
+  return lower === "low" || lower === "high" ? lower : "medium";
+}
 
 export function mapLegacyGovernmentComponents(components: string[]): ComponentType[] {
   if (!components) return [];
@@ -86,14 +91,19 @@ export function useArchetypes(era?: "modern" | "historical" | "all") {
 
   // Process archetypes with fallback logic
   const { archetypes, isUsingFallback } = useMemo(() => {
-    const list = Array.isArray(dbArchetypes) ? dbArchetypes : (dbArchetypes as any)?.archetypes;
+    const list = dbArchetypes?.archetypes;
 
     // Use database if available and not empty
     if (list && list.length > 0) {
-      const mappedDbList = (list as EconomicArchetype[]).map((a) => ({
+      // `key` is the stable archetype id (the built-in id for seeded archetypes); builder state
+      // stores it as selectedArchetypeId.
+      const mappedDbList: EconomicArchetype[] = list.map((a) => ({
         ...a,
-        governmentComponents: mapLegacyGovernmentComponents(a.governmentComponents as any[]),
+        id: a.key,
+        implementationComplexity: normalizeComplexity(a.implementationComplexity),
+        governmentComponents: mapLegacyGovernmentComponents(a.governmentComponents as string[]),
       }));
+      rememberArchetypes(mappedDbList);
       return {
         archetypes: mappedDbList,
         isUsingFallback: false,
@@ -107,24 +117,15 @@ export function useArchetypes(era?: "modern" | "historical" | "all") {
       );
     }
 
-    const fallback: EconomicArchetype[] = [
-      ...Array.from(modernArchetypes.values()),
-      ...Array.from(historicalArchetypes.values()),
-    ].map((a) => ({
-      ...a,
-      governmentComponents: mapLegacyGovernmentComponents(a.governmentComponents as any[]),
-    }));
-
-    // Filter by era if specified
-    let filtered = fallback;
-    if (era === "modern") {
-      filtered = fallback.filter((a) => modernArchetypes.has(a.id));
-    } else if (era === "historical") {
-      filtered = fallback.filter((a) => historicalArchetypes.has(a.id));
-    }
+    const fallback: EconomicArchetype[] = builtinArchetypes()
+      .filter((a) => !era || era === "all" || a.era === era)
+      .map((a) => ({
+        ...a,
+        governmentComponents: mapLegacyGovernmentComponents(a.governmentComponents as string[]),
+      }));
 
     return {
-      archetypes: filtered,
+      archetypes: fallback,
       isUsingFallback: true,
     };
   }, [dbArchetypes, era, isLoading]);

@@ -23,7 +23,7 @@ import { Badge } from "~/components/ui/badge";
 import { useAtomicGovernmentBuilder } from "~/hooks/useAtomicGovernmentBuilder";
 import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/government/atomic-data";
 import { getCategories } from "~/lib/government/atomic-utils";
-import { useGovernmentComponentsData } from "~/hooks/useGovernmentComponentsData";
+import { api } from "~/trpc/react";
 import {
   ComponentLibrary,
   SelectedComponentsList,
@@ -72,13 +72,9 @@ export function AtomicGovernmentComponents({
   hideCategorySelector = false,
   hideSelectedList = false,
 }: AtomicGovernmentComponentsProps) {
-  // Fetch component data from database (with fallback)
-  const {
-    components: _componentData,
-    isLoading: componentsLoading,
-    isUsingFallback,
-    incrementUsage,
-  } = useGovernmentComponentsData();
+  // Usage counts for the admin component statistics
+  const { mutate: trackUsage } = api.governmentComponents.incrementComponentUsage.useMutation();
+  const incrementUsage = (componentType: ComponentType) => trackUsage({ componentType });
 
   // Initialize builder hook
   const builder = useAtomicGovernmentBuilder({
@@ -212,18 +208,6 @@ export function AtomicGovernmentComponents({
     incrementUsage(componentType);
   };
 
-  // Show loading state
-  if (componentsLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="space-y-2 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-amber-500"></div>
-          <p className="text-sm text-muted-foreground">Loading components...</p>
-        </div>
-      </div>
-    );
-  }
-
   const workspaceContent = (
     <div className="space-y-6">
       {/* Filter and Search Bar */}
@@ -290,16 +274,6 @@ export function AtomicGovernmentComponents({
         {/* Welcome & Instruction Modal */}
         {!standalone && (
           <AtomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
-        )}
-
-        {/* Fallback Warning Banner */}
-        {isUsingFallback && (
-          <Alert variant="default" className="border-amber-500/20 bg-amber-500/10 text-amber-400">
-            <Info className="h-4 w-4 text-amber-400" />
-            <AlertDescription className="font-medium">
-              Using local component data. Database connection unavailable or empty.
-            </AlertDescription>
-          </Alert>
         )}
 
         {/* Header Section */}

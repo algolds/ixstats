@@ -5,19 +5,16 @@
  * `api.economicComponents.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - catalog:    public read/usage endpoints (component catalog, by-type, by-category,
- *                synergies, templates, usage increment)
- *  - components: admin-only component mutations (create / update / delete component)
- *  - admin:      admin-only stats and relationship/template mutations
- *                (usage stats, create synergy, create template)
+ *  - catalog: public read/usage endpoints (component catalog, templates, usage increment)
+ *  - admin:   admin-only usage statistics
+ *
+ * Components are defined in code (~/lib/economy/atomic-data); there are no edit endpoints.
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { economicComponentsCatalogRouter } from "./catalog";
-import { economicComponentsComponentsRouter } from "./components";
 import { economicComponentsAdminRouter } from "./admin";
 
 export const economicComponentsRouter = mergeRouters(
   economicComponentsCatalogRouter,
-  economicComponentsComponentsRouter,
   economicComponentsAdminRouter
 );

@@ -97,7 +97,7 @@ describe("PL-3: public usage counters are rate-limited", () => {
     await expect(caller.incrementArchetypeUsage({ archetypeId: "a1" })).rejects.toThrow(
       /Too many requests/
     );
-    expect(db.economicArchetype.update).not.toHaveBeenCalled();
+    expect(db.economicArchetype.updateMany).not.toHaveBeenCalled();
   });
 
   it("economicComponents.incrementComponentUsage stops once the limit is hit", async () => {

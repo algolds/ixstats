@@ -1,41 +1,24 @@
 /**
- * Economic Components Router (Phase 5 Migration)
+ * Economic Components Router — admin
  *
- * API layer for atomic economic component library system.
- * Provides public endpoints for component catalog with JSON field parsing.
- *
- * Database Model: EconomicComponentData (reference library)
- * Fallback Data: ATOMIC_ECONOMIC_COMPONENTS from ~/lib/atomic-economic-data
- *
- * Features:
- * - getAllComponents: Query component catalog with category filtering
- * - getComponentByType: Fetch single component details
- * - incrementComponentUsage: Track component selection for analytics
- * - JSON parsing for 7 impact fields (synergies, conflicts, governmentSynergies,
- *   governmentConflicts, taxImpact, sectorImpact, employmentImpact)
+ * Usage statistics for the economic component library. Components are defined in code
+ * (ATOMIC_ECONOMIC_COMPONENTS in ~/lib/economy/atomic-data) and aren't editable here.
  */
 
-import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { EconomicComponentType } from "@prisma/client";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 import { type ParsedEconomicComponent } from "./serializer";
 
 // ============================================================================
-// Input Validation Schemas
-// ============================================================================
-
-const economicComponentTypeSchema = z.nativeEnum(EconomicComponentType);
-// ============================================================================
 // Helper Functions
 // ============================================================================
 
 /**
- * Get fallback component data from ATOMIC_ECONOMIC_COMPONENTS library
+ * Components from the ATOMIC_ECONOMIC_COMPONENTS code library
  */
-function getFallbackComponents(): ParsedEconomicComponent[] {
+function getLibraryComponents(): ParsedEconomicComponent[] {
   return Object.values(ATOMIC_ECONOMIC_COMPONENTS)
     .filter((comp): comp is NonNullable<typeof comp> => comp !== undefined)
     .map((comp) => ({
@@ -76,7 +59,7 @@ export const economicComponentsAdminRouter = createTRPCRouter({
    */
   getComponentUsageStats: adminProcedure.query(async ({ ctx }) => {
     try {
-      const components = getFallbackComponents();
+      const components = getLibraryComponents();
 
       // Get actual usage from EconomicComponent instances
       const usageStats = await ctx.db.economicComponent.groupBy({
@@ -118,73 +101,4 @@ export const economicComponentsAdminRouter = createTRPCRouter({
       });
     }
   }),
-
-  /**
-   * Create a synergy relationship (admin only)
-   */
-  createSynergy: adminProcedure
-    .input(
-      z.object({
-        component1: economicComponentTypeSchema,
-        component2: economicComponentTypeSchema,
-        synergyType: z.enum(["STRONG", "MODERATE", "WEAK", "CONFLICT"]),
-        bonusPercent: z.number().min(-100).max(100),
-        description: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Create synergy
-        const synergy = await ctx.db.economicSynergy.create({
-          data: {
-            component1: input.component1,
-            component2: input.component2,
-            synergyType: input.synergyType,
-            bonusPercent: input.bonusPercent,
-            description: input.description || `${input.synergyType} synergy between components`,
-          },
-        });
-
-        // Log the admin action
-        await ctx.db.adminAuditLog.create({
-          data: {
-            action: "ECONOMIC_SYNERGY_CREATED",
-            targetType: "economic_synergy",
-            targetId: synergy.id,
-            targetName: `${input.component1} <-> ${input.component2}`,
-            changes: JSON.stringify(input),
-            adminId: ctx.user?.id || "system",
-            adminName: ctx.user?.clerkUserId || "System",
-            timestamp: new Date(),
-            ipAddress:
-              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
-          },
-        });
-
-        return {
-          success: true,
-          synergy,
-          message: "Synergy created successfully",
-        };
-      } catch (error) {
-        console.error(
-          `[economicComponents] Error creating synergy between ${input.component1} and ${input.component2}:`,
-          {
-            error: error instanceof Error ? error.message : String(error),
-            userId: ctx.auth?.userId || "anonymous",
-            adminUser: ctx.user
-              ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
-              : "NO_USER",
-            component1: input.component1,
-            component2: input.component2,
-            synergyType: input.synergyType,
-            stack: error instanceof Error ? error.stack : undefined,
-          }
-        );
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to create synergy between ${input.component1} and ${input.component2}. Please try again or contact support if the issue persists.`,
-        });
-      }
-    }),
 });

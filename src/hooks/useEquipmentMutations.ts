@@ -6,6 +6,10 @@
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import type { EquipmentFormData } from "~/lib/military/catalog-utils";
+import type { RouterInputs } from "~/trpc/react";
+
+type CatalogCategory = RouterInputs["militaryEquipment"]["createCatalogEquipment"]["category"];
+type CatalogEra = RouterInputs["militaryEquipment"]["createCatalogEquipment"]["era"];
 
 interface UseEquipmentMutationsArgs {
   formData: EquipmentFormData;
@@ -79,50 +83,34 @@ export function useEquipmentMutations({
     },
   });
 
+  // The router validates category and era against the same lists the form offers.
+  const equipmentInput = () => ({
+    name: formData.name,
+    manufacturer: formData.manufacturer,
+    category: formData.category as CatalogCategory,
+    subcategory: formData.subcategory,
+    era: formData.era as CatalogEra,
+    specifications: formData.specifications,
+    capabilities: formData.capabilities,
+    acquisitionCost: formData.acquisitionCost,
+    maintenanceCost: formData.maintenanceCost,
+    technologyLevel: formData.technologyLevel,
+    crewRequirement: formData.crewRequirement,
+    maintenanceHours: formData.maintenanceHours,
+    imageUrl: formData.imageUrl.trim(),
+    description: formData.description,
+    historicalContext: formData.historicalContext,
+    isActive: formData.isActive,
+  });
+
   const handleCreate = () => {
-    createMutation.mutate({
-      key: formData.key,
-      name: formData.name,
-      manufacturer: formData.manufacturer,
-      category: formData.category as any,
-      subcategory: formData.subcategory,
-      era: formData.era as any,
-      specifications: formData.specifications,
-      capabilities: formData.capabilities,
-      acquisitionCost: formData.acquisitionCost,
-      maintenanceCost: formData.maintenanceCost,
-      technologyLevel: formData.technologyLevel,
-      crewRequirement: formData.crewRequirement,
-      maintenanceHours: formData.maintenanceHours,
-      imageUrl: formData.imageUrl || undefined,
-      description: formData.description || undefined,
-      historicalContext: formData.historicalContext || undefined,
-      isActive: formData.isActive,
-    } as any);
+    createMutation.mutate({ key: formData.key.trim() || undefined, ...equipmentInput() });
   };
 
   const handleUpdate = () => {
     if (!editingEquipment?.id) return;
 
-    updateMutation.mutate({
-      id: editingEquipment.id,
-      name: formData.name,
-      category: formData.category as any,
-      subcategory: formData.subcategory,
-      era: formData.era as any,
-      manufacturer: formData.manufacturer,
-      specifications: formData.specifications,
-      capabilities: formData.capabilities,
-      acquisitionCost: formData.acquisitionCost,
-      maintenanceCost: formData.maintenanceCost,
-      technologyLevel: formData.technologyLevel,
-      crewRequirement: formData.crewRequirement,
-      maintenanceHours: formData.maintenanceHours,
-      imageUrl: formData.imageUrl || undefined,
-      description: formData.description || undefined,
-      historicalContext: formData.historicalContext || undefined,
-      isActive: formData.isActive,
-    } as any);
+    updateMutation.mutate({ id: editingEquipment.id, ...equipmentInput() });
   };
 
   const handleDelete = (id: string, name: string) => {

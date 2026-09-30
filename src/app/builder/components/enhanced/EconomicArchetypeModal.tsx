@@ -39,7 +39,7 @@ export function EconomicArchetypeModal({
   onArchetypeApplied,
 }: EconomicArchetypeModalProps) {
   // Fetch archetypes from database with fallback
-  const { isUsingFallback } = useArchetypes("all");
+  const { isUsingFallback, isLoading } = useArchetypes("all");
 
   // Track archetype usage
   const incrementUsage = api.economicArchetypes.incrementArchetypeUsage.useMutation();
@@ -82,12 +82,12 @@ export function EconomicArchetypeModal({
         </DialogHeader>
 
         {/* Fallback Warning */}
-        {isUsingFallback && (
+        {isUsingFallback && !isLoading && (
           <div className="px-6 pt-4">
             <Alert variant="default" className="border-yellow-500/30 bg-yellow-500/10">
               <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
               <AlertDescription className="text-xs text-yellow-600 dark:text-yellow-400">
-                Using offline archetype data. Admin should seed database with economic archetypes.
+                Couldn&apos;t load the archetype catalog, so these are the built-in archetypes.
               </AlertDescription>
             </Alert>
           </div>

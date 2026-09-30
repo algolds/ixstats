@@ -13,11 +13,15 @@ import {
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { DEFENSE_MANUFACTURERS, MILITARY_ERAS } from "~/lib/military/equipment";
+import { Skeleton } from "~/components/ui/skeleton";
+import { MILITARY_ERAS } from "~/lib/military/equipment";
+import type { CatalogManufacturer } from "~/lib/military/player-catalog";
 import type { EquipmentPreset } from "./asset-config";
 
 interface EquipmentBrowserProps {
   equipment: EquipmentPreset[];
+  manufacturers: CatalogManufacturer[];
+  isLoading?: boolean;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   selectedEra: string;
@@ -29,13 +33,13 @@ interface EquipmentBrowserProps {
 
 function EquipmentRow({
   equipment,
+  manufacturer,
   onSelect,
 }: {
   equipment: EquipmentPreset;
+  manufacturer: CatalogManufacturer | undefined;
   onSelect: (equipment: EquipmentPreset) => void;
 }) {
-  const manufacturer =
-    DEFENSE_MANUFACTURERS[equipment.manufacturer as keyof typeof DEFENSE_MANUFACTURERS];
   const era = MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS];
   const imageUrl = equipment.imageUrl;
 
@@ -68,7 +72,9 @@ function EquipmentRow({
               </Badge>
             </div>
             <p className="text-muted-foreground text-xs">
-              {manufacturer?.name} • {manufacturer?.country}
+              {manufacturer
+                ? `${manufacturer.name} • ${manufacturer.country}`
+                : equipment.manufacturer}
             </p>
             <div className="mt-2 flex items-center gap-4 text-xs">
               <span>
@@ -93,6 +99,8 @@ function EquipmentRow({
 
 export const EquipmentBrowser = React.memo(function EquipmentBrowser({
   equipment,
+  manufacturers,
+  isLoading = false,
   searchQuery,
   onSearchQueryChange,
   selectedEra,
@@ -101,6 +109,11 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
   onSelectedManufacturerChange,
   onSelect,
 }: EquipmentBrowserProps) {
+  const manufacturersByKey = React.useMemo(
+    () => new Map(manufacturers.map((mfg) => [mfg.key, mfg])),
+    [manufacturers]
+  );
+
   return (
     <>
       {/* Search and Filters */}
@@ -133,8 +146,8 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Manufacturers</SelectItem>
-            {Object.entries(DEFENSE_MANUFACTURERS).map(([key, mfg]) => (
-              <SelectItem key={key} value={key}>
+            {manufacturers.map((mfg) => (
+              <SelectItem key={mfg.key} value={mfg.key}>
                 {mfg.name} ({mfg.country})
               </SelectItem>
             ))}
@@ -144,10 +157,17 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
 
       {/* Equipment List */}
       <div className="grid max-h-96 grid-cols-1 gap-2 overflow-y-auto">
+        {isLoading &&
+          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
         {equipment.map((item) => (
-          <EquipmentRow key={item.key} equipment={item} onSelect={onSelect} />
+          <EquipmentRow
+            key={item.key}
+            equipment={item}
+            manufacturer={item.manufacturer ? manufacturersByKey.get(item.manufacturer) : undefined}
+            onSelect={onSelect}
+          />
         ))}
-        {equipment.length === 0 && (
+        {!isLoading && equipment.length === 0 && (
           <div className="text-muted-foreground py-6 text-center text-sm">
             No equipment found matching your criteria
           </div>

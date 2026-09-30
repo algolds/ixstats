@@ -19,7 +19,6 @@ import { FoundationHero } from "../../FoundationHero";
 import { useNotify } from "~/hooks/useNotify";
 import { safeGetItemSync } from "~/lib/system/local-storage-mutex";
 import type { BuilderStep } from "../builderConfig";
-import { HISTORICAL_ARCHETYPE_IDS } from "./foundation/foundationUtils";
 import { FoundationPathSelector } from "./foundation/FoundationPathSelector";
 import { ArchetypeGrid } from "./foundation/ArchetypeGrid";
 import { ArchetypeConfirmationPanel } from "./foundation/ArchetypeConfirmationPanel";
@@ -83,14 +82,7 @@ export function FoundationStep({
   // Filter archetypes by era, query, and complexity
   const archetypes = React.useMemo(() => {
     if (!allArchetypes) return [];
-    if (activeEra === "historical") {
-      return allArchetypes.filter((arch) =>
-        (HISTORICAL_ARCHETYPE_IDS as readonly string[]).includes(arch.id)
-      );
-    }
-    return allArchetypes.filter(
-      (arch) => !(HISTORICAL_ARCHETYPE_IDS as readonly string[]).includes(arch.id)
-    );
+    return allArchetypes.filter((arch) => (arch.era ?? "modern") === activeEra);
   }, [allArchetypes, activeEra]);
 
   const filteredArchetypes = React.useMemo(() => {

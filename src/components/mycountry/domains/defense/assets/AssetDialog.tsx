@@ -13,6 +13,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
+import { api } from "~/trpc/react";
 import {
   applyEquipmentPreset,
   filterEquipment,
@@ -41,6 +42,14 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
 
   const [formData, setFormData] = useState<AssetFormData>(() => toFormData(asset));
 
+  // Equipment templates come from the admin-maintained catalog (/admin/military-equipment).
+  const { data: catalog, isLoading: catalogLoading } =
+    api.militaryEquipment.getPlayerCatalog.useQuery(undefined, {
+      enabled: open,
+      staleTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    });
+
   React.useEffect(() => {
     if (asset) {
       // oxlint-disable-next-line
@@ -67,7 +76,7 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
     notify.success("Equipment template loaded" + (equipment.imageUrl ? " with image" : ""));
   };
 
-  const filteredEquipment = filterEquipment({
+  const filteredEquipment = filterEquipment(catalog?.equipment ?? [], {
     searchQuery,
     era: selectedEra,
     manufacturer: selectedManufacturer,
@@ -93,6 +102,8 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
           <TabsContent value="browse" className="space-y-4">
             <EquipmentBrowser
               equipment={filteredEquipment}
+              manufacturers={catalog?.manufacturers ?? []}
+              isLoading={catalogLoading}
               searchQuery={searchQuery}
               onSearchQueryChange={setSearchQuery}
               selectedEra={selectedEra}
