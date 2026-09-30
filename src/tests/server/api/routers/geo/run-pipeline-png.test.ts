@@ -209,6 +209,49 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
     expect(pin.create).not.toHaveProperty("areaSqKm");
     expect(pin.update).not.toHaveProperty("centroid");
   });
+
+  it("coerces numeric worldgen feature ids to strings for the featureId column", async () => {
+    const db = importDb();
+    const poly = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [0, 0],
+          [10, 0],
+          [10, 10],
+          [0, 10],
+          [0, 0],
+        ],
+      ],
+    };
+    await createCallerFactory(geoEditorProceduralRouter)(
+      createMockRouterContext({
+        db,
+        auth: { userId: "admin_1" },
+        user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
+      }) as never
+    ).importPipelineResult({
+      realmId: "r_eurth",
+      layers: {
+        political: {
+          type: "FeatureCollection",
+          features: [
+            { type: "Feature", id: 7, geometry: poly, properties: {} },
+            { type: "Feature", id: 0, geometry: poly, properties: {} },
+            { type: "Feature", id: 9, geometry: poly, properties: { featureId: 42 } },
+            { type: "Feature", geometry: poly, properties: {} },
+          ],
+        },
+      },
+    });
+
+    const calls = db.mapLayer.upsert.mock.calls.map((c) => c[0]);
+    expect(calls.map((c) => c.create.featureId)).toEqual(["7", "0", "42", "political_3"]);
+    for (const c of calls) {
+      expect(typeof c.create.featureId).toBe("string");
+      expect(c.where.realmId_layerType_featureId.featureId).toBe(c.create.featureId);
+    }
+  });
 });
 
 describe("geoEditor.runPipeline — SVG and procedural input are unchanged", () => {
