@@ -66,6 +66,22 @@ effectiveGrowthRate = min(
 
 The growth floor defaults to `-0.10` (`minGrowthFloor`). Storyteller `GDP_ADJUSTMENT` effects add to the rate and `GROWTH_RATE_MODIFIER` effects multiply it, before the tier cap is applied.
 
+Growth effects change the rate for the whole span from `baselineDate` to the target time, so they also reshape the projected path before their own start.
+
+### Level effects (national-issue consequences)
+
+`GDP_LEVEL_ADJUSTMENT` (`gdp_level_adjustment`) and `POPULATION_LEVEL_ADJUSTMENT` (`population_level_adjustment`) scale GDP per capita or population by `1 + value × phaseIn` after the growth calculation, bypassing the tier cap. `phaseIn` (`levelPhaseIn`) is 0 before the effect's `ixTimeTimestamp`, rises linearly over `duration` IxTime years, and stays 1 afterwards; an effect with no duration applies at once. They never alter the path before they start, and the shift is kept after the duration ends.
+
+National-issue resolution (`src/lib/national-issues/projection-effects.ts`) creates them instead of writing fields the projection overwrites:
+
+| Consequence | Effect | Value |
+| :--- | :--- | :--- |
+| `actualGdpGrowth` add / subtract X (percentage points) | `gdp_level_adjustment`, duration 1 IxTime year (or `durationDays` rounded to whole years) | `(1 ± X/100)^years − 1`, capped at ±3% |
+| `currentTotalGdp` / `currentGdpPerCapita` multiply m | `gdp_level_adjustment`, no duration | `m − 1`, capped at ±3% |
+| `currentPopulation` multiply m | `population_level_adjustment`, no duration | `m − 1`, capped at ±1% |
+
+Any other operation on those fields (`set`, an absolute add to GDP) is dropped: it is not applied, not listed in the issue's consequence log, and not shown in the recon preview.
+
 ### High GDP per Capita Diminishing Returns
 For nations whose baseline GDP per capita exceeds `$60,000` (`diminishingReturnsThreshold`), a logarithmic diminishing return modifier (factor `0.5`, `diminishingReturnsFactor`) dampens growth after the tier cap:
 $$\text{diminishingFactor} = \log_2\left(\frac{\text{gdpPerCapita}}{60000} + 1\right)$$

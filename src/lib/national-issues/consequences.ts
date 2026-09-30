@@ -4,6 +4,9 @@
  * Applies effects when a player responds to a national issue (or auto-resolution fires).
  * Handles:
  * - Direct DB field updates on Country, GovernmentStructure, InternalStabilityMetrics
+ *   (through the event spine)
+ * - GDP / population / GDP-growth consequences become StorytellerEffects the economy
+ *   projection applies (see ./projection-effects.ts); direct writes there were overwritten
  * - Field value clamping to sensible bounds
  * - Consequence audit trail (NationalIssueConsequence records)
  * - Follow-up issue chain generation
@@ -20,6 +23,7 @@ import {
 } from "./engine";
 import type { PrismaClient } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity";
+import { isProjectionConsequence, issueConsequenceToEffect } from "./projection-effects";
 
 // ==================== FIELD BOUNDS ====================
 
@@ -189,6 +193,7 @@ export class NationalIssuesConsequences {
             issue.countryId,
             db,
             issueId,
+            issue.title,
             currentIxTime
           );
           if (stabilityHit) result.consequences.push(stabilityHit);
@@ -203,6 +208,7 @@ export class NationalIssuesConsequences {
             issue.countryId,
             db,
             issueId,
+            issue.title,
             currentIxTime
           );
           if (approvalHit) result.consequences.push(approvalHit);
@@ -219,6 +225,7 @@ export class NationalIssuesConsequences {
                 issue.countryId,
                 db,
                 issueId,
+                issue.title,
                 currentIxTime
               );
               if (applied) {
@@ -375,8 +382,20 @@ export class NationalIssuesConsequences {
     countryId: string,
     db: PrismaClient,
     issueId: string,
+    issueTitle: string,
     currentIxTime: number
   ): Promise<AppliedConsequence | null> {
+    if (isProjectionConsequence(consequence)) {
+      return this.applyProjectionConsequence(
+        consequence,
+        countryId,
+        db,
+        issueId,
+        issueTitle,
+        currentIxTime
+      );
+    }
+
     const appliedList = await CountryEventSpine.recordCountryEvent({
       db,
       countryId,
@@ -415,6 +434,64 @@ export class NationalIssuesConsequences {
     });
 
     return applied;
+  }
+
+  /**
+   * GDP / population / GDP-growth consequences: the projection owns those numbers, so instead
+   * of a field write (overwritten on the next read) the consequence becomes a StorytellerEffect
+   * the economy engine applies. Consequences with no faithful mapping are dropped (null).
+   */
+  private static async applyProjectionConsequence(
+    consequence: ConsequenceDefinition,
+    countryId: string,
+    db: PrismaClient,
+    issueId: string,
+    issueTitle: string,
+    currentIxTime: number
+  ): Promise<AppliedConsequence | null> {
+    const spec = issueConsequenceToEffect(consequence);
+    if (!spec) return null;
+
+    await db.storytellerEffect.create({
+      data: {
+        countryId,
+        ixTimeTimestamp: new Date(currentIxTime),
+        inputType: spec.inputType,
+        value: spec.value,
+        description: `National issue: ${issueTitle} (${spec.description})`,
+        duration: spec.duration,
+        isActive: true,
+        createdBy: `issue:${issueId}`,
+      },
+    });
+
+    const deltaPct = spec.value * 100;
+    const description = `${spec.description} (economic projection)`;
+
+    await db.nationalIssueConsequence.create({
+      data: {
+        issueId,
+        targetModel: consequence.targetModel,
+        targetField: consequence.targetField,
+        previousValue: null,
+        newValue: JSON.stringify(spec.value),
+        deltaValue: deltaPct,
+        description,
+        effectType: "projection",
+        effectDuration: spec.duration != null ? Math.round(spec.duration * 365) : null,
+        appliedIxTime: currentIxTime,
+      },
+    });
+
+    return {
+      targetModel: consequence.targetModel,
+      targetField: consequence.targetField,
+      previousValue: 0,
+      newValue: deltaPct,
+      delta: deltaPct,
+      description,
+      effectType: "projection",
+    };
   }
 
   /**
