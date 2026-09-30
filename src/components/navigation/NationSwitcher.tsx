@@ -35,7 +35,7 @@ export function NationSwitcher({ onSwitched, className }: NationSwitcherProps) {
       </div>
       {data.realms.map((realm) => (
         <div key={realm.id} role="group" aria-label={realm.name}>
-          <div className="text-muted-foreground/80 px-4 pt-1 text-[11px] font-medium">
+          <div className="text-muted-foreground/80 px-4 pt-1 text-xs font-medium">
             {realm.name}
           </div>
           {realm.nations.map((nation) => {
