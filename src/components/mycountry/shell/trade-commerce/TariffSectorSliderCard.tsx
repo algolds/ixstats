@@ -45,7 +45,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
             <button
               type="button"
               onClick={onReset}
-              title="Reset to default"
+              title="Reset to starting rate"
               className="text-muted-foreground hover:text-foreground p-1 transition-colors"
             >
               <RotateCcw className="h-3 w-3" />
@@ -68,7 +68,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
       </div>
 
       <div className="flex items-baseline justify-between">
-        <span className="text-muted-foreground text-xs">Export Share: {sector.defaultShare}%</span>
+        <span className="text-muted-foreground text-xs">Share of GDP: {sector.defaultShare}%</span>
         <div className={cn("text-lg font-bold tracking-tight", ACCENT_TEXT[sector.accent])}>
           <PercentageFlow value={currentTariff} />
         </div>

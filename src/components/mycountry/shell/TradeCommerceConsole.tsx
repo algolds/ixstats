@@ -2,13 +2,19 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
-import { Plus } from "iconoir-react";
+import { Plus, InfoCircle } from "iconoir-react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
+import {
+  economicRelationsOf,
+  finiteOrNull,
+  savedTariffRate,
+} from "~/lib/economy/country-relations";
 
 import type { CustomSector } from "./trade-commerce/trade-commerce-types";
-import { DEFAULT_SECTORS, parseSectorBreakdownJson } from "./trade-commerce/trade-commerce-types";
+import { sectorsFromRecorded } from "./trade-commerce/trade-commerce-types";
 import { TariffSectorSliderCard } from "./trade-commerce/TariffSectorSliderCard";
 import { TradePartnersManager } from "./trade-commerce/TradePartnersManager";
 import { TradeImpactSummary } from "./trade-commerce/TradeImpactSummary";
@@ -16,6 +22,14 @@ import { CustomSectorDialog } from "./trade-commerce/CustomSectorDialog";
 
 export { type CustomSector, type AccentColor } from "./trade-commerce/trade-commerce-types";
 
+/**
+ * Trade & Commerce tab.
+ *
+ * Trade figures come from the nation's recorded exports/imports (% of GDP) and show "—" when
+ * none are recorded. The sector tariff schedule is a planner: it is seeded from the recorded
+ * sectors and the saved Fiscal Policy tariff rate, but its edits live only in this component and
+ * are labelled as not saved. Trade agreement status is read from recorded treaties.
+ */
 export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   const notify = useNotify();
   const { country } = useCountryData();
@@ -23,28 +37,29 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   const [isAddSectorOpen, setIsAddSectorOpen] = useState(false);
   const [lockedSectors, setLockedSectors] = useState<Record<string, boolean>>({});
 
-  // Fetch economy configuration and diplomatic relationships
-  const { data: econConfig } = api.economics.getEconomyConfiguration.useQuery(
-    { countryId },
-    { enabled: !!countryId, staleTime: 30_000 }
-  );
-
   const { data: diplomaticRelations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  // Parse or initialize sectors
-  const [customSectors, setCustomSectors] = useState<CustomSector[]>(DEFAULT_SECTORS);
-  const [tariffs, setTariffs] = useState<Record<string, number>>(() => {
-    const init: Record<string, number> = {};
-    DEFAULT_SECTORS.forEach((s) => {
-      init[s.id] = s.defaultTariff;
-    });
-    return init;
-  });
+  const { economicProfile: profile, fiscalSystem: fiscal } = economicRelationsOf(country);
+  const currencySymbol = country?.nationalIdentity?.currencySymbol || "$";
 
-  const [agreements, setAgreements] = useState<Record<string, boolean>>({});
+  // Saved overall tariff (Fiscal Policy) — the planner's starting rate for every sector.
+  const baseTariff = savedTariffRate(fiscal?.exciseTaxRates);
+  const taxEfficiency = finiteOrNull(fiscal?.taxEfficiency);
+
+  // Planner sectors: the nation's recorded sectors plus any added in this session (unsaved).
+  const recordedSectors = useMemo(
+    () => sectorsFromRecorded(parseSectorBreakdown(profile?.sectorBreakdown), baseTariff ?? 0),
+    [profile?.sectorBreakdown, baseTariff]
+  );
+  const [addedSectors, setAddedSectors] = useState<CustomSector[]>([]);
+  const sectors = useMemo(
+    () => [...recordedSectors, ...addedSectors],
+    [recordedSectors, addedSectors]
+  );
+  const [tariffs, setTariffs] = useState<Record<string, number>>({});
 
   const handleTariffChange = useCallback((sectorId: string, val: number) => {
     setTariffs((prev) => ({ ...prev, [sectorId]: val }));
@@ -55,48 +70,49 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   }, []);
 
   const resetTariff = useCallback((sector: CustomSector) => {
-    setTariffs((prev) => ({ ...prev, [sector.id]: sector.defaultTariff }));
+    setTariffs((prev) => {
+      const next = { ...prev };
+      delete next[sector.id];
+      return next;
+    });
   }, []);
 
   const handleAddSector = useCallback(
     (newSector: CustomSector) => {
-      setCustomSectors((prev) => [...prev, newSector]);
-      setTariffs((prev) => ({ ...prev, [newSector.id]: newSector.defaultTariff }));
-      notify.success(`Declared export sector: ${newSector.label}`);
+      setAddedSectors((prev) => [...prev, newSector]);
+      notify.success(`Added ${newSector.label} to the tariff planner (not saved)`);
     },
     [notify]
   );
 
-  const toggleAgreement = useCallback((targetCountryId: string) => {
-    setAgreements((prev) => ({ ...prev, [targetCountryId]: !prev[targetCountryId] }));
-  }, []);
+  // Recorded trade figures — null when the nation hasn't recorded them.
+  const gdp = finiteOrNull(country?.currentTotalGdp);
+  const exportsPct = finiteOrNull(profile?.exportsGDPPercent);
+  const importsPct = finiteOrNull(profile?.importsGDPPercent);
+  const totalExports =
+    gdp != null && gdp > 0 && exportsPct != null ? (gdp * exportsPct) / 100 : null;
+  const totalImports =
+    gdp != null && gdp > 0 && importsPct != null ? (gdp * importsPct) / 100 : null;
+  const tradeBalance =
+    totalExports != null && totalImports != null ? totalExports - totalImports : null;
 
-  // Compute aggregate trade metrics
-  const totalExports = useMemo(() => {
-    const gdp = country?.currentTotalGdp ?? 0;
-    return gdp > 0 ? gdp * 0.28 : 50_000_000_000;
-  }, [country?.currentTotalGdp]);
-
-  const totalImports = useMemo(() => {
-    return totalExports * 0.92;
-  }, [totalExports]);
-
-  const { averageTariff, totalTariffRevenue } = useMemo(() => {
-    let weightedTariff = 0;
+  const { plannedAverageTariff, plannedTariffRevenue } = useMemo(() => {
+    let weighted = 0;
     let totalShare = 0;
-    customSectors.forEach((s) => {
+    sectors.forEach((s) => {
       const rate = tariffs[s.id] ?? s.defaultTariff;
-      weightedTariff += rate * (s.defaultShare / 100);
+      weighted += rate * s.defaultShare;
       totalShare += s.defaultShare;
     });
-    const avg = totalShare > 0 ? (weightedTariff / totalShare) * 100 : 4.0;
-    const revenue = totalImports * (avg / 100) * 0.85;
-    return { averageTariff: avg, totalTariffRevenue: revenue };
-  }, [customSectors, tariffs, totalImports]);
+    const avg = totalShare > 0 ? weighted / totalShare : null;
+    const revenue =
+      avg != null && totalImports != null
+        ? totalImports * (avg / 100) * (taxEfficiency ?? 1)
+        : null;
+    return { plannedAverageTariff: avg, plannedTariffRevenue: revenue };
+  }, [sectors, tariffs, totalImports, taxEfficiency]);
 
-  const tradeBalance = totalExports - totalImports;
-
-  // Format trade partners list
+  // Trade partners, with agreement status from recorded treaties.
   const tradePartners = useMemo(() => {
     if (!diplomaticRelations) return [];
     return diplomaticRelations.map((rel) => ({
@@ -104,32 +120,37 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       countryName: rel.targetCountryName || rel.targetCountry || "Diplomatic Partner",
       flagUrl: rel.targetCountryFlag ?? rel.flagUrl ?? null,
       status: rel.relationship || rel.status || "Formal",
-      tradeAgreement:
-        agreements[rel.targetCountryId || rel.id] ??
-        rel.treaties?.some((t) => t.toLowerCase().includes("trade")) ??
-        false,
+      tradeAgreement: rel.treaties?.some((t) => t.toLowerCase().includes("trade")) ?? false,
+      tradeVolume: rel.tradeVolume ?? 0,
     }));
-  }, [diplomaticRelations, agreements]);
+  }, [diplomaticRelations]);
 
   return (
     <div className="space-y-6">
       {/* Top Macro Impact Cards */}
       <TradeImpactSummary
-        totalTariffRevenue={totalTariffRevenue}
-        averageTariff={averageTariff}
+        plannedTariffRevenue={plannedTariffRevenue}
+        plannedAverageTariff={plannedAverageTariff}
+        revenueNetOfEfficiency={taxEfficiency != null}
         tradeBalance={tradeBalance}
         totalExports={totalExports}
         totalImports={totalImports}
-        currencySymbol={country?.nationalIdentity?.currencySymbol || "$"}
+        currencySymbol={currencySymbol}
       />
 
-      {/* Sector Tariffs Section */}
+      {/* Sector Tariff Planner (not saved) */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-foreground text-sm font-semibold">Sector Tariff Schedules</h3>
+            <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
+              Sector Tariff Planner
+              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                Not saved
+              </span>
+            </h3>
             <p className="text-muted-foreground text-xs">
-              Adjust protective tariffs across strategic trade sectors.
+              Try out tariffs by sector. Changes here reset when you leave the page and don&apos;t
+              change your economy.
             </p>
           </div>
           <Button
@@ -137,52 +158,75 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
             variant="outline"
             size="sm"
             onClick={() => setIsAddSectorOpen(true)}
-            className="gap-1.5 text-xs"
+            className="shrink-0 gap-1.5 text-xs"
           >
             <Plus className="h-3.5 w-3.5" />
             Add Sector
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {customSectors.map((sec) => (
-            <TariffSectorSliderCard
-              key={sec.id}
-              sector={sec}
-              currentTariff={tariffs[sec.id] ?? sec.defaultTariff}
-              isLocked={!!lockedSectors[sec.id]}
-              onTariffChange={(val) => handleTariffChange(sec.id, val)}
-              onToggleLock={() => toggleLock(sec.id)}
-              onReset={() => resetTariff(sec)}
-            />
-          ))}
+        <div className="border-border/40 bg-muted/20 text-muted-foreground flex items-start gap-2 rounded-lg border p-3 text-xs">
+          <InfoCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            Your saved tariff is the <strong className="text-foreground">Tariff rate</strong> in the
+            Fiscal Policy tab
+            {baseTariff != null ? ` (currently ${baseTariff}%)` : " (none saved yet)"}. Sectors
+            start at that rate and are weighted by their recorded share of GDP.
+          </span>
         </div>
+
+        {sectors.length === 0 ? (
+          <div className="border-border/50 text-muted-foreground rounded-xl border border-dashed py-8 text-center text-xs">
+            No economic sectors recorded. Record them in the Country Editor, or add one here to
+            sketch a tariff schedule.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {sectors.map((sec) => (
+              <TariffSectorSliderCard
+                key={sec.id}
+                sector={sec}
+                currentTariff={tariffs[sec.id] ?? sec.defaultTariff}
+                isLocked={!!lockedSectors[sec.id]}
+                onTariffChange={(val) => handleTariffChange(sec.id, val)}
+                onToggleLock={() => toggleLock(sec.id)}
+                onReset={() => resetTariff(sec)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Bilateral Trade Partners Section */}
-      <TradePartnersManager partners={tradePartners} onToggleAgreement={toggleAgreement} />
+      <TradePartnersManager partners={tradePartners} currencySymbol={currencySymbol} />
 
-      {/* Custom Sector Modal */}
-      <CustomSectorDialog
-        isOpen={isAddSectorOpen}
-        onClose={() => setIsAddSectorOpen(false)}
-        onAddSector={handleAddSector}
-      />
+      {/* Custom Sector Modal — mounted on open so it starts from the current saved tariff */}
+      {isAddSectorOpen && (
+        <CustomSectorDialog
+          isOpen
+          defaultTariff={baseTariff ?? 0}
+          onClose={() => setIsAddSectorOpen(false)}
+          onAddSector={handleAddSector}
+        />
+      )}
     </div>
   );
 }
 
 export function TradeCommerceInsights({ countryId }: { countryId: string }) {
+  const { country } = useCountryData();
   const { data: diplomaticRelations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
+  const { economicProfile } = economicRelationsOf(country);
+  const recordedSectorCount = parseSectorBreakdown(economicProfile?.sectorBreakdown).length;
+
   const partnerCount = diplomaticRelations?.length ?? 0;
   const ftaCount =
-    diplomaticRelations?.filter((r) =>
-      r.treaties?.some((t) => t.toLowerCase().includes("trade"))
-    )?.length ?? 0;
+    diplomaticRelations?.filter((r) => r.treaties?.some((t) => t.toLowerCase().includes("trade")))
+      ?.length ?? 0;
 
   return (
     <div className="border-border/40 bg-card/60 space-y-2 rounded-xl border p-3 backdrop-blur-sm">
@@ -196,8 +240,10 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
           <span className="font-bold text-emerald-600 dark:text-emerald-400">{ftaCount}</span>
         </div>
         <div className="bg-background/50 border-border/30 rounded-lg border p-2">
-          <span className="text-muted-foreground block text-xs">Active Sectors</span>
-          <span className="text-foreground font-bold">{DEFAULT_SECTORS.length}</span>
+          <span className="text-muted-foreground block text-xs">Recorded Sectors</span>
+          <span className="text-foreground font-bold">
+            {recordedSectorCount > 0 ? recordedSectorCount : "—"}
+          </span>
         </div>
       </div>
     </div>

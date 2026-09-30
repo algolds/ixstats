@@ -10,14 +10,14 @@ nextLabel: Politics & Elections
 
 ## What this section is for
 
-The Economy section of MyCountry ([/mycountry/economy](/mycountry/economy)) shows how your economy is doing and holds your fiscal controls: department budgets, tax rates, tariffs and trade partners. It has four tabs: **Economic Report**, **National Budget**, **Fiscal Policy** and **Trade & Commerce**. The headline strip at the top shows total GDP, GDP growth, your Economic vitality score and government efficiency.
+The Economy section of MyCountry ([/mycountry/economy](/mycountry/economy)) shows how your economy is doing and holds your fiscal controls: department budgets, tax rates and tariffs, plus your trade partners. It has four tabs: **Economic Report**, **National Budget**, **Fiscal Policy** and **Trade & Commerce**. The headline strip at the top shows total GDP, GDP growth, your Economic vitality score and government efficiency.
 
 > [!WARNING]
 > **Budgets and tax rates don't change GDP growth today.** They change your revenue and spending figures and your daily IxCredit dividend. GDP moves with your growth rate, tier, directives, issue outcomes and world events. See [How Your Economy Is Calculated](/help/economy/calculations).
 
 ## Economic Report
 
-A read-out of your economy: sector output, labor market (unemployment, youth unemployment, wages, informal work) and income and wealth distribution. Most of these figures come from what you entered in the builder; change them in the [Country Editor](/help/mycountry/editor) (Advanced mode, Economics step).
+A read-out of your economy: sector output, labor market (unemployment, youth unemployment, female participation, wages, informal work) and income and wealth distribution. Most of these figures come from what you entered in the builder; anything you haven't recorded shows "—". Change them in the [Country Editor](/help/mycountry/editor) (Advanced mode, Economics step).
 
 ## National Budget
 
@@ -46,7 +46,7 @@ Changes save automatically. **Tax Revenue Projections** shows what each tax brin
 
 ## Trade & Commerce
 
-Set tariffs by sector, manage your trade partners, and see a summary of your trade position. More in [Trade & Commerce](/help/economy/trade).
+See your exports, imports and trade balance, try out sector tariffs in a planner (not saved), and see which partners you have a trade treaty with. More in [Trade & Commerce](/help/economy/trade).
 
 ## Tips
 

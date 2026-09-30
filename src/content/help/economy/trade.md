@@ -14,12 +14,12 @@ Trade shows up in three places: the **Trade & Commerce** tab of [Economy & Budge
 
 ## The Trade & Commerce tab
 
-- **Trade summary.** Exports, imports and the trade balance. These are estimates based on your GDP (exports are estimated at 28% of GDP, imports slightly lower), not a record of real trade with other nations.
-- **Sector Tariff Schedules.** Sliders for tariffs by sector, with an estimated average tariff and tariff revenue. You can add your own export sectors.
-- **Bilateral Trade Agreements & Partners.** The nations you have relations with, marked where a trade treaty exists.
+- **Trade summary.** Exports, imports and the trade balance, worked out from the exports and imports (as a share of GDP) you recorded for your nation, applied to your current GDP. If you haven't recorded them they show "—"; set them in the [Country Editor](/help/mycountry/editor) (Advanced mode, Economics step). These are not a record of real trade with other nations.
+- **Sector Tariff Planner.** Sliders for tariffs by sector, with the planner's average tariff and the tariff revenue it would raise on your recorded imports. The planner starts from the sectors you recorded in the builder, each at your saved Fiscal Policy tariff rate and weighted by its share of GDP. You can add sectors to try ideas out.
+- **Bilateral Trade Agreements & Partners.** The nations you have relations with. A **Trade treaty** badge means a trade treaty is recorded with that nation; otherwise **Propose FTA** opens their country page so you can propose one (see below).
 
 > [!WARNING]
-> **Sector tariffs and the agreement toggles in this tab aren't saved yet.** Use them to try out a tariff schedule; they reset when you leave the page and don't change your economy. Your overall **Tariff Rate** in [Fiscal Policy](/help/economy/tax-system) is saved.
+> **The Sector Tariff Planner isn't saved.** It's marked **Not saved** in the tab: use it to try out a tariff schedule. It resets when you leave the page and doesn't change your economy. The tariff that is saved for your nation is the **Tariff rate** in [Fiscal Policy](/help/economy/tax-system).
 
 ## Trade agreements
 
