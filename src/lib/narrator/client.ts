@@ -1,4 +1,5 @@
 import { db } from "~/server/db";
+import { isAllowedLlmApiUrl } from "./llm-url";
 
 export interface LLMConfig {
   provider?: string;
@@ -16,12 +17,6 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
       where: {
         key: {
           in: [
-            "sports:llm:provider",
-            "sports:llm:apiKey",
-            "sports:llm:apiUrl",
-            "sports:llm:modelName",
-            "sports:llm:temperature",
-            "sports:llm:applyGlobally",
             "narrator:llm:provider",
             "narrator:llm:apiKey",
             "narrator:llm:apiUrl",
@@ -33,24 +28,14 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
       },
     });
 
-    // Check narrator-specific keys first, then fall back to sports keys
-    const apiKey =
-      configs.find((c) => c.key === "narrator:llm:apiKey")?.value ||
-      configs.find((c) => c.key === "sports:llm:apiKey")?.value;
+    // Narrator keys only: the sports LLM key must never be used implicitly for narrator calls.
+    const apiKey = configs.find((c) => c.key === "narrator:llm:apiKey")?.value;
 
     if (apiKey) {
-      const provider =
-        configs.find((c) => c.key === "narrator:llm:provider")?.value ||
-        configs.find((c) => c.key === "sports:llm:provider")?.value;
-      const apiUrl =
-        configs.find((c) => c.key === "narrator:llm:apiUrl")?.value ||
-        configs.find((c) => c.key === "sports:llm:apiUrl")?.value;
-      const modelName =
-        configs.find((c) => c.key === "narrator:llm:modelName")?.value ||
-        configs.find((c) => c.key === "sports:llm:modelName")?.value;
-      const tempVal =
-        configs.find((c) => c.key === "narrator:llm:temperature")?.value ||
-        configs.find((c) => c.key === "sports:llm:temperature")?.value;
+      const provider = configs.find((c) => c.key === "narrator:llm:provider")?.value;
+      const apiUrl = configs.find((c) => c.key === "narrator:llm:apiUrl")?.value;
+      const modelName = configs.find((c) => c.key === "narrator:llm:modelName")?.value;
+      const tempVal = configs.find((c) => c.key === "narrator:llm:temperature")?.value;
 
       return {
         provider: provider || undefined,
@@ -66,14 +51,14 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
   }
 
   // Fallback to environment variables
-  const apiKey = process.env.NARRATOR_LLM_API_KEY || process.env.SPORTS_LLM_API_KEY;
+  const apiKey = process.env.NARRATOR_LLM_API_KEY;
 
   if (apiKey) {
     return {
-      provider: process.env.NARRATOR_LLM_PROVIDER || process.env.SPORTS_LLM_PROVIDER || "nvidia",
+      provider: process.env.NARRATOR_LLM_PROVIDER || "nvidia",
       apiKey,
-      apiUrl: process.env.NARRATOR_LLM_API_URL || process.env.SPORTS_LLM_API_URL,
-      modelName: process.env.NARRATOR_LLM_MODEL || process.env.SPORTS_LLM_MODEL,
+      apiUrl: process.env.NARRATOR_LLM_API_URL,
+      modelName: process.env.NARRATOR_LLM_MODEL,
       reasoning: process.env.NARRATOR_LLM_REASONING === "true",
     };
   }
@@ -115,6 +100,12 @@ export async function queryLLM(
   // Auto-append chat completions path if only the base URL was configured
   if (apiUrl && !apiUrl.endsWith("/chat/completions")) {
     apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
+  }
+
+  // Prevent SSRF / API key exfiltration to an arbitrary admin-set host.
+  if (!isAllowedLlmApiUrl(apiUrl)) {
+    console.warn("[narrator-client] LLM API URL is invalid or its host is not allowed.");
+    return "";
   }
 
   // Reasoning/thinking mode is the dominant latency cost — opt-in only.

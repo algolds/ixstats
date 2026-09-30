@@ -347,16 +347,19 @@ function ExecutiveAgendaComponent({
               filteredEvents.map((item, idx) => {
                 const Icon = item.icon;
                 return (
+                  // No `layout` and no CSS transform transition here: Motion owns this element's
+                  // transform, and a CSS transition on the same property (plus re-measured layout
+                  // on every render) made the top card's highlight flicker as the mouse moved.
                   <motion.div
                     key={item.id}
-                    layout
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.97 }}
+                    whileTap={{ scale: 0.985 }}
                     transition={{ type: "spring", stiffness: 450, damping: 30, delay: idx * 0.03 }}
                     onClick={() => setSelectedEvent(item)}
                     className={cn(
-                      "group relative flex cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985] sm:flex-row sm:items-center",
+                      "group relative flex cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow] sm:flex-row sm:items-center",
                       item.accentCls
                     )}
                   >

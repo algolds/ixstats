@@ -241,7 +241,9 @@ export function useNationalIdentityState(
   // Auto-fill flag and coat of arms from foundation country
   useEffect(() => {
     const refFlag = referenceCountry?.flag || referenceCountry?.flagUrl;
-    const activeFlag = flag?.flagUrl || refFlag;
+    // The route-aware resolver returns a placeholder URL when it finds nothing; saving that
+    // as the nation's flag made every other view show "flag not available".
+    const activeFlag = (flag && !flag.isPlaceholder ? flag.flagUrl : null) || refFlag;
     if (activeFlag && !inputs.flagUrl) {
       handleFlagUrlChange(activeFlag);
     }

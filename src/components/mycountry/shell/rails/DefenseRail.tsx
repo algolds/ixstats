@@ -140,12 +140,15 @@ export function DefenseRail({ countryId }: { countryId: string }) {
                   key={b.id}
                   className="space-y-1 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
                 >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-foreground truncate font-semibold">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground min-w-0 truncate font-semibold">
                       {b.name ?? b.branchType ?? "Military Branch"}
                     </span>
-                    <span className="text-xs font-bold text-red-400">
-                      {Math.round(readiness)}% ready · {(personnel / 1000).toFixed(1)}k personnel
+                    <span
+                      className="shrink-0 text-xs font-bold text-red-400"
+                      title={`${(personnel / 1000).toFixed(1)}k personnel`}
+                    >
+                      {Math.round(readiness)}% · {(personnel / 1000).toFixed(1)}k
                     </span>
                   </div>
                   <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">

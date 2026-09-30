@@ -637,10 +637,7 @@ export function InlineWikiArticlePreview({
           selectedAccount={accounts[0] || null}
           accounts={accounts}
           isOwner={true}
-          onPost={() => {
-            setIsRepostOpen(false);
-            notify.success(`Reposted "${cleanTitle}" to ThinkPages!`);
-          }}
+          onPost={() => setIsRepostOpen(false)}
         />
       )}
     </div>

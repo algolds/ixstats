@@ -16,6 +16,8 @@ export interface MediaWikiSyncJob {
   summary?: string;
   minor?: boolean;
   authorWikiUsername?: string;
+  /** Postgres WikiRevision that carries this edit; stamped with the MediaWiki revision id once exported. */
+  revisionId?: string;
   attempts: number;
 }
 
@@ -78,6 +80,17 @@ export class MediaWikiExportWorker {
             },
           })
           .catch(() => null);
+
+        // Stamp the Postgres revision with its MediaWiki id so the inbound sync recognises the
+        // bot revision as this edit and skips it instead of adding a duplicate (NEW-4).
+        if (job.revisionId) {
+          await db.wikiRevision
+            .updateMany({
+              where: { id: job.revisionId, mwRevId: null },
+              data: { mwRevId: res.revisionId },
+            })
+            .catch(() => null);
+        }
 
         if (job.authorWikiUsername) {
           await updateRevisionActor(res.revisionId, job.authorWikiUsername);

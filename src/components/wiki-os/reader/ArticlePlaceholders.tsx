@@ -121,7 +121,9 @@ export function calculateDistanceAndBearing(
 }
 
 const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) => {
-  const src = `/maps?embed=true&lat=${lat.toFixed(4)}&lng=${lng.toFixed(4)}&zoom=${zoom}`;
+  const src = withBasePath(
+    `/maps?embed=true&lat=${lat.toFixed(4)}&lng=${lng.toFixed(4)}&zoom=${zoom}`
+  );
 
   return (
     <iframe

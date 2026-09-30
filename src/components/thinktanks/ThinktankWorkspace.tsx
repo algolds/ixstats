@@ -13,9 +13,9 @@ import { ThinktankLayout } from "./ThinktankLayout";
 import { ThinktankDirectorySidebar } from "./ThinktankDirectorySidebar";
 import { ThinktankHeader, type ThinktankTab } from "./ThinktankHeader";
 import { ThinktankFeedTab } from "./ThinktankFeedTab";
-// oxlint-disable-next-line eslint/no-unused-vars
 import { ThinktankPapersTab } from "./ThinktankPapersTab";
 import { ThinktankRosterTab } from "./ThinktankRosterTab";
+import { ThinktankChatTab } from "./ThinktankChatTab";
 import { ThinktankSettingsModal } from "./ThinktankSettingsModal";
 import { ThinktankCreateModal } from "./ThinktankCreateModal";
 
@@ -34,7 +34,9 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
 
   // ── Query State Sync ──
   const initialGroupId = propGroupId || searchParams.get("group") || null;
-  const initialTab: ThinktankTab = searchParams.get("tab") === "roster" ? "roster" : "feed";
+  const tabParam = searchParams.get("tab");
+  const initialTab: ThinktankTab =
+    tabParam === "roster" || tabParam === "docs" || tabParam === "chat" ? tabParam : "feed";
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(initialGroupId);
   const [activeTab, setActiveTab] = useState<ThinktankTab>(initialTab);
@@ -270,6 +272,23 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
                     members={activeGroup.members || []}
                     currentUserId={currentUserId}
                     userRole={activeGroup.userRole}
+                  />
+                )}
+
+                {activeTab === "docs" && (
+                  <ThinktankPapersTab
+                    groupId={activeGroup.id}
+                    groupName={activeGroup.name}
+                    isMember={Boolean(activeGroup.isMember)}
+                    currentUserId={currentUserId}
+                  />
+                )}
+
+                {activeTab === "chat" && (
+                  <ThinktankChatTab
+                    conversationId={activeGroup.conversationId}
+                    groupName={activeGroup.name}
+                    currentUserId={currentUserId}
                   />
                 )}
               </div>

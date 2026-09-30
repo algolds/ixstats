@@ -10,11 +10,11 @@ import { IxnayPassportSeal } from "../cards/IxnayPassportSeal";
 import type { PassportVisibility } from "../types";
 
 const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; hint: string }> = [
-  { key: "accolades", title: "Civic Accolades", hint: "Show Lorewards score & rank" },
-  { key: "impact", title: "Focus", hint: "Show category breadth" },
-  { key: "forumStats", title: "Forum Discussions", hint: "Show message & reaction counters" },
-  { key: "vaultCards", title: "IxCredits", hint: "Show IxCredits & collection" },
-  { key: "historyStream", title: "Activity History", hint: "Allow public activity stream" },
+  { key: "accolades", title: "Civic Accolades", hint: "Lorewards score & rank" },
+  { key: "impact", title: "Focus", hint: "Category breadth" },
+  { key: "forumStats", title: "Forum Discussions", hint: "Message & reaction counters" },
+  { key: "vaultCards", title: "IxCredits", hint: "IxCredits & collection" },
+  { key: "historyStream", title: "Activity History", hint: "Activity stream" },
 ];
 
 interface PassportBackFaceProps {
@@ -28,7 +28,7 @@ interface PassportBackFaceProps {
   onDone: () => void;
 }
 
-/** Back face of the passport: signature inscription and visibility toggles (owner only). */
+/** Back face of the passport: signature inscription and session-only display toggles (owner only). */
 export const PassportBackFace = React.memo(function PassportBackFace({
   isFlipped,
   shouldReduceMotion,
@@ -68,7 +68,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
                 PASSPORT CONFIGURATION
               </span>
               <span className="text-muted-foreground font-mono text-xs tracking-wider uppercase">
-                SIGNATURE & PRIVACY CONTROLS
+                SIGNATURE & DISPLAY OPTIONS
               </span>
             </div>
           </div>
@@ -116,8 +116,12 @@ export const PassportBackFace = React.memo(function PassportBackFace({
           {/* Telemetry Visibility Toggles */}
           <div className="space-y-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
             <span className="block font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
-              Passport Visibility Toggles
+              Passport Display (This Session)
             </span>
+            <p className="text-muted-foreground text-xs">
+              These switches only change what you see here. They are not saved and do not hide
+              anything from visitors: the public passport always shows these sections.
+            </p>
 
             <div className="space-y-3 text-xs">
               {VISIBILITY_TOGGLES.map((toggle, idx) => (

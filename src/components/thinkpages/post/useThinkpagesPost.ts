@@ -297,7 +297,6 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     try {
       await bookmarkPostMutation.mutateAsync({
         postId: post.id,
-        userId: currentUserAccountId,
         bookmarked: true,
       });
       notify.success("Post bookmarked");

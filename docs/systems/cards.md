@@ -26,7 +26,7 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 ### 1. NATION Cards
 Linked to an IxStates country via `Card.countryId`:
 - **Stats**: Shared Force / Wealth / Influence / Legacy stat set (`src/lib/cards/stat-config.ts`; special stats via `src/lib/country-geo/special-stats-populator.ts`)
-- **Valuation**: The daily `card-values` cron (`src/lib/lorewards/card-value-cron.ts`) re-prices NATION cards against their country's GDP and growth.
+- **Valuation**: The daily `card-values` cron (`src/lib/lorewards/card-value-cron.ts`) re-prices NATION cards against their country's GDP and growth, but in practice does nothing today: no NATION card has a `countryId`.
 - **Minting**: There is no automatic per-country card generator; NATION cards come from admin creation and crafting results (crafted cards default to `cardType: "NATION"`).
 
 ### 2. LORE Cards
@@ -96,7 +96,7 @@ Packs are rows in `CardPack`, seeded from `prisma/seeds/data/card-packs.json` an
 - A successful craft mints a new `Card` row (from `resultCardId`, else a generic "<recipe> Result" NATION card); materials are consumed on every attempt. Recipes are listed in `prisma/seeds/crafting-recipes.ts`.
 
 ### Card Recycling (Junking)
-- Unlocked cards (`isLocked === false`) can be recycled via `api.cards.junkCards`, permanently deleting the ownership record and crediting IxCredits (`junkValue()` = rarity floor × `junkRate`, `src/lib/cards/valuation.ts`). Cards locked in escrow (listed at auction or in a pending trade) cannot be junked; there is no manual lock toggle.
+- Unlocked cards (`isLocked === false`) can be recycled via `api.cards.junkCards`, permanently deleting the ownership record and crediting IxCredits through the ledger as `EARN_CARDS` (`junkValue()` = rarity floor × `junkRate`, currently 0.25 and capped at `JUNK_RATE_MAX` 0.5, `src/lib/cards/valuation.ts`). Cards locked in escrow (listed at auction or in a pending trade) cannot be junked; there is no manual lock toggle.
 
 ---
 

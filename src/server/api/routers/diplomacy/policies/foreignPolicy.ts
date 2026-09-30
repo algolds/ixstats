@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { computeForeignPolicyImpact } from "~/lib/statecraft/foreign-policy";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // Cooperative actions need the target's consent before they take effect; hostile ones
 // are unilateral. See plans/statecraft-stage2.md (S2.C).
@@ -14,9 +15,19 @@ const COOPERATIVE_FP = new Set(["free_trade", "military_alliance"]);
  * Apply a foreign-policy action's stored effects and flip its status to "active":
  * storyteller effects on both sides, relation strength + bilateral trade. Used by
  * proposeForeignPolicyAction (hostile, immediate) and respondToForeignPolicyProposal
- * (cooperative, on accept). Idempotent — a no-op if already active.
+ * (cooperative, on accept).
+ *
+ * `claimFrom` is the status the row must still have. When set (accept path) the row is
+ * claimed atomically inside the transaction (`updateMany where status = claimFrom`), so a
+ * concurrent accept/decline cannot enact it twice or enact a declined proposal. When null
+ * (hostile path) the row was just created as "active" and its effects have not been applied.
  */
-async function enactForeignPolicyEffects(db: PrismaClient, actionId: string, actorUserId: string) {
+async function enactForeignPolicyEffects(
+  db: PrismaClient,
+  actionId: string,
+  actorUserId: string,
+  claimFrom: "proposed" | null
+) {
   const action = await db.foreignPolicyAction.findUnique({
     where: { id: actionId },
     include: {
@@ -24,7 +35,7 @@ async function enactForeignPolicyEffects(db: PrismaClient, actionId: string, act
       target: { select: { id: true, name: true } },
     },
   });
-  if (!action || action.status === "active") return action;
+  if (!action || (claimFrom && action.status !== claimFrom)) return action;
 
   const relation = await db.diplomaticRelation.findFirst({
     where: {
@@ -67,8 +78,14 @@ async function enactForeignPolicyEffects(db: PrismaClient, actionId: string, act
     : null;
   const actionDescription = `Foreign policy: ${action.actionType} (${action.severity}) ${COOPERATIVE_FP.has(action.actionType) ? "with" : "against"} ${action.target.name}`;
 
-  await db.$transaction(async (tx) => {
-    await tx.foreignPolicyAction.update({ where: { id: action.id }, data: { status: "active" } });
+  const enacted = await db.$transaction(async (tx) => {
+    if (claimFrom) {
+      const claimed = await tx.foreignPolicyAction.updateMany({
+        where: { id: action.id, status: claimFrom },
+        data: { status: "active" },
+      });
+      if (claimed.count === 0) return false;
+    }
     await tx.storytellerEffect.createMany({
       data: [
         {
@@ -119,7 +136,9 @@ async function enactForeignPolicyEffects(db: PrismaClient, actionId: string, act
         },
       });
     }
+    return true;
   });
+  if (!enacted) return db.foreignPolicyAction.findUnique({ where: { id: action.id } });
 
   const newsType =
     action.actionType === "embargo"
@@ -329,8 +348,59 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       const enacted = await enactForeignPolicyEffects(
         ctx.db as PrismaClient,
         created.id,
-        ctx.user.id
+        ctx.user.id,
+        null
       );
       return enacted ?? created;
+    }),
+
+  // The target reviews incoming cooperative proposals (free trade / alliance).
+  getForeignPolicyProposals: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return ctx.db.foreignPolicyAction.findMany({
+        where: { targetId: input.countryId, status: "proposed" },
+        orderBy: { createdAt: "desc" },
+        include: { initiator: { select: { id: true, name: true, flag: true } } },
+      });
+    }),
+
+  // Foreign consent: the target's owner accepts (enact the stored effects) or declines.
+  respondToForeignPolicyProposal: protectedProcedure
+    .input(z.object({ actionId: z.string(), choice: z.enum(["accept", "decline"]) }))
+    .mutation(async ({ ctx, input }) => {
+      const action = await ctx.db.foreignPolicyAction.findUnique({
+        where: { id: input.actionId },
+        select: { id: true, targetId: true, status: true },
+      });
+      if (!action) throw new TRPCError({ code: "NOT_FOUND", message: "Proposal not found." });
+      await assertCountryWriteAccess(ctx, action.targetId);
+      if (action.status !== "proposed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
+      }
+
+      if (input.choice === "decline") {
+        const declined = await ctx.db.foreignPolicyAction.updateMany({
+          where: { id: action.id, status: "proposed" },
+          data: { status: "declined" },
+        });
+        if (declined.count === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
+        }
+        return { status: "declined" as const };
+      }
+
+      // Accept: enact the stored effects (the accepting user is the actor of record).
+      const enacted = await enactForeignPolicyEffects(
+        ctx.db as PrismaClient,
+        action.id,
+        ctx.user.id,
+        "proposed"
+      );
+      if (!enacted || enacted.status !== "active") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Proposal is no longer pending." });
+      }
+      return { status: "active" as const, action: enacted };
     }),
 });

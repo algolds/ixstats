@@ -143,6 +143,10 @@ export const messagesConversationsRouter = createTRPCRouter({
         participantIds: input.participantIds,
         subject: input.name,
         source: input.source as any,
+        conversationType: input.conversationType,
+        diplomaticClassification: input.diplomaticClassification,
+        priority: input.priority,
+        channelType: input.channelType,
       });
     }),
 });

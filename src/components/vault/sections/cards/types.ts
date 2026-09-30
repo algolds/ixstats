@@ -3,12 +3,10 @@ import type { CardRarity, CardType } from "@prisma/client";
 
 export type SubTab = "inventory" | "collections" | "gallery";
 
-const isDev = process.env.NODE_ENV === "development";
-
 export const SUB_TABS: { id: SubTab; label: string; icon: typeof Layers }[] = [
+  { id: "gallery", label: "Card Gallery", icon: Globe },
   { id: "inventory", label: "Inventory", icon: Layers },
   { id: "collections", label: "Collections", icon: Folder },
-  ...(isDev ? [{ id: "gallery" as SubTab, label: "Card Gallery", icon: Globe }] : []),
 ];
 
 export type ViewMode = "grid" | "list" | "compact";

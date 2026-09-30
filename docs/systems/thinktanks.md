@@ -1,9 +1,9 @@
 # ThinkTanks — Collaborative Groups & Research Engine
 
 **Last updated:** August 2026  
-**Status:** Production Ready (Release Candidate) — ThinkTanks v2 (Feed + Members live; Docs and Chat deferred)  
+**Status:** 🟡 Partial — ThinkTanks v2 (Feed + Members live; Docs and Chat deferred); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 **Route:** `/thinktanks` · `/thinktanks/[groupId]`  
-**Design System:** Facet Glass Physics & Apple Design (`/apple-design`)  
+**Design System:** Facet Glass Physics (see [Facet Design System](../reference/facet-design-system.md); there is no `/apple-design` route)  
 
 ThinkTanks is IxStates' dedicated group collaboration and worldbuilding environment. It bridges real-time messaging, asynchronous discussion, collaborative document authoring, and institutional roleplay into a cohesive workspace that acts as a sister interface to the [ThinkShare Unified Messaging](./social.md#4-thinkshare-real-time-messaging-messages) platform.
 
@@ -77,7 +77,7 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
   - `🗺️ Lore & Maps` — Cartographic crops and regional lore drafts
 - **Multi-Persona vs. Authentic User Identity**:
   - **When Multi-Persona Posting is Disabled (Default)**: Group members post directly as their **authentic user account** (`User` profile, nation name, and sovereignty flag). No persona selector chips or roleplay badges (`CITIZEN`, `MEDIA`) are shown.
-  - **When Multi-Persona Posting is Enabled**: Members can switch between distinct ThinkPages personas (`Citizen`, `Institution`, `Government`, `Character`), displaying the persona name and corresponding badge on feed cards.
+  - **When Multi-Persona Posting is Enabled**: Members can switch between distinct ThinkPages personas (the ThinkPages account types `government`, `media` and `citizen`, `accounts.ts`), displaying the persona name and corresponding badge on feed cards.
 
 ### Pillar 2: Members (`ThinktankRosterTab.tsx`)
 - **Authentic Member Identity & Sovereignty**: Displays the member's authentic nation name, national flag emoji, custom user avatar, and `@username` handle.
@@ -86,8 +86,8 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
 ---
 
 ### Roadmap Pillars (Deferred / Future Phases)
-- **Group Chat (`ThinktankChatTab.tsx`)** — *not started*: Real-time synchronized messaging powered by the ThinkShare messaging infrastructure. Each group already gets a linked `ThinkshareConversation` (`conversationId`) and the `ThinktankMessage` model exists, but there is no chat tab component.
-- **Collaborative Docs (`ThinktankPapersTab.tsx`)** — *partial*: Split-view editor for creating, searching, editing, and versioning group articles and policy drafts. The component and the `getThinktankDocuments` / `create` / `update` / `deleteThinktankDocument` procedures exist, but the tab is not wired into `ThinktankWorkspace` (`ThinktankTab` is `"feed" | "roster"`).
+- **Group Chat (`ThinktankChatTab.tsx`)** — *live*: the workspace's Chat tab uses the group's linked `ThinkshareConversation` (`conversationId`); only active members can join it.
+- **Collaborative Docs (`ThinktankPapersTab.tsx`)** — *live*: Split-view editor for creating, searching, editing, and versioning group articles and policy drafts. It is the workspace's Docs tab.
 
 ---
 
@@ -133,7 +133,7 @@ Group owners and administrators can customize the visual identity of their Think
   - **Group Emblem / Logo**: Pick from Wikimedia Commons, high-resolution web photography, user Stash, or local file upload.
   - **Group Banner Artwork**: Select panoramic headers rendered as a frosted glass backdrop across the workspace header chrome.
 - **Member Invitations**:
-  - Direct invitation dispatch by username or user ID via `api.thinkpages.inviteToThinktank`.
+  - Invitations via `api.thinkpages.inviteToThinktank`, choosing the invitee through a username search (`searchInvitableUsers`, which respects invite privacy in `invite-privacy.ts`). Joining a private or invite-only group consumes an open invite (`membership.ts`).
 - **Multi-Persona Posting Toggle**:
   - Switch between authentic sovereign user accounts (default) and multi-persona identity chips (`Government`, `Media`, `Citizen`).
 
@@ -163,14 +163,14 @@ All ThinkTank operations are exposed via the `thinkpages` tRPC router (`src/serv
 | `api.thinkpages.getThinktanks` | Query | `{ userId?, type?: "all" \| "joined" \| "created" }` | Returns active groups with computed `isMember` and `userRole` |
 | `api.thinkpages.updateThinktank` / `deleteThinktank` | Mutation | `{ groupId, name?, description?, avatar?, type?, category?, tags? }` / `{ groupId }` | Edits group metadata / deletes the group and its linked conversation |
 | `api.thinkpages.getThinktankById` | Query | `{ groupId: string, userId?: string }` | Returns complete group details, member relations, and settings |
-| `api.thinkpages.createThinktank` | Mutation | `{ name, description?, category?, type?, avatar?, tags?, createdBy }` | Creates group, sets initial avatar, and assigns owner |
-| `api.thinkpages.joinThinktank` | Mutation | `{ groupId: string, userId: string }` | Joins a group and adds user to linked conversation participants |
-| `api.thinkpages.leaveThinktank` | Mutation | `{ groupId: string, userId: string }` | Leaves a group and updates membership counts |
+| `api.thinkpages.createThinktank` | Mutation | `{ name, description?, category?, type?, avatar?, tags? }` (creator = `ctx.auth.userId`) | Creates group, sets initial avatar, and assigns owner |
+| `api.thinkpages.joinThinktank` | Mutation | `{ groupId: string }` | Joins a group as the caller and adds user to linked conversation participants |
+| `api.thinkpages.leaveThinktank` | Mutation | `{ groupId: string }` | Leaves a group as the caller and updates membership counts |
 | `api.thinkpages.updateGroupSettings` | Mutation | `{ groupId, allowPersonaPosting?, bannerUrl?, rules?, themeAccent?, pinnedDocIds? }` | Updates group configurations and banner art |
-| `api.thinkpages.inviteToThinktank` | Mutation | `{ groupId, userIds, invitedBy }` | Dispatches group invitations to specified users |
+| `api.thinkpages.inviteToThinktank` | Mutation | `{ groupId, userIds }` | Dispatches group invitations to specified users |
 | `api.thinkpages.getGroupFeed` | Query | `{ groupId: string, limit?: number, cursor?: string }` | Returns group timeline posts with author accounts and reactions |
 | `api.thinkpages.createGroupPost` | Mutation | `{ groupId, accountId?, content, hashtags?, mediaUrls? }` | Publishes a note to the group feed |
-| `api.thinkpages.getThinktankDocuments` / `createThinktankDocument` / `updateThinktankDocument` / `deleteThinktankDocument` | Query / Mutation | `{ groupId }` / `{ groupId, title, createdBy, content?, isPublic? }` / … | Collaborative doc CRUD (backend for the deferred Docs pillar) |
+| `api.thinkpages.getThinktankDocuments` / `createThinktankDocument` / `updateThinktankDocument` / `deleteThinktankDocument` | Query / Mutation | `{ groupId }` / `{ groupId, title, content?, isPublic? }` / … | Collaborative doc CRUD (backend for the deferred Docs pillar) |
 
 ---
 

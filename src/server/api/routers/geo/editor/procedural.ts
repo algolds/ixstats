@@ -135,10 +135,12 @@ export const geoEditorProceduralRouter = createTRPCRouter({
           if (!collection?.features) continue;
 
           for (const feature of collection.features) {
+            // Worldgen features carry numeric ids; featureId is a String column
+            const rawId = feature.properties?.featureId ?? feature.id;
             const featureId =
-              (feature.properties?.featureId as string) ??
-              (feature.id as string) ??
-              `${layerType}_${imported}`;
+              rawId !== undefined && rawId !== null && String(rawId) !== ""
+                ? String(rawId)
+                : `${layerType}_${imported}`;
 
             // The parser's centroid/bbox/area, so a country linked to this region later syncs real values
             const metrics = polygonMetrics(feature.geometry);

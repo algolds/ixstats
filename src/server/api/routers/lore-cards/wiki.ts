@@ -13,6 +13,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/trpc";
+import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
@@ -234,7 +235,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
           const userId = ctx.auth?.userId;
           const whereClause: any = {};
           if (userId) {
-            whereClause.stash = { userId };
+            whereClause.stash = { userId: { in: requireWikiUserIds(ctx) } };
           }
           if (input.stashId) {
             whereClause.stashId = input.stashId;
@@ -257,7 +258,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
           });
 
           const stashes = await ctx.db.stash.findMany({
-            where: userId ? { userId } : {},
+            where: userId ? { userId: { in: requireWikiUserIds(ctx) } } : {},
             select: { id: true, name: true, color: true, _count: { select: { items: true } } },
             orderBy: { order: "asc" },
           });

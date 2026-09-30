@@ -22,9 +22,6 @@ export const metadata: Metadata = {
   },
   // Prevent Cloudflare hotlink blocking — don't send referer to ixwiki.com resources
   referrer: "no-referrer-when-downgrade",
-  alternates: {
-    canonical: "https://ixwiki.com/wiki/Main_Page",
-  },
 };
 
 export default function WikiOSLayout({ children }: { children: React.ReactNode }) {

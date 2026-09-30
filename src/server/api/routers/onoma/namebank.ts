@@ -5,6 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { ActivityGenerator } from "~/lib/activity";
 import {
   cleanRawValues,
@@ -240,7 +241,7 @@ export const onomaNameBankRouter = createTRPCRouter({
       let targetStashId = input.stashId;
       if (targetStashId) {
         const ownStash = await db.stash.findFirst({
-          where: { id: targetStashId, userId },
+          where: { id: targetStashId, userId: { in: requireWikiUserIds(ctx) } },
           select: { id: true },
         });
         if (!ownStash) {
@@ -248,7 +249,8 @@ export const onomaNameBankRouter = createTRPCRouter({
         }
       } else {
         let defaultStash = await db.stash.findFirst({
-          where: { userId, isDefault: true },
+          where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
+          orderBy: { createdAt: "asc" },
         });
         if (!defaultStash) {
           defaultStash = await db.stash.create({
@@ -439,7 +441,8 @@ export const onomaNameBankRouter = createTRPCRouter({
       }
 
       let defaultStash = await db.stash.findFirst({
-        where: { userId, isDefault: true },
+        where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
+        orderBy: { createdAt: "asc" },
       });
       if (!defaultStash) {
         defaultStash = await db.stash.create({

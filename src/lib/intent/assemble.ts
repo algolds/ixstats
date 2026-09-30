@@ -36,6 +36,12 @@ export interface IntentPackage {
   acceptance: Acceptance;
   risk: "stable" | "volatile" | "high-risk" | "unlocked";
   civCapCost: number;
+  /**
+   * GDP-per-capita growth-rate modifier applied as a StorytellerEffect
+   * ("growth_rate_modifier", like active policies) for GROWTH_EFFECT_YEARS. 0 = none.
+   * This is how the projection moves GDP; the core stats themselves stay Editor-only.
+   */
+  gdpGrowthModifier: number;
   unlockedRequirement?: {
     kind: "broker" | "component";
     name: string;
@@ -252,6 +258,8 @@ interface Recipe {
   // improves (a good-side field) and strains (a cost-side field)
   improve: IntentConsequence;
   strain: IntentConsequence;
+  /** Base growth-rate modifier (scaled by tier) for growth-oriented categories. */
+  growth?: number;
 }
 const RECIPES: Record<Category, Recipe> = {
   defense: {
@@ -259,8 +267,8 @@ const RECIPES: Record<Category, Recipe> = {
     policyName: "Mobilization Directive",
     statement: "issue a firm statement of resolve",
     improve: {
-      targetModel: "GovernmentStructure",
-      targetField: "politicalStability",
+      targetModel: "InternalStabilityMetrics",
+      targetField: "stabilityScore",
       operation: "add",
       value: 1,
     },
@@ -300,6 +308,7 @@ const RECIPES: Record<Category, Recipe> = {
       value: 0.3,
     },
     strain: { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 0 },
+    growth: 0.01,
   },
   social: {
     budgetLine: "Health & Welfare",
@@ -324,6 +333,7 @@ const RECIPES: Record<Category, Recipe> = {
       value: 1,
     },
     strain: { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 0 },
+    growth: 0.01,
   },
   security: {
     budgetLine: "Interior & Policing",
@@ -372,6 +382,11 @@ const TIER_CIVCAP: Record<Tier, number> = {
   broker_unlocked: 8,
   structural_unlocked: 10,
 };
+
+/** How long a directive's growth modifier stays active, in IxTime years. */
+export const GROWTH_EFFECT_YEARS = 1;
+/** Same ceiling as active policies (lib/policies/effects-sync.ts MAX_GROWTH_SWING). */
+const MAX_GROWTH_MODIFIER = 0.05;
 
 function scale(c: IntentConsequence, f: number): IntentConsequence {
   return { ...c, value: Math.round(c.value * f * 100) / 100 };
@@ -458,10 +473,14 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
     title: titles[tier],
     blurb: blurbs[tier],
     changes: changes.slice(0, 4),
-    consequences,
+    // A zero-value lever (e.g. the "+0 approval" strain) changes nothing: don't show or apply it.
+    consequences: consequences.filter((c) => c.value !== 0),
     acceptance: TIER_ACCEPT[tier],
     risk: TIER_RISK[tier],
     civCapCost: TIER_CIVCAP[tier],
+    gdpGrowthModifier: r.growth
+      ? Math.min(MAX_GROWTH_MODIFIER, Math.round(r.growth * f * 10000) / 10000)
+      : 0,
   };
 }
 

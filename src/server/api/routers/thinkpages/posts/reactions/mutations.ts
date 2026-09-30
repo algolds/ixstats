@@ -198,17 +198,24 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
       if (input.reactionType === "like") {
         const postWithAuthor = await db.thinkpagesPost.findUnique({
           where: { id: input.postId },
-          select: { accountId: true, content: true },
+          select: {
+            accountId: true,
+            content: true,
+            account: { select: { clerkUserId: true } },
+          },
         });
 
-        if (postWithAuthor && postWithAuthor.accountId !== input.accountId) {
+        // Notifications are keyed by Clerk user id, so target the owning user of the author
+        // persona (not the persona id), and skip likes on the caller's own personas.
+        const authorClerkUserId = postWithAuthor?.account?.clerkUserId;
+        if (postWithAuthor && authorClerkUserId && authorClerkUserId !== clerkUserId) {
           await notificationHooks
             .onThinkPageActivity({
               thinkpageId: input.postId,
               title: postWithAuthor.content.substring(0, 50),
               action: "liked",
-              authorId: input.accountId,
-              targetUserId: postWithAuthor.accountId,
+              authorId: clerkUserId,
+              targetUserId: authorClerkUserId,
             })
             .catch((err) => console.error("[ThinkPages] Failed to send like notification:", err));
         }

@@ -288,8 +288,14 @@ describe("onoma.saveToNameBank only writes the caller's own entries and stashes"
     await expect(
       caller.saveToNameBank({ ...base, stashId: "someone_elses_stash" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    // Ownership accepts the caller's internal User id and (legacy) Clerk id, nobody else's.
     expect(db.stash.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "someone_elses_stash", userId: CALLER_CLERK_ID } })
+      expect.objectContaining({
+        where: {
+          id: "someone_elses_stash",
+          userId: { in: expect.arrayContaining([CALLER_CLERK_ID]) },
+        },
+      })
     );
     expect(db.stashItem.upsert).not.toHaveBeenCalled();
   });

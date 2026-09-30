@@ -31,9 +31,17 @@ export interface CardValuationConfig {
   /** Type multipliers on the rarity floor (NS_IMPORT/LORE/COMMUNITY = 1.0). */
   multSpecial: number;
   multNation: number;
-  /** Fraction of the rarity floor paid out when a card is junked. */
+  /** Fraction of the rarity floor paid out when a card is junked (0..JUNK_RATE_MAX). */
   junkRate: number;
 }
+
+/**
+ * Hard ceiling on `junkRate`. Junking pays out of thin air, so it has to stay well below
+ * what a card costs to pull from a pack, or buy -> open -> junk mints credits. The
+ * seeded entry packs return up to ~1.55x their price in rarity floors at rate 1.0; at
+ * this ceiling the best one returns ~0.78x. The pack-junk-EV test guards it.
+ */
+export const JUNK_RATE_MAX = 0.5;
 
 export const CARD_VALUATION_DEFAULTS: CardValuationConfig = {
   floorCommon: 10,
@@ -45,7 +53,7 @@ export const CARD_VALUATION_DEFAULTS: CardValuationConfig = {
   nsPremium: 1.5,
   multSpecial: 2.0,
   multNation: 1.5,
-  junkRate: 1.0,
+  junkRate: 0.25,
 };
 
 const KEY = {
@@ -83,6 +91,8 @@ export async function getValuationConfig(db: PrismaClient): Promise<CardValuatio
       if (!Number.isNaN(parsed)) merged[field] = parsed;
     }
   }
+  // Clamp stale/out-of-range rows so a stored 1.0 can't reopen the pack-junk arbitrage
+  merged.junkRate = Math.min(JUNK_RATE_MAX, Math.max(0, merged.junkRate));
 
   cache = { value: merged, expires: now + CACHE_TTL_MS };
   return merged;
@@ -123,6 +133,46 @@ export function rarityFloor(cfg: CardValuationConfig, rarity: string): number {
 /** Credits paid out when junking a card of this rarity. */
 export function junkValue(cfg: CardValuationConfig, rarity: string): number {
   return Math.round(rarityFloor(cfg, rarity) * cfg.junkRate);
+}
+
+/** Odds columns of a pack, as stored on CardPack (percent per card, remainder falls to COMMON). */
+export interface PackOddsForValuation {
+  cardCount: number;
+  commonOdds: number;
+  uncommonOdds: number;
+  rareOdds: number;
+  ultraRareOdds: number;
+  epicOdds: number;
+  legendaryOdds: number;
+}
+
+/**
+ * Expected credits from junking every card in one opened pack. Mirrors
+ * `selectRarityByOdds` (cumulative odds in rarity order, anything left over is COMMON).
+ * Compare against the pack price: it must stay clearly below it.
+ */
+export function expectedPackJunkValue(
+  pack: PackOddsForValuation,
+  cfg: CardValuationConfig
+): number {
+  const tiers: Array<[string, number]> = [
+    ["UNCOMMON", pack.uncommonOdds],
+    ["RARE", pack.rareOdds],
+    ["ULTRA_RARE", pack.ultraRareOdds],
+    ["EPIC", pack.epicOdds],
+    ["LEGENDARY", pack.legendaryOdds],
+  ];
+  const commonPct = Math.max(0, Math.min(100, pack.commonOdds));
+  let cumulative = commonPct;
+  let perCard = (commonPct / 100) * junkValue(cfg, "COMMON");
+  for (const [rarity, odds] of tiers) {
+    const pct = Math.max(0, Math.min(odds, 100 - cumulative));
+    cumulative += pct;
+    perCard += (pct / 100) * junkValue(cfg, rarity);
+  }
+  // Odds that don't sum to 100 fall through to COMMON in the selector
+  perCard += ((100 - cumulative) / 100) * junkValue(cfg, "COMMON");
+  return perCard * pack.cardCount;
 }
 
 /**

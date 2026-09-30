@@ -7,7 +7,7 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { requireWikiUserId } from "~/lib/wiki-os/auth";
+import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 
 import { db } from "~/server/db";
 
@@ -29,12 +29,14 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
+      const userIds = requireWikiUserIds(ctx);
       let targetItemId = input.itemId;
 
       if (!targetItemId) {
         if (!input.pageTitle) throw new Error("Either itemId or pageTitle is required");
         let defaultStash = await db.stash.findFirst({
-          where: { userId, isDefault: true },
+          where: { userId: { in: userIds }, isDefault: true },
+          orderBy: { createdAt: "asc" },
         });
         if (!defaultStash) {
           defaultStash = await db.stash.create({
@@ -53,7 +55,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
           where: { id: targetItemId },
           include: { stash: true },
         });
-        if (!item || item.stash.userId !== userId) throw new Error("Item not found");
+        if (!item || !userIds.includes(item.stash.userId)) throw new Error("Item not found");
       }
 
       return db.stashAnnotation.create({
@@ -78,7 +80,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         where: { id: input.id },
         include: { item: { include: { stash: true } } },
       });
-      if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
+      if (!ann || !requireWikiUserIds(ctx).includes(ann.item.stash.userId))
         throw new Error("Annotation not found");
       await db.stashAnnotation.delete({ where: { id: input.id } });
       return { success: true };
@@ -88,9 +90,10 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   getAnnotations: protectedProcedure
     .input(z.object({ pageTitle: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
-      const userId = requireWikiUserId(ctx);
       const annotations = await db.stashAnnotation.findMany({
-        where: { item: { pageTitle: input.pageTitle, stash: { userId } } },
+        where: {
+          item: { pageTitle: input.pageTitle, stash: { userId: { in: requireWikiUserIds(ctx) } } },
+        },
         orderBy: { createdAt: "asc" },
       });
       return annotations.map((a) => ({
@@ -136,7 +139,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
 
       // 2. Also sync to LoreStash "Watchlist"
       let watchlistStash = await ctx.db.stash.findFirst({
-        where: { userId, name: "Watchlist" },
+        where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       });
       if (!watchlistStash) {
         watchlistStash = await ctx.db.stash.create({
@@ -184,7 +187,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
 
       // 2. Remove from Stash
       const watchlistStash = await ctx.db.stash.findFirst({
-        where: { userId, name: "Watchlist" },
+        where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       });
       if (watchlistStash) {
         await ctx.db.stashItem.deleteMany({
@@ -231,7 +234,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
 
     // Fallback to Stash items
     const watchlistStash = await ctx.db.stash.findFirst({
-      where: { userId, name: "Watchlist" },
+      where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
     });
     return watchlistStash?.items ?? [];
@@ -338,7 +341,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       }
 
       const watchlistStash = await ctx.db.stash.findFirst({
-        where: { userId, name: "Watchlist" },
+        where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       });
       if (!watchlistStash) return false;
       const item = await ctx.db.stashItem.findFirst({

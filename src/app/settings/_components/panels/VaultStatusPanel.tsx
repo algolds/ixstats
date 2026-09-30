@@ -8,7 +8,6 @@ import {
   StatUp as TrendingUp,
   RefreshDouble as RefreshCw,
   Cart as ShoppingCart,
-  Flash,
   OpenNewWindow as ExternalLink,
   Crown,
 } from "iconoir-react";
@@ -31,8 +30,6 @@ export function VaultStatusPanel() {
     vaultLevel,
     vaultXp,
     loginStreak,
-    premiumMultiplier,
-    isPremium,
     isLoading: balanceLoading,
     refresh: refreshBalance,
   } = useVaultBalance();
@@ -126,7 +123,7 @@ export function VaultStatusPanel() {
       {/* Vault Tier & Progression */}
       <SettingsGroup
         title="Vault Tier & Progression"
-        description="Account level, lifetime economic volume, and reward multipliers."
+        description="Account level and lifetime economic volume."
       >
         <SettingsRow
           label="Account Vault Level"
@@ -136,21 +133,6 @@ export function VaultStatusPanel() {
         >
           <span className="border-border/60 bg-muted/40 text-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold">
             Level {vaultLevel}
-          </span>
-        </SettingsRow>
-
-        <SettingsRow
-          label="Reward Multiplier"
-          description={
-            isPremium
-              ? `Active premium boost (${premiumMultiplier}× yield on all platform rewards)`
-              : `Standard yield multiplier (${premiumMultiplier}× base rate)`
-          }
-          icon={Flash}
-          glyphClass="bg-muted/60 text-foreground"
-        >
-          <span className="border-border/60 bg-muted/40 text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold">
-            {premiumMultiplier}× Yield
           </span>
         </SettingsRow>
 

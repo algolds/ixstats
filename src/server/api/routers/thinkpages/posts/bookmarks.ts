@@ -9,12 +9,13 @@ export const thinkpagesPostsBookmarksRouter = createTRPCRouter({
     .input(
       z.object({
         postId: z.string(),
-        userId: z.string(),
         bookmarked: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      // Bookmarks belong to the authenticated caller (Clerk user id), never a client-supplied id.
+      const userId = ctx.auth.userId;
 
       if (input.bookmarked) {
         // Add bookmark
@@ -22,13 +23,13 @@ export const thinkpagesPostsBookmarksRouter = createTRPCRouter({
           where: {
             userId_postId: {
               postId: input.postId,
-              userId: input.userId,
+              userId,
             },
           },
           update: {},
           create: {
             postId: input.postId,
-            userId: input.userId,
+            userId,
           },
         });
       } else {
@@ -36,7 +37,7 @@ export const thinkpagesPostsBookmarksRouter = createTRPCRouter({
         await db.postBookmark.deleteMany({
           where: {
             postId: input.postId,
-            userId: input.userId,
+            userId,
           },
         });
       }

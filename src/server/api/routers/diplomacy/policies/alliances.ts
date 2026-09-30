@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
@@ -222,14 +223,32 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         },
       });
 
+      if (existing?.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Country is already a member." });
+      }
+      if (existing?.status === "invited") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "An invitation to this country is already pending.",
+        });
+      }
+
+      const targetExists = await ctx.db.country.findUnique({
+        where: { id: input.targetCountryId },
+        select: { id: true },
+      });
+      if (!targetExists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found." });
+      }
+
+      // An invite is a pending row (isActive=false, status="invited"): the target's owner must
+      // accept via respondToAllianceInvite before the country becomes a member.
+      const votingPower = input.role === "observer" ? 0 : 1.0;
       if (existing) {
-        if (existing.isActive) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Country is already a member." });
-        }
-        // Re-activate
+        // Previously left or declined: re-issue the invite.
         await ctx.db.allianceMember.update({
           where: { id: existing.id },
-          data: { isActive: true, role: input.role },
+          data: { isActive: false, status: "invited", role: input.role, votingPower },
         });
       } else {
         await ctx.db.allianceMember.create({
@@ -237,20 +256,12 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             allianceId: input.allianceId,
             countryId: input.targetCountryId,
             role: input.role,
-            votingPower: input.role === "observer" ? 0 : 1.0,
+            votingPower,
+            isActive: false,
+            status: "invited",
           },
         });
       }
-
-      // Update member count
-      const count = await ctx.db.allianceMember.count({
-        where: { allianceId: input.allianceId, isActive: true },
-      });
-
-      await ctx.db.alliance.update({
-        where: { id: input.allianceId },
-        data: { memberCount: count },
-      });
 
       // Notification: notify invited country (fire-and-forget)
       try {
@@ -283,7 +294,83 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         );
       }
 
-      return { success: true };
+      return { success: true, pending: true };
+    }),
+
+  // Pending alliance invitations addressed to a country
+  getAllianceInvites: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      const invites = await ctx.db.allianceMember.findMany({
+        where: { countryId: input.countryId, status: "invited", isActive: false },
+        orderBy: { createdAt: "desc" },
+        include: {
+          alliance: {
+            select: {
+              id: true,
+              name: true,
+              shortName: true,
+              type: true,
+              description: true,
+              color: true,
+              memberCount: true,
+            },
+          },
+        },
+      });
+      return invites.map((i) => ({
+        allianceId: i.allianceId,
+        countryId: i.countryId,
+        role: i.role,
+        invitedAt: i.updatedAt,
+        alliance: i.alliance,
+      }));
+    }),
+
+  // The invited country's owner accepts (becomes a member) or declines
+  respondToAllianceInvite: protectedProcedure
+    .input(
+      z.object({
+        allianceId: z.string(),
+        countryId: z.string(),
+        choice: z.enum(["accept", "decline"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      const invite = await ctx.db.allianceMember.findUnique({
+        where: {
+          allianceId_countryId: { allianceId: input.allianceId, countryId: input.countryId },
+        },
+      });
+      if (!invite || invite.status !== "invited" || invite.isActive) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No pending invitation found." });
+      }
+
+      // Claim atomically so a double response cannot flip it twice.
+      const claimed = await ctx.db.allianceMember.updateMany({
+        where: { id: invite.id, status: "invited" },
+        data:
+          input.choice === "accept"
+            ? { isActive: true, status: "active", joinedAt: new Date() }
+            : { isActive: false, status: "declined" },
+      });
+      if (claimed.count === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invitation is no longer pending." });
+      }
+
+      if (input.choice === "decline") return { status: "declined" as const };
+
+      const count = await ctx.db.allianceMember.count({
+        where: { allianceId: input.allianceId, isActive: true },
+      });
+      await ctx.db.alliance.update({
+        where: { id: input.allianceId },
+        data: { memberCount: count },
+      });
+      return { status: "active" as const };
     }),
 
   // Leave an alliance
@@ -309,7 +396,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
 
       await ctx.db.allianceMember.update({
         where: { id: membership.id },
-        data: { isActive: false },
+        data: { isActive: false, status: "left" },
       });
 
       // Update count

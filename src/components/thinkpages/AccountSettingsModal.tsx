@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Xmark as X, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
@@ -23,7 +22,6 @@ export function AccountSettingsModal({
   onAccountUpdate,
 }: AccountSettingsModalProps) {
   const notify = useNotify();
-  const [verified, setVerified] = useState(account.verified);
   const [postingFrequency, setPostingFrequency] = useState(account.postingFrequency);
   const [politicalLean, setPoliticalLean] = useState(account.politicalLean);
   const [personality, setPersonality] = useState(account.personality);
@@ -52,7 +50,6 @@ export function AccountSettingsModal({
   useEffect(() => {
     if (account) {
       // oxlint-disable-next-line
-      setVerified(account.verified);
       setPostingFrequency(account.postingFrequency);
       setPoliticalLean(account.politicalLean);
       setPersonality(account.personality);
@@ -64,7 +61,6 @@ export function AccountSettingsModal({
     try {
       const updatedAccount = await updateAccountMutation.mutateAsync({
         accountId: account.id,
-        verified,
         postingFrequency,
         politicalLean,
         personality,
@@ -111,17 +107,6 @@ export function AccountSettingsModal({
                 </button>
               </div>
               <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="verified-switch" className="flex items-center gap-2">
-                    <span className="text-lg" title="Verified">
-                      ✅
-                    </span>
-                    <span className="text-sm font-medium text-[var(--color-text-primary)] sm:text-base">
-                      Verified
-                    </span>
-                  </label>
-                  <Switch id="verified-switch" checked={verified} onCheckedChange={setVerified} />
-                </div>
                 <div>
                   <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
                     Posting Frequency

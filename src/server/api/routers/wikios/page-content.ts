@@ -7,7 +7,10 @@
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import { getArticleHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import {
+  getArticleHtml,
+  renderArticleViaMediaWiki,
+} from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   transformArticleHtml,
@@ -32,7 +35,6 @@ import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-se
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -175,32 +177,28 @@ export const wikiosPageContentRouter = createTRPCRouter({
           rawHtml && !hasCorruptedMarkup && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
 
         if (!rawHtml || hasCorruptedMarkup || (wikitextHasInfobox && !htmlHasInfobox)) {
-          try {
-            const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-            const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-            const res = await fetch(
-              `${apiEndpoint}?action=parse&page=${encodeURIComponent(resolvedTitle.replace(/ /g, "_"))}&prop=text&disablelimitreport=1&disableeditsection=1&formatversion=2&format=json`,
-              {
-                headers: { "User-Agent": DEFAULT_USER_AGENT },
-                signal: AbortSignal.timeout(3500),
-              }
-            );
-            if (res.ok) {
-              const data = (await res.json()) as any;
-              const parsed = data?.parse?.text;
-              if (parsed && typeof parsed === "string") {
-                rawHtml = parsed;
-                void saveArticleHtmlShadow(resolvedTitle, rawHtml, "ixwiki").catch(() => {});
-              }
-            }
-          } catch {
-            // Fall through to local wikitext compiler
+          // Render from the Postgres wikitext, not MediaWiki's copy of the page, which is stale
+          // right after a WikiOS save (NEW-3).
+          const parsed = await renderArticleViaMediaWiki(nativeArticle.wikitext, resolvedTitle);
+          if (parsed) {
+            rawHtml = parsed;
+            void saveArticleHtmlShadow(
+              resolvedTitle,
+              rawHtml,
+              "ixwiki",
+              nativeArticle.wikitext || undefined
+            ).catch(() => {});
           }
         }
 
         if ((!rawHtml || hasCorruptedMarkup) && nativeArticle.wikitext) {
           rawHtml = parseWikitextToHtml(nativeArticle.wikitext, "ixwiki");
-          void saveArticleHtmlShadow(resolvedTitle, rawHtml, "ixwiki").catch(() => {});
+          void saveArticleHtmlShadow(
+            resolvedTitle,
+            rawHtml,
+            "ixwiki",
+            nativeArticle.wikitext
+          ).catch(() => {});
         }
 
         const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");

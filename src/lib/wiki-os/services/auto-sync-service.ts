@@ -212,6 +212,14 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
   const slug = toArticleSlug(rawTitle);
   const ns = Number(page.ns || 0);
 
+  // The reader prefers cached contentHtml, so when the wikitext changes the cache must be cleared
+  // or MediaWiki-side edits never show (NEW-2). An empty cache is re-rendered on the next view.
+  const previous = await db.wikiArticle.findUnique({
+    where: { source_title: { source: "ixwiki", title: rawTitle } },
+    select: { wikitext: true },
+  });
+  const wikitextChanged = !previous || previous.wikitext !== wikitext;
+
   const article = await (db as any).wikiArticle.upsert({
     where: {
       source_title: { source: "ixwiki", title: rawTitle },
@@ -236,6 +244,7 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
       slug,
       namespace: ns,
       wikitext,
+      ...(wikitextChanged ? { contentHtml: "" } : {}),
       summary,
       leadImageUrl: leadImageUrl || null,
       wordCount: words,
@@ -425,6 +434,14 @@ async function syncChange(rc: RecentChange, syncedTitles: Set<string>): Promise<
     select: { id: true },
   });
   if (existing) return false;
+
+  // The export worker records the bot revision it pushed as the article's mwLatestRevId; that
+  // revision is a WikiOS edit already held in Postgres, not a new MediaWiki-side change (NEW-4).
+  const exportedEcho = await db.wikiArticle.findFirst({
+    where: { source: "ixwiki", mwLatestRevId: rc.revid },
+    select: { id: true },
+  });
+  if (exportedEcho) return false;
 
   syncedTitles.add(rc.title);
   return syncPageOrThrow(rc.title);

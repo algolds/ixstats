@@ -192,7 +192,7 @@ export const DailyBonusWidget: React.FC = () => {
                       IxCredits
                     </span>
                     <span className="text-muted-foreground mt-0.5 text-xs leading-tight">
-                      1 to 10,000 IxCredits scaled by level & streak
+                      A random roll (scaled by level & streak), paid up to your 100 IxC daily earning cap
                     </span>
                   </button>
 

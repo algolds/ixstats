@@ -13,6 +13,18 @@ export function getBasePath(): string {
 export const BASE_PATH = getBasePath();
 
 /**
+ * An image/asset URL ready for `src`: absolute (http/https, protocol-relative), data: and blob:
+ * URLs pass through; app-relative paths such as uploaded flags (`/images/uploads/…`) get the
+ * base path. Returns null for an empty value.
+ */
+export function assetUrl(url: string | null | undefined): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+  if (/^(https?:|data:|blob:|\/\/)/i.test(trimmed)) return trimmed;
+  return withBasePath(trimmed);
+}
+
+/**
  * Prepends the BASE_PATH to a given path
  * @param path - The path to prefix (e.g., "/dashboard")
  * @returns The full path with BASE_PATH (e.g., "/projects/ixstats/dashboard")

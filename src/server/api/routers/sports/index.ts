@@ -11,6 +11,7 @@
  *  - standings: standings, brackets, race results, league/team history, records
  *  - transfers: player transfer listings, bids, valuations
  *  - club:      stadium upgrades, ticket pricing, patron saints
+ *  - predictions: placing stakes on match outcomes (settlement is in lib/sports/predictions)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { sportsLeaguesRouter } from "./leagues";
@@ -20,6 +21,7 @@ import { sportsStandingsRouter } from "./standings";
 import { sportsTransfersRouter } from "./transfers";
 import { sportsClubRouter } from "./club";
 import { sportsAlmanacRouter } from "./almanac";
+import { sportsPredictionsRouter } from "./predictions";
 
 export const sportsRouter = mergeRouters(
   sportsLeaguesRouter,
@@ -28,5 +30,6 @@ export const sportsRouter = mergeRouters(
   sportsStandingsRouter,
   sportsTransfersRouter,
   sportsClubRouter,
-  sportsAlmanacRouter
+  sportsAlmanacRouter,
+  sportsPredictionsRouter
 );

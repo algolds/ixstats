@@ -11,6 +11,7 @@ import {
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
 import { timeAgo } from "~/lib/format/compact";
+import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
@@ -298,7 +299,8 @@ export function ExecutiveRecordFeed({
                               <ArrowDown className="h-3 w-3 stroke-[3] text-red-400" />
                             ) : null}
                             <span>
-                              {item.targetField}: {formatDeltaValue(item.deltaValue)}
+                              {consequenceFieldLabel(item.targetField)}:{" "}
+                              {formatDeltaValue(item.deltaValue)}
                             </span>
                           </span>
                         </>
