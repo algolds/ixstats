@@ -5,7 +5,6 @@ import {
   formatFullWordCurrency,
   getComplexityBadgeClass,
   getArchetypeColorClass,
-  HISTORICAL_ARCHETYPE_IDS,
   getStepLabel,
 } from "../components/enhanced/steps/foundation/foundationUtils";
 
@@ -93,14 +92,6 @@ describe("foundationUtils", () => {
 
     it("returns rose styling for command / state planned archetypes", () => {
       expect(getArchetypeColorClass("soviet-command")).toContain("text-rose-600");
-    });
-  });
-
-  describe("HISTORICAL_ARCHETYPE_IDS", () => {
-    it("contains the canonical historical archetypes", () => {
-      expect(HISTORICAL_ARCHETYPE_IDS).toContain("british-empire");
-      expect(HISTORICAL_ARCHETYPE_IDS).toContain("venetian-republic");
-      expect(HISTORICAL_ARCHETYPE_IDS.length).toBe(10);
     });
   });
 

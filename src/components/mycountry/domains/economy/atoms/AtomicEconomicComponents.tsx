@@ -20,7 +20,6 @@ import {
   WarningTriangle as AlertTriangle,
   FloppyDisk as Save,
   Undo as RotateCcw,
-  Database,
   HelpCircle,
 } from "iconoir-react";
 
@@ -39,8 +38,8 @@ import {
   AtomicFilterBar,
 } from "~/components/shared/atomic-picker";
 
-// Hook import for database integration
-import { useEconomicComponentsData } from "~/hooks/useEconomicComponentsData";
+// Usage tracking
+import { api } from "~/trpc/react";
 
 // Hook import
 import { useAtomicEconomicBuilder } from "~/hooks/useAtomicEconomicBuilder";
@@ -85,13 +84,8 @@ export function AtomicEconomicComponentSelector({
   hideSelectedList = false,
   standalone = false,
 }: AtomicEconomicComponentSelectorProps) {
-  // Use database hook for component data
-  const {
-    components: _dbComponents,
-    isLoading,
-    isUsingFallback,
-    incrementUsage,
-  } = useEconomicComponentsData();
+  // Usage counts for the admin component statistics
+  const { mutate: trackUsage } = api.economicComponents.incrementComponentUsage.useMutation();
 
   // Initialize the economic builder hook
   const builder = useAtomicEconomicBuilder({
@@ -104,9 +98,9 @@ export function AtomicEconomicComponentSelector({
   const handleComponentSelect = useCallback(
     (componentType: EconomicComponentType) => {
       builder.handleToggle(componentType);
-      incrementUsage(componentType);
+      trackUsage({ componentType });
     },
-    [builder, incrementUsage]
+    [builder, trackUsage]
   );
 
   // Dialog state for active synergies/conflicts and detailed breakdown views
@@ -157,21 +151,6 @@ export function AtomicEconomicComponentSelector({
       builder.conflicts.length,
     ]
   );
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <div className="animate-pulse space-y-2">
-            <Database className="mx-auto h-8 w-8 text-emerald-400" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Loading economic components...
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const workspaceContent = (
     <div className="space-y-6">
@@ -236,16 +215,6 @@ export function AtomicEconomicComponentSelector({
             governmentComponents={governmentComponents}
             economicComponents={builder.selectedComponents}
           />
-        )}
-
-        {/* Fallback Warning Banner */}
-        {isUsingFallback && (
-          <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-400">
-            <Database className="h-4 w-4 text-amber-400" />
-            <AlertDescription className="font-medium">
-              Using local component data. Database connection unavailable or empty.
-            </AlertDescription>
-          </Alert>
         )}
 
         {/* Validation Errors */}

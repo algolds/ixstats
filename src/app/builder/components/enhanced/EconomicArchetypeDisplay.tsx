@@ -14,7 +14,6 @@ import { Input } from "~/components/ui/input";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { useArchetypes } from "~/hooks/useArchetypes";
-import { modernArchetypes } from "~/lib/economy/archetypes/modern";
 import { ArchetypeCard, ArchetypeDetailsModal } from "./archetypes";
 
 export interface EconomicArchetypeDisplayProps {
@@ -48,10 +47,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
   const filteredArchetypes = useMemo(() => {
     return (archetypes || []).filter((archetype) => {
       // 1. Filter by Active Tab (modern vs historical)
-      const archetypeWithEra = archetype as EconomicArchetype & { era?: string };
-      const archetypeEra =
-        archetypeWithEra.era || (modernArchetypes.has(archetype.id) ? "modern" : "historical");
-      if (archetypeEra !== activeTab) {
+      if ((archetype.era ?? "modern") !== activeTab) {
         return false;
       }
 
@@ -151,12 +147,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
               <div className="text-muted-foreground shrink-0 text-xs font-semibold">
                 Showing {filteredArchetypes.length} of{" "}
                 {
-                  archetypes.filter((a) => {
-                    const archetypeWithEra = a as EconomicArchetype & { era?: string };
-                    const archetypeEra =
-                      archetypeWithEra.era || (modernArchetypes.has(a.id) ? "modern" : "historical");
-                    return archetypeEra === activeTab;
-                  }).length
+                  archetypes.filter((a) => (a.era ?? "modern") === activeTab).length
                 }
               </div>
             </div>

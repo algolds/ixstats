@@ -6,7 +6,9 @@
  *
  * Domains:
  *  - catalog: public component catalog queries (list, by type, by category, synergies) and public usage tracking
- *  - admin:   admin-only management (usage stats, custom synergy creation, stub create/update/delete)
+ *  - admin:   admin-only usage statistics
+ *
+ * Components are defined in code (~/lib/government/atomic-data); there are no edit endpoints.
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { governmentComponentsCatalogRouter } from "./catalog";

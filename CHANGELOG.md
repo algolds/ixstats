@@ -14,6 +14,19 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-22 
 2026-08-21 → 2026-09-22 work follows it. The version registry (`src/lib/buildVersion.ts`) still reads 1.4.0 until the
 RC2 cut.
 
+### 📚 Admin Reference Catalogs Reach Players (2026-09-30)
+
+- **Economic archetypes**: the builder's archetype picker reads the admin catalog. An empty table is seeded from the
+  built-in archetypes on first read (the seed script's broken import is fixed), rows carry their `key` and `era`, and
+  builder state stores the key, so admin edits and deactivations reach players. The admin form now sends what the
+  router validates (tax rates, revenue efficiency, complexity, component keys).
+- **Military equipment**: the Defense equipment browser lists the active `MilitaryEquipmentCatalog` rows and manufacturers
+  (`militaryEquipment.getPlayerCatalog`), falling back to the built-in list if the table can't be read; empty tables
+  seed themselves. Admin create/update accept the fields the form sends, and the seed script uses the shared seed rows.
+- **Government & economic components**: stay code-defined. Their admin sections are read-only browsers; the stub and
+  unused edit endpoints, form and synergy dialogs are gone, and the catalog endpoints serve the code library with usage
+  counts.
+
 ### 🏰 Realms Phase 1 & Eurth, the First Hosted Realm (2026-09-27 → 09-29)
 
 - **Realm model**: `worldId` → `realmId` everywhere; countries carry `ownerUserId` and every ownership write goes

@@ -2,29 +2,22 @@
 // src/components/admin/atomic-components/AtomicComponentCard.tsx
 // Universal Card renderer for Atomic Simulation Components (Economic & Government)
 
-import { Button } from "~/components/ui/button";
-import {
-  Industry as Factory,
-  City as Building2,
-  EyeClosed as EyeOff,
-  EditPencil as Pencil,
-  Network,
-  Trash as Trash2,
-} from "iconoir-react";
+import { Industry as Factory, City as Building2, Network } from "iconoir-react";
 
 interface AtomicComponentCardProps {
-  component: any;
+  component: {
+    name: string;
+    description: string;
+    category: string;
+    effectiveness: number;
+    synergies: readonly string[];
+    metadata?: { complexity?: string };
+    usageCount?: number;
+  };
   domain: "economy" | "government";
-  onEdit: () => void;
-  onDelete: () => void;
 }
 
-export function AtomicComponentCard({
-  component,
-  domain,
-  onEdit,
-  onDelete,
-}: AtomicComponentCardProps) {
+export function AtomicComponentCard({ component, domain }: AtomicComponentCardProps) {
   const Icon = domain === "economy" ? Factory : Building2;
   const accentColor = domain === "economy" ? "text-amber-400" : "text-cyan-400";
   const badgeColor =
@@ -47,9 +40,6 @@ export function AtomicComponentCard({
             {component.category}
           </span>
         </div>
-        {!component.isActive && (
-          <EyeOff className="h-4 w-4 shrink-0 text-red-400" aria-label="Inactive" />
-        )}
       </div>
 
       {/* Description */}
@@ -79,36 +69,13 @@ export function AtomicComponentCard({
 
       {/* Metrics & Synergies count */}
       <div className="border-border/30 text-muted-foreground flex items-center justify-between border-t pt-2 text-xs">
-        <span className="font-mono text-xs capitalize">
-          Tier: {component.complexity || "Standard"}
+        <span className="font-mono text-xs">
+          Complexity: {component.metadata?.complexity ?? "—"}
         </span>
-        {component.synergies && (
-          <span className="flex items-center gap-1">
-            <Network className="h-3 w-3" />
-            {Array.isArray(component.synergies) ? component.synergies.length : 0} links
-          </span>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="mt-3 flex items-center justify-end gap-1.5 pt-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onEdit}
-          className="h-7 px-2 text-xs active:scale-[0.98]"
-        >
-          <Pencil className="mr-1 h-3.5 w-3.5" />
-          Edit
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDelete}
-          className="h-7 px-2 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98]"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <span className="flex items-center gap-1">
+          <Network className="h-3 w-3" />
+          {component.synergies.length} synergies
+        </span>
       </div>
     </div>
   );

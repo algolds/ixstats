@@ -28,4 +28,4 @@ Adding equipment needs [Premium](/help/getting-started/premium); without it you 
 
 ## For admins
 
-The catalog is edited at `/admin/military-equipment`. See [Reference Data](/help/admin/reference-data).
+The catalog is edited at `/admin/military-equipment`, and the equipment browser shows the active items there. See [Reference Data](/help/admin/reference-data).

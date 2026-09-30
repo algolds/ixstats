@@ -1,11 +1,10 @@
 /**
- * Government Components Router (Phase 4 Migration)
+ * Government Components Router — catalog
  *
- * API layer for atomic government component library and synergy system.
- * Provides public endpoints for component catalog and admin endpoints for management.
- *
- * Database Models: GovernmentComponent, ComponentSynergy (country instances)
- * Fallback Data: ATOMIC_COMPONENTS from ~/lib/atomic-government-data
+ * Serves the atomic government component library. The code library (ATOMIC_COMPONENTS in
+ * ~/lib/government/atomic-data) is the source of truth: the builder, editor and
+ * calculations read it directly, and admins can't edit it. The GovernmentComponentData
+ * table only records how often each component is picked.
  */
 
 import { z } from "zod";
@@ -13,7 +12,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 
-import { type ParsedComponent, transformDatabaseComponent } from "./serializer";
+import { type ParsedComponent } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
@@ -37,14 +36,14 @@ const incrementUsageSchema = z.object({
 // ============================================================================
 
 /**
- * Ensure database is seeded with government component reference data
+ * Ensure the usage-count table has a row per component
  */
 async function ensureSeeded(db: any) {
   try {
     const count = await db.governmentComponentData.count();
     if (count === 0) {
       console.info("[governmentComponents] Reference database is empty. Seeding components...");
-      const components = getFallbackComponents();
+      const components = getLibraryComponents();
       const dataToInsert = components.map((comp) => ({
         componentType: comp.type,
         name: comp.name,
@@ -76,9 +75,9 @@ async function ensureSeeded(db: any) {
 }
 
 /**
- * Get fallback component data from ATOMIC_COMPONENTS library
+ * Components from the ATOMIC_COMPONENTS code library
  */
-function getFallbackComponents(): ParsedComponent[] {
+function getLibraryComponents(): ParsedComponent[] {
   return Object.values(ATOMIC_COMPONENTS)
     .filter((comp): comp is NonNullable<typeof comp> => comp !== undefined)
     .map((comp) => ({
@@ -111,66 +110,31 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
    * Returns from database if available, falls back to ATOMIC_COMPONENTS
    */
   getAllComponents: publicProcedure.input(getAllComponentsSchema).query(async ({ ctx, input }) => {
+    // The code library is the only catalog: the builder, editor and calculations read it
+    // directly. Every component is active; the database only keeps usage counts.
+    let components = (input?.isActive === false ? [] : getLibraryComponents())
+      .filter((comp) => !input?.category || comp.category === input.category)
+      .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+
     try {
-      // Ensure database has reference data
       await ensureSeeded(ctx.db);
-
-      // Query database
-      const dbComponents = await ctx.db.governmentComponentData.findMany({
-        where: {
-          ...(input?.isActive !== undefined && { isActive: input.isActive }),
-          ...(input?.category && { category: input.category }),
-        },
-        orderBy: [{ category: "asc" }, { usageCount: "desc" }],
+      const usage = await ctx.db.governmentComponentData.findMany({
+        select: { componentType: true, usageCount: true },
       });
-
-      if (dbComponents.length === 0) {
-        let components = getFallbackComponents();
-
-        // Apply filters
-        if (input?.category) {
-          components = components.filter((comp) => comp.category === input.category);
-        }
-
-        if (input?.isActive !== undefined) {
-          components = components.filter((comp) => comp.isActive === input.isActive);
-        }
-
-        // Sort by category and name
-        components.sort((a, b) => {
-          if (a.category !== b.category) {
-            return a.category.localeCompare(b.category);
-          }
-          return a.name.localeCompare(b.name);
-        });
-
-        return {
-          success: true,
-          components,
-          count: components.length,
-          isUsingFallback: true,
-        };
-      }
-
-      // Parse and return database components
-      const components = dbComponents.map(transformDatabaseComponent);
-
-      return {
-        success: true,
-        components,
-        count: components.length,
-        isUsingFallback: false,
-      };
+      const usageByType = new Map(usage.map((row) => [row.componentType, row.usageCount]));
+      components = components.map((comp) => ({
+        ...comp,
+        usageCount: usageByType.get(comp.type) ?? 0,
+      }));
     } catch (error) {
-      console.error("Error fetching components:", error);
-      const fallbackComponents = getFallbackComponents();
-      return {
-        success: true,
-        components: fallbackComponents,
-        count: fallbackComponents.length,
-        isUsingFallback: true,
-      };
+      console.error("[governmentComponents] Failed to read usage counts:", error);
     }
+
+    return {
+      success: true,
+      components,
+      count: components.length,
+    };
   }),
 
   /**

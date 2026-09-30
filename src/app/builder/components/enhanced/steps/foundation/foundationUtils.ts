@@ -9,19 +9,6 @@ import {
   Bank as Landmark,
 } from "iconoir-react";
 
-export const HISTORICAL_ARCHETYPE_IDS = [
-  "british-empire",
-  "venetian-republic",
-  "hanseatic-league",
-  "dutch-golden-age",
-  "industrial-revolution",
-  "soviet-command",
-  "american-gilded-age",
-  "french-mercantilism",
-  "ottoman-empire",
-  "chinese-ming-dynasty",
-] as const;
-
 export const containerVariants = {
   hidden: { opacity: 0 },
   show: {

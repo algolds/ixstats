@@ -32,13 +32,19 @@ import {
   type ArchetypeEra,
   COMPLEXITY_LEVELS,
 } from "./_components/EconomicArchetypeFormDialog";
+import {
+  type ArchetypeRecord,
+  archetypeToFormData,
+  complexityLabel,
+  defaultArchetypeFormData,
+  formDataToArchetypeInput,
+} from "./_components/archetype-form-types";
 import { Skeleton } from "~/components/ui/skeleton";
 
 const COMPLEXITY_COLORS: Record<string, string> = {
-  Low: "text-green-400",
-  Moderate: "text-blue-400",
-  High: "text-amber-400",
-  "Very High": "text-red-400",
+  low: "text-green-400",
+  medium: "text-blue-400",
+  high: "text-amber-400",
 };
 
 export function EconomicArchetypesPanel() {
@@ -54,52 +60,11 @@ export function EconomicArchetypesPanel() {
   // oxlint-disable-next-line eslint/no-unused-vars
   const [showInactive, setShowInactive] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingArchetype, setEditingArchetype] = useState<any | null>(null);
+  const [editingArchetype, setEditingArchetype] = useState<ArchetypeRecord | null>(null);
   const [activeTab, setActiveTab] = useState("general");
 
   // Form state
-  const [formData, setFormData] = useState<ArchetypeFormData>({
-    key: "",
-    name: "",
-    description: "",
-    region: "",
-    era: "modern",
-    implementationComplexity: "Moderate",
-    historicalContext: "",
-    characteristics: [],
-    economicComponents: [],
-    governmentComponents: [],
-    taxProfile: {
-      corporateTax: 20,
-      incomeTax: 25,
-      consumptionTax: 10,
-      taxEfficiency: 75,
-    },
-    sectorFocus: {
-      agriculture: 10,
-      manufacturing: 25,
-      services: 35,
-      technology: 20,
-      finance: 5,
-      tourism: 5,
-    },
-    employmentProfile: {
-      unemploymentRate: 5.0,
-      laborParticipation: 65.0,
-      wageGrowth: 2.5,
-    },
-    growthMetrics: {
-      gdpGrowth: 3.0,
-      innovationIndex: 50,
-      competitiveness: 50,
-      stability: 50,
-    },
-    strengths: [],
-    challenges: [],
-    culturalFactors: [],
-    modernExamples: [],
-    recommendations: [],
-  });
+  const [formData, setFormData] = useState<ArchetypeFormData>(defaultArchetypeFormData);
 
   // Queries
   const {
@@ -180,61 +145,20 @@ export function EconomicArchetypesPanel() {
   }, [archetypes, selectedEra, selectedRegion, selectedComplexity, searchQuery]);
 
   const resetForm = () => {
-    setFormData({
-      key: "",
-      name: "",
-      description: "",
-      region: "",
-      era: "modern",
-      implementationComplexity: "Moderate",
-      historicalContext: "",
-      characteristics: [],
-      economicComponents: [],
-      governmentComponents: [],
-      taxProfile: {
-        corporateTax: 20,
-        incomeTax: 25,
-        consumptionTax: 10,
-        taxEfficiency: 75,
-      },
-      sectorFocus: {
-        agriculture: 10,
-        manufacturing: 25,
-        services: 35,
-        technology: 20,
-        finance: 5,
-        tourism: 5,
-      },
-      employmentProfile: {
-        unemploymentRate: 5.0,
-        laborParticipation: 65.0,
-        wageGrowth: 2.5,
-      },
-      growthMetrics: {
-        gdpGrowth: 3.0,
-        innovationIndex: 50,
-        competitiveness: 50,
-        stability: 50,
-      },
-      strengths: [],
-      challenges: [],
-      culturalFactors: [],
-      modernExamples: [],
-      recommendations: [],
-    });
+    setFormData(defaultArchetypeFormData());
     setActiveTab("general");
   };
 
   const handleCreate = () => {
-    createMutation.mutate(formData as any);
+    createMutation.mutate(formDataToArchetypeInput(formData));
   };
 
   const handleUpdate = () => {
     if (editingArchetype?.id) {
       updateMutation.mutate({
         id: editingArchetype.id,
-        ...formData,
-      } as any);
+        ...formDataToArchetypeInput(formData),
+      });
     }
   };
 
@@ -244,49 +168,15 @@ export function EconomicArchetypesPanel() {
     }
   };
 
-  const handleEdit = (archetype: any) => {
-    setFormData({
-      key: archetype.key,
-      name: archetype.name,
-      description: archetype.description,
-      region: archetype.region,
-      era: archetype.era,
-      implementationComplexity: archetype.implementationComplexity,
-      historicalContext: archetype.historicalContext,
-      characteristics: archetype.characteristics || [],
-      economicComponents: archetype.economicComponents || [],
-      governmentComponents: archetype.governmentComponents || [],
-      taxProfile: archetype.taxProfile || {
-        corporateTax: 20,
-        incomeTax: 25,
-        consumptionTax: 10,
-        taxEfficiency: 75,
-      },
-      sectorFocus: archetype.sectorFocus || {},
-      employmentProfile: archetype.employmentProfile || {
-        unemploymentRate: 5.0,
-        laborParticipation: 65.0,
-        wageGrowth: 2.5,
-      },
-      growthMetrics: archetype.growthMetrics || {
-        gdpGrowth: 3.0,
-        innovationIndex: 50,
-        competitiveness: 50,
-        stability: 50,
-      },
-      strengths: archetype.strengths || [],
-      challenges: archetype.challenges || [],
-      culturalFactors: archetype.culturalFactors || [],
-      modernExamples: archetype.modernExamples || [],
-      recommendations: archetype.recommendations || [],
-    });
+  const handleEdit = (archetype: ArchetypeRecord) => {
+    setFormData(archetypeToFormData(archetype));
     setEditingArchetype(archetype);
     setActiveTab("general");
   };
 
-  const handleClone = (archetype: any) => {
+  const handleClone = (archetype: ArchetypeRecord) => {
     setFormData({
-      ...archetype,
+      ...archetypeToFormData(archetype),
       key: `${archetype.key}-copy`,
       name: `${archetype.name} (Copy)`,
     });
@@ -394,7 +284,7 @@ export function EconomicArchetypesPanel() {
               </SelectItem>
               {COMPLEXITY_LEVELS.map((level) => (
                 <SelectItem key={level} value={level} className="text-xs">
-                  {level}
+                  {complexityLabel(level)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -466,7 +356,7 @@ export function EconomicArchetypesPanel() {
                         "text-muted-foreground"
                       }
                     >
-                      {archetype.implementationComplexity}
+                      {complexityLabel(archetype.implementationComplexity)}
                     </span>
                   </td>
                   <td className="text-foreground px-4 py-2.5 font-mono font-medium">

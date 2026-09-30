@@ -6,18 +6,17 @@ import { Component as Layers, CheckCircle, Network, Folder } from "iconoir-react
 
 interface AtomicComponentStatsProps {
   totalCount: number;
-  activeCount: number;
+  /** Active components adopted across nations; undefined while loading. */
+  adoptionCount: number | undefined;
   synergyCount: number;
   categoryCount: number;
-  domain: "economy" | "government";
 }
 
 export function AtomicComponentStats({
   totalCount,
-  activeCount,
+  adoptionCount,
   synergyCount,
   categoryCount,
-  domain: _domain,
 }: AtomicComponentStatsProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -36,12 +35,12 @@ export function AtomicComponentStats({
       <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Active Registry
+            Adopted by Nations
           </span>
           <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
         </div>
         <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-500">
-          {activeCount}
+          {adoptionCount ?? "—"}
         </p>
       </div>
 

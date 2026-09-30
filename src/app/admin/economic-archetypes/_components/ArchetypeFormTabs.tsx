@@ -19,6 +19,7 @@ import {
   type ArchetypeFormData,
   type ArchetypeEra,
   COMPLEXITY_LEVELS,
+  complexityLabel,
   SECTOR_TYPES,
   ECONOMIC_COMPONENTS,
   GOVERNMENT_COMPONENTS,
@@ -105,7 +106,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
           <SelectContent>
             {COMPLEXITY_LEVELS.map((level) => (
               <SelectItem key={level} value={level}>
-                {level}
+                {complexityLabel(level)}
               </SelectItem>
             ))}
           </SelectContent>

@@ -87,7 +87,10 @@ const archetypeInputSchema = z.object({
   culturalFactors: z.array(z.string()),
   modernExamples: z.array(z.string()),
   recommendations: z.array(z.string()),
-  implementationComplexity: z.enum(["Low", "Medium", "High"]),
+  implementationComplexity: z.preprocess(
+    (value) => (typeof value === "string" ? value.toLowerCase() : value),
+    z.enum(["low", "medium", "high"])
+  ),
   historicalContext: z.string(),
 });
 

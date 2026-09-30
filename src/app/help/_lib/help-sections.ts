@@ -505,7 +505,7 @@ export const helpSections: HelpSection[] = [
       {
         id: "reference-data",
         title: "Reference Data",
-        description: "Editing the catalogs everyone builds with.",
+        description: "The catalogs everyone builds with, and which ones admins can edit.",
         path: "/help/admin/reference-data",
         tags: ["admin", "catalog", "components", "equipment"],
       },

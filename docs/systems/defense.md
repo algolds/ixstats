@@ -60,7 +60,7 @@ graph TD
 
 1. **Posture & Readiness**: DEFCON-style posture and branch/unit readiness; deployments drain unit readiness (−10) and recalls restore part of it (+5 per unit).
 2. **Operations & Deployments**: Peacekeeping, defense pact, blockade, intervention, and training operations deploy units/assets and carry a daily operating cost (personnel × $200/day + 1.5× asset maintenance) while active.
-3. **Equipment Management**: Assets are added from the equipment catalogs via `EquipmentBrowser`.
+3. **Equipment Management**: Assets are added from the equipment catalog via `EquipmentBrowser`, which lists the active `MilitaryEquipmentCatalog` rows edited at `/admin/military-equipment` (`militaryEquipment.getPlayerCatalog`).
 4. **Conflicts & Crises**: PvP conflict proposals notify the defender and publish news; security events are resolved from the stability panel. Defense actions are not yet routed through `CountryEventSpine`.
 
 ---

@@ -21,15 +21,15 @@ The Admin CMS provides administrative oversight across 39 sections (plus the liv
 
 ## Overview & Architecture
 
-The Admin CMS ensures **100% dynamic content management**—all game rules, atomic components, scenarios, and catalogs reside in PostgreSQL and can be modified at runtime without requiring code deployments:
+Most reference catalogs live in PostgreSQL and can be changed at runtime without a code deployment:
 
-- Atomic government components & synergies (`ComponentType` enum: 91 values)
-- Economic policy components (`EconomicComponentType` enum: 60 values)
-- Tax system components (`TaxComponentType` enum: 43 values)
 - 50+ diplomatic actions & 100+ dynamic scenarios
 - 8 NPC personality traits & archetypes
-- 500+ military equipment items & small arms
+- Economic archetypes (builder presets)
+- Military equipment, manufacturers & small arms
 - National issue templates
+
+The atomic government components (64) and economic components (27), including their tax impacts, are defined in code (`src/lib/government/data/`, `src/lib/economy/data/`); their admin sections are read-only.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -51,19 +51,19 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
 
 ### 1. Government Components (`/admin/government-components`)
 - **Router**: `src/server/api/routers/governmentComponents/`
-- **Capabilities**: CRUD operations for 56 atomic components, effectiveness scores (0–100), bilateral synergy matrix relationships, and conflict exclusions.
+- **Capabilities**: Read-only browser of the 64 atomic components (category, effectiveness, complexity, synergies) with adoption stats. The components are defined in code (`src/lib/government/data/`), which the builder, editor and calculations read directly; the `GovernmentComponentData` table only holds usage counts.
 
 ### 2. Economic Components (`/admin/economic-components`)
 - **Router**: `src/server/api/routers/economicComponents/`
-- **Capabilities**: Impact modifiers on GDP growth, employment, innovation, and inequality across 5 policy categories.
+- **Capabilities**: Read-only browser of the 27 economic components and the preset templates, with adoption stats. Defined in code (`src/lib/economy/data/`); the `EconomicComponentData` table only holds usage counts.
 
-### 3. Tax Components (inside `/admin/economic-components`)
+### 3. Tax Components
 - **Router**: `src/server/api/routers/taxSystem/` (`crud.ts`, `analysis.ts`)
-- **Capabilities**: Rate ranges, revenue calculation formulas, compliance curves, and administrative costs. The standalone `/admin/tax-components` route was removed; tax editing lives in the Economic Components panel (Tax Impact).
+- **Status**: No admin editor. The standalone `/admin/tax-components` route was removed, and each economic component's tax impact is part of the code-defined component library (see above).
 
 ### 4. Economic Archetypes (`/admin/economic-archetypes`)
 - **Router**: `src/server/api/routers/economicArchetypes/`
-- **Capabilities**: Pre-configured macro policy packages (Nordic Model, Developmental State, Free Market, etc.).
+- **Capabilities**: Create, edit and deactivate the archetype presets (Nordic Model, Silicon Valley, British Empire, etc.). The `EconomicArchetype` table is the source of truth for the builder's archetype picker (`useArchetypes`); an empty table is seeded from `src/lib/economy/archetypes/` on first read, and the built-ins are the fallback if it can't be read. Players' builder state stores the archetype `key`.
 
 ### 5. Diplomatic Scenarios & Options (`/admin/diplomatic-scenarios`)
 - **Router**: `src/server/api/routers/diplomaticScenarios/`
@@ -75,7 +75,7 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
 
 ### 7. Military Equipment (`/admin/military-equipment`)
 - **Router**: `src/server/api/routers/militaryEquipment/` & `smallArmsEquipment/`
-- **Capabilities**: 500+ equipment items across aircraft, naval, ground armor, electronics, and small arms.
+- **Capabilities**: Create, edit and deactivate equipment and manufacturers; small arms; analytics. The `MilitaryEquipmentCatalog` and `DefenseManufacturer` tables are the source of truth for the Defense equipment browser (`militaryEquipment.getPlayerCatalog`); empty tables are seeded from `src/lib/military/` on first read, and the built-in list is the fallback if they can't be read.
 
 ---
 

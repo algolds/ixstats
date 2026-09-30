@@ -11,8 +11,7 @@ import type { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { GovernmentBuilderState, GovernmentType } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
-import { modernArchetypes } from "~/lib/economy/archetypes/modern";
-import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
+import { findArchetype } from "~/lib/economy/archetypes/registry";
 import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
 import { registerCustomCurrency } from "~/lib/utils";
 import {
@@ -192,8 +191,7 @@ export function useBuilderState(
               );
 
               const archetype = newState.selectedArchetypeId
-                ? modernArchetypes.get(newState.selectedArchetypeId) ||
-                  historicalArchetypes.get(newState.selectedArchetypeId)
+                ? findArchetype(newState.selectedArchetypeId)
                 : null;
 
               if (archetype) {
