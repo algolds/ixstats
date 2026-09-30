@@ -10,19 +10,12 @@
 import { plateFingerprint } from "~/lib/wiki-os/transformers/plate-fingerprint";
 import type { PlateNode } from "~/lib/wiki-os/transformers/plate-node";
 import { buildFileLink } from "~/lib/wiki-os/wikitext/file-params";
+import { joinMarkedSegments, wrapQuotes, type MarkedSegment } from "~/lib/wiki-os/wikitext/quote-marks";
 import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 
 /** Whether `node` still holds what it held when it was loaded from wikitext (so `wikiRaw` is valid). */
 export function isUnmodified(node: PlateNode): boolean {
   return typeof node.wikiRaw === "string" && node.wikiFp === plateFingerprint(node);
-}
-
-interface InlineItem {
-  text: string;
-  bold: boolean;
-  italic: boolean;
-  /** Text that can be broken at its line breaks (marks end at a line break); elements cannot. */
-  isText: boolean;
 }
 
 /** `<code>`, `<s>`, `<u>`, `<sup>` and `<sub>`: marks MediaWiki has no quote syntax for. */
@@ -36,28 +29,7 @@ function withHtmlMarks(leaf: PlateNode, text: string): string {
   return out;
 }
 
-function wrapQuotes(text: string, bold: boolean, italic: boolean): string {
-  if (bold && italic) return `'''''${text}'''''`;
-  if (bold) return `'''${text}'''`;
-  if (italic) return `''${text}''`;
-  return text;
-}
-
-/** The quote marks that turn (bold0, italic0) into (bold1, italic1). */
-function quoteTransition(bold0: boolean, italic0: boolean, bold1: boolean, italic1: boolean): string {
-  const closeBold = bold0 && !bold1;
-  const closeItalic = italic0 && !italic1;
-  const openBold = !bold0 && bold1;
-  const openItalic = !italic0 && italic1;
-  let out = "";
-  if (closeBold && closeItalic) out += "'''''";
-  else out += (closeItalic ? "''" : "") + (closeBold ? "'''" : "");
-  if (openBold && openItalic) out += "'''''";
-  else out += (openItalic ? "''" : "") + (openBold ? "'''" : "");
-  return out;
-}
-
-function leafItem(leaf: PlateNode): InlineItem | null {
+function leafItem(leaf: PlateNode): MarkedSegment | null {
   if (!leaf.text) return null;
   return {
     text: withHtmlMarks(leaf, leaf.text),
@@ -94,7 +66,7 @@ function linkTarget(el: PlateNode): string {
   return decodeURIComponent((el.url || "").replace(/^\/wiki\//, "").replace(/_/g, " "));
 }
 
-function linkItem(el: PlateNode): InlineItem {
+function linkItem(el: PlateNode): MarkedSegment {
   const leaves = textLeaves(el.children ?? []);
   const bold = leaves.length > 0 && leaves.every((leaf) => leaf.bold);
   const italic = leaves.length > 0 && leaves.every((leaf) => leaf.italic);
@@ -150,7 +122,7 @@ function elementText(el: PlateNode): string | null {
   }
 }
 
-function collectItems(children: PlateNode[], items: InlineItem[]): void {
+function collectItems(children: PlateNode[], items: MarkedSegment[]): void {
   for (const child of children) {
     if (typeof child.text === "string") {
       const item = leafItem(child);
@@ -172,41 +144,9 @@ function collectItems(children: PlateNode[], items: InlineItem[]): void {
   }
 }
 
-/** Joins the items, writing one quote mark where the bold/italic state changes, and none across a line break. */
-function joinItems(items: InlineItem[]): string {
-  let out = "";
-  let bold = false;
-  let italic = false;
-  const moveTo = (nextBold: boolean, nextItalic: boolean): void => {
-    out += quoteTransition(bold, italic, nextBold, nextItalic);
-    bold = nextBold;
-    italic = nextItalic;
-  };
-
-  for (const item of items) {
-    if (!item.isText) {
-      moveTo(item.bold, item.italic);
-      out += item.text;
-      continue;
-    }
-    item.text.split("\n").forEach((line, index) => {
-      if (index > 0) {
-        moveTo(false, false);
-        out += "\n";
-      }
-      if (line !== "") {
-        moveTo(item.bold, item.italic);
-        out += line;
-      }
-    });
-  }
-  moveTo(false, false);
-  return out;
-}
-
 /** Serializes the inline children of a block (paragraph, heading, list item, table cell) to wikitext. */
 export function serializeInline(children: PlateNode[] | undefined): string {
-  const items: InlineItem[] = [];
+  const items: MarkedSegment[] = [];
   collectItems(children ?? [], items);
-  return joinItems(items);
+  return joinMarkedSegments(items);
 }

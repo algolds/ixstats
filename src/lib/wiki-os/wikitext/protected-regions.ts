@@ -8,7 +8,7 @@
  */
 
 /** Tags whose content is literal text or extension input: never wikitext, never a block boundary. */
-export const OPAQUE_TAG_NAMES = [
+const OPAQUE_TAG_NAMES = [
   "nowiki",
   "pre",
   "math",
@@ -72,7 +72,7 @@ export function findTagClose(text: string, tag: OpenTag): number {
 }
 
 /** Index just after the `-->` of the comment that starts at `text[i]`; the end of text when unclosed. */
-export function findCommentEnd(text: string, i: number): number {
+function findCommentEnd(text: string, i: number): number {
   const close = text.indexOf("-->", i + 4);
   return close === -1 ? text.length : close + 3;
 }

@@ -15,7 +15,7 @@ export interface ScanTemplatesResult {
   diagnostics: Diagnostic[];
 }
 
-export interface ScannedTemplate {
+interface ScannedTemplate {
   /** The parsed template, or null when the braces hold no usable name. */
   parsed: ParsedTemplate | null;
   /** Index just after the closing `}}`; the end of the text when the template is never closed. */

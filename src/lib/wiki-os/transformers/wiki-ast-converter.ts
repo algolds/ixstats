@@ -21,6 +21,7 @@ import type {
   WikiInlineNode,
   WikiInlineMarks,
   WikiHeadingBlock,
+  WikiParagraphBlock,
   WikiInfoboxBlock,
   WikiTemplateNode,
   WikiRawNode,
@@ -108,164 +109,170 @@ function withProvenance(
   return el;
 }
 
-/** One top-level AST block as a Plate element; null for a block type the editor has no element for. */
-function blockToPlate(node: WikiBlockNode): PlateNode | null {
-  switch (node.type) {
-    case "heading":
-    case "h2":
-    case "h3":
-    case "h4": {
-      const hNode = node as WikiHeadingBlock;
-      const level = hNode.level ?? 2;
-      return { type: `h${level}`, children: astInlinesToPlateLeaves(hNode.children) };
-    }
-
-    case "paragraph":
-    case "p":
-      return { type: "p", children: astInlinesToPlateLeaves(node.children) };
-
-    case "infobox": {
-      const ib = node as WikiInfoboxBlock;
-      return {
-        type: "infobox-block",
-        templateName: ib.templateName,
-        title: ib.title,
-        params: ib.params || {},
-        paramList: ib.paramList || [],
-        positional: ib.positional || [],
-        classification: "infobox",
-        rawWikitext: ib.raw || ib.rawWikitext,
-        parseState: ib.parseState,
-        children: [{ text: "" }],
-      } as PlateNode;
-    }
-
-    case "template": {
-      const tmpl = node as WikiTemplateNode;
-      return {
-        type: "template-block",
-        templateName: tmpl.templateName || tmpl.name,
-        name: tmpl.templateName || tmpl.name,
-        params: tmpl.params || {},
-        paramList: tmpl.paramList || [],
-        positional: tmpl.positional || [],
-        classification: tmpl.classification || "standard",
-        rawWikitext: tmpl.raw || tmpl.rawWikitext,
-        parseState: tmpl.parseState,
-        children: [{ text: "" }],
-      } as PlateNode;
-    }
-
-    case "parser-function": {
-      const pfn = node as WikiParserFunctionBlock;
-      return {
-        type: "template-block",
-        templateName: pfn.functionName,
-        name: pfn.functionName,
-        params: {},
-        positional: pfn.branches || [],
-        classification: "standard",
-        rawWikitext: pfn.raw || pfn.rawWikitext,
-        parseState: pfn.parseState,
-        children: [{ text: "" }],
-      } as PlateNode;
-    }
-
-    case "raw": {
-      // Source the editor cannot edit faithfully: shown read-only, saved back verbatim.
-      const rawNode = node as WikiRawNode;
-      return {
-        type: "raw-wikitext",
-        rawWikitext: rawNode.raw || rawNode.rawWikitext,
-        construct: rawNode.construct,
-        tag: rawNode.tag,
-        children: [{ text: "" }],
-      };
-    }
-
-    case "media": {
-      const mb = node as MediaBlock;
-      return {
-        type: "media",
-        filename: mb.filename,
-        align: mb.align || "thumb",
-        caption: mb.caption,
-        width: mb.width,
-        height: mb.height,
-        children: [{ text: "" }],
-      } as PlateNode;
-    }
-
-    case "table": {
-      const tb = node as WikiTableBlock;
-      return {
-        type: "table",
-        caption: tb.caption,
-        attributes: tb.attributes,
-        rawWikitext: tb.rawWikitext,
-        children: tb.children?.map((row) => ({
-          type: "tr",
-          attributes: row.attributes,
-          children: row.children?.map((cell) => ({
-            type: cell.isHeader ? "th" : "td",
-            attributes: cell.attributes,
-            children: ensureSlateInlineSurroundings(
-              astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
-            ),
-          })),
-        })) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
-      } as PlateNode;
-    }
-
-    case "list":
-    case "ul":
-    case "ol": {
-      const lb = node as ListBlock;
-      return {
-        type: lb.ordered ? "ol" : "ul",
-        children: lb.children?.map((li) => ({
-          type: "li",
-          level: li.level || 1,
-          prefix: li.prefix,
-          children: ensureSlateInlineSurroundings(
-            astInlinesToPlateLeaves(li.children as WikiInlineNode[])
-          ),
-        })) || [{ type: "li", children: [{ text: "" }] }],
-      } as PlateNode;
-    }
-
-    case "divider":
-    case "hr":
-      return { type: "hr", children: [{ text: "" }] };
-
-    case "quote":
-    case "blockquote": {
-      const qb = node as QuoteBlock;
-      let inlines: any[] = [];
-      if (Array.isArray(qb.children)) {
-        if (qb.children.length > 0 && typeof qb.children[0] === "object" && "type" in qb.children[0] && (qb.children[0] as any).type === "p") {
-          inlines = (qb.children as any[]).flatMap((p) => p.children || []);
-        } else {
-          inlines = qb.children as any[];
-        }
-      }
-      return {
-        type: "blockquote",
-        author: qb.author,
-        source: qb.source,
-        children: astInlinesToPlateLeaves(inlines),
-      } as PlateNode;
-    }
-
-    case "code-block": {
-      const cb = node as CodeBlock;
-      return { type: "code-block", code: cb.code, children: [{ text: cb.code || "" }] } as PlateNode;
-    }
-
-    default:
-      return null;
-  }
+function headingToPlate(node: WikiBlockNode): PlateNode {
+  const hNode = node as WikiHeadingBlock;
+  return { type: `h${hNode.level ?? 2}`, children: astInlinesToPlateLeaves(hNode.children) };
 }
+
+function paragraphToPlate(node: WikiBlockNode): PlateNode {
+  return { type: "p", children: astInlinesToPlateLeaves((node as WikiParagraphBlock).children) };
+}
+
+function infoboxToPlate(node: WikiBlockNode): PlateNode {
+  const ib = node as WikiInfoboxBlock;
+  return {
+    type: "infobox-block",
+    templateName: ib.templateName,
+    title: ib.title,
+    params: ib.params || {},
+    paramList: ib.paramList || [],
+    positional: ib.positional || [],
+    classification: "infobox",
+    rawWikitext: ib.raw || ib.rawWikitext,
+    parseState: ib.parseState,
+    children: [{ text: "" }],
+  } as PlateNode;
+}
+
+function templateToPlate(node: WikiBlockNode): PlateNode {
+  const tmpl = node as WikiTemplateNode;
+  return {
+    type: "template-block",
+    templateName: tmpl.templateName || tmpl.name,
+    name: tmpl.templateName || tmpl.name,
+    params: tmpl.params || {},
+    paramList: tmpl.paramList || [],
+    positional: tmpl.positional || [],
+    classification: tmpl.classification || "standard",
+    rawWikitext: tmpl.raw || tmpl.rawWikitext,
+    parseState: tmpl.parseState,
+    children: [{ text: "" }],
+  } as PlateNode;
+}
+
+function parserFunctionToPlate(node: WikiBlockNode): PlateNode {
+  const pfn = node as WikiParserFunctionBlock;
+  return {
+    type: "template-block",
+    templateName: pfn.functionName,
+    name: pfn.functionName,
+    params: {},
+    positional: pfn.branches || [],
+    classification: "standard",
+    rawWikitext: pfn.raw || pfn.rawWikitext,
+    parseState: pfn.parseState,
+    children: [{ text: "" }],
+  } as PlateNode;
+}
+
+/** Source the editor cannot edit faithfully: shown read-only, saved back verbatim. */
+function rawToPlate(node: WikiBlockNode): PlateNode {
+  const rawNode = node as WikiRawNode;
+  return {
+    type: "raw-wikitext",
+    rawWikitext: rawNode.raw || rawNode.rawWikitext,
+    construct: rawNode.construct,
+    tag: rawNode.tag,
+    children: [{ text: "" }],
+  };
+}
+
+function mediaToPlate(node: WikiBlockNode): PlateNode {
+  const mb = node as MediaBlock;
+  return {
+    type: "media",
+    filename: mb.filename,
+    align: mb.align || "thumb",
+    caption: mb.caption,
+    width: mb.width,
+    height: mb.height,
+    children: [{ text: "" }],
+  } as PlateNode;
+}
+
+function tableToPlate(node: WikiBlockNode): PlateNode {
+  const tb = node as WikiTableBlock;
+  return {
+    type: "table",
+    caption: tb.caption,
+    attributes: tb.attributes,
+    rawWikitext: tb.rawWikitext,
+    children: tb.children?.map((row) => ({
+      type: "tr",
+      attributes: row.attributes,
+      children: row.children?.map((cell) => ({
+        type: cell.isHeader ? "th" : "td",
+        attributes: cell.attributes,
+        children: ensureSlateInlineSurroundings(
+          astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
+        ),
+      })),
+    })) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
+  } as PlateNode;
+}
+
+function listToPlate(node: WikiBlockNode): PlateNode {
+  const lb = node as ListBlock;
+  return {
+    type: lb.ordered ? "ol" : "ul",
+    children: lb.children?.map((li) => ({
+      type: "li",
+      level: li.level || 1,
+      prefix: li.prefix,
+      children: ensureSlateInlineSurroundings(
+        astInlinesToPlateLeaves(li.children as WikiInlineNode[])
+      ),
+    })) || [{ type: "li", children: [{ text: "" }] }],
+  } as PlateNode;
+}
+
+const dividerToPlate = (): PlateNode => ({ type: "hr", children: [{ text: "" }] });
+
+function quoteToPlate(node: WikiBlockNode): PlateNode {
+  const qb = node as QuoteBlock;
+  let inlines: any[] = [];
+  if (Array.isArray(qb.children)) {
+    if (qb.children.length > 0 && typeof qb.children[0] === "object" && "type" in qb.children[0] && (qb.children[0] as any).type === "p") {
+      inlines = (qb.children as any[]).flatMap((p) => p.children || []);
+    } else {
+      inlines = qb.children as any[];
+    }
+  }
+  return {
+    type: "blockquote",
+    author: qb.author,
+    source: qb.source,
+    children: astInlinesToPlateLeaves(inlines),
+  } as PlateNode;
+}
+
+function codeBlockToPlate(node: WikiBlockNode): PlateNode {
+  const cb = node as CodeBlock;
+  return { type: "code-block", code: cb.code, children: [{ text: cb.code || "" }] } as PlateNode;
+}
+
+const BLOCK_CONVERTERS: ReadonlyMap<string, (node: WikiBlockNode) => PlateNode> = new Map([
+  ["heading", headingToPlate],
+  ["h2", headingToPlate],
+  ["h3", headingToPlate],
+  ["h4", headingToPlate],
+  ["paragraph", paragraphToPlate],
+  ["p", paragraphToPlate],
+  ["infobox", infoboxToPlate],
+  ["template", templateToPlate],
+  ["parser-function", parserFunctionToPlate],
+  ["raw", rawToPlate],
+  ["media", mediaToPlate],
+  ["table", tableToPlate],
+  ["list", listToPlate],
+  ["ul", listToPlate],
+  ["ol", listToPlate],
+  ["divider", dividerToPlate],
+  ["hr", dividerToPlate],
+  ["quote", quoteToPlate],
+  ["blockquote", quoteToPlate],
+  ["code-block", codeBlockToPlate],
+]);
 
 /**
  * Converts a WikiAST Document into Slate/Plate compatible node trees. Every element that came from
@@ -279,7 +286,7 @@ export function astToPlateNodes(doc: WikiDocument): any[] {
 
   const plateNodes: PlateNode[] = [];
   doc.nodes.forEach((node, index) => {
-    const el = blockToPlate(node);
+    const el = BLOCK_CONVERTERS.get(node.type)?.(node);
     if (!el) return;
     const last = index === doc.nodes.length - 1;
     plateNodes.push(withProvenance(el, node, { first: plateNodes.length === 0, last }, doc.trailing));

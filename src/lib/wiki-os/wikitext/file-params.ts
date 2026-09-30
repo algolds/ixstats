@@ -44,14 +44,14 @@ function isFileOption(param: string): boolean {
 }
 
 /** Index in `params` of the caption (the last parameter that is not an option), or -1 when there is none. */
-export function fileCaptionIndex(params: readonly string[]): number {
+function fileCaptionIndex(params: readonly string[]): number {
   for (let i = params.length - 1; i >= 0; i--) {
     if (!isFileOption(params[i]!)) return i;
   }
   return -1;
 }
 
-export interface ParsedFileLink {
+interface ParsedFileLink {
   /** The target as written, trimmed (`File:x.png`). */
   target: string;
   /** Every pipe parameter, verbatim. */

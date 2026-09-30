@@ -75,51 +75,58 @@ function mediaWikitext(el: PlateNode): string {
   return `[[File:${el.filename}${el.align ? `|${el.align}` : "|thumb"}${el.caption ? `|${el.caption}` : ""}]]`;
 }
 
+interface SerializeState {
+  complete: boolean;
+}
+
+type BlockSerializer = (el: PlateNode, state: SerializeState) => string;
+
+const headingSerializer =
+  (level: number): BlockSerializer =>
+  (el) =>
+    headingWikitext(el, level);
+
+/** A paragraph that holds only whitespace writes nothing. */
+const paragraphWikitext: BlockSerializer = (el) => {
+  const inner = serializeInline(el.children);
+  return inner.trim() ? inner : "";
+};
+
+const rawHtmlWikitext: BlockSerializer = (el, state) => {
+  const wt = el.rawWikitext || el.wikitext;
+  if (!wt) state.complete = false;
+  return wt || el.html || "";
+};
+
+const BLOCK_SERIALIZERS: ReadonlyMap<string, BlockSerializer> = new Map<string, BlockSerializer>([
+  ["h1", headingSerializer(1)],
+  ["h2", headingSerializer(2)],
+  ["h3", headingSerializer(3)],
+  ["h4", headingSerializer(4)],
+  ["h5", headingSerializer(5)],
+  ["h6", headingSerializer(6)],
+  ["p", paragraphWikitext],
+  ["lic", paragraphWikitext],
+  ["blockquote", (el) => `<blockquote>${serializeInline(el.children)}</blockquote>`],
+  ["code-block", (el) => `<pre>${esc((el.children ?? []).map((c) => c.text ?? "").join(""))}</pre>`],
+  ["ul", listWikitext],
+  ["ol", listWikitext],
+  ["table", tableWikitext],
+  ["hr", () => "----"],
+  ["infobox-block", (el) => templateWikitext(el, "Infobox")],
+  ["infobox", (el) => templateWikitext(el, "Infobox")],
+  ["infobox-box", (el) => templateWikitext(el, "Infobox")],
+  ["template-block", (el) => templateWikitext(el, "Template")],
+  ["template", (el) => templateWikitext(el, "Template")],
+  ["media", mediaWikitext],
+  ["raw-wikitext", (el) => el.rawWikitext ?? ""],
+  ["raw-html", rawHtmlWikitext],
+]);
+
 /** The wikitext of one generated block, without its separator; "" for a block that writes nothing. */
-function blockWikitext(el: PlateNode, state: { complete: boolean }): string {
-  switch (el.type) {
-    case "h1":
-    case "h2":
-    case "h3":
-    case "h4":
-    case "h5":
-    case "h6":
-      return headingWikitext(el, Number(el.type.slice(1)));
-    case "p":
-    case "lic": {
-      const inner = serializeInline(el.children);
-      return inner.trim() ? inner : "";
-    }
-    case "blockquote":
-      return `<blockquote>${serializeInline(el.children)}</blockquote>`;
-    case "code-block":
-      return `<pre>${esc((el.children ?? []).map((c) => c.text ?? "").join(""))}</pre>`;
-    case "ul":
-    case "ol":
-      return listWikitext(el);
-    case "table":
-      return tableWikitext(el);
-    case "hr":
-      return "----";
-    case "infobox-block":
-    case "infobox":
-    case "infobox-box":
-      return templateWikitext(el, "Infobox");
-    case "template-block":
-    case "template":
-      return templateWikitext(el, "Template");
-    case "media":
-      return mediaWikitext(el);
-    case "raw-wikitext":
-      return el.rawWikitext ?? "";
-    case "raw-html": {
-      const wt = el.rawWikitext || el.wikitext;
-      if (!wt) state.complete = false;
-      return wt || el.html || "";
-    }
-    default:
-      return el.rawWikitext || el.wikitext || "";
-  }
+function blockWikitext(el: PlateNode, state: SerializeState): string {
+  const serialize = el.type === undefined ? undefined : BLOCK_SERIALIZERS.get(el.type);
+  return serialize ? serialize(el, state) : el.rawWikitext || el.wikitext || "";
 }
 
 const newlineCount = (text: string): number => text.split("\n").length - 1;

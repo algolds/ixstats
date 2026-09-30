@@ -33,12 +33,3 @@ export const VOID_INLINE_ELEMENTS = [
 
 /** Inline elements whose text children are editable. */
 export const INLINE_ELEMENTS = ["link", "a"] as const;
-
-const VOID = new Set<string>([...VOID_BLOCK_ELEMENTS, ...VOID_INLINE_ELEMENTS]);
-const INLINE = new Set<string>([...VOID_INLINE_ELEMENTS, ...INLINE_ELEMENTS]);
-
-export const isVoidElementType = (type: string | undefined): boolean =>
-  type !== undefined && VOID.has(type);
-
-export const isInlineElementType = (type: string | undefined): boolean =>
-  type !== undefined && INLINE.has(type);
