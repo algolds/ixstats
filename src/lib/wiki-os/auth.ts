@@ -20,6 +20,7 @@ export interface WikiAuthContext {
     countryId?: string | null;
     country?: { id?: string; name?: string | null; flag?: string | null } | null;
     role?: { id?: string; name?: string | null; level?: number | null } | null;
+    createdAt?: Date | string | null;
   } | null;
 }
 
