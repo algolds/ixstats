@@ -478,7 +478,7 @@ function MessagesRouterInner() {
   const createConversation = api.messages.createConversation.useMutation();
 
   const handleCreateConversation = useCallback(
-    async (participantId: string) => {
+    async (participantId: string, options?: { diplomatic?: boolean }) => {
       if (!currentUserId?.trim() || !participantId?.trim()) {
         notify.error("Invalid user or participant");
         return;
@@ -487,14 +487,15 @@ function MessagesRouterInner() {
       const participantIds =
         participantId === currentUserId ? [currentUserId] : [currentUserId, participantId];
 
-      // Source based on active folder
-      const source = (activeFolder as string) === "diplomatic" ? "diplomatic" : "thinkshare";
+      // The diplomatic channel is chosen explicitly in the new-conversation modal
+      const isDiplomatic = options?.diplomatic === true;
+      const source = isDiplomatic ? "diplomatic" : "thinkshare";
 
       try {
         const result = await createConversation.mutateAsync({
           participantIds,
           source: source as any,
-          conversationType: (activeFolder as string) === "diplomatic" ? "diplomatic" : undefined,
+          conversationType: isDiplomatic ? "diplomatic" : undefined,
         });
         setSelectedConversationId(result.id);
         setShowNewConversation(false);
@@ -504,7 +505,7 @@ function MessagesRouterInner() {
         notify.error(error.message || "Failed to create conversation");
       }
     },
-    [currentUserId, activeFolder, createConversation, notify, refetchConversations]
+    [currentUserId, createConversation, notify, refetchConversations]
   );
 
   const leaveConversationMutation = api.messages.leaveConversation.useMutation({

@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { createMessagingService } from "~/server/modules/messaging";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -124,7 +124,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
   /**
    * Search users for new conversation creation.
    */
-  searchUsers: publicProcedure
+  searchUsers: protectedProcedure
     .input(z.object({ query: z.string() }))
     .query(async ({ ctx, input }) => {
       if (input.query.length < 3) return [];
@@ -139,7 +139,13 @@ export const messagesParticipantsRouter = createTRPCRouter({
             ],
           },
         },
-        include: { country: true },
+        // Only the fields the compose/add-participant UI renders (clerkUserId is the
+        // participant identifier). Never return the full User/Country rows.
+        select: {
+          id: true,
+          clerkUserId: true,
+          country: { select: { name: true, slug: true, flag: true } },
+        },
         take: 10,
       });
 
