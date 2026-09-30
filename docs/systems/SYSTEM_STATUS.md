@@ -3,7 +3,7 @@
 **Platform:** 1.4.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
 **Last verified:** 2026-09-29, by a doc-by-doc audit against the code
 **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
-**Open work:** [`docs/roadmap/pending-features.md`](../roadmap/pending-features.md)
+**Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../roadmap/code-audit-2026-09-30.md)
 
 This page replaces the August "Gold Master (100%)" matrix. That matrix rated every system as finished; the September audit
 found several that are partly built, read-only, or broken, so each row now carries the status the code supports.
@@ -115,7 +115,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Facet design system | v2 | global | `src/styles/facet/`, `src/components/ui/facet*` | ✅ Live | Plan 346 cleanup partial (hex colours, blur, pulse counts in the audits) |
 | Halo overlay & command palette | v5 | global | `src/components/halo/` | ✅ Live | |
 | Cuelume audio | v1 | global | `src/lib/sound/cuelume.ts` | ✅ Live | 17 synthesized cues |
-| Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | ✅ Live | 39 sections; `/admin/calculations` has no `page.tsx`; audit log records `execute` paths and errors only |
+| Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | 🟡 Partial | 39 sections; `/admin/calculations` has no `page.tsx`; the audit log middleware persists nothing (PL-1) |
 | Help center | platform | `/help` | `src/content/help/`, `HelpExplorer.tsx` | 🟡 Partial | See [help.md](help.md) for registered vs unregistered articles |
 | Rate limiting | platform | — | `src/lib/cache/rate-limiter.ts`, `trpc/middleware.ts` | 🟡 Partial | Fewer than 100 of ~960 procedures are limited; no `X-RateLimit-*` headers |
 
@@ -132,6 +132,13 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 ## Known blockers on `rose-garden`
 
+- **Security and economy exploits (code audit 2026-09-30).** The store trusts the client's price; the NationStates import bonus can be
+  farmed; ThinkTank procedures skip authorization; forum accounts can be linked without proof; the admin audit log
+  persists nothing; production deploys have no backups. Details: [code audit §1](../roadmap/code-audit-2026-09-30.md#1-security--economy-exploits);
+  plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits). Fixes are open for review in
+  [#36](https://github.com/algolds/ixstats/pull/36) (Vault), [#38](https://github.com/algolds/ixstats/pull/38) (authorization)
+  and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups); still open: the CSP nonce (PL-2) and
+  per-click match revenue (SL-14).
 - **`audit:arch` (non-blocking in CI) reports 15 source files over their line ceiling** (largest:
   `routers/wikios/templates.ts`, 1,298 lines). Split them or add them to `RELAXED_FILES`.
 - **Rotate the `ixstats_readonly` Postgres password** (plan 325): the old one is in git history since 2026-05-31.
