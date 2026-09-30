@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { OpenBook as BookOpen } from "iconoir-react";
+import { EmptyState } from "~/components/ui/empty-state";
 import type { PassportWiki, WorkPayload } from "../types";
 import { WorkActivityFeed } from "./work/WorkActivityFeed";
 import {
@@ -43,15 +44,12 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
 
   if (total === 0 && !wiki.linked) {
     return (
-      <div className="space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-12 text-center dark:border-white/10 dark:bg-white/[0.02]">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
-          <BookOpen className="h-6 w-6" />
-        </div>
-        <h3 className="text-foreground text-base font-bold">No Published Work Found</h3>
-        <p className="text-muted-foreground mx-auto max-w-md text-xs">
-          @{cleanUsername} has not yet published any WikiOS articles, revisions, language packs, or
-          simulation directives.
-        </p>
+      <div className="bg-surface-secondary border-separator rounded-row border">
+        <EmptyState
+          icon={<BookOpen />}
+          title="No Published Work Found"
+          message={`@${cleanUsername} has not yet published any WikiOS articles, revisions, language packs, or simulation directives.`}
+        />
       </div>
     );
   }

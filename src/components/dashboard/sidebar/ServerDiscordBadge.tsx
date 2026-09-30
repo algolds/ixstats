@@ -26,14 +26,14 @@ export function ServerDiscordBadge() {
       href="https://discord.gg/mgXAEYdqkd"
       target="_blank"
       rel="noopener noreferrer"
-      className="border-border/40 bg-card/60 text-foreground hover:text-foreground hover:border-discord/40 hover:bg-discord/10 inline-flex h-8 w-full items-center justify-between gap-2 rounded-lg border px-3 text-xs font-medium backdrop-blur-md transition-colors"
+      className="border-separator bg-surface text-label hover:text-label hover:border-discord/40 hover:bg-discord/10 rounded-control text-caption inline-flex h-8 w-full items-center justify-between gap-2 border px-3 transition-colors"
     >
       <div className="flex items-center gap-2">
         <DiscordIcon />
         <span>Ixnay Discord</span>
       </div>
-      <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      <span className="text-label-secondary text-footnote inline-flex items-center gap-1">
+        <span className="bg-green h-1.5 w-1.5 rounded-full" />
         Join
       </span>
     </a>

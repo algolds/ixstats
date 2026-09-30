@@ -86,8 +86,8 @@ type scale (`text-display-hero` … `micro-badge`) with **0 uses**.
 | forum | 3.5 | own `--forum-*` tokens + legacy glass |
 | messages, vault+cards | 3 | vault: 113 durations >250ms, 156 `text-white` |
 | halo/nav, labs/onoma, wiki-os | 2.5 | wiki-os: 306 raw buttons, 518 `dark:`; onoma: 418 `text-[Npx]` |
-| thinkpages, passport/settings | 2 | 308 / 259 `dark:`, custom modals |
-| dashboard, achievements | 1–1.5 | no Facet surfaces at all |
+| thinkpages, passport/settings | 2 | 308 / 259 `dark:`, custom modals — *passport + its settings panel converted in Phase 4 (spec §14)* |
+| dashboard, achievements | 1–1.5 | no Facet surfaces at all — *converted in Phase 4 (spec §14)* |
 
 **De-facto house style (what the code actually converged on):** `text-xs` is 64% of all text sizes; `Button size="sm"`
 58% of buttons; `rounded-xl`/`rounded-lg` dominate; `gap-2`/`space-y-4`; amber (2,697) and emerald (1,874) are the most

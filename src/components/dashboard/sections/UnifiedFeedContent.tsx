@@ -8,7 +8,10 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
-import { UnifiedFeedItem, getActivityLabel } from "./UnifiedFeedItem";
+import { UnifiedFeedItem, FeedItemSkeleton, getActivityLabel } from "./UnifiedFeedItem";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
+import { springSmooth } from "~/lib/design/motion";
 
 type FeedTab = "all" | "following" | "community";
 
@@ -254,10 +257,7 @@ export function UnifiedFeedContent({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-5">
-            <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
-            <div className="bg-muted/60 h-3 w-1/2 rounded" />
-          </div>
+          <FeedItemSkeleton key={i} />
         ))}
       </div>
     );
@@ -266,11 +266,13 @@ export function UnifiedFeedContent({
   if (filteredFeed.length === 0) {
     const label = activeTab === "community" ? "community updates" : "activity";
     return (
-      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
-        <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-        <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
-        <p className="text-muted-foreground text-xs">Check back later for updates.</p>
-      </div>
+      <FacetCard>
+        <EmptyState
+          icon={<Rss />}
+          title={`No recent ${label}`}
+          message="Check back later for updates."
+        />
+      </FacetCard>
     );
   }
 
@@ -283,7 +285,7 @@ export function UnifiedFeedContent({
               key={a.id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={springSmooth}
             >
               <ThinkpagesPost
                 post={a.rawPost}
@@ -353,10 +355,7 @@ export function FollowingFeedContent({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-5">
-            <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
-            <div className="bg-muted/60 h-3 w-1/2 rounded" />
-          </div>
+          <FeedItemSkeleton key={i} />
         ))}
       </div>
     );
@@ -366,30 +365,30 @@ export function FollowingFeedContent({
 
   if (followingCount === 0) {
     return (
-      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
-        <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-        <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
-        <p className="text-muted-foreground text-xs">
-          Follow countries or ThinkPages accounts to see their activity here.
-        </p>
-        <Link href={"/countries"}>
-          <Button size="sm" variant="outline" className="mt-3 text-xs">
-            Explore Countries
-          </Button>
-        </Link>
-      </div>
+      <FacetCard>
+        <EmptyState
+          icon={<Users />}
+          title="Not following anyone yet"
+          message="Follow countries or ThinkPages accounts to see their activity here."
+          action={
+            <Button asChild size="sm" variant="bordered">
+              <Link href={"/countries"}>Explore countries</Link>
+            </Button>
+          }
+        />
+      </FacetCard>
     );
   }
 
   if (processedActivities.length === 0) {
     return (
-      <div className="group border-border/50 bg-card/75 hover:border-border/80 relative overflow-hidden rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
-        <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-        <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
-        <p className="text-muted-foreground text-xs">
-          Countries and accounts you follow haven't posted yet.
-        </p>
-      </div>
+      <FacetCard>
+        <EmptyState
+          icon={<Users />}
+          title="No recent activity"
+          message="Countries and accounts you follow haven't posted yet."
+        />
+      </FacetCard>
     );
   }
 
@@ -402,7 +401,7 @@ export function FollowingFeedContent({
               key={a.id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={springSmooth}
             >
               <ThinkpagesPost
                 post={a.rawPost}

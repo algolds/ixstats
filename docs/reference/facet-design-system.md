@@ -239,7 +239,7 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 
 | Test | Enforces |
 |---|---|
-| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport): no `dark:`, no hex classes, no arbitrary z, capped gradients |
 | `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
 | `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
 | `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |

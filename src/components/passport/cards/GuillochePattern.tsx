@@ -27,7 +27,7 @@ export function GuillochePattern({ className, opacity = 0.05 }: GuillochePattern
               fill="none"
               stroke="currentColor"
               strokeWidth="0.75"
-              className="text-foreground"
+              className="text-label"
             />
             <path
               d="M0 30 Q30 55, 60 30 T120 30 M0 15 Q30 40, 60 15 T120 15 M0 45 Q30 70, 60 45 T120 45"
@@ -35,7 +35,7 @@ export function GuillochePattern({ className, opacity = 0.05 }: GuillochePattern
               stroke="currentColor"
               strokeWidth="0.75"
               strokeDasharray="2 2"
-              className="text-foreground"
+              className="text-label"
             />
           </pattern>
           <pattern id="guilloche-rosette" width="240" height="240" patternUnits="userSpaceOnUse">
@@ -46,7 +46,7 @@ export function GuillochePattern({ className, opacity = 0.05 }: GuillochePattern
               fill="none"
               stroke="currentColor"
               strokeWidth="0.5"
-              className="text-foreground"
+              className="text-label"
             />
             <circle
               cx="120"
@@ -56,7 +56,7 @@ export function GuillochePattern({ className, opacity = 0.05 }: GuillochePattern
               stroke="currentColor"
               strokeWidth="0.5"
               strokeDasharray="4 2"
-              className="text-foreground"
+              className="text-label"
             />
             <circle
               cx="120"
@@ -65,7 +65,7 @@ export function GuillochePattern({ className, opacity = 0.05 }: GuillochePattern
               fill="none"
               stroke="currentColor"
               strokeWidth="0.5"
-              className="text-foreground"
+              className="text-label"
             />
           </pattern>
         </defs>

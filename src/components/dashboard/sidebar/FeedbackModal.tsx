@@ -24,7 +24,8 @@ import {
   SystemRestart as Loader2,
   Cpu,
 } from "iconoir-react";
-import { cn } from "~/lib/utils/cn";
+import { Badge } from "~/components/ui/badge";
+import { DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
 interface FeedbackModalProps {
   onClose: () => void;
@@ -83,42 +84,32 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex flex-col gap-1.5 text-left">
-        <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-blue-500/10 p-1.5 text-blue-500 dark:bg-blue-500/20">
-            <MessageSquare className="h-4 w-4" />
-          </div>
-          <span className="text-foreground text-lg leading-none font-bold">Send Feedback</span>
-        </div>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+      <DialogHeader className="text-left">
+        <DialogTitle className="flex items-center gap-2">
+          <MessageSquare aria-hidden className="text-tint size-5 shrink-0" />
+          Send feedback
+        </DialogTitle>
+        <DialogDescription>
           Have a suggestion, bug report, or query? Fill out the form below. Diagnostic logs and
           route metadata are attached automatically to help developers debug.
-        </p>
-      </div>
+        </DialogDescription>
+      </DialogHeader>
 
       <div className="space-y-3">
         {/* Feedback Type */}
         <div className="space-y-1">
-          <Label htmlFor="feedback-type" className="text-muted-foreground text-xs font-semibold">
+          <Label htmlFor="feedback-type" className="text-subhead text-label-secondary">
             Category
           </Label>
           <Select value={feedbackType} onValueChange={setFeedbackType}>
-            <SelectTrigger id="feedback-type" className="bg-background/40 w-full text-xs">
+            <SelectTrigger id="feedback-type" className="w-full">
               <SelectValue placeholder="Select feedback type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bug" className="text-xs">
-                Bug Report
-              </SelectItem>
-              <SelectItem value="suggestion" className="text-xs">
-                Suggestion
-              </SelectItem>
-              <SelectItem value="question" className="text-xs">
-                Question
-              </SelectItem>
-              <SelectItem value="other" className="text-xs">
-                Other
-              </SelectItem>
+              <SelectItem value="bug">Bug report</SelectItem>
+              <SelectItem value="suggestion">Suggestion</SelectItem>
+              <SelectItem value="question">Question</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -126,96 +117,101 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
         {/* Message */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <Label htmlFor="message" className="text-muted-foreground text-xs font-semibold">
+            <Label htmlFor="message" className="text-subhead text-label-secondary">
               Message
             </Label>
-            <span className="text-muted-foreground/75 text-xs">{message.length} / 1000</span>
+            <span className="text-label-secondary text-footnote tabular-nums">
+              {message.length} / 1000
+            </span>
           </div>
           <Textarea
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
             placeholder="What's on your mind? Please describe any bugs or suggestions in detail..."
-            className="border-border bg-background/25 min-h-[100px] resize-none text-xs focus-visible:ring-blue-500/50"
+            className="min-h-[100px] resize-none"
             required
           />
         </div>
 
         {/* Collapsible Diagnostics */}
-        <div className="border-border/40 bg-muted/20 overflow-hidden rounded-lg border">
+        <div className="border-separator rounded-row overflow-hidden border">
           <button
             type="button"
             onClick={() => setShowDiagnostics(!showDiagnostics)}
-            className="hover:bg-muted/30 flex w-full items-center justify-between px-3 py-2 text-left transition-colors"
+            aria-expanded={showDiagnostics}
+            className="hover:bg-fill-4 focus-visible:outline-tint flex w-full items-center justify-between px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
           >
-            <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
-              <Terminal className="h-3.5 w-3.5 text-blue-500" />
-              <span>Diagnostic Metadata Preview ({logs.length} logs)</span>
+            <span className="text-label-secondary text-caption flex items-center gap-1.5">
+              <Terminal aria-hidden className="size-3.5" />
+              <span>Diagnostic metadata preview ({logs.length} logs)</span>
             </span>
             {showDiagnostics ? (
-              <ChevronUp className="text-muted-foreground h-3.5 w-3.5" />
+              <ChevronUp aria-hidden className="text-label-secondary size-3.5" />
             ) : (
-              <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
+              <ChevronDown aria-hidden className="text-label-secondary size-3.5" />
             )}
           </button>
 
           {showDiagnostics && (
-            <div className="border-border/30 bg-background/30 max-h-[220px] space-y-2 overflow-y-auto border-t p-3 text-xs">
+            <div className="border-separator bg-surface-secondary text-footnote max-h-[220px] space-y-2 overflow-y-auto border-t p-3">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="border-border/20 bg-muted/40 flex flex-col gap-0.5 rounded-md border p-1.5">
-                  <span className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
-                    <Globe className="h-2.5 w-2.5" />
+                <div className="bg-surface rounded-control-sm flex flex-col gap-0.5 p-2">
+                  <span className="text-label-secondary text-eyebrow flex items-center gap-1">
+                    <Globe aria-hidden className="size-3" />
                     Active URL
                   </span>
-                  <span className="text-foreground truncate font-mono text-xs" title={url}>
+                  <span className="text-label text-footnote truncate font-mono" title={url}>
                     {url || "Retrieving..."}
                   </span>
                 </div>
-                <div className="border-border/20 bg-muted/40 flex flex-col gap-0.5 rounded-md border p-1.5">
-                  <span className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
-                    <Cpu className="h-2.5 w-2.5" />
-                    Browser Agent
+                <div className="bg-surface rounded-control-sm flex flex-col gap-0.5 p-2">
+                  <span className="text-label-secondary text-eyebrow flex items-center gap-1">
+                    <Cpu aria-hidden className="size-3" />
+                    Browser agent
                   </span>
-                  <span className="text-foreground truncate font-mono text-xs" title={userAgent}>
+                  <span className="text-label text-footnote truncate font-mono" title={userAgent}>
                     {userAgent || "Retrieving..."}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
-                  Console Log Stream (Last 50 Events)
+                <span className="text-label-secondary text-subhead block">
+                  Console log stream (last 50 events)
                 </span>
                 {logs.length === 0 ? (
-                  <div className="border-border/30 bg-muted/10 flex items-center gap-1 rounded-md border border-dashed p-2 text-center">
-                    <Info className="text-muted-foreground/60 h-3 w-3" />
-                    <span className="text-muted-foreground/60 text-xs">
+                  <div className="bg-surface rounded-control-sm flex items-center gap-1 p-2">
+                    <Info aria-hidden className="text-label-secondary size-3.5" />
+                    <span className="text-label-secondary text-footnote">
                       No console messages captured yet.
                     </span>
                   </div>
                 ) : (
-                  <div className="border-border/30 max-h-[110px] space-y-1 overflow-y-auto rounded-md border bg-slate-950/80 p-2 font-mono text-xs leading-relaxed">
+                  <div className="bg-surface rounded-control-sm text-footnote max-h-[110px] space-y-1 overflow-y-auto p-2 font-mono">
                     {logs.map((log, index) => (
                       <div
                         key={index}
-                        className="flex items-start gap-1.5 border-b border-white/5 pb-0.5 last:border-b-0"
+                        className="border-separator flex items-start gap-1.5 border-b pb-0.5 last:border-b-0"
                       >
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-sm px-1 text-xs font-bold uppercase select-none",
+                        <Badge
+                          variant={
                             log.type === "error"
-                              ? "border border-red-500/30 bg-red-500/20 text-red-400"
+                              ? "destructive"
                               : log.type === "warn"
-                                ? "border border-amber-500/30 bg-amber-500/20 text-amber-400"
-                                : "border border-blue-500/30 bg-blue-500/20 text-blue-400"
-                          )}
+                                ? "caution"
+                                : "info"
+                          }
+                          className="select-none"
                         >
                           {log.type}
-                        </span>
-                        <span className="text-muted-foreground shrink-0 text-xs select-none">
+                        </Badge>
+                        <span className="text-label-secondary text-footnote shrink-0 tabular-nums select-none">
                           {new Date(log.timestamp).toLocaleTimeString()}
                         </span>
-                        <span className="break-all text-slate-200 select-all">{log.message}</span>
+                        <span className="text-label-secondary break-all select-all">
+                          {log.message}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -226,28 +222,18 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
         </div>
       </div>
 
-      <div className="border-border/40 flex items-center justify-end gap-2 border-t pt-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-          disabled={submitMutation.isPending}
-          className="border-border h-8 px-3 text-xs shadow-xs"
-        >
+      <div className="flex items-center justify-end gap-2 pt-2">
+        <Button type="button" variant="gray" onClick={onClose} disabled={submitMutation.isPending}>
           Cancel
         </Button>
-        <Button
-          type="submit"
-          disabled={submitMutation.isPending}
-          className="h-8 border-0 bg-blue-600 px-4 text-xs text-white transition-colors hover:bg-blue-500"
-        >
+        <Button type="submit" variant="filled" disabled={submitMutation.isPending}>
           {submitMutation.isPending ? (
             <>
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 aria-hidden className="animate-spin" />
               Submitting...
             </>
           ) : (
-            "Submit Feedback"
+            "Submit feedback"
           )}
         </Button>
       </div>

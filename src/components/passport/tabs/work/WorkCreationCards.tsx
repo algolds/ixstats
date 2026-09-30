@@ -11,14 +11,17 @@ import {
   Globe,
   Trophy,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
 import type { WorkPayload } from "../../types";
 
-const CARD_CLASS =
-  "flex flex-col justify-between space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/15 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20";
+/** An inset work card inside the passport (the passport itself is the opaque card). */
+const CARD_CLASS = "bg-surface-secondary rounded-row flex flex-col justify-between space-y-3 p-4";
 
-const CARD_FOOTER =
-  "flex items-center justify-between border-t border-black/6 pt-3 dark:border-white/8";
+const CARD_FOOTER = "border-separator flex items-center justify-between border-t pt-3";
+
+/** Trailing card action link (tint, never colour alone: text + arrow). */
+const CARD_LINK =
+  "text-tint text-footnote rounded-control-sm focus-visible:outline-tint inline-flex cursor-pointer items-center gap-1 font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2";
 
 function formatDay(date: Date | string) {
   return new Date(date).toLocaleDateString("en-US", {
@@ -36,54 +39,48 @@ export const WorkArticleCards = React.memo(function WorkArticleCards({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider uppercase">
-          <BookOpen className="h-3.5 w-3.5 text-blue-500" />
-          <span>AUTHORED WIKI PAGES ({articles.length})</span>
+        <h4 className="text-subhead text-label-secondary flex items-center gap-1.5">
+          <BookOpen aria-hidden className="size-4" />
+          <span>
+            Authored wiki pages <span className="tabular-nums">({articles.length})</span>
+          </span>
         </h4>
-        <Link
-          href="/wiki"
-          data-cuelume-press="soft"
-          className="flex items-center gap-0.5 font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
-        >
+        <Link href="/wiki" className={CARD_LINK}>
           <span>Explore WikiOS</span>
-          <ArrowUpRight className="h-3 w-3" />
+          <ArrowUpRight aria-hidden className="size-3.5" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {articles.map((item) => (
-          <FacetCard key={item.id} depth={1} interactive="hover" className={CARD_CLASS}>
+          <article key={item.id} className={CARD_CLASS}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
-                  <FileText className="h-3 w-3" />
+                <Badge variant="info">
+                  <FileText aria-hidden />
                   Authored Page
-                </span>
-                <span className="text-muted-foreground font-mono text-xs">
+                </Badge>
+                <span className="text-label-secondary text-footnote tabular-nums">
                   {formatDay(item.updatedAt || item.createdAt)}
                 </span>
               </div>
               <div>
-                <h3 className="text-foreground line-clamp-1 text-base font-bold tracking-tight">
-                  {item.title}
-                </h3>
+                <h3 className="text-label text-headline line-clamp-1">{item.title}</h3>
                 {item.summary && (
-                  <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{item.summary}</p>
+                  <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
+                    {item.summary}
+                  </p>
                 )}
               </div>
             </div>
             <div className={CARD_FOOTER}>
-              <span className="text-muted-foreground font-mono text-xs uppercase">WikiOS</span>
-              <Link
-                href={`/wiki/${encodeURIComponent(item.title)}`}
-                data-cuelume-press="soft"
-                className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
-              >
+              <span className="text-label-secondary text-footnote">WikiOS</span>
+              <Link href={`/wiki/${encodeURIComponent(item.title)}`} className={CARD_LINK}>
                 <span>Read Article</span>
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>
-          </FacetCard>
+          </article>
         ))}
       </div>
     </div>
@@ -107,112 +104,98 @@ export const WorkCreationCards = React.memo(function WorkCreationCards({
   return (
     <div className="space-y-3 pt-2">
       {showHeading && (
-        <h4 className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
-          CANONICAL REALM & SYSTEM CREATIONS
-        </h4>
+        <h4 className="text-subhead text-label-secondary">Canonical realm and system creations</h4>
       )}
 
-      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {conlangs.map((item) => (
-          <FacetCard key={item.id} depth={1} interactive="hover" className={CARD_CLASS}>
+          <article key={item.id} className={CARD_CLASS}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 rounded-md border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  <Globe className="h-3 w-3" />
+                <Badge variant="tinted">
+                  <Globe aria-hidden />
                   Language Pack
-                </span>
+                </Badge>
                 {item.culturalFamily && (
-                  <span className="text-muted-foreground font-mono text-xs">
-                    {item.culturalFamily}
-                  </span>
+                  <span className="text-label-secondary text-footnote">{item.culturalFamily}</span>
                 )}
               </div>
               <div>
-                <h3 className="text-foreground text-base font-bold tracking-tight">{item.name}</h3>
+                <h3 className="text-label text-headline">{item.name}</h3>
                 {item.description && (
-                  <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                  <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
                     {item.description}
                   </p>
                 )}
               </div>
             </div>
             <div className={CARD_FOOTER}>
-              <span className="text-muted-foreground font-mono text-xs uppercase">Onoma</span>
-              <Link
-                href={`/onoma/pack/${item.slug || item.id}`}
-                data-cuelume-press="soft"
-                className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
-              >
+              <span className="text-label-secondary text-footnote">Onoma</span>
+              <Link href={`/onoma/pack/${item.slug || item.id}`} className={CARD_LINK}>
                 <span>View Pack</span>
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>
-          </FacetCard>
+          </article>
         ))}
 
         {directives.map((item) => (
-          <FacetCard key={item.id} depth={1} interactive="hover" className={CARD_CLASS}>
+          <article key={item.id} className={CARD_CLASS}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Flash className="h-3 w-3" />
+                <Badge variant="caution">
+                  <Flash aria-hidden />
                   Directive
-                </span>
-                <span className="text-muted-foreground font-mono text-xs uppercase">
-                  {item.tier} Tier
-                </span>
+                </Badge>
+                <span className="text-label-secondary text-footnote">{item.tier} Tier</span>
               </div>
               <div>
-                <h3 className="text-foreground text-sm font-bold tracking-tight">{item.goal}</h3>
+                <h3 className="text-label text-headline">{item.goal}</h3>
                 {item.summary && (
-                  <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{item.summary}</p>
+                  <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
+                    {item.summary}
+                  </p>
                 )}
               </div>
             </div>
             <div className={CARD_FOOTER}>
-              <span className="text-muted-foreground font-mono text-xs capitalize">
+              <span className="text-label-secondary text-footnote capitalize">
                 {item.category || "Governance"}
               </span>
-              <span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                {item.status}
-              </span>
+              <Badge variant="success">{item.status}</Badge>
             </div>
-          </FacetCard>
+          </article>
         ))}
 
         {sportTeams.map((item) => (
-          <FacetCard key={item.id} depth={1} interactive="hover" className={CARD_CLASS}>
+          <article key={item.id} className={CARD_CLASS}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  <Trophy className="h-3 w-3" />
+                <Badge variant="success">
+                  <Trophy aria-hidden />
                   Athletic Club
-                </span>
+                </Badge>
                 {item.city && (
-                  <span className="text-muted-foreground font-mono text-xs">{item.city}</span>
+                  <span className="text-label-secondary text-footnote">{item.city}</span>
                 )}
               </div>
               <div>
-                <h3 className="text-foreground text-base font-bold tracking-tight">{item.name}</h3>
+                <h3 className="text-label text-headline">{item.name}</h3>
                 {item.shortName && (
-                  <p className="text-muted-foreground mt-0.5 font-mono text-xs">
+                  <p className="text-label-secondary text-footnote mt-0.5">
                     Abbreviation: {item.shortName}
                   </p>
                 )}
               </div>
             </div>
             <div className={CARD_FOOTER}>
-              <span className="text-muted-foreground font-mono text-xs uppercase">MyLeague</span>
-              <Link
-                href="/sports"
-                data-cuelume-press="soft"
-                className="inline-flex cursor-pointer items-center gap-1 font-mono text-xs font-bold text-emerald-600 hover:underline dark:text-emerald-400"
-              >
+              <span className="text-label-secondary text-footnote">MyLeague</span>
+              <Link href="/sports" className={CARD_LINK}>
                 <span>View Club</span>
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>
-          </FacetCard>
+          </article>
         ))}
       </div>
     </div>

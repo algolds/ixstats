@@ -11,7 +11,7 @@ import {
   SystemRestart as Loader2,
   Heart,
   Refresh as Repeat2,
-  ShareAndroid as ShareAndroid,
+  ShareAndroid,
   Check,
   Trash,
   Xmark as X,
@@ -31,6 +31,14 @@ import {
 } from "~/lib/wiki-os/transformers/image-url";
 import { cn } from "~/lib/utils";
 import { RepostModal } from "~/components/thinkpages/RepostModal";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { springSmooth, tweenExit } from "~/lib/design/motion";
+
+/** A toolbar action on a feed card (plain, pill-shaped, neutral until pressed). */
+const FEED_ACTION =
+  "text-label-secondary hover:bg-fill-4 hover:text-label text-caption duration-fast ease-out-facet focus-visible:outline-tint inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
 export { parseWikitextToHtml };
 
@@ -312,29 +320,29 @@ export function InlineWikiArticlePreview({
   const marginHref = `${titleToWikiOSRoute(cleanTitle)}?modal=margin`;
 
   return (
-    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-wiki/20 bg-wiki/[0.04] p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-wiki/35 hover:bg-wiki/[0.07] sm:p-4 dark:border-wiki/30 dark:bg-wiki/[0.04] dark:hover:border-wiki/50 dark:hover:bg-wiki/[0.08]">
-      {/* Content & Lead Image Row */}
-      <div className="flex items-start gap-3.5">
+    <div className="bg-surface-secondary rounded-row mt-2 p-3 sm:p-4">
+      {/* Content & lead image */}
+      <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           {formattedHtml && (
             <WikiHtmlContent
               html={formattedHtml}
-              className="text-foreground/85 group-hover/preview:text-foreground line-clamp-3 text-xs leading-relaxed font-normal tracking-tight sm:text-[13px] [&_a]:transition-colors"
+              className="text-label text-callout line-clamp-3 [&_a]:transition-colors"
             />
           )}
         </div>
 
-        {/* Lead Image Thumbnail */}
+        {/* Lead image thumbnail */}
         {leadImage && (
           <Link
             href={wikiHref}
-            className="border-border/40 relative h-20 w-28 shrink-0 overflow-hidden rounded-xl border bg-black/5 shadow-xs transition-transform duration-200 group-hover/preview:scale-[1.02] active:scale-95 sm:h-22 sm:w-32 dark:border-white/10 dark:bg-white/5"
+            className="border-separator bg-fill-4 rounded-row focus-visible:outline-tint relative h-20 w-28 shrink-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-22 sm:w-32"
             title={`View ${cleanTitle}`}
           >
             <img
               src={leadImage}
               alt={cleanTitle}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover/preview:scale-105"
+              className="h-full w-full object-cover"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = "none";
               }}
@@ -343,82 +351,68 @@ export function InlineWikiArticlePreview({
         )}
       </div>
 
-      {/* ── Action Toolbar Row ── */}
-      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-wiki/15 pt-2.5 dark:border-wiki/25">
+      {/* ── Action toolbar ── */}
+      <div className="border-separator mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
         <div className="flex flex-wrap items-center gap-1">
-          {/* 1. Margin Note / Comment Button */}
+          {/* Margin note */}
           <button
             type="button"
             onClick={() => setIsMarginOpen((v) => !v)}
-            className={cn(
-              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
-              isMarginOpen
-                ? "bg-yellow-400/20 font-semibold text-yellow-600 ring-1 ring-yellow-400/40 dark:text-yellow-400"
-                : "text-muted-foreground hover:bg-yellow-400/15 hover:text-yellow-600 dark:hover:text-yellow-400"
-            )}
+            aria-pressed={isMarginOpen}
+            className={cn(FEED_ACTION, isMarginOpen && "bg-tint-fill text-tint")}
             title="Leave a note or comment on Margin"
           >
-            <Edit className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+            <Edit aria-hidden className="size-3.5" />
             <span>Margin</span>
             {marginThreadsCount > 0 && (
-              <span className="py-0.2 rounded-full bg-yellow-400/25 px-1.5 text-xs font-bold text-yellow-700 dark:text-yellow-300">
+              <Badge variant="tinted" className="tabular-nums">
                 {marginThreadsCount}
-              </span>
+              </Badge>
             )}
           </button>
 
-          {/* 2. Repost to ThinkPages Feed */}
+          {/* Repost to ThinkPages */}
           <button
             type="button"
             onClick={() => setIsRepostOpen(true)}
-            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-emerald-500/10 hover:text-emerald-500 active:scale-95"
+            className={FEED_ACTION}
             title="Repost to ThinkPages feed"
           >
-            <Repeat2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+            <Repeat2 aria-hidden className="size-3.5" />
             <span>Repost</span>
           </button>
 
-          {/* 3. Like & Emoji Reaction Button */}
+          {/* Like & emoji reaction */}
           <Popover open={isReactionOpen} onOpenChange={setIsReactionOpen}>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 onClick={handleToggleLike}
-                className={cn(
-                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
-                  hasLiked
-                    ? "bg-red-500/15 font-semibold text-red-500"
-                    : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
-                )}
+                aria-pressed={hasLiked}
+                className={cn(FEED_ACTION, hasLiked && "bg-red/10 text-red")}
                 title="React or like this article"
               >
                 {selectedEmoji ? (
-                  <span className="text-xs transition-transform group-hover:scale-125">
-                    {selectedEmoji}
-                  </span>
+                  <span className="text-footnote">{selectedEmoji}</span>
                 ) : (
-                  <Heart
-                    className={cn(
-                      "h-3.5 w-3.5 transition-transform group-hover:scale-110",
-                      hasLiked && "fill-red-500 text-red-500"
-                    )}
-                  />
+                  <Heart aria-hidden className={cn("size-3.5", hasLiked && "fill-current")} />
                 )}
-                {localLikes > 0 && <span>{localLikes}</span>}
+                {localLikes > 0 ? (
+                  <span className="tabular-nums">{localLikes}</span>
+                ) : (
+                  <span className="sr-only">Like</span>
+                )}
               </button>
             </PopoverTrigger>
-            <PopoverContent
-              side="top"
-              align="start"
-              className="border-border/80 bg-popover/95 z-[200000] w-auto rounded-full border p-1.5 shadow-2xl backdrop-blur-xl"
-            >
-              <div className="flex items-center gap-1 px-1">
+            <PopoverContent side="top" align="start" className="w-auto rounded-full p-1">
+              <div className="flex items-center gap-1">
                 {QUICK_REACTIONS.map((emoji) => (
                   <button
                     key={emoji}
                     type="button"
                     onClick={() => handleSelectReactionEmoji(emoji)}
-                    className="hover:bg-accent/50 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:scale-125 active:scale-95"
+                    aria-label={`React ${emoji}`}
+                    className="hover:bg-fill-3 text-body focus-visible:outline-tint flex size-8 cursor-pointer items-center justify-center rounded-full transition-colors select-none focus-visible:outline-2"
                   >
                     {emoji}
                   </button>
@@ -427,7 +421,7 @@ export function InlineWikiArticlePreview({
             </PopoverContent>
           </Popover>
 
-          {/* 4. Save to Stash Popover Button */}
+          {/* Save to stash */}
           <Popover open={isStashPopoverOpen} onOpenChange={setIsStashPopoverOpen}>
             <PopoverTrigger asChild>
               <button
@@ -441,45 +435,37 @@ export function InlineWikiArticlePreview({
                   if (hoverStashTimer.current) clearTimeout(hoverStashTimer.current);
                 }}
                 disabled={isPendingStash}
-                className={cn(
-                  "group inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
-                  isStashed
-                    ? "bg-amber-500/15 font-semibold text-amber-600 dark:text-amber-400"
-                    : "text-muted-foreground hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
-                )}
+                aria-pressed={isStashed}
+                className={cn(FEED_ACTION, isStashed && "bg-tint-fill text-tint")}
                 title={isStashed ? "Manage stashes" : "Save to Stash"}
               >
                 {isPendingStash ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 aria-hidden className="size-3.5 animate-spin" />
                 ) : isStashed ? (
-                  <BookmarkCheck className="h-3.5 w-3.5 text-amber-500 transition-transform group-hover:scale-110" />
+                  <BookmarkCheck aria-hidden className="size-3.5 fill-current" />
                 ) : (
-                  <Bookmark className="transition-hover h-3.5 w-3.5 group-hover:scale-110" />
+                  <Bookmark aria-hidden className="size-3.5" />
                 )}
                 <span>{isStashed ? "Saved" : "Save to Stash"}</span>
               </button>
             </PopoverTrigger>
-            <PopoverContent
-              side="top"
-              align="start"
-              className="border-border/80 bg-popover/95 z-[200000] w-64 rounded-2xl border p-3 shadow-2xl backdrop-blur-xl"
-            >
-              <div className="space-y-2.5 text-xs">
-                <div className="border-border/50 flex items-center justify-between border-b pb-2">
-                  <span className="text-foreground flex items-center gap-1.5 font-semibold">
-                    <Bookmark className="h-3.5 w-3.5 text-amber-500" />
-                    Lore Stash
+            <PopoverContent side="top" align="start" className="w-64 p-3">
+              <div className="text-footnote space-y-2">
+                <div className="border-separator flex items-center justify-between border-b pb-2">
+                  <span className="text-label text-headline flex items-center gap-1.5">
+                    <Bookmark aria-hidden className="text-label-secondary size-4" />
+                    Lore stash
                   </span>
                   <Link
                     href="/stashes"
-                    className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+                    className="text-tint text-footnote underline-offset-2 hover:underline"
                   >
-                    View all →
+                    View all
                   </Link>
                 </div>
 
                 {userStashes.length === 0 ? (
-                  <p className="text-muted-foreground py-1 text-xs">
+                  <p className="text-label-secondary text-footnote py-1">
                     No custom stashes found. Click Save to Stash to create your default stash.
                   </p>
                 ) : (
@@ -491,21 +477,21 @@ export function InlineWikiArticlePreview({
                           key={stash.id}
                           type="button"
                           onClick={() => handleToggleSpecificStash(stash.id)}
+                          aria-pressed={active}
                           className={cn(
-                            "flex w-full cursor-pointer items-center justify-between rounded-xl px-2 py-1.5 text-left transition-colors",
-                            active
-                              ? "bg-amber-500/15 font-medium text-amber-600 dark:text-amber-300"
-                              : "hover:bg-accent/40 text-foreground"
+                            "rounded-row text-body flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left transition-colors",
+                            active ? "bg-tint-fill text-tint" : "hover:bg-fill-4 text-label"
                           )}
                         >
                           <div className="flex min-w-0 items-center gap-2">
                             <span
-                              className="h-2.5 w-2.5 shrink-0 rounded-full"
+                              aria-hidden
+                              className="size-2.5 shrink-0 rounded-full"
                               style={{ backgroundColor: stash.color || "var(--color-info)" }}
                             />
-                            <span className="truncate text-xs">{stash.name}</span>
+                            <span className="truncate">{stash.name}</span>
                           </div>
-                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-amber-500" />}
+                          {active && <Check aria-hidden className="size-4 shrink-0" />}
                         </button>
                       );
                     })}
@@ -513,109 +499,115 @@ export function InlineWikiArticlePreview({
                 )}
 
                 {isStashed && (
-                  <button
+                  <Button
                     type="button"
+                    variant="plain"
+                    size="sm"
+                    className="text-destructive w-full justify-start"
                     onClick={() => {
                       unstashMutation.mutate({ pageTitle: cleanTitle });
                       setIsStashPopoverOpen(false);
                     }}
-                    className="border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/15 flex w-full cursor-pointer items-center gap-1.5 rounded-xl border px-2 py-1.5 text-xs font-medium transition-colors"
                   >
-                    <Trash className="h-3 w-3" />
+                    <Trash aria-hidden />
                     <span>Remove from all stashes</span>
-                  </button>
+                  </Button>
                 )}
               </div>
             </PopoverContent>
           </Popover>
 
-          {/* 5. ShareAndroid Button */}
+          {/* Share */}
           <button
             type="button"
             onClick={handleShare}
-            className="group text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-cyan-500/10 hover:text-cyan-500 active:scale-95"
+            className={FEED_ACTION}
             title="Share article link"
           >
             {copied ? (
-              <Check className="h-3.5 w-3.5 text-cyan-500" />
+              <Check aria-hidden className="text-success size-3.5" />
             ) : (
-              <ShareAndroid className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+              <ShareAndroid aria-hidden className="size-3.5" />
             )}
-            <span>{copied ? "Copied!" : "ShareAndroid"}</span>
+            <span>{copied ? "Copied" : "Share"}</span>
           </button>
         </div>
 
-        {/* Open in Wiki Link */}
-        <Link
-          href={wikiHref}
-          className="inline-flex items-center gap-1 rounded-full bg-wiki/10 px-3 py-1 text-xs font-semibold text-wiki transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-wiki/20 hover:text-wiki-hover active:scale-95"
-        >
-          <span>Open in Wiki</span>
-          <ExternalLink className="h-3 w-3" />
-        </Link>
+        {/* Open in wiki */}
+        <Button asChild variant="tinted" size="sm" className="rounded-full">
+          <Link href={wikiHref}>
+            <span>Open in Wiki</span>
+            <ExternalLink aria-hidden />
+          </Link>
+        </Button>
       </div>
 
-      {/* ── Inline Margin Note Composer ── */}
+      {/* ── Inline margin note composer ── */}
       <AnimatePresence>
         {isMarginOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-3 overflow-hidden border-t border-yellow-400/20 pt-3"
+            exit={{ opacity: 0, height: 0, transition: tweenExit }}
+            transition={springSmooth}
+            className="overflow-hidden"
           >
             <form
               onSubmit={handleSubmitMarginNote}
-              className="space-y-2 rounded-xl border border-yellow-400/20 bg-yellow-400/[0.04] p-3"
+              className="bg-surface-secondary rounded-row mt-3 space-y-2 p-3"
             >
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-yellow-600 dark:text-yellow-400">
-                  <Edit className="h-3.5 w-3.5" />
-                  Add Margin Note / Discussion
+                <span className="text-subhead text-label flex items-center gap-1.5">
+                  <Edit aria-hidden className="text-label-secondary size-4" />
+                  Add margin note or discussion
                 </span>
                 <div className="flex items-center gap-2">
                   <Link
                     href={marginHref}
-                    className="text-muted-foreground text-xs transition-colors hover:text-yellow-500"
+                    className="text-tint text-footnote underline-offset-2 hover:underline"
                   >
-                    Open Margin reader →
+                    Open Margin reader
                   </Link>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setIsMarginOpen(false)}
-                    className="text-muted-foreground hover:bg-accent/40 hover:text-foreground cursor-pointer rounded-md p-0.5"
+                    aria-label="Close margin note"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                    <X />
+                  </Button>
                 </div>
               </div>
 
-              <textarea
+              <Textarea
                 value={marginNote}
                 onChange={(e) => setMarginNote(e.target.value)}
                 placeholder={`Leave a note or start a discussion on ${cleanTitle}...`}
+                aria-label="Margin note"
                 rows={2}
                 autoFocus
-                className="border-border/50 bg-background/80 text-foreground placeholder:text-muted-foreground/60 w-full resize-none rounded-lg border p-2 text-xs focus:border-yellow-400/50 focus:ring-1 focus:ring-yellow-400/30 focus:outline-hidden"
+                className="resize-none"
               />
 
-              <div className="flex items-center justify-end gap-1.5 pt-1">
-                <button
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <Button
                   type="button"
+                  variant="gray"
+                  size="sm"
                   onClick={() => setIsMarginOpen(false)}
-                  className="text-muted-foreground hover:bg-accent/40 cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="filled"
+                  size="sm"
                   disabled={!marginNote.trim() || isSubmittingNote}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold text-stone-950 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-yellow-400 active:scale-95 disabled:opacity-50"
                 >
-                  {isSubmittingNote ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                  <span>Post Note</span>
-                </button>
+                  {isSubmittingNote ? <Loader2 aria-hidden className="animate-spin" /> : null}
+                  <span>Post note</span>
+                </Button>
               </div>
             </form>
           </motion.div>

@@ -27,6 +27,9 @@ import { PreText } from "~/components/ui/pretext";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { StandingBands } from "~/components/mycountry/shell/StandingBands";
 
+const SNAPSHOT_BUTTON =
+  "group hover:bg-fill-4 rounded-control duration-fast ease-out-facet focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2 px-2 py-1 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
+
 // Helper UI primitives
 export function StatPill({
   icon: Icon,
@@ -40,11 +43,11 @@ export function StatPill({
   color: string;
 }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5">
-      <Icon className={cn("h-3 w-3 shrink-0", color)} />
+    <div className="bg-fill-4 rounded-control flex items-center gap-2 px-2 py-1.5">
+      <Icon aria-hidden className={cn("size-3.5 shrink-0", color)} />
       <div className="min-w-0">
-        <p className="text-muted-foreground/60 text-xs tracking-wider uppercase">{label}</p>
-        <p className="text-foreground text-xs font-bold">{value}</p>
+        <p className="text-label-secondary text-eyebrow">{label}</p>
+        <p className="text-label text-caption tabular-nums">{value}</p>
       </div>
     </div>
   );
@@ -53,7 +56,7 @@ export function StatPill({
 export function MiniBar({
   value,
   max = 100,
-  color = "bg-amber-500",
+  color = "bg-yellow",
 }: {
   value: number;
   max?: number;
@@ -61,7 +64,7 @@ export function MiniBar({
 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
-    <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+    <div className="bg-fill-3 h-1 w-full overflow-hidden rounded-full">
       <div className={cn("h-full rounded-full", color)} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -70,10 +73,10 @@ export function MiniBar({
 export function IndicatorRow({
   label,
   value,
-  valueClass = "text-foreground",
+  valueClass = "text-label",
   barValue,
   barMax = 100,
-  barColor = "bg-amber-500",
+  barColor = "bg-yellow",
 }: {
   label: string;
   value: string;
@@ -84,9 +87,9 @@ export function IndicatorRow({
 }) {
   return (
     <div className="space-y-0.5">
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="text-muted-foreground/70 truncate">{label}</span>
-        <span className={cn("shrink-0 font-bold", valueClass)}>{value}</span>
+      <div className="text-footnote flex items-center justify-between gap-2">
+        <span className="text-label-secondary truncate">{label}</span>
+        <span className={cn("shrink-0 font-medium tabular-nums", valueClass)}>{value}</span>
       </div>
       {barValue != null && <MiniBar value={barValue} max={barMax} color={barColor} />}
     </div>
@@ -95,10 +98,8 @@ export function IndicatorRow({
 
 export function DetailList({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="mt-1.5 flex min-h-0 flex-1 flex-col gap-1 rounded-lg bg-white/[0.02] p-2">
-      <p className="text-muted-foreground/50 text-xs font-semibold tracking-wider uppercase">
-        {title}
-      </p>
+    <div className="bg-fill-4 rounded-control mt-2 flex min-h-0 flex-1 flex-col gap-1 p-2">
+      <p className="text-subhead text-label-secondary">{title}</p>
       <div className="flex min-h-0 flex-1 flex-col justify-center gap-1.5">{children}</div>
     </div>
   );
@@ -144,28 +145,28 @@ export interface HeroSnapshotData {
 }
 
 function getQualitativeRating(score: number): { label: string; color: string } {
-  if (score >= 80) return { label: "Optimal", color: "text-emerald-600 dark:text-emerald-400" };
-  if (score >= 65) return { label: "Strong", color: "text-emerald-600 dark:text-emerald-400" };
-  if (score >= 45) return { label: "Stable", color: "text-cyan-600 dark:text-cyan-400" };
-  if (score >= 30) return { label: "Moderate", color: "text-amber-600 dark:text-amber-400" };
-  return { label: "Vulnerable", color: "text-red-600 dark:text-red-400" };
+  if (score >= 80) return { label: "Optimal", color: "text-success" };
+  if (score >= 65) return { label: "Strong", color: "text-success" };
+  if (score >= 45) return { label: "Stable", color: "text-teal" };
+  if (score >= 30) return { label: "Moderate", color: "text-caution" };
+  return { label: "Vulnerable", color: "text-destructive" };
 }
 
 // oxlint-disable-next-line eslint/no-unused-vars
 function getDiplomaticStance(strength: number): { label: string; color: string } {
-  if (strength >= 80) return { label: "Ironclad Alliance", color: "text-cyan-400" };
-  if (strength >= 65) return { label: "Strong Ties", color: "text-emerald-400" };
-  if (strength >= 45) return { label: "Warm Relations", color: "text-cyan-400" };
-  if (strength >= 25) return { label: "Neutral Stance", color: "text-blue-400" };
-  return { label: "Strained Ties", color: "text-amber-400" };
+  if (strength >= 80) return { label: "Ironclad Alliance", color: "text-teal" };
+  if (strength >= 65) return { label: "Strong Ties", color: "text-green" };
+  if (strength >= 45) return { label: "Warm Relations", color: "text-teal" };
+  if (strength >= 25) return { label: "Neutral Stance", color: "text-blue" };
+  return { label: "Strained Ties", color: "text-yellow" };
 }
 
 // oxlint-disable-next-line eslint/no-unused-vars
 function getForceReadinessLabel(readiness: number): { label: string; color: string } {
-  if (readiness >= 75) return { label: "Combat Ready", color: "text-emerald-400" };
-  if (readiness >= 50) return { label: "Operational", color: "text-cyan-400" };
-  if (readiness >= 30) return { label: "Refitting", color: "text-amber-400" };
-  return { label: "Standby", color: "text-red-400" };
+  if (readiness >= 75) return { label: "Combat Ready", color: "text-green" };
+  if (readiness >= 50) return { label: "Operational", color: "text-teal" };
+  if (readiness >= 30) return { label: "Refitting", color: "text-yellow" };
+  return { label: "Standby", color: "text-red" };
 }
 
 function HeroSnapshotPanelsComponent({
@@ -181,10 +182,10 @@ function HeroSnapshotPanelsComponent({
   onOpenModal: (modal: "vitality" | "gdp" | "population" | "government") => void;
 }) {
   const getMetricColor = (val: number) => {
-    if (val < 35) return "#ef4444";
-    if (val < 60) return "#f97316";
-    if (val < 80) return "#eab308";
-    return "#10b981";
+    if (val < 35) return "var(--color-red)";
+    if (val < 60) return "var(--color-orange)";
+    if (val < 80) return "var(--color-yellow)";
+    return "var(--color-green)";
   };
 
   const dashboardData = (api as any).mycountry?.getCountryDashboard?.useQuery?.(
@@ -256,117 +257,101 @@ function HeroSnapshotPanelsComponent({
     : [];
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/15 bg-white/[0.04] shadow-sm backdrop-blur-md">
-      {/* Section 1: Prominent Telemetry Header Bar */}
-      <div className="grid grid-cols-3 gap-1.5 bg-white/[0.04] p-2.5">
-        <div
+    <div className="bg-surface rounded-row flex h-full flex-col overflow-hidden">
+      {/* Section 1: headline figures */}
+      <div className="divide-separator grid grid-cols-3 divide-x p-2">
+        <button
+          type="button"
           onClick={() => onOpenModal("population")}
-          className="group/pop flex min-w-0 cursor-pointer items-center gap-2"
-          title="Click for Population Breakdown"
+          className={SNAPSHOT_BUTTON}
+          title="Population breakdown"
         >
-          <Users className="h-4 w-4 shrink-0 text-blue-600 transition-transform group-hover/pop:scale-110 dark:text-blue-400" />
-          <div className="min-w-0">
-            <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
-              Pop
-            </p>
-            <p className="text-foreground truncate text-xs font-bold tracking-tight tabular-nums group-hover/pop:underline sm:text-sm">
+          <Users aria-hidden className="text-label-secondary size-4 shrink-0" />
+          <span className="min-w-0">
+            <span className="text-label-secondary text-eyebrow block">Pop</span>
+            <span className="text-label text-caption sm:text-headline block truncate tabular-nums group-hover:underline">
               {pop}
-            </p>
-          </div>
-        </div>
+            </span>
+          </span>
+        </button>
 
-        <div
+        <button
+          type="button"
           onClick={() => onOpenModal("gdp")}
-          className="group/gdp flex min-w-0 cursor-pointer items-center gap-2 border-l border-white/10 pl-2"
-          title="Click for GDP Breakdown"
+          className={SNAPSHOT_BUTTON}
+          title="GDP breakdown"
         >
-          <Coins className="h-4 w-4 shrink-0 text-emerald-600 transition-transform group-hover/gdp:scale-110 dark:text-emerald-400" />
-          <div className="min-w-0">
-            <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
-              GDP
-            </p>
-            <p className="truncate text-xs font-bold tracking-tight text-emerald-600 tabular-nums group-hover/gdp:underline sm:text-sm dark:text-emerald-400">
+          <Coins aria-hidden className="text-label-secondary size-4 shrink-0" />
+          <span className="min-w-0">
+            <span className="text-label-secondary text-eyebrow block">GDP</span>
+            <span className="text-label text-caption sm:text-headline block truncate tabular-nums group-hover:underline">
               {gdp}
-            </p>
-          </div>
-        </div>
+            </span>
+          </span>
+        </button>
 
-        <div
+        <button
+          type="button"
           onClick={() => onOpenModal("vitality")}
-          className="group/standing flex min-w-0 cursor-pointer items-center gap-2 border-l border-white/10 pl-2"
-          title="Click for full Vitality Breakdown"
+          className={SNAPSHOT_BUTTON}
+          title="Vitality breakdown"
         >
-          <Activity className="h-4 w-4 shrink-0 text-amber-600 transition-transform group-hover/standing:scale-110 dark:text-amber-400" />
-          <div className="min-w-0">
-            <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
-              Standing
-            </p>
-            <p className="truncate text-xs font-bold tracking-tight text-amber-700 group-hover/standing:underline sm:text-sm dark:text-amber-300">
+          <Activity aria-hidden className="text-label-secondary size-4 shrink-0" />
+          <span className="min-w-0">
+            <span className="text-label-secondary text-eyebrow block">Standing</span>
+            <span className="text-success text-caption sm:text-headline block truncate group-hover:underline">
               Optimal
-            </p>
-          </div>
-        </div>
+            </span>
+          </span>
+        </button>
       </div>
 
-      {/* Section 2: 4 Vitality Rings Grid */}
-      <div className="flex flex-1 flex-col justify-center border-t border-white/10 bg-white/[0.02] p-2.5">
+      {/* Section 2: vitality rings */}
+      <div className="border-separator flex flex-1 flex-col justify-center border-t p-2">
         <div className="grid grid-cols-2 gap-2">
           {rings.map((ring) => {
             const rating = getQualitativeRating(ring.value);
             return (
-              <div
+              <button
+                type="button"
                 key={ring.label}
                 onClick={() => onOpenModal("vitality")}
-                className="group flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.97]"
-                title="Click for full Vitality Breakdown"
+                className="bg-surface-secondary hover:bg-fill-3 rounded-control duration-fast ease-out-facet focus-visible:outline-tint group flex cursor-pointer items-center gap-2 p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                title="Vitality breakdown"
               >
                 <HealthRing value={ring.value} size={32} color={ring.color} label={ring.label} />
-                <div className="min-w-0 flex-1">
-                  <span className="text-muted-foreground/70 group-hover:text-foreground block truncate text-xs font-medium tracking-wider uppercase transition-colors">
+                <span className="min-w-0 flex-1">
+                  <span className="text-label-secondary text-eyebrow block truncate">
                     {ring.label}
                   </span>
-                  <span className={cn("text-xs font-semibold tracking-tight", rating.color)}>
-                    {rating.label}
-                  </span>
-                </div>
-              </div>
+                  <span className={cn("text-caption block", rating.color)}>{rating.label}</span>
+                </span>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Section 3: Integrated Executive Telemetry Micro-Bar */}
-      <div className="grid grid-cols-3 gap-1 border-t border-white/10 bg-white/[0.02] p-1.5">
-        <div className="flex min-w-0 items-center justify-center gap-1">
-          <Heart className="h-3 w-3 shrink-0 text-red-400" />
-          <span className="text-muted-foreground/70 text-xs font-medium tracking-wider uppercase">
-            Approval:
-          </span>
-          <span className="text-foreground truncate text-xs font-semibold tabular-nums">
-            {approvalPct}%
-          </span>
+      {/* Section 3: executive telemetry */}
+      <dl className="border-separator divide-separator grid grid-cols-3 divide-x border-t py-2">
+        <div className="flex min-w-0 items-center justify-center gap-1 px-1">
+          <Heart aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+          <dt className="text-label-secondary text-footnote">Approval</dt>
+          <dd className="text-label text-caption truncate tabular-nums">{approvalPct}%</dd>
         </div>
 
-        <div className="flex min-w-0 items-center justify-center gap-1 border-l border-white/10 pl-1">
-          <Scale className="h-3 w-3 shrink-0 text-indigo-400" />
-          <span className="text-muted-foreground/70 text-xs font-medium tracking-wider uppercase">
-            Stability:
-          </span>
-          <span className="text-foreground truncate text-xs font-semibold tabular-nums">
-            {stabilityPct}%
-          </span>
+        <div className="flex min-w-0 items-center justify-center gap-1 px-1">
+          <Scale aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+          <dt className="text-label-secondary text-footnote">Stability</dt>
+          <dd className="text-label text-caption truncate tabular-nums">{stabilityPct}%</dd>
         </div>
 
-        <div className="flex min-w-0 items-center justify-center gap-1 border-l border-white/10 pl-1">
-          <Zap className="h-3 w-3 shrink-0 text-amber-400" />
-          <span className="text-muted-foreground/70 text-xs font-medium tracking-wider uppercase">
-            Capacity:
-          </span>
-          <span className="text-foreground truncate text-xs font-semibold tabular-nums">
-            {capacityPct}%
-          </span>
+        <div className="flex min-w-0 items-center justify-center gap-1 px-1">
+          <Zap aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+          <dt className="text-label-secondary text-footnote">Capacity</dt>
+          <dd className="text-label text-caption truncate tabular-nums">{capacityPct}%</dd>
         </div>
-      </div>
+      </dl>
     </div>
   );
 }

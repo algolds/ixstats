@@ -381,6 +381,17 @@ values on hover or tap.
 4. **Apps, worst-first:** dashboard, achievements, passport/settings, ThinkPages, WikiOS, labs chrome, Halo views,
    vault, messages, forum, admin, sports, countries, builder; then re-check MyCountry and maps against Facet 3.
    `facet-guards` gains each app's rules as it converts.
+   **Dashboard, achievements, passport — ✅ converted 2026-09-30** (`components/dashboard`, `app/dashboard`,
+   `components/achievements`, `app/achievements`, `components/passport`, Settings → IxnayID & Digital Passport panel;
+   default tint, now in `facet-guards`' converted areas): `CutoutCard`/glass/`bg-black/[…]` panels → `FacetCard`
+   (opaque) with `surface-secondary` insets inside the passport document; hand-rolled pills, filters and view switchers
+   → `Badge`, `SegmentedControl`, `ToggleGroup`, `SearchField`, `Button` styles; rankings, affiliations and privacy
+   switches → `FacetList`/`FacetRow`; metric tiles → `Stat`; empty states → `EmptyState`; `animate-pulse` blocks →
+   `Skeleton`; hero flag washes → the corner `FlagWatermark`; achievement aurora/foil gradients removed (category
+   colour on the icon mask only); palette colours, `dark:` pairs and raw text sizes → roles and text styles; motion →
+   `springSmooth`/`springSnappy`/`tweenFast`. Left for their own apps: `/leaderboards` and `/id/[username]` page shells,
+   the shared Settings `SettingsGroup`/`SettingsRow` primitives, the Lorewards details still in a `Dialog` (its two-column
+   layout needs more width than a side `Sheet`).
 
 ## 15. Governance
 

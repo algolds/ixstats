@@ -15,7 +15,12 @@ import {
   ScaleFrameEnlarge as Scale,
   Flash as Zap,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Stat } from "~/components/ui/stat";
+import { FlagWatermark } from "~/components/mycountry/shell/FlagWatermark";
+import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { getScaledValue } from "~/lib/utils/format-utils";
 import type { RealmItem } from "../types";
@@ -26,14 +31,14 @@ interface PassportRealmsTabProps {
 }
 
 const PASSPORT_SCALE_WORDS: Record<string, string> = {
-  T: "TRILLION",
-  B: "BILLION",
-  M: "MILLION",
-  K: "THOUSAND",
+  T: "trillion",
+  B: "billion",
+  M: "million",
+  K: "thousand",
 };
 
 /**
- * Format an amount in uppercase passport information grammar ("1.25 BILLION"), scaled by
+ * Format an amount in passport information grammar ("1.25 billion"), scaled by
  * the shared `getScaledValue`. `prefix` is "$" for GDP.
  */
 function formatPassportAmount(num: number | null | undefined, prefix = ""): string {
@@ -43,9 +48,7 @@ function formatPassportAmount(num: number | null | undefined, prefix = ""): stri
   return `${prefix}${value >= 10 ? value.toFixed(1) : value.toFixed(2)} ${PASSPORT_SCALE_WORDS[suffix]}`;
 }
 
-/**
- * Semantic Role Badge Renderer (Harmonized with Passport Identity Grammar)
- */
+/** Role badge: leaders and staff get a tinted chip with an icon; everyone else neutral. */
 function RealmRoleBadge({ role }: { role: string }) {
   const normalizedRole = role.toUpperCase().replace(/\s+/g, "_");
 
@@ -58,10 +61,10 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("PRIME_MINISTER")
   ) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 font-mono text-xs font-bold tracking-wider text-amber-600 shadow-2xs dark:text-amber-400">
-        <Crown className="h-3 w-3 shrink-0" />
-        <span>{role.toUpperCase()}</span>
-      </span>
+      <Badge variant="caution">
+        <Crown aria-hidden />
+        <span>{role}</span>
+      </Badge>
     );
   }
 
@@ -71,18 +74,40 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("MODERATOR")
   ) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-0.5 font-mono text-xs font-bold tracking-wider text-indigo-600 shadow-2xs dark:text-indigo-400">
-        <Shield className="h-3 w-3 shrink-0" />
-        <span>{role.toUpperCase()}</span>
-      </span>
+      <Badge variant="tinted">
+        <Shield aria-hidden />
+        <span>{role}</span>
+      </Badge>
     );
   }
 
   return (
-    <span className="text-muted-foreground inline-flex items-center gap-1.5 rounded-lg border border-black/8 bg-black/5 px-2.5 py-0.5 font-mono text-xs font-medium tracking-wider dark:border-white/10 dark:bg-white/5">
-      <User className="h-3 w-3 shrink-0 opacity-70" />
-      <span>{role.toUpperCase()}</span>
-    </span>
+    <Badge variant="neutral">
+      <User aria-hidden />
+      <span>{role}</span>
+    </Badge>
+  );
+}
+
+/** One figure in the realm telemetry pod. */
+function RealmMetric({
+  icon,
+  label,
+  value,
+  className,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex min-w-0 items-center gap-2", className)}>
+      <span aria-hidden className="text-label-secondary shrink-0 [&_svg]:size-4">
+        {icon}
+      </span>
+      <Stat size="sm" label={label} value={value} />
+    </div>
   );
 }
 
@@ -92,27 +117,21 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
 }: PassportRealmsTabProps) {
   if (!realms || realms.length === 0) {
     return (
-      <div className="space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-12 text-center dark:border-white/10 dark:bg-white/[0.02]">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
-          <Globe className="h-6 w-6" />
-        </div>
-        <h3 className="text-foreground text-base font-bold">No Realms Joined</h3>
-        <p className="text-muted-foreground mx-auto max-w-md text-xs">
-          @{cleanUsername} is not currently a member of any realms.
-        </p>
+      <div className="bg-surface-secondary border-separator rounded-row border">
+        <EmptyState
+          icon={<Globe />}
+          title="No Realms Joined"
+          message={`@${cleanUsername} is not currently a member of any realms.`}
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-mono text-xs font-bold tracking-widest text-stone-400 uppercase">
-            JOINED REALMS ({realms.length})
-          </h2>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <h2 className="text-subhead text-label-secondary">
+        Joined realms <span className="tabular-nums">({realms.length})</span>
+      </h2>
 
       <div className="grid grid-cols-1 gap-4">
         {realms.map((item) => {
@@ -130,29 +149,18 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
           const capacityPct = 85;
 
           return (
-            <FacetCard
+            <article
               key={`${item.id}-${country?.id || "none"}`}
-              depth={1}
-              interactive="none"
-              className="group/card relative flex flex-col overflow-hidden rounded-3xl border border-black/8 bg-black/[0.015] p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-black/15 hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+              className="bg-surface-secondary border-separator rounded-row relative flex flex-col overflow-hidden border p-4 sm:p-5"
             >
-              {/* 1. Cinematic Background Flag Watermark Scrim */}
-              {flagUrl && (
-                <div className="pointer-events-none absolute -top-10 -right-10 h-64 w-64 overflow-hidden opacity-[0.08] transition-opacity duration-300 select-none dark:opacity-[0.14]">
-                  <img
-                    src={flagUrl}
-                    alt=""
-                    className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
-                  />
-                  <div className="via-card/75 to-card absolute inset-0 bg-gradient-to-l from-transparent" />
-                </div>
-              )}
+              {/* Corner flag watermark (decorative) */}
+              <FlagWatermark src={flagUrl} />
 
-              <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-                {/* 2. Left Zone: Flag Crest + Sovereign Identity + Meta & Actions */}
+              <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+                {/* Identity, meta and action */}
                 <div className="flex min-w-0 flex-1 items-start gap-4 sm:items-center">
                   {country ? (
-                    <div className="bg-muted/40 relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-black/15 shadow-xs transition-transform duration-200 group-hover/card:scale-105 dark:border-white/20">
+                    <div className="bg-fill-3 border-separator rounded-row relative size-16 shrink-0 overflow-hidden border">
                       <UnifiedCountryFlag
                         countryName={country.name}
                         size="lg"
@@ -167,144 +175,103 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       />
                     </div>
                   ) : (
-                    <div className="bg-muted/40 text-muted-foreground flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-black/15 shadow-xs dark:border-white/20">
-                      <Globe className="h-7 w-7" />
+                    <div className="bg-fill-3 border-separator text-label-secondary rounded-row flex size-16 shrink-0 items-center justify-center border">
+                      <Globe aria-hidden className="size-6" />
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-foreground truncate font-sans text-xl font-bold tracking-tight sm:text-2xl">
+                      <h3 className="text-label text-title-2 truncate">
                         {countryName || item.name}
                       </h3>
 
                       <RealmRoleBadge role={item.role} />
 
                       {item.isFeatured && (
-                        <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-bold tracking-wider text-amber-600 dark:text-amber-400">
-                          <Crown className="h-3 w-3 shrink-0" />
-                          PRIMARY
-                        </span>
+                        <Badge variant="tinted">
+                          <Crown aria-hidden />
+                          Primary
+                        </Badge>
                       )}
                     </div>
 
-                    <p className="text-muted-foreground flex flex-wrap items-center gap-2 font-mono text-xs">
-                      <span className="text-foreground/85 font-semibold">
-                        REALM: {item.name.toUpperCase()}
-                      </span>
+                    <p className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
+                      <span className="text-label font-medium">Realm: {item.name}</span>
                       {country?.continent && (
                         <>
-                          <span className="opacity-40">•</span>
+                          <span aria-hidden className="text-label-tertiary">
+                            •
+                          </span>
                           <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 shrink-0 opacity-70" />
-                            {country.continent.toUpperCase()}
+                            <MapPin aria-hidden className="size-3.5 shrink-0" />
+                            {country.continent}
                           </span>
                         </>
                       )}
                       {country?.governmentType && (
                         <>
-                          <span className="opacity-40">•</span>
-                          <span>{country.governmentType.toUpperCase()}</span>
+                          <span aria-hidden className="text-label-tertiary">
+                            •
+                          </span>
+                          <span>{country.governmentType}</span>
                         </>
                       )}
                     </p>
 
                     <div className="pt-1">
-                      {country ? (
-                        <Link
-                          href={`/countries/${country.slug}`}
-                          data-cuelume-press="soft"
-                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
-                        >
-                          <span>View Country</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/r/${item.slug || item.id}`}
-                          data-cuelume-press="soft"
-                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97] dark:bg-white dark:text-stone-950"
-                        >
-                          <span>View Realm</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
-                      )}
+                      <Button asChild variant="tinted" size="sm">
+                        {country ? (
+                          <Link href={`/countries/${country.slug}`}>
+                            <span>View Country</span>
+                            <ArrowRight aria-hidden />
+                          </Link>
+                        ) : (
+                          <Link href={`/r/${item.slug || item.id}`}>
+                            <span>View Realm</span>
+                            <ArrowRight aria-hidden />
+                          </Link>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>
 
-                {/* 3. Right Zone: Restrained Passport Information Grammar Telemetry Pod */}
+                {/* Telemetry pod */}
                 {country && (
-                  <div className="flex w-full shrink-0 flex-col gap-2.5 rounded-2xl border border-black/8 bg-black/[0.02] p-3.5 shadow-2xs backdrop-blur-md sm:p-4 lg:w-[420px] dark:border-white/10 dark:bg-white/[0.02]">
-                    {/* Row 1: Population & GDP in Tabular Passport Grammar */}
-                    <div className="flex items-center justify-between gap-4 border-b border-black/8 pb-2.5 dark:border-white/10">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
-                        <div>
-                          <span className="text-muted-foreground block font-mono text-xs font-bold tracking-wider uppercase">
-                            POPULATION
-                          </span>
-                          <strong className="text-foreground font-mono text-sm font-bold tracking-tight">
-                            {formatPassportAmount(country.currentPopulation)}
-                          </strong>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-right">
-                        <div className="min-w-0">
-                          <span className="text-muted-foreground block font-mono text-xs font-bold tracking-wider uppercase">
-                            GROSS DOMESTIC PRODUCT
-                          </span>
-                          <strong className="font-mono text-sm font-bold tracking-tight text-emerald-500 dark:text-emerald-400">
-                            {formatPassportAmount(country.currentTotalGdp, "$")}
-                          </strong>
-                        </div>
-                        <DollarSign className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
-                      </div>
+                  <div className="bg-surface rounded-row flex w-full shrink-0 flex-col gap-3 p-3 sm:p-4 lg:w-[420px]">
+                    <div className="border-separator flex items-center justify-between gap-4 border-b pb-3">
+                      <RealmMetric
+                        icon={<Users />}
+                        label="Population"
+                        value={formatPassportAmount(country.currentPopulation)}
+                      />
+                      <RealmMetric
+                        icon={<DollarSign />}
+                        label="Gross domestic product"
+                        value={formatPassportAmount(country.currentTotalGdp, "$")}
+                      />
                     </div>
 
-                    {/* Row 2: Governance Triple-Metric Matrix */}
-                    <div className="grid grid-cols-3 gap-2 pt-0.5">
-                      <div className="flex min-w-0 items-center gap-2 px-1">
-                        <Heart className="h-3.5 w-3.5 shrink-0 text-red-500 dark:text-red-400" />
-                        <div className="flex min-w-0 flex-col">
-                          <span className="text-muted-foreground font-mono text-xs leading-none font-bold tracking-wider uppercase sm:text-xs">
-                            APPROVAL
-                          </span>
-                          <span className="text-foreground mt-0.5 truncate font-mono text-xs leading-tight font-bold sm:text-sm">
-                            {approvalPct}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex min-w-0 items-center gap-2 border-l border-black/8 px-2 dark:border-white/10">
-                        <Scale className="h-3.5 w-3.5 shrink-0 text-indigo-500 dark:text-indigo-400" />
-                        <div className="flex min-w-0 flex-col">
-                          <span className="text-muted-foreground font-mono text-xs leading-none font-bold tracking-wider uppercase sm:text-xs">
-                            STABILITY
-                          </span>
-                          <span className="text-foreground mt-0.5 truncate font-mono text-xs leading-tight font-bold sm:text-sm">
-                            {stabilityPct}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex min-w-0 items-center gap-2 border-l border-black/8 px-2 dark:border-white/10">
-                        <Zap className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
-                        <div className="flex min-w-0 flex-col">
-                          <span className="text-muted-foreground font-mono text-xs leading-none font-bold tracking-wider uppercase sm:text-xs">
-                            CAPACITY
-                          </span>
-                          <span className="text-foreground mt-0.5 truncate font-mono text-xs leading-tight font-bold sm:text-sm">
-                            {capacityPct}%
-                          </span>
-                        </div>
-                      </div>
+                    <div className="divide-separator grid grid-cols-3 gap-2 divide-x">
+                      <RealmMetric icon={<Heart />} label="Approval" value={`${approvalPct}%`} />
+                      <RealmMetric
+                        icon={<Scale />}
+                        label="Stability"
+                        value={`${stabilityPct}%`}
+                        className="pl-2"
+                      />
+                      <RealmMetric
+                        icon={<Zap />}
+                        label="Capacity"
+                        value={`${capacityPct}%`}
+                        className="pl-2"
+                      />
                     </div>
                   </div>
                 )}
               </div>
-            </FacetCard>
+            </article>
           );
         })}
       </div>

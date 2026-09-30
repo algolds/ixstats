@@ -6,6 +6,10 @@ import { FireFlame as Flame } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
+import { springSmooth } from "~/lib/design/motion";
+import { FeedItemSkeleton } from "./UnifiedFeedItem";
 
 /**
  * Trending tab: posts the thinkpages-trending cron job flagged (engagement from other users over
@@ -54,12 +58,12 @@ export function TrendingFeedContent({
     <div className="space-y-3">
       {topics && topics.length > 0 && (
         <div className="flex flex-wrap items-center gap-2" aria-label="Trending topics">
-          <span className="text-muted-foreground text-xs font-medium">Trending topics</span>
+          <span className="text-label-secondary text-subhead">Trending topics</span>
           {topics.map((topic) => (
             <Link
               key={topic.id}
               href={withBasePath(`/hashtags/${encodeURIComponent(topic.hashtag)}`)}
-              className="border-border/60 bg-card/60 hover:bg-accent/10 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors"
+              className="bg-fill-3 hover:bg-fill-2 text-label text-caption duration-fast ease-out-facet focus-visible:outline-tint rounded-full px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               title={`${topic.postCount} post${topic.postCount !== 1 ? "s" : ""}`}
             >
               {topic.title}
@@ -71,24 +75,17 @@ export function TrendingFeedContent({
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-5"
-            >
-              <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
-              <div className="bg-muted/60 h-3 w-1/2 rounded" />
-            </div>
+            <FeedItemSkeleton key={i} />
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="border-border/50 bg-card/75 rounded-2xl border p-8 text-center shadow-xs backdrop-blur-xl">
-          <Flame className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-          <h3 className="mb-1 text-sm font-semibold">Nothing is trending right now</h3>
-          <p className="text-muted-foreground text-xs">
-            Posts trend when other people react to, reply to or repost them within the last few
-            days.
-          </p>
-        </div>
+        <FacetCard>
+          <EmptyState
+            icon={<Flame />}
+            title="Nothing is trending right now"
+            message="Posts trend when other people react to, reply to or repost them within the last few days."
+          />
+        </FacetCard>
       ) : (
         <div className="space-y-2">
           {posts.map((post: any) => (
@@ -96,7 +93,7 @@ export function TrendingFeedContent({
               key={post.id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={springSmooth}
             >
               <ThinkpagesPost
                 post={post}

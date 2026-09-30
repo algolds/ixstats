@@ -2,9 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 import { Crown, ArrowRight, Trophy, Dollar as Coins } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Progress } from "~/components/ui/progress";
+import { Stat } from "~/components/ui/stat";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import type { CardInstance } from "~/types/cards-display";
@@ -38,22 +41,20 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
 
   if (totalCards === 0) {
     return (
-      <div className="space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-10 text-center dark:border-white/10 dark:bg-white/[0.02]">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
-          <Crown className="h-6 w-6" />
-        </div>
-        <h3 className="text-foreground text-base font-bold">No Vault Collection</h3>
-        <p className="text-muted-foreground mx-auto max-w-md text-xs">
-          @{cleanUsername} hasn&apos;t started collecting IxCards yet.
-        </p>
-        <Link
-          href="/vault"
-          data-cuelume-press="soft"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500 active:scale-[0.97]"
-        >
-          <span>Explore Vault</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+      <div className="bg-surface-secondary border-separator rounded-row border">
+        <EmptyState
+          icon={<Crown />}
+          title="No Vault Collection"
+          message={`@${cleanUsername} hasn't started collecting IxCards yet.`}
+          action={
+            <Button asChild variant="tinted" size="sm">
+              <Link href="/vault">
+                <span>Explore Vault</span>
+                <ArrowRight aria-hidden />
+              </Link>
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -63,74 +64,43 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider uppercase">
-          <Crown className="h-3.5 w-3.5 text-amber-500" />
-          <span>VAULT COLLECTION</span>
+        <h2 className="text-subhead text-label-secondary flex items-center gap-1.5">
+          <Crown aria-hidden className="size-4" />
+          <span>Vault collection</span>
         </h2>
         <Link
           href="/vault"
-          data-cuelume-press="soft"
-          className="flex items-center gap-0.5 font-mono text-xs text-amber-600 hover:underline dark:text-amber-400"
+          className="text-tint text-footnote flex items-center gap-0.5 hover:underline"
         >
           <span>Open Vault</span>
-          <ArrowRight className="h-3 w-3" />
+          <ArrowRight aria-hidden className="size-3.5" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-        <FacetCard
-          depth={1}
-          className="space-y-2 rounded-2xl border border-black/8 bg-black/[0.02] p-3.5 dark:border-white/10 dark:bg-white/[0.02]"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
-              Collector Level
-            </span>
-            <Trophy className="text-muted-foreground h-3.5 w-3.5" />
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div className="bg-surface-secondary rounded-row space-y-2 p-4">
+          <div className="flex items-start justify-between gap-2">
+            <Stat label="Collector level" value={`Lv. ${level}`} />
+            <Trophy aria-hidden className="text-label-secondary size-4" />
           </div>
-          <p className="text-foreground text-lg leading-none font-bold tracking-tight">
-            Lv. {level}
-          </p>
           <div className="space-y-1">
-            <div className="h-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
-              <motion.div
-                className="bg-foreground h-full rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${xpPct}%` }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0.2 }
-                    : { type: "spring", bounce: 0, duration: 0.4 }
-                }
-                style={{ willChange: "width" }}
-              />
-            </div>
-            <p className="text-muted-foreground font-mono text-xs">
+            <Progress value={xpPct} aria-label="Progress to next collector level" className="h-1" />
+            <p className="text-label-secondary text-footnote tabular-nums">
               {xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP
             </p>
           </div>
-        </FacetCard>
+        </div>
 
-        <FacetCard
-          depth={1}
-          className="space-y-2 rounded-2xl border border-black/8 bg-black/[0.02] p-3.5 dark:border-white/10 dark:bg-white/[0.02]"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
-              Deck Value
-            </span>
-            <Coins className="h-3.5 w-3.5 text-amber-500" />
-          </div>
-          <p className="text-lg leading-none font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-            {formatDeckValue(deckValue)}
-          </p>
-        </FacetCard>
+        <div className="bg-surface-secondary rounded-row flex items-start justify-between gap-2 p-4">
+          <Stat label="Deck value" value={formatDeckValue(deckValue)} />
+          <Coins aria-hidden className="text-label-secondary size-4" />
+        </div>
       </div>
 
       {topCards.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
-            Featured Deck · Top {topCards.length}
+          <h3 className="text-subhead text-label-secondary">
+            Featured deck · Top <span className="tabular-nums">{topCards.length}</span>
           </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {topCards.map((card) => (

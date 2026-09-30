@@ -63,6 +63,13 @@ const FACET_CONVERTED = [
   // Country profile: the Command profile, its deep-dive chrome and shared pieces.
   "app/countries/[slug]/",
   "components/country-profile/",
+  // Phase 4 apps: dashboard, achievements, passport (+ its settings panel).
+  "components/dashboard/",
+  "app/dashboard/",
+  "components/achievements/",
+  "app/achievements/",
+  "components/passport/",
+  "app/settings/_components/panels/AccountIdentityPanel.tsx",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));

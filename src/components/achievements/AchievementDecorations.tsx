@@ -3,11 +3,11 @@
 import React from "react";
 import { Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
 
 /**
- * Jewel Achievement Icon with Category-Tuned Metallic Gem Gradient Mask
+ * Achievement icon painted in its category colour through the icon mask (locked: a faint
+ * blurred icon under a lock)
  */
 export function JewelAchievementIcon({
   iconPath,
@@ -26,17 +26,18 @@ export function JewelAchievementIcon({
         <img
           src={iconPath}
           alt=""
-          className="h-6 w-6 object-contain opacity-20 blur-[1.5px] filter"
+          className="size-6 object-contain opacity-20 blur-[1.5px]"
           loading="lazy"
         />
-        <Lock className="text-muted-foreground/80 absolute h-5 w-5 drop-shadow-sm" />
+        <Lock aria-label="Locked" className="text-label-secondary absolute size-5" />
       </div>
     );
   }
 
   return (
     <div
-      className={cn(className, "bg-gradient-to-tr drop-shadow-md", categoryTheme.iconGradient)}
+      aria-hidden
+      className={cn(className, categoryTheme.iconFill)}
       style={{
         maskImage: `url(${iconPath})`,
         WebkitMaskImage: `url(${iconPath})`,
@@ -52,66 +53,38 @@ export function JewelAchievementIcon({
 }
 
 /**
- * Unified Achievement Card Backdrop combining:
- * - 140px Ghost SVG Heraldic Watermark
- * - Multi-stop Aurora Wave Mesh
- * - Category Bottom-up Radiance
- * - Holographic Foil Sheen (Legendary / Epic)
- * - Apple Frosted Dots Texture Overlay
+ * Achievement card backdrop: the achievement's icon as a faint ghost watermark in the
+ * bottom-right corner (decorative, `aria-hidden`, behind the content). Facet 3 cards are opaque,
+ * so the old aurora, radiance and foil gradients are gone.
  */
 export function AchievementCardBackdrop({
   iconPath,
   categoryTheme,
   isUnlocked,
-  isLegendaryOrEpic = false,
 }: {
   iconPath: string;
   categoryTheme: CategoryTheme;
   isUnlocked: boolean;
+  /** @deprecated Ignored — the foil sheen was removed in Facet 3. */
   isLegendaryOrEpic?: boolean;
 }) {
   return (
-    <>
-      <TextureOverlay texture="dots" opacity={0.035} />
-
-      {/* Multi-stop Aurora Wave Mesh */}
-      <div
-        className={cn(
-          "pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr opacity-40 blur-xl transition-opacity duration-300",
-          isUnlocked && "group-hover:opacity-75",
-          categoryTheme.auroraGradient
-        )}
-      />
-
-      {/* Category Ambient Radiance from Bottom */}
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-0 bg-gradient-to-b opacity-45 transition-opacity duration-300",
-          isUnlocked && "group-hover:opacity-70",
-          categoryTheme.cardGlow
-        )}
-      />
-
-      {/* Holographic foil sheen on epic/legendary */}
-      {isLegendaryOrEpic && isUnlocked && (
-        <div className="pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr from-amber-500/15 via-transparent to-amber-500/10 opacity-60 blur-xl" />
+    <div
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute -right-6 -bottom-6 size-36 opacity-[0.06] select-none print:hidden",
+        isUnlocked ? categoryTheme.iconFill : "bg-label"
       )}
-
-      {/* 140px Ghost SVG Watermark in Bottom-Right Corner */}
-      <div
-        className="pointer-events-none absolute -right-6 -bottom-6 h-36 w-36 opacity-[0.065] blur-[0.3px] select-none dark:opacity-[0.095]"
-        style={{
-          maskImage: `url(${iconPath})`,
-          WebkitMaskImage: `url(${iconPath})`,
-          maskSize: "contain",
-          WebkitMaskSize: "contain",
-          maskRepeat: "no-repeat",
-          WebkitMaskRepeat: "no-repeat",
-          maskPosition: "center",
-          WebkitMaskPosition: "center",
-          backgroundColor: "currentColor",
-        }}
-      />
-    </>
+      style={{
+        maskImage: `url(${iconPath})`,
+        WebkitMaskImage: `url(${iconPath})`,
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+      }}
+    />
   );
 }

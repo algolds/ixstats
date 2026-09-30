@@ -2,6 +2,8 @@
 
 import React, { Component, type ReactNode } from "react";
 import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
 import { WarningTriangle as AlertTriangle, SystemRestart as RotateCcw } from "iconoir-react";
 
 export interface DashboardErrorBoundaryProps {
@@ -50,29 +52,23 @@ export class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProp
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="border-destructive/20 bg-destructive/5 flex min-h-[300px] w-full flex-col items-center justify-center rounded-2xl border p-8 text-center backdrop-blur-md">
-          <div className="bg-destructive/10 text-destructive mb-4 flex h-12 w-12 items-center justify-center rounded-full">
-            <AlertTriangle className="h-6 w-6" />
-          </div>
-          <h3 className="text-foreground text-base font-bold">
-            {this.props.title || "Something went wrong"}
-          </h3>
-          <p className="text-muted-foreground mt-1.5 max-w-md text-xs">
-            {this.props.description ||
+        <FacetCard role="alert" className="flex min-h-[300px] w-full items-center justify-center">
+          <EmptyState
+            icon={<AlertTriangle className="text-destructive" />}
+            title={this.props.title || "Something went wrong"}
+            message={
+              this.props.description ||
               this.state.error?.message ||
-              "An unexpected error occurred while loading this view."}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={this.reset}
-            className="mt-6 gap-2 text-xs font-semibold"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Try Again
-          </Button>
-        </div>
+              "An unexpected error occurred while loading this view."
+            }
+            action={
+              <Button type="button" variant="bordered" size="sm" onClick={this.reset}>
+                <RotateCcw aria-hidden />
+                Try again
+              </Button>
+            }
+          />
+        </FacetCard>
       );
     }
 
