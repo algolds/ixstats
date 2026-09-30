@@ -23,7 +23,7 @@ import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 import { cn } from "~/lib/utils";
 import type { BannerMode, BannerOption } from "../_types";
-import { FloatingRibbonRack } from "~/components/achievements/FloatingRibbonRack";
+import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 import { CountryIdentityStrip } from "./CountryIdentityStrip";
 
 const MediaSearchModal = dynamic(
@@ -246,7 +246,7 @@ export function CountryHeader({
                   >
                     {country.name.replace(/_/g, " ")}
                   </h1>
-                  <FloatingRibbonRack />
+                  <CountryOwnerRibbonRack countrySlug={country.slug} />
                 </div>
                 {/* Variant A — IxnayID / Realm / Passport rail (between title and stats) */}
                 <div className="mb-2.5">
