@@ -392,7 +392,7 @@ export function ThinktankSettingsModal({
                       >
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={u.profileImageUrl || undefined} alt="" />
-                          <AvatarFallback className="text-[10px]">
+                          <AvatarFallback className="text-xs">
                             {u.displayName.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>

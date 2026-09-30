@@ -113,7 +113,7 @@ export function ThinktankChatTab({
                 )}
               >
                 {!own && (
-                  <div className="mb-0.5 text-[11px] font-semibold opacity-70">
+                  <div className="mb-0.5 text-xs font-semibold opacity-70">
                     {m.account?.displayName || m.account?.username || "Member"}
                   </div>
                 )}
