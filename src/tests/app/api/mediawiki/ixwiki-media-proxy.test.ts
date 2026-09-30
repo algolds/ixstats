@@ -51,7 +51,7 @@ describe("ixwiki media proxy", () => {
     fetchMock.mockRestore();
   });
 
-  it.each([
+  const rejectedPaths: Array<[string[], string]> = [
     [["api.php"], "?action=parse&page=Main_Page"],
     [["index.php"], "?title=Special:UserLogin"],
     [["wiki", "Main_Page"], ""],
@@ -60,7 +60,9 @@ describe("ixwiki media proxy", () => {
     [["images", "%2e%2e", "api.php"], ""],
     [["wiki", "Special:FilePath"], ""],
     [["Some", "Foo.png"], ""],
-  ])("404s %j without fetching MediaWiki", async (path, query) => {
+  ];
+
+  it.each(rejectedPaths)("404s %j without fetching MediaWiki", async (path, query) => {
     const res = await call(path, query);
 
     expect(res.status).toBe(404);

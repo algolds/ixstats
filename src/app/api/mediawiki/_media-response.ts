@@ -42,7 +42,7 @@ function reject(status: number): NextResponse {
 }
 
 /** Read the body, aborting (and returning null) as soon as it grows past the cap. */
-async function readCapped(res: Response): Promise<Uint8Array | null> {
+async function readCapped(res: Response): Promise<Uint8Array<ArrayBuffer> | null> {
   const reader = res.body?.getReader();
   if (!reader) return new Uint8Array(0);
 
