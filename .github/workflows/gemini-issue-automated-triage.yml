@@ -31,13 +31,18 @@ permissions:
 
 jobs:
   triage-issue:
+    # Gemini jobs run only once credentials exist: set the repo variable GEMINI_ENABLED=true
+    # together with the GEMINI_API_KEY secret (or Vertex/GCA settings). Otherwise the job is skipped.
     if: |-
-      github.event_name == 'issues' ||
-      github.event_name == 'workflow_dispatch' ||
+      vars.GEMINI_ENABLED == 'true' &&
       (
-        github.event_name == 'issue_comment' &&
-        contains(github.event.comment.body, '@gemini-cli /triage') &&
-        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+        github.event_name == 'issues' ||
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'issue_comment' &&
+          contains(github.event.comment.body, '@gemini-cli /triage') &&
+          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+        )
       )
     timeout-minutes: 5
     runs-on: 'ubuntu-latest'
