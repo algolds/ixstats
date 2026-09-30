@@ -44,7 +44,6 @@ interface ThinkpagesAccountInput {
   lastName: string;
   username: string;
   bio: string;
-  verified: boolean;
   postingFrequency: "active" | "moderate" | "low";
   politicalLean: "left" | "center" | "right";
   personality: "serious" | "casual" | "satirical";
@@ -87,7 +86,6 @@ export function AccountCreationModal({
     lastName: "",
     username: "",
     bio: "",
-    verified: false,
     postingFrequency: "moderate",
     politicalLean: "center",
     personality: "serious",
@@ -180,7 +178,6 @@ export function AccountCreationModal({
         lastName: "",
         username: "",
         bio: "",
-        verified: false,
         postingFrequency: "moderate",
         politicalLean: "center",
         personality: "serious",
@@ -367,7 +364,6 @@ export function AccountCreationModal({
                           setFormData((prev) => ({
                             ...prev,
                             accountType: t,
-                            verified: t === "government",
                           }))
                         }
                         onContinue={() => setStep("details")}
