@@ -52,6 +52,7 @@ const jsonResponse = (body: object, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 let mediaWikiNamespaces: Record<string, number> = {};
+let mediaWikiWikitext: Record<string, string> = {};
 
 const pageResponse = (title: string, revid: number) =>
   jsonResponse({
@@ -68,7 +69,7 @@ const pageResponse = (title: string, revid: number) =>
               timestamp: "2026-09-27T10:00:00Z",
               user: "alice",
               comment: "edit",
-              slots: { main: { "*": "Body text." } },
+              slots: { main: { "*": mediaWikiWikitext[title] ?? "Body text." } },
             },
           ],
         },
@@ -111,6 +112,7 @@ beforeEach(() => {
   rcResponses = [];
   failingTitles = new Set();
   mediaWikiNamespaces = {};
+  mediaWikiWikitext = {};
   globalThis.fetch = fetchMock as typeof fetch;
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
@@ -297,4 +299,23 @@ test("a namespace the canonical table knows is not overridden by MediaWiki's id"
     namespace: 1,
     namespacePrefix: "Talk",
   });
+});
+
+test("stores a synced redirect's canonical target and fragment, and nulls for ordinary text (plan 402)", async () => {
+  mediaWikiWikitext = { Old: "#REDIRECT [[foo_bar#Sec one]]", Plain: "See #REDIRECT [[Foo]] here." };
+  rcResponses = [{ changes: [change("Old", 100, 1), change("Plain", 101, 2)] }];
+
+  await runAutoSyncCycle();
+
+  const upsertFor = (title: string) =>
+    mockWikiArticleUpsert.mock.calls.find(([args]) => args.create.title === title)?.[0];
+  const expectedRedirect = {
+    redirectTargetSlug: "Foo bar",
+    redirectTargetFragment: "Sec one",
+  };
+  expect(upsertFor("Old").create).toMatchObject(expectedRedirect);
+  expect(upsertFor("Old").update).toMatchObject(expectedRedirect);
+  const noRedirect = { redirectTargetSlug: null, redirectTargetFragment: null };
+  expect(upsertFor("Plain").create).toMatchObject(noRedirect);
+  expect(upsertFor("Plain").update).toMatchObject(noRedirect);
 });

@@ -92,11 +92,11 @@ beforeEach(() => {
 });
 
 describe("ArticleRepository.saveArticle", () => {
-  const save = (slug: string, title = "") => {
+  const save = (slug: string, title = "", wikitext = "body") => {
     mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
       savedRow(args.create.title)
     );
-    return ArticleRepository.saveArticle({ slug, title, wikitext: "body" });
+    return ArticleRepository.saveArticle({ slug, title, wikitext });
   };
 
   it("upserts on the canonical title, not the spelling that was typed", async () => {
@@ -134,6 +134,26 @@ describe("ArticleRepository.saveArticle", () => {
   it("rejects a title MediaWiki would refuse before touching the database", async () => {
     await expect(save("a[b")).rejects.toThrow("Invalid title");
     expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("writes a redirect's canonical target title and fragment on create and update (plan 402)", async () => {
+    const { article } = await save("Old", "", "#REDIRECT [[foo#Bar]]");
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    const expected = { redirectTargetSlug: "Foo", redirectTargetFragment: "Bar" };
+    expect(args.create).toMatchObject(expected);
+    expect(args.update).toMatchObject(expected);
+    expect(article).toMatchObject(expected);
+  });
+
+  it("writes nulls for ordinary text, so an edited-away redirect is cleared (plan 402)", async () => {
+    const { article } = await save("Old", "", "Now a real article. #REDIRECT [[Foo]]");
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    const expected = { redirectTargetSlug: null, redirectTargetFragment: null };
+    expect(args.create).toMatchObject(expected);
+    expect(args.update).toMatchObject(expected);
+    expect(article).toMatchObject(expected);
   });
 });
 

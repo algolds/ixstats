@@ -158,8 +158,6 @@ export interface SaveArticleInput {
   namespacePrefix?: string | null;
   protectionLevel?: string;
   protectionExpiry?: Date | null;
-  redirectTargetSlug?: string | null;
-  redirectTargetFragment?: string | null;
   infoboxData?: Record<string, unknown>;
   leadImageUrl?: string;
 }

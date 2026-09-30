@@ -19,6 +19,7 @@ import {
 } from "./domain-types";
 import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
+import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 
 /** The columns a reader needs from a WikiArticle row. */
@@ -157,6 +158,9 @@ export class ArticleRepository {
     const { title, slug } = canon;
     const wikitext = input.wikitext || "";
     const contentHtml = input.contentHtml || "";
+    const redirect = parseRedirect(wikitext);
+    const redirectTargetSlug = redirect?.title ?? null;
+    const redirectTargetFragment = redirect?.fragment ?? null;
 
     // Compute basic word count and reading time
     const words = (wikitext || contentHtml).split(/\s+/).filter(Boolean).length;
@@ -190,6 +194,8 @@ export class ArticleRepository {
           wikitext,
           contentHtml,
           summary: input.summary ?? null,
+          redirectTargetSlug,
+          redirectTargetFragment,
           authorId: resolvedDbUserId,
           lastEditorId: resolvedDbUserId,
           readingTime,
@@ -202,6 +208,8 @@ export class ArticleRepository {
           wikitext,
           contentHtml,
           summary: input.summary ?? undefined,
+          redirectTargetSlug,
+          redirectTargetFragment,
           lastEditorId: resolvedDbUserId ?? undefined,
           syncedAt: new Date(),
           readingTime,
@@ -294,8 +302,8 @@ export class ArticleRepository {
         wordCount: words,
         viewCount: 0,
         leadImageUrl: null,
-        redirectTargetSlug: null,
-        redirectTargetFragment: null,
+        redirectTargetSlug,
+        redirectTargetFragment,
         authorId: authorId ?? null,
         lastEditorId: authorId ?? null,
         createdAt: result.article.syncedAt || new Date(),
