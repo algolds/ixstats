@@ -74,6 +74,8 @@ const mockModels = {
   },
   country: {
     findUnique: jest.fn(async () => mockCountry),
+    // u1's primary (earliest-owned) nation, which pays the dividend.
+    findFirst: jest.fn(async () => ({ id: "c1" })),
   },
   systemConfig: {
     findMany: jest.fn(async () => []),

@@ -16,6 +16,7 @@ import { SignInButton, useAuth } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { getNationUrl } from "~/lib/utils";
+import { NationSwitcher } from "./NationSwitcher";
 
 interface UserProfileMenuProps {
   user: any;
@@ -101,6 +102,12 @@ export function UserProfileMenu({
               </div>
             </div>
           </div>
+
+          {/* Nation switcher (players with more than one nation) */}
+          <NationSwitcher
+            onSwitched={() => setShowUserPopover(false)}
+            className="border-border border-b pb-2"
+          />
 
           {/* Menu Items */}
           <div className="py-1">

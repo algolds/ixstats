@@ -18,7 +18,7 @@ import { resolvePrimaryWikiUsername } from "~/lib/wiki-os/adapters/ixstates/user
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { canModerateRealm, isSiteAdmin, type RealmActor } from "./realms.access";
 import { assignNation, NationOwnershipError } from "./realms.ownership";
-import { realmSettings } from "./realms.settings";
+import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 
 export type ClaimErrorCode =
   "NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED" | "FORBIDDEN" | "NOT_PENDING" | "REASON_REQUIRED";
@@ -278,13 +278,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     realmId: string,
     settings: Prisma.JsonValue | null | undefined
   ) {
-    const held = await db.country.count({ where: { ownerUserId: actor.id, realmId } });
-    if (held >= realmSettings(settings).maxNationsPerUser) {
-      throw new ClaimError(
-        "CAP_REACHED",
-        "You already hold the maximum number of nations in this realm"
-      );
-    }
+    const capacity = await nationCapacity(db, { userId: actor.id, realmId, settings });
+    if (!capacity.canTakeAnother) throw new ClaimError("CAP_REACHED", capReachedMessage(capacity));
   }
 
   async function loadClaimable(actor: RealmActor, countryId: string) {

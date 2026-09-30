@@ -3,7 +3,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (77 Routers, 929 Endpoints)
+### Live tRPC API Inventory (77 Routers, 931 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -67,7 +67,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.policies`** | 2 | 1 | 0 | **3** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
 | **`api.quickActions`** | 1 | 1 | 0 | **2** | `src/server/api/routers/quickactions/index.ts` |
-| **`api.realms`** | 7 | 5 | 0 | **12** | `src/server/api/routers/realms/index.ts` |
+| **`api.realms`** | 9 | 5 | 0 | **14** | `src/server/api/routers/realms/index.ts` |
 | **`api.resources`** | 1 | 0 | 0 | **1** | `src/server/api/routers/resources.ts` |
 | **`api.scheduledChanges`** | 1 | 0 | 0 | **1** | `src/server/api/routers/scheduledChanges.ts` |
 | **`api.security`** | 8 | 9 | 0 | **17** | `src/server/api/routers/security/index.ts` |
@@ -84,7 +84,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.vault`** | 25 | 19 | 0 | **44** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 55 | 20 | 0 | **75** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **456** | **472** | **0** | **929** | **77 registered namespaces** |
+| **TOTALS** | **458** | **472** | **0** | **931** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.

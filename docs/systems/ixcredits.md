@@ -49,6 +49,7 @@ $$\text{Daily Dividend} = (\text{BaseRate} + \text{PopulationBonus} + \text{Grow
 - $\text{GrowthBonus} = \text{BaseRate} \times 0.1$ (if GDP growth $> 3\%$)
 - $\text{BudgetMultiplier}$: typically 0.8×–2.0×, derived from department budget allocations (`src/lib/economy/budget-vault-calculator.ts`).
 - A purchased Passive Yield Boost store perk multiplies the result by $(1 + \text{yieldBoost})$.
+- **Which nation pays:** one dividend per account, computed from its primary nation, which is the earliest-created nation it owns (`resolveDividendCountryId`, `src/lib/vault/dividend-nation.ts`). It never follows the active nation, so switching nations before the payout changes nothing. An account that owns no nation but acts as one (a legacy link, or a system-owner override) is paid from that nation. The vault dashboard and the MyCountry vault widget project the same nation's dividend.
 
 ### 2. Active Gameplay (`EARN_ACTIVE`) — 100 IxC Daily Cap
 - **Login Streak** (`vault.claimDailyBonus`): 1 to 7 IxC daily (`min(streak, maxStreakBonus)`)

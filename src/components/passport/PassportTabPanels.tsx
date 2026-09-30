@@ -4,6 +4,7 @@ import React from "react";
 import { api } from "~/trpc/react";
 import { EyeClosed } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
+import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
 import { PassportOverviewTab } from "./tabs/PassportOverviewTab";
 import { PassportRealmsTab } from "./tabs/PassportRealmsTab";
@@ -44,10 +45,18 @@ export function HiddenSection({
   );
 }
 
-function RealmsPanel({ handle }: { handle: string }) {
+function RealmsPanel({ handle, isOwner }: { handle: string; isOwner: boolean }) {
   const { data, isLoading } = api.ixnayid.getRealms.useQuery({ handle });
   if (isLoading) return <TabSkeleton />;
-  return <PassportRealmsTab realms={data ?? []} cleanUsername={handle} />;
+  return (
+    <>
+      {/* The owner's own nations across realms, to switch which one they play as. */}
+      {isOwner && (
+        <NationSwitcher className="mb-6 rounded-2xl border border-black/8 py-2 dark:border-white/10" />
+      )}
+      <PassportRealmsTab realms={data ?? []} cleanUsername={handle} />
+    </>
+  );
 }
 
 const EMPTY_WORK = {
@@ -115,7 +124,7 @@ export const PassportTabBody = React.memo(function PassportTabBody({
     case "overview":
       return <PassportOverviewTab data={data} cleanUsername={handle} onOpenVault={onOpenVault} />;
     case "realms":
-      return <RealmsPanel handle={handle} />;
+      return <RealmsPanel handle={handle} isOwner={isOwner} />;
     case "work":
       return <WorkPanel handle={handle} wiki={data.wiki} />;
     case "vault":

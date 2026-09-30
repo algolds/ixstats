@@ -15,6 +15,7 @@ import { type BuilderSection, isScratchOrImportOrigin, getBuilderSteps } from ".
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 
 import { useBuilderFilter } from "./builder-filter-context";
+import { BuilderRealmPicker } from "./BuilderRealmPicker";
 
 const SECTION_LABELS: Record<BuilderSection, string> = {
   foundation: "Foundation",
@@ -46,7 +47,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
   isSubmitting = false,
   onReset,
 }: BuilderStepFooterProps) {
-  const { clearDraft, builderState } = useBuilderContext();
+  const { clearDraft, builderState, setBuilderState } = useBuilderContext();
   const filter = useBuilderFilter();
   const router = useRouter();
 
@@ -123,6 +124,12 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
 
       {/* Right: Forward action button */}
       <div className="flex items-center gap-3">
+        {isOnPreview && mode === "create" && (
+          <BuilderRealmPicker
+            value={builderState.realmId}
+            onChange={(realmId) => setBuilderState((prev) => ({ ...prev, realmId }))}
+          />
+        )}
         {isOnPreview ? (
           <Button
             type="button"

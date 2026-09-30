@@ -3,6 +3,7 @@ import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { getOrCreateVault } from "~/lib/vault/vault-ledger";
 import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
 import { earnCreditsOnce } from "~/lib/vault/vault-service";
+import { resolveDividendCountryId } from "~/lib/vault/dividend-nation";
 
 export const PASSIVE_DIVIDEND_SOURCE = "DAILY_DIVIDEND";
 /** Source written by the pre-328 daily cron; the catch-up lookback still honours it. */
@@ -104,7 +105,9 @@ export async function catchUpPassiveIncome(
       },
     });
 
-    if (!user || !user.countryId) {
+    // The account's primary nation pays, not the active one (resolveDividendCountryId).
+    const countryId = user ? await resolveDividendCountryId(db, user) : null;
+    if (!user || !countryId) {
       return { success: true, count: 0, totalCreditsAwarded: 0 };
     }
 
@@ -150,14 +153,14 @@ export async function catchUpPassiveIncome(
     }
 
     console.log(
-      `[Vault Service] Catching up ${daysToAward.length} days of passive income for user ${user.id} / country ${user.countryId}`
+      `[Vault Service] Catching up ${daysToAward.length} days of passive income for user ${user.id} / country ${countryId}`
     );
 
     let awardedCount = 0;
     let totalCreditsAwarded = 0;
 
     for (const day of daysToAward) {
-      const dailyIncome = await calculatePassiveIncome(user.countryId, db);
+      const dailyIncome = await calculatePassiveIncome(countryId, db);
       if (dailyIncome > 0) {
         const earnResult = await earnCreditsOnce(db, {
           userId: user.id,
@@ -165,7 +168,7 @@ export async function catchUpPassiveIncome(
           type: "EARN_PASSIVE",
           source: PASSIVE_DIVIDEND_SOURCE,
           metadata: {
-            countryId: user.countryId,
+            countryId,
             isCatchUp: true,
             targetDate: day.toISOString(),
           },

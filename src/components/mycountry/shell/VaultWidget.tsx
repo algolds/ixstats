@@ -60,19 +60,25 @@ export function VaultWidget() {
     enabled: !!userId && !!userData?.countryId,
   });
 
+  // The dividend is paid from the account's primary nation, not necessarily the active one.
+  const { data: myNations } = api.realms.myNations.useQuery(undefined, {
+    enabled: !!userId && !!userData?.countryId,
+  });
+  const dividendCountryId = myNations?.dividendCountryId ?? null;
+
   const { data: passiveIncomeData } = api.vault.calculatePassiveIncome.useQuery(
-    { countryId: userData?.countryId ?? "" },
+    { countryId: dividendCountryId ?? "" },
     {
-      enabled: !!userData?.countryId,
+      enabled: !!dividendCountryId,
       refetchInterval: 300000, // Refresh every 5 minutes
     }
   );
 
   // Get budget multiplier data
   const { data: budgetMultiplierData } = api.vault.getBudgetMultiplier.useQuery(
-    { countryId: userData?.countryId ?? "" },
+    { countryId: dividendCountryId ?? "" },
     {
-      enabled: !!userData?.countryId,
+      enabled: !!dividendCountryId,
       refetchInterval: 300000, // Refresh every 5 minutes
     }
   );

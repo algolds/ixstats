@@ -19,7 +19,11 @@ function tx(country: any, ownedInRealm = 0) {
       update: jest.fn().mockResolvedValue({}),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
-    user: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    user: {
+      findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }),
+      update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
   } as any;
 }
 
