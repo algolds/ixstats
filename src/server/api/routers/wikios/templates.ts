@@ -6,13 +6,14 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import {
   fetchTemplateData,
   categorizeTemplate,
   isNoiseTemplate,
 } from "~/lib/wiki-os/templates/template-registry";
 import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { db } from "~/server/db";
 import type { Prisma } from "@prisma/client";
 
@@ -1282,17 +1283,24 @@ export const wikiosTemplatesRouter = createTRPCRouter({
     }),
 
   /**
-   * Get rendered preview of a template with given parameters.
+   * Get rendered preview of a template with given parameters. Signed-in and rate limited: it
+   * forwards to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  getTemplatePreview: publicProcedure
+  getTemplatePreview: readOnlyProcedure
     .input(
       z.object({
-        template: z.string().min(1).max(500),
-        params: z.record(z.string(), z.string()),
+        template: z
+          .string()
+          .min(1)
+          .max(255)
+          .regex(/^[^{}|\[\]<>\n]+$/),
+        params: z
+          .record(z.string().max(64), z.string().max(4000))
+          .refine((params) => Object.keys(params).length <= 60, "At most 60 parameters"),
       })
     )
     .query(async ({ input }) => {
       const preview = await renderTemplateWithRedisCache(input.template, input.params);
-      return preview.html;
+      return sanitizeWikiArticleHtml(preview.html);
     }),
 });

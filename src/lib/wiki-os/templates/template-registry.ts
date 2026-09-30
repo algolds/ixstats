@@ -178,6 +178,26 @@ export async function searchTemplatesFromWiki(
   }
 }
 
+const INVALID_PARAMETER_PREVIEW = "Invalid parameter";
+/** A key containing these could end the parameter name early or open a second parameter. */
+const UNSAFE_PARAM_KEY = /[|={}\n\r]/;
+/** A value containing these could close (or open) a template call and inject wikitext around it. */
+const UNSAFE_PARAM_VALUE = /\{\{|\}\}/;
+
+/**
+ * `{{name|k=v}}` for the given params, or null when a key or value could break out of the call.
+ * Literal pipes in values are escaped as `{{!}}`; empty values are skipped.
+ */
+function buildTemplateInvocation(
+  templateName: string,
+  params: Record<string, string>
+): string | null {
+  const entries = Object.entries(params).filter(([, v]) => v.trim() !== "");
+  if (entries.some(([k, v]) => UNSAFE_PARAM_KEY.test(k) || UNSAFE_PARAM_VALUE.test(v))) return null;
+  const paramParts = entries.map(([k, v]) => `|${k}=${v.replace(/\|/g, "{{!}}")}`);
+  return `{{${templateName}${paramParts.join("")}}}`;
+}
+
 /**
  * Get a rendered preview of a template with given parameters.
  */
@@ -185,11 +205,8 @@ export async function getTemplatePreview(
   templateName: string,
   params: Record<string, string>
 ): Promise<string> {
-  // Build wikitext from template name + params
-  const paramParts = Object.entries(params)
-    .filter(([, v]) => v.trim() !== "")
-    .map(([k, v]) => `|${k}=${v}`);
-  const wikitext = `{{${templateName}${paramParts.join("")}}}`;
+  const wikitext = buildTemplateInvocation(templateName, params);
+  if (wikitext === null) return INVALID_PARAMETER_PREVIEW;
 
   const apiParams = new URLSearchParams({
     action: "parse",
