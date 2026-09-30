@@ -8,6 +8,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
+import { requireNotBlocked } from "~/lib/wiki-os/permissions";
 
 import { db } from "~/server/db";
 
@@ -29,6 +30,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
+      await requireNotBlocked(ctx);
       const userIds = requireWikiUserIds(ctx);
       let targetItemId = input.itemId;
 

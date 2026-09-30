@@ -10,6 +10,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, lightMutationProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, isWikiAdmin } from "~/lib/wiki-os/auth";
+import { requireNotBlocked } from "~/lib/wiki-os/permissions";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -232,6 +233,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const authUserId = requireWikiUserId(ctx);
+      await requireNotBlocked(ctx);
       // Posting "as" a country is only allowed for a country the caller may write to.
       if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const dbUser = ctx.user as any;
@@ -287,6 +289,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const authUserId = requireWikiUserId(ctx);
+      await requireNotBlocked(ctx);
       // Posting "as" a country is only allowed for a country the caller may write to.
       if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const dbUser = ctx.user as any;
@@ -336,6 +339,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
+      await requireNotBlocked(ctx);
       const prismaClient = db as any;
 
       const thread = await prismaClient.wikiDiscussionThread.findUnique({
@@ -364,6 +368,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     .input(z.object({ threadId: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
+      await requireNotBlocked(ctx);
       const admin = await isWikiAdmin(ctx);
       const prismaClient = db as any;
 

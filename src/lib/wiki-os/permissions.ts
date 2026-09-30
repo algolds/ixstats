@@ -208,6 +208,12 @@ export async function authorizeAction(
   if (!decision.allowed) throw forbidden(decision.code, decision.reason);
 }
 
+/** Throws FORBIDDEN (`blocked`) when the caller is blocked: for writes that are not page edits, such as margin discussions and annotations. */
+export async function requireNotBlocked(ctx: WikiAuthContext): Promise<void> {
+  const { block } = await getWikiPermissions(ctx);
+  if (block) throw forbidden("blocked", describeBlock(block));
+}
+
 /** Throws FORBIDDEN (`permissiondenied`) unless the caller holds `right`; returns their permissions. */
 export async function requireRight(ctx: WikiAuthContext, right: Right): Promise<WikiPermissions> {
   const permissions = await getWikiPermissions(ctx);
@@ -244,4 +250,63 @@ export async function assertPageVisible(
       message: `The page "${title}" does not exist on IxWiki.`,
     });
   }
+}
+
+/** The status of the page `rawTitle` names, found as `ArticleRepository.findBySlug` finds it: the exact title, else the one row whose slug matches. */
+async function pageStatus(rawTitle: string, source: string): Promise<string | null> {
+  const canon = canonicalizeTitle(rawTitle, { source });
+  if (!canon) return null;
+  const exact = await db.wikiArticle.findUnique({
+    where: { source_title: { source, title: canon.title } },
+    select: { status: true },
+  });
+  if (exact) return exact.status;
+  const variants = await db.wikiArticle.findMany({
+    where: { source, slug: canon.slug },
+    take: 2,
+    select: { status: true },
+  });
+  return variants.length === 1 ? (variants[0]?.status ?? null) : null;
+}
+
+/** `assertPageVisible` for a read that has only a title: looks the page's status up first. */
+export async function assertTitleVisible(
+  ctx: WikiAuthContext,
+  rawTitle: string,
+  source = "ixwiki"
+): Promise<void> {
+  const status = await pageStatus(rawTitle, source);
+  await assertPageVisible(ctx, status ? { status } : null, rawTitle);
+}
+
+/** Whether the caller may see the page `rawTitle` names: false only for a deleted page and a reader without `deletedhistory`. */
+export async function canSeeTitle(
+  ctx: WikiAuthContext,
+  rawTitle: string,
+  source = "ixwiki"
+): Promise<boolean> {
+  try {
+    await assertTitleVisible(ctx, rawTitle, source);
+    return true;
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") return false;
+    throw error;
+  }
+}
+
+/** `rawTitles` without the deleted pages this caller may not see (all of them, for a reader with `deletedhistory`). */
+export async function visibleTitles(
+  ctx: WikiAuthContext,
+  rawTitles: readonly string[],
+  source = "ixwiki"
+): Promise<string[]> {
+  const titles = rawTitles.flatMap((raw) => canonicalizeTitle(raw, { source })?.title ?? []);
+  if (titles.length === 0) return [...rawTitles];
+  if ((await getWikiPermissions(ctx)).rights.has("deletedhistory")) return [...rawTitles];
+  const rows = await db.wikiArticle.findMany({
+    where: { source, status: "ARCHIVED", title: { in: titles } },
+    select: { title: true },
+  });
+  const hidden = new Set(rows.map((row) => row.title));
+  return rawTitles.filter((raw) => !hidden.has(canonicalizeTitle(raw, { source })?.title ?? ""));
 }
