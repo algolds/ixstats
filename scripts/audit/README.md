@@ -20,7 +20,7 @@ Automation under `scripts/audit` provides fast confidence in architecture bounda
 | `audit-components.ts` | `bun run audit:components` (`:json`) | Import-graph reachability audit for unused components |
 | `audit-schema-coverage.ts` | `bun run audit:coverage` | Schema coverage report (writes to `scripts/audit/reports/`) |
 | `audit-v1.ts` | `bun run audit:v1` (`:prod`) | Legacy V1 production-readiness audit |
-| `audit-vault-exploits.ts` | `bun run audit:vault-exploits` (`:json`) | Read-only Vault ledger report: store charges not matching item prices, repeat cosmetic buys, repeated one-time / NS deck-import bonuses (M0 exploit cleanup) |
+| `audit-vault-exploits.ts` | `bun run audit:vault-exploits` (`:json`, `:apply`) | Vault ledger report for the M0 exploits (store charges not matching item prices, repeat cosmetic buys, repeated one-time / NS deck-import bonuses) plus the planned corrections; `:apply` writes them as idempotent `ADMIN_ADJUSTMENT` rows (rules in `src/lib/vault/exploit-corrections.ts`; back up first) |
 | `audit-wikios-db.ts` | `bun run audit:wikios-db` | WikiOS PostgreSQL store self-audit |
 | `audit-wikios-parity.ts` | `bun run audit:wikios-parity` | MediaWiki ↔ PostgreSQL WikiOS parity audit |
 | `verify-country-links.ts` | `bun run audit:country-links` | User ↔ country linkage integrity |
