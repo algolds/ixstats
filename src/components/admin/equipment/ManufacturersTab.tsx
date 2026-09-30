@@ -74,7 +74,7 @@ export function ManufacturersTab({
 }: ManufacturersTabProps) {
   return (
     <div className="space-y-6">
-      <div className="facet-card-parent rounded-xl border border-white/10 p-4">
+      <div className="bg-card rounded-xl border border-white/10 p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-foreground text-xl font-bold">Defense Manufacturers</h2>
           <Button
@@ -140,7 +140,7 @@ export function ManufacturersTab({
       </div>
 
       {/* Table */}
-      <div className="facet-card-child border-border/50 rounded-xl border p-6">
+      <div className="bg-card border-border/50 rounded-xl border p-6">
         {manufacturersLoading ? (
           <div className="py-12 text-center">
             <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
@@ -290,21 +290,21 @@ export function ManufacturersTab({
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div className="facet-card-child border-border/50 rounded-lg border p-4">
+        <div className="bg-card border-border/50 rounded-lg border p-4">
           <div className="text-foreground text-2xl font-bold">{normalizedManufacturers.length}</div>
           <div className="text-muted-foreground text-sm">Total Manufacturers</div>
         </div>
-        <div className="facet-card-child border-border/50 rounded-lg border p-4">
+        <div className="bg-card border-border/50 rounded-lg border p-4">
           <div className="text-foreground text-2xl font-bold">
             {normalizedManufacturers.filter((m) => m.isActive).length}
           </div>
           <div className="text-muted-foreground text-sm">Active</div>
         </div>
-        <div className="facet-card-child border-border/50 rounded-lg border p-4">
+        <div className="bg-card border-border/50 rounded-lg border p-4">
           <div className="text-foreground text-2xl font-bold">{countries.length}</div>
           <div className="text-muted-foreground text-sm">Countries</div>
         </div>
-        <div className="facet-card-child border-border/50 rounded-lg border p-4">
+        <div className="bg-card border-border/50 rounded-lg border p-4">
           <div className="text-foreground text-2xl font-bold">
             {normalizedManufacturers.reduce((sum, m) => sum + (m.equipment?.length ?? 0), 0)}
           </div>

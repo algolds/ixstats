@@ -31,7 +31,7 @@ export const StashDropdown = memo(function StashDropdown({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="glass-none z-[10001] flex w-80 flex-col gap-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-3 text-[var(--wikios-text)] shadow-2xl"
+        className="z-[10001] flex w-80 flex-col gap-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-3 text-[var(--wikios-text)] shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-2">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--wikios-text-muted)]">

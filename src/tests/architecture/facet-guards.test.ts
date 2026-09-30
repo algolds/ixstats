@@ -121,6 +121,25 @@ describe("Facet anti-slop guards", () => {
     expect(hits(/radial-gradient\(circle at 1px 1px/g)).toEqual([]);
   });
 
+  describe("Facet 3 foundations (docs/specs/2026-09-30-facet-3-design-system.md)", () => {
+    it("uses no legacy glass-*/facet-card-* classes (their CSS was deleted)", () => {
+      expect(
+        hits(
+          /\b(?:glass-(?:hierarchy-interactive|hierarchy-modal|child|parent|none|physics|blended|contextual-popover)|facet-card-(?:parent|child))\b/g
+        )
+      ).toEqual([]);
+    });
+
+    it("references no *-hsl colour tokens (none exist)", () => {
+      expect(hits(/var\(--[\w-]+-hsl\)/g)).toEqual([]);
+    });
+
+    it("layers src/components/ui with the --z-* tokens, not arbitrary z-[N] values", () => {
+      const uiDir = path.join("components", "ui") + path.sep;
+      expect(hits(/\bz-\[\d+\]/g).filter((hit) => hit.startsWith(uiDir))).toEqual([]);
+    });
+  });
+
   describe("surfaces converted to Facet", () => {
     it("use theme tokens instead of dark: overrides", () => {
       expect(convertedHits(/\bdark:[a-z][a-z0-9-]*/g, DARK_OVERRIDE_ALLOWED)).toEqual([]);

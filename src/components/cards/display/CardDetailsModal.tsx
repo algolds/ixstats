@@ -200,7 +200,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 {onShare && (
                   <button
                     onClick={() => onShare(card)}
-                    className="glass-hierarchy-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                    className="border-border bg-muted/50 hover:bg-muted flex items-center border gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
                   >
                     <Share2 className="h-3.5 w-3.5" />
                     Share
@@ -209,7 +209,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 {onDownloadImage && (
                   <button
                     onClick={() => onDownloadImage(card)}
-                    className="glass-hierarchy-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                    className="border-border bg-muted/50 hover:bg-muted flex items-center border gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
                   >
                     <Download className="h-3.5 w-3.5" />
                     Save Image

@@ -177,7 +177,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
               {yourCards.map((ownership: any) => (
                 <div
                   key={ownership.id}
-                  className="glass-hierarchy-interactive flex items-center gap-3 rounded-lg p-2"
+                  className="bg-muted/50 flex items-center gap-3 rounded-lg p-2"
                 >
                   <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
                     <CardHolographicCover
@@ -211,7 +211,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
             {/* Credits */}
             {yourCredits > 0 && (
-              <div className="glass-hierarchy-interactive mb-3 flex items-center gap-2 rounded-lg p-3">
+              <div className="bg-muted/50 mb-3 flex items-center gap-2 rounded-lg p-3">
                 <Coins className="h-5 w-5 text-amber-400" />
                 <span className="font-semibold text-white">
                   +{yourCredits.toLocaleString()} IxCredits
@@ -237,7 +237,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
               {theirCards.map((ownership: any) => (
                 <div
                   key={ownership.id}
-                  className="glass-hierarchy-interactive flex items-center gap-3 rounded-lg p-2"
+                  className="bg-muted/50 flex items-center gap-3 rounded-lg p-2"
                 >
                   <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
                     <CardHolographicCover
@@ -271,7 +271,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
             {/* Credits */}
             {theirCredits > 0 && (
-              <div className="glass-hierarchy-interactive mb-3 flex items-center gap-2 rounded-lg p-3">
+              <div className="bg-muted/50 mb-3 flex items-center gap-2 rounded-lg p-3">
                 <Coins className="h-5 w-5 text-amber-400" />
                 <span className="font-semibold text-white">
                   +{theirCredits.toLocaleString()} IxCredits
@@ -316,7 +316,6 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   }
                   disabled={respondToTrade.isPending}
                   variant="outline"
-                  className="glass-hierarchy-interactive"
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Counter Offer
@@ -329,7 +328,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                     })
                   }
                   disabled={respondToTrade.isPending}
-                  className="glass-hierarchy-interactive bg-green-500/20 hover:bg-green-500/30"
+                  className="bg-green-500/20 hover:bg-green-500/30"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   {respondToTrade.isPending ? "Processing..." : "Accept Trade"}

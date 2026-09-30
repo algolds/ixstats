@@ -35,7 +35,7 @@ export function AccountManagerModal({
       }}
     >
       <DialogContent
-        className="glass-hierarchy-modal flex max-h-[90vh] max-w-lg flex-col overflow-hidden p-0"
+        className="flex max-h-[90vh] max-w-lg flex-col overflow-hidden p-0"
         data-dialog-nested="true"
       >
         <DialogHeader className="border-border/40 shrink-0 border-b px-6 pt-6 pb-4">

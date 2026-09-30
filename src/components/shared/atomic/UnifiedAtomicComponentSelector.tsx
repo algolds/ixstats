@@ -101,7 +101,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
   }, [currentCategory, searchQuery, categories, components]);
 
   return (
-    <Card className="facet-card-parent w-full">
+    <Card className="w-full">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">

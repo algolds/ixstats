@@ -106,7 +106,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             <SelectTrigger id="feedback-type" className="bg-background/40 w-full text-xs">
               <SelectValue placeholder="Select feedback type" />
             </SelectTrigger>
-            <SelectContent className="z-[100021]">
+            <SelectContent>
               <SelectItem value="bug" className="text-xs">
                 Bug Report
               </SelectItem>

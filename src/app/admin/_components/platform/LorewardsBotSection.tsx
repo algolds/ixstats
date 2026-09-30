@@ -751,7 +751,7 @@ export function LorewardsBotSection() {
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="border-border/50 bg-card/95 z-[100060] w-80 p-0 shadow-2xl backdrop-blur-md">
+                <PopoverContent className="border-border/50 bg-card/95 w-80 p-0 shadow-2xl backdrop-blur-md">
                   <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Search wiki account..."

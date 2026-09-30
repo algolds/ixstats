@@ -183,7 +183,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
 
                 {/* Trade summary */}
                 <div className="mt-3 grid grid-cols-2 gap-3">
-                  <div className="glass-hierarchy-interactive rounded-lg p-2">
+                  <div className="bg-muted/50 rounded-lg p-2">
                     <p className="mb-1 text-xs text-white/60">You Offered</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm font-semibold text-blue-400">
@@ -207,7 +207,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
                     )}
                   </div>
 
-                  <div className="glass-hierarchy-interactive rounded-lg p-2">
+                  <div className="bg-muted/50 rounded-lg p-2">
                     <p className="mb-1 text-xs text-white/60">You Received</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm font-semibold text-green-400">

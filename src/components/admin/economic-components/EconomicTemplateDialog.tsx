@@ -43,7 +43,7 @@ export function EconomicTemplateDialog({
         <div className="flex-1 overflow-auto p-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {templates.map((template) => (
-              <Card key={template.id} className="facet-card-child p-4">
+              <Card key={template.id} className="p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <FileText className="h-5 w-5 text-[--intel-gold]" />
                   <h3 className="text-foreground font-semibold">{template.name}</h3>

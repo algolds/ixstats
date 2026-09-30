@@ -38,7 +38,7 @@ export function RepostModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-hierarchy-modal max-w-2xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Repost</DialogTitle>
         </DialogHeader>

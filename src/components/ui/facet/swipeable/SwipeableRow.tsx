@@ -723,7 +723,7 @@ function SwipeableRowExpanded({ children, className }: SwipeableRowExpandedProps
 
 // ── SwipeActionButton ───────────────────────────────────────────────────
 
-// Helper mapping Tailwind colors to glass-blended styles
+// Helper mapping Tailwind colors to tinted swipe-action styles
 const tailwindColorMap: Record<string, { light: string; dark: string }> = {
   red: {
     light: "bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-700",

@@ -45,7 +45,7 @@ export function CollectionEditDeleteModals({
     <>
       {/* Edit modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="glass-hierarchy-modal">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Collection</DialogTitle>
             <DialogDescription>Update your collection details</DialogDescription>
@@ -99,7 +99,7 @@ export function CollectionEditDeleteModals({
 
       {/* Delete confirmation modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="glass-hierarchy-modal">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Collection</DialogTitle>
             <DialogDescription>

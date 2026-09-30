@@ -29,7 +29,7 @@ export default function LoreGeneratorPage() {
         </div>
 
         {/* Info Panel */}
-        <div className="glass-parent mb-6 space-y-4 p-6">
+        <div className="border-border bg-card rounded-xl border mb-6 space-y-4 p-6">
           <h2 className="text-2xl font-bold text-white">How It Works</h2>
 
           <div className="space-y-3">
@@ -83,7 +83,7 @@ export default function LoreGeneratorPage() {
             </div>
           </div>
 
-          <div className="glass-child rounded-lg border border-indigo-400/20 bg-indigo-500/10 p-4">
+          <div className="rounded-lg border border-indigo-400/20 bg-indigo-500/10 p-4">
             <div className="flex items-start gap-3">
               <svg
                 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-400"
@@ -104,7 +104,7 @@ export default function LoreGeneratorPage() {
             </div>
           </div>
 
-          <div className="glass-child rounded-lg border border-yellow-400/20 bg-yellow-500/10 p-4">
+          <div className="rounded-lg border border-yellow-400/20 bg-yellow-500/10 p-4">
             <div className="flex items-start gap-3">
               <svg
                 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400"
@@ -127,7 +127,7 @@ export default function LoreGeneratorPage() {
         </div>
 
         {/* Generator Interface */}
-        <div className="glass-parent p-8">
+        <div className="border-border bg-card rounded-xl border p-8">
           <LoreCardGenerator onRequestSubmitted={handleRequestSubmitted} />
         </div>
 

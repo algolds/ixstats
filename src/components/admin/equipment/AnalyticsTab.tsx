@@ -190,7 +190,7 @@ export function AnalyticsTab({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="facet-card-parent rounded-xl border border-white/10 p-6">
+      <div className="bg-card rounded-xl border border-white/10 p-6">
         <h2 className="text-2xl font-bold tracking-tight text-red-600">
           Military Equipment Analytics
         </h2>

@@ -97,7 +97,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={`Search ${wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"} articles...`}
-          className="glass-child w-full rounded-lg px-4 py-3 pr-10 text-white placeholder-white/40"
+          className="border-border bg-muted/50 w-full rounded-lg border px-4 py-3 pr-10 text-white placeholder-white/40"
         />
 
         {loading && (
@@ -127,7 +127,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
 
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="glass-parent absolute z-10 mt-2 max-h-96 w-full overflow-y-auto rounded-lg shadow-lg">
+        <div className="border-border bg-popover absolute z-10 border mt-2 max-h-96 w-full overflow-y-auto rounded-lg shadow-lg">
           {suggestions.map((suggestion, idx) => (
             <button
               key={idx}
@@ -145,7 +145,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
 
       {/* No Results Message */}
       {!loading && searchQuery.length >= 3 && suggestions.length === 0 && showSuggestions && (
-        <div className="glass-parent absolute z-10 mt-2 w-full rounded-lg px-4 py-3 shadow-lg">
+        <div className="border-border bg-popover absolute z-10 border mt-2 w-full rounded-lg px-4 py-3 shadow-lg">
           <div className="text-center text-sm text-white/60">
             No articles found matching "{searchQuery}"
           </div>

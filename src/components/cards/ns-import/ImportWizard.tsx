@@ -147,7 +147,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
   };
 
   return (
-    <div className="glass-parent min-h-[600px] p-8">
+    <div className="border-border bg-card min-h-[600px] rounded-xl border p-8">
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="mb-2 flex items-center justify-between">
@@ -198,7 +198,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
               type="text"
               value={nationName}
               onChange={(e) => setNationName(e.target.value)}
-              className="glass-child w-full rounded-lg px-4 py-2 text-white placeholder-white/40"
+              className="border-border bg-muted/50 w-full rounded-lg border px-4 py-2 text-white placeholder-white/40"
               placeholder="Enter nation name"
             />
           </div>
@@ -213,7 +213,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </button>
           ) : (
             <div className="space-y-4">
-              <div className="glass-child rounded-lg p-4">
+              <div className="bg-muted/50 rounded-lg p-4">
                 <p className="mb-2 text-sm text-white/80">
                   A verification window has been opened. Copy your verification code and paste it
                   below.
@@ -228,7 +228,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
                   type="text"
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
-                  className="glass-child w-full rounded-lg px-4 py-2 text-white placeholder-white/40"
+                  className="border-border bg-muted/50 w-full rounded-lg border px-4 py-2 text-white placeholder-white/40"
                   placeholder="Paste verification code"
                 />
               </div>
@@ -258,15 +258,15 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           <p className="text-white/80">Review your NationStates deck before importing.</p>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="glass-child rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-sm text-white/60">Total Cards</div>
               <div className="text-2xl font-bold text-white">{deckData.totalCards}</div>
             </div>
-            <div className="glass-child rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-sm text-white/60">Unique Cards</div>
               <div className="text-2xl font-bold text-white">{deckData.uniqueCards}</div>
             </div>
-            <div className="glass-child col-span-2 rounded-lg p-4">
+            <div className="bg-muted/50 col-span-2 rounded-lg p-4">
               <div className="text-sm text-white/60">Deck Value</div>
               <div className="text-gold-400 text-2xl font-bold">
                 {deckData.deckValue.toFixed(2)} Bank
@@ -274,11 +274,11 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </div>
           </div>
 
-          <div className="glass-child max-h-96 overflow-y-auto rounded-lg p-4">
+          <div className="bg-muted/50 max-h-96 overflow-y-auto rounded-lg p-4">
             <h3 className="mb-4 font-semibold text-white">Cards (showing first 20)</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {deckData.cards.slice(0, 20).map((card, idx) => (
-                <div key={idx} className="glass-child rounded-lg p-3 text-center">
+                <div key={idx} className="bg-muted/50 rounded-lg p-3 text-center">
                   <div className="truncate text-xs font-semibold text-white/90">
                     {card.name || `Card ${card.id}`}
                   </div>
@@ -314,7 +314,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           <p className="text-white/80">Choose how to handle duplicate cards.</p>
 
           <div className="space-y-3">
-            <label className="glass-child flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
+            <label className="bg-muted/50 flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
               <input
                 type="radio"
                 name="duplicateOption"
@@ -331,7 +331,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
               </div>
             </label>
 
-            <label className="glass-child flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
+            <label className="bg-muted/50 flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
               <input
                 type="radio"
                 name="duplicateOption"
@@ -349,7 +349,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </label>
           </div>
 
-          <div className="glass-child rounded-lg border border-amber-400/30 bg-amber-500/10 p-4">
+          <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-4">
             <label className="flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
@@ -393,7 +393,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             Please wait while we import your cards. This may take a few moments.
           </p>
 
-          <div className="glass-child rounded-lg p-8 text-center">
+          <div className="bg-muted/50 rounded-lg p-8 text-center">
             <div className="border-t-gold-400 mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-white/20"></div>
             <div className="text-lg font-semibold text-white">Importing your deck...</div>
             <div className="mt-2 text-sm text-white/60">This may take a minute</div>
@@ -407,15 +407,15 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           <p className="text-white/80">Your NationStates deck has been successfully imported.</p>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="glass-child rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-sm text-white/60">Cards Imported</div>
               <div className="text-2xl font-bold text-green-400">{importResults.cardsImported}</div>
             </div>
-            <div className="glass-child rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-sm text-white/60">Cards Skipped</div>
               <div className="text-2xl font-bold text-white/60">{importResults.cardsSkipped}</div>
             </div>
-            <div className="glass-child col-span-2 rounded-lg p-4">
+            <div className="bg-muted/50 col-span-2 rounded-lg p-4">
               <div className="text-sm text-white/60">Bonus Credits Earned</div>
               <div className="text-gold-400 flex items-center gap-1 text-2xl font-bold">
                 <IxCreditsSymbol className="h-6 w-6 shrink-0 text-amber-400" />

@@ -97,7 +97,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         >
           <div
             className={cn(
-              "absolute right-0 z-[1000] h-auto w-[5%] overflow-hidden bg-gradient-to-l"
+              "absolute right-0 z-1000 h-auto w-[5%] overflow-hidden bg-gradient-to-l"
             )}
           ></div>
 
@@ -215,7 +215,7 @@ export const Card = ({
             exit={{ opacity: 0 }}
             ref={containerRef}
             layoutId={layout ? `card-${card.title}` : undefined}
-            className="relative z-[60] mx-auto my-10 h-fit max-w-5xl overflow-hidden rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900"
+            className="relative z-60 mx-auto my-10 h-fit max-w-5xl overflow-hidden rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900"
           >
             {/* Modal Background Image with Fade Overlay */}
             {card.src && (

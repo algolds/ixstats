@@ -99,7 +99,7 @@ export function ImportVerifyStep({
             }
           }}
           placeholder="Paste the code NationStates gave you..."
-          className="glass-hierarchy-interactive bg-background h-12 font-mono text-base"
+          className="bg-background h-12 font-mono text-base"
         />
       </FacetCard>
 

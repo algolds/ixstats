@@ -336,7 +336,7 @@ export function CardOverviewTab({
             <button
               onClick={() => onTrade(card)}
               className={cn(
-                "glass-hierarchy-interactive rounded-lg px-4 py-3",
+                "border-border bg-muted/50 hover:bg-muted rounded-lg border px-4 py-3",
                 "text-foreground text-sm font-semibold dark:text-white",
                 "transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
               )}
@@ -348,7 +348,7 @@ export function CardOverviewTab({
             <button
               onClick={() => onList(card)}
               className={cn(
-                "glass-hierarchy-interactive rounded-lg px-4 py-3",
+                "border-border bg-muted/50 hover:bg-muted rounded-lg border px-4 py-3",
                 "text-foreground text-sm font-semibold dark:text-white",
                 "transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
               )}
@@ -360,7 +360,7 @@ export function CardOverviewTab({
             <button
               onClick={() => onViewCollection(card.countryId!)}
               className={cn(
-                "glass-hierarchy-interactive col-span-2 rounded-lg px-4 py-3",
+                "border-border bg-muted/50 hover:bg-muted col-span-2 rounded-lg border px-4 py-3",
                 "text-foreground text-sm font-semibold dark:text-white",
                 "transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
               )}

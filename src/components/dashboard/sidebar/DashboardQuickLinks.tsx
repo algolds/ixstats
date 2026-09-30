@@ -168,7 +168,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                     Feedback
                   </button>
                 </DialogTrigger>
-                <DialogContent className="bg-background/95 border-border/80 z-[100020] max-w-md border p-6 backdrop-blur-xl">
+                <DialogContent className="bg-background/95 border-border/80 max-w-md border p-6 backdrop-blur-xl">
                   <FeedbackModal onClose={() => setIsOpen(false)} />
                 </DialogContent>
               </Dialog>

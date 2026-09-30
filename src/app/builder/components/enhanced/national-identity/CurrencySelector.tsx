@@ -129,7 +129,7 @@ export function CurrencySelector({
       </PopoverTrigger>
 
       <PopoverContent
-        className="w-[320px] sm:w-[380px] p-0 border border-border bg-popover/95 backdrop-blur-2xl shadow-2xl rounded-xl overflow-hidden z-[100050]"
+        className="w-[320px] sm:w-[380px] p-0 border border-border bg-popover/95 backdrop-blur-2xl shadow-2xl rounded-xl overflow-hidden"
         align="start"
         sideOffset={4}
       >

@@ -44,7 +44,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
       </PopoverTrigger>
       <PopoverContent
         align={align}
-        className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
+        className="z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
       >
         <div className="flex flex-col gap-0.5 text-xs">
           <button

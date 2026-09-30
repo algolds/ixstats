@@ -70,7 +70,7 @@ export function DiplomaticChoiceEditor({
         ) : (
           <div className="space-y-2">
             {responseOptions.map((choice, index) => (
-              <Card key={choice.id || index} className="facet-card-child p-3">
+              <Card key={choice.id || index} className="p-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
@@ -163,7 +163,7 @@ export function DiplomaticChoiceEditor({
 
       {/* Choice Editor Sub-Card */}
       {editingChoiceIndex !== null && (
-        <Card className="facet-card-parent border-2 border-red-500/30 p-4">
+        <Card className="border-2 border-red-500/30 p-4">
           <h4 className="text-foreground mb-3 text-sm font-medium">
             {editingChoiceIndex < responseOptions.length ? "Edit Choice" : "Add New Choice"}
           </h4>

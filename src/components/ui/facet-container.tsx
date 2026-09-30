@@ -25,6 +25,21 @@ export type FacetVariant =
   | "military"
   | "cultural";
 
+/**
+ * Variants that have a `.facet-<variant>` rule in `src/styles/facet/**`. The other variants are
+ * accepted for compatibility but emit no variant class (they never had CSS).
+ */
+const STYLED_VARIANTS: ReadonlySet<FacetVariant> = new Set<FacetVariant>([
+  "base",
+  "security",
+  "forum",
+  "builder",
+  "overview",
+  "economy",
+  "military",
+  "cultural",
+]);
+
 // Volumetric Z-depth levels for layering
 export type FacetDepth = 1 | 2 | 3 | 4 | "flat" | "base" | "elevated" | "modal" | "interactive";
 
@@ -69,7 +84,9 @@ export interface FacetContainerProps extends React.HTMLAttributes<HTMLDivElement
   variant?: FacetVariant;
   depth?: FacetDepth;
   interactive?: FacetInteractivity;
+  /** @deprecated No-op (the class it emitted never had CSS). Removed in Facet 3 Phase 2. */
   enableRefraction?: boolean;
+  /** @deprecated No-op (the class it emitted never had CSS). Removed in Facet 3 Phase 2. */
   adaptToBackground?: boolean;
   onDepthChange?: (depth: 1 | 2 | 3 | 4) => void;
   texture?: TextureType;
@@ -93,8 +110,8 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
       variant = "base",
       depth = 2,
       interactive = "none",
-      enableRefraction = true,
-      adaptToBackground = false,
+      enableRefraction: _enableRefraction,
+      adaptToBackground: _adaptToBackground,
       onDepthChange,
       texture,
       textureOpacity,
@@ -173,11 +190,11 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
     const isClickable = interactive === "click" || Boolean(onClick);
     const hasInteractionState = interactive !== "none" || Boolean(onClick);
     const facetClasses = cn(
-      "facet-container relative",
-      isSolid ? "border-border bg-card border" : [`facet-${variant}`, `facet-depth-${currentDepth}`],
+      "relative",
+      isSolid
+        ? "border-border bg-card border"
+        : [STYLED_VARIANTS.has(variant) && `facet-${variant}`, `facet-depth-${currentDepth}`],
       isClickable && "facet-interactive cursor-pointer active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-      enableRefraction && "facet-refract",
-      adaptToBackground && "facet-adapt",
       themeClass,
       blurClass,
       className
@@ -254,7 +271,6 @@ export const FacetCard = forwardRef<HTMLDivElement, Omit<FacetContainerProps, "v
       variant="base"
       depth={1}
       interactive={interactive}
-      enableRefraction={false}
       {...props}
     />
   )
@@ -291,7 +307,6 @@ export const FacetModal = forwardRef<
     variant="base"
     depth={4}
     interactive="none"
-    enableRefraction={true}
     {...props}
   />
 ));
@@ -306,8 +321,6 @@ export const FacetNavigation = forwardRef<
     variant="base"
     depth={3}
     interactive="focus"
-    enableRefraction={true}
-    adaptToBackground={true}
     {...props}
   />
 ));

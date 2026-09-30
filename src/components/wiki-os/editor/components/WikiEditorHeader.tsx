@@ -191,7 +191,7 @@ export function WikiEditorHeader({
           <PopoverContent
             align="end"
             style={{ transformOrigin: "var(--radix-popover-content-transform-origin)" }}
-            className="glass-none z-[10001] w-52 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
+            className="z-[10001] w-52 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
           >
             <div className="flex flex-col gap-0.5 text-xs">
               <button

@@ -36,7 +36,7 @@ export function EquipmentCard({
 
   return (
     <Card
-      className={`facet-card-child p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/50 ${isSelected ? "ring-2 ring-red-500" : ""}`}
+      className={`p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/50 ${isSelected ? "ring-2 ring-red-500" : ""}`}
     >
       {/* Selection & Image */}
       <div className="mb-3 flex items-start justify-between">

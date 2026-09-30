@@ -159,7 +159,7 @@ export function PostModals({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100100] flex flex-col items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+            className="fixed inset-0 z-[100005] flex flex-col items-center justify-center bg-black/80 p-4 backdrop-blur-md"
             onClick={() => setLightboxMedia(null)}
           >
             <motion.div

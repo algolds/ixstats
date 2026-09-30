@@ -27,7 +27,7 @@ export const SettingsDropdown = memo(function SettingsDropdown({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2 text-[var(--wikios-text)] shadow-2xl"
+        className="z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2 text-[var(--wikios-text)] shadow-2xl"
       >
         <div className="flex flex-col gap-2.5 p-1 text-xs">
           <div className="mb-1 border-b border-[var(--wikios-border)] pb-1.5 font-semibold text-[var(--wikios-text-dim)]">

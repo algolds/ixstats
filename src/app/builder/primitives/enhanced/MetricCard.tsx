@@ -107,7 +107,7 @@ export function MetricCard({
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="z-[100050] max-w-[250px] px-3 py-2 text-xs font-normal"
+                    className="max-w-[250px] px-3 py-2 text-xs font-normal"
                   >
                     {tooltip}
                   </TooltipContent>

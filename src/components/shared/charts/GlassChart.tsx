@@ -56,7 +56,7 @@ function ChartSkeleton({ height = 300, type = "bar" }: ChartSkeletonProps) {
           >
             <motion.path
               d="M20,150 Q100,100 200,120 T380,80"
-              stroke="hsl(var(--color-brand-primary-hsl))"
+              stroke="var(--color-brand-primary)"
               strokeWidth="3"
               fill="none"
               strokeLinecap="round"
@@ -70,10 +70,10 @@ function ChartSkeleton({ height = 300, type = "bar" }: ChartSkeletonProps) {
             className="mx-auto h-32 w-32 rounded-full"
             style={{
               background: `conic-gradient(
-                hsl(var(--color-brand-primary-hsl)) 0deg 120deg,
-                hsl(var(--color-success-hsl)) 120deg 200deg,
-                hsl(var(--color-warning-hsl)) 200deg 280deg,
-                hsl(var(--color-error-hsl)) 280deg 360deg
+                var(--color-brand-primary) 0deg 120deg,
+                var(--color-success) 120deg 200deg,
+                var(--color-warning) 200deg 280deg,
+                var(--color-error) 280deg 360deg
               )`,
             }}
             initial={{ scale: 0.8, opacity: 0, rotate: 0 }}
@@ -216,22 +216,22 @@ export function GlassChart({
 export const chartTheme = {
   colors: chartColorPalette,
   text: {
-    primary: "hsl(var(--color-text-primary-hsl))",
-    secondary: "hsl(var(--color-text-secondary-hsl))",
-    muted: "hsl(var(--color-text-muted-hsl))",
+    primary: "var(--color-text-primary)",
+    secondary: "var(--color-text-secondary)",
+    muted: "var(--color-text-muted)",
   },
   grid: {
-    stroke: "hsl(var(--color-border-primary-hsl))",
+    stroke: "var(--color-border-primary)",
     strokeWidth: 1,
     opacity: 0.3,
   },
   tooltip: {
-    background: "hsl(var(--color-bg-secondary-hsl))",
-    border: "hsl(var(--color-border-primary-hsl))",
-    text: "hsl(var(--color-text-primary-hsl))",
+    background: "var(--color-bg-secondary)",
+    border: "var(--color-border-primary)",
+    text: "var(--color-text-primary)",
   },
   legend: {
-    text: "hsl(var(--color-text-secondary-hsl))",
+    text: "var(--color-text-secondary)",
     fontSize: 12,
   },
 };

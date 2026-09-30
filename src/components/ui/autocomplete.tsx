@@ -186,7 +186,7 @@ export const Autocomplete = React.memo(function Autocomplete({
       </div>
 
       {open && totalSuggestions > 0 && (
-        <div className="border-border/60 bg-popover/95 text-popover-foreground absolute z-[100020] mt-1.5 w-full rounded-lg border p-1 shadow-lg backdrop-blur-md animate-in fade-in-0 zoom-in-95 duration-100">
+        <div className="border-border/60 bg-popover/95 text-popover-foreground absolute z-(--z-popover) mt-1.5 w-full rounded-lg border p-1 shadow-lg backdrop-blur-md animate-in fade-in-0 zoom-in-95 duration-100">
           <Command shouldFilter={false}>
             <CommandList className="max-h-[260px]">
               {isLoading ? (

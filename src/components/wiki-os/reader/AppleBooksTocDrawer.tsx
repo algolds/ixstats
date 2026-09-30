@@ -94,7 +94,7 @@ export function AppleBooksTocDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[100020] bg-black/40 backdrop-blur-[2px] transition-opacity"
+            className="fixed inset-0 z-[100002] bg-black/40 backdrop-blur-[2px] transition-opacity"
           />
 
           {/* Drawer Panel */}
@@ -103,7 +103,7 @@ export function AppleBooksTocDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="text-foreground fixed top-0 right-0 bottom-0 z-[100021] flex h-full w-80 max-w-[85vw] flex-col border-l border-white/10 bg-zinc-950/95 shadow-2xl backdrop-blur-3xl dark:bg-black/90"
+            className="text-foreground fixed top-0 right-0 bottom-0 z-[100003] flex h-full w-80 max-w-[85vw] flex-col border-l border-white/10 bg-zinc-950/95 shadow-2xl backdrop-blur-3xl dark:bg-black/90"
           >
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5">

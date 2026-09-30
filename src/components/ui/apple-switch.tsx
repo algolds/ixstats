@@ -317,7 +317,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
         </span>
 
         <motion.span
-          className="pointer-events-none absolute left-0 z-[9] block rounded-full"
+          className="pointer-events-none absolute left-0 z-9 block rounded-full"
           style={{
             width: thumbWidth,
             height: thumbHeight,

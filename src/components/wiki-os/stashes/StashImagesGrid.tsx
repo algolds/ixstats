@@ -225,7 +225,7 @@ export function StashedImageModal({
 
   return createPortal(
     <div
-      className="animate-in fade-in fixed inset-0 z-[120002] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md duration-200"
+      className="animate-in fade-in fixed inset-0 z-[100008] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md duration-200"
       onClick={onClose}
     >
       <button
@@ -373,7 +373,7 @@ export function StashedImageModal({
       {/* Full Screen Image Lightbox */}
       {isZoomed && (
         <div
-          className="animate-in fade-in fixed inset-0 z-[120003] flex cursor-zoom-out items-center justify-center bg-black/95 backdrop-blur-md duration-200"
+          className="animate-in fade-in fixed inset-0 z-[100009] flex cursor-zoom-out items-center justify-center bg-black/95 backdrop-blur-md duration-200"
           onClick={() => setIsZoomed(false)}
         >
           <button

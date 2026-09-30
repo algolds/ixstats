@@ -170,7 +170,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                   className={cn(
                     "rounded-lg px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     leaderboardCategory === cat
-                      ? "glass-hierarchy-interactive text-white"
+                      ? "bg-muted text-white"
                       : "text-white/60 hover:text-white/80"
                   )}
                 >

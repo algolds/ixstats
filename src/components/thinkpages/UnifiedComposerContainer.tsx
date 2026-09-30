@@ -43,7 +43,7 @@ export function UnifiedComposerContainer({
   // If hiding accounts tab, show only composer without tabs
   if (hideAccountsTab) {
     return (
-      <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
+      <Card className="border-blue-500/30 bg-blue-500/5">
         {selectedAccount ? (
           <GlassCanvasComposer
             account={selectedAccount}
@@ -71,7 +71,7 @@ export function UnifiedComposerContainer({
   }
 
   return (
-    <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
+    <Card className="border-blue-500/30 bg-blue-500/5">
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "compose" | "accounts")}

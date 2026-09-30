@@ -403,7 +403,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
       {isZoomed &&
         createPortal(
           <div
-            className="animate-in fade-in fixed inset-0 z-[120002] flex items-center justify-center bg-black/90 backdrop-blur-md duration-200"
+            className="animate-in fade-in fixed inset-0 z-[100008] flex items-center justify-center bg-black/90 backdrop-blur-md duration-200"
             onClick={() => setIsZoomed(false)}
           >
             <button

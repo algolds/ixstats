@@ -188,7 +188,7 @@ export function ImportNationStep({
                     }
                   }}
                   placeholder="e.g. Testlandia"
-                  className="glass-hierarchy-interactive bg-muted/30 focus:bg-background h-12 pl-10 text-base"
+                  className="bg-muted/30 focus:bg-background h-12 pl-10 text-base"
                   autoFocus
                 />
               </div>

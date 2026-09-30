@@ -106,7 +106,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
             className={`flex-1 rounded-lg px-4 py-3 font-semibold transition-colors ${
               selectedWikiSource === "ixwiki"
                 ? "bg-gold-400 text-gray-900"
-                : "glass-child text-white hover:bg-white/10"
+                : "bg-muted/50 text-white hover:bg-white/10"
             }`}
           >
             IxWiki
@@ -116,7 +116,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
             className={`flex-1 rounded-lg px-4 py-3 font-semibold transition-colors ${
               selectedWikiSource === "iiwiki"
                 ? "bg-gold-400 text-gray-900"
-                : "glass-child text-white hover:bg-white/10"
+                : "bg-muted/50 text-white hover:bg-white/10"
             }`}
           >
             IIWiki
@@ -136,7 +136,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
 
       {/* Article Preview */}
       {selectedArticle && (
-        <div className="glass-child rounded-lg p-4">
+        <div className="bg-muted/50 rounded-lg p-4">
           <h3 className="mb-2 font-semibold text-white">{selectedArticle}</h3>
 
           {loadingPreview ? (
@@ -148,7 +148,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       )}
 
       {/* Cost Display */}
-      <div className="glass-child bg-gold-500/10 border-gold-400/20 rounded-lg border p-4">
+      <div className="bg-gold-500/10 border-gold-400/20 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-white/60">Request Cost</div>
@@ -193,14 +193,14 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
 
       {/* Recent Requests */}
       {myRequests.data && myRequests.data.requests.length > 0 && (
-        <div className="glass-child rounded-lg p-4">
+        <div className="bg-muted/50 rounded-lg p-4">
           <h3 className="mb-3 font-semibold text-white">Your Recent Requests</h3>
 
           <div className="space-y-2">
             {myRequests.data.requests.map((request: any) => (
               <div
                 key={request.id}
-                className="glass-child flex items-center justify-between rounded-lg p-3"
+                className="bg-muted/50 flex items-center justify-between rounded-lg p-3"
               >
                 <div className="flex-1">
                   <div className="text-sm font-medium text-white">{request.articleTitle}</div>

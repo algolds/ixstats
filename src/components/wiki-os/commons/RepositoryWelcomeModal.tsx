@@ -154,7 +154,7 @@ export function RepositoryWelcomeModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[120000] bg-zinc-950/40 backdrop-blur-[12px] dark:bg-black/60"
+            className="fixed inset-0 z-[100006] bg-zinc-950/40 backdrop-blur-[12px] dark:bg-black/60"
             onClick={handleClose}
           />
 
@@ -165,7 +165,7 @@ export function RepositoryWelcomeModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 20 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-1/2 left-1/2 z-[120001] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4 focus:outline-none"
+            className="fixed top-1/2 left-1/2 z-[100007] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4 focus:outline-none"
           >
             <div className="relative overflow-hidden rounded-2xl border border-black/10 bg-white/70 shadow-2xl backdrop-blur-2xl dark:border-white/20 dark:bg-zinc-950/70">
               {/* Close button */}

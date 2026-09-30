@@ -108,7 +108,7 @@ export function ComposerPollModal({
                 <SelectTrigger className="border-input bg-secondary focus:border-poll/50 h-8 rounded-xl text-xs font-semibold">
                   <SelectValue placeholder="Select Poll Type" />
                 </SelectTrigger>
-                <SelectContent className="border-border bg-popover/98 z-[100020] rounded-xl text-xs shadow-2xl backdrop-blur-2xl">
+                <SelectContent className="border-border bg-popover/98 rounded-xl text-xs shadow-2xl backdrop-blur-2xl">
                   <SelectItem value="choice">Choice Poll</SelectItem>
                   {!isRegularUser && <SelectItem value="feature-poll">Feature Poll</SelectItem>}
                 </SelectContent>
