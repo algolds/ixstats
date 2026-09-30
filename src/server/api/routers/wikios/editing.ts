@@ -26,6 +26,7 @@ import {
   type WikiAuthIdentity,
 } from "~/lib/wiki-os/auth";
 import { checkEditPolicy } from "~/lib/wiki-os/namespace-policy";
+import { getVerifiedWikiUsername } from "~/lib/wiki-os/storage";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
@@ -40,15 +41,18 @@ async function assertCanEditArticle(
   realm = "ixwiki"
 ): Promise<WikiAuthIdentity> {
   const identity = getWikiAuth(ctx);
+  const verifiedWikiUsername = identity.internalUserId
+    ? await getVerifiedWikiUsername(identity.internalUserId)
+    : null;
   const policy = checkEditPolicy(title, {
     isAdmin: identity.isAdmin,
-    linkedWikiUsername: identity.hasLinkedWikiAccount ? identity.wikiUsername : null,
+    linkedWikiUsername: verifiedWikiUsername,
   });
   if (!policy.allowed) {
     throw new TRPCError({ code: "FORBIDDEN", message: policy.reason });
   }
   const existing = await ArticleRepository.findBySlug(title, realm);
-  if (!canEditProtectedArticle(existing, identity)) {
+  if (!canEditProtectedArticle(existing, identity, verifiedWikiUsername !== null)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "This page is protected." });
   }
   return identity;

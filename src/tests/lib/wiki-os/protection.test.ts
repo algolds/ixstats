@@ -14,14 +14,14 @@ const identity = (overrides: Partial<WikiAuthIdentity>): WikiAuthIdentity => ({
   internalUserId: "db1",
   userId: "user_1",
   wikiUsername: "User_1",
-  hasLinkedWikiAccount: false,
+  hasLegacyWikiUsername: false,
   countryName: null,
   isAdmin: false,
   ...overrides,
 });
 
 const plain = identity({});
-const linked = identity({ hasLinkedWikiAccount: true, wikiUsername: "Linked" });
+const legacyUsername = identity({ hasLegacyWikiUsername: true, wikiUsername: "Legacy" });
 const admin = identity({ isAdmin: true });
 const anonymous = identity({ userId: null, internalUserId: null, wikiUsername: null });
 
@@ -32,21 +32,28 @@ const article = (protectionLevel: string, protectionExpiry: Date | null = null) 
 
 describe("canEditProtectedArticle", () => {
   it.each([
-    ["new page, signed in", null, plain, true],
-    ["ALL, signed in", article("ALL"), plain, true],
-    ["ALL, anonymous", article("ALL"), anonymous, false],
-    ["AUTOCONFIRMED, no linked account", article("AUTOCONFIRMED"), plain, false],
-    ["AUTOCONFIRMED, linked account", article("AUTOCONFIRMED"), linked, true],
-    ["AUTOCONFIRMED, admin", article("AUTOCONFIRMED"), admin, true],
-    ["SYSOP, linked non-admin", article("SYSOP"), linked, false],
-    ["SYSOP, admin", article("SYSOP"), admin, true],
-    ["PROTECTED, linked non-admin", article("PROTECTED"), linked, false],
-    ["PROTECTED, admin", article("PROTECTED"), admin, true],
-    ["unknown level fails closed", article("SOMETHING_NEW"), linked, false],
-    ["unknown level, admin", article("SOMETHING_NEW"), admin, true],
-    ["expired SYSOP counts as ALL", article("SYSOP", PAST), plain, true],
-    ["unexpired SYSOP", article("SYSOP", FUTURE), plain, false],
-  ] as const)("%s", (_label, target, who, expected) => {
-    expect(canEditProtectedArticle(target, who, NOW)).toBe(expected);
+    ["new page, signed in", null, plain, false, true],
+    ["ALL, signed in", article("ALL"), plain, false, true],
+    ["ALL, anonymous", article("ALL"), anonymous, false, false],
+    ["AUTOCONFIRMED, no verified account", article("AUTOCONFIRMED"), plain, false, false],
+    [
+      "AUTOCONFIRMED, legacy wikiUsername but no verified account",
+      article("AUTOCONFIRMED"),
+      legacyUsername,
+      false,
+      false,
+    ],
+    ["AUTOCONFIRMED, verified account", article("AUTOCONFIRMED"), plain, true, true],
+    ["AUTOCONFIRMED, admin", article("AUTOCONFIRMED"), admin, false, true],
+    ["SYSOP, verified non-admin", article("SYSOP"), plain, true, false],
+    ["SYSOP, admin", article("SYSOP"), admin, false, true],
+    ["PROTECTED, verified non-admin", article("PROTECTED"), plain, true, false],
+    ["PROTECTED, admin", article("PROTECTED"), admin, false, true],
+    ["unknown level fails closed", article("SOMETHING_NEW"), plain, true, false],
+    ["unknown level, admin", article("SOMETHING_NEW"), admin, false, true],
+    ["expired SYSOP counts as ALL", article("SYSOP", PAST), plain, false, true],
+    ["unexpired SYSOP", article("SYSOP", FUTURE), plain, false, false],
+  ] as const)("%s", (_label, target, who, verified, expected) => {
+    expect(canEditProtectedArticle(target, who, verified, NOW)).toBe(expected);
   });
 });

@@ -12,6 +12,7 @@
 
 import { db } from "~/server/db";
 import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 export interface WikiUserRecord {
   id: string;
@@ -33,4 +34,20 @@ export async function resolveActiveCountryId(ctx: WikiAuthContext): Promise<stri
   if (!userId) return null;
   const user = await findWikiUserByAuthId(userId);
   return user?.countryId ?? null;
+}
+
+/**
+ * The user's VERIFIED wiki account name on `source`, or null. Verified means the user proved control
+ * of the account (`WikiAccountLink.verifiedAt`); `User.wikiUsername` is never consulted because it can
+ * hold an unverified display fallback. This is the only source of wiki identity for authorization.
+ */
+export async function getVerifiedWikiUsername(
+  userId: string,
+  source: WikiSource = "ixwiki"
+): Promise<string | null> {
+  const link = await db.wikiAccountLink.findFirst({
+    where: { userId, source, verifiedAt: { not: null } },
+    select: { username: true },
+  });
+  return link?.username ?? null;
 }
