@@ -16,22 +16,34 @@ function nameOf(value: CanonicalAuthorInfo["creator"]): string | null {
   return personOf(value)?.username ?? (typeof value === "string" ? value : null);
 }
 
+function creatorFields(raw: CanonicalAuthorInfo) {
+  const person = personOf(raw.creator);
+  return {
+    creator: nameOf(raw.creator) ?? raw.author ?? null,
+    creatorAvatar: person?.avatar ?? raw.creatorAvatar ?? null,
+    createdAt: raw.createdAt ?? person?.timestamp ?? raw.createdTimestamp ?? null,
+  };
+}
+
+function lastEditorFields(raw: CanonicalAuthorInfo) {
+  const person = personOf(raw.lastEditor);
+  return {
+    lastEditor: nameOf(raw.lastEditor),
+    lastEditorAvatar: person?.avatar ?? raw.lastEditorAvatar ?? null,
+    lastEditedAt: raw.lastEditedAt ?? person?.timestamp ?? raw.lastModifiedTimestamp ?? null,
+  };
+}
+
 /** Canonical authorship as the article header, byline and companion read it; null when there is none. */
 export function normalizeAuthorInfo(
   raw: CanonicalAuthorInfo | null | undefined
 ): ArticleAuthorInfo | null {
   if (!raw) return null;
 
-  const creator = personOf(raw.creator);
-  const lastEditor = personOf(raw.lastEditor);
   const contributors = raw.topContributors ?? raw.contributors ?? [];
   return {
-    creator: nameOf(raw.creator) ?? raw.author ?? null,
-    creatorAvatar: creator?.avatar ?? raw.creatorAvatar ?? null,
-    createdAt: raw.createdAt ?? creator?.timestamp ?? raw.createdTimestamp ?? null,
-    lastEditor: nameOf(raw.lastEditor),
-    lastEditorAvatar: lastEditor?.avatar ?? raw.lastEditorAvatar ?? null,
-    lastEditedAt: raw.lastEditedAt ?? lastEditor?.timestamp ?? raw.lastModifiedTimestamp ?? null,
+    ...creatorFields(raw),
+    ...lastEditorFields(raw),
     contributors,
     totalContributors: raw.totalContributors ?? contributors.length,
   };
