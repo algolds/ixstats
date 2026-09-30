@@ -48,7 +48,11 @@ jest.mock("~/lib/wiki-os/core", () => ({
   ArticleRepository: { findBySlug: jest.fn(), findMissingTitles: jest.fn() },
   MediaAssetService: {},
 }));
-jest.mock("~/lib/utils/sanitize-html", () => ({ __esModule: true, sanitizeWikiArticleHtml: jest.fn() }));
+jest.mock("~/lib/utils/sanitize-html", () => ({
+  __esModule: true,
+  sanitizeWikiArticleHtml: jest.fn(),
+  wikiArticleSanitizerFingerprint: jest.fn(() => "test-fingerprint"),
+}));
 jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({ __esModule: true, getHeadRevisionRefs: jest.fn() }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
