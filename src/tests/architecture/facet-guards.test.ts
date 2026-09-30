@@ -78,6 +78,18 @@ const DARK_OVERRIDE_ALLOWED = new Set([
 const CONVERTED_GRADIENT_CEILING = 10;
 
 describe("Facet anti-slop guards", () => {
+  it("never nests block elements (Skeleton renders a div) inside <p> — a hydration error", () => {
+    const paragraph = /<p(?:\s[^>]*)?>((?:(?!<\/p>)[\s\S]){0,600}?)<\/p>/g;
+    const offenders = sources.flatMap(({ file, content }) =>
+      [...content.matchAll(paragraph)]
+        .filter((m) =>
+          /<(Skeleton|div|FacetCard|Card|ul|ol|table|h[1-6]|section)\b/.test(m[1] ?? "")
+        )
+        .map((m) => `${file}:${content.slice(0, m.index).split("\n").length}`)
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("has no arbitrary sub-12px text sizes", () => {
     expect(hits(MICRO_TYPE, MICRO_TYPE_ALLOWED)).toEqual([]);
   });

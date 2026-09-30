@@ -113,13 +113,13 @@ export function VaultWidget() {
                 <Eyebrow className="block">IxCredits</Eyebrow>
                 <div className="flex items-center gap-1.5 pt-0.5">
                   <IxCreditsSymbol className="size-4 shrink-0 text-amber-600" />
-                  <p className="text-foreground text-base font-bold tracking-tight tabular-nums sm:text-lg">
-                    {balanceLoading ? (
-                      <Skeleton className="h-5 w-16" />
-                    ) : (
-                      Math.round(balanceData?.credits ?? 0).toLocaleString()
-                    )}
-                  </p>
+                  {balanceLoading ? (
+                    <Skeleton className="h-5 w-16" />
+                  ) : (
+                    <p className="text-foreground text-base font-bold tracking-tight tabular-nums sm:text-lg">
+                      {Math.round(balanceData?.credits ?? 0).toLocaleString()}
+                    </p>
+                  )}
                   {passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
                     <Button
                       type="button"
