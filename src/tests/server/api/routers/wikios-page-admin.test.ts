@@ -227,6 +227,43 @@ describe("movePage", () => {
     });
   });
 
+  describe("the talk destination is authorized like the main destination", () => {
+    const protectDestinationTalk = () =>
+      tables.wikiRestriction.seed({
+        source: "ixwiki",
+        title: "Talk:New name",
+        action: "move",
+        level: "sysop",
+      });
+
+    it("is refused to a mover its move protection keeps out, and leaves that protection in place", async () => {
+      protectDestinationTalk();
+
+      await expect(
+        as(memberCtx()).movePage({ from: "Old name", to: "New name" })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
+
+      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("Old name");
+      expect(tables.wikiRestriction.rows.map((row) => row.title)).toEqual(["Talk:New name"]);
+    });
+
+    it("does not matter when the talk page stays behind", async () => {
+      protectDestinationTalk();
+
+      await as(memberCtx()).movePage({ from: "Old name", to: "New name", moveTalk: false });
+
+      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("New name");
+    });
+
+    it("lets a sysop move the talk page onto it", async () => {
+      protectDestinationTalk();
+
+      await as(sysopCtx()).movePage({ from: "Old name", to: "New name" });
+
+      expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("Talk:New name");
+    });
+  });
+
   describe("protection follows the page", () => {
     const seedProtections = (withCreate = true) =>
       tables.wikiRestriction.seed(

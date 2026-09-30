@@ -93,6 +93,7 @@ async function authorizeMove(
   if (fromTalk && toTalk) {
     await authorizeAction(ctx, "move", fromTalk);
     await authorizeAction(ctx, writeSource, fromTalk);
+    await authorizeAction(ctx, "move", toTalk);
     await authorizeAction(ctx, "create", toTalk);
   }
 }
