@@ -1,19 +1,23 @@
+/**
+ * Media proxy for the local ixwiki.com install.
+ *
+ * SECURITY: this is an image-only proxy, not a general reverse proxy. Only three path shapes are
+ * served (`images/...`, `wiki/Special:FilePath/<name>`, or a bare image file name which is rewritten
+ * to Special:FilePath); everything else is a 404 and never reaches MediaWiki. Only a numeric `width`
+ * query parameter is forwarded, and every success response goes through `imageOnlyResponse`
+ * (`image/*` only, 15 MB cap, nosniff).
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
-import { Cache } from "~/lib/cache";
+import { MEDIA_CORS_HEADERS } from "../../_config";
+import { imageOnlyResponse } from "../../_media-response";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Cross-Origin-Resource-Policy": "cross-origin",
-};
+const corsHeaders = MEDIA_CORS_HEADERS;
 
-const mediaBufferCache = new Cache<{ buffer: ArrayBuffer; contentType: string }>({
-  defaultTtlMs: 24 * 60 * 60 * 1000, // 24 hours
-  maxSize: 500,
-});
+const IMAGE_FILE = /\.(?:png|jpe?g|gif|webp|svg|ico|avif)$/i;
+const WIDTH_PARAM = /^\d{1,4}$/;
+const FALLBACK_USER_AGENT = "IxStats/1.4 (https://ixwiki.com; info@ixwiki.com)";
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -22,147 +26,118 @@ export async function OPTIONS() {
   });
 }
 
+function notFound(): NextResponse {
+  return new NextResponse(null, { status: 404, headers: corsHeaders });
+}
+
+function safeDecode(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    // malformed percent-encoding — keep the raw segment
+    return segment;
+  }
+}
+
+/**
+ * Map the requested sub-path onto the origin path it may fetch, or null when it is not a media path.
+ * Segments are decoded first so `%2e%2e` / `%2F` tricks cannot smuggle a traversal past the prefix check.
+ */
+function resolveMediaPath(rawSegments: string[]): string[] | null {
+  const segments = rawSegments.map(safeDecode);
+  if (segments.some((s) => s === "" || s === "." || s === ".." || /[\\/]/.test(s))) return null;
+
+  const [first, second, ...rest] = segments;
+  if (segments.length === 1 && first && IMAGE_FILE.test(first)) {
+    return ["wiki", "Special:FilePath", first];
+  }
+  if (first === "images" && second) return segments;
+  if (first === "wiki" && second?.toLowerCase() === "special:filepath" && rest.length > 0) {
+    return segments;
+  }
+  return null;
+}
+
+/** `:` stays literal so `Special:FilePath` keeps its canonical form. */
+function encodePath(segments: string[]): string {
+  return segments.map((s) => encodeURIComponent(s).replace(/%3A/gi, ":")).join("/");
+}
+
+function registerAssetOnce(filename: string, originBaseUrl: string): void {
+  void MediaAssetService.findAsset(filename)
+    .then(async (existing) => {
+      if (!existing) await MediaAssetService.registerAsset({ filename, originBaseUrl }).catch(() => null);
+    })
+    .catch(() => null);
+}
+
+/** Try MediaWiki's canonical Special:FilePath (local uploads, InstantCommons), then the Commons MD5 shard. */
+async function fetchImageFallback(baseUrl: string, cleanFilename: string): Promise<Response | null> {
+  const headers = { "User-Agent": FALLBACK_USER_AGENT, Accept: "image/*,*/*" };
+  const filePathRes = await fetch(`${baseUrl}/wiki/Special:FilePath/${encodeURIComponent(cleanFilename)}`, {
+    method: "GET",
+    headers,
+    redirect: "follow",
+    signal: AbortSignal.timeout(10000),
+  }).catch(() => null);
+  if (filePathRes?.ok) return filePathRes;
+
+  const { getMd5ShardPath } = await import("~/lib/wiki-os/transformers/image-url");
+  const { fullPath } = getMd5ShardPath(cleanFilename);
+  const commonsRes = await fetch(`https://upload.wikimedia.org/wikipedia/commons/${fullPath}`, {
+    headers,
+    signal: AbortSignal.timeout(10000),
+  }).catch(() => null);
+  return commonsRes?.ok ? commonsRes : null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const subpath = resolvedParams.path.join("/");
-    const searchParams = request.nextUrl.searchParams.toString();
-    const queryString = searchParams ? `?${searchParams}` : "";
+    const { path } = await params;
+    const mediaPath = resolveMediaPath(path);
+    if (!mediaPath) return notFound();
 
-    const cacheKey = `${subpath}${queryString}`;
-    const cachedMedia = mediaBufferCache.get(cacheKey);
-    if (cachedMedia) {
-      return new NextResponse(cachedMedia.buffer, {
-        status: 200,
-        headers: {
-          "Content-Type": cachedMedia.contentType,
-          "Cache-Control": "public, max-age=31536000, immutable",
-          ...corsHeaders,
-        },
-      });
-    }
+    const width = request.nextUrl.searchParams.get("width");
+    const queryString = width && WIDTH_PARAM.test(width) ? `?width=${width}` : "";
 
     const baseUrl = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
-    const targetUrl = `${baseUrl}/${subpath}${queryString}`;
+    const targetUrl = `${baseUrl}/${encodePath(mediaPath)}${queryString}`;
 
-    // Extract filename if this is an image or thumbnail path
-    const lastSegment = resolvedParams.path[resolvedParams.path.length - 1] || "";
-    let decodedLastSegment = lastSegment;
-    try {
-      decodedLastSegment = decodeURIComponent(lastSegment);
-    } catch {
-      // malformed percent-encoding — keep the raw segment
-    }
-
-    const isImageFile = /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i.test(decodedLastSegment);
-    const cleanFilename = decodedLastSegment
+    // Thumbnail names (`300px-Foo.png`) map back to the original file name.
+    const lastSegment = mediaPath[mediaPath.length - 1] ?? "";
+    const isImageFile = IMAGE_FILE.test(lastSegment);
+    const cleanFilename = lastSegment
       .replace(/^(\d+px-)/i, "")
       .replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "")
       .trim();
 
-    // 1. Check & Auto-register in PostgreSQL `wiki_assets` if new
-    if (isImageFile && cleanFilename) {
-      void MediaAssetService.findAsset(cleanFilename)
-        .then(async (existing) => {
-          if (!existing) {
-            await MediaAssetService.registerAsset({
-              filename: cleanFilename,
-              originBaseUrl: baseUrl,
-            }).catch(() => null);
-          }
-        })
-        .catch(() => null);
-    }
-
-    // 2. Fetch from origin media source
-    let response: Response | null = null;
-    try {
-      response = await fetch(targetUrl, {
-        method: "GET",
-        headers: {
-          "User-Agent": DEFAULT_USER_AGENT,
-          "Api-User-Agent": DEFAULT_USER_AGENT,
-        },
-        signal: AbortSignal.timeout(10000),
-      });
-    } catch {
-      response = null;
-    }
-
-    // If direct target was 404 and it's an image, resolve via MediaWiki Special:FilePath & MD5 sharding
-    if ((!response || !response.ok) && isImageFile && cleanFilename) {
-      try {
-        // 1. Try MediaWiki canonical Special:FilePath (handles both local uploads and InstantCommons redirects)
-        const filePathUrl = `${baseUrl}/wiki/Special:FilePath/${encodeURIComponent(cleanFilename)}`;
-        const fpRes = await fetch(filePathUrl, {
-          method: "GET",
-          headers: {
-            "User-Agent": "IxStats/1.4 (https://ixwiki.com; info@ixwiki.com)",
-            Accept: "image/*,*/*",
-          },
-          redirect: "follow",
-          signal: AbortSignal.timeout(10000),
-        }).catch(() => null);
-
-        if (fpRes && fpRes.ok) {
-          response = fpRes;
-        }
-
-        // 2. If Special:FilePath didn't resolve, try direct Wikimedia Commons MD5 shard
-        if (!response || !response.ok) {
-          const { getMd5ShardPath } = await import("~/lib/wiki-os/transformers/image-url");
-          const { fullPath } = getMd5ShardPath(cleanFilename);
-          const commonsUrl = `https://upload.wikimedia.org/wikipedia/commons/${fullPath}`;
-          const commonsRes = await fetch(commonsUrl, {
-            headers: {
-              "User-Agent": "IxStats/1.4 (https://ixwiki.com; info@ixwiki.com)",
-              Accept: "image/*,*/*",
-            },
-            signal: AbortSignal.timeout(10000),
-          }).catch(() => null);
-
-          if (commonsRes && commonsRes.ok) {
-            response = commonsRes;
-          }
-        }
-      } catch {
-        // Fall through
-      }
-    }
-
-    if (!response || !response.ok) {
-      return new NextResponse(response?.body || "Not Found", {
-        status: response?.status || 404,
-        headers: {
-          "Content-Type": response?.headers.get("Content-Type") || "text/plain",
-          ...corsHeaders,
-        },
-      });
-    }
-
-    const contentType = response.headers.get("Content-Type") || "application/octet-stream";
-    const arrayBuffer = await response.arrayBuffer();
-
-    if (isImageFile) {
-      mediaBufferCache.set(cacheKey, { buffer: arrayBuffer, contentType });
-    }
-
-    // 4. Cache media files with immutable cache controls
-    const cacheControl = isImageFile
-      ? "public, max-age=31536000, immutable"
-      : "public, max-age=86400, stale-while-revalidate=604800";
-
-    return new NextResponse(arrayBuffer, {
-      status: 200,
+    let response: Response | null = await fetch(targetUrl, {
+      method: "GET",
       headers: {
-        "Content-Type": contentType,
-        "Cache-Control": cacheControl,
-        ...corsHeaders,
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Api-User-Agent": DEFAULT_USER_AGENT,
       },
-    });
+      signal: AbortSignal.timeout(10000),
+    }).catch(() => null);
+
+    if (!response?.ok && isImageFile && cleanFilename) {
+      response = (await fetchImageFallback(baseUrl, cleanFilename).catch(() => null)) ?? response;
+    }
+
+    if (!response?.ok) {
+      // The upstream error body is never relayed: it could be HTML served from our origin.
+      return new NextResponse(null, { status: response?.status || 404, headers: corsHeaders });
+    }
+
+    const result = await imageOnlyResponse(response);
+    // Register in `wiki_assets` only for files that really answered with an image.
+    if (result.status === 200 && isImageFile && cleanFilename) {
+      registerAssetOnce(cleanFilename, baseUrl);
+    }
+    return result;
   } catch (error) {
     console.error("[IxWiki Proxy] Catch-all error:", error);
     return new NextResponse("Proxy Error", { status: 500, headers: corsHeaders });
