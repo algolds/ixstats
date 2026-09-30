@@ -200,6 +200,21 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/government/budget-year-rollover-cron")).runBudgetYearRollover,
   },
   {
+    // Persists the economic projection into stored current* stats + monthly history (MC-7).
+    // Same lock as the admin forceRecalculation button.
+    name: "stat-progression",
+    defaultSchedule: "23 */6 * * *",
+    scheduleConfigKey: "cronSchedule_statProgression",
+    lockName: "stat-progression",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/server/cron/stat-progression",
+    exportName: "runStatProgression",
+    load: async () => {
+      const { runStatProgression } = await import("~/server/cron/stat-progression");
+      return () => runStatProgression();
+    },
+  },
+  {
     // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
     name: "db-backup",
     defaultSchedule: "17 3 * * *",

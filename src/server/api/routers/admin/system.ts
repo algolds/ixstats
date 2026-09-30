@@ -8,12 +8,9 @@ import {
   invalidateConfigCache,
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { assertPersistableStats, IxStatsCalculator } from "~/lib/economy/calculations";
+import { withJobLock } from "~/lib/system/job-lock";
+import { runStatProgression, type StatProgressionResult } from "~/server/cron/stat-progression";
 import type { SystemStatus } from "~/types/ixstats";
-import {
-  prepareBaseCountryData,
-  getCountryComponentsStatsData,
-} from "~/server/shared/country-helpers";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 export const adminSystemRouter = createTRPCRouter({
@@ -370,84 +367,40 @@ export const adminSystemRouter = createTRPCRouter({
       }
     }),
 
-  // Force recalculation of all countries
+  // Force recalculation of all countries: the stat-progression job with every country written.
   forceRecalculation: adminProcedure.mutation(async ({ ctx }) => {
+    let outcome: Awaited<ReturnType<typeof withJobLock<StatProgressionResult>>>;
     try {
-      const startTime = Date.now();
-      const countries = await ctx.db.country.findMany({
-        include: {
-          storytellerEffects: {
-            where: { isActive: true },
-            orderBy: { ixTimeTimestamp: "desc" },
-          },
-        },
-      });
-
-      const econConfig = await getEconomicConfigFromDB(ctx.db);
-      const currentIxTime = IxTime.getCurrentIxTime();
-
-      let updatedCount = 0;
-
-      for (const country of countries) {
-        try {
-          const calc = new IxStatsCalculator(econConfig, country.baselineDate.getTime());
-
-          const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
-          const baseCountryData = prepareBaseCountryData(country, componentsData);
-
-          const initialStats = calc.initializeCountryStats(baseCountryData);
-          const effects = country.storytellerEffects.map((d) => ({
-            ...d,
-            ixTimeTimestamp: d.ixTimeTimestamp.getTime(),
-          }));
-
-          const result = calc.calculateTimeProgression(initialStats, currentIxTime, effects);
-          assertPersistableStats(result.newStats);
-
-          await ctx.db.country.update({
-            where: { id: country.id },
-            data: {
-              currentPopulation: result.newStats.currentPopulation,
-              currentGdpPerCapita: result.newStats.currentGdpPerCapita,
-              currentTotalGdp: result.newStats.currentTotalGdp,
-              economicTier: result.newStats.economicTier.toString(),
-              populationTier: result.newStats.populationTier.toString(),
-              populationDensity: result.newStats.populationDensity,
-              gdpDensity: result.newStats.gdpDensity,
-              lastCalculated: new Date(currentIxTime),
-            },
-          });
-
-          updatedCount++;
-        } catch (countryError) {
-          console.error(`Failed to update country ${country.name}:`, countryError);
-        }
-      }
-
-      const executionTime = Date.now() - startTime;
-
-      // Log the calculation
-      await ctx.db.calculationLog.create({
-        data: {
-          timestamp: new Date(),
-          ixTimeTimestamp: new Date(currentIxTime),
-          countriesUpdated: updatedCount,
-          executionTimeMs: executionTime,
-          globalGrowthFactor: econConfig.globalGrowthFactor,
-          notes: "Manual recalculation from admin panel",
-        },
-      });
-
-      return {
-        success: true,
-        message: `Updated ${updatedCount} countries in ${executionTime}ms`,
-        countriesUpdated: updatedCount,
-        executionTimeMs: executionTime,
-      };
+      outcome = await withJobLock(
+        ctx.db,
+        "stat-progression",
+        () =>
+          runStatProgression({
+            db: ctx.db,
+            force: true,
+            note: "Manual recalculation from admin panel",
+          }),
+        { timeoutMs: 30 * 60_000 }
+      );
     } catch (error) {
       console.error("Failed to force recalculation:", error);
       throw new Error("Failed to recalculate country statistics", { cause: error });
     }
+
+    if (!outcome.ran) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Stat progression is already running; try again shortly.",
+      });
+    }
+
+    const { updated, executionTimeMs } = outcome.result;
+    return {
+      success: true,
+      message: `Updated ${updated} countries in ${executionTimeMs}ms`,
+      countriesUpdated: updated,
+      executionTimeMs,
+    };
   }),
 
   getSystemLogs: adminProcedure
