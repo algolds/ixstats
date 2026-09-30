@@ -33,7 +33,7 @@ Each directive in **In force** shows **Executing** (still holding CivCap) or **I
 - **Follow up** with a related directive.
 - **Respond** to a linked resistance issue (opens the issue brief).
 - **Complete** it. This stays disabled until its resistance issues are resolved.
-- **Abandon** it. You're asked to confirm; abandoning releases its CivCap.
+- **Abandon** it. You're asked to confirm; abandoning releases its CivCap but not its weekly slot.
 
 Directives are completed or abandoned here, not from the agenda.
 
@@ -43,7 +43,7 @@ Directives are completed or abandoned here, not from the agenda.
 
 ## Limits
 
-- **3 per IxTime week.** The weekly cap counts directives that are active or completed within the last 7 IxTime days (3.5 real days). Abandoned directives don't count toward it, so abandoning one frees a slot. When all three slots are used, the status strip and the MyCountry header show a countdown to the next one.
+- **3 per IxTime week.** The weekly cap counts every directive you declared in the last 7 IxTime days (3.5 real days), whatever happened to it since. Completing or abandoning a directive frees its CivCap but not its slot; the slot opens again 7 IxTime days after you declared it. Drafts you never declared don't use a slot. When all three slots are used, the status strip and the MyCountry header show a countdown to the next one.
 - **Resistance.** Active directives make related national issues more likely to come up, representing groups that oppose or support you. A directive with open resistance issues can't be completed until they're resolved.
 
 ## What a directive changes

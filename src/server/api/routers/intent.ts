@@ -32,7 +32,7 @@ import { growthModifierToLevelShift, StorytellerEffectType } from "~/lib/economy
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 const COOLDOWN_MS = WEEK_MS; // decided: weekly cooldown between intents
-const WEEKLY_CAP = 3; // safety ceiling on intents resolved per IxTime-week
+const WEEKLY_CAP = 3; // safety ceiling on directives committed per IxTime-week
 const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
 
 /** Load active Power Brokers for a country (mirrors elections.getPowerBrokers). */
@@ -62,13 +62,20 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
   return id ? brokers.find((b) => b.id === id) : undefined;
 }
 
+/**
+ * Weekly slots: every directive committed in the last IxTime week uses one, whatever its
+ * status now. Abandoning (or completing) a directive releases its CivCap but not its slot, so
+ * declare → abandon → redeclare cannot exceed the cap. Drafts (`tier: "proposed"`, never
+ * committed) don't use a slot. This is the one server value the UI slot counters read
+ * (`getStatus`).
+ */
 async function cooldownStatus(db: PrismaClient, countryId: string) {
   const now = IxTime.getCurrentIxTime();
   const weekAgo = now - WEEK_MS;
   const recent = await db.intent.findMany({
     where: {
       countryId,
-      status: { in: ["active", "completed"] },
+      tier: { not: "proposed" },
       createdIxTime: { gte: weekAgo },
     },
     orderBy: { createdIxTime: "asc" },
