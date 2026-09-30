@@ -21,6 +21,33 @@ import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
 import { canonicalizeTitle } from "./title";
 
+/** The columns a reader needs from a WikiArticle row. */
+const ARTICLE_SELECT = {
+  id: true,
+  title: true,
+  source: true,
+  status: true,
+  format: true,
+  contentHtml: true,
+  contentJson: true,
+  wikitext: true,
+  summary: true,
+  namespace: true,
+  namespacePrefix: true,
+  protectionLevel: true,
+  protectionExpiry: true,
+  redirectTargetSlug: true,
+  redirectTargetFragment: true,
+  readingTime: true,
+  wordCount: true,
+  viewCount: true,
+  leadImageUrl: true,
+  authorId: true,
+  lastEditorId: true,
+  syncedAt: true,
+  updatedAt: true,
+} as const;
+
 export class ArticleRepository {
   static async getArticleBySlug(
     slug: string,
@@ -30,49 +57,12 @@ export class ArticleRepository {
   }
 
   /**
-   * Find an authoritative article by slug (<2ms query)
+   * Find an authoritative article by slug or title (<2ms query). The title is canonicalized first,
+   * so `foo_bar` reads the row a save of "Foo bar" wrote.
    */
   static async findBySlug(slug: string, source = "ixwiki"): Promise<WikiArticleEntity | null> {
-    const normalizedSlug = toArticleSlug(slug);
-
     try {
-      const article = await db.wikiArticle.findFirst({
-        where: {
-          source,
-          OR: [
-            { slug: { equals: normalizedSlug, mode: "insensitive" } },
-            { slug: { equals: slug, mode: "insensitive" } },
-            { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
-            { title: { equals: slug, mode: "insensitive" } },
-            { title: { equals: normalizedSlug, mode: "insensitive" } },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          source: true,
-          status: true,
-          format: true,
-          contentHtml: true,
-          contentJson: true,
-          wikitext: true,
-          summary: true,
-          namespace: true,
-          namespacePrefix: true,
-          protectionLevel: true,
-          protectionExpiry: true,
-          redirectTargetSlug: true,
-          redirectTargetFragment: true,
-          readingTime: true,
-          wordCount: true,
-          viewCount: true,
-          leadImageUrl: true,
-          authorId: true,
-          lastEditorId: true,
-          syncedAt: true,
-          updatedAt: true,
-        },
-      });
+      const article = await this.lookupArticle(slug, source);
 
       if (!article || (!article.wikitext && !article.contentHtml)) return null;
 
@@ -106,6 +96,47 @@ export class ArticleRepository {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * The row for `slug`, resolved deterministically: (a) the canonical title, (b) the one row whose
+   * lower-case slug matches (a case variant of the title, e.g. `/wiki/nato` for "NATO"), then
+   * (c) the legacy case-insensitive match, newest row first, for titles MediaWiki would refuse
+   * and rows that predate canonical titles.
+   */
+  private static async lookupArticle(slug: string, source: string) {
+    const canon = canonicalizeTitle(slug);
+    if (canon) {
+      const exact = await db.wikiArticle.findUnique({
+        where: { source_title: { source, title: canon.title } },
+        select: ARTICLE_SELECT,
+      });
+      if (exact) return exact;
+
+      const variants = await db.wikiArticle.findMany({
+        where: { source, slug: canon.slug },
+        orderBy: { updatedAt: "desc" },
+        take: 2,
+        select: ARTICLE_SELECT,
+      });
+      if (variants.length === 1) return variants[0] ?? null;
+    }
+
+    const normalizedSlug = toArticleSlug(slug);
+    return db.wikiArticle.findFirst({
+      where: {
+        source,
+        OR: [
+          { slug: { equals: normalizedSlug, mode: "insensitive" } },
+          { slug: { equals: slug, mode: "insensitive" } },
+          { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
+          { title: { equals: slug, mode: "insensitive" } },
+          { title: { equals: normalizedSlug, mode: "insensitive" } },
+        ],
+      },
+      orderBy: { updatedAt: "desc" },
+      select: ARTICLE_SELECT,
+    });
   }
 
   /**
@@ -286,19 +317,19 @@ export class ArticleRepository {
   }
 
   /**
-   * Of `titles`, the ones with no article in this realm — one query, used to mark red links.
+   * Of `titles`, the ones with no article in this realm: one query, used to mark red links.
+   * Titles are compared by their canonical form, exactly as MediaWiki does (so "Foo bar" and
+   * "Foo Bar" are different pages); a title MediaWiki would refuse can never exist.
    */
   static async findMissingTitles(titles: string[], source = "ixwiki"): Promise<string[]> {
     if (titles.length === 0) return [];
+    const candidates = titles.map((raw) => ({ raw, title: canonicalizeTitle(raw)?.title }));
     const found = await db.wikiArticle.findMany({
-      where: {
-        source,
-        OR: [{ slug: { in: titles.map((t) => toArticleSlug(t)) } }, { title: { in: titles } }],
-      },
-      select: { slug: true, title: true },
+      where: { source, title: { in: candidates.flatMap((c) => c.title ?? []) } },
+      select: { title: true },
     });
-    const existing = new Set(found.flatMap((a) => [toArticleSlug(a.slug), toArticleSlug(a.title)]));
-    return titles.filter((t) => !existing.has(toArticleSlug(t)));
+    const existing = new Set(found.map((a) => a.title));
+    return candidates.filter((c) => !c.title || !existing.has(c.title)).map((c) => c.raw);
   }
 
   /**

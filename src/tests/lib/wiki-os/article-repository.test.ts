@@ -133,3 +133,88 @@ describe("ArticleRepository.saveArticle", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 });
+
+describe("ArticleRepository.findBySlug", () => {
+  it("returns the exact canonical row even when a case-variant row also exists", async () => {
+    const rows = new Map([
+      ["foo bar", articleRow("foo bar", { wikitext: "stale text" })],
+      ["Foo bar", articleRow("Foo bar")],
+    ]);
+    mockFindUnique.mockImplementation(
+      async (args: { where: { source_title: { title: string } } }) =>
+        rows.get(args.where.source_title.title) ?? null
+    );
+
+    const article = await ArticleRepository.findBySlug("foo_bar");
+
+    expect(mockFindUnique.mock.calls[0]?.[0].where).toEqual({
+      source_title: { source: "ixwiki", title: "Foo bar" },
+    });
+    expect(article?.title).toBe("Foo bar");
+    expect(article?.wikitext).toBe("body of Foo bar");
+    expect(mockFindMany).not.toHaveBeenCalled();
+    expect(mockFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("keeps NATO and Nato as two different articles", async () => {
+    const rows = new Map([
+      ["NATO", articleRow("NATO")],
+      ["Nato", articleRow("Nato")],
+    ]);
+    mockFindUnique.mockImplementation(
+      async (args: { where: { source_title: { title: string } } }) =>
+        rows.get(args.where.source_title.title) ?? null
+    );
+
+    expect((await ArticleRepository.findBySlug("NATO"))?.title).toBe("NATO");
+    expect((await ArticleRepository.findBySlug("Nato"))?.title).toBe("Nato");
+    expect((await ArticleRepository.findBySlug("nato"))?.title).toBe("Nato");
+  });
+
+  it("falls back to a unique case-variant row by slug", async () => {
+    mockFindMany.mockResolvedValue([articleRow("NATO")]);
+
+    const article = await ArticleRepository.findBySlug("nato");
+
+    expect(mockFindMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { source: "ixwiki", slug: "nato" },
+      orderBy: { updatedAt: "desc" },
+      take: 2,
+    });
+    expect(article?.title).toBe("NATO");
+    expect(mockFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("does not guess between two case-variant rows: the last resort takes the newest", async () => {
+    mockFindMany.mockResolvedValue([articleRow("NATO"), articleRow("Nato")]);
+    mockFindFirst.mockResolvedValue(articleRow("NATO"));
+
+    const article = await ArticleRepository.findBySlug("nAto");
+
+    const args = mockFindFirst.mock.calls[0]?.[0];
+    expect(args.orderBy).toEqual({ updatedAt: "desc" });
+    expect(args.where.OR.length).toBeGreaterThan(0);
+    expect(article?.title).toBe("NATO");
+  });
+
+  it("returns null when nothing matches", async () => {
+    await expect(ArticleRepository.findBySlug("Nowhere")).resolves.toBeNull();
+  });
+
+  it("returns null for a stub row without wikitext or html", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo", { wikitext: "", contentHtml: "" }));
+
+    await expect(ArticleRepository.findBySlug("Foo")).resolves.toBeNull();
+    expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
+  it("still tries the legacy lookup for a title MediaWiki would refuse", async () => {
+    mockFindFirst.mockResolvedValue(articleRow("a[b"));
+
+    const article = await ArticleRepository.findBySlug("a[b");
+
+    expect(mockFindUnique).not.toHaveBeenCalled();
+    expect(mockFindMany).not.toHaveBeenCalled();
+    expect(article?.title).toBe("a[b");
+  });
+});

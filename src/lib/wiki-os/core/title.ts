@@ -63,6 +63,16 @@ const MAX_TITLE_BYTES = 255;
 /** Characters MediaWiki never allows in a page name. "#" is gone by then: it starts the fragment. */
 const ILLEGAL_TITLE_CHARS = /[[\]{}|<>]/;
 
+/** Length of `text` in UTF-8 bytes (no TextEncoder/Buffer: this also runs in the browser and jsdom). */
+function utf8Length(text: string): number {
+  let bytes = 0;
+  for (const char of text) {
+    const codePoint = char.codePointAt(0) ?? 0;
+    bytes += codePoint < 0x80 ? 1 : codePoint < 0x800 ? 2 : codePoint < 0x10000 ? 3 : 4;
+  }
+  return bytes;
+}
+
 /**
  * Upper-case only the first code point, the way `$wgCapitalLinks` does. A code point whose
  * upper-case form is several characters (`ß` becomes `SS`) stays as typed: MediaWiki keeps the
@@ -99,7 +109,7 @@ export function canonicalizeTitle(raw: string): CanonicalTitle | null {
 
   const base = capitalizeFirst(parsed.base);
   if (!base || ILLEGAL_TITLE_CHARS.test(base)) return null;
-  if (new TextEncoder().encode(base).length > MAX_TITLE_BYTES) return null;
+  if (utf8Length(base) > MAX_TITLE_BYTES) return null;
 
   const namespacePrefix = NAMESPACE_CANONICAL_NAMES[parsed.namespaceId] ?? null;
   const title = namespacePrefix ? `${namespacePrefix}:${base}` : base;
