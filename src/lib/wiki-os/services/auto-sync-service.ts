@@ -11,7 +11,7 @@ import { db } from "~/server/db";
 import { cleanExcerpt, calculateRawTextBytes } from "../transformers/wikitext-parser";
 import { extractLeadImageFromWikitext } from "../transformers/image-url";
 import { toArticleSlug } from "../core/domain-types";
-import { canonicalizeTitle } from "../core/title";
+import { canonicalizeTitle, storedNamespace } from "../core/title";
 import { DEFAULT_USER_AGENT } from "../config";
 
 const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
@@ -211,7 +211,9 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
   const cleanSum = cleanExcerpt(wikitext, 300);
   const summary = cleanSum ? cleanSum.substring(0, 480) : null;
   const leadImageUrl = extractLeadImageFromWikitext(wikitext);
-  const { slug, title: articleTitle, namespaceId, namespacePrefix } = canon;
+  const { slug, title: articleTitle } = canon;
+  // MediaWiki's namespace wins where the canonical table has no prefix for it ("Portal:" is ns 100).
+  const { namespaceId, namespacePrefix } = storedNamespace(canon, Number(page.ns || 0));
 
   // The reader prefers cached contentHtml, so when the wikitext changes the cache must be cleared
   // or MediaWiki-side edits never show (NEW-2). An empty cache is re-rendered on the next view.

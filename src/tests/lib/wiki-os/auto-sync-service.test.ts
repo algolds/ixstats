@@ -51,13 +51,15 @@ const change = (title: string, revid: number, second: number): Change => ({
 const jsonResponse = (body: object, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
+let mediaWikiNamespaces: Record<string, number> = {};
+
 const pageResponse = (title: string, revid: number) =>
   jsonResponse({
     query: {
       pages: {
         "1": {
           pageid: 1,
-          ns: 0,
+          ns: mediaWikiNamespaces[title] ?? 0,
           title,
           lastrevid: revid,
           revisions: [
@@ -108,6 +110,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   rcResponses = [];
   failingTitles = new Set();
+  mediaWikiNamespaces = {};
   globalThis.fetch = fetchMock as typeof fetch;
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
@@ -262,4 +265,36 @@ test("skips a change whose title MediaWiki itself would refuse", async () => {
 
   expect(syncedTitles()).toEqual([]);
   expect(mockWikiArticleUpsert).not.toHaveBeenCalled();
+});
+
+test("keeps MediaWiki's namespace and the title's prefix when the canonical table lacks it", async () => {
+  mediaWikiNamespaces = { "Portal:Eurth": 100, "Foo: bar": 0 };
+  rcResponses = [{ changes: [change("Portal:Eurth", 100, 1), change("Foo: bar", 101, 2)] }];
+
+  await runAutoSyncCycle();
+
+  const upsertFor = (title: string) =>
+    mockWikiArticleUpsert.mock.calls.find(([args]) => args.create.title === title)?.[0];
+  const portal = upsertFor("Portal:Eurth");
+  expect(portal.create).toMatchObject({
+    title: "Portal:Eurth",
+    slug: "portal:eurth",
+    namespace: 100,
+    namespacePrefix: "Portal",
+  });
+  expect(portal.update).toMatchObject({ namespace: 100, namespacePrefix: "Portal" });
+
+  expect(upsertFor("Foo: bar").create).toMatchObject({ namespace: 0, namespacePrefix: null });
+});
+
+test("a namespace the canonical table knows is not overridden by MediaWiki's id", async () => {
+  mediaWikiNamespaces = { "Talk:x": 1 };
+  rcResponses = [{ changes: [change("Talk:x", 100, 1)] }];
+
+  await runAutoSyncCycle();
+
+  expect(mockWikiArticleUpsert.mock.calls[0]?.[0].create).toMatchObject({
+    namespace: 1,
+    namespacePrefix: "Talk",
+  });
 });
