@@ -22,6 +22,10 @@ export interface ImportedRevision {
   /** The WikiOS user, only through a verified WikiAccountLink. */
   authorId: string | null;
   summary: string | null;
+  /** MediaWiki revision deletion: the dump hides the summary, the text, the author. */
+  commentDeleted: boolean;
+  textDeleted: boolean;
+  userDeleted: boolean;
   minor: boolean;
   byteSize: number;
   /** Size against the previous revision of the dump (the first revision: its own size). */
@@ -38,7 +42,11 @@ export interface ExistingRevisionRow {
   mwRevId: number | null;
   sha1: string | null;
   createdAt: Date;
-  /** The row's wikitext is "" (an unfilled placeholder, or a genuinely blank revision). */
+  /**
+   * The row's wikitext is "" and could still receive text: an unfilled placeholder, or a genuinely
+   * blank revision. A row whose text an administrator deleted (`textDeleted`) is not one: it is
+   * hidden, not empty, and a later dump must not resurrect its text.
+   */
   isPlaceholder: boolean;
 }
 

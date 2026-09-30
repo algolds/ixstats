@@ -222,7 +222,16 @@ describe("createExportWriter", () => {
         title: "Foo",
         ns: 0,
         pageId: 1,
-        revisions: [revision({ text: null, comment: null, bytes: 1234, sha1: "abc" })],
+        revisions: [
+          revision({
+            text: null,
+            textDeleted: true,
+            comment: null,
+            commentDeleted: true,
+            bytes: 1234,
+            sha1: "abc",
+          }),
+        ],
       },
     ]);
 
@@ -231,7 +240,34 @@ describe("createExportWriter", () => {
       attributes: { bytes: "1234", sha1: "abc", deleted: "deleted" },
       text: "",
     });
-    expect(byName(elements, "comment")).toHaveLength(0);
+    expect(byName(elements, "comment")).toHaveLength(1);
+    expect(byName(elements, "comment")[0]).toMatchObject({
+      attributes: { deleted: "deleted" },
+      text: "",
+    });
+  });
+
+  it("writes text that was never fetched as an empty element with its size, not as deleted", async () => {
+    const xml = await dump([
+      {
+        title: "Foo",
+        ns: 0,
+        pageId: 1,
+        revisions: [revision({ text: null, bytes: 4096, sha1: "abc456" })],
+      },
+    ]);
+
+    const node = byName(parseElements(xml), "text")[0];
+    expect(node?.attributes).toEqual({ bytes: "4096", sha1: "abc456" });
+    expect(node?.text).toBe("");
+  });
+
+  it("leaves the text element out when nothing is known about it", async () => {
+    const xml = await dump([
+      { title: "Foo", ns: 0, pageId: 1, revisions: [revision({ text: null })] },
+    ]);
+
+    expect(byName(parseElements(xml), "text")).toHaveLength(0);
   });
 
   it("omits the optional elements when there is nothing to say", async () => {

@@ -54,6 +54,9 @@ interface RevisionRow {
   byteSize: number;
   /** Only read for full history. */
   sha1?: string | null;
+  textDeleted: boolean;
+  commentDeleted: boolean;
+  userDeleted: boolean;
   createdAt: Date;
   wikitext: string;
 }
@@ -76,6 +79,9 @@ const CURRENT_REVISION_SELECT = {
   summary: true,
   minor: true,
   byteSize: true,
+  textDeleted: true,
+  commentDeleted: true,
+  userDeleted: true,
   createdAt: true,
   wikitext: true,
 } as const;
@@ -89,22 +95,28 @@ export function contributorOf(author: string | null): Contributor {
   return isIP(author) === 0 ? { username: author, id: null } : { ip: author };
 }
 
-function toXmlRevision(row: RevisionRow, parentId: number | null, text: string): XmlRevision {
+/**
+ * A stored revision as a dump revision. Text an administrator deleted is written as deleted; a
+ * placeholder (empty text, but a recorded size: history that was never fetched) as text that is
+ * not available, carrying its size. Both keep the size and hash they had.
+ */
+function toXmlRevision(row: RevisionRow, parentId: number | null): XmlRevision {
+  const unavailable = row.textDeleted || (row.wikitext === "" && row.byteSize > 0);
   return {
     id: row.mwRevId,
     parentId,
     timestamp: toXmlTimestamp(row.createdAt),
-    contributor: contributorOf(row.author),
+    contributor: row.userDeleted ? { deleted: true } : contributorOf(row.author),
     minor: row.minor,
-    comment: row.summary,
+    comment: row.commentDeleted ? null : row.summary,
+    commentDeleted: row.commentDeleted,
     model: "wikitext",
     format: "text/x-wiki",
-    text,
+    text: unavailable ? null : row.wikitext,
+    textDeleted: row.textDeleted,
+    ...(unavailable ? { bytes: row.byteSize, sha1: row.sha1 ?? null } : {}),
   };
 }
-
-/** An empty placeholder: no text was ever stored for a revision that had some. */
-const isPlaceholder = (row: RevisionRow): boolean => row.wikitext === "" && row.byteSize > 0;
 
 /** Every stored revision of a page, oldest first, in batches. */
 async function* historyOf(articleId: string): AsyncGenerator<XmlRevision> {
@@ -119,14 +131,7 @@ async function* historyOf(articleId: string): AsyncGenerator<XmlRevision> {
       select: HISTORY_REVISION_SELECT,
     });
     for (const row of batch) {
-      yield isPlaceholder(row)
-        ? {
-            ...toXmlRevision(row, parentId, ""),
-            text: null,
-            bytes: row.byteSize,
-            sha1: row.sha1 ?? null,
-          }
-        : toXmlRevision(row, parentId, row.wikitext);
+      yield toXmlRevision(row, parentId);
       parentId = row.mwRevId;
     }
     if (batch.length < REVISION_BATCH) return;
@@ -136,11 +141,11 @@ async function* historyOf(articleId: string): AsyncGenerator<XmlRevision> {
 
 /**
  * The newest revision of a page that has its text: the one the page's head came from. (A newer
- * placeholder, history that was never fetched, is not the head.)
+ * placeholder, history that was never fetched, or a revision whose text was deleted, is not the head.)
  */
 async function newestRevision(articleId: string): Promise<RevisionRow | undefined> {
   const row: RevisionRow | null = await db.wikiRevision.findFirst({
-    where: { articleId, OR: [{ wikitext: { not: "" } }, { byteSize: 0 }] },
+    where: { articleId, textDeleted: false, OR: [{ wikitext: { not: "" } }, { byteSize: 0 }] },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: CURRENT_REVISION_SELECT,
   });
@@ -157,12 +162,14 @@ function currentRevision(page: PageRow, newest: RevisionRow | undefined): XmlRev
       contributor: { deleted: true },
       minor: false,
       comment: null,
+      commentDeleted: false,
       model: "wikitext",
       format: "text/x-wiki",
       text: page.wikitext,
+      textDeleted: false,
     };
   }
-  return toXmlRevision(newest, null, page.wikitext);
+  return { ...toXmlRevision(newest, null), text: page.wikitext, textDeleted: false };
 }
 
 function redirectTitleOf(page: PageRow, source: string): string | null {

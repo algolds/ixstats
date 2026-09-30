@@ -96,6 +96,9 @@ const seedRevision = (articleId: string, overrides: Partial<RevisionRow> = {}): 
     authorId: null,
     summary: null,
     minor: false,
+    textDeleted: false,
+    commentDeleted: false,
+    userDeleted: false,
     byteSize: 6,
     byteDelta: 6,
     sha1: null,
@@ -176,10 +179,22 @@ describe("fresh import of the export-0.11 fixture", () => {
       authorId: null,
       summary: null,
       wikitext: "",
+      textDeleted: true,
+      commentDeleted: true,
+      userDeleted: true,
       byteSize: 54,
       byteDelta: 6,
       sha1: "ih14qtmq7un0xyinywzceva6okr6l5u",
     });
+    // Nothing else in the fixture is deleted.
+    expect(store.revisions.filter((r) => r.mwRevId !== 1003)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ textDeleted: false, commentDeleted: false, userDeleted: false }),
+      ])
+    );
+    expect(
+      store.revisions.filter((r) => r.textDeleted || r.commentDeleted || r.userDeleted)
+    ).toHaveLength(1);
   });
 
   it("makes the newest revision with text the page's head, and marks it for re-render", () => {
@@ -303,6 +318,23 @@ describe("placeholder revisions from scripts/sync-ixwiki-full.ts", () => {
     // 1002 was already complete: skipped. 1003 is new (hidden), so it is imported.
     expect(summary.revisionsSkipped).toBeGreaterThanOrEqual(1);
     expect(store.revisions.filter((r) => r.mwRevId === 1002)).toHaveLength(1);
+  });
+
+  it("never fills a revision whose text an administrator deleted: hidden stays hidden", async () => {
+    const seeded = seedArticle();
+    const hidden = seedRevision(seeded.id, {
+      mwRevId: 1001,
+      wikitext: "",
+      textDeleted: true,
+      byteSize: 24,
+      createdAt: new Date("2026-01-02T03:04:05Z"),
+    });
+
+    const summary = await importFixture();
+
+    expect(summary.placeholdersFilled).toBe(0);
+    expect(hidden).toMatchObject({ wikitext: "", textDeleted: true });
+    expect(store.revisions.filter((r) => r.mwRevId === 1001)).toHaveLength(1);
   });
 
   it("does not turn a filled revision into a duplicate on the next import", async () => {

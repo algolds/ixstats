@@ -94,9 +94,11 @@ const blankRevision = (): XmlRevision => ({
   contributor: { deleted: true },
   minor: false,
   comment: null,
+  commentDeleted: false,
   model: "wikitext",
   format: "text/x-wiki",
   text: null,
+  textDeleted: false,
   bytes: null,
   sha1: null,
 });
@@ -119,6 +121,18 @@ const blankSiteInfo = (): SiteInfo => ({
   case: "first-letter",
   namespaces: [],
 });
+
+/** `mwSha1Base36("")`: the hash a genuinely empty text has. */
+const EMPTY_TEXT_SHA1 = "phoiac9h4m842xq45sp7s6u21eteeq1";
+
+/**
+ * An empty `<text>` whose attributes say it had content (a size above 0, or the hash of
+ * something): the text is not available (an unfilled placeholder), not a blank page.
+ */
+function isTextMissing(content: string, draft: TextDraft): boolean {
+  if (content !== "") return false;
+  return (draft.bytes ?? 0) > 0 || (draft.sha1 !== null && draft.sha1 !== EMPTY_TEXT_SHA1);
+}
 
 function contributorFrom(draft: ContributorDraft): Contributor {
   if (draft.deleted) return { deleted: true };
@@ -182,6 +196,9 @@ const OPEN: Readonly<Record<string, OpenHandler>> = {
       ip: null,
       deleted: attributes.deleted !== undefined,
     };
+  },
+  "page/revision/comment": (state, attributes) => {
+    if (state.revision) state.revision.commentDeleted = attributes.deleted !== undefined;
   },
   "page/revision/text": (state, attributes) => {
     state.textDraft = {
@@ -254,7 +271,8 @@ const CLOSE: Readonly<Record<string, CloseHandler>> = {
   "page/revision/text": (state, value) => {
     const { revision, textDraft } = state;
     if (!revision || !textDraft) return;
-    revision.text = textDraft.deleted ? null : value;
+    revision.text = textDraft.deleted || isTextMissing(value, textDraft) ? null : value;
+    revision.textDeleted = textDraft.deleted;
     revision.bytes = textDraft.bytes;
     revision.sha1 = revision.sha1 ?? textDraft.sha1;
     state.textDraft = null;

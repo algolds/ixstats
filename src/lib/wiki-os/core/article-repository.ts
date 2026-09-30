@@ -144,7 +144,7 @@ async function loadExistingRows(
   }
   const blank = articleId
     ? await client.wikiRevision.findMany({
-        where: { articleId, wikitext: "" },
+        where: { articleId, wikitext: "", textDeleted: false },
         select: { id: true },
         take: ALL_ROWS,
       })
@@ -187,6 +187,9 @@ async function insertRevisions(
         authorId: revision.authorId,
         summary: revision.summary,
         minor: revision.minor,
+        textDeleted: revision.textDeleted,
+        commentDeleted: revision.commentDeleted,
+        userDeleted: revision.userDeleted,
         byteSize: revision.byteSize,
         byteDelta: revision.byteDelta,
         sha1: revision.sha1,

@@ -90,9 +90,11 @@ describe("readExport: the hand-written export-0.11 fixture", () => {
       contributor: { username: "Jane", id: 7 },
       minor: false,
       comment: "Create the page",
+      commentDeleted: false,
       model: "wikitext",
       format: "text/x-wiki",
       text: "Testia is a [[kingdom]].",
+      textDeleted: false,
       bytes: 24,
       sha1: "5m4a1twcqtk8kln29696qjq0i7jb99b",
     });
@@ -112,7 +114,9 @@ describe("readExport: the hand-written export-0.11 fixture", () => {
       id: 1003,
       contributor: { deleted: true },
       comment: null,
+      commentDeleted: true,
       text: null,
+      textDeleted: true,
       bytes: 54,
       sha1: "ih14qtmq7un0xyinywzceva6okr6l5u",
     });
@@ -220,6 +224,26 @@ describe("readExport: bad input", () => {
     expect(events.map((e) => e.type)).toEqual(["siteinfo"]);
   });
 
+  it("tells deleted text from text that was never fetched and from a blank page", async () => {
+    const events = await read(
+      "<mediawiki><page><title>Foo</title><ns>0</ns>" +
+        '<revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="9" sha1="x" deleted="deleted" /></revision>' +
+        '<revision><id>2</id><timestamp>2026-01-02T00:00:00Z</timestamp><text bytes="9" sha1="x" xml:space="preserve"></text></revision>' +
+        '<revision><id>3</id><timestamp>2026-01-03T00:00:00Z</timestamp><text bytes="0" sha1="phoiac9h4m842xq45sp7s6u21eteeq1" xml:space="preserve"></text></revision>' +
+        "<revision><id>4</id><timestamp>2026-01-04T00:00:00Z</timestamp><text /></revision>" +
+        "<revision><id>5</id><timestamp>2026-01-05T00:00:00Z</timestamp></revision>" +
+        "</page></mediawiki>"
+    );
+
+    expect(pagesOf(events)[0]?.revisions.map((r) => [r.id, r.text, r.textDeleted])).toEqual([
+      [1, null, true], // deleted by an administrator
+      [2, null, false], // a size but no content: never fetched
+      [3, "", false], // really blank
+      [4, "", false], // no claim about content
+      [5, null, false], // no <text> at all
+    ]);
+  });
+
   it("tolerates missing ids, contributor and text: null/default fields, no failure", async () => {
     const events = await read(
       "<mediawiki><page><title>Bare</title><revision><timestamp>2026-01-01T00:00:00Z</timestamp></revision></page></mediawiki>"
@@ -308,9 +332,11 @@ describe("writer to reader round trip", () => {
       contributor: { username: "Jane <b>", id: 7 },
       minor: false,
       comment: 'summary with <tags> & "quotes"',
+      commentDeleted: false,
       model: "wikitext",
       format: "text/x-wiki",
       text: '<b>&"</b>\r\nsecond line ]]> é漢字🙂\n',
+      textDeleted: false,
     },
     {
       id: 11,
@@ -319,9 +345,11 @@ describe("writer to reader round trip", () => {
       contributor: { ip: "2001:db8::1" },
       minor: true,
       comment: null,
+      commentDeleted: false,
       model: "wikitext",
       format: "text/x-wiki",
       text: "",
+      textDeleted: false,
     },
     {
       id: 12,
@@ -330,11 +358,28 @@ describe("writer to reader round trip", () => {
       contributor: { deleted: true },
       minor: false,
       comment: null,
+      commentDeleted: true,
       model: "wikitext",
       format: "text/x-wiki",
       text: null,
+      textDeleted: true,
       bytes: 99,
       sha1: "abc123",
+    },
+    {
+      id: 14,
+      parentId: 13,
+      timestamp: "2026-03-03T12:00:00Z",
+      contributor: { username: "Jane", id: 7 },
+      minor: false,
+      comment: "history that was never fetched",
+      commentDeleted: false,
+      model: "wikitext",
+      format: "text/x-wiki",
+      text: null,
+      textDeleted: false,
+      bytes: 4096,
+      sha1: "abc456",
     },
     {
       id: null,
@@ -343,9 +388,11 @@ describe("writer to reader round trip", () => {
       contributor: { username: "Old", id: null },
       minor: false,
       comment: "no ids",
+      commentDeleted: false,
       model: "wikitext",
       format: "text/x-wiki",
       text: "kept",
+      textDeleted: false,
     },
   ];
 

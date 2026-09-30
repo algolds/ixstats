@@ -37,6 +37,9 @@ export interface RevisionRow {
   authorId: string | null;
   summary: string | null;
   minor: boolean;
+  textDeleted: boolean;
+  commentDeleted: boolean;
+  userDeleted: boolean;
   byteSize: number;
   byteDelta: number;
   sha1: string | null;
@@ -221,6 +224,9 @@ const revisionDelegate = {
         authorId: null,
         summary: null,
         minor: false,
+        textDeleted: false,
+        commentDeleted: false,
+        userDeleted: false,
         byteSize: 0,
         byteDelta: 0,
         sha1: null,

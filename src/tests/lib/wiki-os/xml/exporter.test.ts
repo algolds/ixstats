@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { writeExport, contributorOf } from "~/lib/wiki-os/xml/exporter";
 import { readExport, type ImportEvent, type ImportPage } from "~/lib/wiki-os/xml/import-reader";
 import { importExport } from "~/lib/wiki-os/xml/importer";
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import { resetStore, store, type ArticleRow, type RevisionRow } from "./fake-wiki-db";
 
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
@@ -95,6 +96,9 @@ const seedPage = (overrides: Partial<ArticleRow>, revisions: Array<Partial<Revis
       authorId: null,
       summary: null,
       minor: false,
+      textDeleted: false,
+      commentDeleted: false,
+      userDeleted: false,
       byteSize: 9,
       byteDelta: 9,
       sha1: null,
@@ -253,6 +257,54 @@ describe("writeExport", () => {
     expect(page?.revisions.map((r) => r.id)).toEqual(Array.from({ length: 450 }, (_, i) => i + 1));
   });
 
+  it("writes deleted text, summaries and authors back as deleted, and unfetched history as unavailable", async () => {
+    seedPage({ title: "Alpha" }, [
+      { mwRevId: 1, wikitext: "visible" },
+      { mwRevId: 2, wikitext: "", textDeleted: true, byteSize: 0, sha1: "gone" },
+      {
+        mwRevId: 3,
+        wikitext: "t",
+        commentDeleted: true,
+        summary: "never exported",
+        userDeleted: true,
+        author: "(deleted)",
+      },
+      { mwRevId: 4, wikitext: "", byteSize: 4096 },
+    ]);
+
+    const [page] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true })
+    );
+
+    const [visible, deleted, hiddenMeta, unfetched] = page?.revisions ?? [];
+    expect(visible).toMatchObject({ text: "visible", textDeleted: false });
+    // A deleted text with size 0 is still deleted: never a visible empty revision.
+    expect(deleted).toMatchObject({ text: null, textDeleted: true, bytes: 0, sha1: "gone" });
+    expect(hiddenMeta).toMatchObject({
+      text: "t",
+      comment: null,
+      commentDeleted: true,
+      contributor: { deleted: true },
+    });
+    expect(unfetched).toMatchObject({ text: null, textDeleted: false, bytes: 4096 });
+  });
+
+  it("a current-only export never takes a revision with deleted text as the head's", async () => {
+    seedPage({ title: "Alpha", wikitext: "real" }, [
+      { mwRevId: 1, wikitext: "real", author: "Jane" },
+      { mwRevId: 2, wikitext: "", textDeleted: true, byteSize: 0, author: "Bob" },
+    ]);
+
+    const [page] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: false })
+    );
+
+    expect(page?.revisions[0]).toMatchObject({
+      id: 1,
+      contributor: { username: "Jane", id: null },
+    });
+  });
+
   it("exports a redirect's target by its canonical title", async () => {
     seedPage({ title: "Old", redirectTargetSlug: "New name" }, [
       { wikitext: "#REDIRECT [[New name]]" },
@@ -303,6 +355,56 @@ describe("the loop: import, export, import again", () => {
     expect(summary.errors).toEqual([]);
     expect(summary).toMatchObject({ pages: 5, pagesCreated: 5, revisionsImported: 7 });
     expect(tables()).toEqual(first);
+  });
+
+  it("keeps deleted and never-fetched revisions exactly as they were through export and import", async () => {
+    seedPage({ title: "Alpha", wikitext: "visible", mwPageId: 5 }, [
+      { mwRevId: 1, wikitext: "visible", sha1: mwSha1Base36("visible"), byteSize: 7 },
+      { mwRevId: 2, wikitext: "", textDeleted: true, byteSize: 0 },
+      {
+        mwRevId: 3,
+        wikitext: "x",
+        commentDeleted: true,
+        summary: null,
+        userDeleted: true,
+        author: "(deleted)",
+        byteSize: 1,
+      },
+      { mwRevId: 4, wikitext: "", byteSize: 4096 },
+    ]);
+    const before = tables();
+    const xml = await exportXml({ source: "ixwiki", history: true });
+
+    resetStore();
+    const summary = await importExport(readExport(chunks(xml)));
+
+    expect(summary).toMatchObject({ revisionsImported: 4, errors: [] });
+    const rows = tables().revisions;
+    expect(
+      rows.map((r) => [
+        r.mwRevId,
+        r.textDeleted,
+        r.commentDeleted,
+        r.userDeleted,
+        r.wikitext,
+        r.byteSize,
+      ])
+    ).toEqual(
+      before.revisions.map((r) => [
+        r.mwRevId,
+        r.textDeleted,
+        r.commentDeleted,
+        r.userDeleted,
+        r.wikitext,
+        r.byteSize,
+      ])
+    );
+    expect(rows.map((r) => [r.mwRevId, r.textDeleted, r.byteSize])).toEqual([
+      [1, false, 7],
+      [2, true, 0],
+      [3, false, 1],
+      [4, false, 4096],
+    ]);
   });
 
   it("importing the export into the database it came from changes nothing", async () => {

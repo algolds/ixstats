@@ -123,9 +123,11 @@ export function apiRevisionToXml(revision: ApiRevision): XmlRevision {
     contributor: contributorOf(revision),
     minor: revision.minor,
     comment: revision.commenthidden ? null : (revision.comment ?? null),
+    commentDeleted: revision.commenthidden === true,
     model: main?.contentmodel ?? "wikitext",
     format: main?.contentformat ?? "text/x-wiki",
     text,
+    textDeleted: main?.texthidden === true,
     bytes: revision.size,
     sha1: revision.sha1 ? sha1HexToBase36(revision.sha1) : null,
   };

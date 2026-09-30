@@ -17,10 +17,17 @@ export interface XmlRevision {
   minor: boolean;
   /** The edit summary; null when absent, empty or hidden (`<comment deleted="deleted" />`). */
   comment: string | null;
+  /** The summary was deleted by an administrator: `<comment deleted="deleted" />`. */
+  commentDeleted: boolean;
   model: string;
   format: string;
-  /** The wikitext; null when the dump does not carry it (`<text deleted="deleted" />`, no content). */
+  /**
+   * The wikitext; null when it is not available: deleted (`textDeleted`), or never fetched (an
+   * unfilled placeholder: an empty `<text bytes="N" />` with a size but no content).
+   */
   text: string | null;
+  /** The text was deleted by an administrator: `<text deleted="deleted" />`. */
+  textDeleted: boolean;
   /**
    * `<text bytes>`. The writer computes it from `text` and only uses this value when `text` is
    * null (the size of a text that is not available); the reader reports the attribute as written.

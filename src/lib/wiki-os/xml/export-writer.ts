@@ -133,15 +133,19 @@ function contributorXml(contributor: Contributor): string {
   return line(3, "<contributor>") + inner + line(3, "</contributor>");
 }
 
-/** The `<text>` and `<sha1>` lines: sized and hashed from the text written, never from claims. */
+/**
+ * The `<text>` and `<sha1>` lines: sized and hashed from the text written, never from claims.
+ * Text that is not available is an element without content: marked deleted when an administrator
+ * deleted it, else just carrying the size it had (an unfilled placeholder); with neither a size
+ * nor a deletion there is nothing to say and the element is left out.
+ */
 function textXml(rev: XmlRevision): string {
   if (rev.text === null) {
     const bytes = typeof rev.bytes === "number" ? ` bytes="${rev.bytes}"` : "";
     const sha1 = rev.sha1 ? ` sha1="${escapeXmlAttribute(rev.sha1)}"` : "";
-    return (
-      line(3, `<text${bytes}${sha1} deleted="deleted" />`) +
-      (rev.sha1 ? tag(3, "sha1", rev.sha1) : "")
-    );
+    const deleted = rev.textDeleted ? ' deleted="deleted"' : "";
+    const element = bytes || deleted || sha1 ? line(3, `<text${bytes}${sha1}${deleted} />`) : "";
+    return element + (rev.sha1 ? tag(3, "sha1", rev.sha1) : "");
   }
   const text = toXmlSafe(rev.text);
   const sha1 = mwSha1Base36(text);
@@ -154,6 +158,12 @@ function textXml(rev: XmlRevision): string {
   );
 }
 
+/** The `<comment>` line: the summary, a deleted marker, or nothing. */
+function commentXml(rev: XmlRevision): string {
+  if (rev.commentDeleted) return line(3, '<comment deleted="deleted" />');
+  return rev.comment ? tag(3, "comment", rev.comment) : "";
+}
+
 function revisionXml(rev: XmlRevision): string {
   return [
     line(2, "<revision>"),
@@ -162,7 +172,7 @@ function revisionXml(rev: XmlRevision): string {
     tag(3, "timestamp", rev.timestamp),
     contributorXml(rev.contributor),
     rev.minor ? line(3, "<minor />") : "",
-    rev.comment ? tag(3, "comment", rev.comment) : "",
+    commentXml(rev),
     rev.id === null ? "" : tag(3, "origin", String(rev.id)),
     tag(3, "model", rev.model),
     tag(3, "format", rev.format),
