@@ -31,6 +31,7 @@ import {
   SheetDescription,
 } from "~/components/ui/sheet";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
@@ -39,12 +40,12 @@ import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDet
 
 const PoliticsDrillDown = dynamic(
   () => import("./PoliticsDrillDown").then((m) => ({ default: m.PoliticsDrillDown })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" />, ssr: false }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" />, ssr: false }
 );
 
 const EconomyDrillDown = dynamic(
   () => import("./EconomyDrillDown").then((m) => ({ default: m.EconomyDrillDown })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" />, ssr: false }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" />, ssr: false }
 );
 
 const EmbassiesAndRelationsPanel = dynamic(
@@ -52,7 +53,7 @@ const EmbassiesAndRelationsPanel = dynamic(
     import("~/components/mycountry/domains/diplomacy/EmbassiesAndRelationsPanel").then((m) => ({
       default: m.EmbassiesAndRelationsPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
 );
 
 const DefenseCommandPanel = dynamic(
@@ -60,7 +61,7 @@ const DefenseCommandPanel = dynamic(
     import("~/components/mycountry/domains/defense/DefenseCommandPanel").then((m) => ({
       default: m.DefenseCommandPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
 );
 
 /** A v2 drill-down surface. Phase 3 connects deep domain panels directly inside right-side sheets. */
@@ -76,9 +77,9 @@ export type DrillSheetKind =
 export type V2Drill = DrillSheetKind;
 
 const TIER_BADGE: Record<string, string> = {
-  measured: "text-emerald-300 bg-emerald-500/10 border-emerald-400/20",
-  moderate: "text-amber-300 bg-amber-500/10 border-amber-400/20",
-  extreme: "text-red-300 bg-red-500/10 border-red-400/20",
+  measured: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-400/20",
+  moderate: "text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-400/20",
+  extreme: "text-red-700 dark:text-red-300 bg-red-500/10 border-red-400/20",
 };
 
 const CATEGORY_BROKER_MAP: Record<
@@ -88,42 +89,42 @@ const CATEGORY_BROKER_MAP: Record<
   defense: {
     name: "Generals",
     icon: Shield,
-    color: "text-red-400 bg-red-500/10 border-red-500/20",
+    color: "text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20",
   },
   security: {
     name: "Generals",
     icon: Shield,
-    color: "text-red-400 bg-red-500/10 border-red-500/20",
+    color: "text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20",
   },
   fiscal: {
     name: "Magnates",
     icon: Building2,
-    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    color: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20",
   },
   economy: {
     name: "Magnates",
     icon: Building2,
-    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   },
   social: {
     name: "Party",
     icon: Users2,
-    color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
+    color: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
   },
   infrastructure: {
     name: "Technocrats",
     icon: Compass,
-    color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    color: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20",
   },
   religion: {
     name: "Clergy",
     icon: Landmark,
-    color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
+    color: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
   },
   foreign: {
     name: "Cabinet Diplomatic Corps",
     icon: Globe2,
-    color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+    color: "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
   },
 };
 
@@ -140,7 +141,7 @@ function IntentBranchingTree({
 
   return (
     <FacetCard depth={1} surface="solid" className="flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+      <div className="flex items-center gap-2 text-xs font-bold text-cyan-600 dark:text-cyan-400">
         <GitBranch className="h-4 w-4" />
         <span>Executive Decision Tree (Branching Lineage)</span>
       </div>
@@ -244,7 +245,7 @@ function IntentDetail({
   const brokerInfo = CATEGORY_BROKER_MAP[intent.category?.toLowerCase()] || {
     name: "Cabinet Administration",
     icon: Command,
-    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    color: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20",
   };
   const BrokerIcon = brokerInfo.icon;
 
@@ -281,7 +282,7 @@ function IntentDetail({
               {intent.category}
             </span>
             {intent.target && (
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs font-extrabold text-cyan-400">
+              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs font-extrabold text-cyan-600 dark:text-cyan-400">
                 Target: {intent.target}
               </span>
             )}
@@ -291,10 +292,10 @@ function IntentDetail({
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase",
               intent.status === "completed"
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 : intent.status === "abandoned"
-                  ? "border-red-500/30 bg-red-500/10 text-red-400"
-                  : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                  ? "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
             )}
           >
             <span
@@ -344,7 +345,7 @@ function IntentDetail({
                 className="border-border/40 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 {copied ? (
-                  <Check className="h-3 w-3 text-emerald-400" />
+                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                 ) : (
                   <Share2 className="h-3 w-3" />
                 )}
@@ -357,7 +358,7 @@ function IntentDetail({
                 type="button"
                 onClick={() => updateM.mutate({ id: intent.id, status: "completed" })}
                 disabled={updateM.isPending}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20"
               >
                 <CheckCircle2 className="h-3 w-3" />
                 <span>Complete Directive</span>
@@ -461,9 +462,9 @@ function IntentDetail({
                     className={cn(
                       "shrink-0 rounded-full border px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase",
                       done
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                         : iss.status === "viewed"
-                          ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
                           : "border-border/60 bg-muted/20 text-muted-foreground"
                     )}
                   >
@@ -503,7 +504,7 @@ function IntentDetail({
             <div className="text-muted-foreground text-xs font-medium">{brokerInfo.name}</div>
           </div>
         </div>
-        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-extrabold text-emerald-400">
+        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
           Cabinet Aligned
         </span>
       </FacetCard>
@@ -534,8 +535,8 @@ function IntentDetail({
                     className={cn(
                       "rounded-md border px-2 py-0.5 font-mono text-xs font-bold",
                       change.deltaPercent > 0
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                        : "border-red-500/30 bg-red-500/10 text-red-400"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
                     )}
                   >
                     {change.deltaPercent > 0
@@ -568,7 +569,7 @@ function IntentDetail({
                 className="flex items-center justify-between border-l-2 border-l-amber-500 p-3 text-xs"
               >
                 <span className="text-foreground font-bold">{parent.goal}</span>
-                <span className="text-xs font-bold text-amber-400 uppercase">
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase">
                   {parent.tier}
                 </span>
               </FacetCard>
@@ -589,10 +590,10 @@ function IntentDetail({
                     className="flex items-center justify-between border-l-2 border-l-blue-500 p-3 pl-4 text-xs"
                   >
                     <div className="flex items-center gap-2">
-                      <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                      <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
                       <span className="text-foreground font-bold">{kid.goal}</span>
                     </div>
-                    <span className="text-xs font-bold text-blue-400 uppercase">
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">
                       {kid.tier}
                     </span>
                   </FacetCard>
@@ -643,7 +644,7 @@ function DrillSheetsComponent({
         : drill.kind === "issue"
           ? AlertTriangle
           : (meta?.icon ?? Target);
-  const accent = drill === null ? "text-amber-400" : (meta?.accent ?? "text-amber-400");
+  const accent = drill === null ? "text-amber-600 dark:text-amber-400" : (meta?.accent ?? "text-amber-600 dark:text-amber-400");
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>

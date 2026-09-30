@@ -61,7 +61,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
               className={cn(
                 "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors",
                 partner.tradeAgreement
-                  ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                  ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               )}
             >

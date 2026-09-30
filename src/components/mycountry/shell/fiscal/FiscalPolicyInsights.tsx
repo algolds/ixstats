@@ -136,12 +136,12 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
       >
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 shrink-0 text-amber-400" />
+            <BarChart3 className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
             <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Tax Burden Analysis
             </h4>
           </div>
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-400">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-600 dark:text-amber-400">
             Macro Index
           </span>
         </div>
@@ -151,7 +151,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             <span className="text-muted-foreground text-xs font-semibold">
               Effective GDP Tax Burden
             </span>
-            <span className="font-mono text-base font-bold text-amber-400 tabular-nums">
+            <span className="font-mono text-base font-bold text-amber-600 dark:text-amber-400 tabular-nums">
               <PercentageFlow value={effectiveTaxBurden} decimalPlaces={1} />
             </span>
           </div>
@@ -177,7 +177,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
           </div>
           <div className="text-muted-foreground/70 flex justify-between font-mono text-xs">
             <span>0%</span>
-            <span className="font-semibold text-emerald-400">Optimal Zone (15-35%)</span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Optimal Zone (15-35%)</span>
             <span>50%+</span>
           </div>
         </div>
@@ -190,7 +190,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
       >
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 shrink-0 text-cyan-400" />
+            <Activity className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
             <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Revenue Stream Composition
             </h4>
@@ -246,7 +246,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
       >
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Fiscal Health & Telemetry
             </h4>
@@ -258,7 +258,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             <Eyebrow className="block">
               Efficiency
             </Eyebrow>
-            <p className="mt-0.5 font-mono text-base font-bold text-emerald-400 tabular-nums">
+            <p className="mt-0.5 font-mono text-base font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
               <PercentageFlow value={collectionEfficiency} decimalPlaces={0} />
             </p>
           </div>
@@ -269,7 +269,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             <p
               className={cn(
                 "mt-0.5 font-mono text-base font-bold tabular-nums",
-                budgetImpact >= 0 ? "text-emerald-400" : "text-red-400"
+                budgetImpact >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
               )}
             >
               {budgetImpact >= 0 ? (
@@ -288,10 +288,10 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
               className={cn(
                 "mt-1 font-mono text-xs font-semibold tabular-nums",
                 lafferPosition === "optimal"
-                  ? "text-emerald-400"
+                  ? "text-emerald-600 dark:text-emerald-400"
                   : lafferPosition === "below-optimal"
-                    ? "text-amber-400"
-                    : "text-red-400"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-red-600 dark:text-red-400"
               )}
             >
               {lafferPosition === "optimal"

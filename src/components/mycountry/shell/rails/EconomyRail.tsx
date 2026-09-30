@@ -7,7 +7,7 @@ import { TradeCommerceInsights } from "../TradeCommerceConsole";
 /** Economy rail — fiscal policy insights & trade commerce insights telemetry. */
 export function EconomyRail({ countryId }: { countryId: string }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Fiscal Policy Insights — Tax Burden, Revenue Composition, Fiscal Health */}
       <FiscalPolicyInsights countryId={countryId} />
 

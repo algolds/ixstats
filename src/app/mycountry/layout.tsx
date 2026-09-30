@@ -17,9 +17,15 @@ function DemoModeBanner() {
   if (!isDemoActive) return null;
 
   return (
-    <div className="sticky top-0 z-50 flex items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/15 px-4 py-1.5 text-xs font-semibold tracking-wide text-amber-600 backdrop-blur-md dark:text-amber-400">
-      <AlertTriangle className="h-3.5 w-3.5" />
-      <span>DEMO MODE — Viewing seeded demo data. Changes are not saved.</span>
+    <div
+      role="status"
+      className="sticky top-0 z-50 flex items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/15 px-4 py-2 text-center text-xs font-medium text-amber-800 backdrop-blur-md dark:text-amber-300"
+    >
+      <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+      <span>
+        <span className="font-semibold">Demo mode.</span> You&apos;re viewing seeded demo data;
+        changes aren&apos;t saved.
+      </span>
     </div>
   );
 }

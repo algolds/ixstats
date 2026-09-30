@@ -174,15 +174,18 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
       <FacetCard depth={1} className="bg-card/30 space-y-4 p-4 backdrop-blur-md">
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Percent className="h-4 w-4 text-emerald-400" />
+            <Percent className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <h4 className="text-foreground text-sm font-bold">National Tax Rate Controls</h4>
           </div>
           <div className="flex items-center gap-2.5">
             <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Total Revenue:
             </span>
-            <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-bold tracking-tight text-emerald-400 tabular-nums shadow-md shadow-emerald-500/10 sm:text-base">
-              <CurrencyFlow value={yields._total ?? 0} className="font-bold text-emerald-400" />
+            <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-bold tracking-tight text-emerald-600 tabular-nums shadow-md shadow-emerald-500/10 sm:text-base dark:text-emerald-400">
+              <CurrencyFlow
+                value={yields._total ?? 0}
+                className="font-bold text-emerald-600 dark:text-emerald-400"
+              />
               <span className="ml-1 text-xs font-semibold text-emerald-400/70">/ yr</span>
             </span>
           </div>

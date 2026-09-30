@@ -10,13 +10,14 @@ import {
   Crown,
 } from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const CabinetPanel = dynamic(
   () =>
     import("~/components/executive/politics/CabinetPanel").then((m) => ({
       default: m.CabinetPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
 );
 
 const PartyManager = dynamic(
@@ -24,7 +25,7 @@ const PartyManager = dynamic(
     import("~/components/executive/politics/PartyManager").then((m) => ({
       default: m.PartyManager,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
 );
 
 const LegislaturePanel = dynamic(
@@ -32,7 +33,7 @@ const LegislaturePanel = dynamic(
     import("~/components/executive/politics/LegislaturePanel").then((m) => ({
       default: m.LegislaturePanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
 );
 
 const BillsPanel = dynamic(
@@ -40,7 +41,7 @@ const BillsPanel = dynamic(
     import("~/components/executive/politics/BillsPanel").then((m) => ({
       default: m.BillsPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
 );
 
 const ElectionStatusCard = dynamic(
@@ -48,7 +49,7 @@ const ElectionStatusCard = dynamic(
     import("~/components/executive/politics/ElectionStatusCard").then((m) => ({
       default: m.ElectionStatusCard,
     })),
-  { loading: () => <div className="h-20 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-20 rounded-2xl" /> }
 );
 
 const PowerBrokersPanel = dynamic(
@@ -56,7 +57,7 @@ const PowerBrokersPanel = dynamic(
     import("~/components/executive/politics/PowerBrokersPanel").then((m) => ({
       default: m.PowerBrokersPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
 );
 
 export interface PoliticsDrillDownProps {

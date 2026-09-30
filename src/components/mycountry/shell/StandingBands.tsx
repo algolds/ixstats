@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion } from "motion/react";
 import {
   Activity,
+  NavArrowRight,
   Group as Users,
   Dollar as DollarSign,
   Heart,
@@ -18,11 +18,17 @@ import {
   createVitalityRingsFromCountry,
   type VitalityRing,
 } from "~/components/mycountry/shared/primitives";
-import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";
-import { assetUrl } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
+import {
+  FOCUS_RING,
+  INSET_SURFACE,
+  PRESSABLE,
+  SECONDARY_BUTTON,
+  SectionHeader,
+} from "./surface-kit";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -77,10 +83,7 @@ export function describeCivCapBand(
 }
 
 type RingKey =
-  | "economicVitality"
-  | "populationWellbeing"
-  | "diplomaticStanding"
-  | "governmentalEfficiency";
+  "economicVitality" | "populationWellbeing" | "diplomaticStanding" | "governmentalEfficiency";
 const RING_KEYS: Record<string, RingKey> = {
   economic: "economicVitality",
   population: "populationWellbeing",
@@ -92,7 +95,7 @@ function finiteScore(raw: unknown): number | null {
   return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
 }
 
-/** National Standing rail card — population/GDP telemetry + governance strip + 4 vitality rings. */
+/** National standing — the calm vitals summary under the title: five vitals + four vitality rings. */
 function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.Element {
   const { country, activityRingsData } = useCountryData();
   const [showExactPop, setShowExactPop] = useState(false);
@@ -165,9 +168,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   const ratingLabelText = useMemo(() => getRatingLabel(compositeScore), [compositeScore]);
 
   const population = useMemo(() => {
-    return (
-      country?.currentPopulation ?? country?.population ?? 0
-    );
+    return country?.currentPopulation ?? country?.population ?? 0;
   }, [country?.currentPopulation, country?.population]);
 
   const totalGdp = useMemo(() => {
@@ -182,7 +183,11 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     return showExactPop ? Math.round(population).toLocaleString() : formatCompact(population);
   }, [showExactPop, population]);
 
-  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
+  const civCapData = civCapQuery.data;
+  const civCapPct =
+    civCapData && Number.isFinite(civCapData.capacity) && civCapData.capacity > 0
+      ? Math.min(100, Math.max(0, (civCapData.used / civCapData.capacity) * 100))
+      : null;
 
   const handleOpenBreakdown = () => {
     soundEffects.bloom();
@@ -199,196 +204,153 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       <FacetCard
         depth={1}
         interactive="none"
-        className="group/card border-border/60 bg-card/60 relative flex flex-col gap-3 overflow-hidden rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
+        className="flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
+        aria-labelledby="national-standing-title"
+        role="region"
       >
-        {/* Cinematic Background Flag Watermark Scrim */}
-        {flagUrl && (
-          <div className="pointer-events-none absolute -top-10 -right-10 h-56 w-56 overflow-hidden opacity-[0.12] transition-opacity duration-300 select-none dark:opacity-[0.16]">
-            <img
-              src={flagUrl}
-              alt=""
-              className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
+        <SectionHeader
+          id="national-standing-title"
+          title="National standing"
+          subtitle="Your nation's vitals right now"
+          accessory={
+            <button
+              type="button"
+              onClick={handleOpenBreakdown}
+              className={cn(SECONDARY_BUTTON, "h-9 gap-1.5 px-3 sm:h-8")}
+              title="Open the vitality breakdown"
+            >
+              <Activity aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+              <span>{knownRings.length > 0 ? ratingLabelText : "Vitality"}</span>
+              {knownRings.length > 0 && (
+                <span className="text-muted-foreground tabular-nums">{compositeScore}</span>
+              )}
+              <NavArrowRight aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+            </button>
+          }
+        />
+
+        {/* Vitals: grouped inset tiles with tabular figures */}
+        {country && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            <div className={cn(INSET_SURFACE, "rounded-xl p-0")}>
+              <button
+                type="button"
+                onClick={handleTogglePop}
+                aria-pressed={showExactPop}
+                className={cn(
+                  "hover:bg-muted/60 flex h-full w-full flex-col items-start gap-1 rounded-xl p-3 text-left",
+                  PRESSABLE,
+                  FOCUS_RING
+                )}
+                title={showExactPop ? "Show compact population" : "Show exact population"}
+              >
+                <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                  <Users aria-hidden="true" className="h-3.5 w-3.5" />
+                  Population
+                </span>
+                <span className="text-foreground text-xl font-semibold tracking-tight tabular-nums">
+                  {formattedPop}
+                </span>
+              </button>
+            </div>
+
+            <VitalTile icon={DollarSign} label="GDP" value={`$${formatCompact(totalGdp)}`} />
+            <VitalTile
+              icon={Heart}
+              label="Approval"
+              value={approvalPct === null ? "—" : `${approvalPct}%`}
             />
-            <div className="via-card/75 to-card absolute inset-0 bg-gradient-to-l from-transparent" />
+            <VitalTile
+              icon={Scale}
+              label="Stability"
+              value={stabilityPct === null ? "—" : `${stabilityPct}%`}
+            />
+
+            <div
+              className={cn(
+                INSET_SURFACE,
+                "col-span-2 flex flex-col gap-1 rounded-xl p-3 sm:col-span-1"
+              )}
+              title={civCapBand.title}
+              data-testid="civcap-band"
+            >
+              <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                <Zap aria-hidden="true" className="h-3.5 w-3.5" />
+                CivCap
+              </p>
+              <p
+                className={cn(
+                  "text-xl font-semibold tracking-tight tabular-nums",
+                  civCapData?.overCapacity ? "text-red-600 dark:text-red-400" : "text-foreground"
+                )}
+              >
+                {civCapBand.value}
+              </p>
+              {civCapPct !== null && (
+                <div
+                  className="bg-muted h-1 overflow-hidden rounded-full"
+                  role="meter"
+                  aria-label="Civil service capacity used"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(civCapPct)}
+                >
+                  <div
+                    className={cn(
+                      "h-full rounded-full",
+                      civCapData?.overCapacity ? "bg-red-500" : "bg-amber-500"
+                    )}
+                    style={{ width: `${civCapPct}%` }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="relative z-10 flex flex-col gap-3">
-          {/* Header Row: Title & Vitality Pill */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-col">
-              <span className="text-muted-foreground/70 text-xs font-bold tracking-wider uppercase">
-                National Standing
-              </span>
-              {country?.name && (
-                <div className="mt-0.5 flex min-w-0 items-center gap-2">
-                  <div className="border-border/60 bg-muted/40 relative flex shrink-0 items-center justify-center overflow-hidden rounded-md border p-0.5 shadow-2xs backdrop-blur-md transition-transform group-hover/card:scale-105">
-                    <UnifiedCountryFlag
-                      countryName={country.name}
-                      flagUrl={flagUrl}
-                      size="sm"
-                      className="rounded-sm object-cover"
-                    />
-                  </div>
-                  <h3 className="text-foreground truncate text-sm font-bold tracking-tight">
-                    {country.name}
-                  </h3>
-                </div>
-              )}
-            </div>
-
-            <motion.button
-              type="button"
-              whileHover={{
-                scale: 1.03,
-                transition: { type: "spring", stiffness: 400, damping: 25 },
-              }}
-              whileTap={{ scale: 0.96 }}
-              onClick={handleOpenBreakdown}
-              className="border-border/80 bg-muted/50 hover:bg-muted text-foreground group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-2xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-              title="Click for full Vitality Breakdown"
-            >
-              <Activity className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
-              <span className="font-semibold">
-                {knownRings.length > 0 ? ratingLabelText : "—"}
-              </span>
-              {knownRings.length > 0 && (
-                <span className="text-muted-foreground font-mono text-xs">
-                  ({compositeScore})
-                </span>
-              )}
-            </motion.button>
-          </div>
-
-          {/* Single Unified Telemetry Glass Container (Pop, GDP, Approval, Stability, Capacity) */}
-          {country && (
-            <div className="border-border/50 bg-muted/20 flex flex-col gap-2 rounded-xl border p-2.5 shadow-2xs backdrop-blur-md">
-              {/* Row 1: Population & GDP */}
-              <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-1.5">
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleTogglePop}
-                  className="group flex cursor-pointer items-center gap-1.5 text-xs transition-colors"
-                  title="Click to toggle exact population count"
-                >
-                  <Users className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
-                  <span className="text-muted-foreground/70 text-xs font-bold tracking-wider uppercase">
-                    Pop:
+        {/* Vitality rings */}
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {rings.map((ring) => {
+            const known = ringScores[RING_KEYS[ring.id]!] !== null;
+            return (
+              <button
+                key={ring.id}
+                type="button"
+                onClick={handleOpenBreakdown}
+                aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
+                className={cn(
+                  "group/ring hover:bg-muted/40 flex items-center gap-3 rounded-xl p-2 text-left",
+                  PRESSABLE,
+                  FOCUS_RING
+                )}
+              >
+                <HealthRing
+                  value={known ? ring.value : 0}
+                  size={40}
+                  color={known ? ring.color : "#94a3b8"}
+                  label={ring.label}
+                />
+                <div className="min-w-0 flex-1">
+                  <span className="text-muted-foreground group-hover/ring:text-foreground block truncate text-xs transition-colors">
+                    {ring.label}
                   </span>
-                  <strong className="text-foreground text-xs font-bold tracking-tight tabular-nums group-hover:underline">
-                    {formattedPop}
-                  </strong>
-                </motion.button>
-
-                <div className="flex items-center gap-1.5 text-xs">
-                  <DollarSign className="text-muted-foreground h-3.5 w-3.5" />
-                  <span className="text-muted-foreground/70 text-xs font-bold tracking-wider uppercase">
-                    GDP:
-                  </span>
-                  <strong className="text-foreground text-xs font-bold tracking-tight tabular-nums">
-                    ${formatCompact(totalGdp)}
-                  </strong>
-                </div>
-              </div>
-
-              {/* Row 2: Executive Governance Telemetry (Approval, Stability, Capacity) */}
-              <div className="grid grid-cols-3 gap-1 pt-0.5">
-                <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-xs">
-                  <Heart className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-xs leading-none font-bold tracking-wider uppercase">
-                      Approval
+                  {known ? (
+                    <span className="text-foreground text-sm font-semibold tabular-nums">
+                      {ring.value}
+                      <span className="text-muted-foreground text-xs font-normal">/100</span>
                     </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-bold tabular-nums">
-                      {approvalPct === null ? "—" : `${approvalPct}%`}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs">
-                  <Scale className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-xs leading-none font-bold tracking-wider uppercase">
-                      Stability
-                    </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-bold tabular-nums">
-                      {stabilityPct === null ? "—" : `${stabilityPct}%`}
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs"
-                  title={civCapBand.title}
-                  data-testid="civcap-band"
-                >
-                  <Zap className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-xs leading-none font-bold tracking-wider uppercase">
-                      CivCap
-                    </span>
+                  ) : (
                     <span
-                      className={`truncate font-mono text-xs leading-tight font-bold tabular-nums ${
-                        civCapQuery.data?.overCapacity ? "text-rose-500" : "text-foreground"
-                      }`}
+                      className="text-muted-foreground text-sm font-semibold tabular-nums"
+                      title="No data yet"
                     >
-                      {civCapBand.value}
+                      —
                     </span>
-                  </div>
+                  )}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* 4 Vitality Rings Grid */}
-          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-            {rings.map((ring) => {
-              const known = ringScores[RING_KEYS[ring.id]!] !== null;
-              return (
-                <motion.button
-                  key={ring.id}
-                  type="button"
-                  whileHover={{
-                    scale: 1.02,
-                    transition: { type: "spring", stiffness: 400, damping: 25 },
-                  }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleOpenBreakdown}
-                  className="group/ring border-border/50 bg-card/40 hover:border-border/80 hover:bg-card/70 flex cursor-pointer items-center gap-2 rounded-xl border p-2 text-left backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]"
-                >
-                  <HealthRing
-                    value={known ? ring.value : 0}
-                    size={34}
-                    color={known ? ring.color : "#94a3b8"}
-                    label={ring.label}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-xs font-bold tracking-wider uppercase transition-colors">
-                      {ring.label}
-                    </span>
-                    {known ? (
-                      <span
-                        className="text-foreground text-xs font-bold tabular-nums"
-                        style={{ color: ring.color }}
-                      >
-                        {ring.value}
-                        <span className="text-muted-foreground/60 text-xs font-normal">/100</span>
-                      </span>
-                    ) : (
-                      <span
-                        className="text-muted-foreground text-xs font-bold tabular-nums"
-                        title="No data yet"
-                      >
-                        —
-                      </span>
-                    )}
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
+              </button>
+            );
+          })}
         </div>
       </FacetCard>
 
@@ -399,6 +361,29 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
         countryName={country?.name}
       />
     </>
+  );
+}
+
+/** One static vital: footnote label with glyph over a large tabular figure. */
+function VitalTile({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className={cn(INSET_SURFACE, "flex flex-col gap-1 rounded-xl p-3")}>
+      <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+        <Icon aria-hidden="true" className="h-3.5 w-3.5" />
+        {label}
+      </p>
+      <p className="text-foreground truncate text-xl font-semibold tracking-tight tabular-nums">
+        {value}
+      </p>
+    </div>
   );
 }
 

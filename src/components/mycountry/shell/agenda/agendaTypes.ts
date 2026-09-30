@@ -1,5 +1,6 @@
 import type { Calendar } from "iconoir-react";
 import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { Tone } from "../surface-kit";
 
 export interface AgendaEvent {
   id: string;
@@ -9,10 +10,13 @@ export interface AgendaEvent {
   category: "defense" | "diplomacy" | "politics" | "economy" | "directive";
   description: string;
   directiveGoal: string;
+  /** Sentence-case status, e.g. "Priority issue". */
   statusLabel: string;
   icon: typeof Calendar;
-  accentCls: string;
-  badgeCls: string;
+  /** Semantic tone for the row's glyph tile and status label. */
+  tone: Tone;
+  /** Higher sorts first within a day (priority issue 4, open issue 3, directive 2, event 1). */
+  priority: number;
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
   intentId?: string;
   rawIxTime?: number;
@@ -31,6 +35,14 @@ export function seasonFor(month: number): { name: string; emoji: string } {
   if (month <= 7) return { name: "Summer", emoji: "☀️" };
   return { name: "Autumn", emoji: "🍂" };
 }
+
+export const AGENDA_CATEGORY_LABEL: Record<AgendaEvent["category"], string> = {
+  directive: "Directives",
+  politics: "Politics",
+  diplomacy: "Diplomacy",
+  defense: "Defense",
+  economy: "Economy",
+};
 
 export function getSeverityRank(s: string): number {
   const sev = String(s ?? "").toLowerCase();

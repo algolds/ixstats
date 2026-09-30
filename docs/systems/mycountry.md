@@ -20,14 +20,17 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 ┌────────────────────────────────────────────────────────────────────────┐
 │            COMMAND SURFACE (src/components/mycountry/shell/)           │
 ├───────────────────────────────────┬────────────────────────────────────┤
-│ 1. Header & Actions Strip         │ Compact StateSeal, Name, Leader,   │
-│    headers/UnifiedGlassCommandBar │ Primary "Declare Directive" CTA    │
+│ 1. Header (large title)           │ Flag + country name, leader/gov't  │
+│    headers/UnifiedGlassCommandBar │ footnote, Profile/Edit, primary    │
+│                                   │ "Declare Directive" + slot status  │
 ├───────────────────────────────────┼────────────────────────────────────┤
-│ 2. Telemetry Standing Bands       │ Approval, Stability, CivCap,       │
-│    StandingBands.tsx              │ Vitality Rings; WorldCensusCard    │
+│ 2. National Standing (vitals)     │ Population, GDP, Approval,         │
+│    StandingBands.tsx              │ Stability, CivCap + 4 vitality     │
+│                                   │ rings (full width)                 │
 ├───────────────────────────────────┼────────────────────────────────────┤
-│ 3. Main Action Feed               │ Realtime Agenda, Horizon Strip,    │
-│    ExecutiveHome.tsx              │ Crisis Priority Hero, Issue Briefs │
+│ 3. Overview body                  │ Priority hero, 7-day agenda,       │
+│    ExecutiveHome.tsx              │ recent activity; rail: World       │
+│                                   │ Census, Territory map              │
 ├───────────────────────────────────┼────────────────────────────────────┤
 │ 4. Domain Command Surfaces        │ Full-page modes for Diplomacy,     │
 │    DomainSurface.tsx              │ Defense, Politics, and Economy     │
@@ -37,11 +40,23 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 └───────────────────────────────────┴────────────────────────────────────┘
 ```
 
+### Overview layout & design (Facet / Apple HIG)
+The overview reads top to bottom as one hierarchy, on an 8pt spacing rhythm (24px between cards):
+1. **Header** (`headers/UnifiedGlassCommandBar.tsx`) — large title (flag + country name), a footnote line (leader · government type · economic tier) and a quiet toolbar: Profile and Edit (icon-only on phones, 44px targets) and the one primary action, **Declare Directive**. Under it, one line of directive status: "N of 3 directives left this week" or "Next directive in …" while on cooldown (`intent.getStatus`). On the overview the header also lists the four domains (Diplomacy, Defense, Politics, Economy & Budget); on a domain page or in the directive console it becomes a segmented section switcher.
+2. **National standing** (`StandingBands.tsx`) — full-width vitals: Population (tap for the exact figure), GDP, Approval, Stability, CivCap (with a used/capacity meter), then the four vitality rings. The "Vitality" button opens the breakdown.
+3. **Priority** (`ExecutiveOpportunityHero.tsx`) — the one thing most worth the leader's attention, dismissible for the session.
+4. **Agenda** (`ExecutiveAgenda.tsx`) and **Recent activity** (`ExecutiveRecordFeed.tsx`) in the main column; **World Census** and **Territory** in the rail.
+
+Rules the overview follows:
+- **Real data only.** Domain tiles show a real figure when one exists (Politics: stability; Economy: GDP growth from `calculatedStats.gdpGrowth`; Diplomacy: items awaiting an answer) and otherwise a plain description, never a placeholder number. The priority hero skips a card whose figure is missing (defense readiness, embassy counts). The agenda lists only open national issues, active directives, elections and issue deadlines; the fixed sample events it used to show are gone, and an empty day says what appears there and offers Declare Directive.
+- **Shared kit** (`surface-kit.tsx`): one focus ring, one accent (amber) for primary buttons, semantic tones for status (critical, warning, info, success) plus the four domain tones for icon tiles only, a sentence-case `SectionHeader`, and a `SegmentedFilter`. Theme tokens (`bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`) so every surface reads in light and dark mode.
+- Nested rows and tiles are opaque (`bg-muted/40`); only the cards themselves use Facet material. Loading states use `<Skeleton>` shaped like the final rows.
+
 ### Key Component Architecture
 All under `src/components/mycountry/shell/` unless noted.
 - `CommandSurface.tsx` – Master viewport wrapper and shell orchestration
-- `ExecutiveHome.tsx` – Action-first dashboard housing telemetry and priority issues
-- `ExecutiveAgenda.tsx` – 7-day IxTime horizon calendar and commitment tree
+- `ExecutiveHome.tsx` – Overview body: national standing, priority hero, agenda, recent activity, rail
+- `ExecutiveAgenda.tsx` – 7-day horizon of open issues, active directives, elections and issue deadlines (`agenda/`)
 - `ExecutiveOpportunityHero.tsx` – Spotlight hero prioritizing critical national crises
 - `DomainSurface.tsx` – Specialized domain view for Diplomacy, Defense, Politics, Economy
 - `DomainContextRail.tsx` – Contextual KPI trends and event activity logs
@@ -49,6 +64,7 @@ All under `src/components/mycountry/shell/` unless noted.
 - `shared/headers/IssueDetailBrief.tsx` – 4-branch issue resolution brief modal
 - `ExecutiveConsole.tsx` – Directive package composer and diff preview console (wraps `shared/primitives/IntentComposer.tsx`)
 - `rails/` – Per-domain context rails (`EconomyRail`, `PoliticsRail`, `RelationsRail`, `DefenseRail`)
+- `surface-kit.tsx` – Shared shell styling: focus ring, primary/secondary buttons, tones, `IconTile`, `SectionHeader`, `SegmentedFilter`
 - `MyCountryRouter.tsx` / `MyCountrySidebarNav.tsx` – Single-page section router and nav (the component is not rendered today; only its `MyCountrySection` type is used)
 
 ---

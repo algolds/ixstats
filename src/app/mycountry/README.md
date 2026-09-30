@@ -24,6 +24,7 @@ Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)
 
 ## Key Features
 
+- **Overview layout** — large-title header (flag, country name, Profile/Edit, primary **Declare Directive** with weekly slot status), then the full-width National standing vitals, the priority card, the 7-day agenda and recent activity, with World Census and Territory in the rail. Shared shell styling (buttons, tones, section headers, segmented filters) lives in `shell/surface-kit.tsx`; see `docs/systems/mycountry.md` → "Overview layout & design".
 - **Single-page navigation** — instant section switches, URL kept in sync via `pushState`, back/forward handled by a `popstate` listener; document title updated per section.
 - **Compliance gate** — `useMyCountryCompliance` surfaces `MyCountryComplianceModal` on the overview when the country is incomplete; "Review" deep-links to `/mycountry/editor`. Snooze state persisted in `localStorage`.
 - **Per-section error isolation** — each section is wrapped in `DashboardErrorBoundary` with a retry/refresh fallback keyed on `activeSection`.
@@ -36,7 +37,7 @@ The MyCountry subsystem uses a **4-tier modular domain architecture** located at
 
 | Tier | Path | Description |
 | --- | --- | --- |
-| **Shell** | `shell/` | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `EconomyDrillDown`, `PoliticsDrillDown`, `rails/`, `agenda/`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta.ts`). |
+| **Shell** | `shell/` | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `EconomyDrillDown`, `PoliticsDrillDown`, `rails/`, `agenda/`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta.ts`, `surface-kit.tsx`). |
 | **Shared** | `shared/` | Universal reusable primitives (`cards/`, `headers/`, `modals/`, `primitives/`, `tabs/`). |
 | **Domains** | `domains/` | 5 simulation pillar modules: `defense/`, `diplomacy/`, `economy/`, `government/`, `geography/`. |
 | **Dossier** | `dossier/` | Public country dossier views, factbooks, and Wiki infobox cards. |

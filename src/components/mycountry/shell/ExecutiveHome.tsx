@@ -1,16 +1,11 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  KeyCommand as Command,
-  ClockRotateRight as FileClock,
-  Clock,
-} from "iconoir-react";
+import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { Skeleton } from "~/components/ui/skeleton";
+import { SectionHeader } from "./surface-kit";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
@@ -75,7 +70,6 @@ export function ExecutiveHomeComponent({
   onOpenIntent: (intentId: string) => void;
   onNavigate?: (section: MyCountrySection) => void;
 }) {
-  const _router = useRouter();
   const searchParams = useSearchParams();
   const focusParam = searchParams?.get("focus");
 
@@ -94,14 +88,15 @@ export function ExecutiveHomeComponent({
     { countryId, limit: 60 },
     { enabled: !!countryId }
   );
-  const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
 
   const items = useMemo(() => feed.data ?? [], [feed.data]);
-  const canCommit = status?.data?.canCommit ?? true;
 
   return (
-    <div className="space-y-5">
-      {/* Primary Opportunity Briefing Hero */}
+    <div className="space-y-6">
+      {/* Calm summary of the nation's vitals */}
+      <StandingBands countryId={countryId} />
+
+      {/* The one thing that most needs the leader's attention */}
       <ExecutiveOpportunityHero
         countryId={countryId}
         onDeclare={onDeclare}
@@ -110,10 +105,9 @@ export function ExecutiveHomeComponent({
         onOpenIntent={onOpenIntent}
       />
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        {/* Main Column: Pulse & Agenda Widget + Recent Activity Feed */}
-        <div className="space-y-5 lg:col-span-2">
-          {/* Primary Agenda Widget */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main column: agenda, then the national log */}
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <ExecutiveAgenda
             countryId={countryId}
             onIssueDirective={onDeclare}
@@ -121,83 +115,39 @@ export function ExecutiveHomeComponent({
             onOpenDrill={onOpenDrill}
           />
 
-          {/* Main Feed */}
           <FacetCard
             depth={1}
             interactive="none"
-            className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md"
+            role="region"
+            aria-labelledby="recent-activity-title"
+            className="flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
           >
-            <h4 className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
-              Recent Activity - National log
-            </h4>
-            <ExecutiveRecordFeed items={items} onOpenDrill={onOpenDrill} />
+            <SectionHeader
+              id="recent-activity-title"
+              title="Recent activity"
+              subtitle="Changes recorded in your national ledger"
+            />
+            {feed.isLoading ? (
+              <div className="space-y-2" aria-busy="true" aria-label="Loading recent activity">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-2">
+                    <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-3/5" />
+                      <Skeleton className="h-3 w-2/5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ExecutiveRecordFeed items={items} onOpenDrill={onOpenDrill} />
+            )}
           </FacetCard>
         </div>
 
-        {/* Rail */}
-        <aside className="space-y-5">
-          {/* 1. National Standing & Vitality Rings */}
-          <StandingBands countryId={countryId} />
-
-          {/* World Census: realm rankings across the national stats */}
+        {/* Rail: where the nation stands among its peers, and its territory */}
+        <aside className="min-w-0 space-y-6" aria-label="Rankings and territory">
           <WorldCensusCard countryId={countryId} />
-
-          {/* 2. Executive CivCap Throughput & Trigger */}
-          {canCommit ? (
-            <button
-              type="button"
-              onClick={() => {
-                soundEffects.bloom();
-                onDeclare();
-              }}
-              className="group border-border/50 bg-card/40 hover:bg-card/70 text-foreground relative flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/40 hover:shadow-md active:scale-[0.98]"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:scale-105 group-hover:bg-amber-500/20 dark:text-amber-400">
-                <Command className="h-3.5 w-3.5" />
-              </span>
-              <span className="transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400">
-                Declare a new Directive
-              </span>
-            </button>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-full">
-                  <button
-                    type="button"
-                    disabled
-                    className="border-border/40 bg-card/20 text-muted-foreground flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold opacity-75 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                  >
-                    <span className="border-border/40 bg-muted/20 text-muted-foreground flex h-7 w-7 items-center justify-center rounded-lg border">
-                      <FileClock className="h-3.5 w-3.5" />
-                    </span>
-                    <span>Directive on Cooldown</span>
-                  </button>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent
-                side="left"
-                className="bg-popover/95 max-w-xs space-y-1.5 rounded-xl border border-amber-500/30 p-3 shadow-xl backdrop-blur-xl"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>Executive Cooldown Active</span>
-                </div>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Your government has issued maximum weekly directives (
-                  {status?.data?.usedThisWeek ?? 3}/{status?.data?.cap ?? 3}).
-                </p>
-                <div className="border-border/30 text-foreground flex items-center justify-between border-t pt-1.5 font-mono text-xs font-bold">
-                  <span>Next Available Slot:</span>
-                  <span className="text-amber-500 dark:text-amber-400">
-                    <CooldownTimer cooldownUntil={status?.data?.cooldownUntil} />
-                  </span>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* 3. Interactive Territory Map Canvas */}
           <TerritoryMapWidget countryId={countryId} />
         </aside>
       </div>

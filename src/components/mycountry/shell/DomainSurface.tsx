@@ -2,8 +2,10 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { KeyCommand as Command, ArrowUpRight } from "iconoir-react";
+import { KeyCommand as Command } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
+import { soundEffects } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
 import { useAbility } from "~/components/providers/AbilityProvider";
 import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives";
@@ -11,6 +13,7 @@ import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
+import { IconTile, SECONDARY_BUTTON, type Tone } from "./surface-kit";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -19,7 +22,7 @@ const EmbassiesAndRelationsPanel = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <div className="bg-muted/40 h-96 animate-pulse rounded-2xl" />,
+    loading: () => <Skeleton className="h-96 rounded-3xl" />,
   }
 );
 
@@ -28,7 +31,7 @@ const DefenseCommandPanel = dynamic(
     import("~/components/mycountry/domains/defense/DefenseCommandPanel").then((m) => ({
       default: m.DefenseCommandPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="h-64 rounded-3xl" /> }
 );
 
 const SECTION_TO_DOMAIN: Record<string, V2Domain> = {
@@ -39,18 +42,11 @@ const SECTION_TO_DOMAIN: Record<string, V2Domain> = {
   executive: "economy",
 };
 
-const DOMAIN_GLOW: Record<V2Domain, string> = {
-  relations: "bg-cyan-400",
-  defense: "bg-red-400",
-  politics: "bg-indigo-400",
-  economy: "bg-emerald-400",
-};
-
-const DOMAIN_BORDER: Record<V2Domain, string> = {
-  relations: "border-t-cyan-500/40",
-  defense: "border-t-red-500/40",
-  politics: "border-t-indigo-500/40",
-  economy: "border-t-emerald-500/40",
+const DOMAIN_TONE: Record<V2Domain, Tone> = {
+  relations: "diplomacy",
+  defense: "defense",
+  politics: "politics",
+  economy: "economy",
 };
 
 /**
@@ -76,47 +72,19 @@ function DomainSurfaceComponent({
   const ability = useAbility();
   const domain = SECTION_TO_DOMAIN[section];
   const meta = DOMAIN_META[domain];
-  const Icon = meta.icon;
 
   return (
-    <div className="space-y-5">
-      {/* Domain Hero — themed header card */}
-      <FacetCard
-        depth={1}
-        className={cn(
-          "relative overflow-hidden border-t-2 p-5 backdrop-blur-md",
-          DOMAIN_BORDER[domain]
-        )}
-      >
-        {/* Ambient glow + watermark glyph */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className={cn(
-              "absolute -top-10 -right-10 h-40 w-40 rounded-full opacity-15 blur-3xl",
-              DOMAIN_GLOW[domain]
-            )}
-          />
-          <Icon
-            className={cn("absolute -right-3 -bottom-4 h-24 w-24 opacity-[0.06]", meta.accent)}
-            strokeWidth={1}
-          />
-        </div>
-
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Domain header: glyph tile, title, one-line purpose and a domain-scoped directive */}
+      <FacetCard depth={1} interactive="none" className="rounded-3xl p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3.5">
-            <div
-              className={cn(
-                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-white/5",
-                meta.accent
-              )}
-            >
-              <Icon className="h-5 w-5" />
-            </div>
+            <IconTile icon={meta.icon} tone={DOMAIN_TONE[domain]} size="lg" />
             <div className="min-w-0">
-              <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
+              <h2 className="text-foreground text-xl font-semibold tracking-tight sm:text-2xl">
                 {meta.title}
-              </h1>
-              <p className="text-muted-foreground mt-0.5 max-w-xl text-xs leading-relaxed font-normal">
+              </h2>
+              <p className="text-muted-foreground mt-0.5 max-w-xl text-sm leading-relaxed">
                 {meta.blurb}
               </p>
             </div>
@@ -124,21 +92,22 @@ function DomainSurfaceComponent({
 
           <button
             type="button"
-            onClick={() => onDeclare?.(meta.prefilledGoal)}
-            className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-500 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
+            onClick={() => {
+              soundEffects.bloom();
+              onDeclare?.(meta.prefilledGoal);
+            }}
+            className={cn(SECONDARY_BUTTON, "shrink-0")}
+            title={`Start a directive with a suggested ${meta.title.toLowerCase()} goal`}
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10">
-              <Command className="h-3 w-3" />
-            </span>
-            <span>Declare a Directive</span>
-            <ArrowUpRight className="h-3.5 w-3.5 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+            <Command aria-hidden="true" className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span>{meta.title} directive</span>
           </button>
         </div>
       </FacetCard>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Main column — the domain's v2 drill content inline */}
-        <div className="min-w-0 space-y-5 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           {domain === "defense" ? (
             <PremiumPreviewFrame
               feature="defense"
@@ -156,7 +125,7 @@ function DomainSurfaceComponent({
         </div>
 
         {/* Rail — per-domain contextual KPIs + recent activity */}
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-6">
           <DomainContextRail countryId={countryId} domain={domain} />
         </aside>
       </div>

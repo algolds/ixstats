@@ -58,7 +58,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
             className={cn(
               "rounded p-1 transition-colors",
               isLocked
-                ? "bg-amber-500/10 text-amber-400"
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

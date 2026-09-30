@@ -25,7 +25,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
       <div className="space-y-1 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 backdrop-blur-md">
         <div className="text-muted-foreground flex items-center justify-between text-xs">
           <span>Tariff Revenue Yield</span>
-          <Percent className="h-4 w-4 text-emerald-400" />
+          <Percent className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
         </div>
         <p className="text-foreground text-xl font-bold tracking-tight">
           {currencySymbol}
@@ -39,10 +39,10 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
       <div className="space-y-1 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 backdrop-blur-md">
         <div className="text-muted-foreground flex items-center justify-between text-xs">
           <span>Trade Balance</span>
-          <Ship className="h-4 w-4 text-cyan-400" />
+          <Ship className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
         </div>
         <p
-          className={`text-xl font-bold tracking-tight ${tradeBalance >= 0 ? "text-emerald-400" : "text-red-400"}`}
+          className={`text-xl font-bold tracking-tight ${tradeBalance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
         >
           {tradeBalance >= 0 ? "+" : ""}
           {currencySymbol}

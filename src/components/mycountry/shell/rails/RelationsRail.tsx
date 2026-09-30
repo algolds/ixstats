@@ -166,7 +166,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `embassy-${e.id}`,
         icon: Building2,
-        iconColor: "text-cyan-400",
+        iconColor: "text-cyan-600 dark:text-cyan-400",
         text: `Embassy with ${resolvedName}`,
         time: new Date(e.establishedAt ?? e.createdAt ?? Date.now()),
       });
@@ -177,7 +177,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `relation-${r.id}`,
         icon: strength >= 70 ? TrendingUp : Handshake,
-        iconColor: strength >= 70 ? "text-cyan-400" : "text-cyan-500/70",
+        iconColor: strength >= 70 ? "text-cyan-600 dark:text-cyan-400" : "text-cyan-500/70",
         text: `${r.targetName} — ${r.stance}`,
         time: new Date(),
       });
@@ -187,7 +187,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       entries.push({
         id: `alliance-${a.id}`,
         icon: Users,
-        iconColor: "text-amber-400",
+        iconColor: "text-amber-600 dark:text-amber-400",
         text: `Alliance: ${a.name ?? "Diplomatic Pact"} (${a.memberCount ?? a.members?.length ?? 1} members)`,
         time: new Date(a.createdAt ?? Date.now()),
       });
@@ -200,8 +200,8 @@ export function RelationsRail({ countryId }: { countryId: string }) {
           icon: Scale,
           iconColor:
             fp.actionType === "free_trade" || fp.actionType === "military_alliance"
-              ? "text-emerald-400"
-              : "text-red-400",
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-red-600 dark:text-red-400",
           text: `${fp.actionType?.replace(/_/g, " ")} → ${fp.target?.name ?? "Partner"}`,
           time: new Date(fp.createdAt ?? Date.now()),
         });
@@ -212,32 +212,30 @@ export function RelationsRail({ countryId }: { countryId: string }) {
   }, [embassies, liveRelations, alliances, foreignPolicies]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Diplomatic Snapshot Header KPIs */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md">
+      <FacetCard depth={1} className="rounded-3xl p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Globe2 className="h-3.5 w-3.5 text-cyan-500" />
-            <h4 className="text-xs font-bold tracking-widest text-cyan-500 uppercase">
-              Diplomatic Snapshot
-            </h4>
+            <h4 className="text-foreground text-sm font-semibold">Diplomatic Snapshot</h4>
           </div>
         </div>
         <DomainKpiGrid items={kpis} />
       </FacetCard>
 
       {/* Unified Embassy & Bilateral Network Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+      <FacetCard depth={1} className="space-y-3 rounded-3xl p-4">
+        <div className="border-border/60 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-cyan-400" />
-            <h4 className="text-foreground text-xs font-bold">Embassy & Bilateral Network</h4>
+            <Building2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+            <h4 className="text-foreground text-sm font-semibold">Embassies and bilateral ties</h4>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-400">
+            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-600 dark:text-cyan-400">
               {activeEmbassies.length} Embassies
             </span>
-            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs font-extrabold text-blue-400">
+            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs font-extrabold text-blue-600 dark:text-blue-400">
               {liveRelations.length} Relations
             </span>
           </div>
@@ -245,7 +243,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
 
         {/* 1. Embassy Network Section */}
         <div className="space-y-1.5">
-          <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
             <span>Active Embassies</span>
             <span className="text-xs">{activeEmbassies.length} total</span>
           </div>
@@ -271,10 +269,10 @@ export function RelationsRail({ countryId }: { countryId: string }) {
               return (
                 <div
                   key={emb.id}
-                  className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
+                  className="border-border/60 bg-muted/40 flex items-center justify-between rounded-lg border p-2 text-xs"
                 >
                   <div className="flex min-w-0 items-center gap-2">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-400">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                       <UnifiedCountryFlag
                         countryName={partnerName}
                         flagUrl={partnerFlag}
@@ -290,7 +288,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-400">
+                  <span className="shrink-0 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     Active
                   </span>
                 </div>
@@ -300,8 +298,8 @@ export function RelationsRail({ countryId }: { countryId: string }) {
         </div>
 
         {/* 2. Bilateral Relations Section */}
-        <div className="space-y-1.5 border-t border-white/5 pt-1">
-          <div className="text-muted-foreground flex items-center justify-between text-xs font-bold tracking-wider uppercase">
+        <div className="border-border/60 space-y-1.5 border-t pt-1">
+          <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
             <span>Bilateral Relationships</span>
             <span className="text-xs">{liveRelations.length} partners</span>
           </div>
@@ -313,9 +311,9 @@ export function RelationsRail({ countryId }: { countryId: string }) {
             liveRelations.slice(0, 4).map((rel) => (
               <div
                 key={rel.id}
-                className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
+                className="border-border/60 bg-muted/40 flex items-center gap-2 rounded-lg border p-2 text-xs"
               >
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-400">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <UnifiedCountryFlag
                     countryName={rel.targetName}
                     flagUrl={rel.targetFlag}
@@ -327,14 +325,14 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                     <span className="text-foreground truncate font-semibold">{rel.targetName}</span>
                     <span className="text-xs font-bold text-cyan-500">{rel.strength}%</span>
                   </div>
-                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="bg-muted mt-1 h-1 w-full overflow-hidden rounded-full">
                     <div
                       className="h-full bg-cyan-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                       style={{ width: `${Math.min(100, Math.max(0, rel.strength))}%` }}
                     />
                   </div>
                 </div>
-                <span className="text-muted-foreground shrink-0 text-xs font-bold tracking-wider uppercase">
+                <span className="text-muted-foreground shrink-0 text-xs font-medium">
                   {rel.stance}
                 </span>
               </div>
@@ -344,13 +342,13 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Alliances & Blocs Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 space-y-2.5 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+      <FacetCard depth={1} className="space-y-2.5 rounded-3xl p-4">
+        <div className="border-border/60 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-cyan-400" />
-            <h4 className="text-foreground text-xs font-bold">Alliances & Blocs</h4>
+            <Users className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+            <h4 className="text-foreground text-sm font-semibold">Alliances and blocs</h4>
           </div>
-          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-400">
+          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-extrabold text-cyan-600 dark:text-cyan-400">
             {alliances.length} Active
           </span>
         </div>
@@ -364,7 +362,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
             alliances.slice(0, 3).map((ally) => (
               <div
                 key={ally.id}
-                className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
+                className="border-border/60 bg-muted/40 flex items-center justify-between rounded-lg border p-2 text-xs"
               >
                 <div>
                   <p className="text-foreground text-xs font-semibold">
@@ -374,7 +372,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                     {ally.memberCount ?? ally.members?.length ?? 1} Nations
                   </p>
                 </div>
-                <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-xs font-bold text-cyan-300">
+                <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-xs font-bold text-cyan-700 dark:text-cyan-300">
                   {ally.myRole ?? "Member"}
                 </span>
               </div>

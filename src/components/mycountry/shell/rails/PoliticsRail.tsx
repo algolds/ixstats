@@ -161,14 +161,14 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Political Snapshot Header KPIs */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md">
+      <FacetCard depth={1} className="rounded-3xl p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Landmark className="h-3.5 w-3.5 text-indigo-500" />
-            <h4 className="text-xs font-bold tracking-widest text-indigo-500 uppercase">
-              Political Snapshot
+            <h4 className="text-foreground text-sm font-semibold">
+              Political snapshot
             </h4>
           </div>
         </div>
@@ -176,11 +176,11 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Parliament Seat Allocation Card (Hemicycle Arc & Seat Breakdown) */}
-      <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+      <FacetCard depth={1} className="space-y-3 rounded-3xl p-4">
+        <div className="flex items-center justify-between border-b border-border/60 pb-2">
           <div className="flex min-w-0 items-center gap-2">
             <Building2 className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-            <h4 className="text-foreground truncate text-xs font-bold">
+            <h4 className="text-foreground truncate text-sm font-semibold">
               {parliament?.legislature?.name
                 ? `${parliament.legislature.name} Seat Allocation`
                 : "Legislature Seat Allocation"}
@@ -233,11 +233,11 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Political Parties & Factions Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 space-y-2.5 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+      <FacetCard depth={1} className="space-y-2.5 rounded-3xl p-4">
+        <div className="flex items-center justify-between border-b border-border/60 pb-2">
           <div className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-indigo-500" />
-            <h4 className="text-foreground text-xs font-bold">Political Parties</h4>
+            <h4 className="text-foreground text-sm font-semibold">Political parties</h4>
           </div>
           <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-xs font-extrabold text-indigo-500">
             {parties?.length ?? 0} Parties
@@ -257,7 +257,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
               return (
                 <div
                   key={party.id}
-                  className="space-y-1 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
+                  className="space-y-1 rounded-lg border border-border/60 bg-muted/40 p-2 text-xs"
                 >
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex min-w-0 items-center gap-1.5 pr-2">
@@ -270,7 +270,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                       {support}% support · {seats} seats
                     </span>
                   </div>
-                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full bg-indigo-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                       style={{ width: `${Math.min(100, Math.max(0, support))}%` }}

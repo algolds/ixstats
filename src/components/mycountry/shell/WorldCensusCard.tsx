@@ -2,6 +2,8 @@
 
 import React from "react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
+import { SectionHeader } from "./surface-kit";
 import { api } from "~/trpc/react";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
@@ -38,22 +40,36 @@ export interface WorldCensusListProps {
 export function WorldCensusList({ rankings, isLoading }: WorldCensusListProps) {
   if (isLoading) {
     return (
-      <div className="space-y-1.5" aria-busy="true">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="bg-muted/40 h-6 animate-pulse rounded-md" />
+      <div
+        className="bg-muted/40 divide-border/60 divide-y overflow-hidden rounded-2xl"
+        aria-busy="true"
+        aria-label="Loading census"
+      >
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex items-center justify-between gap-3 px-3 py-2.5">
+            <Skeleton className="h-3.5 w-2/5" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
         ))}
       </div>
     );
   }
   if (!rankings || rankings.length === 0) {
-    return <p className="text-muted-foreground text-xs">No census data yet.</p>;
+    return (
+      <div className="bg-muted/30 rounded-2xl px-4 py-6 text-center">
+        <p className="text-foreground text-sm font-medium">No census data yet.</p>
+        <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+          Ranks appear once your nation and its realm peers have population and GDP on record.
+        </p>
+      </div>
+    );
   }
   return (
-    <ul className="divide-border/40 divide-y">
+    <ul className="bg-muted/40 divide-border/60 divide-y overflow-hidden rounded-2xl">
       {rankings.map((r) => (
         <li
           key={r.category}
-          className="flex items-center justify-between gap-2 py-1.5 text-xs"
+          className="flex min-h-11 items-center justify-between gap-3 px-3 py-2 text-sm"
           title={
             `${r.category}: #${r.global.position} of ${r.global.total} in the realm` +
             (r.regional.total > 0
@@ -62,15 +78,17 @@ export function WorldCensusList({ rankings, isLoading }: WorldCensusListProps) {
             (r.lowerIsBetter ? " (lower is better)" : "")
           }
         >
-          <span className="text-muted-foreground min-w-0 truncate font-semibold">{r.category}</span>
-          <span className="flex shrink-0 items-center gap-2">
-            <span className="text-foreground font-mono tabular-nums">{formatCensusValue(r)}</span>
+          <span className="text-foreground min-w-0 truncate">{r.category}</span>
+          <span className="flex shrink-0 items-center gap-2.5">
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {formatCensusValue(r)}
+            </span>
             <span
               className={cn(
-                "rounded-full border px-1.5 py-0.5 font-bold tabular-nums",
+                "min-w-14 rounded-full px-2 py-0.5 text-center text-xs font-semibold tabular-nums",
                 r.global.position <= 3
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  : "border-border/60 bg-muted/40 text-foreground"
+                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                  : "bg-card text-foreground"
               )}
             >
               #{r.global.position}
@@ -98,14 +116,15 @@ export function WorldCensusCard({ countryId }: WorldCensusCardProps) {
     <FacetCard
       depth={1}
       interactive="none"
-      className="border-border/60 bg-card/60 flex flex-col gap-2 rounded-2xl border p-3.5 shadow-sm backdrop-blur-md"
+      role="region"
+      aria-labelledby="world-census-title"
+      className="flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
     >
-      <div className="flex flex-col">
-        <span className="text-muted-foreground/70 text-xs font-bold tracking-wider uppercase">
-          World Census
-        </span>
-        <span className="text-muted-foreground text-xs">Rank among nations in your realm</span>
-      </div>
+      <SectionHeader
+        id="world-census-title"
+        title="World Census"
+        subtitle="Your rank among nations in your realm"
+      />
       <WorldCensusList rankings={data} isLoading={isLoading} />
     </FacetCard>
   );

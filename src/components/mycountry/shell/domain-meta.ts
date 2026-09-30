@@ -26,7 +26,7 @@ export const DOMAIN_META: Record<
     icon: Globe2,
     accent: "text-cyan-500",
     blurb:
-      "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence",
+      "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence.",
     section: "diplomacy",
     href: "/mycountry/diplomacy",
     prefilledGoal: "Fund foreign ministry diplomatic consular service and trade promotion",

@@ -193,7 +193,7 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="bg-background/50 border-border/30 rounded-lg border p-2">
           <span className="text-muted-foreground block text-xs">Free Trade Pacts</span>
-          <span className="font-bold text-emerald-400">{ftaCount}</span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">{ftaCount}</span>
         </div>
         <div className="bg-background/50 border-border/30 rounded-lg border p-2">
           <span className="text-muted-foreground block text-xs">Active Sectors</span>

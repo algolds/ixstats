@@ -12,9 +12,8 @@ import {
   Heart,
   WarningTriangle as AlertTriangle,
   ScaleFrameEnlarge as Scale,
-  ArrowUpRight,
+  NavArrowRight,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -26,92 +25,52 @@ import {
   PoliticsGraphic,
   EconomyGraphic,
 } from "./ActionCardGraphics";
+import { FOCUS_RING, IconTile, PRESSABLE, TONE, type Tone } from "./surface-kit";
 
+/** Canon-feed category → label, glyph and tone (`cls` is the matching icon-tile class). */
 export const CATEGORY_STYLE: Record<
   string,
-  { label: string; icon: React.ComponentType<{ className?: string }>; cls: string }
+  { label: string; icon: React.ComponentType<{ className?: string }>; tone: Tone; cls: string }
 > = {
-  diplomatic: {
-    label: "Diplomacy",
-    icon: Globe2,
-    cls: "border-cyan-500/40 text-cyan-800 dark:text-cyan-400 bg-cyan-500/10",
-  },
-  diplomacy: {
-    label: "Diplomacy",
-    icon: Globe2,
-    cls: "border-cyan-500/40 text-cyan-800 dark:text-cyan-400 bg-cyan-500/10",
-  },
-  military: {
-    label: "Defense",
-    icon: Shield,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  defense: {
-    label: "Defense",
-    icon: Shield,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  security: {
-    label: "Defense",
-    icon: Shield,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  governance: {
-    label: "Politics",
-    icon: Landmark,
-    cls: "border-indigo-500/40 text-indigo-800 dark:text-indigo-400 bg-indigo-500/10",
-  },
-  economic: {
-    label: "Economy",
-    icon: TrendingUp,
-    cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10",
-  },
-  economy: {
-    label: "Economy",
-    icon: TrendingUp,
-    cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10",
-  },
-  social: {
-    label: "Social",
-    icon: Heart,
-    cls: "border-blue-500/40 text-blue-800 dark:text-blue-400 bg-blue-500/10",
-  },
-  intent: {
-    label: "Directive",
-    icon: Command,
-    cls: "border-amber-500/40 text-amber-800 dark:text-amber-400 bg-amber-500/10",
-  },
-  crisis: {
-    label: "Crisis",
-    icon: AlertTriangle,
-    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
-  },
-  ledger: {
-    label: "Ledger",
-    icon: Scale,
-    cls: "border-blue-500/40 text-blue-800 dark:text-blue-400 bg-blue-500/10",
-  },
+  diplomatic: { label: "Diplomacy", icon: Globe2, tone: "diplomacy", cls: TONE.diplomacy.tile },
+  diplomacy: { label: "Diplomacy", icon: Globe2, tone: "diplomacy", cls: TONE.diplomacy.tile },
+  military: { label: "Defense", icon: Shield, tone: "defense", cls: TONE.defense.tile },
+  defense: { label: "Defense", icon: Shield, tone: "defense", cls: TONE.defense.tile },
+  security: { label: "Defense", icon: Shield, tone: "defense", cls: TONE.defense.tile },
+  governance: { label: "Politics", icon: Landmark, tone: "politics", cls: TONE.politics.tile },
+  economic: { label: "Economy", icon: TrendingUp, tone: "economy", cls: TONE.economy.tile },
+  economy: { label: "Economy", icon: TrendingUp, tone: "economy", cls: TONE.economy.tile },
+  social: { label: "Social", icon: Heart, tone: "info", cls: TONE.info.tile },
+  intent: { label: "Directive", icon: Command, tone: "accent", cls: TONE.accent.tile },
+  crisis: { label: "Crisis", icon: AlertTriangle, tone: "critical", cls: TONE.critical.tile },
+  ledger: { label: "Ledger", icon: Scale, tone: "neutral", cls: TONE.neutral.tile },
 };
 
 interface CountryPeekData {
-  activeEmbassiesCount?: number;
-  embassies?: Array<{ id?: string }>;
-  diplomaticStance?: string;
-  militaryReadiness?: number;
-  readiness?: number;
-  defensePosture?: string;
-  posture?: string;
   stabilityMetrics?: { stabilityScore?: number | null } | null;
-  gdpGrowth?: number;
-  currentGdpGrowth?: number;
+  calculatedStats?: { gdpGrowth?: number | null } | null;
+  adjustedGdpGrowth?: number | null;
 }
 
+/** GDP growth as a signed percentage, or null when the country has no growth figure. */
+export function formatGrowthPeek(country: CountryPeekData | null | undefined): string | null {
+  const raw = country?.calculatedStats?.gdpGrowth ?? country?.adjustedGdpGrowth;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+  const pct = Math.abs(raw) > 1 ? raw : raw * 100;
+  return `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%`;
+}
+
+/**
+ * The four domain destinations. `getPeek` only ever reports real data; when a figure is
+ * missing it falls back to a plain description of what the domain holds, never a number.
+ */
 export const DOMAIN_TILES: {
   id: MyCountrySection;
   title: string;
   drillKind: Exclude<V2Drill, { kind: "intent" } | null>;
   icon: React.ComponentType<{ className?: string }>;
   graphic: React.ComponentType<{ className?: string }>;
+  tone: Tone;
   badgeCls: string;
   getPeek: (country: CountryPeekData | null | undefined) => string;
 }[] = [
@@ -121,9 +80,9 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "relations" },
     icon: Globe,
     graphic: DiplomacyGraphic,
-    badgeCls: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
-    getPeek: (c) =>
-      `${c?.activeEmbassiesCount ?? c?.embassies?.length ?? 12} Embassies • ${c?.diplomaticStance ?? "Active Alliance"}`,
+    tone: "diplomacy",
+    badgeCls: TONE.diplomacy.tile,
+    getPeek: () => "Relations, embassies and alliances",
   },
   {
     id: "defense",
@@ -131,9 +90,9 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "defense" },
     icon: HistoricShieldAlt,
     graphic: DefenseGraphic,
-    badgeCls: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
-    getPeek: (c) =>
-      `${c?.militaryReadiness ?? c?.readiness ?? 94}% Readiness • ${c?.defensePosture ?? c?.posture ?? "Defensive"}`,
+    tone: "defense",
+    badgeCls: TONE.defense.tile,
+    getPeek: () => "Forces, readiness and threats",
   },
   {
     id: "politics",
@@ -141,12 +100,13 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "politics" },
     icon: Scale,
     graphic: PoliticsGraphic,
-    badgeCls: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+    tone: "politics",
+    badgeCls: TONE.politics.tile,
     getPeek: (c) => {
       const score = c?.stabilityMetrics?.stabilityScore;
-      return typeof score === "number"
-        ? `${Math.round(score)}% Stability • Active Cabinet`
-        : "Stability pending • Active Cabinet";
+      return typeof score === "number" && Number.isFinite(score)
+        ? `Stability ${Math.round(score)}%`
+        : "Cabinet, parties and bills";
     },
   },
   {
@@ -155,13 +115,56 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "economy" },
     icon: TrendingUp,
     graphic: EconomyGraphic,
-    badgeCls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+    tone: "economy",
+    badgeCls: TONE.economy.tile,
     getPeek: (c) => {
-      const raw = c?.gdpGrowth ?? c?.currentGdpGrowth ?? 0.034;
-      return `+${(raw > 1 ? raw : raw * 100).toFixed(1)}% Growth • Fiscal Stable`;
+      const growth = formatGrowthPeek(c);
+      return growth ? `GDP growth ${growth}` : "Budget, tax and trade";
     },
   },
 ];
+
+/** One domain destination: icon tile, title, a real-data peek and a disclosure chevron. */
+export function DomainTileButton({
+  tile,
+  peek,
+  badge,
+  onSelect,
+}: {
+  tile: (typeof DOMAIN_TILES)[number];
+  peek: string;
+  badge?: React.ReactNode;
+  onSelect: () => void;
+}) {
+  const Icon = tile.icon;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        soundEffects.press();
+        onSelect();
+      }}
+      className={cn(
+        "group bg-muted/40 hover:bg-muted/70 flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left",
+        PRESSABLE,
+        FOCUS_RING
+      )}
+    >
+      <IconTile icon={Icon} tone={tile.tone} />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
+          <span className="truncate">{tile.title}</span>
+          {badge}
+        </span>
+        <span className="text-muted-foreground truncate text-xs tabular-nums">{peek}</span>
+      </span>
+      <NavArrowRight
+        aria-hidden="true"
+        className="text-muted-foreground/60 group-hover:text-muted-foreground h-4 w-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+      />
+    </button>
+  );
+}
 
 export const DomainActionTiles = React.memo(function DomainActionTiles({
   onOpenDrill,
@@ -173,54 +176,20 @@ export const DomainActionTiles = React.memo(function DomainActionTiles({
   const { country } = useCountryData();
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {DOMAIN_TILES.map(
-        ({ id, title, icon: Icon, graphic: Graphic, badgeCls, drillKind, getPeek }) => (
-          <FacetCard
-            key={id}
-            depth={1}
-            interactive="none"
-            onClick={() => {
-              soundEffects.press();
-              if (onNavigate) {
-                onNavigate(id);
-              } else if (onOpenDrill) {
-                onOpenDrill(drillKind);
-              }
-            }}
-            className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border p-3 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
-          >
-            {/* Subtle Radial-Masked Architectural Watermark */}
-            <Graphic />
-
-            {/* Left: Themed Icon Badge + Text */}
-            <div className="relative z-10 flex min-w-0 items-center gap-3">
-              <div
-                className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-transform duration-150 group-hover:scale-105",
-                  badgeCls
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-              </div>
-              <div className="flex min-w-0 flex-col gap-0.5 text-left">
-                <span className="text-foreground truncate text-[13px] leading-tight font-bold tracking-tight">
-                  {title}
-                </span>
-                <span className="text-muted-foreground truncate text-xs leading-tight font-medium tracking-tight">
-                  {getPeek(country as CountryPeekData | null | undefined)}
-                </span>
-              </div>
-            </div>
-
-            {/* Right: Arrow indicator */}
-            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-          </FacetCard>
-        )
-      )}
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      {DOMAIN_TILES.map((tile) => (
+        <DomainTileButton
+          key={tile.id}
+          tile={tile}
+          peek={tile.getPeek(country as CountryPeekData | null | undefined)}
+          onSelect={() => {
+            if (onNavigate) onNavigate(tile.id);
+            else onOpenDrill?.(tile.drillKind);
+          }}
+        />
+      ))}
     </div>
   );
 });
 
 export const ExecutiveActionCards = DomainActionTiles;
-

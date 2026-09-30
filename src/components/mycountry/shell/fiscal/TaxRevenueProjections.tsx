@@ -22,7 +22,7 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
     >
       <div className="border-border/20 flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
-          <Landmark className="h-4 w-4 shrink-0 text-emerald-400" />
+          <Landmark className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <h4 className="text-foreground text-xs font-semibold">Tax Revenue Projections</h4>
         </div>
       </div>
