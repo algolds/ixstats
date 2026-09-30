@@ -46,6 +46,34 @@ describe("parser time on adversarial input", () => {
   });
 });
 
+describe("parser time with unclosed tags (re-verification item 9)", () => {
+  /** About 2 MB: 10,000 repetitions of a ~200 character chunk holding one tag that is never closed. */
+  const FILLER = "Some ordinary sentence of running text that goes on for a while. ".repeat(3);
+  const big = (chunk: (filler: string) => string): string => chunk(FILLER).repeat(10_000);
+
+  it.each(["nowiki", "ref", "pre", "math", "gallery", "poem", "syntaxhighlight"])(
+    "parses 2 MB with 10,000 unclosed <%s> tags in under 300 ms",
+    (tag) => {
+      const inline = big((filler) => `${filler}<${tag}> x\n`);
+      const blocks = big((filler) => `<${tag}>\n${filler}\n\n`);
+      expect(inline.length).toBeGreaterThan(1_900_000);
+      expect(parseMs(inline)).toBeLessThan(300);
+      expect(parseMs(blocks)).toBeLessThan(300);
+      // a single closing tag at the very end must not make every earlier tag scan to it
+      expect(parseMs(`${inline}</${tag}>`)).toBeLessThan(300);
+    }
+  );
+
+  it("still pairs each opening tag with the next closing tag", () => {
+    const { ast } = parse("<nowiki>{{a}}</nowiki>\n\n<nowiki>open\n\n<nowiki>{{b}}</nowiki>");
+    // the second <nowiki> runs to the only closing tag after it, as it always did (they do not nest)
+    expect(ast.nodes.map((n) => n.raw)).toEqual([
+      "<nowiki>{{a}}</nowiki>",
+      "<nowiki>open\n\n<nowiki>{{b}}</nowiki>",
+    ]);
+  });
+});
+
 describe("match index", () => {
   const PIECES = ["{{", "}}", "[[", "]]", "{", "}", "[", "]", "<!--", "-->", "a", " ", "\n", "|", "{{{", "}}}", "<nowiki>"];
 

@@ -47,7 +47,6 @@ export interface PlateWikiEditorProps {
   onEditorReady?: (editor: ReturnType<typeof usePlateEditor>) => void;
   openTemplateEditor: (id: string) => void;
   deleteNode: (id: string) => void;
-  updateInfoboxFields?: (id: string, fields: Array<{ label: string; value: string }>) => void;
   onKeyDownExtra?: (e: React.KeyboardEvent) => void;
   onSelectionChange?: () => void;
 }
@@ -282,7 +281,6 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
   onEditorReady,
   openTemplateEditor,
   deleteNode,
-  updateInfoboxFields,
   onKeyDownExtra,
   onSelectionChange,
 }: PlateWikiEditorProps) {
@@ -338,9 +336,8 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
     () => ({
       openTemplateEditor,
       deleteNode,
-      updateInfoboxFields,
-    }),
-    [openTemplateEditor, deleteNode, updateInfoboxFields]
+        }),
+    [openTemplateEditor, deleteNode]
   );
 
   useEffect(() => {

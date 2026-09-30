@@ -19,6 +19,8 @@ function esc(s: string): string {
 export interface WikitextSerializeResult {
   wikitext: string;
   complete: boolean;
+  /** Things the author should be told after a save: an edit that could not be applied, a block that was moved. */
+  notices: string[];
 }
 
 function mediaWikitext(el: PlateNode): string {
@@ -29,6 +31,7 @@ function mediaWikitext(el: PlateNode): string {
 
 interface SerializeState {
   complete: boolean;
+  notices: string[];
 }
 
 type BlockSerializer = (el: PlateNode, state: SerializeState) => string;
@@ -65,11 +68,11 @@ const BLOCK_SERIALIZERS: ReadonlyMap<string, BlockSerializer> = new Map<string, 
   ["ol", listWikitext],
   ["table", tableWikitext],
   ["hr", () => "----"],
-  ["infobox-block", (el) => templateWikitext(el, "Infobox")],
-  ["infobox", (el) => templateWikitext(el, "Infobox")],
-  ["infobox-box", (el) => templateWikitext(el, "Infobox")],
-  ["template-block", (el) => templateWikitext(el, "Template")],
-  ["template", (el) => templateWikitext(el, "Template")],
+  ["infobox-block", (el, state) => templateWikitext(el, "Infobox", state.notices)],
+  ["infobox", (el, state) => templateWikitext(el, "Infobox", state.notices)],
+  ["infobox-box", (el, state) => templateWikitext(el, "Infobox", state.notices)],
+  ["template-block", (el, state) => templateWikitext(el, "Template", state.notices)],
+  ["template", (el, state) => templateWikitext(el, "Template", state.notices)],
   ["media", mediaWikitext],
   ["raw-wikitext", (el) => el.rawWikitext ?? ""],
   ["raw-html", rawHtmlWikitext],
@@ -130,6 +133,30 @@ function originalOwners(nodes: readonly PlateNode[]): Map<number, number> {
   return owners;
 }
 
+/** A block the output will contain, with how it is written. */
+interface Planned {
+  el: PlateNode;
+  isOriginal: boolean;
+  /** The block exactly as loaded, when it is unchanged. */
+  verbatimRaw: string | undefined;
+  body: string;
+}
+
+const isRedirect = (el: PlateNode): boolean => el.type === "raw-wikitext" && el.construct === "redirect";
+
+/**
+ * MediaWiki honours `#REDIRECT` only on the first line of a page. A redirect block that is not first
+ * (the author added blocks above it) is moved to the top, and the author is told.
+ */
+function redirectFirst(planned: Planned[], state: SerializeState): Planned[] {
+  const at = planned.findIndex((block) => isRedirect(block.el));
+  if (at <= 0) return planned;
+  state.notices.push(
+    "The #REDIRECT line was moved to the top of the page: MediaWiki only honours a redirect on the first line."
+  );
+  return [planned[at]!, ...planned.slice(0, at), ...planned.slice(at + 1)];
+}
+
 /**
  * Serialize the Plate value to MediaWiki wikitext. Blocks loaded from wikitext and not edited are
  * written back byte for byte, separators included; the leading text of the page is kept with its
@@ -138,16 +165,19 @@ function originalOwners(nodes: readonly PlateNode[]): Map<number, number> {
 export function serializePlateToWikitext(value: readonly Descendant[]): WikitextSerializeResult {
   const nodes = value as readonly PlateNode[];
   const owners = originalOwners(nodes);
-  const state = { complete: true };
-  let out = "";
-  let prev: Written | null = null;
+  const state: SerializeState = { complete: true, notices: [] };
 
+  const planned: Planned[] = [];
   for (const [index, el] of nodes.entries()) {
     const isOriginal = el.wikiSrc !== undefined && owners.get(el.wikiSrc) === index;
     const verbatimRaw = isOriginal && isUnmodified(el) ? el.wikiRaw : undefined;
     const body = verbatimRaw ?? blockWikitext(el, state);
-    if (body === "") continue;
+    if (body !== "") planned.push({ el, isOriginal, verbatimRaw, body });
+  }
 
+  let out = "";
+  let prev: Written | null = null;
+  for (const { el, isOriginal, verbatimRaw, body } of redirectFirst(planned, state)) {
     const lead = isOriginal ? (el.wikiLead ?? "") : "";
     const verbatim = verbatimRaw !== undefined;
     out += (prev === null ? lead : separatorBefore(el, isOriginal, verbatim, prev)) + body;
@@ -159,5 +189,5 @@ export function serializePlateToWikitext(value: readonly Descendant[]): Wikitext
   }
 
   out += nodes[nodes.length - 1]?.wikiTrail ?? "";
-  return { wikitext: out, complete: state.complete };
+  return { wikitext: out, complete: state.complete, notices: state.notices };
 }

@@ -28,6 +28,7 @@ type FingerprintObject = { [key: string]: FingerprintValue };
 /** Provenance written by `astToPlateNodes`, and the `id` Plate assigns: never content. */
 const IGNORED_NODE_KEYS = new Set([
   "wikiRaw",
+  "wikiOuter",
   "wikiSep",
   "wikiFp",
   "wikiSrc",
@@ -67,7 +68,9 @@ function canonicalChildren(children: FingerprintValue[]): FingerprintValue[] {
     const canonical = canonicalNode(child);
     const prev = out[out.length - 1];
     if (isTextLeaf(canonical)) {
-      if (canonical.text === "") continue;
+      // An empty leaf is noise (Slate pads inline elements with them) unless it is the only child and
+      // carries a mark: that is the leaf of a void inline element, where toggled marks land.
+      if (canonical.text === "" && !(children.length === 1 && Object.keys(canonical).length > 1)) continue;
       if (prev !== undefined && isTextLeaf(prev) && marksOf(prev) === marksOf(canonical)) {
         prev.text += canonical.text;
         continue;

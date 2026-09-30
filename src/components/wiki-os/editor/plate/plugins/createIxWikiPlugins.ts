@@ -9,6 +9,8 @@
  */
 
 import { createPlatePlugin } from "platejs/react";
+import type { Editor, NodeEntry } from "slate";
+import { removeEmptyLink } from "../link-normalizer";
 import { PlateInteractiveTemplateElement } from "../elements/PlateInteractiveTemplateElement";
 import { PlateEngineChipElement } from "../elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "../elements/PlateCoordChipElement";
@@ -31,17 +33,31 @@ export const ELEMENT_CHIP_TEMPLATE = "chip-template";
 export const ELEMENT_INLINE_TEMPLATE = "inline-template";
 export const ELEMENT_RAW_WIKITEXT = "raw-wikitext";
 
+/**
+ * A void element. An inline one is markable: bold and italic toggled over a selection land on its
+ * one child leaf, where the serializer reads the marks around a file, chip or reference.
+ */
 function voidPlugin(key: string, isInline = false) {
   return createPlatePlugin({ key }).extend({
-    node: { isVoid: true, isElement: true, isInline },
+    node: { isVoid: true, isElement: true, isInline, isMarkableVoid: isInline },
   });
 }
 
-/** An inline element with editable text children (a link). Unregistered, Slate unwraps it on load. */
+/**
+ * An inline element with editable text children (a link). Unregistered, Slate unwraps it on load.
+ * A link that loses all its text (Enter at its edge, deleting it) is removed rather than left empty.
+ */
 function inlinePlugin(key: string) {
-  return createPlatePlugin({ key }).extend({
-    node: { isElement: true, isInline: true },
-  });
+  return createPlatePlugin({ key })
+    .extend({ node: { isElement: true, isInline: true } })
+    .overrideEditor(({ editor, tf: { normalizeNode } }) => ({
+      transforms: {
+        normalizeNode(entry, options) {
+          if (removeEmptyLink(editor as unknown as Editor, entry as NodeEntry)) return;
+          normalizeNode(entry, options);
+        },
+      },
+    }));
 }
 
 /**

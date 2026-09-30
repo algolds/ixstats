@@ -339,6 +339,9 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
 
       await waitFor(() => expect(screen.getByTestId("visual").textContent).toBe("My text"));
       expect(screen.queryByText(/Your version was set aside/)).toBeNull();
+      // one line of warning: saving replaces the current version with the restored text
+      const warning = screen.getByText(/This is your text, not the current version/);
+      expect(warning.closest("p")!.textContent).toContain("saving will replace the current version");
       // and it does not come back as a draft
       expect(getDraft("Vesperia")).toBeNull();
     });
@@ -352,6 +355,15 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
 
       expect(writeText).toHaveBeenCalledWith("My text");
       await waitFor(() => expect(mockNotifySuccess).toHaveBeenCalledWith("Copied", expect.any(String)));
+    });
+
+    it("shows no replace warning until the author restores their text, and drops it after a save", async () => {
+      await conflictWithDraft("source");
+      expect(screen.queryByText(/This is your text, not the current version/)).toBeNull();
+      fireEvent.click(await screen.findByRole("button", { name: "Restore my text" }));
+      await screen.findByText(/This is your text, not the current version/);
+      await save("Final");
+      expect(screen.queryByText(/This is your text, not the current version/)).toBeNull();
     });
 
     it("drops the set-aside text after a successful save", async () => {

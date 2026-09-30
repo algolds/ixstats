@@ -178,25 +178,18 @@ describe("edited templates and infoboxes are serialised (review fix 5b)", () => 
     expect(roundTrip(page)).toBe(page);
   });
 
-  it("rebuilds from the edited fields: the changed value only, every other parameter as written", () => {
+  it("rebuilds from the edited params: the changed value only, every other parameter as written", () => {
     const nodes = load(page);
     expect(nodes[0]!.type).toBe("infobox-block");
-    const edited = { ...nodes[0]!, fields: [{ label: "capital", value: "Vilena" }], edited: true };
+    const edited = { ...nodes[0]!, params: { ...nodes[0]!.params, capital: "Vilena" }, edited: true };
     expect(save([edited, nodes[1]!])).toBe(
       "{{Infobox country\n| name = Urcea\n| capital = Vilena\n| population = 54,000,000\n}}\n\nText."
     );
   });
 
-  it("matches a field label to a parameter up to case and underscores, and appends new parameters in the style of the last", () => {
+  it("appends a new parameter in the style of the last", () => {
     const nodes = load(page);
-    const edited = {
-      ...nodes[0]!,
-      fields: [
-        { label: "Population", value: "55" },
-        { label: "gdp nominal", value: "$1" },
-      ],
-      edited: true,
-    };
+    const edited = { ...nodes[0]!, params: { ...nodes[0]!.params, population: "55", "gdp nominal": "$1" }, edited: true };
     expect(save([edited])).toBe(
       "{{Infobox country\n| name = Urcea\n| capital = [[Urceopolis]]\n| population = 55\n| gdp nominal = $1\n}}"
     );
@@ -223,7 +216,7 @@ describe("edited templates and infoboxes are serialised (review fix 5b)", () => 
     const fn = "{{#if: {{{x|}}} | yes | no }}";
     expect(roundTrip(fn)).toBe(fn);
     const nodes = load(infobox);
-    expect(save([{ ...nodes[0]!, fields: [{ label: "capital", value: "Vilena" }] }])).toBe(infobox);
+    expect(save([{ ...nodes[0]!, params: { ...nodes[0]!.params, capital: "Vilena" } }])).toBe(infobox);
   });
 });
 
@@ -239,23 +232,23 @@ describe("no junk wikitext (review fix 6)", () => {
     expect(save([{ type: "h3", children: [{ text: "a  \n  b\n\nc" }] }])).toBe("=== a b c ===");
   });
 
-  it("writes a link whose label was emptied as [[Target]], never [[Target|]]", () => {
+  it("writes no link at all for a link whose label was emptied: never [[Target]], never [[Target|]]", () => {
     const [p] = load("See [[Vilena|the city]] today.");
     const emptied = {
       ...p!,
       children: p!.children!.map((leaf) => (leaf.type === "link" ? { ...leaf, children: [{ text: "" }] } : leaf)),
     };
-    expect(save([emptied])).toBe("See [[Vilena]] today.");
-    expect(save([emptied])).not.toContain("|]]");
+    expect(save([emptied])).toBe("See  today.");
+    expect(save([emptied])).not.toContain("[[");
   });
 
-  it("writes an external link with an emptied label as [url]", () => {
+  it("writes no external link for an emptied label either", () => {
     const [p] = load("Go [https://example.org the site] now.");
     const emptied = {
       ...p!,
       children: p!.children!.map((leaf) => (leaf.type === "link" ? { ...leaf, children: [{ text: "" }] } : leaf)),
     };
-    expect(save([emptied])).toBe("Go [https://example.org] now.");
+    expect(save([emptied])).toBe("Go  now.");
   });
 });
 
@@ -274,14 +267,15 @@ describe("quote marks inside link labels are marks, not literal apostrophes (rev
     expect(out).toBe("See [[Foo|''z'' y]] and [[Bar|'''b''' c]] and [http://a.example ''e''] now.");
   });
 
-  it("keeps bold around a link and italic inside its label apart", () => {
+  it("puts the marks around a link on its label's leaves, where toggling them off can reach", () => {
     const source = "'''[[Foo|''x'']]''' end";
     expect(roundTrip(source)).toBe(source);
     const [p] = load(source);
     const link = p!.children!.find((leaf) => leaf.type === "link")!;
-    expect(link.bold).toBe(true);
-    expect(link.children).toEqual([{ text: "x", italic: true }]);
-    expect(save(edit([p!], "x", "y"))).toBe("'''[[Foo|''y'']]''' end");
+    expect(link.bold).toBeUndefined();
+    expect(link.children).toEqual([{ text: "x", bold: true, italic: true }]);
+    // edited, every leaf is bold and italic, so the marks are written around the link
+    expect(save(edit([p!], "x", "y"))).toBe("'''''[[Foo|y]]''''' end");
   });
 
   it("does not read ticks in a link target or in a template inside a label", () => {

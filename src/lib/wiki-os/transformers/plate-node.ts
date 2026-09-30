@@ -52,9 +52,7 @@ export interface PlateNode {
   metric?: string;
   lat?: number;
   lng?: number;
-  /** Template/infobox fields set by the field editor: label and new value of a parameter. */
-  fields?: Array<{ label: string; value: string }>;
-  /** The template was changed through `fields`; its wikitext is rebuilt from its parameters. */
+  /** The template was changed through its form (`params`); its wikitext is rebuilt from them, keeping what was not changed. */
   edited?: boolean;
   /** Every pipe parameter of a `wiki-file` element, verbatim and in order. */
   fileParams?: string[];
@@ -65,6 +63,11 @@ export interface PlateNode {
   // Provenance (plan 414)
   /** The block or inline construct exactly as it was written. */
   wikiRaw?: string;
+  /**
+   * On a link: the bold/italic that was written around it when it was loaded. `wikiRaw` does not
+   * include it, and the link's leaves carry it together with the marks inside the label.
+   */
+  wikiOuter?: { bold?: boolean; italic?: boolean };
   /** Fingerprint of the node's content when it was loaded; `wikiRaw` is only valid while it still matches. */
   wikiFp?: string;
   /** Offset of the block in the loaded page; identifies the original block even after Slate splits it. */

@@ -279,6 +279,9 @@ function tryWikiLink(ctx: InlineContext, i: number): InlineSpan | null {
   const inner = text.slice(i + 2, closeIdx);
   const pipeIdx = inner.indexOf("|");
   const target = pipeIdx !== -1 ? inner.slice(0, pipeIdx).trim() : inner.trim();
+  // `[[|120px|center]]` has no page to link to: MediaWiki shows it as the text it is, and so do we,
+  // so that regenerating its block never strips the brackets.
+  if (target === "") return null;
   const label = pipeIdx !== -1 ? inner.slice(pipeIdx + 1).trim() : target;
   return nodeSpan(
     {

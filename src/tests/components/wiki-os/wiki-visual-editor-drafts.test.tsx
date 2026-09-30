@@ -6,10 +6,15 @@ import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 /** What the mocked Plate canvas reports as its value; the real serializer turns it into wikitext. */
 let mockNodes: unknown[] = [];
 const mockNotifyError = jest.fn();
+const mockNotifyWarning = jest.fn();
 
 jest.mock("~/hooks/useNavigationScroll", () => ({ useNavigationScroll: () => ({ repulsionProgress: 0 }) }));
 jest.mock("~/hooks/useNotify", () => ({
-  useNotify: () => ({ success: jest.fn(), error: (...args: unknown[]) => mockNotifyError(...args) }),
+  useNotify: () => ({
+    success: jest.fn(),
+    error: (...args: unknown[]) => mockNotifyError(...args),
+    warning: (...args: unknown[]) => mockNotifyWarning(...args),
+  }),
 }));
 jest.mock("~/components/wiki-os/editor/hooks/useWikiVisualFormatting", () => ({
   useWikiVisualFormatting: () => ({
@@ -117,5 +122,29 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     expect(reader()).toBe("Edited text.");
     view.unmount();
     expect(register).toHaveBeenLastCalledWith(null);
+  });
+
+  it("tells the author when an edit could not be applied or a block was moved, and still saves", async () => {
+    mockNodes = [
+      { type: "p", children: [{ text: "Inserted above the redirect." }] },
+      { type: "raw-wikitext", construct: "redirect", rawWikitext: "#REDIRECT [[Target]]", children: [{ text: "" }] },
+      {
+        type: "template-block",
+        templateName: "Infobox x",
+        params: { a: "9" },
+        edited: true,
+        parseState: "incomplete",
+        rawWikitext: "{{Infobox x\n| a = 1",
+        children: [{ text: "" }],
+      },
+    ];
+    const { onSave } = setup();
+    fireEvent.click(screen.getByText("publish"));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+
+    expect(onSave.mock.calls[0]![0].startsWith("#REDIRECT [[Target]]")).toBe(true);
+    const messages = mockNotifyWarning.mock.calls.map((call) => call[1] as string);
+    expect(messages.some((m) => /#REDIRECT/.test(m))).toBe(true);
+    expect(messages.some((m) => /not closed/.test(m))).toBe(true);
   });
 });

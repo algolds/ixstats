@@ -166,11 +166,20 @@ describe("draft-store", () => {
       expect(listDrafts()[0]?.wikitext).toBe("== Heading ==\nSome [[text]].");
     });
 
-    it("leaves rendered HTML, a source draft, and drafts of the current format alone", () => {
-      store({ mode: "visual", html: "<p>Rendered</p>" });
-      expect(getDraft("Old page")?.html).toBe("<p>Rendered</p>");
+    it("migrates wikitext that starts with HTML-like tags too: the version decides, not the text", () => {
+      for (const text of ["<div class=\"infobox\">x</div>\n== H ==", "<span>a</span> text", "<blockquote>q</blockquote>\nmore", "<p>para</p>"]) {
+        store({ mode: "visual", html: text });
+        const draft = getDraft("Old page");
+        expect(draft?.wikitext).toBe(text);
+        expect(draft?.html).toBeUndefined();
+      }
+    });
+
+    it("leaves a source draft, a draft that has its wikitext, and drafts of the current format alone", () => {
       store({ mode: "source", wikitext: "x" });
       expect(getDraft("Old page")?.wikitext).toBe("x");
+      store({ mode: "visual", html: "old html", wikitext: "kept" });
+      expect(getDraft("Old page")).toMatchObject({ wikitext: "kept", html: "old html" });
       store({ mode: "visual", html: "plain words", version: 2 });
       expect(getDraft("Old page")?.html).toBe("plain words");
     });

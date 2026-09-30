@@ -62,13 +62,53 @@ export function matchOpenTag(text: string, i: number): OpenTag | null {
   };
 }
 
+interface CloseTags {
+  starts: number[];
+  ends: number[];
+}
+
+/**
+ * Where every `</name>` of a text starts and ends, found in one scan and kept for the last few texts
+ * asked about. Looking for the closing tag of each opening tag by scanning forward is quadratic when
+ * thousands of tags never close (every scan runs to the end).
+ */
+const closeTagCache: Array<{ text: string; byName: Map<string, CloseTags> }> = [];
+const CLOSE_TAG_CACHE_SIZE = 4;
+
+function closeTagsOf(text: string, name: string): CloseTags {
+  let entry = closeTagCache.find((candidate) => candidate.text === text);
+  if (!entry) {
+    entry = { text, byName: new Map() };
+    closeTagCache.unshift(entry);
+    closeTagCache.length = Math.min(closeTagCache.length, CLOSE_TAG_CACHE_SIZE);
+  }
+  let tags = entry.byName.get(name);
+  if (!tags) {
+    tags = { starts: [], ends: [] };
+    const close = new RegExp(`</${name}\\s*>`, "gi");
+    let match: RegExpExecArray | null;
+    while ((match = close.exec(text)) !== null) {
+      tags.starts.push(match.index);
+      tags.ends.push(match.index + match[0].length);
+    }
+    entry.byName.set(name, tags);
+  }
+  return tags;
+}
+
 /** Index just after the closing tag that matches `tag`, or -1 when it is never closed. */
 export function findTagClose(text: string, tag: OpenTag): number {
   if (tag.selfClosing) return tag.openEnd;
-  const close = new RegExp(`</${tag.name}\\s*>`, "gi");
-  close.lastIndex = tag.openEnd;
-  const match = close.exec(text);
-  return match ? match.index + match[0].length : -1;
+  const { starts, ends } = closeTagsOf(text, tag.name);
+  // the first closing tag that starts at or after the end of the opening tag
+  let low = 0;
+  let high = starts.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (starts[mid]! < tag.openEnd) low = mid + 1;
+    else high = mid;
+  }
+  return low < ends.length ? ends[low]! : -1;
 }
 
 /** Index just after the `-->` of the comment that starts at `text[i]`; the end of text when unclosed. */

@@ -43,18 +43,16 @@ export function clearEditorBase(title: string, source = "ixwiki"): void {
   editorBases.delete(draftKey(title, source));
 }
 
-/** Rendered article HTML starts with a block element; wikitext hardly ever does. */
-const RENDERED_HTML = /^\s*<(?:p|h[1-6]|div|table|ul|ol|blockquote|figure|section|span)\b/i;
-
 /**
  * Reads a draft written by older code. The visual editor's "Save draft" used to store the page's
- * wikitext in the `html` field; such a draft (no `version`, visual mode, `html` that is not rendered
- * HTML, no `wikitext`) is returned with that text as `wikitext`.
+ * wikitext in the `html` field; a draft with no `version` (older code never wrote one), in visual
+ * mode, with `html` and no `wikitext`, is returned with that text as `wikitext`. The decision is the
+ * draft's version alone: wikitext that happens to start with `<div>` or `<blockquote>` is still wikitext.
  */
 function migrateDraft(draft: WikiEditorDraft): WikiEditorDraft {
   const { html } = draft;
   if (draft.version !== undefined || draft.mode !== "visual" || draft.wikitext !== undefined) return draft;
-  if (html === undefined || RENDERED_HTML.test(html)) return draft;
+  if (html === undefined) return draft;
   const { html: _html, ...rest } = draft;
   return { ...rest, wikitext: html };
 }

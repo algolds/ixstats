@@ -64,6 +64,7 @@ export function WikiVisualEditor({
   const wtRef = useRef<WikitextSerializeResult>({
     wikitext: initialWikitext || "",
     complete: true,
+    notices: [],
   });
   const { repulsionProgress } = useNavigationScroll();
 
@@ -117,6 +118,8 @@ export function WikiVisualEditor({
       return;
     }
     const wikitextToSave = wtRef.current.wikitext;
+    // Edits that could not be applied as typed, or a block that had to move: the author is told.
+    for (const notice of wtRef.current.notices) state.notify.warning("Check the saved page", notice);
     const saved = await state.executeSave(() => wikitextToSave);
     // A published page needs no draft (executeSave cleared it); a failed save keeps the work as one.
     if (!saved) saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
@@ -185,28 +188,6 @@ export function WikiVisualEditor({
       setIsDirty(true);
     },
     [editorRef, fmt, setIsDirty]
-  );
-
-  const handleUpdateInfoboxFields = useCallback(
-    (id: string, fields: Array<{ label: string; value: string }>) => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      const entries = Array.from(
-        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-          at: [],
-          match: (n) => (n as unknown as { id?: string }).id === id,
-        })
-      );
-      if (entries.length === 0) return;
-      const [, path] = entries[0]!;
-      Transforms.setNodes(
-        editor as unknown as import("slate").BaseEditor,
-        { fields, edited: true } as unknown as Partial<import("slate").Descendant>,
-        { at: path }
-      );
-      setIsDirty(true);
-    },
-    [editorRef, setIsDirty]
   );
 
   // Template and Image Handlers
@@ -333,7 +314,6 @@ export function WikiVisualEditor({
             onSelectionChange={refreshActiveFormats}
             openTemplateEditor={handleOpenTemplateEditor}
             deleteNode={handleDeleteNode}
-            updateInfoboxFields={handleUpdateInfoboxFields}
           />
         </div>
 

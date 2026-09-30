@@ -9,6 +9,7 @@
 
 import { decodeTitleParam } from "~/lib/wiki-os/core/title";
 import { plateFingerprint } from "~/lib/wiki-os/transformers/plate-fingerprint";
+import { linkOuterMarks, voidInlineMarks } from "~/lib/wiki-os/transformers/plate-marks";
 import type { PlateNode } from "~/lib/wiki-os/transformers/plate-node";
 import { buildFileLink } from "~/lib/wiki-os/wikitext/file-params";
 import { joinMarkedSegments, wrapQuotes, type MarkedSegment } from "~/lib/wiki-os/wikitext/quote-marks";
@@ -43,11 +44,15 @@ function leafItem(leaf: PlateNode): MarkedSegment | null {
 const textLeaves = (children: PlateNode[]): PlateNode[] =>
   children.filter((child) => typeof child.text === "string" && child.text !== "");
 
-/** The label of a link: its text leaves, each with its own bold, italic and HTML marks. */
-function labelText(children: PlateNode[]): string {
+/** The label of a link: its text leaves with their own marks, less those written around the whole link. */
+function labelText(children: PlateNode[], around: { bold: boolean; italic: boolean }): string {
   return textLeaves(children)
     .map((leaf) =>
-      wrapQuotes(withHtmlMarks(leaf, leaf.text ?? ""), Boolean(leaf.bold), Boolean(leaf.italic))
+      wrapQuotes(
+        withHtmlMarks(leaf, leaf.text ?? ""),
+        Boolean(leaf.bold) && !around.bold,
+        Boolean(leaf.italic) && !around.italic
+      )
     )
     .join("");
 }
@@ -63,24 +68,25 @@ function linkTarget(el: PlateNode): string {
   return decodeTitleParam((el.url || "").replace(/^\/wiki\//, "").replace(/_/g, " "));
 }
 
-function linkItem(el: PlateNode): MarkedSegment {
-  // The marks around the link (bold across it) are properties of the element; the marks inside its
-  // label are on its text leaves.
-  const bold = Boolean(el.bold);
-  const italic = Boolean(el.italic);
+function linkItem(el: PlateNode): MarkedSegment | null {
+  // The marks around the link are the ones every leaf of its label has: toggling a mark off on the
+  // label removes it from the wikitext, and a bolded paragraph is one bold run across the link.
   if (isUnmodified(el) && el.wikiRaw !== undefined) {
-    return { text: el.wikiRaw, bold, italic, isText: false };
+    // Unchanged: its source already holds the marks inside its label; what was around it is recorded.
+    return { text: el.wikiRaw, bold: Boolean(el.wikiOuter?.bold), italic: Boolean(el.wikiOuter?.italic), isText: false };
   }
+  const { bold, italic } = linkOuterMarks(el);
 
-  const label = labelText(el.children ?? []);
+  const label = labelText(el.children ?? [], { bold, italic });
+  // A link with no text is not there: Enter at its edge or deleting its text must not leave [[Target]].
+  if (textLeaves(el.children ?? []).length === 0) return null;
   let text: string;
   if (isInternalLink(el)) {
     const target = linkTarget(el);
-    // A link whose label was emptied is [[Target]]: [[Target|]] would be MediaWiki's pipe trick.
     if (target === "") text = label;
-    else text = label === "" || label === target ? `[[${target}]]` : `[[${target}|${label}]]`;
+    else text = label === target ? `[[${target}]]` : `[[${target}|${label}]]`;
   } else {
-    text = label === "" || label === el.url ? `[${el.url}]` : `[${el.url} ${label}]`;
+    text = label === el.url ? `[${el.url}]` : `[${el.url} ${label}]`;
   }
   return { text, bold, italic, isText: false };
 }
@@ -130,13 +136,14 @@ function collectItems(children: PlateNode[], items: MarkedSegment[]): void {
       continue;
     }
     if (child.type === "a" || child.type === "link") {
-      items.push(linkItem(child));
+      const link = linkItem(child);
+      if (link) items.push(link);
     } else if (child.type === "lic" || child.type === "span") {
       collectItems(child.children ?? [], items);
     } else {
       const text = elementText(child);
       if (text !== null) {
-        items.push({ text, bold: Boolean(child.bold), italic: Boolean(child.italic), isText: false });
+        items.push({ text, ...voidInlineMarks(child), isText: false });
       } else {
         collectItems(child.children ?? [], items);
       }

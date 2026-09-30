@@ -92,6 +92,8 @@ export function WikiEditBridge({
   const [editorKey, setEditorKey] = useState(0);
   /** The author's text when they chose "Load current version": kept here, not in the draft store. */
   const [setAsideText, setSetAsideText] = useState<string | null>(null);
+  /** The author put their set-aside text back: saving now replaces the current version with it. */
+  const [restoredOverCurrent, setRestoredOverCurrent] = useState(false);
   const pendingSave = useRef<PendingSave | null>(null);
   /** Reads the mounted editor's content as it is now (see the editors' `registerContentReader`). */
   const readContentRef = useRef<(() => string | null) | null>(null);
@@ -217,6 +219,7 @@ export function WikiEditBridge({
 
         pendingSave.current = null;
         setSetAsideText(null);
+        setRestoredOverCurrent(false);
         clearDraft(title);
 
         if (save.keepEditing) {
@@ -268,6 +271,7 @@ export function WikiEditBridge({
     const mine = readContentRef.current?.() ?? pendingSave.current?.wikitext ?? null;
     clearDraft(title);
     setSetAsideText(mine);
+    setRestoredOverCurrent(false);
     pendingSave.current = null;
     setActiveWikitext(conflict.currentWikitext);
     setLoaded({ wikitext: conflict.currentWikitext, ...revisionOf(conflict.currentRevisionRef) });
@@ -279,6 +283,7 @@ export function WikiEditBridge({
     if (setAsideText === null) return;
     setActiveWikitext(setAsideText);
     setSetAsideText(null);
+    setRestoredOverCurrent(true);
     setEditorKey((key) => key + 1);
   }, [setAsideText]);
 
@@ -360,6 +365,12 @@ export function WikiEditBridge({
             </Button>
           </div>
         </div>
+      )}
+
+      {restoredOverCurrent && !conflict && (
+        <p role="status" className="mb-4 rounded-xl border border-border bg-card/75 px-4 py-2 text-sm text-foreground">
+          <strong>This is your text, not the current version:</strong> saving will replace the current version with it.
+        </p>
       )}
 
       {setAsideText !== null && !conflict && (
