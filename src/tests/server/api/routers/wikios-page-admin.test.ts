@@ -123,7 +123,7 @@ describe("movePage", () => {
   });
 
   it("can leave no redirect and keep the talk page", async () => {
-    const result = await as(memberCtx()).movePage({
+    const result = await as(sysopCtx()).movePage({
       from: "Old name",
       to: "New name",
       leaveRedirect: false,
@@ -165,6 +165,148 @@ describe("movePage", () => {
 
     await as(sysopCtx()).movePage({ from: "Old name", to: "New name" });
     expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("New name");
+  });
+
+  it("needs suppressredirect to move without leaving a redirect", async () => {
+    await expect(
+      as(memberCtx()).movePage({ from: "Old name", to: "New name", leaveRedirect: false })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringMatching(/^permissiondenied: .*suppressredirect/),
+    });
+    expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("Old name");
+  });
+
+  // The security review: a deleted page must stay invisible to a mover, and a salted title stays salted.
+  describe("a deleted page and a salted title", () => {
+    beforeEach(() => {
+      tables.wikiArticle.rows.find((row) => row.id === "a-old")!.status = "ARCHIVED";
+    });
+
+    it("is NOT_FOUND to a mover without deletedhistory and undelete, and changes nothing", async () => {
+      await expect(
+        as(memberCtx()).movePage({ from: "Old name", to: "New name" })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+      expect(tables.wikiArticle.rows.map((row) => row.title).sort()).toEqual([
+        "Old name",
+        "Talk:Old name",
+      ]);
+      expect(tables.wikiLog.rows).toHaveLength(0);
+    });
+
+    it("can be moved by a sysop, who leaves no redirect for it and keeps it deleted", async () => {
+      const result = await as(sysopCtx()).movePage({
+        from: "Old name",
+        to: "New name",
+        moveTalk: false,
+      });
+      expect(result).toMatchObject({ redirectCreated: false });
+      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")).toMatchObject({
+        title: "New name",
+        status: "ARCHIVED",
+      });
+    });
+
+    it("cannot be used to plant a redirect on a salted title: create-protection holds the old title", async () => {
+      tables.wikiArticle.rows.find((row) => row.id === "a-old")!.status = "PUBLISHED";
+      tables.wikiRestriction.seed({
+        source: "ixwiki",
+        title: "Old name",
+        action: "create",
+        level: "sysop",
+      });
+
+      await expect(
+        as(memberCtx()).movePage({ from: "Old name", to: "New name" })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/^titleprotected: /) });
+      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("Old name");
+
+      await as(sysopCtx()).movePage({ from: "Old name", to: "New name" });
+      expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("New name");
+    });
+  });
+
+  describe("protection follows the page", () => {
+    const seedProtections = (withCreate = true) =>
+      tables.wikiRestriction.seed(
+        { source: "ixwiki", title: "Old name", action: "edit", level: "sysop" },
+        { source: "ixwiki", title: "Old name", action: "move", level: "autoconfirmed" },
+        { source: "ixwiki", title: "Old name", action: "upload", level: "sysop" },
+        ...(withCreate
+          ? [{ source: "ixwiki", title: "Old name", action: "create", level: "sysop" }]
+          : [])
+      );
+    const restrictionsAt = (title: string) =>
+      tables.wikiRestriction.rows
+        .filter((row) => row.title === title)
+        .map((row) => `${row.action}:${row.level}`)
+        .sort();
+
+    it("is refused to a mover the page's edit protection keeps out, leaving everything in place", async () => {
+      seedProtections(false);
+      await expect(
+        as(memberCtx()).movePage({ from: "Old name", to: "New name" })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
+
+      expect(restrictionsAt("Old name")).toHaveLength(3);
+      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")?.title).toBe("Old name");
+    });
+
+    it("moves the edit, move and upload protections to the new title, keeps create-protection, and syncs the mirror", async () => {
+      seedProtections();
+      tables.wikiArticle.rows.find((row) => row.id === "a-old")!.protectionLevel = "SYSOP";
+
+      await as(sysopCtx()).movePage({ from: "Old name", to: "New name", moveTalk: false });
+
+      expect(restrictionsAt("New name")).toEqual([
+        "edit:sysop",
+        "move:autoconfirmed",
+        "upload:sysop",
+      ]);
+      expect(restrictionsAt("Old name")).toEqual(["create:sysop"]);
+      expect(tables.wikiArticle.rows.find((row) => row.id === "a-old")).toMatchObject({
+        title: "New name",
+        protectionLevel: "SYSOP",
+      });
+      // the redirect left behind is an ordinary page
+      expect(tables.wikiArticle.rows.find((row) => row.title === "Old name")).toMatchObject({
+        protectionLevel: "ALL",
+      });
+    });
+
+    it("protects the moved page against the next mover, and replaces stale protections at the destination", async () => {
+      tables.wikiRestriction.seed({
+        source: "ixwiki",
+        title: "New name",
+        action: "edit",
+        level: "autoconfirmed",
+      });
+      tables.wikiRestriction.seed({
+        source: "ixwiki",
+        title: "Old name",
+        action: "edit",
+        level: "sysop",
+      });
+      await as(sysopCtx()).movePage({ from: "Old name", to: "New name", moveTalk: false });
+      expect(restrictionsAt("New name")).toEqual(["edit:sysop"]);
+
+      await expect(
+        as(memberCtx()).movePage({ from: "New name", to: "Newer name" })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
+    });
+
+    it("moves a protected talk page's protection with it", async () => {
+      tables.wikiRestriction.seed({
+        source: "ixwiki",
+        title: "Talk:Old name",
+        action: "edit",
+        level: "autoconfirmed",
+      });
+      await as(sysopCtx()).movePage({ from: "Old name", to: "New name" });
+      expect(restrictionsAt("Talk:New name")).toEqual(["edit:autoconfirmed"]);
+      expect(restrictionsAt("Talk:Old name")).toEqual([]);
+    });
   });
 
   it("refuses a destination that exists, a missing page and an invalid title", async () => {
@@ -305,6 +447,20 @@ describe("protectPage / getPageRestrictions", () => {
 
     tables.wikiRestriction.rows[0]!.expiresAt = new Date(Date.now() - DAY);
     expect((await anonymous().getPageRestrictions({ title: "Salted" })).restrictions).toEqual([]);
+  });
+
+  it("refuses cascading protection, which is not enforced yet, and stores nothing", async () => {
+    await expect(
+      as(sysopCtx()).protectPage({
+        title: "Old name",
+        restrictions: [{ action: "edit", level: "sysop" }],
+        cascade: true,
+      })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("Cascading protection is not supported yet"),
+    });
+    expect(tables.wikiRestriction.rows).toHaveLength(0);
   });
 
   it("is forbidden without the protect right, and refuses a past expiry", async () => {

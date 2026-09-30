@@ -23,7 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { expiryFromPreset, type ExpiryPreset } from "~/lib/wiki-os/page-admin-ui";
+import {
+  chooseExpiry,
+  chooseLevel,
+  expiryFromPreset,
+  type ExpiryPreset,
+  type ProtectionDraft,
+} from "~/lib/wiki-os/page-admin-ui";
 
 const ACTIONS = [
   { action: "edit", label: "Edit" },
@@ -31,7 +37,6 @@ const ACTIONS = [
   { action: "upload", label: "Upload" },
   { action: "create", label: "Create (a page that does not exist yet)" },
 ] as const;
-type Action = (typeof ACTIONS)[number]["action"];
 type Level = "none" | "autoconfirmed" | "sysop";
 type Expiry = ExpiryPreset | "keep";
 
@@ -47,18 +52,13 @@ export default function ProtectPagePage() {
   const title = readableTitle(useSearchParams().get("title") ?? "");
   const router = useRouter();
   const notify = useNotify();
-  const [levels, setLevels] = useState<Record<Action, Level>>({
-    edit: "none",
-    move: "none",
-    upload: "none",
-    create: "none",
+  // Setting Edit also sets Move until Move is chosen on its own (see chooseLevel).
+  const [draft, setDraft] = useState<ProtectionDraft<Level, Expiry>>({
+    levels: { edit: "none", move: "none", upload: "none", create: "none" },
+    expiries: { edit: "infinite", move: "infinite", upload: "infinite", create: "infinite" },
+    moveChosen: false,
   });
-  const [expiries, setExpiries] = useState<Record<Action, Expiry>>({
-    edit: "infinite",
-    move: "infinite",
-    upload: "infinite",
-    create: "infinite",
-  });
+  const { levels, expiries } = draft;
   const [reason, setReason] = useState("");
 
   const current = api.wikios.getPageRestrictions.useQuery({ title }, { enabled: title !== "" });
@@ -66,14 +66,17 @@ export default function ProtectPagePage() {
 
   // Start from what the page has now: each protected row keeps its level and (by default) its expiry.
   useEffect(() => {
-    if (!existing) return;
-    for (const { action } of ACTIONS) {
-      const level = existing.find((row) => row.action === action)?.level;
-      if (level && isLevel(level)) {
-        setLevels((prev) => ({ ...prev, [action]: level }));
-        setExpiries((prev) => ({ ...prev, [action]: "keep" }));
+    if (!existing || existing.length === 0) return;
+    setDraft((prev) => {
+      let next = { ...prev, moveChosen: true }; // editing a protected page: nothing follows Edit on its own
+      for (const { action } of ACTIONS) {
+        const level = existing.find((row) => row.action === action)?.level;
+        if (level && isLevel(level)) {
+          next = chooseExpiry(chooseLevel(next, action, level), action, "keep");
+        }
       }
-    }
+      return next;
+    });
   }, [existing]);
 
   const protect = api.wikios.protectPage.useMutation({
@@ -127,7 +130,7 @@ export default function ProtectPagePage() {
                   <Select
                     value={levels[action]}
                     onValueChange={(next) => {
-                      if (isLevel(next)) setLevels((prev) => ({ ...prev, [action]: next }));
+                      if (isLevel(next)) setDraft((prev) => chooseLevel(prev, action, next));
                     }}
                   >
                     <SelectTrigger
@@ -148,7 +151,7 @@ export default function ProtectPagePage() {
                     <ExpirySelect
                       value={expiries[action]}
                       allowKeep={isProtected}
-                      onChange={(next) => setExpiries((prev) => ({ ...prev, [action]: next }))}
+                      onChange={(next) => setDraft((prev) => chooseExpiry(prev, action, next))}
                     />
                   )}
                 </div>

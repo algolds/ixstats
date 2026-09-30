@@ -1,6 +1,8 @@
 /** @jest-environment node */
 // Plan 409: the page-admin screens' pure helpers.
 import {
+  chooseExpiry,
+  chooseLevel,
   describeExpiry,
   describeLogEntry,
   expiryFromPreset,
@@ -102,5 +104,52 @@ describe("describeLogEntry", () => {
 
   it("falls back to the action and title for a type it does not know", () => {
     expect(line("upload", "upload", "File:X.png")).toBe('upload "File:X.png"');
+  });
+});
+
+describe("the protect screen's edit-to-move chain", () => {
+  type Level = "none" | "autoconfirmed" | "sysop";
+  const fresh = () => ({
+    levels: { edit: "none", move: "none", upload: "none", create: "none" } as Record<string, Level>,
+    expiries: {
+      edit: "infinite",
+      move: "infinite",
+      upload: "infinite",
+      create: "infinite",
+    } as Record<string, string>,
+    moveChosen: false,
+  });
+
+  it("sets Move to the level chosen for Edit until Move has been chosen on its own", () => {
+    const edit = chooseLevel(fresh(), "edit", "sysop");
+    expect(edit.levels).toEqual({ edit: "sysop", move: "sysop", upload: "none", create: "none" });
+
+    const relaxed = chooseLevel(edit, "move", "autoconfirmed");
+    expect(relaxed.levels.move).toBe("autoconfirmed");
+    expect(relaxed.moveChosen).toBe(true);
+
+    // once Move was chosen, changing Edit leaves it alone
+    expect(chooseLevel(relaxed, "edit", "none").levels).toMatchObject({
+      edit: "none",
+      move: "autoconfirmed",
+    });
+  });
+
+  it("chains the expiry the same way, and never touches Upload or Create", () => {
+    const edit = chooseExpiry(fresh(), "edit", "1w");
+    expect(edit.expiries).toEqual({
+      edit: "1w",
+      move: "1w",
+      upload: "infinite",
+      create: "infinite",
+    });
+    expect(chooseLevel(fresh(), "upload", "sysop").levels.move).toBe("none");
+    expect(chooseLevel(fresh(), "create", "sysop").moveChosen).toBe(false);
+  });
+
+  it("does not change the draft it was given", () => {
+    const draft = fresh();
+    chooseLevel(draft, "edit", "sysop");
+    expect(draft.levels.move).toBe("none");
   });
 });

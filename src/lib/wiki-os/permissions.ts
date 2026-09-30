@@ -70,8 +70,8 @@ const ACTION_RIGHTS: Readonly<Record<WikiAction, readonly Right[]>> = {
  * exist" answer must never open a protected page.
  *
  * ponytail: cascading protection (a page transcluded by a cascade-protected page) is not enforced;
- * it needs plan 406's `wiki_template_links` table. Until then `cascade` only records the intent, and
- * a `cascadeprotected` denial code joins DenialCode when the lookup exists.
+ * it needs plan 406's `wiki_template_links` table. Until then protectPage refuses `cascade: true`
+ * and no cascade flag is stored; a `cascadeprotected` denial code joins DenialCode with the lookup.
  */
 const RESTRICTIONS_FOR_ACTION: Readonly<Record<WikiAction, readonly RestrictionType[]>> = {
   edit: ["edit"],

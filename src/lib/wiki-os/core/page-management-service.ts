@@ -48,6 +48,20 @@ export interface MovePageOptions {
   leaveRedirect?: boolean;
   /** Move the talk page along when it exists and the destination talk page does not (default true). */
   moveTalk?: boolean;
+  /**
+   * May a deleted (archived) page be moved (default false: to the mover it does not exist)? Only for a
+   * caller who holds both `deletedhistory` and `undelete`. No redirect is left for a deleted page.
+   */
+  includeArchived?: boolean;
+}
+
+/** The protections that follow a page when it moves; create-protection belongs to the title, so it stays. */
+const PORTABLE_RESTRICTIONS = ["edit", "move", "upload"];
+
+/** What `WikiArticle.protectionLevel` shows for a restriction level: ALL | AUTOCONFIRMED | SYSOP. */
+export function legacyProtectionLevel(level: string | undefined): string {
+  if (level === "autoconfirmed") return "AUTOCONFIRMED";
+  return level ? "SYSOP" : "ALL";
 }
 
 export interface MediaUsageItem {
@@ -91,7 +105,7 @@ export class PageManagementService {
     reason: string,
     actor: PageActor,
     realm = "ixwiki",
-    { leaveRedirect = true, moveTalk = true }: MovePageOptions = {}
+    { leaveRedirect = true, moveTalk = true, includeArchived = false }: MovePageOptions = {}
   ): Promise<MovePageResult> {
     const target = canonicalizeTitle(newTitle, { source: realm });
     if (!target) throw new PageOperationError("BAD_REQUEST", "Invalid title");
@@ -100,13 +114,15 @@ export class PageManagementService {
     }
 
     return db.$transaction(async (tx) => {
-      const move = { reason, actor, realm, leaveRedirect };
+      const move = { reason, actor, realm, leaveRedirect, includeArchived };
       const moved = await this.moveOne(tx, oldSlugOrTitle, target, move);
       const fromTalk = moveTalk ? talkTitleOf(oldSlugOrTitle, realm) : null;
       const toTalk = moveTalk ? talkTitleOf(target.title, realm) : null;
       const talkTarget = toTalk ? canonicalizeTitle(toTalk, { source: realm }) : null;
       const talk =
-        fromTalk && talkTarget && (await this.canMoveTalk(tx, fromTalk, talkTarget, realm))
+        fromTalk &&
+        talkTarget &&
+        (await this.canMoveTalk(tx, fromTalk, talkTarget, realm, includeArchived))
           ? await this.moveOne(tx, fromTalk, talkTarget, move)
           : null;
       return { success: true, ...moved, talk };
@@ -118,13 +134,15 @@ export class PageManagementService {
     tx: Prisma.TransactionClient,
     fromTalk: string,
     talkTarget: CanonicalTitle,
-    realm: string
+    realm: string,
+    includeArchived: boolean
   ): Promise<boolean> {
     const [source, destination] = await Promise.all([
       findPage(tx, fromTalk, realm),
       findPage(tx, talkTarget.title, realm),
     ]);
-    return source !== null && destination === null;
+    const movable = source !== null && (includeArchived || source.status !== "ARCHIVED");
+    return movable && destination === null;
   }
 
   private static async moveOne(
@@ -136,11 +154,13 @@ export class PageManagementService {
       actor,
       realm,
       leaveRedirect,
+      includeArchived,
     }: {
       reason: string;
       actor: PageActor;
       realm: string;
       leaveRedirect: boolean;
+      includeArchived: boolean;
     }
   ): Promise<MoveOneResult> {
     const { title: newCanonicalTitle, slug: newSlug } = target;
@@ -149,6 +169,14 @@ export class PageManagementService {
     // 1. Fetch original article
     const original = await findPage(tx, oldSlugOrTitle, realm);
     if (!original) {
+      throw new PageOperationError(
+        "NOT_FOUND",
+        `Article "${oldSlugOrTitle}" not found in realm "${realm}".`
+      );
+    }
+
+    // A deleted page does not exist for a mover who may not see deleted pages.
+    if (original.status === "ARCHIVED" && !includeArchived) {
       throw new PageOperationError(
         "NOT_FOUND",
         `Article "${oldSlugOrTitle}" not found in realm "${realm}".`
@@ -166,7 +194,10 @@ export class PageManagementService {
       );
     }
 
-    // 3. Update original article to new title and slug
+    // 3. Protections follow the page; the mirrored protectionLevel follows its edit protection
+    const edit = await this.moveRestrictions(tx, realm, original.title, newCanonicalTitle);
+
+    // 4. Update original article to new title and slug
     const movedArticle = await tx.wikiArticle.update({
       where: { id: original.id },
       data: {
@@ -174,23 +205,27 @@ export class PageManagementService {
         slug: newSlug,
         namespace: target.namespaceId,
         namespacePrefix: target.namespacePrefix,
+        protectionLevel: legacyProtectionLevel(edit?.level),
+        protectionExpiry: edit?.expiresAt ?? null,
         lastEditorId: actor.userId,
         updatedAt: new Date(),
       },
     });
 
-    // 4. Create a redirect at the old location: a page with its own `#REDIRECT` revision
-    const redirectArticleId = leaveRedirect
-      ? await this.createRedirect(tx, original, oldSlug, target, actor, realm)
-      : null;
+    // 5. Create a redirect at the old location: a page with its own `#REDIRECT` revision
+    // (none for a deleted page: there is nothing to redirect to)
+    const redirectArticleId =
+      leaveRedirect && original.status !== "ARCHIVED"
+        ? await this.createRedirect(tx, original, oldSlug, target, actor, realm)
+        : null;
 
-    // 5. Update Link Graph: Repoint incoming links to new article ID
+    // 6. Update Link Graph: Repoint incoming links to new article ID
     const linkUpdateResult = await tx.wikiLink.updateMany({
       where: { targetArticleId: original.id },
       data: { targetArticleId: movedArticle.id },
     });
 
-    // 6. Log the move action
+    // 7. Log the move action
     await tx.wikiLog.create({
       data: {
         logType: "move",
@@ -204,7 +239,7 @@ export class PageManagementService {
           newTitle: newCanonicalTitle,
           newSlug,
           reason,
-          redirectCreated: leaveRedirect,
+          redirectCreated: redirectArticleId !== null,
         },
         userId: actor.userId,
         articleId: movedArticle.id,
@@ -218,6 +253,29 @@ export class PageManagementService {
       movedArticleId: movedArticle.id,
       linksUpdated: linkUpdateResult.count,
     };
+  }
+
+  /**
+   * Move the page's edit/move/upload protections from `oldTitle` to `newTitle` (create-protection stays
+   * with the title). Rows already at the destination are stale and replaced. Returns the moved edit
+   * restriction, if any.
+   */
+  private static async moveRestrictions(
+    tx: Prisma.TransactionClient,
+    realm: string,
+    oldTitle: string,
+    newTitle: string
+  ): Promise<{ level: string; expiresAt: Date | null } | null> {
+    const action = { in: PORTABLE_RESTRICTIONS };
+    await tx.wikiRestriction.deleteMany({ where: { source: realm, title: newTitle, action } });
+    await tx.wikiRestriction.updateMany({
+      where: { source: realm, title: oldTitle, action },
+      data: { title: newTitle },
+    });
+    return tx.wikiRestriction.findUnique({
+      where: { source_title_action: { source: realm, title: newTitle, action: "edit" } },
+      select: { level: true, expiresAt: true },
+    });
   }
 
   private static async createRedirect(

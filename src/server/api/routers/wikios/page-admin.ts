@@ -84,20 +84,28 @@ function publicPermissions(permissions: WikiPermissions) {
   };
 }
 
-/** The caller may move `from` to `to` (and, with `moveTalk`, their talk pages). */
+/**
+ * The caller may move `from` to `to` (and, with `moveTalk`, their talk pages). Besides `move` on the
+ * source and create on the destination, they must be able to write the source itself: its edit
+ * protection would otherwise travel with the page to a mover it keeps out, and a redirect at the old
+ * title is a new page there, so `create` (which also holds a salted title back) when one is left.
+ */
 async function authorizeMove(
   ctx: WikiAuthContext,
   from: string,
   to: string,
-  moveTalk: boolean
+  { moveTalk, leaveRedirect }: { moveTalk: boolean; leaveRedirect: boolean }
 ): Promise<void> {
+  const writeSource = leaveRedirect ? "create" : "edit";
   await authorizeAction(ctx, "move", from);
+  await authorizeAction(ctx, writeSource, from);
   await authorizeAction(ctx, "move", to);
   await authorizeAction(ctx, "create", to);
   const fromTalk = moveTalk ? talkTitleOf(from) : null;
   const toTalk = moveTalk ? talkTitleOf(to) : null;
   if (fromTalk && toTalk) {
     await authorizeAction(ctx, "move", fromTalk);
+    await authorizeAction(ctx, writeSource, fromTalk);
     await authorizeAction(ctx, "create", toTalk);
   }
 }
@@ -121,11 +129,15 @@ export const wikiosPageAdminRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const from = requireCanonicalTitle(input.from);
       const to = requireCanonicalTitle(input.to);
-      await authorizeMove(ctx, from, to, input.moveTalk);
+      // Moving without a redirect is a right of its own (MediaWiki's suppressredirect).
+      if (!input.leaveRedirect) await requireRight(ctx, "suppressredirect");
+      await authorizeMove(ctx, from, to, input);
+      const { rights } = await getWikiPermissions(ctx);
       const moved = await refusals(
         PageManagementService.movePage(from, to, input.reason, actorOf(ctx), "ixwiki", {
           leaveRedirect: input.leaveRedirect,
           moveTalk: input.moveTalk,
+          includeArchived: rights.has("deletedhistory") && rights.has("undelete"),
         })
       );
       return {
@@ -170,7 +182,11 @@ export const wikiosPageAdminRouter = createTRPCRouter({
       z.object({
         title: titleInput,
         restrictions: z.array(restrictionInput).min(1).max(4),
-        cascade: z.boolean().default(false),
+        // Cascading protection is not enforced yet (plan 406 adds the template-link table it needs), so it is not stored.
+        cascade: z
+          .boolean()
+          .default(false)
+          .refine((cascade) => !cascade, "Cascading protection is not supported yet."),
         reason: reasonInput,
       })
     )
@@ -183,7 +199,6 @@ export const wikiosPageAdminRouter = createTRPCRouter({
       await RightsAdminService.protect({
         title,
         changes: input.restrictions,
-        cascade: input.cascade,
         reason: input.reason,
         actor: actorOf(ctx),
       });

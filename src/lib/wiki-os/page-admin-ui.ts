@@ -49,6 +49,47 @@ export function pageAdminActions(title: string, rights: readonly Right[]): PageA
   }));
 }
 
+/** What a page protection can hold back, in the order the protect screen lists them. */
+export const PROTECT_ACTIONS = ["edit", "move", "upload", "create"] as const;
+export type ProtectAction = (typeof PROTECT_ACTIONS)[number];
+
+/** The protect screen's form state: a level and an expiry per action, and whether Move was chosen on its own. */
+export interface ProtectionDraft<Level, Expiry> {
+  levels: Record<ProtectAction, Level>;
+  expiries: Record<ProtectAction, Expiry>;
+  moveChosen: boolean;
+}
+
+/**
+ * `draft` after `action` is set to `value`. Choosing Edit also sets Move to the same value until Move has
+ * been chosen on its own (MediaWiki's "chain": a page nobody else may edit is not one anybody else may move).
+ */
+function chooseValue<Level, Expiry, Key extends "levels" | "expiries">(
+  draft: ProtectionDraft<Level, Expiry>,
+  key: Key,
+  action: ProtectAction,
+  value: ProtectionDraft<Level, Expiry>[Key][ProtectAction]
+): ProtectionDraft<Level, Expiry> {
+  const chained = action === "edit" && !draft.moveChosen;
+  return {
+    ...draft,
+    moveChosen: draft.moveChosen || action === "move",
+    [key]: { ...draft[key], [action]: value, ...(chained ? { move: value } : {}) },
+  };
+}
+
+export const chooseLevel = <Level, Expiry>(
+  draft: ProtectionDraft<Level, Expiry>,
+  action: ProtectAction,
+  level: Level
+) => chooseValue(draft, "levels", action, level);
+
+export const chooseExpiry = <Level, Expiry>(
+  draft: ProtectionDraft<Level, Expiry>,
+  action: ProtectAction,
+  expiry: Expiry
+) => chooseValue(draft, "expiries", action, expiry);
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** How long a block, protection or group membership lasts. */

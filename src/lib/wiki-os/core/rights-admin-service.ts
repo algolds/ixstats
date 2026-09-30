@@ -11,7 +11,11 @@ import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import type { RestrictionLevel, RestrictionType } from "~/lib/wiki-os/permissions";
 import { isActive, type ExplicitGroup } from "~/lib/wiki-os/rights";
-import { PageOperationError, type PageActor } from "./page-management-service";
+import {
+  legacyProtectionLevel,
+  PageOperationError,
+  type PageActor,
+} from "./page-management-service";
 
 /** A user to act on: a WikiOS user, or a wiki username that may not be linked to anyone yet. */
 export type UserTarget = { userId: string } | { wikiUsername: string };
@@ -35,7 +39,6 @@ export interface PublicRestriction {
   action: string;
   level: string;
   expiresAt: Date | null;
-  cascade: boolean;
   reason: string | null;
   setBy: string | null;
 }
@@ -72,12 +75,6 @@ export interface LogQuery {
   limit: number;
   cursor?: string;
 }
-
-/** What `WikiArticle.protectionLevel` showed before the restriction table: ALL | AUTOCONFIRMED | SYSOP. */
-const LEGACY_LEVEL: Readonly<Record<RestrictionLevel, string>> = {
-  autoconfirmed: "AUTOCONFIRMED",
-  sysop: "SYSOP",
-};
 
 /** `where` clauses matching rows keyed by the target's user id and/or wiki username. */
 function keysOf(target: Pick<ResolvedTarget, "userId" | "wikiUsername">) {
@@ -144,12 +141,11 @@ export class RightsAdminService {
   static async protect(params: {
     title: string;
     changes: readonly RestrictionChange[];
-    cascade: boolean;
     reason: string;
     actor: PageActor;
     realm?: string;
   }): Promise<void> {
-    const { title, changes, cascade, reason, actor, realm = "ixwiki" } = params;
+    const { title, changes, reason, actor, realm = "ixwiki" } = params;
     await db.$transaction(async (tx) => {
       for (const change of changes) {
         const key = { source: realm, title, action: change.action };
@@ -160,7 +156,6 @@ export class RightsAdminService {
         const data = {
           level: change.level,
           expiresAt: change.expiresAt,
-          cascade,
           setById: actor.userId,
           reason: reason || null,
         };
@@ -180,7 +175,7 @@ export class RightsAdminService {
         await tx.wikiArticle.update({
           where: { id: article.id },
           data: {
-            protectionLevel: edit.level ? LEGACY_LEVEL[edit.level] : "ALL",
+            protectionLevel: legacyProtectionLevel(edit.level ?? undefined),
             protectionExpiry: edit.level ? edit.expiresAt : null,
           },
         });
@@ -199,7 +194,6 @@ export class RightsAdminService {
               level: change.level,
               expiresAt: change.expiresAt?.toISOString() ?? null,
             })),
-            cascade,
           },
           userId: actor.userId,
           articleId: article?.id ?? null,
@@ -218,7 +212,6 @@ export class RightsAdminService {
       action: row.action,
       level: row.level,
       expiresAt: row.expiresAt,
-      cascade: row.cascade,
       reason: row.reason,
       setBy: (row.setById && names.get(row.setById)) || null,
     }));

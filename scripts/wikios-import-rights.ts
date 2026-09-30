@@ -54,7 +54,6 @@ export interface RestrictionImport {
   action: ProtectionType | "create";
   level: ImportedLevel;
   expiresAt: Date | null;
-  cascade: boolean;
   reason: string;
 }
 
@@ -331,12 +330,16 @@ export function mapProtections(
       if (entry.source !== undefined || !isProtectionType(entry.type)) continue;
       const expiresAt = parseExpiry(entry.expiry);
       if (isExpired(expiresAt, now)) continue;
+      if (entry.cascade === true) {
+        notes.push(
+          `${title} (${entry.type}): cascade protection is not supported yet; imported as plain protection.`
+        );
+      }
       restrictions.push({
         title,
         action: entry.type,
         level: mapLevel(entry.level, `${title} (${entry.type})`, notes),
         expiresAt,
-        cascade: entry.cascade === true,
         reason: IMPORT_REASON,
       });
     }
@@ -360,7 +363,6 @@ export function mapProtectedTitles(
       action: "create",
       level: mapLevel(entry.level, `${title} (create)`, notes),
       expiresAt,
-      cascade: false,
       reason: entry.comment ? `${IMPORT_REASON}: ${entry.comment}`.slice(0, 500) : IMPORT_REASON,
     });
   }
@@ -521,10 +523,10 @@ export async function applyPlan(prisma: PrismaClient, plan: ImportPlan): Promise
   }
 
   for (const restriction of plan.restrictions) {
-    const { title, action, level, expiresAt, cascade, reason } = restriction;
+    const { title, action, level, expiresAt, reason } = restriction;
     await prisma.wikiRestriction.upsert({
       where: { source_title_action: { source: "ixwiki", title, action } },
-      create: { source: "ixwiki", title, action, level, expiresAt, cascade, reason },
+      create: { source: "ixwiki", title, action, level, expiresAt, reason },
       update: {},
     });
     if (action === "edit") {
@@ -595,7 +597,7 @@ function printPlan(plan: ImportPlan): void {
     "Restrictions",
     plan.restrictions,
     (r) =>
-      `${r.title}: ${r.action} ${r.level}${r.expiresAt ? ` until ${r.expiresAt.toISOString()}` : ""}${r.cascade ? " (cascade)" : ""}`
+      `${r.title}: ${r.action} ${r.level}${r.expiresAt ? ` until ${r.expiresAt.toISOString()}` : ""}`
   );
   sample(
     "Blocks",

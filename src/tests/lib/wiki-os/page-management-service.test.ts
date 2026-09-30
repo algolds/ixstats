@@ -19,6 +19,9 @@ const mockCreate = jest.fn();
 const mockRevisionCreate = jest.fn();
 const mockLinkUpdateMany = jest.fn();
 const mockLogCreate = jest.fn();
+const mockRestrictionDeleteMany = jest.fn();
+const mockRestrictionUpdateMany = jest.fn();
+const mockRestrictionFindUnique = jest.fn();
 
 jest.mock("~/server/db", () => {
   const tx = {
@@ -30,6 +33,11 @@ jest.mock("~/server/db", () => {
     wikiRevision: { create: (...a: unknown[]) => mockRevisionCreate(...a) },
     wikiLink: { updateMany: (...a: unknown[]) => mockLinkUpdateMany(...a) },
     wikiLog: { create: (...a: unknown[]) => mockLogCreate(...a) },
+    wikiRestriction: {
+      deleteMany: (...a: unknown[]) => mockRestrictionDeleteMany(...a),
+      updateMany: (...a: unknown[]) => mockRestrictionUpdateMany(...a),
+      findUnique: (...a: unknown[]) => mockRestrictionFindUnique(...a),
+    },
   };
   return {
     db: {
@@ -64,6 +72,9 @@ beforeEach(() => {
   mockRevisionCreate.mockResolvedValue({});
   mockLinkUpdateMany.mockResolvedValue({ count: 2 });
   mockLogCreate.mockResolvedValue({});
+  mockRestrictionDeleteMany.mockResolvedValue({ count: 0 });
+  mockRestrictionUpdateMany.mockResolvedValue({ count: 0 });
+  mockRestrictionFindUnique.mockResolvedValue(null);
 });
 
 describe("PageManagementService.movePage", () => {
@@ -237,6 +248,114 @@ describe("PageManagementService.movePage", () => {
   });
 });
 
+describe("PageManagementService.movePage: deleted pages and protections (plan 409 review)", () => {
+  const archived = { ...original, status: "ARCHIVED" };
+
+  it("a deleted page does not exist for a mover who may not see deleted pages", async () => {
+    pages({ old_name: archived });
+    await expect(
+      PageManagementService.movePage("old_name", "New name", "x", actor)
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockRestrictionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("moves a deleted page for a caller allowed to, and leaves no redirect for it", async () => {
+    pages({ old_name: archived });
+    const result = await PageManagementService.movePage(
+      "old_name",
+      "New name",
+      "x",
+      actor,
+      "ixwiki",
+      {
+        includeArchived: true,
+      }
+    );
+    expect(result.redirectArticleId).toBeNull();
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockLogCreate.mock.calls[0]?.[0].data.params).toMatchObject({ redirectCreated: false });
+  });
+
+  it("does not bring a deleted talk page along unless it may", async () => {
+    pages({ old_name: original, "talk:old_name": { ...talkOriginal, status: "ARCHIVED" } });
+    expect(
+      (await PageManagementService.movePage("old_name", "New name", "x", actor)).talk
+    ).toBeNull();
+
+    pages({ old_name: original, "talk:old_name": { ...talkOriginal, status: "ARCHIVED" } });
+    const result = await PageManagementService.movePage(
+      "old_name",
+      "New name",
+      "x",
+      actor,
+      "ixwiki",
+      {
+        includeArchived: true,
+      }
+    );
+    expect(result.talk).not.toBeNull();
+  });
+
+  it("moves the edit, move and upload protections with the page, replacing stale ones at the destination", async () => {
+    mockRestrictionFindUnique.mockResolvedValue({ level: "sysop", expiresAt: null });
+
+    await PageManagementService.movePage("old_name", "New name", "x", actor, "ixwiki", {
+      moveTalk: false,
+    });
+
+    const action = { in: ["edit", "move", "upload"] };
+    expect(mockRestrictionDeleteMany).toHaveBeenCalledWith({
+      where: { source: "ixwiki", title: "New name", action },
+    });
+    expect(mockRestrictionUpdateMany).toHaveBeenCalledWith({
+      where: { source: "ixwiki", title: "Old name", action },
+      data: { title: "New name" },
+    });
+    // create-protection stays with the title: it is never in the moved set
+    expect(JSON.stringify(mockRestrictionUpdateMany.mock.calls)).not.toContain("create");
+  });
+
+  it("keeps the article's mirrored protection level in step with the moved edit protection", async () => {
+    const expires = new Date("2027-01-01T00:00:00Z");
+    mockRestrictionFindUnique.mockResolvedValue({ level: "autoconfirmed", expiresAt: expires });
+    await PageManagementService.movePage("old_name", "New name", "x", actor, "ixwiki", {
+      moveTalk: false,
+    });
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
+      protectionLevel: "AUTOCONFIRMED",
+      protectionExpiry: expires,
+    });
+
+    mockUpdate.mockClear();
+    mockRestrictionFindUnique.mockResolvedValue({ level: "sysop", expiresAt: null });
+    await PageManagementService.movePage("old_name", "Newer name", "x", actor, "ixwiki", {
+      moveTalk: false,
+    });
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ protectionLevel: "SYSOP" });
+
+    mockUpdate.mockClear();
+    mockRestrictionFindUnique.mockResolvedValue(null);
+    await PageManagementService.movePage("old_name", "Newest name", "x", actor, "ixwiki", {
+      moveTalk: false,
+    });
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
+      protectionLevel: "ALL",
+      protectionExpiry: null,
+    });
+  });
+
+  it("migrates the protections of the talk page too", async () => {
+    pages({ old_name: original, "talk:old_name": talkOriginal });
+    await PageManagementService.movePage("old_name", "New name", "x", actor);
+    expect(mockRestrictionUpdateMany.mock.calls.map((c) => c[0].where.title)).toEqual([
+      "Old name",
+      "Talk:Old name",
+    ]);
+  });
+});
+
 describe("talkTitleOf", () => {
   it.each([
     ["Old name", "Talk:Old name"],
@@ -341,9 +460,7 @@ describe("PageManagementService.getBrokenRedirects", () => {
 
     const broken = await PageManagementService.getBrokenRedirects(10);
 
-    expect(broken).toEqual([
-      { id: "r2", title: "Gone", slug: "gone", targetSlug: "Missing page" },
-    ]);
+    expect(broken).toEqual([{ id: "r2", title: "Gone", slug: "gone", targetSlug: "Missing page" }]);
     expect(mockFindMany.mock.calls[1]?.[0]).toEqual({
       where: {
         source: "ixwiki",

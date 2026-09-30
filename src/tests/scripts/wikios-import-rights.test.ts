@@ -86,7 +86,6 @@ describe("mapProtections", () => {
         action: "edit",
         level: "sysop",
         expiresAt: null,
-        cascade: true,
         reason: "Imported from MediaWiki",
       },
       {
@@ -94,7 +93,6 @@ describe("mapProtections", () => {
         action: "move",
         level: "autoconfirmed",
         expiresAt: new Date(FUTURE),
-        cascade: false,
         reason: "Imported from MediaWiki",
       },
       {
@@ -102,11 +100,13 @@ describe("mapProtections", () => {
         action: "upload",
         level: "sysop",
         expiresAt: null,
-        cascade: false,
         reason: "Imported from MediaWiki",
       },
     ]);
-    expect(notes).toEqual([]);
+    // a cascade flag is not stored (it is not enforced yet), and the operator is told
+    expect(notes).toEqual([
+      "Template:Infobox country (edit): cascade protection is not supported yet; imported as plain protection.",
+    ]);
   });
 
   it("skips expired protections, inherited cascade protection and types it does not import", () => {
@@ -166,7 +166,6 @@ describe("mapProtectedTitles", () => {
         action: "create",
         level: "sysop",
         expiresAt: null,
-        cascade: false,
         reason: "Imported from MediaWiki: repeated spam",
       },
       {
@@ -174,7 +173,6 @@ describe("mapProtectedTitles", () => {
         action: "create",
         level: "autoconfirmed",
         expiresAt: new Date(FUTURE),
-        cascade: false,
         reason: "Imported from MediaWiki",
       },
     ]);
@@ -504,7 +502,6 @@ describe("applyPlan", () => {
         action: "edit",
         level: "sysop",
         expiresAt: new Date(FUTURE),
-        cascade: false,
         reason: "Imported from MediaWiki",
       },
       {
@@ -512,7 +509,6 @@ describe("applyPlan", () => {
         action: "create",
         level: "sysop",
         expiresAt: null,
-        cascade: false,
         reason: "Imported from MediaWiki",
       },
     ],
