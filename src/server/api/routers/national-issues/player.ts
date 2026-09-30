@@ -56,6 +56,10 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
 export const nationalIssuesPlayerRouter = createTRPCRouter({
   // ==================== PLAYER ENDPOINTS ====================
 
+  // Visibility: every procedure below is the nation's own inbox — the owner (the user acting as
+  // the nation or `Country.ownerUserId`) and privileged roles only; FORBIDDEN for other players.
+  // Visitors read resolved outcomes through `countries.getPublicRecord`.
+
   /**
    * Get issues for a country (the owner's inbox — open issues included). Triggers lazy
    * evaluation if stale. Owner / privileged roles only; visitors read resolved outcomes through
