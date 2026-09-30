@@ -206,6 +206,9 @@ model InternalStabilityMetrics {
   trustInGovernment       Float    @default(50)
   trustInPolice           Float    @default(55)
   fearOfCrime             Float    @default(35)
+  /// JSON of the formula values the last recalculation produced; the gap between a stored
+  /// field and its formula value here is the event (issue/directive) delta to carry forward.
+  formulaSnapshot         String?
   lastCalculated          DateTime @default(now())
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt

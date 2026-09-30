@@ -23,6 +23,7 @@ import {
 } from "./engine";
 import type { PrismaClient } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity";
+import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
 import { isProjectionConsequence, issueConsequenceToEffect } from "./projection-effects";
 
 // ==================== FIELD BOUNDS ====================
@@ -394,6 +395,16 @@ export class NationalIssuesConsequences {
         issueTitle,
         currentIxTime
       );
+    }
+
+    // A country gets its stability row only when someone views the Defense panel; create it
+    // from the same formula first so the delta has a real value to move.
+    if (consequence.targetModel === "InternalStabilityMetrics") {
+      try {
+        await ensureInternalStabilityMetrics(db, countryId);
+      } catch (err) {
+        console.error(`Failed to initialise stability metrics for ${countryId}:`, err);
+      }
     }
 
     const appliedList = await CountryEventSpine.recordCountryEvent({

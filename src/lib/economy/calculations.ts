@@ -64,6 +64,23 @@ export function levelPhaseIn(
   return Math.min(1, IxTime.getYearsElapsed(start, targetTimeMs) / effect.duration);
 }
 
+/** Growth rate a relative growth modifier is sized against when it becomes a level effect. */
+export const REFERENCE_GDP_GROWTH = 0.03;
+
+/**
+ * GDP level shift equivalent to multiplying a `referenceGrowth` growth rate by `1 + modifier`
+ * for `years`: ((1 + g(1 + m)) / (1 + g))^years − 1. Rounded to 6 decimals.
+ */
+export function growthModifierToLevelShift(
+  modifier: number,
+  years: number,
+  referenceGrowth = REFERENCE_GDP_GROWTH
+): number {
+  const g = referenceGrowth;
+  const shift = Math.pow((1 + g * (1 + modifier)) / (1 + g), years) - 1;
+  return Math.round(shift * 1e6) / 1e6;
+}
+
 /** Floor for the summed annual population growth rate; keeps `1 + rate` positive. */
 const MIN_POPULATION_GROWTH_RATE = -0.5;
 
