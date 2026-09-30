@@ -65,6 +65,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     onSuccess: () => {
       void utils.elections.getParties.invalidate({ countryId });
       void utils.elections.getCurrentParliament.invalidate({ countryId });
+      void utils.elections.getElectionStatus.invalidate({ countryId });
       refetch();
       resetForm();
       setDialogOpen(false);
@@ -75,6 +76,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     onSuccess: () => {
       void utils.elections.getParties.invalidate({ countryId });
       void utils.elections.getCurrentParliament.invalidate({ countryId });
+      void utils.elections.getElectionStatus.invalidate({ countryId });
       refetch();
       resetForm();
       setDialogOpen(false);
@@ -86,6 +88,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     onSuccess: () => {
       void utils.elections.getParties.invalidate({ countryId });
       void utils.elections.getCurrentParliament.invalidate({ countryId });
+      void utils.elections.getElectionStatus.invalidate({ countryId });
       refetch();
     },
   });
