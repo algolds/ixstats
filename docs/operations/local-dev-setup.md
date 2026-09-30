@@ -130,11 +130,13 @@ This config allows you to run `ssh ixwiki` to open a shell and automatically spi
 ## Part 3 — Cloning & Configuration Sync
 
 ### Step 1 — Clone the Repository
-Inside WSL, clone the repository into your home directory and switch to the active integration branch, `rose-garden`:
+Inside WSL, clone the repository into your home directory and switch to your working branch: `development` (junior
+devs; stable but experimental) or `rose-garden` (the maintainer's nightly branch). See
+[contributing.md](../processes/contributing.md#branches).
 ```bash
 mkdir -p ~/projects && cd ~/projects
 git clone https://github.com/algolds/ixstats.git
-cd ixstats && git checkout rose-garden
+cd ixstats && git checkout development
 git config core.autocrlf input
 ```
 

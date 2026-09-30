@@ -3,8 +3,9 @@
 The index for IxStates architecture, systems, operations, specifications, reference and research. Version information
 comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-> Audited 2026-09-29 against the code — platform **IxStates 1.4.0 "Lobster Crosby"** (Release Candidate), integration
-> branch `rose-garden`. Every doc below was checked claim by claim; statuses reflect the code, not earlier plans.
+> Audited 2026-09-29 against the code — platform **IxStates 1.4.0 "Lobster Crosby"** (Release Candidate), on the
+> nightly branch `rose-garden` (branches: `rose-garden` nightly → `development` stable-experimental → `master`
+> production; see [contributing](processes/contributing.md#branches)). Every doc below was checked claim by claim; statuses reflect the code, not earlier plans.
 > Implementation plans live in `plans/` and completion records in `docs/archive/` and `plans/archive/`. All three are
 > git-ignored and exist only in the maintainer's local checkout.
 
