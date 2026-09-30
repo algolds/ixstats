@@ -6,6 +6,7 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
 import { vaultService } from "~/lib/vault/vault-service";
 import { globalCache } from "~/lib/cache";
+import { personaDisplayName } from "../../post-utils";
 
 const invalidateFeeds = async () => {
   try {
@@ -18,6 +19,9 @@ const invalidateFeeds = async () => {
     console.error("Failed to invalidate feeds:", error);
   }
 };
+
+/** Visibilities whose posts other people can open, so they may trigger notifications. */
+const NOTIFIABLE_VISIBILITIES = new Set(["public", "unlisted"]);
 
 const CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
@@ -253,6 +257,24 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
       },
     });
 
+    // Keep the denormalised engagement counters on the parent / original post in step.
+    if (input.parentPostId) {
+      await db.thinkpagesPost.updateMany({
+        where: { id: input.parentPostId },
+        data: { replyCount: { increment: 1 } },
+      });
+    }
+    if (input.repostOfId) {
+      await db.thinkpagesPost.updateMany({
+        where: { id: input.repostOfId },
+        data: { repostCount: { increment: 1 } },
+      });
+    }
+
+    const actorName = personaDisplayName(account);
+    // Private and draft posts can only be opened by their author, so they notify nobody.
+    const notifiable = NOTIFIABLE_VISIBILITIES.has(post.visibility);
+
     // Create mentions if any
     if (input.mentions && input.mentions.length > 0) {
       const mentionedAccounts = await db.thinkpagesAccount.findMany({
@@ -275,21 +297,49 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
           data: mentionData,
         });
 
-        // 🔔 Notify mentioned users
-        for (const mentioned of mentionedAccounts) {
-          await notificationHooks
-            .onSocialActivity({
-              activityType: "mention",
-              fromUserId: account.clerkUserId,
-              toUserId: mentioned.clerkUserId,
-              contentTitle: input.content.substring(0, 50),
-              contentId: post.id,
-            })
-            .catch((err) =>
-              console.error("[ThinkPages] Failed to send mention notification:", err)
-            );
+        // 🔔 Notify the owning user of each mentioned persona (notifications are keyed by Clerk
+        // user id), once per user, never the author themselves.
+        const recipients = new Set(
+          mentionedAccounts
+            .map((mentioned) => mentioned.clerkUserId)
+            .filter((id): id is string => !!id && id !== clerkUserId)
+        );
+        if (notifiable) {
+          for (const recipient of recipients) {
+            await notificationHooks
+              .onSocialActivity({
+                activityType: "mention",
+                fromUserId: clerkUserId,
+                fromUserName: actorName,
+                toUserId: recipient,
+                contentTitle: input.content.substring(0, 50),
+                contentId: post.id,
+              })
+              .catch((err) =>
+                console.error("[ThinkPages] Failed to send mention notification:", err)
+              );
+          }
         }
       }
+    }
+
+    // 🔔 Notify the original author of a repost or quote
+    const originalAuthorId = (post as any).repostOf?.account?.clerkUserId as string | undefined;
+    if (input.repostOfId && notifiable && originalAuthorId && originalAuthorId !== clerkUserId) {
+      const isQuote = input.content.trim().length > 0;
+      await notificationHooks
+        .onSocialActivity({
+          activityType: isQuote ? "quote" : "repost",
+          fromUserId: clerkUserId,
+          fromUserName: actorName,
+          toUserId: originalAuthorId,
+          contentTitle: isQuote
+            ? input.content.substring(0, 50)
+            : ((post as any).repostOf?.content ?? "").substring(0, 50) || undefined,
+          // A quote links to the quoting post; a plain repost to the original.
+          contentId: isQuote ? post.id : input.repostOfId,
+        })
+        .catch((err) => console.error("[ThinkPages] Failed to send repost notification:", err));
     }
 
     // 🔔 Notify if this is a reply
@@ -311,13 +361,15 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
         },
       });
 
-      if (parentPost && parentPost.accountId !== input.accountId) {
+      // Skip replies to any of the caller's own personas (keyed by owning user, not persona).
+      if (parentPost && parentPost.account.clerkUserId !== clerkUserId) {
         await notificationHooks
           .onThinkPageActivity({
             thinkpageId: post.id,
             title: input.content.substring(0, 50),
             action: "commented",
             authorId: account.clerkUserId,
+            authorName: actorName,
             targetUserId: parentPost.account.clerkUserId,
           })
           .catch((err) => console.error("[ThinkPages] Failed to send reply notification:", err));

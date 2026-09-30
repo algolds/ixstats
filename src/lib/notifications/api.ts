@@ -81,6 +81,8 @@ export interface NotificationTriggerOptions {
     title: string;
     action: "created" | "updated" | "commented" | "liked" | "shared";
     authorId: string;
+    /** Display name of the acting persona; shown in the title when present. */
+    authorName?: string;
     targetUserId?: string;
   };
 
@@ -217,7 +219,7 @@ class NotificationAPIService {
   async trigger(options: NotificationTriggerOptions): Promise<string | null> {
     // Thinkpages notifications
     if (options.thinkpage) {
-      const { id, title, action, authorId, targetUserId } = options.thinkpage;
+      const { id, title, action, authorId, authorName, targetUserId } = options.thinkpage;
 
       const actionMessages: Record<typeof action, string> = {
         created: "created a new ThinkPage",
@@ -227,9 +229,10 @@ class NotificationAPIService {
         shared: "shared your ThinkPage",
       };
 
+      const actor = authorName?.trim();
       return this.create({
-        title: `ThinkPage ${action}`,
-        message: `${actionMessages[action]}: "${title}"`,
+        title: actor ? `${actor} ${actionMessages[action]}` : `ThinkPage ${action}`,
+        message: actor ? `"${title}"` : `${actionMessages[action]}: "${title}"`,
         userId: targetUserId ?? null,
         category: "social",
         type: action === "created" ? "success" : "info",
@@ -402,6 +405,7 @@ class NotificationAPIService {
     title: string;
     action: "created" | "updated" | "commented" | "liked" | "shared";
     authorId: string;
+    authorName?: string;
     targetUserId?: string;
   }): Promise<string> {
     return this.trigger({
@@ -410,6 +414,7 @@ class NotificationAPIService {
         title: params.title,
         action: params.action,
         authorId: params.authorId,
+        authorName: params.authorName,
         targetUserId: params.targetUserId,
       },
     }) as Promise<string>;

@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { globalCache } from "~/lib/cache";
+import { personaDisplayName } from "../../post-utils";
 
 const invalidateFeeds = async () => {
   try {
@@ -16,6 +17,17 @@ const invalidateFeeds = async () => {
     console.error("Failed to invalidate feeds:", error);
   }
 };
+
+/**
+ * Post update for a new reaction tally: the JSON tally plus `likeCount`, which mirrors the
+ * `like` entry so feed and post views show the real number (it was never written before).
+ */
+export function countersData(reactionCounts: Record<string, number>) {
+  return {
+    reactionCounts: JSON.stringify(reactionCounts),
+    likeCount: Math.max(0, reactionCounts.like ?? 0),
+  };
+}
 
 const AddReactionSchema = z.object({
   postId: z.string(),
@@ -99,7 +111,7 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
 
           await tx.thinkpagesPost.update({
             where: { id: input.postId },
-            data: { reactionCounts: JSON.stringify(reactionCounts) },
+            data: countersData(reactionCounts),
           });
         });
 
@@ -138,7 +150,7 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
 
         await tx.thinkpagesPost.update({
           where: { id: input.postId },
-          data: { reactionCounts: JSON.stringify(reactionCounts) },
+          data: countersData(reactionCounts),
         });
       });
 
@@ -175,7 +187,7 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
 
         await tx.thinkpagesPost.update({
           where: { id: input.postId },
-          data: { reactionCounts: JSON.stringify(reactionCounts) },
+          data: countersData(reactionCounts),
         });
 
         return newReaction;
@@ -215,6 +227,7 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
               title: postWithAuthor.content.substring(0, 50),
               action: "liked",
               authorId: clerkUserId,
+              authorName: personaDisplayName(account),
               targetUserId: authorClerkUserId,
             })
             .catch((err) => console.error("[ThinkPages] Failed to send like notification:", err));
@@ -307,7 +320,7 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
           // Update post with new counts
           await tx.thinkpagesPost.update({
             where: { id: input.postId },
-            data: { reactionCounts: JSON.stringify(reactionCounts) },
+            data: countersData(reactionCounts),
           });
         });
 
