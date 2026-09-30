@@ -257,6 +257,26 @@ describe("wikiosEditingRouter.previewWikitext (NEW-13)", () => {
       "html"
     );
   });
+
+  it("sanitizes the HTML it hands back: script, event handlers and javascript: links are gone (plan 404 review)", async () => {
+    jest
+      .mocked(wikitextToHtml)
+      .mockResolvedValue(
+        '<p onclick="steal()">Hi <a href="javascript:alert(1)">link</a></p><script>alert(2)</script>' +
+          '<table class="infobox"><tr><td>Capital<img src=x onerror="alert(3)"></td></tr></table>' +
+          '<div class="hatnote">Notice <script>alert(4)</script></div>'
+      );
+    const caller = createCaller(userCtx("Linked") as never);
+
+    const { html } = await caller.previewWikitext({ wikitext: "hi", title: "T" });
+
+    expect(html).toContain("Hi");
+    expect(html).toContain("Capital");
+    expect(html).toContain("Notice");
+    expect(html).not.toMatch(/<script|onclick|onerror|javascript:/i);
+    // The wrapper the editor styles keeps its class.
+    expect(html).toContain("wikios-infobox-container");
+  });
 });
 
 describe("wikiosEditingRouter canonical titles (plan 403)", () => {

@@ -24,6 +24,11 @@ import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
 
+const ARTICLE_STALE_TIME_MS = 10 * 60 * 1000;
+/** How soon a stale article (its render pending) is asked for again. */
+const STALE_ARTICLE_REFETCH_MS = 5_000;
+const BUSY_RETRY_DELAY_MS = 3_000;
+
 /**
  * `?source=` reads another wiki's page (e.g. a realm's iiwiki lore), read-only (ruling E-l);
  * `?action=edit` opens the editor, for IxWiki pages only.
@@ -171,8 +176,13 @@ export default function WikiOSArticlePage() {
     articleHtmlInput(title, wikiSource),
     {
       enabled: !!title && !isCategoryOrSpecialOrMain,
-      staleTime: 10 * 60 * 1000,
-      retry: false,
+      // An article served while its render is still pending (`stale`) is asked for again soon and
+      // never treated as fresh; a finished one is good for ten minutes.
+      staleTime: (query) => (query.state.data?.stale ? 0 : ARTICLE_STALE_TIME_MS),
+      refetchInterval: (query) => (query.state.data?.stale ? STALE_ARTICLE_REFETCH_MS : false),
+      // "Busy" (the page may exist, MediaWiki was not asked yet) is worth a retry; anything else is final.
+      retry: (failureCount, err) => err.data?.code === "TOO_MANY_REQUESTS" && failureCount < 2,
+      retryDelay: BUSY_RETRY_DELAY_MS,
     }
   );
 

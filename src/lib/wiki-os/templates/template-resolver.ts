@@ -166,7 +166,7 @@ const CHIP_STYLES: Record<string, { className: string; icon: string }> = {
   businessdata: { className: "bg-teal-500/10 text-teal-400 border-teal-500/20", icon: "💼" },
 };
 
-function makeChip(key: string, value: string): string {
+export function makeChip(key: string, value: string): string {
   let style = CHIP_STYLES["countrydata"]!;
   if (key.startsWith("MyCountry:")) style = CHIP_STYLES["mycountry"]!;
   else if (key.startsWith("BusinessData:")) style = CHIP_STYLES["businessdata"]!;

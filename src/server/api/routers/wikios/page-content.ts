@@ -23,6 +23,8 @@ import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-se
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
 // Register host-app template data provider
@@ -97,10 +99,15 @@ export const wikiosPageContentRouter = createTRPCRouter({
           wikiSource
         );
 
+        // Another wiki's HTML is as untrusted as a user's: sanitized before it is served.
         return {
-          contentHtml: transformed.contentHtml,
-          infoboxHtml: transformed.infoboxHtml,
-          noticesHtml: transformed.noticesHtml,
+          contentHtml: sanitizeWikiArticleHtml(transformed.contentHtml),
+          infoboxHtml: transformed.infoboxHtml
+            ? sanitizeWikiArticleHtml(transformed.infoboxHtml)
+            : null,
+          noticesHtml: transformed.noticesHtml
+            ? sanitizeWikiArticleHtml(transformed.noticesHtml)
+            : null,
           toc: transformed.toc,
           title: article.title,
           categories: [] as string[],
@@ -110,6 +117,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
           resolvedFrom: null,
           wikiSource,
           authorInfo,
+          renderQuality: "rendered" as const,
+          stale: false,
         };
       }
 
@@ -154,7 +163,15 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       const { title: resolvedTitle } = await resolveRedirect(rawTitle);
 
-      const view = await getArticleView(resolvedTitle, () => resolveActiveCountryId(ctx));
+      const view = await getArticleView(resolvedTitle, () => resolveActiveCountryId(ctx)).catch(
+        (error: Error) => {
+          // Not asking MediaWiki about a missing page right now is "busy", not "no such page".
+          if (error instanceof ThrottledError) {
+            throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+          }
+          throw error;
+        }
+      );
       if (!view) {
         throw new TRPCError({
           code: "NOT_FOUND",

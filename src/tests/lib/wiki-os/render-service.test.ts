@@ -29,6 +29,7 @@ import {
   renderFallbackView,
   RENDERER_VERSION,
 } from "~/lib/wiki-os/services/render-service";
+import { wikiArticleSanitizerFingerprint } from "~/lib/utils/sanitize-html";
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -146,7 +147,7 @@ describe("renderArticle", () => {
     ]);
   });
 
-  it("gives up after a few superseded attempts", async () => {
+  it("reports superseded, not failed, after a few attempts the saves overtook", async () => {
     const id = freshId();
     let n = 0;
     mockFindUnique.mockImplementation(async () => ({
@@ -156,7 +157,7 @@ describe("renderArticle", () => {
     }));
     mockUpdateMany.mockResolvedValue({ count: 0 });
 
-    await expect(renderArticle(id)).resolves.toEqual({ ok: false });
+    await expect(renderArticle(id)).resolves.toEqual({ ok: false, superseded: true });
     expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(3);
   });
 
@@ -334,7 +335,7 @@ describe("buildViewBundle", () => {
 
     const bundle = buildViewBundle(html);
 
-    expect(bundle.rendererVersion).toBe(1);
+    expect(bundle.rendererVersion).toBe(RENDERER_VERSION);
     expect(bundle.toc).toEqual([{ id: "Geography", text: "Geography", level: 2 }]);
     expect(bundle.infoboxHtml).toContain("Capital");
     expect(bundle.noticesHtml).toContain("hatnote");
@@ -344,13 +345,23 @@ describe("buildViewBundle", () => {
     }
   });
 
-  it("keeps the template chip placeholders the viewer-specific step needs", () => {
+  it("stores each template chip as an inert marker, from the DOM", () => {
     const bundle = buildViewBundle(
-      '<p><a href="/wiki/Template:CountryData:Aurelia:population" title="Template:CountryData:Aurelia:population">x</a> {{MyCountry:gdp}}</p>'
+      '<p>Pop <a href="/wiki/Template:CountryData:Aurelia:population" title="Template:CountryData:Aurelia:population">x</a> and {{MyCountry:gdp}} here.</p>'
     );
 
-    expect(bundle.bodyHtml).toContain("Template:CountryData:Aurelia:population");
-    expect(bundle.bodyHtml).toContain("{{MyCountry:gdp}}");
+    expect(bundle.bodyHtml).toBe(
+      '<p>Pop <span data-wikios-chip="CountryData:Aurelia:population"></span> and <span data-wikios-chip="MyCountry:gdp"></span> here.</p>'
+    );
+  });
+
+  it("keeps a chip whose key is outside the marker alphabet as the ordinary link it was", () => {
+    const bundle = buildViewBundle(
+      '<p><a href="/wiki/Template:CountryData:A%3CB:population">x</a></p>'
+    );
+
+    expect(bundle.bodyHtml).not.toContain("data-wikios-chip");
+    expect(bundle.bodyHtml).toContain("Template:CountryData");
   });
 
   it("has no infobox or notices when the page has none", () => {
@@ -398,6 +409,16 @@ describe("loadViewBundle", () => {
 
     await expect(loadViewBundle("a")).resolves.toBeNull();
   });
+
+  it("is tied to the sanitizer: another sanitizer fingerprint is another renderer version", async () => {
+    expect(RENDERER_VERSION).toBe(`2:${wikiArticleSanitizerFingerprint()}`);
+    mockFindUnique.mockResolvedValue({
+      renderedView: { ...buildViewBundle(PARSED), rendererVersion: "2:0123456789abc" },
+      htmlSyncedAt: syncedAt,
+    });
+
+    await expect(loadViewBundle("a")).resolves.toBeNull();
+  });
 });
 
 describe("renderFallbackView", () => {
@@ -409,6 +430,18 @@ describe("renderFallbackView", () => {
     expect(bundle?.bodyHtml).toContain("Bold");
     expect(mockRenderViaMediaWiki).not.toHaveBeenCalled();
     expect(mockUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("prefers the HTML MediaWiki produced for an earlier revision over compiling the wikitext", async () => {
+    mockFindUnique.mockResolvedValue({
+      wikitext: "Newer text",
+      contentHtml: "<p>Earlier render.</p>",
+    });
+
+    const bundle = await renderFallbackView("a");
+
+    expect(bundle?.bodyHtml).toContain("Earlier render.");
+    expect(bundle?.bodyHtml).not.toContain("Newer");
   });
 
   it("uses the stored HTML of an HTML-only row", async () => {
@@ -425,5 +458,173 @@ describe("renderFallbackView", () => {
 
     mockFindUnique.mockResolvedValueOnce(null);
     await expect(renderFallbackView("a")).resolves.toBeNull();
+  });
+});
+
+describe("the render queue's priorities", () => {
+  /** Two slots held by A and B; every later render waits in the queue until a gate is opened. */
+  function holdBothSlots() {
+    const [a, b] = Array.from({ length: 2 }, freshId);
+    mockFindUnique.mockImplementation(async (args: { where: { id: string } }) => ({
+      title: args.where.id,
+      wikitext: "text",
+      contentHtml: null,
+    }));
+    const started: string[] = [];
+    const gates = new Map<string, Deferred<string>>();
+    mockRenderViaMediaWiki.mockImplementation(async (_text: string, title: string) => {
+      started.push(title);
+      const gate = deferred<string>();
+      gates.set(title, gate);
+      return gate.promise;
+    });
+    enqueueRender(a);
+    enqueueRender(b);
+    const open = async (id: string) => {
+      gates.get(id)?.resolve(PARSED);
+      await flush();
+    };
+    return { a, b, started, open };
+  }
+
+  it("renders an editor's save before an inbound-sync backlog that queued earlier", async () => {
+    const { a, b, started, open } = holdBothSlots();
+    const [backlog1, backlog2, save] = Array.from({ length: 3 }, freshId);
+    await flush();
+
+    enqueueRender(backlog1, { background: true });
+    enqueueRender(backlog2, { background: true });
+    enqueueRender(save);
+    await open(a);
+
+    expect(started).toEqual([a, b, save]);
+    await open(b);
+    expect(started).toEqual([a, b, save, backlog1]);
+    for (const id of [save, backlog1, backlog2]) await open(id);
+    await open(backlog2);
+  });
+
+  it("moves a background render to the front when a waiting reader attaches to it", async () => {
+    const { a, b, started, open } = holdBothSlots();
+    const [first, second] = Array.from({ length: 2 }, freshId);
+    await flush();
+
+    enqueueRender(first, { background: true });
+    enqueueRender(second, { background: true });
+    const read = ensureRendered(second, { waitMs: 5000 });
+    await open(a);
+
+    expect(started).toEqual([a, b, second]);
+    await open(second);
+    await expect(read).resolves.toEqual({ ok: true });
+    await open(b);
+    await open(first);
+  });
+
+  it("moves a background render up to a save's place when the article is saved", async () => {
+    const { a, b, started, open } = holdBothSlots();
+    const [first, second] = Array.from({ length: 2 }, freshId);
+    await flush();
+
+    enqueueRender(first, { background: true });
+    enqueueRender(second, { background: true });
+    enqueueRender(second); // the editor saves the page the backlog also holds
+    await open(a);
+
+    expect(started).toEqual([a, b, second]);
+    await open(b);
+    await open(second);
+    await open(first);
+  });
+});
+
+describe("a render job's deadline", () => {
+  beforeEach(() => {
+    jest.useFakeTimers({ doNotFake: ["setImmediate"] });
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("abandons a render that hangs: the waiter gets a failure, the flight and the slot are released", async () => {
+    const [a, b, c] = Array.from({ length: 3 }, freshId);
+    mockFindUnique.mockImplementation(async (args: { where: { id: string } }) => ({
+      title: args.where.id,
+      wikitext: "text",
+      contentHtml: null,
+    }));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    mockRenderViaMediaWiki.mockImplementation(async (_text: string, title: string) =>
+      title === c ? PARSED : new Promise<string>(() => undefined)
+    );
+
+    const hung = ensureRendered(a, { waitMs: 120_000 });
+    enqueueRender(b);
+    const queued = ensureRendered(c, { waitMs: 120_000 }); // waits for a slot behind the two hung renders
+    await flush();
+    expect(mockUpdateMany).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(60_000);
+
+    await expect(hung).resolves.toEqual({ ok: false });
+    await expect(queued).resolves.toEqual({ ok: true }); // the slot came free
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("deadline"));
+
+    // The flight is gone: a new write renders the article again.
+    mockRenderViaMediaWiki.mockResolvedValue(PARSED);
+    enqueueRender(a);
+    await flush();
+    expect(mockUpdateMany).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+});
+
+describe("saves that keep overtaking a render (plan 404 review)", () => {
+  it("four rapid saves end with a rendered bundle, not a failure cool-down", async () => {
+    const id = freshId();
+    let current = "v1";
+    let savesLanded = 0;
+    mockFindUnique.mockImplementation(async () => ({
+      title: "Foo",
+      wikitext: current,
+      contentHtml: null,
+    }));
+    // A save lands during each of the first four renders.
+    mockRenderViaMediaWiki.mockImplementation(async () => {
+      if (savesLanded < 4) current = `v${2 + savesLanded++}`;
+      return PARSED;
+    });
+    mockUpdateMany.mockImplementation(async (args: { where: { wikitext: string } }) => ({
+      count: args.where.wikitext === current ? 1 : 0,
+    }));
+
+    await expect(ensureRendered(id, { waitMs: 5000 })).resolves.toEqual({ ok: true });
+
+    expect(mockUpdateMany.mock.calls.at(-1)?.[0].where.wikitext).toBe("v5");
+    expect(
+      mockUpdateMany.mock.calls.filter((call) => call[0].where.wikitext === current)
+    ).toHaveLength(1);
+
+    // No failure was recorded: the next reader renders again instead of being turned away.
+    const callsBefore = mockRenderViaMediaWiki.mock.calls.length;
+    await expect(ensureRendered(id, { waitMs: 5000 })).resolves.toEqual({ ok: true });
+    expect(mockRenderViaMediaWiki.mock.calls.length).toBe(callsBefore + 1);
+  });
+
+  it("calls a text that never settles a failure after a few rounds, and cools down", async () => {
+    const id = freshId();
+    let n = 0;
+    mockFindUnique.mockImplementation(async () => ({
+      title: "Foo",
+      wikitext: `text ${++n}`,
+      contentHtml: null,
+    }));
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+
+    await expect(ensureRendered(id, { waitMs: 5000 })).resolves.toEqual({ ok: false });
+    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(9); // 3 rounds of 3 attempts
+
+    await expect(ensureRendered(id, { waitMs: 5000 })).resolves.toEqual({ ok: false });
+    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(9);
   });
 });

@@ -138,6 +138,50 @@ describe("WikiOS reader ?source=", () => {
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ authorInfo: null }));
   });
 
+  describe("a stale article (its render still pending) is asked for again soon (plan 404 review)", () => {
+    interface ArticleQueryOptions {
+      staleTime: (query: { state: { data?: { stale: boolean } } }) => number;
+      refetchInterval: (query: { state: { data?: { stale: boolean } } }) => number | false;
+      retry: (failureCount: number, error: { data?: { code: string } }) => boolean;
+      retryDelay: number;
+    }
+    const options = () => mockUseQuery.mock.calls.at(-1)![1] as ArticleQueryOptions;
+    const queryWith = (data?: { stale: boolean }) => ({ state: { data } });
+
+    it("refetches after ~5 s while the article is stale, and stops once it is not", () => {
+      mockSlug = "Aurelia";
+      found("Aurelia");
+      render(<WikiOSArticlePage />);
+
+      expect(options().refetchInterval(queryWith({ stale: true }))).toBe(5_000);
+      expect(options().refetchInterval(queryWith({ stale: false }))).toBe(false);
+      expect(options().refetchInterval(queryWith(undefined))).toBe(false);
+    });
+
+    it("never treats a stale article as fresh for ten minutes", () => {
+      mockSlug = "Aurelia";
+      found("Aurelia");
+      render(<WikiOSArticlePage />);
+
+      expect(options().staleTime(queryWith({ stale: true }))).toBe(0);
+      expect(options().staleTime(queryWith({ stale: false }))).toBe(10 * 60 * 1000);
+    });
+
+    it("retries a busy answer (TOO_MANY_REQUESTS) twice, and nothing else", () => {
+      mockSlug = "Aurelia";
+      found("Aurelia");
+      render(<WikiOSArticlePage />);
+
+      const busy = { data: { code: "TOO_MANY_REQUESTS" } };
+      expect(options().retry(0, busy)).toBe(true);
+      expect(options().retry(1, busy)).toBe(true);
+      expect(options().retry(2, busy)).toBe(false);
+      expect(options().retry(0, { data: { code: "NOT_FOUND" } })).toBe(false);
+      expect(options().retry(0, {})).toBe(false);
+      expect(options().retryDelay).toBe(3_000);
+    });
+  });
+
   it("?margin=1 opens the margin on an IxWiki page only (ruling E-l′)", () => {
     mockSearch = "source=iiwiki&margin=1";
     found();

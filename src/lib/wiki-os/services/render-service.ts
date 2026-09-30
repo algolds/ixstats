@@ -10,8 +10,8 @@
  * wikitext", NULL means "stale, render me". A writer of wikitext sets it to NULL and calls
  * `enqueueRender`; the previous bundle stays in place so readers keep seeing it meanwhile.
  *
- * Per-user template chips (`{{MyCountry:...}}`) are NOT part of the bundle: they differ per viewer
- * and are applied per request by article-view-service.
+ * Template chips (`{{MyCountry:...}}`) are stored as inert markers (see templates/chip-markers.ts)
+ * and filled in per viewer, per request, by article-view-service.
  *
  * State here is per process (single-flight map, queue, cool-down): with several processes the worst
  * case is one extra render per process.
@@ -19,13 +19,24 @@
 
 import { z } from "zod";
 import { db } from "~/server/db";
-import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import {
+  sanitizeWikiArticleHtml,
+  wikiArticleSanitizerFingerprint,
+} from "~/lib/utils/sanitize-html";
 import { renderArticleViaMediaWiki } from "../adapters/mediawiki/parsoid";
+import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
 
-/** Bump when the bundle's shape or the transform changes: bundles of another version re-render. */
-export const RENDERER_VERSION = 1;
+/** Bump when the bundle's shape or the transform changes. */
+const RENDERER_BASE_VERSION = 2;
+
+/**
+ * What a bundle was built by: the transform's version plus a fingerprint of the sanitizer (its
+ * rules and DOMPurify's version). A bundle of another version is never served, it re-renders, so a
+ * sanitizer change reaches every stored article without anyone remembering to bump a number.
+ */
+export const RENDERER_VERSION = `${RENDERER_BASE_VERSION}:${wikiArticleSanitizerFingerprint()}`;
 
 const tocEntrySchema = z.object({ id: z.string(), text: z.string(), level: z.number() });
 
@@ -42,6 +53,8 @@ export type ViewBundle = z.infer<typeof viewBundleSchema>;
 
 export interface RenderResult {
   ok: boolean;
+  /** The text kept changing under every attempt; not a failure of MediaWiki. */
+  superseded?: boolean;
 }
 
 /** Concurrent MediaWiki renders, for the queue and readers together: the private MW is small. */
@@ -52,23 +65,29 @@ const FAILURE_COOLDOWN_MS = 30_000;
 const MAX_REMEMBERED_FAILURES = 5_000;
 /** A save that lands while a render is running supersedes it; the render restarts on the new text. */
 const MAX_RENDER_ATTEMPTS = 3;
+/** Rounds of attempts (each back through the queue) before the text is called unsettled. */
+const MAX_SUPERSEDED_ROUNDS = 3;
+/** A render job that has not finished by then is abandoned: its slot and its flight are released. */
+const RENDER_DEADLINE_MS = 60_000;
 
 const FAILED: RenderResult = { ok: false };
+const SUPERSEDED: RenderResult = { ok: false, superseded: true };
 
 // ---------------------------------------------------------------------------
 // The view bundle
 // ---------------------------------------------------------------------------
 
 /**
- * MediaWiki's HTML as the reader wants it: the exact transform `getArticleHtml` always applied,
- * then one sanitizer pass per part. Pure.
+ * MediaWiki's HTML as the reader wants it: the transform `getArticleHtml` always applied, template
+ * chips turned into markers (DOM, before sanitizing), then one sanitizer pass per part. Pure.
  */
 export function buildViewBundle(rawHtml: string): ViewBundle {
   const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
+  const clean = (html: string) => sanitizeWikiArticleHtml(markTemplateChips(html));
   return {
-    bodyHtml: sanitizeWikiArticleHtml(transformed.contentHtml),
-    infoboxHtml: transformed.infoboxHtml ? sanitizeWikiArticleHtml(transformed.infoboxHtml) : null,
-    noticesHtml: transformed.noticesHtml ? sanitizeWikiArticleHtml(transformed.noticesHtml) : null,
+    bodyHtml: clean(transformed.contentHtml),
+    infoboxHtml: transformed.infoboxHtml ? clean(transformed.infoboxHtml) : null,
+    noticesHtml: transformed.noticesHtml ? clean(transformed.noticesHtml) : null,
     toc: transformed.toc,
     rendererVersion: RENDERER_VERSION,
   };
@@ -99,9 +118,10 @@ export async function loadViewBundle(
 }
 
 /**
- * A view built in-process for an article MediaWiki could not render and that has no bundle yet:
- * the wikitext compiled locally (no templates, no Lua), or the stored HTML of an HTML-only row.
- * Never persisted. Null when the article has neither (a stub).
+ * A view built in-process for an article that has no bundle and whose render failed: the HTML
+ * MediaWiki produced for an earlier revision (`contentHtml`), else the wikitext compiled locally
+ * (no templates, no Lua). Sanitized like any bundle, never persisted. Null when the article has
+ * neither (a stub).
  */
 export async function renderFallbackView(articleId: string): Promise<ViewBundle | null> {
   const row = await db.wikiArticle.findUnique({
@@ -109,9 +129,10 @@ export async function renderFallbackView(articleId: string): Promise<ViewBundle 
     select: { wikitext: true, contentHtml: true },
   });
   if (!row) return null;
-  const html =
-    row.wikitext.trim() !== "" ? parseWikitextToHtml(row.wikitext, "ixwiki") : row.contentHtml;
-  return html?.trim() ? buildViewBundle(html) : null;
+  const html = row.contentHtml?.trim()
+    ? row.contentHtml
+    : parseWikitextToHtml(row.wikitext, "ixwiki");
+  return html.trim() ? buildViewBundle(html) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +157,8 @@ async function renderSource(article: {
  * Render one article now: parse its wikitext, build the bundle and store it with the raw HTML and
  * `htmlSyncedAt = now`. The write is guarded by the wikitext it rendered, so a save that lands
  * meanwhile is never overwritten; the render then restarts on the new text. On a MediaWiki failure
- * nothing is stored: the previous bundle stays and the article stays stale.
+ * nothing is stored: the previous bundle stays and the article stays stale. When every attempt was
+ * overtaken by a save the result says `superseded`, which is not a failure.
  */
 export async function renderArticle(articleId: string): Promise<RenderResult> {
   for (let attempt = 0; attempt < MAX_RENDER_ATTEMPTS; attempt++) {
@@ -162,34 +184,59 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
     });
     if (stored.count > 0) return { ok: true };
   }
-  return FAILED;
+  return SUPERSEDED;
 }
 
 // ---------------------------------------------------------------------------
-// Single-flight, concurrency cap, failure cool-down
+// Single-flight, priority queue, concurrency cap, failure cool-down, deadline
 // ---------------------------------------------------------------------------
+
+/** Who is waiting for the render: a reader, an editor's save, or a backlog (inbound sync, import). */
+const READER = 0;
+const SAVE = 1;
+const BACKGROUND = 2;
+
+interface Waiter {
+  articleId: string;
+  priority: number;
+  grant: () => void;
+}
 
 const inFlight = new Map<string, Promise<RenderResult>>();
 const failedUntil = new Map<string, number>();
-const waitingForSlot: Array<() => void> = [];
+const waitingForSlot: Waiter[] = [];
 let activeRenders = 0;
 
-function acquireSlot(priority: boolean): Promise<void> {
+/** Keeps the queue ordered by priority, first come first served within one. */
+function enqueueWaiter(waiter: Waiter): void {
+  const index = waitingForSlot.findIndex((queued) => queued.priority > waiter.priority);
+  if (index === -1) waitingForSlot.push(waiter);
+  else waitingForSlot.splice(index, 0, waiter);
+}
+
+function acquireSlot(articleId: string, priority: number): Promise<void> {
   if (activeRenders < MAX_CONCURRENT_RENDERS) {
     activeRenders++;
     return Promise.resolve();
   }
-  return new Promise((resolve) => {
-    if (priority) waitingForSlot.unshift(resolve);
-    else waitingForSlot.push(resolve);
-  });
+  return new Promise((grant) => enqueueWaiter({ articleId, priority, grant }));
 }
 
 /** Hands the slot to the next waiter (the active count stays), or frees it. */
 function releaseSlot(): void {
   const next = waitingForSlot.shift();
-  if (next) next();
+  if (next) next.grant();
   else activeRenders--;
+}
+
+/** Someone more urgent now waits for a render that is still queued: it moves up the queue. */
+function promote(articleId: string, priority: number): void {
+  const index = waitingForSlot.findIndex((queued) => queued.articleId === articleId);
+  const waiter = waitingForSlot[index];
+  if (!waiter || waiter.priority <= priority) return;
+  waitingForSlot.splice(index, 1);
+  waiter.priority = priority;
+  enqueueWaiter(waiter);
 }
 
 function rememberFailure(articleId: string): void {
@@ -201,10 +248,31 @@ function rememberFailure(articleId: string): void {
   failedUntil.set(articleId, Date.now() + FAILURE_COOLDOWN_MS);
 }
 
-async function runRender(articleId: string, priority: boolean): Promise<RenderResult> {
-  await acquireSlot(priority);
+/** `task`'s result, or FAILED once `ms` have passed; `task` itself cannot be cancelled. */
+function withDeadline(task: Promise<RenderResult>, ms: number): Promise<RenderResult> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      console.warn(`[WikiOS:render] A render ran past its ${ms} ms deadline and was abandoned.`);
+      resolve(FAILED);
+    }, ms);
+    task.then(
+      (result) => {
+        clearTimeout(timer);
+        resolve(result);
+      },
+      (error: Error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
+/** One round: wait for a slot, render (at most RENDER_DEADLINE_MS), free the slot. */
+async function runRender(articleId: string, priority: number): Promise<RenderResult> {
+  await acquireSlot(articleId, priority);
   try {
-    return await renderArticle(articleId);
+    return await withDeadline(renderArticle(articleId), RENDER_DEADLINE_MS);
   } catch (err) {
     console.warn(`[WikiOS:render] Rendering article ${articleId} failed:`, err);
     return FAILED;
@@ -213,12 +281,27 @@ async function runRender(articleId: string, priority: boolean): Promise<RenderRe
   }
 }
 
-/** The render of `articleId`: the one already queued or running, else a new one. Never rejects. */
-function startRender(articleId: string, priority: boolean): Promise<RenderResult> {
-  const running = inFlight.get(articleId);
-  if (running) return running;
+/**
+ * The whole job of one article: a render, and a new round (back through the queue) while saves
+ * keep overtaking it. Only a text that never settles, or a real failure, ends as a failure.
+ */
+async function runJob(articleId: string, priority: number): Promise<RenderResult> {
+  for (let round = 0; round < MAX_SUPERSEDED_ROUNDS; round++) {
+    const result = await runRender(articleId, priority);
+    if (!result.superseded) return result;
+  }
+  return FAILED;
+}
 
-  const job = runRender(articleId, priority)
+/** The render of `articleId`: the one already queued or running, else a new one. Never rejects. */
+function startRender(articleId: string, priority: number): Promise<RenderResult> {
+  const running = inFlight.get(articleId);
+  if (running) {
+    promote(articleId, priority);
+    return running;
+  }
+
+  const job = runJob(articleId, priority)
     .then((result) => {
       if (result.ok) failedUntil.delete(articleId);
       else rememberFailure(articleId);
@@ -243,9 +326,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
 
 /**
  * Make sure a render of `articleId` is running or done, and wait for it for at most `waitMs`.
- * Concurrent callers share one render (single-flight). Resolves with its result, or with null when
- * `waitMs` ran out first (the render carries on; the caller serves what it has). An article whose
- * last render failed is not retried for a short cool-down: the failure result comes back at once.
+ * Concurrent callers share one render (single-flight), and a reader who waits moves a queued render
+ * to the front. Resolves with its result, or with null when `waitMs` ran out first (the render
+ * carries on; the caller serves what it has). An article whose last render failed is not retried
+ * for a short cool-down: the failure result comes back at once.
  */
 export async function ensureRendered(
   articleId: string,
@@ -254,15 +338,17 @@ export async function ensureRendered(
   const coolingDown = (failedUntil.get(articleId) ?? 0) > Date.now();
   if (coolingDown && !inFlight.has(articleId)) return FAILED;
 
-  const render = startRender(articleId, waitMs > 0);
+  const render = startRender(articleId, waitMs > 0 ? READER : SAVE);
   return waitMs > 0 ? withTimeout(render, waitMs) : null;
 }
 
 /**
- * Queue a render after a write of wikitext; fire-and-forget. A new write is a new attempt, so it
- * clears the failure cool-down. Plan 407 makes background jobs durable; this queue is in memory.
+ * Queue a render after a write of wikitext; fire-and-forget. A save comes before a backlog
+ * (`background`: inbound sync, XML import), and a render already queued for the article moves up to
+ * the save's place. A new write is a new attempt, so it clears the failure cool-down. Plan 407
+ * makes background jobs durable; this queue is in memory.
  */
-export function enqueueRender(articleId: string): void {
+export function enqueueRender(articleId: string, options: { background?: boolean } = {}): void {
   failedUntil.delete(articleId);
-  void ensureRendered(articleId, { waitMs: 0 });
+  void startRender(articleId, options.background ? BACKGROUND : SAVE);
 }
