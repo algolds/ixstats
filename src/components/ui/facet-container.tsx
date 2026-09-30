@@ -111,6 +111,7 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
       onFocus,
       onBlur,
       onClick,
+      style,
       ...props
     },
     ref
@@ -202,7 +203,7 @@ export const FacetContainer = forwardRef<HTMLDivElement, FacetContainerProps>(
         role={isClickable ? "button" : undefined}
         style={
           {
-            ...props.style,
+            ...style,
             "--facet-depth": currentDepth,
             "--facet-interacting": isInteracting ? "1" : "0",
           } as React.CSSProperties

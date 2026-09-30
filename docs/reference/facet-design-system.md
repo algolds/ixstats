@@ -67,6 +67,17 @@ Facet organizes all UI elements along a physical Z-axis. Instead of arbitrary ad
 | `--z-depth-tooltip` | `100020` | `100020` | Information tooltips, rich hover cards (`TooltipContent`, `HoverCardContent`) |
 | `--z-depth-toast` | `100050` | `100050` | Halo dynamic island notifications, live alert push banners (`DynamicIsland`) |
 
+### Positioning glass containers
+The `.facet-depth-1…4` classes in `src/styles/facet/core.css` sit outside Tailwind's cascade layers and set `position: relative` plus a depth `z-index` (depth 2 → 100, depth 3 → 1000, depth 4 → 100001). Because unlayered CSS beats Tailwind utilities, `absolute`, `fixed`, `sticky` or `z-*` classes on a glass `FacetContainer`/`FacetCard` are silently ignored. To float Facet chrome, put the positioning on a plain wrapper and the Facet surface inside it:
+
+```tsx
+<div className="absolute right-4 bottom-4 z-(--z-depth-floating)">
+  <FacetContainer depth={2}>…</FacetContainer>
+</div>
+```
+
+`surface="solid"` containers don't get the depth classes, so utilities apply to them normally. Nested cards should be solid anyway (no stacked blur), which also keeps depth-3 rows from all taking `z-index: 1000`.
+
 ### Volumetric Stacking Hierarchy
 ```mermaid
 graph TD
