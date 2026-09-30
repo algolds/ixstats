@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useState, useEffect } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import ShieldRenderer from "../renderer/ShieldRenderer";
@@ -48,10 +49,10 @@ export default function PreviewPanel() {
   return (
     <FacetMaterial
       material="satin"
-      className="h-[450px] overflow-hidden rounded-xl border border-white/10"
+      className="border-border h-[450px] overflow-hidden rounded-xl border"
     >
       <div className="flex h-full flex-col p-4">
-        <h2 className="mb-4 border-b border-white/5 pb-2 text-xs font-bold tracking-widest text-zinc-400 uppercase">
+        <h2 className="border-border text-foreground mb-4 border-b pb-2 text-sm font-semibold">
           Live Render
         </h2>
 
@@ -61,12 +62,12 @@ export default function PreviewPanel() {
         ))}
 
         {/* Canvas */}
-        <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-lg border border-white/5 bg-zinc-950/40 p-6">
+        <div className="border-border bg-card/40 relative flex flex-1 items-center justify-center overflow-hidden rounded-lg border p-6">
           <div className="relative flex aspect-square max-h-full max-w-full items-center justify-center">
             {/* External Ornaments placeholders (e.g. Helm) */}
             {composition.externals?.helm && (
               <div className="absolute -top-12 z-20 flex flex-col items-center">
-                <span className="animate-bounce text-3xl duration-1000">🪖</span>
+                <Eyebrow>Helm</Eyebrow>
               </div>
             )}
 
@@ -85,9 +86,9 @@ export default function PreviewPanel() {
                   composition.externals.motto.position === "above" ? "-top-10" : "-bottom-4"
                 }`}
               >
-                <div className="animate-in fade-in zoom-in-95 rounded-md border border-amber-600/30 bg-amber-500/90 px-4 py-1.5 font-serif text-xs font-bold tracking-wider whitespace-nowrap text-zinc-950 uppercase shadow-md duration-200">
-                  📜 {composition.externals.motto.text}
-                </div>
+                <Eyebrow className="animate-in fade-in zoom-in-95 block rounded-md border border-amber-600/30 bg-amber-500/90 px-4 py-1.5 whitespace-nowrap shadow-md duration-200">
+                  {composition.externals.motto.text}
+                </Eyebrow>
               </div>
             )}
           </div>

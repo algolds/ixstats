@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { useState, useCallback } from "react";
 import { Trash as Trash2, Xmark as X, EditPencil as Pencil, Check } from "iconoir-react";
 
@@ -98,28 +99,32 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
 
       <div className="bg-border mx-1 h-4 w-px" />
 
-      <button
+      <Button
+        variant="ghost"
+        size="xs"
+        className="text-muted-foreground"
         onClick={onDeselectAll}
         disabled={isMutating}
-        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
       >
         <X className="h-3 w-3" />
         Deselect All
-      </button>
+      </Button>
 
       {/* Bulk Edit — subdivisions only */}
       {canBulkEdit && !editOpen && (
-        <button
+        <Button
+          variant="ghost"
+          size="xs"
+          className="text-muted-foreground"
           onClick={() => {
             setEditOpen(true);
             setResultMsg(null);
           }}
           disabled={isMutating}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
         >
           <Pencil className="h-3 w-3" />
           Edit {subdivisionCount} region{subdivisionCount !== 1 ? "s" : ""}
-        </button>
+        </Button>
       )}
 
       {editOpen && (
@@ -189,37 +194,37 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
             />
           )}
 
-          <button
-            onClick={handleApply}
-            disabled={pending || !value.trim()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded px-2 py-0.5 transition-colors disabled:opacity-50"
-          >
+          <Button size="xs" onClick={handleApply} disabled={pending || !value.trim()}>
             <Check className="h-3 w-3" />
             Apply to {subdivisionCount}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
             onClick={() => setEditOpen(false)}
             disabled={pending}
-            className="text-muted-foreground hover:text-foreground px-1 transition-colors disabled:opacity-50"
             aria-label="Cancel"
           >
             <X className="h-3 w-3" />
-          </button>
+          </Button>
         </div>
       )}
 
       {resultMsg && <span className="text-muted-foreground italic">{resultMsg}</span>}
 
-      <button
+      <Button
+        variant="ghost"
+        size="xs"
+        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={onBatchDelete}
         disabled={isMutating}
-        className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
         title="Delete selected (Delete)"
       >
         <Trash2 className="h-3 w-3" />
         Delete Selected
-      </button>
+      </Button>
     </div>
   );
 });

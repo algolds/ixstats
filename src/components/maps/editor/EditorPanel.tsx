@@ -22,6 +22,8 @@ import {
   MailIn as Inbox,
 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { FeatureListSkeleton, LayerPanelSkeleton } from "~/components/maps/editor/EditorSkeleton";
 
 const PANEL_MIN_W = 256;
@@ -240,9 +242,10 @@ export function EditorPanel({
 
   if (collapsed && isStacked) {
     return (
-      <div
-        className={`border-border bg-card/75 flex shrink-0 items-center justify-between px-2 py-1.5 backdrop-blur-md ${
-          placement === "bottom" ? "h-9 w-32 rounded-md border" : "h-9 w-full border-t border-b"
+      <FacetContainer
+        depth={1}
+        className={`flex shrink-0 items-center justify-between px-2 py-1.5 ${
+          placement === "bottom" ? "h-9 w-32 rounded-md" : "h-9 w-full rounded-none"
         }`}
       >
         <div className="flex items-center gap-1.5 overflow-hidden">
@@ -258,18 +261,17 @@ export function EditorPanel({
             );
           })}
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onToggleCollapse}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/40 shrink-0 rounded p-0.5 transition-colors"
-          title="Expand Panel"
+          className="text-muted-foreground h-6 w-6 shrink-0"
+          title="Expand panel"
+          aria-label="Expand panel"
         >
-          {placement === "bottom" ? (
-            <ChevronUp className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5" />
-          )}
-        </button>
-      </div>
+          {placement === "bottom" ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
+        </Button>
+      </FacetContainer>
     );
   }
 
@@ -278,8 +280,9 @@ export function EditorPanel({
     return (
       <div className="relative flex h-full">
         {!collapsed && (
-          <div
-            className="border-border bg-card/75 relative flex flex-col border-r shadow-lg backdrop-blur-md"
+          <FacetContainer
+            depth={1}
+            className="flex flex-col rounded-none"
             style={{
               width: placement === "bottom" ? "100%" : panelWidth,
               height: placement === "bottom" ? panelHeight : "100%",
@@ -299,7 +302,7 @@ export function EditorPanel({
               />
             )}
             {importWizardContent}
-          </div>
+          </FacetContainer>
         )}
         <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
       </div>
@@ -317,13 +320,13 @@ export function EditorPanel({
             onTabDrop(tabId);
           }
         }}
-        className={`border-border/40 bg-card/20 text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-xs backdrop-blur-sm transition-colors`}
+        className="border-border text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-xs transition-colors"
         style={{
           width: placement === "bottom" ? "100%" : 140,
           height: placement === "bottom" ? 80 : "100%",
         }}
       >
-        <Layout className="text-muted-foreground/60 mb-1 h-4 w-4" />
+        <Layout className="text-muted-foreground mb-1 h-4 w-4" aria-hidden />
         <span>Drag tab here</span>
         {onChangePlacement && !panelsLocked && (
           <div className="mt-2 flex gap-1">
@@ -361,14 +364,9 @@ export function EditorPanel({
       )}
 
       {!collapsed && (
-        <div
-          className={`border-border bg-card/75 relative flex flex-col shadow-lg backdrop-blur-md ${
-            placement === "bottom"
-              ? "w-full border-t"
-              : placement === "left"
-                ? "h-full border-r"
-                : "h-full border-l"
-          }`}
+        <FacetContainer
+          depth={1}
+          className={`flex flex-col rounded-none ${placement === "bottom" ? "w-full" : "h-full"}`}
           style={{
             width: placement === "bottom" ? "100%" : panelWidth,
             height: placement === "bottom" ? panelHeight : "100%",
@@ -397,7 +395,7 @@ export function EditorPanel({
                 onTabDrop(droppedTabId);
               }
             }}
-            className="border-border bg-muted/20 flex h-9 w-full shrink-0 items-center justify-between border-b"
+            className="border-border flex h-9 w-full shrink-0 items-center justify-between border-b"
           >
             <div className="flex h-full min-w-0 flex-1 scrollbar-none overflow-x-auto">
               {tabs.map((tabId) => {
@@ -418,11 +416,11 @@ export function EditorPanel({
                     onClick={() => handleTabClick(tabId)}
                     className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-xs font-medium transition-colors sm:text-xs ${
                       isActive
-                        ? "border-primary bg-card/40 text-foreground border-b-2"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                        ? "border-primary text-foreground border-b-2"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     }`}
                   >
-                    <tabDef.Icon className="h-3 w-3" />
+                    <tabDef.Icon className="h-3.5 w-3.5" aria-hidden />
                     <span className="hidden sm:inline">{tabDef.label}</span>
                     {tabId === "features" && featureCount !== undefined && featureCount > 0 && (
                       <span className="bg-muted text-muted-foreground rounded-full px-1 text-xs tabular-nums">
@@ -436,40 +434,46 @@ export function EditorPanel({
 
             {/* Dock selector buttons */}
             {onChangePlacement && !panelsLocked && (
-              <div className="border-border bg-muted/5 ml-auto flex shrink-0 items-center gap-1 border-l px-2 py-1">
-                <button
+              <div className="border-border ml-auto flex shrink-0 items-center gap-0.5 border-l px-1.5 py-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onChangePlacement("left")}
-                  className={`rounded p-1 transition-colors ${
-                    placement === "left"
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                  aria-pressed={placement === "left"}
+                  className={`h-6 w-6 ${
+                    placement === "left" ? "bg-accent text-foreground" : "text-muted-foreground"
                   }`}
-                  title="Dock Left"
+                  title="Dock left"
+                  aria-label="Dock left"
                 >
-                  <ChevronLeft className="h-3 w-3" />
-                </button>
-                <button
+                  <ChevronLeft aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onChangePlacement("bottom")}
-                  className={`rounded p-1 transition-colors ${
-                    placement === "bottom"
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                  aria-pressed={placement === "bottom"}
+                  className={`h-6 w-6 ${
+                    placement === "bottom" ? "bg-accent text-foreground" : "text-muted-foreground"
                   }`}
-                  title="Dock Bottom"
+                  title="Dock bottom"
+                  aria-label="Dock bottom"
                 >
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                <button
+                  <ChevronDown aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onChangePlacement("right")}
-                  className={`rounded p-1 transition-colors ${
-                    placement === "right"
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                  aria-pressed={placement === "right"}
+                  className={`h-6 w-6 ${
+                    placement === "right" ? "bg-accent text-foreground" : "text-muted-foreground"
                   }`}
-                  title="Dock Right"
+                  title="Dock right"
+                  aria-label="Dock right"
                 >
-                  <ChevronRight className="h-3 w-3" />
-                </button>
+                  <ChevronRight aria-hidden />
+                </Button>
               </div>
             )}
           </div>
@@ -516,7 +520,7 @@ export function EditorPanel({
               )}
             </div>
           </div>
-        </div>
+        </FacetContainer>
       )}
 
       {(placement === "left" || placement === "bottom") && (
@@ -549,7 +553,7 @@ function CollapseToggle({
   return (
     <button
       onClick={onToggle}
-      className={`bg-card/75 border-border text-muted-foreground hover:text-foreground absolute z-10 flex items-center justify-center border transition-colors ${positionClass} shadow-md backdrop-blur-sm`}
+      className={`bg-card border-border text-muted-foreground hover:text-foreground absolute z-10 flex items-center justify-center border shadow-sm transition-colors ${positionClass}`}
       title={collapsed ? "Show panel" : "Hide panel"}
     >
       {placement === "bottom" ? (

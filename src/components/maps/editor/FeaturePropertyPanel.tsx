@@ -1,5 +1,7 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React from "react";
 
 /**
@@ -7,7 +9,12 @@ import React from "react";
  * based on the current editor mode.
  */
 
-import { SystemRestart as Loader2, Check, CheckCircle as CheckCircle2 } from "iconoir-react";
+import {
+  SystemRestart as Loader2,
+  Check,
+  CheckCircle as CheckCircle2,
+  MapPin,
+} from "iconoir-react";
 import dynamic from "next/dynamic";
 import type {
   EditorMode,
@@ -192,14 +199,13 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          {MODE_TITLES[mode] ?? mode}
-        </h3>
+        <Eyebrow className="block">{MODE_TITLES[mode] ?? mode}</Eyebrow>
       </div>
 
       {/* Location indicator */}
       {!isEdit && !hasLocation && (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-500">
+        <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" aria-hidden />
           {mode === "add-subdivision" || mode === "add-lake"
             ? "Draw a polygon on the map to define the boundary"
             : mode === "add-river"
@@ -208,17 +214,20 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         </div>
       )}
       {pendingCoordinates && isPointMode && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Location: {pendingCoordinates[1].toFixed(3)}&deg;, {pendingCoordinates[0].toFixed(3)}&deg;
         </div>
       )}
       {pendingGeometry && (mode === "add-subdivision" || mode === "add-lake") && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Polygon boundary drawn
         </div>
       )}
       {pendingGeometry && mode === "add-river" && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Line path drawn
         </div>
       )}
@@ -351,7 +360,10 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Success flash with fade-in animation */}
       {lastSavedAt && !error && (
-        <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500 duration-200">
+        <div
+          role="status"
+          className="animate-in fade-in flex items-center gap-1.5 text-xs font-medium text-emerald-500 duration-200"
+        >
           <CheckCircle2 className="h-3.5 w-3.5" />
           <span>{isEdit ? "Changes saved" : "Saved — click map to place another"}</span>
         </div>
@@ -366,10 +378,11 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Action buttons */}
       <div className="flex gap-2">
-        <button
+        <Button
+          size="sm"
+          className="flex-1 justify-center sm:py-1.5 sm:text-sm"
           onClick={onSubmit}
           disabled={!canSubmit}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-3 text-base font-medium shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:py-1.5 sm:text-sm"
         >
           {isMutating ? (
             <Loader2 className="h-4 w-4 animate-spin sm:h-3.5 sm:w-3.5" />
@@ -377,13 +390,10 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
             <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           )}
           {isMutating ? "Saving..." : isEdit ? "Update" : "Save"}
-        </button>
-        <button
-          onClick={onCancel}
-          className="border-border text-foreground/80 hover:bg-accent active:bg-accent rounded-lg border px-3 py-3 text-base transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] sm:py-1.5 sm:text-sm"
-        >
+        </Button>
+        <Button variant="outline" size="sm" className="sm:py-1.5 sm:text-sm" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );

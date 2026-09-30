@@ -10,6 +10,7 @@
  * - Process, preview, commit, rollback actions
  */
 
+import { FacetCard } from "~/components/ui/facet-container";
 import { useState, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { notifyFromStore } from "~/hooks/useNotify";
@@ -196,22 +197,20 @@ export function SvgUploadManager() {
             </SelectContent>
           </Select>
 
-          <div className="border-border bg-muted text-muted-foreground rounded-lg border p-3 text-xs">
+          <FacetCard className="text-muted-foreground rounded-lg p-3 text-xs">
             <p className="text-foreground font-medium">Upload an Inkscape SVG</p>
             <p className="mt-1">
               The SVG should contain a layer group matching the selected type. Features are
               extracted from <code>&lt;path&gt;</code> elements within the layer.
             </p>
-          </div>
+          </FacetCard>
         </div>
 
         {/* Right: Upload zone */}
         <div className="lg:col-span-2">
           <div
             className={`flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
-              isDragging
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                : "border-border hover:border-blue-400"
+              isDragging ? "border-blue-500" : "border-border hover:border-blue-400"
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -248,7 +247,7 @@ export function SvgUploadManager() {
           </div>
 
           {uploadError && (
-            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+            <div className="border-destructive/30 mt-3 rounded-lg border p-3 text-sm text-red-700">
               <AlertCircle className="mb-1 inline h-4 w-4" /> {uploadError}
             </div>
           )}
@@ -268,9 +267,9 @@ export function SvgUploadManager() {
             ))}
           </div>
         ) : !history || history.length === 0 ? (
-          <div className="border-border bg-muted text-muted-foreground rounded-lg border p-8 text-center text-sm">
+          <FacetCard className="text-muted-foreground rounded-lg p-8 text-center text-sm">
             No uploads yet for this layer type.
-          </div>
+          </FacetCard>
         ) : (
           <div className="border-border overflow-hidden rounded-lg border">
             <table className="w-full text-sm">
@@ -289,10 +288,7 @@ export function SvgUploadManager() {
                   const StatusIcon = statusCfg.icon;
 
                   return (
-                    <tr
-                      key={upload.id}
-                      className={`${upload.isActive ? "bg-emerald-50/50 dark:bg-emerald-900/10" : ""}`}
-                    >
+                    <tr key={upload.id} className={`${upload.isActive ? "" : ""}`}>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{upload.fileName}</span>
@@ -300,9 +296,7 @@ export function SvgUploadManager() {
                             {formatBytes(upload.fileSizeBytes)}
                           </span>
                           {upload.isActive && (
-                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                              Active
-                            </Badge>
+                            <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>
                           )}
                         </div>
                       </td>

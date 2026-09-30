@@ -2,7 +2,7 @@
 
 import React from "react";
 import { STORY_PIN_COLORS } from "~/lib/maps/story-pin-icons";
-import { CATEGORY_ICONS } from "~/components/maps/core/utils/story-pin-helpers";
+import { getCategoryIcon } from "~/components/maps/core/utils/story-pin-helpers";
 
 interface RelatedPinCardProps {
   pin: {
@@ -16,18 +16,20 @@ interface RelatedPinCardProps {
 }
 
 export function RelatedPinCard({ pin, onNavigate }: RelatedPinCardProps) {
-  const color = STORY_PIN_COLORS[pin.category] ?? "#6b7280";
+  // The category colour is map data (it matches the pin drawn on the map), not chrome.
+  const color = STORY_PIN_COLORS[pin.category];
+  const Icon = getCategoryIcon(pin.category);
   return (
     <button
+      type="button"
       onClick={() => onNavigate?.(pin.id)}
-      className="border-border/30 bg-card/30 hover:bg-card/60 flex items-center gap-2.5 rounded-lg border p-2 text-left transition-colors"
+      className="border-border bg-card hover:bg-accent focus-visible:ring-ring flex w-full items-center gap-2.5 rounded-lg border p-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
-      <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm"
-        style={{ backgroundColor: `${color}20`, color }}
-      >
-        {CATEGORY_ICONS[pin.category] ?? "📌"}
-      </div>
+      <Icon
+        className="text-muted-foreground h-4 w-4 shrink-0"
+        style={color ? { color } : undefined}
+        aria-hidden
+      />
       <div className="min-w-0">
         <p className="text-foreground truncate text-xs font-medium">{pin.title}</p>
         {pin.ixTimeYear != null && (

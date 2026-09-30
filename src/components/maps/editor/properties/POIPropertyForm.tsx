@@ -1,5 +1,6 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
 import React from "react";
 import type { POIFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
@@ -109,7 +110,10 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <div className="border-border/60 bg-muted/20 flex items-center justify-between rounded-lg border px-3 py-2 text-xs">
+        <FacetCard
+          surface="solid"
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
+        >
           <div className="text-muted-foreground text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
@@ -132,7 +136,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
             <MapPin className="h-3.5 w-3.5" />
             <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
           </button>
-        </div>
+        </FacetCard>
       )}
       <textarea
         placeholder="Description (optional)"

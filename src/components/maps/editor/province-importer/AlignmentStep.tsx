@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { memo } from "react";
 import {
   Archery as Crosshair,
@@ -46,7 +47,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
 
       {/* Auto-alignment status */}
       {hasAlignment && (
-        <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-3 py-2 text-xs text-green-700 dark:text-green-400">
+        <div className="border-border flex items-center gap-2 rounded-lg border px-3 py-2 text-xs text-emerald-500">
           <Check className="h-3.5 w-3.5 shrink-0" />
           Auto-aligned to country border. Use manual adjust for fine-tuning.
         </div>
@@ -93,24 +94,27 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
                     Point {i + 1}: [{pt.source[0]?.toFixed(2)}, {pt.source[1]?.toFixed(2)}] → [
                     {pt.target[0]?.toFixed(2)}, {pt.target[1]?.toFixed(2)}]
                   </span>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => importer.removeReferencePoint(i)}
-                    className="text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="h-3 w-3" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
           )}
 
-          <button
+          <Button
+            size="sm"
+            className="w-full"
             onClick={importer.applyReferencePointAlignment}
             disabled={importer.referencePoints.length < 2}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40"
           >
             Apply Alignment ({importer.referencePoints.length} points)
-          </button>
+          </Button>
         </div>
       )}
 
@@ -121,10 +125,11 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               ? "Re-run auto-alignment to recompute the best fit using ICP shape matching."
               : "Automatically matches the outer boundary of your provinces to the country border using iterative shape matching (ICP algorithm)."}
           </p>
-          <button
+          <Button
+            size="sm"
+            className="w-full justify-center"
             onClick={importer.applyAutoAlignment}
             disabled={importer.isProcessing || !importer.countryBorder}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40"
           >
             {importer.isProcessing ? (
               <>
@@ -137,7 +142,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
                 {hasAlignment ? "Re-run Auto-Align" : "Auto-Align"}
               </>
             )}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -147,16 +152,17 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
           <p className="text-muted-foreground text-xs">
             Once alignment looks close, snap province edges to the country border:
           </p>
-          <button
+          <Button
+            size="sm"
+            className="w-full justify-center"
             onClick={() => {
               importer.applySnapping();
             }}
             disabled={!importer.countryBorder || importer.isProcessing}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40"
           >
             <Magnet className="h-3.5 w-3.5" />
             Snap to Country Border
-          </button>
+          </Button>
           <p className="text-muted-foreground text-xs">
             Clips provinces to the border, snaps outer vertices, and aligns shared edges. You can
             re-adjust and snap again.
@@ -283,12 +289,14 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
           </div>
 
           {/* Reset manual transform button */}
-          <button
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
             onClick={() => importer.setManualTransform({ translate: [0, 0], rotate: 0, scale: 1 })}
-            className="border-border text-muted-foreground hover:bg-accent hover:text-foreground w-full rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
           >
             Reset Manual Adjustments
-          </button>
+          </Button>
         </div>
       )}
     </div>

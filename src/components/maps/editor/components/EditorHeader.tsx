@@ -27,6 +27,11 @@ import {
 import { cn } from "~/lib/utils/cn";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Switch } from "~/components/ui/switch";
 
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapEditorInstance, EditorFeature } from "../types/editor-state";
@@ -201,22 +206,27 @@ export const EditorHeader = React.memo(function EditorHeader({
   ]);
 
   return (
-    <div className="border-border/60 bg-card/85 pointer-events-auto z-20 flex h-10 shrink-0 items-center gap-2 border-b px-3 shadow-xs backdrop-blur-xl">
+    <FacetContainer
+      depth={1}
+      className="pointer-events-auto flex h-11 shrink-0 items-center gap-2 rounded-none px-3"
+    >
       {/* Exit button */}
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground h-7 w-7"
         onClick={handleRequestExit}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98]"
         title="Exit Editor (Esc)"
       >
         <ArrowLeft className="h-4 w-4" />
-      </button>
+      </Button>
 
       {/* Breadcrumbs */}
       <div className="text-muted-foreground flex items-center gap-1.5 text-xs select-none">
         {isWorldMode ? (
           <>
-            <Map className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-foreground font-semibold">World Map</span>
+            <Map className="h-3.5 w-3.5 text-blue-500" aria-hidden />
+            <span className="text-foreground font-semibold">World map</span>
             {activeCountryId && (
               <>
                 <ChevronRight className="h-3 w-3" />
@@ -224,16 +234,16 @@ export const EditorHeader = React.memo(function EditorHeader({
               </>
             )}
             <ChevronRight className="h-3 w-3" />
-            <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-xs font-semibold text-blue-500">
-              {activeEditorMode === "border_edit" ? "BORDER EDIT" : "VIEW"}
-            </span>
+            <Badge variant="outline">
+              {activeEditorMode === "border_edit" ? "Border edit" : "View"}
+            </Badge>
           </>
         ) : (
           <>
-            <Map className="h-3.5 w-3.5 text-emerald-500" />
+            <Map className="h-3.5 w-3.5 text-blue-500" aria-hidden />
             <span className="text-foreground font-semibold">{resolvedCountryName}</span>
             <ChevronRight className="h-3 w-3" />
-            <span>Map Editor</span>
+            <span>Map editor</span>
           </>
         )}
       </div>
@@ -241,21 +251,25 @@ export const EditorHeader = React.memo(function EditorHeader({
       {/* Undo/Redo — left side after breadcrumb */}
       {(!isWorldMode || editor.mode !== "view") && (
         <div className="ml-2 flex items-center gap-0.5">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-7 w-7"
             disabled={!editor.historyCanUndo || editor.isMutating}
             onClick={() => editor.undo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
             title={
               undoAction ? `Undo: ${undoAction.description} (Ctrl+Z)` : "Nothing to undo (Ctrl+Z)"
             }
             aria-label="Undo"
           >
             <Undo2 className="h-3.5 w-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-7 w-7"
             disabled={!editor.historyCanRedo || editor.isMutating}
             onClick={() => editor.redo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
             title={
               redoAction
                 ? `Redo: ${redoAction.description} (Ctrl+Shift+Z)`
@@ -264,7 +278,7 @@ export const EditorHeader = React.memo(function EditorHeader({
             aria-label="Redo"
           >
             <Redo2 className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -275,59 +289,61 @@ export const EditorHeader = React.memo(function EditorHeader({
       {/* Map controls in header — grid, center, settings */}
       <div className="ml-1 flex items-center gap-1.5">
         <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => setShowGrid((v) => !v)}
+          <Button
+            variant="ghost"
+            size="icon"
             className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-              showGrid
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              "h-7 w-7",
+              showGrid ? "bg-accent text-foreground" : "text-muted-foreground"
             )}
+            onClick={() => setShowGrid((v) => !v)}
             title="Toggle grid (G)"
             aria-pressed={showGrid}
           >
             <Grid3X3 className="h-3.5 w-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-7 w-7"
             onClick={() => {
               const geo = editor.countryGeo;
               if (geo?.centroid) {
                 mapRef.current?.flyTo(geo.centroid.lng, geo.centroid.lat, 5);
               }
             }}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
             title="Zoom to country"
           >
             <Crosshair className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => editor.setShowGaps?.(!editor.showGaps)}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-              editor.showGaps
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              "h-7 w-7",
+              editor.showGaps ? "bg-accent text-foreground" : "text-muted-foreground"
             )}
+            onClick={() => editor.setShowGaps?.(!editor.showGaps)}
             title={`Highlight gaps & empty regions: ${editor.showGaps ? "On" : "Off"} (H)`}
             aria-pressed={editor.showGaps}
           >
             <Eye className="h-3.5 w-3.5" />
-          </button>
+          </Button>
 
           {/* Snap toggle (tolerance lives in the Settings popover below) */}
-          <button
-            onClick={() => setSnapEnabled(!snapEnabled)}
+          <Button
+            variant="ghost"
+            size="icon"
             className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-              snapEnabled
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              "h-7 w-7",
+              snapEnabled ? "bg-accent text-foreground" : "text-muted-foreground"
             )}
+            onClick={() => setSnapEnabled(!snapEnabled)}
             title={`Snap: ${snapEnabled ? "On" : "Off"} (tolerance in Settings)`}
             aria-pressed={snapEnabled}
           >
             <Magnet className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
 
         <div className="bg-border h-4 w-px" />
@@ -336,125 +352,140 @@ export const EditorHeader = React.memo(function EditorHeader({
         <div className="flex items-center gap-1">
           {isAdmin && (
             <div className="mr-0.5 flex items-center gap-0.5">
-              <button
-                onClick={() => toggleEditorLayer("rivers")}
+              <Button
+                variant="ghost"
+                size="icon"
                 className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+                  "h-7 w-7",
                   editorVisibleLayers.has("rivers")
-                    ? "bg-blue-500/15 text-blue-500"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground"
                 )}
+                onClick={() => toggleEditorLayer("rivers")}
                 title="Rivers"
               >
                 <Droplets className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => toggleEditorLayer("altitudes")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+                  "h-7 w-7",
                   editorVisibleLayers.has("altitudes")
-                    ? "bg-amber-500/15 text-amber-500"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground"
                 )}
+                onClick={() => toggleEditorLayer("altitudes")}
                 title="Altitude/Elevation"
               >
                 <MountainIcon className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </div>
           )}
 
           {onShowShortcuts && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hidden h-7 w-7 sm:flex"
               onClick={onShowShortcuts}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground hidden h-6 w-6 items-center justify-center rounded-md transition-colors sm:flex"
               title="Keyboard shortcuts (?)"
               aria-label="Keyboard shortcuts"
             >
               <KeyCommand className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
 
           {/* Help & Guide Button */}
           {onShowHelp && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground h-7 w-7"
               onClick={onShowHelp}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
               title="Map Editor Guide & Onboarding"
             >
               <HelpCircle className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
 
           {/* Settings Popover */}
           <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <PopoverTrigger
-              className={cn(
-                "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-                isSettingsOpen
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-              title="Map Editor Settings"
-            >
-              <Settings className="h-3.5 w-3.5" />
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-7 w-7",
+                  isSettingsOpen ? "bg-accent text-foreground" : "text-muted-foreground"
+                )}
+                title="Map editor settings"
+                aria-label="Map editor settings"
+              >
+                <Settings className="h-3.5 w-3.5" />
+              </Button>
             </PopoverTrigger>
-            <PopoverContent
-              className="glass-none bg-popover border-border text-foreground z-[100] w-64 rounded-md border p-3 shadow-md"
-              align="end"
-            >
+            <PopoverContent className="w-64 rounded-xl p-3" align="end">
               <div className="flex flex-col gap-3">
-                <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
-                  Map Editor Settings
-                </div>
+                <Eyebrow className="block select-none">Map editor settings</Eyebrow>
 
                 <div className="flex flex-col gap-1">
                   {/* Import Provinces */}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground w-full justify-start px-2"
                     onClick={() => {
                       setIsSettingsOpen(false);
                       editor.setMode("import-provinces");
                     }}
-                    className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
                     title="Import provinces from external GeoJSON"
                   >
-                    <FileUp className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                    <FileUp className="h-3.5 w-3.5 shrink-0" />
                     <span className="font-medium">Import Provinces (SVG/PNG)</span>
                     <span className="bg-muted text-muted-foreground ml-auto rounded px-1 font-mono text-xs">
                       I
                     </span>
-                  </button>
+                  </Button>
 
                   {!isWorldMode || activeCountryId ? (
                     <>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground w-full justify-start px-2"
                         onClick={() => {
                           setIsSettingsOpen(false);
                           importInputRef.current?.click();
                         }}
                         disabled={editor.isMutating}
-                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
                         title="Create cities, POIs and regions from a GeoJSON file (points → cities, polygons → regions)"
                       >
-                        <FileUp className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+                        <FileUp className="h-3.5 w-3.5 shrink-0" />
                         <span className="font-medium">Import GeoJSON…</span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground w-full justify-start px-2"
                         onClick={() => {
                           setIsSettingsOpen(false);
                           handleExportGeoJSON();
                         }}
-                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
                         title="Download every feature on this map as a GeoJSON FeatureCollection"
                       >
-                        <Download className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+                        <Download className="h-3.5 w-3.5 shrink-0" />
                         <span className="font-medium">Export GeoJSON</span>
-                      </button>
+                      </Button>
                     </>
                   ) : null}
 
                   {/* Simplify All */}
                   {editor.allFeatures.some((f: EditorFeature) => f.type === "subdivision") && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground w-full justify-start px-2"
                       onClick={async () => {
                         setIsSettingsOpen(false);
                         if (!activeCountryId) return;
@@ -473,36 +504,28 @@ export const EditorHeader = React.memo(function EditorHeader({
                         }
                       }}
                       disabled={simplifyAll.isPending || !activeCountryId}
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
                       title="Simplify all regions — reduce vertices while preserving shape"
                     >
-                      <Minimize2 className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                      <Minimize2 className="h-3.5 w-3.5 shrink-0" />
                       <span className="font-medium">
                         {simplifyAll.isPending ? "Simplifying..." : "Simplify All Regions"}
                       </span>
-                    </button>
+                    </Button>
                   )}
 
                   {/* Snap (always visible — universal editing feature) */}
                   <>
-                    <div className="border-border/60 my-1 border-t" aria-hidden />
+                    <div className="border-border my-1 border-t" aria-hidden />
                     <div className="flex items-center justify-between px-2 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Magnet className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                          Snap
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setSnapEnabled(!snapEnabled)}
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
-                          snapEnabled
-                            ? "bg-emerald-500/10 text-emerald-500"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {snapEnabled ? "On" : "Off"}
-                      </button>
+                      <Eyebrow className="flex items-center gap-1.5">
+                        <Magnet className="h-3 w-3" aria-hidden />
+                        Snap
+                      </Eyebrow>
+                      <Switch
+                        checked={snapEnabled}
+                        onCheckedChange={setSnapEnabled}
+                        aria-label="Snap to features"
+                      />
                     </div>
                     {snapEnabled && (
                       <div className="flex items-center gap-2 px-2 pb-1.5">
@@ -524,35 +547,29 @@ export const EditorHeader = React.memo(function EditorHeader({
 
                   {/* Lock Panels */}
                   <>
-                    <div className="border-border/60 my-1 border-t" aria-hidden />
+                    <div className="border-border my-1 border-t" aria-hidden />
                     <div className="flex items-center justify-between px-2 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Settings className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                          Lock Panels
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setPanelsLocked(!panelsLocked)}
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
-                          panelsLocked
-                            ? "bg-amber-500/10 text-amber-500"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {panelsLocked ? "Locked" : "Unlocked"}
-                      </button>
+                      <Eyebrow className="flex items-center gap-1.5">
+                        <Settings className="h-3 w-3" aria-hidden />
+                        Lock panels
+                      </Eyebrow>
+                      <Switch
+                        checked={panelsLocked}
+                        onCheckedChange={setPanelsLocked}
+                        aria-label="Lock panels"
+                      />
                     </div>
                   </>
 
                   {/* Admin: transport + recalc — gated, separated visually from the always-on items above */}
                   {isAdmin && activeCountryId && (
                     <>
-                      <div className="border-border/60 my-1 border-t" aria-hidden />
-                      <div className="text-muted-foreground/80 px-2 text-xs font-semibold tracking-wider uppercase select-none">
-                        Admin
-                      </div>
-                      <button
+                      <div className="border-border my-1 border-t" aria-hidden />
+                      <Eyebrow className="block px-2 select-none">Admin</Eyebrow>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground w-full justify-start px-2"
                         onClick={async () => {
                           setIsSettingsOpen(false);
                           try {
@@ -571,15 +588,17 @@ export const EditorHeader = React.memo(function EditorHeader({
                           }
                         }}
                         disabled={generateTransport.isPending}
-                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
                         title="Generate rail + highway routes procedurally (clears existing transport routes)"
                       >
-                        <Train className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                        <Train className="h-3.5 w-3.5 shrink-0" />
                         <span className="font-medium">
                           {generateTransport.isPending ? "Generating..." : "Gen Transport"}
                         </span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground w-full justify-start px-2"
                         onClick={async () => {
                           setIsSettingsOpen(false);
                           try {
@@ -592,19 +611,18 @@ export const EditorHeader = React.memo(function EditorHeader({
                           }
                         }}
                         disabled={recalculateGeo.isPending}
-                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
                         title="Recalculate the geographic profile for the active country"
                       >
                         <RefreshCw
                           className={cn(
-                            "h-3.5 w-3.5 shrink-0 text-emerald-500",
+                            "h-3.5 w-3.5 shrink-0",
                             recalculateGeo.isPending && "animate-spin"
                           )}
                         />
                         <span className="font-medium">
                           {recalculateGeo.isPending ? "Recalculating..." : "Recalc"}
                         </span>
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>
@@ -616,15 +634,17 @@ export const EditorHeader = React.memo(function EditorHeader({
 
       {/* Bulk delete — shown when multi-select has items */}
       {editor.selectedIds.size > 0 && onDeleteSelection && (
-        <button
+        <Button
+          variant="destructive"
+          size="xs"
           onClick={onDeleteSelection}
           disabled={editor.isMutating}
-          className="text-destructive bg-destructive/10 hover:bg-destructive/20 ml-1 flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-[color,background-color,transform] active:scale-[0.98] disabled:opacity-50"
+          className="ml-1"
           title="Delete selected (Delete)"
         >
-          <Trash className="h-3 w-3" />
+          <Trash aria-hidden />
           <span className="hidden sm:inline">Delete {editor.selectedIds.size}</span>
-        </button>
+        </Button>
       )}
 
       <input
@@ -638,6 +658,6 @@ export const EditorHeader = React.memo(function EditorHeader({
           if (file) void handleImportFile(file);
         }}
       />
-    </div>
+    </FacetContainer>
   );
 });

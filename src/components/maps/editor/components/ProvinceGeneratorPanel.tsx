@@ -1,5 +1,8 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useState, useCallback } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -83,12 +86,9 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
     return (
       <div className="space-y-3 p-3">
         <p className="text-muted-foreground text-xs">No country geometry loaded.</p>
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground text-xs underline"
-        >
+        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
     );
   }
@@ -97,76 +97,74 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
     <div className="space-y-3 p-3">
       <div className="flex items-center justify-between">
         <span className="text-foreground text-xs font-semibold">Generate Subdivisions</span>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground h-6 w-6"
           onClick={onClose}
-          className="text-muted-foreground hover:text-foreground rounded p-0.5"
         >
           <X className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* Controls */}
       <div className="space-y-2">
         <div>
-          <label className="text-muted-foreground text-xs font-medium uppercase">
-            Count ({count})
-          </label>
+          <Eyebrow className="block">Count ({count})</Eyebrow>
           <input
             type="range"
             min={2}
             max={50}
             value={count}
             onChange={(e) => setCount(parseInt(e.target.value))}
-            className="h-1 w-full accent-primary"
+            className="accent-primary h-1 w-full"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-muted-foreground shrink-0 text-xs font-medium uppercase">
-            Seed
-          </label>
+          <Eyebrow className="block shrink-0">Seed</Eyebrow>
           <input
             type="number"
             value={seed}
             onChange={(e) => setSeed(parseInt(e.target.value) || 42)}
-            className="border-border bg-background w-20 rounded border px-2 py-1 text-xs focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+            className="border-border bg-background focus:border-primary focus:ring-primary w-20 rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="text-muted-foreground text-xs font-medium uppercase">
-            Names (one per line, optional)
-          </label>
+          <Eyebrow className="block">Names (one per line, optional)</Eyebrow>
           <textarea
             value={names}
             onChange={(e) => setNames(e.target.value)}
             rows={3}
             placeholder="Province A&#10;Province B&#10;..."
-            className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+            className="border-border bg-background focus:border-primary focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Action buttons */}
       {!cells && (
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-full justify-center"
           onClick={handleGenerate}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
         >
           <Dice5 className="h-3.5 w-3.5" />
           Generate
-        </button>
+        </Button>
       )}
 
       {/* Generated cells preview */}
       {cells && (
         <>
-          <div className="border-border/30 bg-muted/10 space-y-1 rounded-lg border p-2">
-            <div className="text-muted-foreground flex items-center justify-between text-xs font-semibold tracking-wider uppercase">
-              <span className="flex items-center gap-1">
+          <FacetCard surface="solid" className="space-y-1 rounded-lg p-2">
+            <div className="flex items-center justify-between">
+              <Eyebrow className="flex items-center gap-1">
                 <Grid3X3 className="h-3 w-3" />
                 Preview ({cells.length} cells)
-              </span>
+              </Eyebrow>
             </div>
             <div className="max-h-40 space-y-0.5 overflow-y-auto">
               {cells.map((cell, i) => (
@@ -185,13 +183,15 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
                 </div>
               ))}
             </div>
-          </div>
+          </FacetCard>
 
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 justify-center"
               onClick={handleCommit}
               disabled={commitMutation.isPending}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-500/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
             >
               {commitMutation.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -199,15 +199,17 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
                 <Check className="h-3.5 w-3.5" />
               )}
               {commitMutation.isPending ? "Committing…" : "Commit"}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive flex-1 justify-center"
               onClick={handleDiscard}
               disabled={commitMutation.isPending}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-destructive/15 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
             >
               <X className="h-3.5 w-3.5" />
               Discard
-            </button>
+            </Button>
           </div>
         </>
       )}

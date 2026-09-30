@@ -28,6 +28,8 @@ import {
 } from "iconoir-react";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import { cn } from "~/lib/utils";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { useIsMobile } from "~/hooks/useIsMobile";
 
 // Extracted state hook, components, and helper utilities
@@ -106,12 +108,9 @@ export function MapDynamicIsland({
   const mobilePill = (
     <div
       className={cn(
-        "relative overflow-hidden rounded-full border shadow-xl transition-colors duration-200",
-        isFlashing ? "border-red-500/50" : "border-white/10"
+        "bg-popover relative overflow-hidden rounded-full border shadow-xl transition-colors duration-200",
+        isFlashing ? "border-red-500/50" : "border-border"
       )}
-      style={{
-        background: "rgba(0, 0, 0, 0.85)",
-      }}
     >
       <div className="relative z-10">
         {searchOpen ? (
@@ -187,7 +186,7 @@ export function MapDynamicIsland({
                   router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                 }
                 className={cn(
-                  "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+                  "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                   isFlashing ? "scale-110 bg-red-500/20" : "text-muted-foreground"
                 )}
               >
@@ -218,24 +217,6 @@ export function MapDynamicIsland({
 
   const desktopPill = (
     <div className="relative">
-      {/* Outer alert glow on new notification / flashing mode */}
-      <AnimatePresence>
-        {isFlashing && (
-          <motion.div
-            layout
-            transition={SPRING}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-full"
-            style={{ willChange: "width, height" }}
-          >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Main glass pill — Apple HIG Acrylic Shell */}
       <motion.div
         layout
@@ -243,18 +224,13 @@ export function MapDynamicIsland({
         animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
         data-expanded={searchOpen ? "true" : undefined}
         className={cn(
-          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-300",
-          isFlashing && "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]"
+          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-200",
+          isFlashing && "!border-red-500/80"
         )}
         style={{
           willChange: "width, height",
         }}
       >
-        {/* Specular edge highlight (Apple physical acrylic top lip) */}
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/20" />
-        </div>
-
         {/* Content */}
         <div className="relative z-10">
           <AnimatePresence mode="popLayout" initial={false}>
@@ -353,7 +329,7 @@ export function MapDynamicIsland({
                       router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                     }
                     className={cn(
-                      "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+                      "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                       isFlashing
                         ? "scale-125 bg-red-500/20"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -381,12 +357,8 @@ export function MapDynamicIsland({
                     )}
                     <span
                       className={cn(
-                        "ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-xs font-bold text-white shadow-sm ring-2 transition-colors duration-500",
-                        messageUnreadCount > 0
-                          ? isFlashing
-                            ? "animate-bounce bg-red-600"
-                            : "bg-red-500"
-                          : "bg-gradient-to-r from-blue-500 to-indigo-500"
+                        "ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-xs font-bold text-white shadow-sm ring-2 transition-colors duration-200",
+                        messageUnreadCount > 0 ? "bg-red-500" : "bg-blue-500"
                       )}
                     >
                       {totalUnread > 99 ? "99+" : totalUnread}
@@ -411,10 +383,72 @@ export function MapDynamicIsland({
     </div>
   );
 
+  const resultsBody = (
+    <>
+      {searchLoading && !hasResults && (
+        <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Searching…
+        </div>
+      )}
+
+      {!searchLoading && !hasResults && flatResults.length === 0 && (
+        <div className="text-muted-foreground px-4 py-6 text-center text-sm">
+          No results for &ldquo;{query.trim()}&rdquo;
+        </div>
+      )}
+
+      {grouped.map(([type, items]) => {
+        const meta = TYPE_META[type] ?? { icon: Globe, label: type };
+        const Icon = meta.icon;
+        return (
+          <div key={type}>
+            <Eyebrow className="flex items-center gap-1.5 px-3 py-1.5">
+              <Icon className="h-3 w-3" aria-hidden />
+              {meta.label}
+            </Eyebrow>
+            {items.map((result) => {
+              const flatIdx = flatResults.indexOf(result);
+              const isHighlighted = flatIdx === selectedIdx;
+              return (
+                <button
+                  type="button"
+                  id={`map-search-opt-${flatIdx}`}
+                  role="option"
+                  aria-selected={isHighlighted}
+                  key={`${result.type}-${result.id}`}
+                  onClick={() => handleSelect(result)}
+                  className={cn(
+                    "flex min-h-11 w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors sm:min-h-0",
+                    isHighlighted
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
+                  )}
+                >
+                  {result.type === "country" ? (
+                    <FlagIcon name={result.name} />
+                  ) : (
+                    <Icon
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0",
+                        isHighlighted ? "text-blue-500" : "text-muted-foreground"
+                      )}
+                    />
+                  )}
+                  <span className="truncate font-medium">{result.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })}
+    </>
+  );
+
   return (
     <div
       ref={containerRef}
-      className="absolute top-3 left-1/2 z-[var(--z-floating)] -translate-x-1/2"
+      className="absolute top-3 left-1/2 z-[var(--z-depth-floating)] -translate-x-1/2"
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
@@ -425,70 +459,15 @@ export function MapDynamicIsland({
       {/* ── Search Results Dropdown ── */}
       {isMobile ? (
         showResults && (
-          <div
+          <FacetContainer
+            depth={2}
             id="map-search-results"
             role="listbox"
             aria-label="Search results"
-            className="bg-card border-border mt-2 max-h-[min(20rem,60dvh)] w-[calc(100vw-24px)] overflow-y-auto overscroll-contain rounded-2xl border py-1 shadow-2xl"
+            className="mt-2 max-h-[min(20rem,60dvh)] w-[calc(100vw-24px)] overflow-y-auto overscroll-contain rounded-2xl py-1"
           >
-            {searchLoading && !hasResults && (
-              <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Searching…
-              </div>
-            )}
-
-            {!searchLoading && !hasResults && flatResults.length === 0 && (
-              <div className="text-muted-foreground px-4 py-6 text-center text-sm">
-                No results for &ldquo;{query.trim()}&rdquo;
-              </div>
-            )}
-
-            {grouped.map(([type, items]) => {
-              const meta = TYPE_META[type] ?? { icon: Globe, label: type };
-              const Icon = meta.icon;
-              return (
-                <div key={type}>
-                  <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
-                    <Icon className="h-3 w-3" />
-                    {meta.label}
-                  </div>
-                  {items.map((result) => {
-                    const flatIdx = flatResults.indexOf(result);
-                    const isHighlighted = flatIdx === selectedIdx;
-                    return (
-                      <button
-                        type="button"
-                        id={`map-search-opt-${flatIdx}`}
-                        role="option"
-                        aria-selected={isHighlighted}
-                        key={`${result.type}-${result.id}`}
-                        onClick={() => handleSelect(result)}
-                        className={cn(
-                          "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors",
-                          isHighlighted
-                            ? "bg-accent text-accent-foreground"
-                            : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
-                        )}
-                      >
-                        {result.type === "country" ? (
-                          <FlagIcon name={result.name} />
-                        ) : (
-                          <Icon
-                            className={cn(
-                              "h-3.5 w-3.5 shrink-0",
-                              isHighlighted ? "text-blue-500" : "text-muted-foreground"
-                            )}
-                          />
-                        )}
-                        <span className="truncate font-medium">{result.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
+            {resultsBody}
+          </FacetContainer>
         )
       ) : (
         <AnimatePresence>
@@ -498,68 +477,17 @@ export function MapDynamicIsland({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={SPRING_SOFT}
-              id="map-search-results"
-              role="listbox"
-              aria-label="Search results"
-              className="bg-card ring-border mt-2 max-h-80 overflow-y-auto overscroll-contain rounded-2xl py-1 shadow-2xl ring-1"
+              className="mt-2"
             >
-              {searchLoading && !hasResults && (
-                <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Searching…
-                </div>
-              )}
-
-              {!searchLoading && !hasResults && flatResults.length === 0 && (
-                <div className="text-muted-foreground px-4 py-6 text-center text-sm">
-                  No results for &ldquo;{query.trim()}&rdquo;
-                </div>
-              )}
-
-              {grouped.map(([type, items]) => {
-                const meta = TYPE_META[type] ?? { icon: Globe, label: type };
-                const Icon = meta.icon;
-                return (
-                  <div key={type}>
-                    <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
-                      <Icon className="h-3 w-3" />
-                      {meta.label}
-                    </div>
-                    {items.map((result) => {
-                      const flatIdx = flatResults.indexOf(result);
-                      const isHighlighted = flatIdx === selectedIdx;
-                      return (
-                        <button
-                          type="button"
-                          id={`map-search-opt-${flatIdx}`}
-                          role="option"
-                          aria-selected={isHighlighted}
-                          key={`${result.type}-${result.id}`}
-                          onClick={() => handleSelect(result)}
-                          className={cn(
-                            "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors",
-                            isHighlighted
-                              ? "bg-accent text-accent-foreground"
-                              : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
-                          )}
-                        >
-                          {result.type === "country" ? (
-                            <FlagIcon name={result.name} />
-                          ) : (
-                            <Icon
-                              className={cn(
-                                "h-3.5 w-3.5 shrink-0",
-                                isHighlighted ? "text-blue-500" : "text-muted-foreground"
-                              )}
-                            />
-                          )}
-                          <span className="truncate font-medium">{result.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+              <FacetContainer
+                depth={2}
+                id="map-search-results"
+                role="listbox"
+                aria-label="Search results"
+                className="max-h-80 overflow-y-auto overscroll-contain rounded-2xl py-1"
+              >
+                {resultsBody}
+              </FacetContainer>
             </motion.div>
           )}
         </AnimatePresence>

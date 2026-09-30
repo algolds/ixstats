@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "iconoir-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { FacetMaterial } from "~/components/ui/facet";
@@ -52,7 +54,7 @@ export default function PropertiesPanel() {
     value: Tincture;
     onChange: (t: Tincture) => void;
   }) => (
-    <div className="mt-1 grid grid-cols-4 gap-1.5 rounded-lg border border-white/5 bg-zinc-950/40 p-2">
+    <div className="border-border bg-card/40 mt-1 grid grid-cols-4 gap-1.5 rounded-lg border p-2">
       {Object.keys(TINCTURE_HEX).map((t) => {
         const key = t as Tincture;
         const color = TINCTURE_HEX[key];
@@ -67,13 +69,13 @@ export default function PropertiesPanel() {
             className={`relative h-7 w-full rounded border transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               isSelected
                 ? "scale-105 border-amber-500 shadow-md"
-                : "border-white/10 opacity-70 hover:opacity-100"
+                : "border-border opacity-70 hover:opacity-100"
             }`}
             style={{ backgroundColor: color }}
           >
             {isSelected && (
-              <span className="absolute inset-0 flex items-center justify-center rounded bg-white/20 text-xs font-bold text-zinc-950">
-                ✓
+              <span className="bg-muted text-foreground absolute inset-0 flex items-center justify-center rounded text-xs font-bold">
+                <Check className="h-3.5 w-3.5" aria-hidden />
               </span>
             )}
           </button>
@@ -87,9 +89,9 @@ export default function PropertiesPanel() {
     return (
       <FacetMaterial
         material="satin"
-        className="h-full overflow-hidden rounded-xl border border-white/10"
+        className="border-border h-full overflow-hidden rounded-xl border"
       >
-        <div className="flex h-full items-center justify-center p-6 text-center text-xs text-zinc-500 italic">
+        <div className="text-muted-foreground flex h-full items-center justify-center p-6 text-center text-xs italic">
           Select a layer from the tree to edit properties
         </div>
       </FacetMaterial>
@@ -99,14 +101,12 @@ export default function PropertiesPanel() {
   // 1. Root Shield Properties
   if (selectedLayerPath === "shield") {
     return (
-      <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
+      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
         <div className="flex flex-col gap-4 p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
-            Shield Properties
-          </h3>
+          <Eyebrow className="border-border block border-b pb-2">Shield Properties</Eyebrow>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Shape</label>
+            <label className="text-muted-foreground font-medium">Shape</label>
             <select
               value={composition.shield.shape}
               onChange={(e) =>
@@ -115,7 +115,7 @@ export default function PropertiesPanel() {
                   shield: { ...composition.shield, shape: e.target.value as ShieldShape },
                 })
               }
-              className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:border-amber-500 focus:outline-none"
+              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
             >
               {SHIELD_SHAPES.map((shape) => (
                 <option key={shape.value} value={shape.value}>
@@ -161,18 +161,16 @@ export default function PropertiesPanel() {
     };
 
     return (
-      <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
+      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
         <div className="flex max-h-[400px] flex-col gap-4 overflow-y-auto p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
-            Field Properties
-          </h3>
+          <Eyebrow className="border-border block border-b pb-2">Field Properties</Eyebrow>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Division</label>
+            <label className="text-muted-foreground font-medium">Division</label>
             <select
               value={field.division}
               onChange={(e) => handleDivisionChange(e.target.value as Division)}
-              className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:border-amber-500 focus:outline-none"
+              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
             >
               {DIVISIONS.map((d) => (
                 <option key={d.value} value={d.value}>
@@ -183,11 +181,11 @@ export default function PropertiesPanel() {
           </div>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Line Style</label>
+            <label className="text-muted-foreground font-medium">Line Style</label>
             <select
               value={field.lineStyle}
               onChange={(e) => updateField({ ...field, lineStyle: e.target.value as LineStyle })}
-              className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:border-amber-500 focus:outline-none"
+              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
             >
               {LINE_STYLES.map((ls) => (
                 <option key={ls.value} value={ls.value}>
@@ -198,13 +196,13 @@ export default function PropertiesPanel() {
           </div>
 
           {/* Tincture pickers for divisions */}
-          <div className="space-y-3 border-t border-white/5 pt-2">
-            <span className="block font-bold text-zinc-400">Tinctures ({expectedCount})</span>
+          <div className="border-border space-y-3 border-t pt-2">
+            <span className="text-muted-foreground block font-bold">
+              Tinctures ({expectedCount})
+            </span>
             {Array.from({ length: expectedCount }).map((_, i) => (
               <div key={i} className="space-y-1">
-                <span className="text-xs tracking-wider text-zinc-500 uppercase">
-                  Section {i + 1}
-                </span>
+                <Eyebrow>Section {i + 1}</Eyebrow>
                 <TincturePicker
                   value={field.tinctures[i] ?? "argent"}
                   onChange={(tinc) => handleTinctureChange(i, tinc)}
@@ -226,18 +224,18 @@ export default function PropertiesPanel() {
     if (!ord) return null;
 
     return (
-      <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
+      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
         <div className="flex flex-col gap-4 p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
+          <Eyebrow className="border-border block border-b pb-2">
             Ordinary Properties ({idx + 1})
-          </h3>
+          </Eyebrow>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Type</label>
+            <label className="text-muted-foreground font-medium">Type</label>
             <select
               value={ord.type}
               onChange={(e) => updateOrdinary(idx, { type: e.target.value as OrdinaryType })}
-              className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus-visible:border-amber-500 focus-visible:outline-none"
+              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
             >
               {ORDINARIES.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -248,11 +246,11 @@ export default function PropertiesPanel() {
           </div>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Line Style</label>
+            <label className="text-muted-foreground font-medium">Line Style</label>
             <select
               value={ord.lineStyle}
               onChange={(e) => updateOrdinary(idx, { lineStyle: e.target.value as LineStyle })}
-              className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus-visible:border-amber-500 focus-visible:outline-none"
+              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
             >
               {LINE_STYLES.map((ls) => (
                 <option key={ls.value} value={ls.value}>
@@ -262,8 +260,8 @@ export default function PropertiesPanel() {
             </select>
           </div>
 
-          <div className="space-y-1 border-t border-white/5 pt-2">
-            <label className="block font-medium text-zinc-400">Tincture</label>
+          <div className="border-border space-y-1 border-t pt-2">
+            <label className="text-muted-foreground block font-medium">Tincture</label>
             <TincturePicker
               value={ord.tincture}
               onChange={(tinc) => updateOrdinary(idx, { tincture: tinc })}
@@ -283,26 +281,28 @@ export default function PropertiesPanel() {
     if (!charge) return null;
 
     return (
-      <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
+      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
         <div className="flex flex-col gap-4 p-4 text-xs">
-          <h3 className="truncate border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
+          <Eyebrow className="border-border block truncate border-b pb-2">
             Charge Properties: {charge.chargeId}
-          </h3>
+          </Eyebrow>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Count ({charge.count})</label>
+            <label className="text-muted-foreground font-medium">Count ({charge.count})</label>
             <input
               type="range"
               min="1"
               max="12"
               value={charge.count}
               onChange={(e) => updateCharge(idx, { count: parseInt(e.target.value, 10) })}
-              className="h-2 w-full cursor-pointer rounded-lg bg-zinc-950 accent-amber-500"
+              className="bg-card h-2 w-full cursor-pointer rounded-lg accent-amber-500"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Size ({charge.size.toFixed(2)}x)</label>
+            <label className="text-muted-foreground font-medium">
+              Size ({charge.size.toFixed(2)}x)
+            </label>
             <input
               type="range"
               min="0.1"
@@ -310,18 +310,18 @@ export default function PropertiesPanel() {
               step="0.05"
               value={charge.size}
               onChange={(e) => updateCharge(idx, { size: parseFloat(e.target.value) })}
-              className="h-2 w-full cursor-pointer rounded-lg bg-zinc-950 accent-amber-500"
+              className="bg-card h-2 w-full cursor-pointer rounded-lg accent-amber-500"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="font-medium text-zinc-400">Attitude</label>
+            <label className="text-muted-foreground font-medium">Attitude</label>
             <select
               value={charge.attitude || ""}
               onChange={(e) =>
                 updateCharge(idx, { attitude: (e.target.value || undefined) as Attitude })
               }
-              className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus-visible:border-amber-500 focus-visible:outline-none"
+              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
             >
               <option value="">Default (None)</option>
               {ATTITUDES.map((att) => (
@@ -332,18 +332,18 @@ export default function PropertiesPanel() {
             </select>
           </div>
 
-          <div className="flex items-center justify-between border-t border-white/5 pt-2">
-            <label className="font-medium text-zinc-400">Mirrored</label>
+          <div className="border-border flex items-center justify-between border-t pt-2">
+            <label className="text-muted-foreground font-medium">Mirrored</label>
             <input
               type="checkbox"
               checked={!!charge.mirrored}
               onChange={(e) => updateCharge(idx, { mirrored: e.target.checked })}
-              className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-amber-500 focus:ring-amber-500"
+              className="border-border bg-card h-4 w-4 rounded text-amber-500 focus:ring-amber-500"
             />
           </div>
 
-          <div className="space-y-1 border-t border-white/5 pt-2">
-            <label className="block font-medium text-zinc-400">Tincture</label>
+          <div className="border-border space-y-1 border-t pt-2">
+            <label className="text-muted-foreground block font-medium">Tincture</label>
             <TincturePicker
               value={charge.tincture}
               onChange={(tinc) => updateCharge(idx, { tincture: tinc })}
@@ -382,26 +382,24 @@ export default function PropertiesPanel() {
     };
 
     return (
-      <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
+      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
         <div className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
-            Ornaments Properties
-          </h3>
+          <Eyebrow className="border-border block border-b pb-2">Ornaments Properties</Eyebrow>
 
           {/* Helm toggle */}
           <div className="flex items-center justify-between">
-            <label className="font-medium text-zinc-400">Include Helm</label>
+            <label className="text-muted-foreground font-medium">Include Helm</label>
             <input
               type="checkbox"
               checked={!!ext.helm}
               onChange={(e) => handleHelmToggle(e.target.checked)}
-              className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-amber-500 focus:ring-amber-500"
+              className="border-border bg-card h-4 w-4 rounded text-amber-500 focus:ring-amber-500"
             />
           </div>
 
           {ext.helm && (
-            <div className="space-y-1 border-l border-white/5 pl-3">
-              <label className="font-medium text-zinc-500">Helm Type</label>
+            <div className="border-border space-y-1 border-l pl-3">
+              <label className="text-muted-foreground font-medium">Helm Type</label>
               <select
                 value={ext.helm.type}
                 onChange={(e) =>
@@ -410,7 +408,7 @@ export default function PropertiesPanel() {
                     helm: { ...ext.helm!, type: e.target.value as HelmType },
                   })
                 }
-                className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:outline-none"
+                className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:outline-none"
               >
                 {HELM_TYPES.map((h) => (
                   <option key={h.value} value={h.value}>
@@ -422,26 +420,26 @@ export default function PropertiesPanel() {
           )}
 
           {/* Motto section */}
-          <div className="space-y-2 border-t border-white/5 pt-2">
-            <label className="block font-bold text-zinc-400">Motto Scroll</label>
+          <div className="border-border space-y-2 border-t pt-2">
+            <label className="text-muted-foreground block font-bold">Motto Scroll</label>
             <div className="space-y-1">
-              <label className="text-zinc-500">Motto Text</label>
+              <label className="text-muted-foreground">Motto Text</label>
               <input
                 type="text"
                 placeholder="e.g. In Hoc Signo Vinces"
                 value={ext.motto?.text || ""}
                 onChange={(e) => handleMottoTextChange(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus-visible:border-amber-500 focus-visible:outline-none"
+                className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
               />
             </div>
 
             {ext.motto && (
-              <div className="space-y-1 border-l border-white/5 pl-3">
-                <label className="text-zinc-500">Position</label>
+              <div className="border-border space-y-1 border-l pl-3">
+                <label className="text-muted-foreground">Position</label>
                 <select
                   value={ext.motto.position}
                   onChange={(e) => handleMottoPositionChange(e.target.value as "above" | "below")}
-                  className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:outline-none"
+                  className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:outline-none"
                 >
                   <option value="below">Scroll below shield</option>
                   <option value="above">Scroll above shield</option>

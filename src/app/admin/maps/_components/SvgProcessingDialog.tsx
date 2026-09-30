@@ -6,6 +6,8 @@
  * and allows preview + commit.
  */
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import {
@@ -145,8 +147,8 @@ export function SvgProcessingDialog({
 
           {/* Processing error */}
           {processMutation.isError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-              <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
+            <div className="border-destructive/30 rounded-lg border p-4">
+              <div className="text-destructive flex items-center gap-2 text-sm">
                 <AlertCircle className="h-4 w-4" />
                 {processMutation.error.message}
               </div>
@@ -158,24 +160,24 @@ export function SvgProcessingDialog({
             <>
               {/* Summary */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-900/20">
-                  <div className="text-xs text-emerald-600 dark:text-emerald-400">Features</div>
-                  <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">
+                <FacetCard surface="solid" className="rounded-lg p-3">
+                  <Eyebrow className="block">Features</Eyebrow>
+                  <div className="text-foreground text-lg font-semibold tabular-nums">
                     {processResult.featureCount}
                   </div>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-                  <div className="text-xs text-blue-600 dark:text-blue-400">Matched</div>
-                  <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                </FacetCard>
+                <FacetCard surface="solid" className="rounded-lg p-3">
+                  <Eyebrow className="block">Matched</Eyebrow>
+                  <div className="text-foreground text-lg font-semibold tabular-nums">
                     {Object.keys(processResult.countryMatches).length}
                   </div>
-                </div>
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
-                  <div className="text-xs text-amber-600 dark:text-amber-400">Unmatched</div>
-                  <div className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                </FacetCard>
+                <FacetCard surface="solid" className="rounded-lg p-3">
+                  <Eyebrow className="block">Unmatched</Eyebrow>
+                  <div className="text-foreground text-lg font-semibold tabular-nums">
                     {processResult.featureCount - Object.keys(processResult.countryMatches).length}
                   </div>
-                </div>
+                </FacetCard>
               </div>
 
               {/* Feature list */}
@@ -227,8 +229,8 @@ export function SvgProcessingDialog({
 
           {/* Commit error */}
           {commitMutation.isError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-              <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
+            <div className="border-destructive/30 rounded-lg border p-4">
+              <div className="text-destructive flex items-center gap-2 text-sm">
                 <AlertCircle className="h-4 w-4" />
                 {commitMutation.error.message}
               </div>

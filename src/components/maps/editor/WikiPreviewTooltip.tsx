@@ -79,7 +79,7 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
     visible && mounted
       ? createPortal(
           <div
-            className="pointer-events-none fixed z-[9999]"
+            className="pointer-events-none fixed z-[var(--z-depth-tooltip)]"
             style={{
               top: position.top,
               left: position.left,

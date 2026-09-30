@@ -1,5 +1,8 @@
 "use client";
 
+import { Xmark } from "iconoir-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { DIVISIONS, ORDINARIES } from "~/lib/heraldry";
@@ -19,10 +22,10 @@ export default function LayerPanel() {
   return (
     <FacetMaterial
       material="satin"
-      className="h-full overflow-hidden rounded-xl border border-white/10"
+      className="border-border h-full overflow-hidden rounded-xl border"
     >
       <div className="flex h-full flex-col p-4">
-        <h2 className="mb-4 border-b border-white/5 pb-2 text-xs font-bold tracking-widest text-zinc-400 uppercase">
+        <h2 className="border-border text-foreground mb-4 border-b pb-2 text-sm font-semibold">
           Layer Tree
         </h2>
 
@@ -33,13 +36,11 @@ export default function LayerPanel() {
               onClick={() => handleSelect("shield")}
               className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                 selectedLayerPath === "shield"
-                  ? "border border-amber-500/30 bg-amber-500/20 text-amber-400"
-                  : "border border-transparent bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800/80"
+                  ? "border border-amber-500/30 bg-amber-500/20 text-amber-500"
+                  : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
               }`}
             >
-              <span className="flex items-center gap-2">
-                🛡️ Shield ({composition.shield.shape})
-              </span>
+              <span className="flex items-center gap-2">Shield ({composition.shield.shape})</span>
             </div>
 
             <div className="space-y-1 pl-4">
@@ -48,31 +49,34 @@ export default function LayerPanel() {
                 onClick={() => handleSelect("shield.field")}
                 className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-xs transition-colors ${
                   selectedLayerPath === "shield.field"
-                    ? "border border-amber-500/20 bg-amber-500/20 text-amber-400"
-                    : "border border-transparent bg-zinc-800/20 text-zinc-400 hover:bg-zinc-800/60"
+                    ? "border border-amber-500/20 bg-amber-500/20 text-amber-500"
+                    : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
                 }`}
               >
-                <span>✨ Field ({activeDivision?.label || composition.shield.field.division})</span>
+                <span>Field ({activeDivision?.label || composition.shield.field.division})</span>
               </div>
 
               {/* Ordinaries Header */}
               <div className="pt-2">
-                <div className="flex items-center justify-between px-3 py-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
-                  <span>Ordinaries</span>
-                  <button
+                <div className="flex items-center justify-between px-3 py-1">
+                  <Eyebrow>Ordinaries</Eyebrow>
+                  <Button
+                    variant="outline"
+                    size="xs"
                     onClick={() =>
                       addOrdinary({ type: "chief", tincture: "or", lineStyle: "straight" })
                     }
-                    className="rounded px-1.5 py-0.5 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 hover:text-amber-400"
                   >
                     + Add
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Ordinaries List */}
                 <div className="mt-1 space-y-1">
                   {(composition.shield.ordinaries ?? []).length === 0 ? (
-                    <div className="px-3 py-2 text-xs text-zinc-600 italic">No ordinaries.</div>
+                    <div className="text-muted-foreground px-3 py-2 text-xs italic">
+                      No ordinaries.
+                    </div>
                   ) : (
                     (composition.shield.ordinaries ?? []).map((ord, idx) => {
                       const label = ORDINARIES.find((o) => o.value === ord.type)?.label || ord.type;
@@ -84,21 +88,23 @@ export default function LayerPanel() {
                           onClick={() => handleSelect(path)}
                           className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-xs transition-colors ${
                             selectedLayerPath === path
-                              ? "border border-amber-500/20 bg-amber-500/20 text-amber-400"
-                              : "border border-transparent bg-zinc-800/10 text-zinc-400 hover:bg-zinc-800/50"
+                              ? "border border-amber-500/20 bg-amber-500/20 text-amber-500"
+                              : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
                           }`}
                         >
-                          <span className="truncate">🔸 {label}</span>
-                          <button
+                          <span className="truncate">{label}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-6 w-6"
                             onClick={(e) => {
                               e.stopPropagation();
                               removeOrdinary(idx);
                             }}
-                            className="rounded p-1 text-zinc-600 opacity-0 group-hover:opacity-100 hover:bg-white/5 hover:text-red-400 focus:opacity-100"
                             style={{ opacity: 1 }} // force visibility for ease of use
                           >
-                            ✕
-                          </button>
+                            <Xmark aria-hidden />
+                          </Button>
                         </div>
                       );
                     })
@@ -108,14 +114,14 @@ export default function LayerPanel() {
 
               {/* Charges Header */}
               <div className="pt-2">
-                <div className="flex items-center justify-between px-3 py-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
-                  <span>Charges</span>
+                <div className="flex items-center justify-between px-3 py-1">
+                  <Eyebrow>Charges</Eyebrow>
                 </div>
 
                 {/* Charges List */}
                 <div className="mt-1 space-y-1">
                   {(composition.shield.charges ?? []).length === 0 ? (
-                    <div className="px-3 py-2 text-xs text-zinc-600 italic">
+                    <div className="text-muted-foreground px-3 py-2 text-xs italic">
                       No charges. Select from library to add.
                     </div>
                   ) : (
@@ -128,22 +134,24 @@ export default function LayerPanel() {
                           onClick={() => handleSelect(path)}
                           className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-xs transition-colors ${
                             selectedLayerPath === path
-                              ? "border border-amber-500/20 bg-amber-500/20 text-amber-400"
-                              : "border border-transparent bg-zinc-800/10 text-zinc-400 hover:bg-zinc-800/50"
+                              ? "border border-amber-500/20 bg-amber-500/20 text-amber-500"
+                              : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
                           }`}
                         >
                           <span className="truncate">
-                            🐾 {charge.count}x {charge.chargeId}
+                            {charge.count}x {charge.chargeId}
                           </span>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-6 w-6"
                             onClick={(e) => {
                               e.stopPropagation();
                               removeCharge(idx);
                             }}
-                            className="rounded p-1 text-zinc-600 hover:bg-white/5 hover:text-red-400"
                           >
-                            ✕
-                          </button>
+                            <Xmark aria-hidden />
+                          </Button>
                         </div>
                       );
                     })
@@ -154,16 +162,16 @@ export default function LayerPanel() {
           </div>
 
           {/* Externals Root */}
-          <div className="space-y-1.5 border-t border-white/5 pt-2">
+          <div className="border-border space-y-1.5 border-t pt-2">
             <div
               onClick={() => handleSelect("externals")}
               className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                 selectedLayerPath === "externals"
-                  ? "border border-amber-500/30 bg-amber-500/20 text-amber-400"
-                  : "border border-transparent bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800/80"
+                  ? "border border-amber-500/30 bg-amber-500/20 text-amber-500"
+                  : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
               }`}
             >
-              <span>👑 External Ornaments</span>
+              <span>External ornaments</span>
             </div>
           </div>
         </div>

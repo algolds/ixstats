@@ -24,6 +24,8 @@ import {
   ModernTv as Mountain,
 } from "iconoir-react";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import type { EditorFeature } from "./types/editor-state";
 
 export interface LayerState {
@@ -177,7 +179,7 @@ export const LayerPanel = React.memo(function LayerPanel({
   );
 
   const searchBox = (
-    <div className="border-border/40 relative border-b px-2 py-1.5">
+    <div className="border-border relative border-b px-2 py-1.5">
       <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 h-3 w-3 -translate-y-1/2" />
       <input
         type="search"
@@ -345,7 +347,7 @@ export const LayerPanel = React.memo(function LayerPanel({
             const isExpanded = !!normalizedQuery || expandedLayers.has(group.id);
 
             return (
-              <div key={group.id} className="border-border/40 border-b">
+              <div key={group.id} className="border-border border-b">
                 <button
                   onClick={() => toggleLayerExpanded(group.id)}
                   className="hover:bg-accent/50 flex h-8 w-full items-center gap-1.5 px-2 text-left transition-colors"
@@ -357,9 +359,9 @@ export const LayerPanel = React.memo(function LayerPanel({
                   )}
                   <Icon className="text-muted-foreground h-3.5 w-3.5" />
                   <span className="flex-1 truncate text-xs font-medium">{group.name}</span>
-                  <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs">
+                  <Badge variant="secondary" className="font-mono tabular-nums">
                     {groupFeats.length}
-                  </span>
+                  </Badge>
                 </button>
                 {isExpanded && (
                   <div className="flex flex-col gap-0.5 px-1 pb-1">{renderRows(groupFeats)}</div>
@@ -373,10 +375,8 @@ export const LayerPanel = React.memo(function LayerPanel({
   }
 
   return (
-    <div className="bg-card text-foreground flex flex-col text-xs select-none">
-      <div className="border-border/40 text-muted-foreground border-b px-2 py-1 text-xs font-semibold tracking-wider uppercase">
-        Layers & Features
-      </div>
+    <div className="text-foreground flex flex-col text-xs select-none">
+      <Eyebrow className="border-border block border-b px-2 py-1.5">Layers & features</Eyebrow>
       {searchBox}
       <div className="flex flex-col">
         {layers.map((layer) => {
@@ -398,7 +398,7 @@ export const LayerPanel = React.memo(function LayerPanel({
           }
 
           return (
-            <div key={layer.id} className="border-border/40 border-b">
+            <div key={layer.id} className="border-border border-b">
               {/* Layer Header Row */}
               <div
                 className={`group hover:bg-accent/40 flex h-8 items-center gap-1 px-1 ${
@@ -430,7 +430,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                   {layer.visible ? (
                     <Eye className="text-foreground h-3.5 w-3.5" />
                   ) : (
-                    <EyeOff className="text-muted-foreground/60 h-3.5 w-3.5" />
+                    <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
                   )}
                 </button>
 
@@ -480,9 +480,9 @@ export const LayerPanel = React.memo(function LayerPanel({
 
                 {/* Badge Count */}
                 {count !== undefined && count > 0 && (
-                  <span className="bg-muted text-muted-foreground mr-1.5 rounded px-1 py-0.5 text-xs leading-none font-semibold">
+                  <Badge variant="secondary" className="mr-1.5 tabular-nums">
                     {count}
-                  </span>
+                  </Badge>
                 )}
               </div>
 
@@ -513,7 +513,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                   {layerFeatures.length > 0 ? (
                     renderRows(layerFeatures)
                   ) : (
-                    <div className="text-muted-foreground/60 py-1 pl-8 text-xs italic">
+                    <div className="text-muted-foreground py-1 pl-8 text-xs italic">
                       No features in this layer
                     </div>
                   )}
@@ -525,7 +525,7 @@ export const LayerPanel = React.memo(function LayerPanel({
 
         {/* Guides Section */}
         {guides !== undefined && (
-          <div className="border-border/40 border-b">
+          <div className="border-border border-b">
             <div
               className={`group hover:bg-accent/40 flex h-8 items-center gap-1 px-1 ${!showGuides ? "opacity-50" : ""}`}
             >
@@ -550,7 +550,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 {showGuides ? (
                   <Eye className="text-foreground h-3.5 w-3.5" />
                 ) : (
-                  <EyeOff className="text-muted-foreground/60 h-3.5 w-3.5" />
+                  <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
                 )}
               </button>
 
@@ -579,9 +579,9 @@ export const LayerPanel = React.memo(function LayerPanel({
 
               {/* Count */}
               {guides.length > 0 && (
-                <span className="bg-muted text-muted-foreground mr-1.5 rounded px-1 py-0.5 text-xs leading-none font-semibold">
+                <Badge variant="secondary" className="mr-1.5 tabular-nums">
                   {guides.length}
-                </span>
+                </Badge>
               )}
             </div>
 
@@ -595,7 +595,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                       className="group hover:bg-accent/50 flex items-center gap-1.5 rounded px-2 py-1 pl-8"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                        <span className="text-muted-foreground/70 shrink-0 text-xs font-bold uppercase">
+                        <span className="text-muted-foreground shrink-0 font-mono text-xs font-semibold">
                           {guide.type === "h" ? "Lat" : "Lng"}
                         </span>
                         <span className="text-foreground truncate text-xs">
@@ -616,7 +616,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                     </div>
                   ))
                 ) : (
-                  <div className="text-muted-foreground/60 py-1 pl-8 text-xs italic">
+                  <div className="text-muted-foreground py-1 pl-8 text-xs italic">
                     No guides (drag from rulers to add)
                   </div>
                 )}

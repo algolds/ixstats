@@ -1,5 +1,8 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useCallback, useMemo, memo } from "react";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
@@ -305,16 +308,14 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
     return (
       <div className="space-y-4 px-3 py-3">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Selection
-          </span>
+          <Eyebrow>Selection</Eyebrow>
           <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
             {editor.selectedIds.size} features selected
           </span>
         </div>
 
         {selectedSubdivisions.length > 1 && (
-          <div className="border-border/60 bg-muted/10 space-y-3 rounded-lg border p-3">
+          <FacetCard surface="solid" className="space-y-3 rounded-lg p-3">
             <div className="flex flex-col gap-1">
               <span className="text-foreground text-xs font-semibold">Combine regions</span>
               <span className="text-muted-foreground text-xs">
@@ -322,35 +323,35 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <button
+              <Button
+                size="sm"
                 onClick={() => editor.pathfinderOperation("union")}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer rounded-md py-1.5 text-center text-xs font-medium shadow-sm transition-colors"
                 title="Merge selected regions into one"
               >
                 Union
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => editor.pathfinderOperation("subtract")}
-                className="bg-muted text-foreground hover:bg-accent cursor-pointer rounded-md py-1.5 text-center text-xs font-medium shadow-sm transition-colors"
                 title="Subtract subsequent regions from the first"
               >
                 Subtract
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => editor.pathfinderOperation("intersect")}
-                className="bg-muted text-foreground hover:bg-accent cursor-pointer rounded-md py-1.5 text-center text-xs font-medium shadow-sm transition-colors"
                 title="Keep only the overlapping parts"
               >
                 Intersect
-              </button>
+              </Button>
             </div>
-          </div>
+          </FacetCard>
         )}
 
-        <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Selected items
-          </label>
+        <FacetCard surface="solid" className="space-y-2 rounded-lg p-3">
+          <Eyebrow className="block">Selected items</Eyebrow>
           <div className="max-h-48 space-y-1 overflow-y-auto">
             {editor.allFeatures
               .filter((f: EditorFeature) => editor.selectedIds.has(f.id))
@@ -359,13 +360,11 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
                   <span className="text-foreground/80 max-w-[180px] truncate">
                     {f.name || f.id}
                   </span>
-                  <span className="text-muted-foreground font-mono text-xs uppercase">
-                    {f.type}
-                  </span>
+                  <Eyebrow>{f.type}</Eyebrow>
                 </div>
               ))}
           </div>
-        </div>
+        </FacetCard>
       </div>
     );
   }

@@ -1,3 +1,4 @@
+import { FacetContainer } from "~/components/ui/facet-container";
 import React from "react";
 
 interface VertexEditingToolbarProps {
@@ -18,52 +19,54 @@ export function VertexEditingToolbar({
   if (!isVertexEditing) return null;
 
   return (
-    <div className="border-border bg-card/90 ring-border/50 absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border p-1.5 shadow-xl ring-1 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]">
-      <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
-        Drag vertices · Midpoints to add · Right-click to remove
-      </span>
-      <div className="bg-border hidden h-4 w-px sm:block" />
-      <button
-        onClick={handleSimplifyAndSave}
-        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-        title="Simplify vertices, snap to country border, and save"
-      >
-        <svg
-          className="h-3 w-3"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+    <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+      <FacetContainer depth={2} className="flex items-center gap-1.5 rounded-full p-1.5">
+        <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
+          Drag vertices · Midpoints to add · Right-click to remove
+        </span>
+        <div className="bg-border hidden h-4 w-px sm:block" />
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleSimplifyAndSave}
+          title="Simplify vertices, snap to country border, and save"
         >
-          <path d="M4 20L8 4" />
-          <path d="M20 20L16 4" />
-          <path d="M6 12h12" />
-        </svg>
-        <span className="hidden sm:inline">Simplify</span>
-      </button>
-      <button
-        onClick={handleSave}
-        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-        title="Save the shape and keep reshaping (Ctrl+Z undoes the save)"
-      >
-        Save
-      </button>
-      <button
-        onClick={finishVertexEdit}
-        title="Save any changes and stop reshaping"
-        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-      >
-        Done
-      </button>
-      <button
-        onClick={cancelVertexEdit}
-        title="Discard unsaved vertex changes"
-        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-      >
-        Cancel
-      </button>
+          <svg
+            className="h-3 w-3"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 20L8 4" />
+            <path d="M20 20L16 4" />
+            <path d="M6 12h12" />
+          </svg>
+          <span className="hidden sm:inline">Simplify</span>
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleSave}
+          title="Save the shape and keep reshaping (Ctrl+Z undoes the save)"
+        >
+          Save
+        </Button>
+        <Button size="sm" onClick={finishVertexEdit} title="Save any changes and stop reshaping">
+          Done
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={cancelVertexEdit}
+          title="Discard unsaved vertex changes"
+        >
+          Cancel
+        </Button>
+      </FacetContainer>
     </div>
   );
 }
+import { Button } from "~/components/ui/button";

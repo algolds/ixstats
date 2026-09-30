@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import { memo } from "react";
 import { WarningTriangle as AlertTriangle, Check, MapPin } from "iconoir-react";
 import {
@@ -28,10 +30,10 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="facet-modal max-w-md rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden />
             Borders Adjusted to Country Shape
           </DialogTitle>
           <DialogDescription>
@@ -46,17 +48,17 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
             All borders must conform to the country shape. The following subdivisions were adjusted:
           </p>
 
-          <div className="max-h-[200px] overflow-y-auto rounded-lg border border-amber-500/30 bg-amber-500/5">
+          <FacetCard surface="solid" className="max-h-[200px] overflow-y-auto rounded-lg">
             {clippedNames.map((name) => (
               <div
                 key={name}
-                className="flex items-center gap-2 border-b border-amber-500/10 px-3 py-2 last:border-0"
+                className="border-border flex items-center gap-2 border-b px-3 py-2 last:border-0"
               >
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <MapPin className="text-muted-foreground h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="text-foreground text-sm">{name}</span>
               </div>
             ))}
-          </div>
+          </FacetCard>
 
           <p className="text-muted-foreground text-xs">
             These borders may need manual adjustment for accuracy. You can edit individual
@@ -65,19 +67,13 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <button
-            onClick={onClose}
-            className="bg-card text-foreground ring-border hover:bg-accent rounded-lg px-4 py-2 text-sm font-medium ring-1"
-          >
+          <Button variant="outline" size="sm" onClick={onClose}>
             Review Manually
-          </button>
-          <button
-            onClick={onAccept}
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-          >
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onAccept}>
             <Check className="h-3.5 w-3.5" />
             Accept All
-          </button>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

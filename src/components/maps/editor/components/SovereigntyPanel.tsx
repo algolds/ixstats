@@ -1,7 +1,10 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React from "react";
-import { Plus, EditPencil as Edit, Trash as Trash2 } from "iconoir-react";
+import { Plus, EditPencil as Edit, Trash as Trash2, ArrowRight } from "iconoir-react";
 import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
 import type {
   SovereigntyRelation,
@@ -16,7 +19,9 @@ interface SovereigntyPanelProps {
   resetSovereigntyForm: () => void;
   editingSovereigntyId: string | null;
   sovereigntyForm: SovereigntyFormData;
-  setSovereigntyForm: React.Dispatch<React.SetStateAction<SovereigntyFormData>> | ((form: SovereigntyFormData) => void);
+  setSovereigntyForm:
+    | React.Dispatch<React.SetStateAction<SovereigntyFormData>>
+    | ((form: SovereigntyFormData) => void);
   countries: PropertiesPanelCountry[];
   createSovereignty: { isPending: boolean };
   updateSovereignty: { isPending: boolean };
@@ -59,23 +64,23 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
       <div className="flex items-center justify-between">
         <span className="text-muted-foreground text-xs">{filteredRelations.length} Relations</span>
         {!showSovereigntyForm && (
-          <button
+          <Button
+            size="xs"
             onClick={() => {
               resetSovereigntyForm();
               setShowSovereigntyForm(true);
             }}
-            className="flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-primary/90 active:scale-[0.98]"
           >
             <Plus className="h-3 w-3" /> New Relation
-          </button>
+          </Button>
         )}
       </div>
 
       {showSovereigntyForm && (
-        <div className="bg-muted/40 border-border/50 space-y-2.5 rounded-lg border p-3">
-          <h4 className="text-foreground border-border/30 border-b pb-1 text-xs font-semibold tracking-wider uppercase">
+        <FacetCard surface="solid" className="space-y-2.5 rounded-lg p-3">
+          <Eyebrow className="border-border/30 block border-b pb-1">
             {editingSovereigntyId ? "Edit Sovereignty" : "New Sovereignty Relation"}
-          </h4>
+          </Eyebrow>
           <div className="space-y-2 text-xs">
             <div>
               <label className="text-muted-foreground mb-0.5 block">Sovereign (Parent)</label>
@@ -85,7 +90,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                   setSovereigntyForm({ ...sovereigntyForm, sovereignId: e.target.value })
                 }
                 disabled={!!editingSovereigntyId}
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="border-border bg-background focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
               >
                 <option value="">Select parent...</option>
                 {countries.map((c: PropertiesPanelCountry) => (
@@ -103,7 +108,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                   setSovereigntyForm({ ...sovereigntyForm, subjectId: e.target.value })
                 }
                 disabled={!!editingSovereigntyId}
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="border-border bg-background focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
               >
                 <option value="">Select subject...</option>
                 {countries
@@ -122,7 +127,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                 onChange={(e) =>
                   setSovereigntyForm({ ...sovereigntyForm, relationshipType: e.target.value })
                 }
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="border-border bg-background focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
               >
                 {SOVEREIGNTY_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -146,7 +151,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                     autonomyLevel: parseInt(e.target.value),
                   })
                 }
-                className="w-full accent-primary"
+                className="accent-primary w-full"
               />
             </div>
             <div>
@@ -158,7 +163,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                 onChange={(e) =>
                   setSovereigntyForm({ ...sovereigntyForm, establishedDate: e.target.value })
                 }
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="border-border bg-background focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
               />
             </div>
             <div>
@@ -170,12 +175,13 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                 onChange={(e) =>
                   setSovereigntyForm({ ...sovereigntyForm, description: e.target.value })
                 }
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="border-border bg-background focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
               />
             </div>
           </div>
           <div className="border-border/30 flex justify-end gap-1.5 border-t pt-2">
-            <button
+            <Button
+              size="xs"
               onClick={editingSovereigntyId ? handleUpdateSovereignty : handleCreateSovereignty}
               disabled={
                 createSovereignty.isPending ||
@@ -183,18 +189,19 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                 !sovereigntyForm.sovereignId ||
                 !sovereigntyForm.subjectId
               }
-              className="rounded bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-primary/90 active:scale-[0.98]"
             >
               Save
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
               onClick={resetSovereigntyForm}
-              className="text-muted-foreground hover:text-foreground text-xs active:scale-[0.98]"
             >
               Cancel
-            </button>
+            </Button>
           </div>
-        </div>
+        </FacetCard>
       )}
 
       <div className="flex gap-2">
@@ -203,12 +210,12 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
           placeholder="Search relations..."
           value={sovereigntySearch}
           onChange={(e) => setSovereigntySearch(e.target.value)}
-          className="bg-background border-border w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+          className="bg-background border-border focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
         />
         <select
           value={sovereigntyTypeFilter}
           onChange={(e) => setSovereigntyTypeFilter(e.target.value)}
-          className="bg-background border-border rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+          className="bg-background border-border focus:ring-primary rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
         >
           <option value="all">All Types</option>
           {SOVEREIGNTY_TYPES.map((t) => (
@@ -244,26 +251,30 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                   </span>
                 </div>
                 <div className="text-muted-foreground mt-0.5 flex items-center gap-1 pl-6 text-xs">
-                  <span>➔</span>
+                  <ArrowRight className="h-3 w-3" aria-hidden />
                   <span>{rel.subjectName}</span>
-                  <span className="ml-1 rounded-sm bg-primary/10 px-1 text-xs text-primary">
+                  <span className="bg-primary/10 text-primary ml-1 rounded-sm px-1 text-xs">
                     {typeLabel(rel.relationshipType)}
                   </span>
                 </div>
               </div>
               <div className="ml-1 flex shrink-0 items-center gap-1">
-                <button
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-6 w-6"
                   onClick={() => handleEditSovereignty(rel)}
-                  className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent hover:text-foreground active:scale-[0.98]"
                 >
                   <Edit className="h-3 w-3" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive h-6 w-6"
                   onClick={() => handleDeleteSovereignty(rel.id)}
-                  className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
                 >
                   <Trash2 className="h-3 w-3" />
-                </button>
+                </Button>
               </div>
             </div>
           ))

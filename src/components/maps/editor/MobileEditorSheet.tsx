@@ -16,6 +16,7 @@
 
 import { useRef, useCallback, useState } from "react";
 import { Settings as Settings2, List } from "iconoir-react";
+import { FacetTabs } from "~/components/ui/facet";
 
 type MobileTab = "properties" | "features";
 
@@ -115,25 +116,18 @@ export function MobileEditorSheet({
           </div>
 
           {/* Mini tab bar */}
-          <div className="border-border mx-3 flex h-9 shrink-0 border-b">
-            {MOBILE_TABS.map((tab) => {
-              // Only show Properties when in add/edit mode
-              if (tab.id === "properties" && !isEditMode) return null;
-
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
-                    isActive ? "border-primary text-foreground border-b-2" : "text-muted-foreground"
-                  }`}
-                >
-                  <tab.Icon className="h-3.5 w-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+          <div className="border-border mx-3 shrink-0 border-b pb-2">
+            <FacetTabs
+              tabs={MOBILE_TABS.filter((tab) => tab.id !== "properties" || isEditMode).map(
+                (tab) => ({ id: tab.id, label: tab.label, icon: tab.Icon })
+              )}
+              activeTab={activeTab}
+              onChange={(id) => setActiveTab(id as MobileTab)}
+              size="sm"
+              tone="neutral"
+              showTexture={false}
+              className="w-full"
+            />
           </div>
 
           {/* Title bar (only for properties tab) */}

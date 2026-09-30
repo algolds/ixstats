@@ -278,7 +278,7 @@ export function SnapBottomSheet({
       {/* Backdrop — visible at half/full */}
       {expanded && (
         <div
-          className="absolute inset-0 bg-black/20 dark:bg-black/40"
+          className="absolute inset-0 bg-black/30"
           style={{ pointerEvents: "auto" }}
           onClick={onClose}
           aria-hidden
@@ -317,7 +317,7 @@ export function SnapBottomSheet({
             {peekContent}
             {/* Hint text */}
             <div
-              className="text-muted-foreground mt-1 flex items-center justify-center gap-1 text-xs transition-opacity duration-500"
+              className="text-muted-foreground mt-1 flex items-center justify-center gap-1 text-xs transition-opacity duration-200"
               style={{ opacity: hintVisible && snap === "peek" ? 0.7 : 0 }}
               aria-hidden
             >

@@ -1,4 +1,6 @@
+import { FacetContainer } from "~/components/ui/facet-container";
 import React, { useMemo } from "react";
+import { Button } from "~/components/ui/button";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { calculateRouteTravelTime, type LngLat } from "~/lib/economy/travel-time";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
@@ -82,8 +84,10 @@ export function RouteEditingToolbar({
   if (mode === "add-route") {
     if (!estimate) return null;
     return (
-      <div className="bg-card/95 ring-border absolute bottom-12 left-1/2 z-10 -translate-x-1/2 rounded-full py-1 shadow-md ring-1 backdrop-blur-sm">
-        <EstimateText estimate={estimate} />
+      <div className="absolute bottom-12 left-1/2 z-10 -translate-x-1/2">
+        <FacetContainer depth={2} className="rounded-full py-1">
+          <EstimateText estimate={estimate} />
+        </FacetContainer>
       </div>
     );
   }
@@ -91,29 +95,25 @@ export function RouteEditingToolbar({
   if (mode !== "edit-route") return null;
 
   return (
-    <div className="border-border bg-card/90 ring-border/50 absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border p-1.5 shadow-xl ring-1 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]">
-      <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
-        Drag route vertices · Midpoints to add · Right-click to remove
-      </span>
-      <div className="bg-border hidden h-4 w-px sm:block" />
-      {estimate && (
-        <>
-          <EstimateText estimate={estimate} />
-          <div className="bg-border h-4 w-px" />
-        </>
-      )}
-      <button
-        onClick={onRouteEditCommit}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-      >
-        Save Route Path
-      </button>
-      <button
-        onClick={onRouteEditCancel}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-      >
-        Cancel
-      </button>
+    <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+      <FacetContainer depth={2} className="flex items-center gap-1.5 rounded-full p-1.5">
+        <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
+          Drag route vertices · Midpoints to add · Right-click to remove
+        </span>
+        <div className="bg-border hidden h-4 w-px sm:block" />
+        {estimate && (
+          <>
+            <EstimateText estimate={estimate} />
+            <div className="bg-border h-4 w-px" />
+          </>
+        )}
+        <Button size="sm" onClick={onRouteEditCommit}>
+          Save Route Path
+        </Button>
+        <Button variant="outline" size="sm" onClick={onRouteEditCancel}>
+          Cancel
+        </Button>
+      </FacetContainer>
     </div>
   );
 }

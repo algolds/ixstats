@@ -1,14 +1,9 @@
 "use client";
 
 import React, { memo, useState } from "react";
-import {
-  Hexagon,
-  Copy,
-  Cut as Scissors,
-  Sparks as Sparkles,
-  ControlSlider as Sliders,
-} from "iconoir-react";
+import { Hexagon, Copy, Cut as Scissors, City, ControlSlider as Sliders } from "iconoir-react";
 import { Popover, PopoverTrigger } from "~/components/ui/popover";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   SNAP_LAYER_TYPES,
   getDisabledSnapLayers,
@@ -16,14 +11,7 @@ import {
   type SnapLayerType,
 } from "~/lib/maps/editor-prefs";
 import { CityScatterPopover, TransformGeometryPopover } from "./ScatterToolOptions";
-import {
-  ToolLabel,
-  btnClass,
-  activeBtnClass,
-  labelClass,
-  dividerClass,
-  selectClass,
-} from "./CoordinateSnappingControls";
+import { ToolLabel, ToolbarButton, dividerClass, selectClass } from "./CoordinateSnappingControls";
 
 const SUBDIVISION_TYPES = [
   { value: "province", label: "Province" },
@@ -55,21 +43,21 @@ function SnapLayerToggles() {
   return (
     <>
       <div className={dividerClass} />
-      <span className={labelClass}>Snap to</span>
+      <Eyebrow>Snap to</Eyebrow>
       {SNAP_LAYER_TYPES.map((layer) => {
         const on = !disabled.has(layer);
         const label = SNAP_LAYER_LABELS[layer];
         return (
-          <button
+          <ToolbarButton
+            tone={on ? "active" : "default"}
             key={layer}
-            type="button"
+
             onClick={() => toggle(layer)}
-            className={on ? activeBtnClass : btnClass}
             aria-pressed={on}
             title={`Snap to ${label.toLowerCase()} (when Snap is on and the layer is visible)`}
           >
             {label}
-          </button>
+          </ToolbarButton>
         );
       })}
     </>
@@ -105,7 +93,7 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
   return (
     <>
       <ToolLabel icon={Hexagon} label="Region" />
-      <span className={labelClass}>Type</span>
+      <Eyebrow>Type</Eyebrow>
       <select
         value={subdivisionType ?? "province"}
         onChange={(e) => onSubdivisionTypeChange?.(e.target.value)}
@@ -117,7 +105,7 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
           </option>
         ))}
       </select>
-      <span className={labelClass}>Level</span>
+      <Eyebrow>Level</Eyebrow>
       <input
         type="number"
         min={1}
@@ -135,9 +123,9 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
               <div className={dividerClass} />
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className={btnClass} title="Scatter cities inside this region">
-                    <Sparkles className="h-3 w-3" /> Scatter Cities...
-                  </button>
+                  <ToolbarButton title="Scatter cities inside this region">
+                    <City className="h-3 w-3" aria-hidden /> Scatter cities…
+                  </ToolbarButton>
                 </PopoverTrigger>
                 <CityScatterPopover onScatter={onScatterCities} />
               </Popover>
@@ -146,28 +134,27 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
           {onApplyGeometryTransformation && (
             <Popover>
               <PopoverTrigger asChild>
-                <button className={btnClass} title="Transform region geometry">
+                <ToolbarButton title="Transform region geometry">
                   <Sliders className="h-3 w-3" /> Transform...
-                </button>
+                </ToolbarButton>
               </PopoverTrigger>
               <TransformGeometryPopover onApply={onApplyGeometryTransformation} />
             </Popover>
           )}
           {onStartSplitSubdivision && (
-            <button
+            <ToolbarButton
               onClick={onStartSplitSubdivision}
-              className={btnClass}
               title="Split this subdivision by drawing a line"
             >
               <Scissors className="h-3 w-3" /> Split
-            </button>
+            </ToolbarButton>
           )}
           {onDuplicate && (
             <>
               <div className={dividerClass} />
-              <button onClick={onDuplicate} className={btnClass} title="Duplicate region">
+              <ToolbarButton onClick={onDuplicate} title="Duplicate region">
                 <Copy className="h-3 w-3" /> Duplicate
-              </button>
+              </ToolbarButton>
             </>
           )}
         </>

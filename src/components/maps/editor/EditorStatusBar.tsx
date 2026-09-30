@@ -17,6 +17,7 @@ import {
   KeyCommand,
 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import { Badge } from "~/components/ui/badge";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { timeAgo } from "~/lib/format/compact";
 
@@ -135,7 +136,7 @@ export function EditorStatusBar({
             <span>{formatCoord(activeCoords[0], "E", "W")}</span>
           </>
         ) : (
-          <span className="text-muted-foreground/50">— , —</span>
+          <span className="text-muted-foreground">— , —</span>
         )}
       </div>
 
@@ -144,11 +145,11 @@ export function EditorStatusBar({
 
       {/* Altitude + Climate */}
       <div className="hidden min-w-[120px] items-center gap-1.5 md:flex">
-        <Mountain className="text-muted-foreground/60 h-3 w-3 shrink-0" />
+        <Mountain className="text-muted-foreground h-3 w-3 shrink-0" />
         {activeTerrain?.elevation ? (
           <span className="truncate">{activeTerrain.elevation}</span>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-muted-foreground">—</span>
         )}
         {activeTerrain?.climate && (
           <>
@@ -163,15 +164,15 @@ export function EditorStatusBar({
 
       {/* Mode + hint (takes remaining space) */}
       <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-        <span className="bg-primary/10 text-primary shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold">
+        <Badge variant="secondary" className="shrink-0">
           {modeInfo.label}
-        </span>
+        </Badge>
         {selectedCount > 0 && (
-          <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+          <Badge variant="outline" className="shrink-0 border-blue-500/30 text-blue-500">
             {selectedCount} selected
-          </span>
+          </Badge>
         )}
-        <span className="text-muted-foreground/70 hidden truncate sm:inline">{modeInfo.hint}</span>
+        <span className="text-muted-foreground hidden truncate sm:inline">{modeInfo.hint}</span>
       </div>
 
       {/* Save state */}
@@ -194,13 +195,13 @@ export function EditorStatusBar({
           )}
         </span>
       ) : isSaving ? (
-        <span className="ml-2 flex shrink-0 items-center gap-1 text-amber-600 dark:text-amber-400">
+        <span className="ml-2 flex shrink-0 items-center gap-1 text-amber-500">
           <Spinner className="h-3 w-3 animate-spin" />
           Saving…
         </span>
       ) : hasUnsavedChanges ? (
         <span
-          className="ml-2 flex shrink-0 items-center gap-1 text-amber-600 dark:text-amber-400"
+          className="ml-2 flex shrink-0 items-center gap-1 text-amber-500"
           title="Finish or cancel the current drawing/edit before leaving"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
@@ -208,7 +209,7 @@ export function EditorStatusBar({
         </span>
       ) : lastSavedAt ? (
         <span
-          className="ml-2 hidden shrink-0 items-center gap-1 text-emerald-600 sm:flex dark:text-emerald-400"
+          className="ml-2 hidden shrink-0 items-center gap-1 text-emerald-500 sm:flex"
           title={lastSavedAt.toLocaleString()}
         >
           <CheckCircle className="h-3 w-3" />

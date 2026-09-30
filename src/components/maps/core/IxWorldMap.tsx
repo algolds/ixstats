@@ -10,6 +10,7 @@
  * - Clean, minimal Google Maps-like visual style
  */
 
+import { FacetCard } from "~/components/ui/facet-container";
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } from "react";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
@@ -338,10 +339,10 @@ const IxWorldMap = memo(
             role="alert"
             className="bg-background absolute inset-0 flex items-center justify-center p-4"
           >
-            <div className="bg-card ring-border max-w-lg rounded-lg p-4 shadow-lg ring-1">
-              <p className="text-destructive font-bold">The map engine failed to start</p>
+            <FacetCard surface="solid" className="max-w-lg rounded-xl p-4">
+              <p className="text-destructive font-semibold">The map engine failed to start</p>
               <pre className="text-foreground mt-2 text-xs whitespace-pre-wrap">{debugError}</pre>
-            </div>
+            </FacetCard>
           </div>
         )}
         {!isLoaded && !debugError && (

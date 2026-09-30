@@ -1,5 +1,9 @@
 "use client";
 
+import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useMemo } from "react";
 import {
   Map,
@@ -103,16 +107,16 @@ export const DocumentInspector = React.memo(function DocumentInspector({
     counts.waters > 0
       ? counts.waters
       : geoProfile?.hydro
-      ? geoProfile.hydro.riverCount + geoProfile.hydro.lakeCount
-      : 0;
+        ? geoProfile.hydro.riverCount + geoProfile.hydro.lakeCount
+        : 0;
 
   return (
     <div className="space-y-4 select-none">
       {/* Country Header */}
-      <div className="border-border/60 bg-muted/20 space-y-2 rounded-xl border p-3.5 backdrop-blur-md">
+      <FacetCard surface="solid" className="space-y-2 rounded-xl p-3.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative h-7 w-10.5 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/40 shadow-xs ring-1 ring-white/10 dark:ring-white/5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="border-border relative h-7 w-10.5 shrink-0 overflow-hidden rounded-md border">
               <UnifiedCountryFlag
                 countryName={displayName}
                 flagUrl={resolvedFlagUrl}
@@ -122,56 +126,52 @@ export const DocumentInspector = React.memo(function DocumentInspector({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-foreground truncate text-sm font-semibold leading-tight">
+              <h3 className="text-foreground truncate text-sm leading-tight font-semibold">
                 {displayName}
               </h3>
             </div>
           </div>
-          <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 rounded px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase">
+          <Badge variant="outline" className="shrink-0 border-emerald-500/30 text-emerald-500">
             Active
-          </span>
+          </Badge>
         </div>
 
         {onFocusCountry && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-center"
             onClick={onFocusCountry}
-            className="border-border/60 bg-background/60 hover:bg-accent/40 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             <Eye className="h-3.5 w-3.5" />
             <span>Center on canvas</span>
-          </button>
+          </Button>
         )}
-      </div>
+      </FacetCard>
 
       {/* Geography Overview */}
-      <div className="border-border/60 bg-muted/10 space-y-2.5 rounded-xl border p-3">
+      <FacetCard surface="solid" className="space-y-2.5 rounded-xl p-3">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Geography
-          </span>
+          <Eyebrow>Geography</Eyebrow>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
-              Land area
-            </span>
-            <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
-              <span className="text-foreground font-mono text-sm font-semibold tabular-nums tracking-tight truncate">
+          <div className="border-border min-w-0 rounded-lg border p-2">
+            <Eyebrow className="block truncate">Land area</Eyebrow>
+            <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
+              <span className="text-foreground truncate font-mono text-sm font-semibold tracking-tight tabular-nums">
                 {areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
               </span>
               {areaKm2 != null && (
-                <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
+                <span className="text-muted-foreground shrink-0 font-sans text-xs font-normal">
                   km²
                 </span>
               )}
             </div>
           </div>
-          <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-            <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
-              Total features
-            </span>
-            <p className="text-foreground font-mono text-sm font-semibold tabular-nums mt-0.5 truncate">
+          <div className="border-border min-w-0 rounded-lg border p-2">
+            <Eyebrow className="block truncate">Total features</Eyebrow>
+            <p className="text-foreground mt-0.5 truncate font-mono text-sm font-semibold tabular-nums">
               {allFeatures.length.toLocaleString()}
             </p>
           </div>
@@ -179,119 +179,119 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
         {/* Feature Breakdown Chips */}
         <div className="grid grid-cols-2 gap-1.5 pt-1">
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
+          <div className="border-border flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
             <MapPin className="text-primary h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Cities</span>
-            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto shrink-0 font-mono text-xs font-semibold tabular-nums">
               {counts.cities.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
-            <Hexagon className="text-amber-500 h-3 w-3 shrink-0" />
+          <div className="border-border flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+            <Hexagon className="text-muted-foreground h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Regions</span>
-            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto shrink-0 font-mono text-xs font-semibold tabular-nums">
               {counts.subdivisions.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
-            <Route className="text-blue-500 h-3 w-3 shrink-0" />
+          <div className="border-border flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+            <Route className="text-muted-foreground h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Routes</span>
-            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto shrink-0 font-mono text-xs font-semibold tabular-nums">
               {counts.routes.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
-            <Landmark className="text-amber-500 h-3 w-3 shrink-0" />
+          <div className="border-border flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+            <Landmark className="text-muted-foreground h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">POIs</span>
-            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto shrink-0 font-mono text-xs font-semibold tabular-nums">
               {counts.pois.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
-            <Mountain className="text-emerald-500 h-3 w-3 shrink-0" />
+          <div className="border-border flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+            <Mountain className="text-muted-foreground h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Peaks</span>
-            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto shrink-0 font-mono text-xs font-semibold tabular-nums">
               {counts.peaks.toLocaleString()}
             </span>
           </div>
 
-          <div className="border-border/40 bg-card/40 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs min-w-0">
-            <Waves className="text-cyan-500 h-3 w-3 shrink-0" />
+          <div className="border-border flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+            <Waves className="text-muted-foreground h-3 w-3 shrink-0" />
             <span className="text-muted-foreground truncate">Water</span>
-            <span className="text-foreground ml-auto font-mono text-xs font-semibold tabular-nums shrink-0">
+            <span className="text-foreground ml-auto shrink-0 font-mono text-xs font-semibold tabular-nums">
               {waterCount.toLocaleString()}
             </span>
           </div>
         </div>
-      </div>
+      </FacetCard>
 
       {/* Hydrology System */}
-      {(waterCount > 0 || (geoProfile?.hydro && (geoProfile.hydro.riverCount > 0 || geoProfile.hydro.lakeCount > 0))) && (
-        <div className="border-border/60 bg-muted/10 space-y-2 rounded-xl border p-3">
+      {(waterCount > 0 ||
+        (geoProfile?.hydro &&
+          (geoProfile.hydro.riverCount > 0 || geoProfile.hydro.lakeCount > 0))) && (
+        <FacetCard surface="solid" className="space-y-2 rounded-xl p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Waves className="h-3.5 w-3.5 text-cyan-500" />
-              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Hydrology System
-              </span>
+              <Waves className="text-muted-foreground h-3.5 w-3.5" />
+              <Eyebrow>Hydrology System</Eyebrow>
             </div>
             {geoProfile?.hydro?.drainageDensity != null && (
-              <span className="text-muted-foreground/60 font-mono text-xs tabular-nums">
+              <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 Drainage: {geoProfile.hydro.drainageDensity.toFixed(2)} km/km²
               </span>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-              <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
-                River network
-              </span>
-              <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
-                <span className="text-foreground font-mono text-sm font-semibold tabular-nums tracking-tight truncate">
-                  {geoProfile?.hydro?.totalRiverLengthKm != null && geoProfile.hydro.totalRiverLengthKm > 0
+            <div className="border-border min-w-0 rounded-lg border p-2">
+              <Eyebrow className="block truncate">River network</Eyebrow>
+              <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
+                <span className="text-foreground truncate font-mono text-sm font-semibold tracking-tight tabular-nums">
+                  {geoProfile?.hydro?.totalRiverLengthKm != null &&
+                  geoProfile.hydro.totalRiverLengthKm > 0
                     ? geoProfile.hydro.totalRiverLengthKm.toLocaleString()
                     : counts.waters > 0
-                    ? "Mapped"
-                    : "—"}
+                      ? "Mapped"
+                      : "—"}
                 </span>
-                {geoProfile?.hydro?.totalRiverLengthKm != null && geoProfile.hydro.totalRiverLengthKm > 0 && (
-                  <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
-                    km
-                  </span>
-                )}
+                {geoProfile?.hydro?.totalRiverLengthKm != null &&
+                  geoProfile.hydro.totalRiverLengthKm > 0 && (
+                    <span className="text-muted-foreground shrink-0 font-sans text-xs font-normal">
+                      km
+                    </span>
+                  )}
               </div>
               {geoProfile?.superlatives?.longestRiver && (
-                <span className="text-muted-foreground/70 text-xs truncate block mt-0.5">
+                <span className="text-muted-foreground mt-0.5 block truncate text-xs">
                   Max: {geoProfile.superlatives.longestRiver.name}
                 </span>
               )}
             </div>
 
-            <div className="border-border/40 bg-card/60 rounded-lg border p-2 min-w-0">
-              <span className="text-muted-foreground/70 text-xs uppercase tracking-wider block truncate">
-                Lakes & basins
-              </span>
-              <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
-                <span className="text-foreground font-mono text-sm font-semibold tabular-nums tracking-tight truncate">
-                  {geoProfile?.hydro?.totalLakeAreaSqKm != null && geoProfile.hydro.totalLakeAreaSqKm > 0
+            <div className="border-border min-w-0 rounded-lg border p-2">
+              <Eyebrow className="block truncate">Lakes & basins</Eyebrow>
+              <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
+                <span className="text-foreground truncate font-mono text-sm font-semibold tracking-tight tabular-nums">
+                  {geoProfile?.hydro?.totalLakeAreaSqKm != null &&
+                  geoProfile.hydro.totalLakeAreaSqKm > 0
                     ? geoProfile.hydro.totalLakeAreaSqKm.toLocaleString()
                     : counts.waters > 0
-                    ? "Mapped"
-                    : "—"}
+                      ? "Mapped"
+                      : "—"}
                 </span>
-                {geoProfile?.hydro?.totalLakeAreaSqKm != null && geoProfile.hydro.totalLakeAreaSqKm > 0 && (
-                  <span className="text-muted-foreground/80 font-sans text-xs font-normal shrink-0">
-                    km²
-                  </span>
-                )}
+                {geoProfile?.hydro?.totalLakeAreaSqKm != null &&
+                  geoProfile.hydro.totalLakeAreaSqKm > 0 && (
+                    <span className="text-muted-foreground shrink-0 font-sans text-xs font-normal">
+                      km²
+                    </span>
+                  )}
               </div>
               {geoProfile?.superlatives?.largestLake && (
-                <span className="text-muted-foreground/70 text-xs truncate block mt-0.5">
+                <span className="text-muted-foreground mt-0.5 block truncate text-xs">
                   Max: {geoProfile.superlatives.largestLake.name}
                 </span>
               )}
@@ -299,29 +299,27 @@ export const DocumentInspector = React.memo(function DocumentInspector({
           </div>
 
           {geoProfile?.climate?.estAnnualPrecipMm != null && (
-            <div className="border-border/30 bg-card/40 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs">
+            <div className="border-border flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs">
               <span className="text-muted-foreground">Annual precipitation</span>
               <span className="text-foreground font-mono font-semibold tabular-nums">
                 {geoProfile.climate.estAnnualPrecipMm.toLocaleString()} mm/yr
               </span>
             </div>
           )}
-        </div>
+        </FacetCard>
       )}
 
       {/* Quick Add */}
-      <div className="border-border/60 bg-muted/10 space-y-2 rounded-xl border p-3">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Quick add
-        </span>
+      <FacetCard surface="solid" className="space-y-2 rounded-xl p-3">
+        <Eyebrow>Quick add</Eyebrow>
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => onModeChange("add-subdivision")}
             className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
-            <Hexagon className="text-amber-500 h-4 w-4" />
+            <Hexagon className="text-muted-foreground h-4 w-4" />
             <span className="text-xs font-medium">Region</span>
-            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-xs font-mono">
+            <span className="bg-muted text-muted-foreground py-0.2 rounded px-1 font-mono text-xs">
               R
             </span>
           </button>
@@ -332,7 +330,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
           >
             <MapPin className="text-primary h-4 w-4" />
             <span className="text-xs font-medium">City</span>
-            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-xs font-mono">
+            <span className="bg-muted text-muted-foreground py-0.2 rounded px-1 font-mono text-xs">
               C
             </span>
           </button>
@@ -341,17 +339,17 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             onClick={() => onModeChange("add-route")}
             className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
-            <Route className="text-blue-500 h-4 w-4" />
+            <Route className="text-muted-foreground h-4 w-4" />
             <span className="text-xs font-medium">Route</span>
-            <span className="bg-muted text-muted-foreground rounded px-1 py-0.2 text-xs font-mono">
+            <span className="bg-muted text-muted-foreground py-0.2 rounded px-1 font-mono text-xs">
               T
             </span>
           </button>
         </div>
-      </div>
+      </FacetCard>
 
       {/* Ambient tip */}
-      <div className="text-muted-foreground/60 flex items-center justify-center gap-1.5 text-center text-xs">
+      <div className="text-muted-foreground flex items-center justify-center gap-1.5 text-center text-xs">
         <Map className="h-3.5 w-3.5 shrink-0 opacity-60" />
         <span>Select any feature on the map to view details</span>
       </div>

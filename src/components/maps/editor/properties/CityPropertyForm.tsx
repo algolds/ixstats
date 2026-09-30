@@ -1,5 +1,7 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 import React from "react";
 import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
@@ -72,7 +74,10 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <div className="border-border/60 bg-muted/20 flex items-center justify-between rounded-lg border px-3 py-2 text-xs">
+        <FacetCard
+          surface="solid"
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
+        >
           <div className="text-muted-foreground text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
@@ -95,7 +100,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
             <MapPin className="h-3.5 w-3.5" />
             <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
           </button>
-        </div>
+        </FacetCard>
       )}
 
       <input
@@ -134,7 +139,10 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
               }
               className={inputClasses}
             />
-            <button
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
               type="button"
               title={sampleTerrain.data ? `zone: ${sampleTerrain.data.zoneName}` : undefined}
               disabled={!form.coordinates || sampleTerrain.isFetching || !sampleTerrain.data}
@@ -144,7 +152,6 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
                   elevation: sampleTerrain.data?.midpoint ?? form.elevation,
                 })
               }
-              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors disabled:opacity-50"
             >
               {sampleTerrain.isFetching ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -152,7 +159,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
                 <Mountain className="h-3.5 w-3.5" />
               )}
               <span>Auto</span>
-            </button>
+            </Button>
           </div>
         </div>
         <input

@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface StorylineTimelineProps {
   pins: Array<{
@@ -23,14 +25,13 @@ export function StorylineTimeline({
   storylineColor,
   onNavigate,
 }: StorylineTimelineProps) {
-  const color = storylineColor ?? "#6366f1";
+  // Storyline colour is authored map data; fall back to the maps accent token.
+  const color = storylineColor ?? "var(--color-blue-500)";
   const currentIdx = pins.findIndex((p) => p.id === currentPinId);
 
   return (
-    <div className="border-border/50 bg-card/50 rounded-xl border p-4">
-      <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-        {storylineTitle}
-      </h4>
+    <FacetCard surface="solid" className="rounded-xl p-4">
+      <Eyebrow className="mb-3 block">{storylineTitle}</Eyebrow>
       <div className="relative space-y-0">
         {pins.map((pin, i) => {
           const isCurrent = pin.id === currentPinId;
@@ -40,7 +41,10 @@ export function StorylineTimeline({
               {i < pins.length - 1 && (
                 <div
                   className="absolute top-4 left-[7px] h-full w-0.5"
-                  style={{ backgroundColor: isCurrent || i < currentIdx ? color : `${color}33` }}
+                  style={{
+                    backgroundColor: color,
+                    opacity: isCurrent || i < currentIdx ? 1 : 0.2,
+                  }}
                 />
               )}
               {/* Dot */}
@@ -65,7 +69,7 @@ export function StorylineTimeline({
                   {pin.title}
                 </p>
                 {pin.ixTimeYear != null && (
-                  <p className="text-muted-foreground/70 text-xs">
+                  <p className="text-muted-foreground text-xs">
                     Year {pin.ixTimeYear}
                     {pin.eraLabel ? ` · ${pin.eraLabel}` : ""}
                   </p>
@@ -76,10 +80,10 @@ export function StorylineTimeline({
         })}
       </div>
       {pins.length > 1 && (
-        <p className="text-muted-foreground/60 mt-2 text-xs">
+        <p className="text-muted-foreground mt-2 text-xs">
           Event {currentIdx + 1} of {pins.length}
         </p>
       )}
-    </div>
+    </FacetCard>
   );
 }

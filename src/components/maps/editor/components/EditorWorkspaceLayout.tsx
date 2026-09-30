@@ -111,9 +111,7 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
 
     if (collapsedA && collapsedB) {
       return (
-        <div
-          className={`bg-card/75 border-border flex h-full shrink-0 flex-col backdrop-blur-md ${side === "left" ? "border-r" : "border-l"}`}
-        >
+        <div className="flex h-full shrink-0 flex-col">
           <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-A`}>
             {panelA}
           </EditorErrorBoundary>
@@ -167,7 +165,7 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         </div>
         {!panelsLocked ? (
           <div
-            className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+            className="bg-border h-1 w-full shrink-0 cursor-row-resize transition-colors hover:bg-blue-500/50"
             onMouseDown={handleVerticalSplitResize(side)}
           />
         ) : (
@@ -202,7 +200,7 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
 
     if (collapsedA && collapsedB) {
       return (
-        <div className="bg-card/75 border-border flex w-full shrink-0 flex-row gap-2 border-t px-2 py-1 backdrop-blur-md">
+        <div className="flex w-full shrink-0 flex-row gap-2 px-2 py-1">
           <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
           <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
         </div>
@@ -246,7 +244,7 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         </div>
         {!panelsLocked ? (
           <div
-            className="h-full w-1 shrink-0 cursor-col-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+            className="bg-border h-full w-1 shrink-0 cursor-col-resize transition-colors hover:bg-blue-500/50"
             onMouseDown={handleHorizontalSplitResize}
           />
         ) : (
@@ -283,7 +281,7 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         {(!toolsDisabled || isWorldMode) && (
           <div
             ref={bottomDockRef}
-            className="bg-card/40 pointer-events-auto hidden w-full shrink-0 flex-row backdrop-blur-md sm:flex"
+            className="pointer-events-auto hidden w-full shrink-0 flex-row sm:flex"
           >
             {renderBottomDockContent()}
           </div>
@@ -303,4 +301,3 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
     </div>
   );
 });
-

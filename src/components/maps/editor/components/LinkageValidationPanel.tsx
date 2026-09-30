@@ -1,5 +1,9 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { FacetTabs } from "~/components/ui/facet";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React from "react";
 import { Refresh as RefreshCw, MagicWand as Wand2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -12,6 +16,13 @@ import type {
   LinkageLinkedItem,
   LinkageUnlinkedItem,
 } from "../types/editor-state";
+
+const VALIDATION_TABS = [
+  { id: "issues", label: "Issues" },
+  { id: "linked", label: "Linked" },
+  { id: "unlinked", label: "Unlinked" },
+  { id: "features", label: "Features" },
+];
 
 export interface LinkageFeatureItem {
   featureId: string;
@@ -63,81 +74,48 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
   const realm = useMapRealm();
   return (
     <div className="space-y-4 p-3 text-xs">
-      <div className="bg-muted/10 border-border/20 flex items-center justify-between rounded-lg border p-3">
+      <FacetCard surface="solid" className="flex items-center justify-between rounded-lg p-3">
         <div className="space-y-0.5">
-          <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
-            Issues / Desyncs
-          </span>
+          <Eyebrow className="block">Issues / Desyncs</Eyebrow>
           <span className="text-foreground text-xl font-bold">
             {validationData?.issues?.length ?? 0}
           </span>
         </div>
         <div className="flex gap-1">
-          <button
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-7 w-7"
             onClick={() => syncMutation.mutate({ action: "sync_all", realm })}
             disabled={syncMutation.isPending}
-            className="rounded bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20 active:scale-[0.98]"
             title="Sync All Linked"
           >
             <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
             onClick={() => autoMatchMutation.mutate({ action: "auto_match", realm })}
             disabled={autoMatchMutation.isPending}
-            className="rounded bg-emerald-500/10 p-1.5 text-emerald-500 transition-colors hover:bg-emerald-500/20 active:scale-[0.98]"
             title="Auto-Match by Name"
           >
             <Wand2 className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
-      </div>
+      </FacetCard>
 
-      <div className="border-border/30 bg-card/40 overflow-hidden rounded-lg border">
-        <div className="bg-muted/20 border-border/30 flex border-b text-xs font-semibold uppercase">
-          <button
-            onClick={() => setValidationTab("issues")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "issues"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Issues
-          </button>
-          <button
-            onClick={() => setValidationTab("linked")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "linked"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Linked
-          </button>
-          <button
-            onClick={() => setValidationTab("unlinked")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "unlinked"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Unlinked
-          </button>
-          <button
-            onClick={() => setValidationTab("features")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "features"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Features
-          </button>
+      <FacetCard surface="solid" className="overflow-hidden rounded-lg">
+        <div className="border-border border-b p-1.5">
+          <FacetTabs
+            tabs={VALIDATION_TABS}
+            activeTab={validationTab}
+            onChange={(tab) => setValidationTab(tab as typeof validationTab)}
+            size="sm"
+            tone="neutral"
+            showTexture={false}
+            className="w-full"
+          />
         </div>
 
         <div className="max-h-[300px] space-y-1.5 overflow-y-auto p-3">
@@ -162,7 +140,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
+                  className="border-border/30 bg-muted/10 hover:border-primary/40 hover:bg-primary/5 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-1.5 truncate">
                     {item.countryFlag && (
@@ -200,7 +178,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
+                  className="border-border/30 bg-muted/10 hover:border-primary/40 hover:bg-primary/5 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-1.5 truncate">
                     {item.countryFlag && (
@@ -247,7 +225,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                     className={cn(
                       "inline-flex items-center rounded-full px-2 py-0.5 text-xs leading-tight font-semibold",
                       item.hasGeometry
-                        ? "bg-amber-500/10 text-amber-500"
+                        ? "border border-amber-500/30 text-amber-500"
                         : "bg-muted text-muted-foreground"
                     )}
                   >
@@ -265,14 +243,14 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                   placeholder="Search features..."
                   value={featureSearch}
                   onChange={(e) => setFeatureSearch(e.target.value)}
-                  className="bg-background border-border w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="bg-background border-border focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
                 />
                 <select
                   value={featureFilter}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                     setFeatureFilter(e.target.value as "all" | "linked" | "unlinked")
                   }
-                  className="bg-background border-border rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="bg-background border-border focus:ring-primary rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
                 >
                   <option value="all">All</option>
                   <option value="linked">Linked</option>
@@ -298,7 +276,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                         setActiveCountryId(null);
                       }
                     }}
-                    className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
+                    className="border-border/30 bg-muted/10 hover:border-primary/40 hover:bg-primary/5 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
                   >
                     <div className="flex items-center gap-1.5 truncate">
                       <div
@@ -313,7 +291,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       className={cn(
                         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
                         feat.isClaimed
-                          ? "bg-emerald-500/10 text-emerald-600"
+                          ? "border border-emerald-500/30 text-emerald-500"
                           : "bg-muted text-muted-foreground"
                       )}
                     >
@@ -325,7 +303,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
             </div>
           )}
         </div>
-      </div>
+      </FacetCard>
     </div>
   );
 });

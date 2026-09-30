@@ -6,6 +6,7 @@ import { MapPin, Globe, OpenBook as BookOpen } from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { Button } from "~/components/ui/button";
 import type { SelectedCountry } from "../IxWorldMap";
 
 interface UnclaimedTerritoryViewProps {
@@ -36,7 +37,7 @@ export function UnclaimedTerritoryView({
           {wikiRichIntro.paragraphs.length > 1 && (
             <button
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
+              className="text-xs font-medium text-blue-500 hover:underline"
             >
               {introExpanded ? "Show less" : "Read more..."}
             </button>
@@ -52,31 +53,27 @@ export function UnclaimedTerritoryView({
         />
       </div>
 
-      <div className="bg-muted/50 mt-3 flex items-center justify-center gap-1.5 rounded-lg py-2">
-        <Globe className="text-muted-foreground h-3.5 w-3.5" />
-        <span className="text-muted-foreground text-xs font-medium">Unclaimed Territory</span>
-      </div>
+      <p className="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs font-medium">
+        <Globe className="h-3.5 w-3.5" aria-hidden />
+        Unclaimed territory
+      </p>
 
       {wikiRichIntro?.wikiUrl && (
         <div className="mt-3">
           {wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/wiki/") ? (
-            <Link
-              href={wikiRichIntro.wikiUrl}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-            >
-              <BookOpen className="h-3 w-3" />
-              Read on IxWiki
-            </Link>
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link href={wikiRichIntro.wikiUrl}>
+                <BookOpen aria-hidden />
+                Read on IxWiki
+              </Link>
+            </Button>
           ) : (
-            <a
-              href={wikiRichIntro.wikiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-            >
-              <BookOpen className="h-3 w-3" />
-              Read on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-            </a>
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <a href={wikiRichIntro.wikiUrl} target="_blank" rel="noopener noreferrer">
+                <BookOpen aria-hidden />
+                Read on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
+              </a>
+            </Button>
           )}
         </div>
       )}

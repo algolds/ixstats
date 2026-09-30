@@ -1,5 +1,7 @@
 "use client";
 
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 import React, { useMemo, useCallback, useState } from "react";
 import { List } from "iconoir-react";
 import dynamic from "next/dynamic";
@@ -139,14 +141,16 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
       {/* Mobile sheet — mounted only on phones so desktop never renders a hidden second
           copy of the properties panel and feature list. */}
       {isMobile && editor.mode === "view" && !mobileListOpen && editor.allFeatures.length > 0 && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
+          className="pointer-events-auto absolute right-3 bottom-20 z-20 rounded-full sm:hidden"
           type="button"
           onClick={() => setMobileListOpen(true)}
-          className="border-border bg-card/95 text-foreground pointer-events-auto absolute right-3 bottom-20 z-20 flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium shadow-lg backdrop-blur-md active:scale-[0.98] sm:hidden"
         >
           <List className="h-4 w-4" />
           Features
-        </button>
+        </Button>
       )}
 
       {showMobileSheet && (
@@ -184,15 +188,17 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
 
       {/* Batch Actions Bar */}
       {editor.selectedIds.size > 1 && (
-        <div className="border-border bg-card/95 pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-xl border shadow-lg backdrop-blur-md">
-          <BatchActionsBar
-            selectedCount={editor.selectedIds.size}
-            subdivisionCount={subdivisionCount}
-            onBatchDelete={handleBatchDelete}
-            onDeselectAll={editor.clearMultiSelect}
-            onBulkEdit={handleBulkEdit}
-            isMutating={editor.isMutating}
-          />
+        <div className="pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2">
+          <FacetContainer depth={2} className="overflow-hidden rounded-xl">
+            <BatchActionsBar
+              selectedCount={editor.selectedIds.size}
+              subdivisionCount={subdivisionCount}
+              onBatchDelete={handleBatchDelete}
+              onDeselectAll={editor.clearMultiSelect}
+              onBulkEdit={handleBulkEdit}
+              isMutating={editor.isMutating}
+            />
+          </FacetContainer>
         </div>
       )}
 

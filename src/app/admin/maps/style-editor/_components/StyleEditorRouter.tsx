@@ -1,5 +1,7 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import { useState } from "react";
 import { ArrowLeft, Refresh as RefreshCw, Component as Layers } from "iconoir-react";
 
@@ -23,24 +25,23 @@ export function StyleEditorRouter() {
       <header className="flex h-12 items-center justify-between border-b border-slate-800 bg-slate-950 px-4">
         {/* Left Section: Back button */}
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               window.location.href = "/admin/maps";
             }}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
             title="Return to Admin Maps Settings"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Exit Editor</span>
-          </button>
+          </Button>
 
           <div className="h-4 w-px bg-slate-800" />
 
           <div className="flex items-center gap-2">
             <Layers className="h-4.5 w-4 text-blue-400" />
-            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
-              Style Editor
-            </span>
+            <Eyebrow>Style Editor</Eyebrow>
           </div>
         </div>
 
@@ -63,13 +64,15 @@ export function StyleEditorRouter() {
 
         {/* Right Section: Info & Reload */}
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
             onClick={() => setKey((prev) => prev + 1)}
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white"
             title="Reload Style Editor"
           >
             <RefreshCw className="h-4 w-4" />
-          </button>
+          </Button>
 
           <div className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-400">
             Maputnik v1.7.0

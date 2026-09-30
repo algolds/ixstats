@@ -1,11 +1,8 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
 import React, { memo } from "react";
-import {
-  SystemRestart as Loader2,
-  Sparks as Sparkles,
-  CheckCircle as CheckCircle2,
-} from "iconoir-react";
+import { SystemRestart as Loader2, NetworkLeft, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
 
 const GENERATABLE_ROUTE_TYPES = [
@@ -67,19 +64,19 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
 
   return (
     <div className="space-y-4">
-      <div className="border-border/40 bg-muted/20 space-y-2 rounded-lg border p-3">
+      <FacetCard surface="solid" className="space-y-2 rounded-lg p-3">
         <div className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-          <Sparkles className="text-primary h-3.5 w-3.5" />
+          <NetworkLeft className="text-muted-foreground h-3.5 w-3.5" aria-hidden />
           <span>Procedural Network Generation</span>
         </div>
         <p className="text-muted-foreground text-xs leading-relaxed">
           Generate realistic national transit corridors connecting cities, ports, and industrial
           nodes using topographic friction routing and cost-distance pathfinding.
         </p>
-      </div>
+      </FacetCard>
 
       <div className="space-y-2">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+        <label className="text-muted-foreground text-xs font-medium">
           Network Types to Generate
         </label>
         <div className="grid grid-cols-2 gap-1.5">
@@ -120,7 +117,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
       </label>
 
       {generateNotice && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs text-emerald-500">
+        <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 p-2 text-xs text-emerald-500">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
           <span>{generateNotice}</span>
         </div>
@@ -130,7 +127,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
         type="button"
         disabled={isGenerating || selectedTypes.length === 0 || !countryId}
         onClick={onGenerate}
-        className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-md py-2 text-xs font-semibold shadow transition active:scale-[0.98] hover:opacity-90 disabled:opacity-50"
+        className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-md py-2 text-xs font-semibold shadow transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
       >
         {isGenerating ? (
           <>
@@ -139,7 +136,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
           </>
         ) : (
           <>
-            <Sparkles className="h-3.5 w-3.5" />
+            <NetworkLeft className="h-3.5 w-3.5" aria-hidden />
             <span>Generate Routes ({selectedTypes.length} types)</span>
           </>
         )}

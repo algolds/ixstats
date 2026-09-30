@@ -3,7 +3,7 @@
 import React, { memo } from "react";
 import { Ruler, Trash as Trash2 } from "iconoir-react";
 import { formatDistanceMetrics } from "~/lib/maps/geo-analytics";
-import { ToolLabel, btnClass, dividerClass, labelClass } from "./CoordinateSnappingControls";
+import { ToolLabel, ToolbarButton, dividerClass } from "./CoordinateSnappingControls";
 
 interface RulerOptionsProps {
   rulerPoints?: [number, number][];
@@ -22,8 +22,8 @@ export const RulerOptions = memo(function RulerOptions({
   return (
     <>
       <ToolLabel icon={Ruler} label="Ruler / Distance" />
-      <span className={labelClass}>
-        {pointsCount < 2 ? "Click on the map to place measurement points." : "Total Distance:"}
+      <span className="text-muted-foreground text-xs">
+        {pointsCount < 2 ? "Click on the map to place measurement points." : "Total distance:"}
       </span>
       {pointsCount >= 2 && (
         <>
@@ -37,9 +37,9 @@ export const RulerOptions = memo(function RulerOptions({
       {pointsCount > 0 && onClearRuler && (
         <>
           <div className={dividerClass} />
-          <button onClick={onClearRuler} className={btnClass} title="Clear measurement">
+          <ToolbarButton onClick={onClearRuler} title="Clear measurement">
             <Trash2 className="h-3 w-3" /> Clear
-          </button>
+          </ToolbarButton>
         </>
       )}
     </>

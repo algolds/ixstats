@@ -1,5 +1,8 @@
 "use client";
 
+import { Component } from "iconoir-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { api } from "~/trpc/react";
@@ -49,19 +52,14 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
   return (
     <FacetMaterial
       material="satin"
-      className="h-full overflow-hidden rounded-xl border border-white/10"
+      className="border-border h-full overflow-hidden rounded-xl border"
     >
       <div className="flex h-full flex-col p-4">
-        <div className="mb-4 flex items-center justify-between border-b border-white/5 pb-2">
-          <h2 className="text-xs font-bold tracking-widest text-zinc-400 uppercase">
-            Charge Library
-          </h2>
-          <button
-            onClick={onOpenCommons}
-            className="rounded bg-amber-500 px-2 py-1 text-xs font-bold text-zinc-950 transition-colors hover:bg-amber-600"
-          >
-            🌐 Browse Commons
-          </button>
+        <div className="border-border mb-4 flex items-center justify-between border-b pb-2">
+          <h2 className="text-foreground text-sm font-semibold">Charge Library</h2>
+          <Button variant="ghost" size="xs" onClick={onOpenCommons}>
+            Browse Commons
+          </Button>
         </div>
 
         {/* Search and Filters */}
@@ -71,13 +69,13 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
             placeholder="Search charges..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:border-amber-500 focus:outline-none"
+            className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
           />
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-400 focus:outline-none"
+            className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:outline-none"
           >
             <option value="">All Categories</option>
             {CHARGE_CATEGORIES.map((cat) => (
@@ -94,18 +92,16 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
             {/* Local Templates */}
             {localTemplates.length > 0 && (
               <div>
-                <span className="mb-2 block text-xs font-bold tracking-wider text-zinc-500 uppercase">
-                  Built-in Templates
-                </span>
+                <Eyebrow className="mb-2 block">Built-in Templates</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
                   {localTemplates.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => handleAddCharge(item.id)}
-                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
+                      className="border-border bg-card/30 hover:bg-accent flex flex-col items-center justify-center gap-1 rounded-lg border p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30"
                     >
-                      <span className="text-xl">🐾</span>
-                      <span className="w-full truncate text-center text-xs font-medium text-zinc-300">
+                      <Component className="text-muted-foreground h-5 w-5" aria-hidden />
+                      <span className="text-muted-foreground w-full truncate text-center text-xs font-medium">
                         {item.name}
                       </span>
                     </button>
@@ -116,16 +112,14 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
 
             {/* Database Library */}
             <div>
-              <span className="mb-2 block text-xs font-bold tracking-wider text-zinc-500 uppercase">
-                Imported Charges
-              </span>
+              <Eyebrow className="mb-2 block">Imported Charges</Eyebrow>
 
               {isLoading ? (
-                <div className="flex justify-center py-6 text-xs text-zinc-500">
+                <div className="text-muted-foreground flex justify-center py-6 text-xs">
                   Loading library...
                 </div>
               ) : (data?.items ?? []).length === 0 ? (
-                <div className="py-6 text-center text-xs text-zinc-600 italic">
+                <div className="text-muted-foreground py-6 text-center text-xs italic">
                   No custom charges found. Use the Commons Browser to import.
                 </div>
               ) : (
@@ -134,18 +128,18 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <button
                       key={item.id}
                       onClick={() => handleAddCharge(item.id)}
-                      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/5 bg-zinc-950/30 p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30 hover:bg-zinc-800/40"
+                      className="border-border bg-card/30 hover:bg-accent flex flex-col items-center justify-center gap-1 rounded-lg border p-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/30"
                     >
                       {/* SVG preview */}
                       <div
-                        className="flex h-8 w-8 items-center justify-center overflow-hidden text-zinc-300"
+                        className="text-muted-foreground flex h-8 w-8 items-center justify-center overflow-hidden"
                         dangerouslySetInnerHTML={{
                           __html: item.svgData
                             .replace(/width="[^"]*"/, 'width="100%"')
                             .replace(/height="[^"]*"/, 'height="100%"'),
                         }}
                       />
-                      <span className="w-full truncate text-center text-xs font-medium text-zinc-300">
+                      <span className="text-muted-foreground w-full truncate text-center text-xs font-medium">
                         {item.name}
                       </span>
                     </button>

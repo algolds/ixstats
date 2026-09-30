@@ -9,13 +9,15 @@
  * - Nearby wiki-mentioned places not yet on the map
  */
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import {
   SeaWaves as Anchor,
   ModernTv as Mountain,
   Tree as TreePine,
   SeaWaves as Waves,
   Bank as Landmark,
-  Sparks as Sparkles,
   Shield,
   Droplet as Droplets,
 } from "iconoir-react";
@@ -162,13 +164,12 @@ export function SmartPlacement(props: SmartPlacementProps) {
   const metrics = computeCivCapMetrics(elev, climate, props.isCoastal);
 
   return (
-    <div className="border-border/60 bg-card/60 space-y-2.5 rounded-lg border p-2.5 backdrop-blur-md">
+    <FacetCard surface="solid" className="space-y-2.5 rounded-lg p-2.5">
       {/* CivCap Intelligence Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
-          <Sparkles className="h-3 w-3" />
-          <span>CivCap Geographic Intelligence</span>
-        </div>
+        <Eyebrow className="flex items-center gap-1.5">
+          <span>CivCap geographic intelligence</span>
+        </Eyebrow>
         <span className="text-muted-foreground font-mono text-xs">
           {elev || "Terrain"} · {climate || "Climate"}
         </span>
@@ -218,28 +219,30 @@ export function SmartPlacement(props: SmartPlacementProps) {
                     <span className="text-foreground">{s.title}</span>
                   </div>
                   {s.civCapImpact && (
-                    <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="font-mono text-xs font-semibold text-emerald-500">
                       {s.civCapImpact}
                     </span>
                   )}
                 </div>
                 <p className="text-muted-foreground text-xs leading-tight">{s.text}</p>
                 {props.onApplySuggestion && s.suggestedType && (
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    className="mt-0.5 w-fit"
                     onClick={() => props.onApplySuggestion?.(s.suggestedType!, s.suggestedName)}
-                    className="bg-primary/10 text-primary hover:bg-primary/20 mt-0.5 flex h-5 w-fit items-center gap-1 rounded px-2 text-xs font-semibold transition-colors duration-100 active:scale-95"
                   >
                     <span>Apply Type: {s.suggestedType}</span>
                     {s.suggestedName && (
                       <span className="text-muted-foreground font-normal">({s.suggestedName})</span>
                     )}
-                  </button>
+                  </Button>
                 )}
               </div>
             );
           })}
         </div>
       )}
-    </div>
+    </FacetCard>
   );
 }

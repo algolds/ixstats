@@ -21,6 +21,10 @@ import {
   Eye,
   Globe,
 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { cn } from "~/lib/utils/cn";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/map-config";
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
 import type { OverlayVisibility } from "./IxWorldMap";
@@ -128,8 +132,13 @@ export function MapControls({
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
-      {/* Icon button row */}
-      <div className="flex items-center gap-1">
+      {/* Icon button row: one floating Facet toolbar */}
+      <FacetContainer
+        depth={2}
+        role="toolbar"
+        aria-label="Map controls"
+        className="flex w-fit items-center gap-0.5 rounded-xl p-1"
+      >
         {/* Layers */}
         <IconButton
           icon={<Layers className="h-4 w-4" />}
@@ -202,7 +211,7 @@ export function MapControls({
             onClick={onOpenWorldEditor}
           />
         )}
-      </div>
+      </FacetContainer>
 
       {/* Layers panel */}
       {openPanel === "layers" && (
@@ -295,20 +304,20 @@ function IconButton({
   expanded?: boolean;
   onClick: () => void;
 }) {
-  const base =
-    "relative flex items-center justify-center rounded-lg shadow-md transition-[color,background-color,box-shadow,transform] duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-[34px]";
-  const colors =
-    variant === "active-tool"
-      ? "bg-blue-500 text-white hover:bg-blue-600"
-      : isActive
-        ? "bg-accent text-foreground"
-        : "bg-card text-muted-foreground hover:bg-accent hover:text-foreground";
-
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon"
       onClick={onClick}
-      className={`${base} ${colors}`}
+      className={cn(
+        "relative h-11 w-11 rounded-lg sm:h-9 sm:w-9",
+        variant === "active-tool"
+          ? "bg-blue-500 text-white hover:bg-blue-500/90 hover:text-white"
+          : isActive
+            ? "bg-accent text-foreground"
+            : "text-muted-foreground"
+      )}
       title={label}
       aria-label={label}
       {...(controls
@@ -317,31 +326,30 @@ function IconButton({
     >
       {icon}
       {hasIndicator && (
-        <span className="ring-card absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-1" />
+        <span className="ring-card absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-500 ring-1" />
       )}
-    </button>
+    </Button>
   );
 }
 
 function DropdownPanel({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <div
+    <FacetContainer
+      depth={2}
       id="map-controls-panel"
       role="region"
       aria-label={label}
-      className="animate-in fade-in slide-in-from-top-1 bg-card ring-border/50 mt-1.5 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain rounded-lg p-2 shadow-lg ring-1 duration-150 sm:w-52"
+      className="animate-in fade-in slide-in-from-top-1 mt-1.5 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain rounded-xl p-2 duration-150"
     >
       {children}
-    </div>
+    </FacetContainer>
   );
 }
 
 function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="[&+&]:border-border [&+&]:mt-1.5 [&+&]:border-t [&+&]:pt-1.5">
-      <div className="text-muted-foreground px-1.5 pb-0.5 text-xs font-semibold tracking-wider uppercase">
-        {title}
-      </div>
+      <Eyebrow className="block px-1.5 pb-0.5">{title}</Eyebrow>
       {children}
     </div>
   );

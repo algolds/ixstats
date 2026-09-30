@@ -14,6 +14,9 @@ import {
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/maps/map-config";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -72,7 +75,7 @@ export function CountryOverviewTab({
           />
           <button
             onClick={() => setActiveTab("info")}
-            className="mt-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
+            className="mt-1 text-xs font-medium text-blue-500 hover:underline"
           >
             Read more →
           </button>
@@ -112,27 +115,29 @@ export function CountryOverviewTab({
       {/* Geography — clickable badges to highlight on map */}
       {(summary.continent || summary.region) && (
         <div className="mt-4">
-          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Geography
-          </div>
-          <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
+          <Eyebrow className="block">Geography</Eyebrow>
+          <div className="mt-1 flex flex-wrap gap-1.5">
             {summary.continent && (
-              <button
+              <Button
+                variant="outline"
+                size="xs"
+                className="rounded-full"
                 onClick={() =>
                   onGeographyFilter?.({ type: "continent", value: summary.continent! })
                 }
-                className="cursor-pointer rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-600 transition-colors hover:bg-blue-100 hover:ring-1 hover:ring-blue-300/50"
               >
                 {summary.continent}
-              </button>
+              </Button>
             )}
             {summary.region && (
-              <button
+              <Button
+                variant="outline"
+                size="xs"
+                className="rounded-full"
                 onClick={() => onGeographyFilter?.({ type: "region", value: summary.region! })}
-                className="cursor-pointer rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-600 transition-colors hover:bg-indigo-100 hover:ring-1 hover:ring-indigo-300/50"
               >
                 {summary.region}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -141,9 +146,7 @@ export function CountryOverviewTab({
       {/* Leader / Government */}
       {(summary.leader || summary.governmentType) && (
         <div className="mt-3">
-          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Government
-          </div>
+          <Eyebrow className="block">Government</Eyebrow>
           <div className="text-foreground/80 mt-1 space-y-0.5 text-xs">
             {summary.leader && (
               <p>
@@ -165,12 +168,12 @@ export function CountryOverviewTab({
       {/* Sovereignty - subject of another */}
       {sovereignty.sovereign && (
         <div className="mt-3">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
+          <Eyebrow className="flex items-center gap-1.5">
             <Swords className="h-3 w-3" />
             Sovereignty
-          </div>
-          <div className="mt-1.5 rounded-lg border border-amber-200/50 bg-amber-50/50 p-2">
-            <div className="text-xs text-amber-700">
+          </Eyebrow>
+          <FacetCard surface="solid" className="mt-1.5 rounded-lg p-2">
+            <div className="text-muted-foreground text-xs">
               {SOVEREIGNTY_TYPE_MAP[
                 sovereignty.sovereign.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
               ]?.label ?? sovereignty.sovereign.relationshipType}{" "}
@@ -184,7 +187,7 @@ export function CountryOverviewTab({
                   displayName: sovereignty.sovereign!.name,
                 })
               }
-              className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-amber-900 transition-colors hover:text-amber-700"
+              className="text-foreground mt-0.5 flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-500"
             >
               {sovereignty.sovereign.flag && (
                 <img
@@ -197,36 +200,36 @@ export function CountryOverviewTab({
             </button>
             {sovereignty.sovereign.autonomyLevel != null && (
               <div className="mt-1.5 flex items-center gap-2">
-                <span className="text-xs text-amber-600">Autonomy</span>
-                <div className="h-1.5 flex-1 rounded-full bg-amber-200">
+                <span className="text-muted-foreground text-xs">Autonomy</span>
+                <div className="bg-muted h-1.5 flex-1 rounded-full">
                   <div
-                    className="h-1.5 rounded-full bg-amber-500"
+                    className="h-1.5 rounded-full bg-blue-500"
                     style={{
                       width: `${Math.round(sovereignty.sovereign.autonomyLevel * 100)}%`,
                     }}
                   />
                 </div>
-                <span className="text-xs font-medium text-amber-700">
+                <span className="text-foreground text-xs font-medium tabular-nums">
                   {Math.round(sovereignty.sovereign.autonomyLevel * 100)}%
                 </span>
               </div>
             )}
             {sovereignty.sovereign.establishedDate && (
-              <div className="mt-1 text-xs text-amber-600">
+              <div className="text-muted-foreground mt-1 text-xs">
                 Est. {sovereignty.sovereign.establishedDate}
               </div>
             )}
-          </div>
+          </FacetCard>
         </div>
       )}
 
       {/* Sovereignty - sovereign over others */}
       {sovereignty.subjects.length > 0 && (
         <div className="mt-3">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
+          <Eyebrow className="flex items-center gap-1.5">
             <Shield className="h-3 w-3" />
             Domains ({sovereignty.subjects.length})
-          </div>
+          </Eyebrow>
           <div className="mt-1 flex flex-wrap gap-1">
             {sovereignty.subjects.map(
               (s: {
@@ -235,8 +238,11 @@ export function CountryOverviewTab({
                 flag?: string | null;
                 relationshipType?: string;
               }) => (
-                <button
+                <Button
                   key={s.countryId}
+                  variant="outline"
+                  size="xs"
+                  className="gap-1 rounded-full"
                   onClick={() =>
                     onNeighborClick?.({
                       featureId: "",
@@ -244,19 +250,18 @@ export function CountryOverviewTab({
                       displayName: s.name,
                     })
                   }
-                  className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
                 >
                   {s.flag && (
                     <img src={s.flag} alt="" className="h-3 w-4 rounded-sm object-cover" />
                   )}
                   {s.name}
-                  <span className="text-xs text-indigo-400">
+                  <span className="text-muted-foreground text-xs">
                     (
                     {SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]
                       ?.short ?? s.relationshipType}
                     )
                   </span>
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -266,18 +271,18 @@ export function CountryOverviewTab({
       {/* Neighbors */}
       {neighbors.length > 0 && (
         <div className="mt-3">
-          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Neighbors
-          </div>
+          <Eyebrow className="block">Neighbors</Eyebrow>
           <div className="mt-1 flex flex-wrap gap-1">
             {neighbors.map((n) => (
-              <button
+              <Button
                 key={n.featureId}
+                variant="secondary"
+                size="xs"
+                className="rounded-full"
                 onClick={() => onNeighborClick?.(n)}
-                className="bg-muted text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
               >
                 {n.displayName}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -286,22 +291,18 @@ export function CountryOverviewTab({
       {/* Action buttons */}
       <div className="mt-4 flex flex-col gap-2">
         {isOwner && onEditMap && (
-          <button
-            onClick={onEditMap}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 py-2 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50"
-          >
-            <Pencil className="h-3 w-3" />
-            Edit Map
-          </button>
+          <Button variant="outline" size="sm" onClick={onEditMap}>
+            <Pencil aria-hidden />
+            Edit map
+          </Button>
         )}
         {summary.slug && (
-          <Link
-            href={`/countries/${summary.slug}`}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50"
-          >
-            View Full Profile
-            <ExternalLink className="h-3 w-3" />
-          </Link>
+          <Button asChild size="sm" className="bg-blue-600 text-white hover:bg-blue-600/90">
+            <Link href={`/countries/${summary.slug}`}>
+              View full profile
+              <ExternalLink aria-hidden />
+            </Link>
+          </Button>
         )}
       </div>
     </>

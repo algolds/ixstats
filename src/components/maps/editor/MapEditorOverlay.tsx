@@ -9,7 +9,11 @@ import {
   GitMerge as Merge,
   SeaWaves as Waves,
   ColorPicker as Paintbrush,
+  SystemRestart as Loader,
 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Tooltip } from "~/components/ui/tooltip";
 import { BorderEditorToolOptions } from "~/components/maps/editor/toolbars/options/BorderEditorToolOptions";
 
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
@@ -47,9 +51,8 @@ const MapContainer = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="bg-muted flex h-full items-center justify-center">
-        <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
-        <p className="text-muted-foreground ml-2 text-xs">Loading map canvas...</p>
+      <div className="bg-muted flex h-full items-center justify-center" role="status">
+        <p className="text-muted-foreground text-xs">Loading map canvas…</p>
       </div>
     ),
   }
@@ -58,11 +61,8 @@ const MapContainer = dynamic(
 const EditorMap = dynamic(() => import("~/components/maps/editor/EditorMap"), {
   ssr: false,
   loading: () => (
-    <div className="bg-muted flex h-full items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
-        <p className="text-muted-foreground text-sm">Loading map editor...</p>
-      </div>
+    <div className="bg-muted flex h-full items-center justify-center" role="status">
+      <p className="text-muted-foreground text-sm">Loading map editor…</p>
     </div>
   ),
 });
@@ -481,7 +481,13 @@ export default function MapEditorOverlay({
           {/* Left tool rail — desktop only */}
           <div className="pointer-events-auto hidden shrink-0 sm:block">
             {isWorldMode && activeEditorMode === "border_edit" ? (
-              <div className="border-border bg-card flex h-full w-10 flex-col items-center gap-0.5 border-r py-1">
+              <FacetContainer
+                depth={1}
+                role="toolbar"
+                aria-label="Border tools"
+                aria-orientation="vertical"
+                className="flex h-full w-10 flex-col items-center gap-0.5 rounded-none py-1"
+              >
                 {(
                   [
                     { id: "select", label: "Select Mode", icon: MousePointer2, shortcut: "V" },
@@ -501,31 +507,23 @@ export default function MapEditorOverlay({
                   const FallbackIcon = tool.icon;
                   return (
                     <React.Fragment key={tool.id}>
-                      {i === 4 && <div className="bg-border my-0.5 h-px w-5 animate-none" />}
-                      <div className="group relative flex items-center">
-                        <button
+                      {i === 4 && <div className="bg-border my-0.5 h-px w-5" />}
+                      <Tooltip content={tool.label} shortcut={tool.shortcut} side="right">
+                        <Button
+                          variant={isActive ? "default" : "ghost"}
+                          size="icon"
                           onClick={() => borderActions.setMode(tool.id)}
-                          className={`group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
-                            isActive
-                              ? "bg-primary text-primary-foreground"
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                          }`}
-                          title={`${tool.label} (${tool.shortcut})`}
+                          aria-label={`${tool.label} (${tool.shortcut})`}
+                          aria-pressed={isActive}
+                          className={isActive ? "" : "text-muted-foreground"}
                         >
-                          <FallbackIcon className="h-4 w-4" />
-
-                          <div className="bg-popover text-popover-foreground ring-border pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 hidden -translate-y-1/2 rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 group-hover:block">
-                            {tool.label}
-                            <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
-                              {tool.shortcut}
-                            </span>
-                          </div>
-                        </button>
-                      </div>
+                          <FallbackIcon aria-hidden />
+                        </Button>
+                      </Tooltip>
                     </React.Fragment>
                   );
                 })}
-              </div>
+              </FacetContainer>
             ) : (
               <MapEditorToolbar
                 mode={editor.mode}
@@ -545,25 +543,24 @@ export default function MapEditorOverlay({
             panelB={isMobile ? null : renderPanel("panelB")}
           >
             {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
-              <div className="bg-map-ocean/80 absolute inset-0 z-30 flex flex-col items-center justify-center backdrop-blur-sm">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-emerald-500)_0%,transparent_70%)] opacity-[0.06]" />
-                <div className="relative z-10 flex flex-col items-center gap-4 text-center">
-                  <div className="relative h-16 w-16">
-                    <div className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full border border-dashed border-emerald-500/30" />
-                    <div className="absolute inset-2 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="border-muted-foreground/20 h-6 w-6 animate-spin rounded-full border-2 border-t-emerald-500" />
-                    </div>
-                  </div>
+              <div
+                role="status"
+                className="bg-background/60 absolute inset-0 z-30 flex items-center justify-center"
+              >
+                <FacetContainer
+                  depth={2}
+                  className="flex items-center gap-3 rounded-2xl px-5 py-4 text-left"
+                >
+                  <Loader aria-hidden className="text-muted-foreground h-5 w-5 animate-spin" />
                   <div>
-                    <h2 className="text-foreground text-xs font-semibold">
-                      Loading Border Editor...
+                    <h2 className="text-foreground text-sm font-semibold">
+                      Loading border editor…
                     </h2>
                     {countryInfo?.name && (
-                      <p className="text-muted-foreground mt-1 text-xs">{countryInfo.name}</p>
+                      <p className="text-muted-foreground mt-0.5 text-xs">{countryInfo.name}</p>
                     )}
                   </div>
-                </div>
+                </FacetContainer>
               </div>
             )}
             <EditorErrorBoundary name="Map">

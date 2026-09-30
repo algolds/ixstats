@@ -1,5 +1,6 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { memo, useCallback, useState, useRef } from "react";
 import {
   Upload,
@@ -82,9 +83,7 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
       {/* Scope picker */}
       <div className="space-y-2">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Import Scope
-        </label>
+        <Eyebrow className="block">Import Scope</Eyebrow>
         <div className="grid grid-cols-3 gap-2">
           {(
             [
@@ -157,7 +156,7 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
       {/* Existing subdivisions info */}
       {importer.existingSubdivisions.length > 0 && (
-        <div className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+        <div className="border-border rounded-lg border px-3 py-2 text-xs text-amber-500">
           This country has {importer.existingSubdivisions.length} existing subdivision
           {importer.existingSubdivisions.length !== 1 ? "s" : ""}. You can choose to replace them in
           the final step.

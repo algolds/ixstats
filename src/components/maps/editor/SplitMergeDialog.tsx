@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Cut as Scissors, GitMerge as Merge, Xmark as X } from "iconoir-react";
+import { Cut as Scissors, GitMerge as Merge, WarningTriangle } from "iconoir-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 
@@ -42,27 +43,19 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
   };
 
   return (
-    <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-      <div className="border-border bg-card w-full max-w-md rounded-xl border p-5 shadow-xl">
+    <Dialog open onOpenChange={(open) => !open && !props.isLoading && props.onCancel()}>
+      <DialogContent className="facet-modal rounded-2xl p-5 sm:max-w-md">
         {/* Header */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             {props.type === "split" ? (
-              <Scissors className="h-5 w-5 text-amber-400" />
+              <Scissors className="text-muted-foreground h-5 w-5" aria-hidden />
             ) : (
-              <Merge className="h-5 w-5 text-blue-400" />
+              <Merge className="text-muted-foreground h-5 w-5" aria-hidden />
             )}
-            <h3 className="text-foreground text-lg font-semibold">
-              {props.type === "split" ? "Split Country" : "Merge Countries"}
-            </h3>
-          </div>
-          <button
-            onClick={props.onCancel}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+            {props.type === "split" ? "Split country" : "Merge countries"}
+          </DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           {props.type === "split" ? (
@@ -115,7 +108,8 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
           )}
 
           {/* Actions */}
-          <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+          <p className="mt-3 flex items-start gap-2 text-xs text-amber-500">
+            <WarningTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             {props.type === "split"
               ? "This permanently replaces the original country with two new ones. It cannot be undone."
               : "This permanently merges the selected countries into one. It cannot be undone."}
@@ -153,7 +147,7 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 });

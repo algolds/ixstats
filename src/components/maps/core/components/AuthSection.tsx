@@ -3,6 +3,7 @@
 import { LogIn, User, Dashboard as LayoutDashboard, Crown } from "iconoir-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
 import { getNationUrl } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -37,7 +38,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
           <img
             src={user.imageUrl}
             alt=""
-            className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20"
+            className="ring-border h-4 w-4 rounded-full object-cover ring-1"
           />
         ) : (
           <User className="h-3 w-3" />
@@ -50,7 +51,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
       <PopoverContent
         side="bottom"
         align="center"
-        className="glass-none border-border bg-popover mt-2 w-64 rounded-2xl border p-0 shadow-2xl"
+        className="mt-2 w-64 rounded-2xl p-0"
         sideOffset={8}
       >
         {/* Header */}
@@ -62,9 +63,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
               className="ring-border h-8 w-8 rounded-full object-cover ring-2"
             />
           ) : (
-            <div className="bg-accent flex h-8 w-8 items-center justify-center rounded-full">
-              <User className="text-muted-foreground h-4 w-4" />
-            </div>
+            <User className="text-muted-foreground h-5 w-5" aria-hidden />
           )}
           <div className="min-w-0 flex-1">
             <div className="text-foreground truncate text-sm font-semibold">
@@ -78,22 +77,26 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
 
         {/* Quick actions */}
         <div className="space-y-0.5 p-1.5">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.push("/dashboard")}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
+            className="text-muted-foreground w-full justify-start"
           >
-            <LayoutDashboard className="h-3.5 w-3.5" />
+            <LayoutDashboard aria-hidden />
             Dashboard
-          </button>
+          </Button>
 
           {countryName && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => router.push(getNationUrl(countryName))}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
+              className="text-muted-foreground w-full justify-start"
             >
-              <Crown className="h-3.5 w-3.5" />
+              <Crown aria-hidden />
               MyCountry
-            </button>
+            </Button>
           )}
         </div>
       </PopoverContent>

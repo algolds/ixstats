@@ -1,5 +1,7 @@
 "use client";
 
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 import React from "react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -42,7 +44,12 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 }: BorderEditorToolOptionsProps) {
   const notify = useNotify();
   return (
-    <div className="border-border bg-card/85 pointer-events-auto flex h-8 shrink-0 items-center justify-between border-b px-3 backdrop-blur-sm">
+    <FacetContainer
+      depth={1}
+      role="toolbar"
+      aria-label="Border editor options"
+      className="pointer-events-auto flex h-9 shrink-0 items-center justify-between rounded-none px-3"
+    >
       {/* Left Side: Active Tool Options */}
       <div className="flex items-center gap-2">
         <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
@@ -55,9 +62,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         {/* Tool-specific configuration */}
         {borderState.mode === "brush" && (
           <div className="flex items-center gap-2">
-            <Eyebrow>
-              Brush Size
-            </Eyebrow>
+            <Eyebrow>Brush Size</Eyebrow>
             <input
               type="range"
               min="1"
@@ -108,28 +113,31 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
       <div className="flex items-center gap-2">
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-6 w-6 justify-center"
             disabled={!(borderState.isDirty && borderState.undoStackState.position >= 0)}
             onClick={borderActions.undo}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Undo (Ctrl+Z)"
           >
             <Undo2 className="h-3.5 w-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-6 w-6 justify-center"
             disabled={
               !(
                 borderState.isDirty &&
-                borderState.undoStackState.position <
-                  borderState.undoStackState.entries.length - 1
+                borderState.undoStackState.position < borderState.undoStackState.entries.length - 1
               )
             }
             onClick={borderActions.redo}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Redo (Ctrl+Shift+Z)"
           >
             <Redo2 className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
 
         <div className="bg-border h-4 w-px" />
@@ -147,14 +155,11 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         {/* Advanced operations popover */}
         <Popover>
-          <PopoverTrigger className="bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors">
+          <PopoverTrigger className="bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors active:scale-[0.98]">
             <Wrench className="h-3 w-3" />
             <span>Advanced</span>
           </PopoverTrigger>
-          <PopoverContent
-            className="bg-popover border-border text-foreground z-[100] w-48 rounded-md border p-2 shadow-md"
-            align="end"
-          >
+          <PopoverContent className="w-48 rounded-md p-2" align="end">
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => {
@@ -215,58 +220,58 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         <div className="bg-border h-4 w-px" />
 
         {/* Save Draft */}
-        <button
+        <Button
+          variant="ghost"
+          size="xs"
           onClick={() => void borderActions.save()}
           disabled={!borderState.isDirty || isSubmitting}
-          className="bg-muted/50 text-foreground hover:bg-accent active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors disabled:opacity-30"
           title="Save draft"
         >
           <Save className="h-3 w-3" />
           <span>{isSubmitting ? "Saving..." : "Save"}</span>
-        </button>
+        </Button>
 
         {/* Revert edits */}
-        <button
+        <Button
+          variant="ghost"
+          size="xs"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           onClick={borderActions.revert}
           disabled={
             !borderState.isDirty &&
             borderState.splitLine.length === 0 &&
             borderState.mergeTargets.length === 0
           }
-          className="flex h-6 cursor-pointer items-center gap-1 rounded bg-red-500/10 px-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-30"
           title="Revert all unsaved changes for this feature"
         >
           <RefreshCw className="h-3 w-3" />
           <span>Revert</span>
-        </button>
+        </Button>
 
         {/* Apply & Exit */}
-        <button
+        <Button
+          variant="ghost"
+          size="xs"
           onClick={onSubmit}
           disabled={
             !borderState.isDirty &&
             !(borderState.mode === "split" && borderState.splitLine.length >= 2) &&
             !(borderState.mode === "merge" && borderState.mergeTargets.length > 0)
           }
-          className="flex h-6 cursor-pointer items-center gap-1 rounded bg-emerald-600/20 px-2 text-xs font-medium text-emerald-500 transition-colors hover:bg-emerald-600/30 active:scale-[0.98] disabled:opacity-30"
           title="Apply and exit"
         >
           <Check className="h-3 w-3" />
           <span>Apply</span>
-        </button>
+        </Button>
 
         <div className="bg-border h-4 w-px" />
 
         {/* Close / Exit Border Editor */}
-        <button
-          onClick={onExit}
-          className="bg-muted hover:bg-accent text-foreground active:scale-[0.98] flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors"
-          title="Close Border Editor"
-        >
+        <Button variant="secondary" size="xs" onClick={onExit} title="Close Border Editor">
           <X className="h-3 w-3" />
           <span>Close</span>
-        </button>
+        </Button>
       </div>
-    </div>
+    </FacetContainer>
   );
 });

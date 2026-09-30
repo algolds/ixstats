@@ -8,6 +8,8 @@
  * infoboxes (population, coordinates, area) and lists disagreements.
  */
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { memo, useState } from "react";
 import {
   OpenBook as BookOpen,
@@ -61,15 +63,16 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
             {totalLinked} linked · {totalUnlinked} without a page
           </p>
         </div>
-        <button
+        <Button
+          size="xs"
+          className="shrink-0"
           type="button"
           onClick={() => startScan()}
           disabled={scanning || scanningConflicts}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex shrink-0 items-center gap-1 rounded-md px-2 py-1 font-medium transition-[background-color,transform] active:scale-[0.98] disabled:opacity-50"
         >
           <Refresh className={`h-3 w-3 ${scanning ? "animate-spin" : ""}`} />
           {hasScanned ? "Rescan" : "Scan"}
-        </button>
+        </Button>
       </div>
 
       {(scanning || scanningConflicts) && (
@@ -103,9 +106,7 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
 
       {hasScanned && (
         <section className="space-y-1.5">
-          <h4 className="text-muted-foreground font-semibold tracking-wider uppercase">
-            Suggested links ({withSuggestions.length})
-          </h4>
+          <Eyebrow className="block">Suggested links ({withSuggestions.length})</Eyebrow>
           {withSuggestions.length === 0 ? (
             <p className="text-muted-foreground italic">No new matches found.</p>
           ) : (
@@ -131,26 +132,27 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
                         <span className="tabular-nums">({Math.round(best.confidence * 100)}%)</span>
                       </span>
                     </button>
-                    <button
+                    <Button
+                      size="xs"
+                      className="shrink-0"
                       type="button"
                       onClick={() => {
                         acceptSuggestion(r.featureId, best.title);
                         setLinked((prev) => new Set(prev).add(r.featureId));
                         notify.success("Wiki page linked", `${r.featureName} → ${best.title}`);
                       }}
-                      className="text-primary hover:bg-primary/10 flex shrink-0 items-center gap-1 rounded px-1.5 py-1 font-medium"
                       title={`Link "${r.featureName}" to ${best.title}`}
                     >
                       <LinkIcon className="h-3 w-3" />
                       Link
-                    </button>
+                    </Button>
                   </li>
                 );
               })}
             </ul>
           )}
           {linked.size > 0 && (
-            <p className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+            <p className="flex items-center gap-1 text-emerald-500">
               <Check className="h-3 w-3" /> {linked.size} linked this session
             </p>
           )}
@@ -159,9 +161,7 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
 
       {hasScanned && !scanningConflicts && (
         <section className="space-y-1.5">
-          <h4 className="text-muted-foreground font-semibold tracking-wider uppercase">
-            Map vs wiki conflicts ({conflicts.length})
-          </h4>
+          <Eyebrow className="block">Map vs wiki conflicts ({conflicts.length})</Eyebrow>
           {conflicts.length === 0 ? (
             <p className="text-muted-foreground italic">
               Linked features agree with their infoboxes.

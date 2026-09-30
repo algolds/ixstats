@@ -1,5 +1,8 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import {
   EditPencil as Pencil,
@@ -105,12 +108,13 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
     <div className="space-y-3">
       {/* Header badge */}
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          {isUnclaimed ? "Unclaimed Territory" : "Country Profile"}
-        </span>
+        <Eyebrow>{isUnclaimed ? "Unclaimed Territory" : "Country Profile"}</Eyebrow>
         <div className="flex min-w-0 items-center gap-1.5">
           {!isUnclaimed && (
-            <div className="border-border/60 bg-muted/40 relative h-4 w-6 shrink-0 overflow-hidden rounded-xs border shadow-2xs">
+            <FacetCard
+              surface="solid"
+              className="relative h-4 w-6 shrink-0 overflow-hidden rounded-xs"
+            >
               <UnifiedCountryFlag
                 countryName={
                   selectedCountryName ||
@@ -121,13 +125,13 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                 objectFit="cover"
                 className="h-full w-full"
               />
-            </div>
+            </FacetCard>
           )}
           <span
-            className={`truncate rounded px-1.5 py-0.5 text-xs font-medium ${
+            className={`truncate rounded border px-1.5 py-0.5 text-xs font-medium ${
               isUnclaimed
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "border-amber-500/30 text-amber-500"
+                : "border-emerald-500/30 text-emerald-500"
             }`}
           >
             {selectedCountryName || mapSelectedCountry.displayName || mapSelectedCountry.featureId}
@@ -136,10 +140,8 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
       </div>
 
       {/* Settings (editable display name & linkage) */}
-      <div className="border-border/60 bg-muted/10 space-y-3 rounded-lg border p-3">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Details
-        </label>
+      <FacetCard surface="solid" className="space-y-3 rounded-lg p-3">
+        <Eyebrow className="block">Details</Eyebrow>
         <div className="space-y-2">
           <div className="space-y-1">
             <span className="text-muted-foreground text-xs font-medium">Name</span>
@@ -185,22 +187,21 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
           {(editableFeatureName !== (mapSelectedCountry.displayName || "") ||
             editableCountryLinkageId !== (mapSelectedCountry.countryId || "") ||
             wikiPageTitle !== (featureDetails?.wikiPageTitle || "")) && (
-            <button
+            <Button
+              size="sm"
+              className="mt-2 w-full"
               onClick={() => handleSaveFeatureProperties()}
               disabled={updatePropertiesMutation.isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2 w-full cursor-pointer rounded-lg py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
             >
               {updatePropertiesMutation.isPending ? "Saving..." : "Save changes"}
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </FacetCard>
 
       {/* Feature data card */}
-      <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Feature Data
-        </label>
+      <FacetCard surface="solid" className="space-y-2 rounded-lg p-3">
+        <Eyebrow className="block">Feature Data</Eyebrow>
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Feature ID</span>
@@ -230,14 +231,12 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             </span>
           </div>
         </div>
-      </div>
+      </FacetCard>
 
       {/* DB feature details card */}
       {featureDetails && (
-        <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Database Record
-          </label>
+        <FacetCard surface="solid" className="space-y-2 rounded-lg p-3">
+          <Eyebrow className="block">Database Record</Eyebrow>
           <div className="space-y-1">
             {featureDetails.flagUrl && (
               <img
@@ -261,16 +260,16 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
               </div>
             )}
           </div>
-        </div>
+        </FacetCard>
       )}
 
       {/* Full feature properties JSON viewer */}
-      <div className="border-border/60 bg-muted/10 rounded-lg border p-3">
+      <FacetCard surface="solid" className="rounded-lg p-3">
         <div className="mb-2 flex items-center justify-between">
-          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Properties JSON
-          </label>
-          <button
+          <Eyebrow className="block">Properties JSON</Eyebrow>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               if (isEditingJson) {
                 try {
@@ -285,10 +284,9 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                 setIsEditingJson(true);
               }
             }}
-            className="text-primary text-xs font-semibold hover:underline"
           >
             {isEditingJson ? "Save" : "Edit JSON"}
-          </button>
+          </Button>
         </div>
         {isEditingJson ? (
           <div className="space-y-1">
@@ -303,7 +301,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
         ) : (
           <JsonViewer data={parsedProperties} />
         )}
-      </div>
+      </FacetCard>
 
       {/* Unclaimed territory actions */}
       {isUnclaimed && (
@@ -314,9 +312,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
 
           {setAssignCountryId && handleAssignLink && availableCountries && (
             <div className="space-y-1.5">
-              <label className="text-muted-foreground text-xs font-medium uppercase">
-                Assign to country
-              </label>
+              <Eyebrow className="block">Assign to country</Eyebrow>
               <div className="flex gap-1.5">
                 <select
                   value={assignCountryId ?? ""}
@@ -330,13 +326,15 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                     </option>
                   ))}
                 </select>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="shrink-0"
                   onClick={() => handleAssignLink(mapSelectedCountry.featureId)}
                   disabled={!assignCountryId || assignMutation?.isPending}
-                  className="bg-primary/15 hover:bg-primary/25 text-primary shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium active:scale-[0.98] disabled:opacity-50"
                 >
                   Assign
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -344,9 +342,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
           {createCountryFromShapeAction &&
             (isCreatingCountry ? (
               <div className="space-y-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2">
-                <label className="block text-xs font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
-                  New Country Name
-                </label>
+                <Eyebrow className="block">New Country Name</Eyebrow>
                 <input
                   type="text"
                   value={newCountryName}
@@ -366,16 +362,20 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                   }}
                 />
                 <div className="flex justify-end gap-1.5">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="text-muted-foreground"
                     onClick={() => {
                       setIsCreatingCountry(false);
                       setNewCountryName("");
                     }}
-                    className="text-muted-foreground hover:text-foreground rounded px-2 py-1 text-xs active:scale-[0.98]"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="xs"
                     onClick={() => {
                       if (newCountryName.trim()) {
                         createCountryFromShapeAction(newCountryName.trim());
@@ -384,23 +384,24 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                       }
                     }}
                     disabled={!newCountryName.trim() || createCountryFromShapePending}
-                    className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
                   >
                     {createCountryFromShapePending ? "Creating…" : "Create"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-center"
                 onClick={() => {
                   setNewCountryName(mapSelectedCountry.displayName || "");
                   setIsCreatingCountry(true);
                 }}
                 disabled={createCountryFromShapePending}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-500/25 active:scale-[0.98] disabled:opacity-50 dark:text-emerald-400"
               >
                 {createCountryFromShapePending ? "Creating…" : "+ Create new country from shape"}
-              </button>
+              </Button>
             ))}
         </div>
       )}
@@ -408,53 +409,61 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
       {/* Action buttons */}
       <div className="border-border/60 space-y-2 border-t pt-3">
         {enterBorderEdit && (
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full justify-center"
             onClick={() => enterBorderEdit()}
-            className="bg-primary/15 text-primary hover:bg-primary/25 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium active:scale-[0.98]"
           >
             <Pencil className="h-3.5 w-3.5" />
             Edit Borders
-          </button>
+          </Button>
         )}
         {enterBorderEdit && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-center"
             onClick={() => enterBorderEdit("brush")}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-500/25 active:scale-[0.98] dark:text-emerald-400"
           >
             <Paintbrush className="h-3.5 w-3.5" />
             Brush Territory…
-          </button>
+          </Button>
         )}
         {!isUnclaimed && (
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full justify-center"
             onClick={() => setShowGenerator((v) => !v)}
-            className="bg-accent hover:bg-accent/80 text-accent-foreground flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium active:scale-[0.98]"
           >
             <Grid3X3 className="h-3.5 w-3.5" />
             Generate Subdivisions…
-          </button>
+          </Button>
         )}
         {!isUnclaimed && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
             onClick={() => {
               if (mapSelectedCountry?.featureId) {
                 router.push(`/admin/geography?featureId=${mapSelectedCountry.featureId}`);
               }
             }}
-            className="border-border bg-muted/20 hover:bg-muted/40 text-foreground w-full rounded-lg border py-2 text-center text-xs font-medium transition-colors active:scale-[0.98]"
           >
             Manage Database Record
-          </button>
+          </Button>
         )}
       </div>
       {showGenerator && (
-        <div className="border-border/60 bg-muted/10 rounded-lg border">
+        <FacetCard surface="solid" className="rounded-lg">
           <ProvinceGeneratorPanel
             countryGeometry={countryGeometry ?? null}
             countryId={countryId ?? ""}
             onClose={() => setShowGenerator(false)}
           />
-        </div>
+        </FacetCard>
       )}
     </div>
   );

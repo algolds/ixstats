@@ -1,5 +1,7 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useState, useEffect } from "react";
 import { notifyFromStore } from "~/hooks/useNotify";
 import { useVexelEditor } from "./VexelEditorProvider";
@@ -124,35 +126,31 @@ export default function SaveControls() {
   return (
     <FacetMaterial
       material="satin"
-      className="mb-6 shrink-0 overflow-hidden rounded-xl border border-white/10"
+      className="border-border mb-6 shrink-0 overflow-hidden rounded-xl border"
     >
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 text-xs text-zinc-300">
+      <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-4 p-4 text-xs">
         <div className="flex flex-1 flex-wrap items-center gap-4">
           {/* Title Input */}
           <div className="flex min-w-[150px] flex-col gap-1">
-            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
-              Arms Title
-            </span>
+            <Eyebrow>Arms Title</Eyebrow>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-200 focus:border-amber-500 focus:outline-none"
+              className="border-border bg-card text-foreground rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
             />
           </div>
 
           {/* Subject Type */}
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
-              Subject Type
-            </span>
+            <Eyebrow>Subject Type</Eyebrow>
             <select
               value={subjectType}
               onChange={(e) => {
                 setSubjectType(e.target.value as any);
                 setSubjectId(null);
               }}
-              className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:outline-none"
+              className="border-border bg-card text-muted-foreground rounded-lg border p-2 focus:outline-none"
             >
               <option value="CHARACTER">Character</option>
               <option value="COUNTRY">Country</option>
@@ -164,13 +162,11 @@ export default function SaveControls() {
           {/* Subject Association (Conditional) */}
           {subjectType === "COUNTRY" && (
             <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
-              <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
-                Select Country
-              </span>
+              <Eyebrow>Select Country</Eyebrow>
               <select
                 value={subjectId || ""}
                 onChange={(e) => setSubjectId(e.target.value || null)}
-                className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:outline-none"
+                className="border-border bg-card text-muted-foreground rounded-lg border p-2 focus:outline-none"
               >
                 <option value="">Choose Country...</option>
                 {countries.map((c) => (
@@ -187,13 +183,14 @@ export default function SaveControls() {
         <div className="flex items-center gap-2">
           {/* Attach Button (Country only) */}
           {subjectType === "COUNTRY" && achievementId && subjectId && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleAttach}
               disabled={attachMutation.isPending}
-              className="h-9 rounded-lg bg-indigo-600 px-4 font-bold text-zinc-100 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-700 disabled:bg-zinc-800"
             >
-              {attachMutation.isPending ? "Attaching..." : "🔗 Attach to Map"}
-            </button>
+              {attachMutation.isPending ? "Attaching..." : "Attach to map"}
+            </Button>
           )}
 
           {/* Publish Button */}
@@ -203,30 +200,28 @@ export default function SaveControls() {
               disabled={isPublishing}
               className={`h-9 rounded-lg px-4 font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 currentAchievement?.isPublished
-                  ? "border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                  : "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                  ? "border-destructive/30 text-destructive hover:bg-destructive/10 border"
+                  : "border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20"
               }`}
             >
-              {currentAchievement?.isPublished ? "Unpublish" : "📢 Publish"}
+              {currentAchievement?.isPublished ? "Unpublish" : "Publish"}
             </button>
           )}
 
           {/* Save Button */}
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleSave}
             disabled={saveMutation.isPending}
-            className="h-9 rounded-lg bg-amber-500 px-4 font-bold text-zinc-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600 disabled:bg-zinc-800"
           >
-            {saveMutation.isPending ? "Saving..." : "💾 Save Changes"}
-          </button>
+            {saveMutation.isPending ? "Saving..." : "Save changes"}
+          </Button>
 
           {/* Export Button */}
-          <button
-            onClick={() => setIsExportOpen(true)}
-            className="h-9 rounded-lg border border-white/10 px-4 font-bold text-zinc-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
-          >
-            📤 Export
-          </button>
+          <Button variant="outline" size="sm" onClick={() => setIsExportOpen(true)}>
+            Export
+          </Button>
         </div>
 
         {isExportOpen && <ExportDialog onClose={() => setIsExportOpen(false)} />}

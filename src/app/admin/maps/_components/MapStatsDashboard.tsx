@@ -7,6 +7,8 @@
  * and a list of unlinked political features.
  */
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -31,8 +33,8 @@ export function MapStatsDashboard() {
   return (
     <div className="space-y-6">
       {/* Layer breakdown */}
-      <div className="border-border bg-card rounded-xl border p-6">
-        <h3 className="text-foreground/80 mb-4 text-sm font-semibold uppercase">Layer Breakdown</h3>
+      <FacetCard className="rounded-xl p-6">
+        <Eyebrow className="text-foreground/80 mb-4 block text-sm">Layer Breakdown</Eyebrow>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {layerInfo?.map((layer) => (
             <div key={layer.type} className="border-border/50 rounded-lg border p-3">
@@ -50,11 +52,11 @@ export function MapStatsDashboard() {
             </div>
           ))}
         </div>
-      </div>
+      </FacetCard>
 
       {/* Linkage overview */}
-      <div className="border-border bg-card rounded-xl border p-6">
-        <h3 className="text-foreground/80 mb-4 text-sm font-semibold uppercase">Country Linkage</h3>
+      <FacetCard className="rounded-xl p-6">
+        <Eyebrow className="text-foreground/80 mb-4 block text-sm">Country Linkage</Eyebrow>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Progress bar */}
           <div>
@@ -66,7 +68,7 @@ export function MapStatsDashboard() {
             </div>
             <div className="bg-muted h-3 overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                className="h-full rounded-full bg-emerald-500"
                 style={{ width: `${stats?.linkageRate ?? 0}%` }}
               />
             </div>
@@ -96,7 +98,7 @@ export function MapStatsDashboard() {
             </div>
             <div className="bg-muted h-3 overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                className="h-full rounded-full bg-blue-500"
                 style={{
                   width: `${
                     stats && stats.totalCountries > 0
@@ -108,15 +110,15 @@ export function MapStatsDashboard() {
             </div>
           </div>
         </div>
-      </div>
+      </FacetCard>
 
       {/* Linked features list */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Linked */}
-        <div className="border-border bg-card rounded-xl border p-6">
-          <h3 className="mb-3 text-sm font-semibold text-emerald-600 uppercase dark:text-emerald-400">
+        <FacetCard className="rounded-xl p-6">
+          <Eyebrow className="mb-3 block text-sm">
             Linked Features ({linkedFeatures.length})
-          </h3>
+          </Eyebrow>
           <div className="max-h-64 space-y-1 overflow-y-auto">
             {linkedFeatures.map((f) => (
               <div
@@ -133,13 +135,13 @@ export function MapStatsDashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </FacetCard>
 
         {/* Unlinked */}
-        <div className="border-border bg-card rounded-xl border p-6">
-          <h3 className="mb-3 text-sm font-semibold text-amber-600 uppercase dark:text-amber-400">
+        <FacetCard className="rounded-xl p-6">
+          <Eyebrow className="mb-3 block text-sm">
             Unlinked Features ({unlinkedFeatures.length})
-          </h3>
+          </Eyebrow>
           <div className="max-h-64 space-y-1 overflow-y-auto">
             {unlinkedFeatures.map((f) => (
               <div
@@ -157,7 +159,7 @@ export function MapStatsDashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </FacetCard>
       </div>
     </div>
   );

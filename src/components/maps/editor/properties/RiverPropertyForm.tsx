@@ -1,5 +1,6 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
 import React, { useMemo } from "react";
 import type { NamedRiverFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
@@ -28,7 +29,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
   const hasGeom = !!activeGeom;
 
   const lengthKm = useMemo(() => {
-    if (!activeGeom) return (selectedFeature?.properties?.lengthKm as number | undefined);
+    if (!activeGeom) return selectedFeature?.properties?.lengthKm as number | undefined;
     if (activeGeom.type === "LineString" && Array.isArray(activeGeom.coordinates)) {
       return polylineLengthKm(activeGeom.coordinates as [number, number][]);
     }
@@ -43,7 +44,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
       }
       return total;
     }
-    return (selectedFeature?.properties?.lengthKm as number | undefined);
+    return selectedFeature?.properties?.lengthKm as number | undefined;
   }, [activeGeom, selectedFeature?.properties?.lengthKm]);
 
   return (
@@ -57,7 +58,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
         autoFocus
       />
 
-      <div className="border-border/60 bg-muted/20 rounded-lg border px-3 py-2 text-xs">
+      <FacetCard surface="solid" className="rounded-lg px-3 py-2 text-xs">
         <div className="text-muted-foreground text-left font-medium">
           Line Geometry:{" "}
           {hasGeom ? (
@@ -73,7 +74,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
             Use the line drawing tool in the map controls to draw the path of the river.
           </div>
         )}
-      </div>
+      </FacetCard>
 
       <WikiLinkWizard
         value={form.wikiPageTitle}

@@ -7,6 +7,7 @@
  * hovering re-renders only this tooltip, not the editor.
  */
 
+import { FacetContainer } from "~/components/ui/facet-container";
 import React, { useMemo } from "react";
 import { countGeometryVertices } from "~/components/maps/editor/utils/editor-overlay-helpers";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
@@ -48,44 +49,47 @@ export const RegionHoverTooltip = React.memo(function RegionHoverTooltip({
 
   return (
     <div
-      className="border-border bg-card/95 pointer-events-none absolute z-20 rounded-lg border px-3 py-2 shadow-lg backdrop-blur-sm"
+      className="pointer-events-none absolute z-20"
+
       style={{
         left: screen.x + 14,
         top: screen.y + 14,
         maxWidth: 220,
       }}
     >
-      <div className="text-foreground text-xs font-semibold">{feature.name}</div>
-      <div className="text-muted-foreground mt-1 space-y-0.5 text-xs">
-        <div className="flex justify-between gap-3">
-          <span>Type</span>
-          <span className="text-foreground font-medium capitalize">
-            {String(feature.properties.type ?? feature.properties.subdivisionType ?? "region")}
-          </span>
+      <FacetContainer depth={2} className="rounded-lg px-3 py-2">
+        <div className="text-foreground text-xs font-semibold">{feature.name}</div>
+        <div className="text-muted-foreground mt-1 space-y-0.5 text-xs">
+          <div className="flex justify-between gap-3">
+            <span>Type</span>
+            <span className="text-foreground font-medium capitalize">
+              {String(feature.properties.type ?? feature.properties.subdivisionType ?? "region")}
+            </span>
+          </div>
+          {feature.properties.areaSqKm != null && (
+            <div className="flex justify-between gap-3">
+              <span>Area</span>
+              <span className="text-foreground font-medium tabular-nums">
+                {Math.round(Number(feature.properties.areaSqKm)).toLocaleString()} km²
+              </span>
+            </div>
+          )}
+          {feature.properties.population != null && (
+            <div className="flex justify-between gap-3">
+              <span>Population</span>
+              <span className="text-foreground font-medium tabular-nums">
+                {Number(feature.properties.population).toLocaleString()}
+              </span>
+            </div>
+          )}
+          {vertexCount !== null && (
+            <div className="flex justify-between gap-3">
+              <span>Vertices</span>
+              <span className="text-foreground font-medium tabular-nums">{vertexCount}</span>
+            </div>
+          )}
         </div>
-        {feature.properties.areaSqKm != null && (
-          <div className="flex justify-between gap-3">
-            <span>Area</span>
-            <span className="text-foreground font-medium tabular-nums">
-              {Math.round(Number(feature.properties.areaSqKm)).toLocaleString()} km²
-            </span>
-          </div>
-        )}
-        {feature.properties.population != null && (
-          <div className="flex justify-between gap-3">
-            <span>Population</span>
-            <span className="text-foreground font-medium tabular-nums">
-              {Number(feature.properties.population).toLocaleString()}
-            </span>
-          </div>
-        )}
-        {vertexCount !== null && (
-          <div className="flex justify-between gap-3">
-            <span>Vertices</span>
-            <span className="text-foreground font-medium tabular-nums">{vertexCount}</span>
-          </div>
-        )}
-      </div>
+      </FacetContainer>
     </div>
   );
 });

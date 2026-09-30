@@ -13,6 +13,8 @@ import { Xmark as X } from "iconoir-react";
 import type { SelectedCountry } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { CountryInfoContent, CountryPeekContent } from "./CountryInfoContent";
 
 // Lazy import modals and geo profile to avoid bloating the initial map bundle
@@ -76,9 +78,9 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
       className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
       style={{ animation: "slideInRight 0.25s ease-out" }}
     >
-      <div className="bg-card border-border/50 flex h-full flex-col border-l shadow-xl">
+      <FacetContainer depth={2} className="flex h-full flex-col rounded-none">
         {/* Header */}
-        <div className="border-border/50 flex shrink-0 items-center justify-between border-b px-4 py-3">
+        <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2.5 overflow-hidden">
             {state.flagUrl ? (
               <img
@@ -96,15 +98,17 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
               {state.displayName}
             </h3>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Close country panel"
             title="Close (Esc)"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring shrink-0 rounded-full p-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            className="text-muted-foreground h-8 w-8 shrink-0 rounded-full"
           >
-            <X className="h-4 w-4" aria-hidden />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
 
         <CountryInfoContent
@@ -113,7 +117,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
           onGeographyFilter={onGeographyFilter}
           onEditMap={onEditMap}
         />
-      </div>
+      </FacetContainer>
     </div>
   );
 

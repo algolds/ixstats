@@ -9,6 +9,8 @@
  * new overlay's legend ships with its registry entry — no edits here required.
  */
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
 import type { OverlayLegend } from "~/lib/maps/overlay-types";
 import type { OverlayVisibility } from "./IxWorldMap";
@@ -28,21 +30,18 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
   const isLoading = !!overlayData && active.renderProps && overlayData[active.id] == null;
 
   return (
-    <div
+    <FacetContainer
+      depth={2}
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
       role="status"
       aria-live="polite"
-      className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 pointer-events-auto max-w-[16rem] rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200"
+      className="animate-in fade-in slide-in-from-bottom-2 pointer-events-auto max-w-[16rem] rounded-xl px-3 py-2.5 duration-200"
     >
-      <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs font-semibold tracking-wider uppercase">
-        <span>{legend.title}</span>
-        {isLoading && (
-          <span className="text-muted-foreground/80 font-normal tracking-normal normal-case">
-            Loading…
-          </span>
-        )}
+      <div className="flex items-center justify-between gap-3">
+        <Eyebrow>{legend.title}</Eyebrow>
+        {isLoading && <span className="text-muted-foreground text-xs">Loading…</span>}
       </div>
 
       {legend.type === "gradient" && (
@@ -69,9 +68,7 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
               overlay and nothing recolored" without users having to read the
               data model. */}
           {"note" in legend && legend.note && (
-            <p className="text-muted-foreground/70 mt-1 text-xs leading-snug italic">
-              {legend.note}
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs leading-snug italic">{legend.note}</p>
           )}
         </div>
       )}
@@ -90,11 +87,11 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
                   height: line.style === "dashed" ? 0 : undefined,
                 }}
               />
-              <span className="text-foreground/80 text-xs">{line.label}</span>
+              <span className="text-foreground text-xs">{line.label}</span>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </FacetContainer>
   );
 }

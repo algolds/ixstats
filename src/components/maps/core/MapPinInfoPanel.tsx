@@ -22,6 +22,8 @@ import type { ClientPointQueryResult } from "~/lib/maps/map-point-query";
 import type { PinPosition } from "~/hooks/useMapPinInfo";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 
 interface PointInfoServerResult {
   coordinates: { lng: number; lat: number };
@@ -82,13 +84,9 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-2.5 py-2">
-      <div className="bg-muted mt-0.5 flex h-6 w-6 items-center justify-center rounded-md">
-        <Icon className="text-muted-foreground h-3.5 w-3.5" />
-      </div>
+      <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
-        <Eyebrow className="block">
-          {label}
-        </Eyebrow>
+        <Eyebrow className="block">{label}</Eyebrow>
         {loading ? (
           <Skeleton className="mt-0.5 h-4 w-24 rounded" />
         ) : (
@@ -151,30 +149,32 @@ export default function MapPinInfoPanel({
   const panelContent = (
     <>
       {/* Header */}
-      <div className="border-border/50 flex items-center justify-between border-b px-4 py-2.5">
+      <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-blue-500" />
-          <span className="text-foreground text-xs font-semibold">Pin Info</span>
+          <MapPin className="h-4 w-4 text-blue-500" aria-hidden />
+          <h3 className="text-foreground text-sm font-semibold">Pin info</h3>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onClose}
           aria-label="Close pin info"
-          className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring rounded-lg p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="text-muted-foreground h-8 w-8 rounded-full"
         >
-          <X className="h-4 w-4" />
-        </button>
+          <X aria-hidden />
+        </Button>
       </div>
 
       {/* Coordinates */}
-      <div className="border-border/50 border-b px-4 py-2">
+      <div className="border-border border-b px-4 py-2">
         <div className="text-muted-foreground font-mono text-xs">
           {formatCoord(pinPosition.lat, "lat")}, {formatCoord(pinPosition.lng, "lng")}
         </div>
       </div>
 
       {/* Info Rows */}
-      <div className="divide-border/30 divide-y px-4">
+      <div className="divide-border divide-y px-4">
         <InfoRow
           icon={Mountain}
           label="Elevation"
@@ -207,7 +207,7 @@ export default function MapPinInfoPanel({
 
       {/* Footer */}
       <div className="px-4 py-2 text-center">
-        <span className="text-muted-foreground/40 text-xs">Tap map to update pin</span>
+        <span className="text-muted-foreground text-xs">Tap map to update pin</span>
       </div>
     </>
   );
@@ -219,9 +219,11 @@ export default function MapPinInfoPanel({
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
-        className="border-border bg-card/95 absolute top-3 right-3 z-20 hidden w-72 rounded-xl border shadow-lg backdrop-blur-sm sm:block"
+        className="absolute top-3 right-3 z-20 hidden w-72 sm:block"
       >
-        {panelContent}
+        <FacetContainer depth={2} className="rounded-2xl">
+          {panelContent}
+        </FacetContainer>
       </div>
 
       {/* Mobile: bottom sheet */}
@@ -229,12 +231,12 @@ export default function MapPinInfoPanel({
         className="absolute inset-x-0 bottom-0 z-20 sm:hidden"
         style={{ animation: "slideInUp 0.25s ease-out" }}
       >
-        <div className="bg-card rounded-t-2xl shadow-xl" style={{ maxHeight: "50vh" }}>
+        <FacetContainer depth={2} className="max-h-[50vh] rounded-t-2xl rounded-b-none">
           <div className="flex justify-center pt-2 pb-1">
             <div className="bg-border h-1 w-8 rounded-full" />
           </div>
           {panelContent}
-        </div>
+        </FacetContainer>
       </div>
 
       <style jsx>{`

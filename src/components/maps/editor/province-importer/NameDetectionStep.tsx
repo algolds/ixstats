@@ -1,5 +1,8 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { memo } from "react";
 import { Check } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
@@ -73,10 +76,10 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                   <span
                     className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${
                       province.confidence >= 0.8
-                        ? "bg-green-500/10 text-green-600"
+                        ? "text-emerald-500"
                         : province.confidence >= 0.5
-                          ? "bg-amber-500/10 text-amber-600"
-                          : "bg-red-500/10 text-red-600"
+                          ? "text-amber-500"
+                          : "text-destructive"
                     }`}
                   >
                     {Math.round(province.confidence * 100)}%
@@ -93,31 +96,33 @@ export const NameDetectionStep = memo(function NameDetectionStep({
           {importer.includedCount} of {importer.rawProvinces.length} provinces selected
         </span>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() =>
               importer.rawProvinces.forEach((p) => {
                 if (!p.included) importer.toggleProvinceIncluded(p.sourceId);
               })
             }
-            className="text-primary hover:underline"
           >
             Select all
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() =>
               importer.rawProvinces.forEach((p) => {
                 if (p.included) importer.toggleProvinceIncluded(p.sourceId);
               })
             }
-            className="text-primary hover:underline"
           >
             Deselect all
-          </button>
+          </Button>
         </div>
       </div>
 
       {importer.hasCities && (
-        <div className="border-border bg-card/40 mt-3 space-y-3 rounded-lg border p-3">
+        <FacetCard surface="solid" className="mt-3 space-y-3 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-foreground text-xs font-semibold">Import Cities</span>
@@ -141,9 +146,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
             <div className="space-y-2">
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="space-y-1">
-                  <label className="text-muted-foreground block text-xs font-semibold uppercase">
-                    Cities Layer
-                  </label>
+                  <Eyebrow className="block">Cities Layer</Eyebrow>
                   <select
                     value={importer.citiesLayerId}
                     onChange={(e) =>
@@ -165,9 +168,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-muted-foreground block text-xs font-semibold uppercase">
-                    Capitals Layer (Optional)
-                  </label>
+                  <Eyebrow className="block">Capitals Layer (Optional)</Eyebrow>
                   <select
                     value={importer.capitalLayerId}
                     onChange={(e) =>
@@ -189,9 +190,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-muted-foreground block text-xs font-semibold uppercase">
-                    City Names (Optional)
-                  </label>
+                  <Eyebrow className="block">City Names (Optional)</Eyebrow>
                   <select
                     value={importer.cityNameLayerId}
                     onChange={(e) =>
@@ -214,7 +213,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
               </div>
 
               {importer.snappedCitiesCount > 0 && (
-                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1.5 text-xs leading-relaxed text-amber-600 dark:text-amber-400">
+                <div className="border-border rounded-lg border px-2.5 py-1.5 text-xs leading-relaxed text-amber-500">
                   <strong>Notice:</strong> {importer.snappedCitiesCount} city dot
                   {importer.snappedCitiesCount !== 1 ? "s" : ""} detected slightly outside country
                   boundaries and will be automatically snapped to the border.
@@ -222,7 +221,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
               )}
             </div>
           )}
-        </div>
+        </FacetCard>
       )}
     </div>
   );

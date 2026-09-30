@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
+import { Xmark } from "iconoir-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { CHARGE_CATEGORIES } from "~/lib/heraldry";
@@ -120,178 +130,180 @@ export default function CommonsBrowserPanel({
   };
 
   return (
-    <div className="animate-in slide-in-from-right fixed inset-y-0 right-0 z-50 flex w-[450px] flex-col overflow-hidden border-l border-white/10 bg-zinc-950/95 shadow-2xl backdrop-blur-2xl duration-250">
-      {/* Panel Header */}
-      <header className="flex h-14 items-center justify-between border-b border-white/10 px-6">
-        <div>
-          <h2 className="text-sm font-bold tracking-wider text-amber-500">Wikimedia Commons</h2>
-          <p className="text-xs text-zinc-500">Search and import vector heraldic charges</p>
+    <Sheet open onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[450px]"
+      >
+        {/* Panel Header */}
+        <SheetHeader className="border-border border-b px-6 py-3 pr-12 text-left">
+          <SheetTitle className="text-sm">Wikimedia Commons</SheetTitle>
+          <SheetDescription className="text-xs">
+            Search and import vector heraldic charges
+          </SheetDescription>
+        </SheetHeader>
+
+        {/* Tabs */}
+        <div className="border-border bg-muted/40 flex border-b">
+          <button
+            onClick={() => setActiveTab("category")}
+            className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+              activeTab === "category"
+                ? "border-amber-500 text-amber-500"
+                : "text-muted-foreground hover:text-foreground border-transparent"
+            }`}
+          >
+            Categories
+          </button>
+          <button
+            onClick={() => setActiveTab("search")}
+            className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+              activeTab === "search"
+                ? "border-amber-500 text-amber-500"
+                : "text-muted-foreground hover:text-foreground border-transparent"
+            }`}
+          >
+            Search
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="rounded p-1 text-xs text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
-        >
-          ✕ Close
-        </button>
-      </header>
 
-      {/* Tabs */}
-      <div className="flex border-b border-white/5 bg-zinc-900/30">
-        <button
-          onClick={() => setActiveTab("category")}
-          className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "category"
-              ? "border-amber-500 text-amber-400"
-              : "border-transparent text-zinc-500 hover:text-zinc-300"
-          }`}
-        >
-          Categories
-        </button>
-        <button
-          onClick={() => setActiveTab("search")}
-          className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "search"
-              ? "border-amber-500 text-amber-400"
-              : "border-transparent text-zinc-500 hover:text-zinc-300"
-          }`}
-        >
-          Search
-        </button>
-      </div>
+        {/* Controls Area */}
+        <div className="border-border bg-card border-b p-4">
+          {activeTab === "category" ? (
+            <div className="space-y-1">
+              <Eyebrow className="block">Commons Category</Eyebrow>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="border-border bg-muted text-muted-foreground w-full rounded-lg border p-2 text-xs focus:outline-none"
+              >
+                {COMMONS_SUGGESTED_CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <Eyebrow className="block">Search Term</Eyebrow>
+              <input
+                type="text"
+                placeholder="e.g. heraldic lion, crown SVG..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border-border bg-muted text-muted-foreground w-full rounded-lg border p-2 text-xs focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+          )}
+        </div>
 
-      {/* Controls Area */}
-      <div className="border-b border-white/5 bg-zinc-950 p-4">
-        {activeTab === "category" ? (
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-zinc-500 uppercase">
-              Commons Category
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-zinc-900 p-2 text-xs text-zinc-300 focus:outline-none"
-            >
-              {COMMONS_SUGGESTED_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-zinc-500 uppercase">Search Term</label>
-            <input
-              type="text"
-              placeholder="e.g. heraldic lion, crown SVG..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-zinc-900 p-2 text-xs text-zinc-300 focus:border-amber-500 focus:outline-none"
-            />
-          </div>
-        )}
-      </div>
+        {/* Results View */}
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          {isLoading ? (
+            <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-20 text-xs">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+              <span>Fetching Wikimedia library...</span>
+            </div>
+          ) : svgImages.length === 0 ? (
+            <div className="text-muted-foreground py-20 text-center text-xs italic">
+              {activeTab === "search" && search.length < 3
+                ? "Type search query to search Wikimedia Commons..."
+                : "No vector SVG files found in this section."}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {svgImages.map((img: any) => {
+                const isImportingThis = importingId === img.pageid;
 
-      {/* Results View */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-xs text-zinc-500">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-            <span>Fetching Wikimedia library...</span>
-          </div>
-        ) : svgImages.length === 0 ? (
-          <div className="py-20 text-center text-xs text-zinc-500 italic">
-            {activeTab === "search" && search.length < 3
-              ? "Type search query to search Wikimedia Commons..."
-              : "No vector SVG files found in this section."}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {svgImages.map((img: any) => {
-              const isImportingThis = importingId === img.pageid;
-
-              return (
-                <div
-                  key={img.pageid}
-                  className="group relative flex flex-col gap-2 overflow-hidden rounded-lg border border-white/5 bg-zinc-900/30 p-2"
-                >
-                  {/* Thumbnail Image Box */}
-                  <div className="relative flex h-28 items-center justify-center overflow-hidden rounded bg-zinc-950 p-2">
-                    <img
-                      src={img.thumbUrl}
-                      alt={img.title}
-                      className="max-h-full max-w-full object-contain brightness-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:brightness-100"
-                      loading="lazy"
-                    />
-                    <span className="absolute right-1 bottom-1 rounded border border-emerald-400/20 bg-black/60 px-1 py-0.5 font-mono text-xs text-emerald-400">
-                      SVG
-                    </span>
-                  </div>
-
-                  {/* Title / Info */}
-                  <div className="space-y-0.5 text-xs">
-                    <p className="truncate font-medium text-zinc-300" title={img.title}>
-                      {getSanitizedTitle(img.title)}
-                    </p>
-                    <p className="truncate text-zinc-500">License: {img.license || "Unknown"}</p>
-                  </div>
-
-                  {/* Action buttons or Inline import form */}
-                  {isImportingThis ? (
-                    <div className="space-y-1.5 border-t border-white/5 p-1 text-xs">
-                      <div>
-                        <span className="mb-0.5 block font-bold text-zinc-500">Name</span>
-                        <input
-                          type="text"
-                          value={importName}
-                          onChange={(e) => setImportName(e.target.value)}
-                          className="w-full rounded border border-white/10 bg-zinc-950 px-1.5 py-0.5 text-zinc-300 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <span className="mb-0.5 block font-bold text-zinc-500">Category</span>
-                        <select
-                          value={importCategory}
-                          onChange={(e) => setImportCategory(e.target.value)}
-                          className="w-full rounded border border-white/10 bg-zinc-950 px-1 py-0.5 text-zinc-400 focus:outline-none"
-                        >
-                          {CHARGE_CATEGORIES.map((cat) => (
-                            <option key={cat.value} value={cat.value}>
-                              {cat.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex gap-1 pt-1.5">
-                        <button
-                          onClick={() => handleConfirmImport(img)}
-                          disabled={importMutation.isPending}
-                          className="flex-1 rounded bg-amber-500 py-1 text-center font-bold text-zinc-950 hover:bg-amber-600"
-                        >
-                          {importMutation.isPending ? "Importing..." : "Confirm"}
-                        </button>
-                        <button
-                          onClick={() => setImportingId(null)}
-                          className="rounded bg-zinc-800 px-2 text-center text-zinc-300 hover:bg-zinc-700"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                return (
+                  <div
+                    key={img.pageid}
+                    className="group border-border bg-muted/40 relative flex flex-col gap-2 overflow-hidden rounded-lg border p-2"
+                  >
+                    {/* Thumbnail Image Box */}
+                    <div className="bg-card relative flex h-28 items-center justify-center overflow-hidden rounded p-2">
+                      <img
+                        src={img.thumbUrl}
+                        alt={img.title}
+                        className="max-h-full max-w-full object-contain brightness-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:brightness-100"
+                        loading="lazy"
+                      />
+                      <span className="border-border bg-background/80 absolute right-1 bottom-1 rounded border px-1 py-0.5 font-mono text-xs text-emerald-500">
+                        SVG
+                      </span>
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => handleStartImport(img)}
-                      className="w-full rounded border border-white/5 bg-zinc-800 py-1 text-center text-xs font-semibold text-zinc-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-400"
-                    >
-                      📥 Import to Library
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+
+                    {/* Title / Info */}
+                    <div className="space-y-0.5 text-xs">
+                      <p className="text-muted-foreground truncate font-medium" title={img.title}>
+                        {getSanitizedTitle(img.title)}
+                      </p>
+                      <p className="text-muted-foreground truncate">
+                        License: {img.license || "Unknown"}
+                      </p>
+                    </div>
+
+                    {/* Action buttons or Inline import form */}
+                    {isImportingThis ? (
+                      <div className="border-border space-y-1.5 border-t p-1 text-xs">
+                        <div>
+                          <span className="text-muted-foreground mb-0.5 block font-bold">Name</span>
+                          <input
+                            type="text"
+                            value={importName}
+                            onChange={(e) => setImportName(e.target.value)}
+                            className="border-border bg-card text-muted-foreground w-full rounded border px-1.5 py-0.5 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground mb-0.5 block font-bold">
+                            Category
+                          </span>
+                          <select
+                            value={importCategory}
+                            onChange={(e) => setImportCategory(e.target.value)}
+                            className="border-border bg-card text-muted-foreground w-full rounded border px-1 py-0.5 focus:outline-none"
+                          >
+                            {CHARGE_CATEGORIES.map((cat) => (
+                              <option key={cat.value} value={cat.value}>
+                                {cat.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex gap-1 pt-1.5">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            className="flex-1"
+                            onClick={() => handleConfirmImport(img)}
+                            disabled={importMutation.isPending}
+                          >
+                            {importMutation.isPending ? "Importing..." : "Confirm"}
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setImportingId(null)}>
+                            <Xmark aria-hidden />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="w-full"
+                        onClick={() => handleStartImport(img)}
+                      >
+                        Import to library
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { memo, useCallback } from "react";
 import {
   Xmark as X,
@@ -64,12 +65,14 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
               ? "Import Provinces"
               : "Import Provinces & Cities"}
         </h2>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground h-6 w-6"
           onClick={handleClose}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Step Indicator */}
@@ -118,14 +121,16 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
 
       {/* Footer Navigation */}
       <div className="border-border flex items-center justify-between border-t px-4 py-3">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground"
           onClick={importer.goBack}
           disabled={!importer.canGoBack || importer.isProcessing}
-          className="text-muted-foreground hover:bg-accent flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           Back
-        </button>
+        </Button>
 
         <div className="text-muted-foreground text-xs">
           {importer.importScope === "cities"
@@ -134,7 +139,8 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         </div>
 
         {importer.step !== "commit" ? (
-          <button
+          <Button
+            size="sm"
             onClick={importer.goNext}
             disabled={
               !importer.canGoNext ||
@@ -144,13 +150,13 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
                   ? importer.rawCityPoints.length === 0
                   : importer.rawProvinces.length === 0))
             }
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
           >
             Next
             <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            size="sm"
             onClick={handleCommit}
             disabled={
               importer.isProcessing ||
@@ -158,7 +164,6 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
                 ? importer.alignedCities.length === 0
                 : importer.includedCount === 0)
             }
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
           >
             {importer.isProcessing
               ? "Importing..."
@@ -166,7 +171,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
                 ? "Import Cities"
                 : "Import Provinces"}
             <Save className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         )}
       </div>
       {/* Border conformance warning modal */}

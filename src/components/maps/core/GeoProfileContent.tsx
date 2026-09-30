@@ -25,40 +25,40 @@ import {
   Droplet,
   MapPin,
   WarningTriangle as AlertTriangle,
-  SystemRestart as Loader2,
   NavArrowDown as ChevronDown,
   NavArrowRight as ChevronRight,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { ELEVATION_ZONES } from "~/lib/maps/geo-analytics";
+import {
+  CLIMATE_COLORS as CLIMATE_COLOR_BY_CODE,
+  CLIMATE_NAMES,
+  CLIMATE_TYPES,
+} from "~/lib/worldgen/climate-system";
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 
-/** Color lookup for climate zones — match by name substring */
-const CLIMATE_COLORS: Record<string, string> = {
-  "Tropical Wet (Ar)": "#990000",
-  "Tropical Wet-And-Dry (Aw)": "#FF3300",
-  "Desert or Arid (Bw)": "#FFFF33",
-  "Steppe or Semiarid (Bs)": "#FF9933",
-  "Subtropical Dry Summer (Cs)": "#669900",
-  "Subtropical Humid (Cf)": "#336600",
-  "Temperate Oceanic (Do)": "#00FF99",
-  "Temperate Continental (Dc)": "#0099FF",
-  "Boreal (E)": "#0066CC",
-  "Tundra (Ft)": "#B9B9B9",
-  "Ice Cap (Fi)": "#99FFFF",
-  "Highland (H)": "#FFCCFF",
-};
+/** Climate zone colours keyed by "<Name> (<code>)", derived from the canonical Trewartha scheme. */
+const CLIMATE_COLORS: Record<string, string> = Object.fromEntries(
+  CLIMATE_TYPES.map((code) => [`${CLIMATE_NAMES[code]} (${code})`, CLIMATE_COLOR_BY_CODE[code]])
+);
+
+/** Swatch fallback for an unknown zone: a theme token, not a literal. */
+const UNKNOWN_SWATCH = "var(--color-muted-foreground)";
 
 function getClimateColor(type: string): string {
   if (CLIMATE_COLORS[type]) return CLIMATE_COLORS[type]!;
   for (const [key, color] of Object.entries(CLIMATE_COLORS)) {
     if (type.includes(key) || key.includes(type)) return color;
   }
-  return "#888888";
+  return UNKNOWN_SWATCH;
 }
 
 function getElevationColor(zoneName: string): string {
   const match = ELEVATION_ZONES.find((z) => z.zoneName === zoneName);
-  return match?.color ?? "#888888";
+  return match?.color ?? UNKNOWN_SWATCH;
 }
 
 const RESOURCE_ICONS: Record<string, typeof Fish> = {
@@ -84,16 +84,15 @@ const RISK_LABELS: Record<string, string> = {
 function ModifierBadge({ label, value }: { label: string; value: number }) {
   const isUp = value > 1.005;
   const isDown = value < 0.995;
-  const color = isUp ? "text-emerald-600" : isDown ? "text-red-500" : "text-muted-foreground";
-  const bg = isUp ? "bg-emerald-50" : isDown ? "bg-red-50" : "bg-muted";
+  const color = isUp ? "text-emerald-500" : isDown ? "text-destructive" : "text-muted-foreground";
   const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Minus;
 
   return (
-    <div className={`flex items-center gap-1.5 rounded-md ${bg} px-2 py-1.5`}>
-      <span className="text-muted-foreground text-xs font-medium">{label}</span>
-      <span className={`text-xs font-semibold ${color}`}>x{value.toFixed(2)}</span>
-      <Icon className={`h-3 w-3 ${color}`} />
-    </div>
+    <Badge variant="outline" className="gap-1.5 py-1">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`font-semibold tabular-nums ${color}`}>x{value.toFixed(2)}</span>
+      <Icon className={color} aria-hidden />
+    </Badge>
   );
 }
 
@@ -102,17 +101,15 @@ function RiskBadge({ type, score }: { type: string; score: number }) {
   const level = score >= 0.6 ? "High" : score >= 0.3 ? "Med" : "Low";
   const color =
     score >= 0.6
-      ? "bg-red-50 text-red-600"
+      ? "border-destructive/30 text-destructive"
       : score >= 0.3
-        ? "bg-amber-50 text-amber-600"
-        : "bg-emerald-50 text-emerald-600";
+        ? "border-amber-500/30 text-amber-500"
+        : "border-emerald-500/30 text-emerald-500";
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${color}`}
-    >
+    <Badge variant="outline" className={color}>
       {label}: {level}
-    </span>
+    </Badge>
   );
 }
 
@@ -137,8 +134,10 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading geography">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-4 w-2/3 rounded" />
+        <Skeleton className="h-4 w-1/2 rounded" />
       </div>
     );
   }
@@ -166,84 +165,81 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
     <div className="space-y-4">
       {/* ── Key Stats ── */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
+        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
+          <Eyebrow className="flex items-center gap-1.5">
             <Wheat className="h-3 w-3" />
             Arable Land
-          </div>
+          </Eyebrow>
           <div
             className={`mt-0.5 text-sm font-semibold ${
               profile.derived.arableLandPercent > 50
-                ? "text-emerald-600"
+                ? "text-emerald-500"
                 : profile.derived.arableLandPercent > 20
-                  ? "text-amber-600"
-                  : "text-red-500"
+                  ? "text-amber-500"
+                  : "text-destructive"
             }`}
           >
             {profile.derived.arableLandPercent}%
           </div>
-        </div>
+        </FacetCard>
 
-        <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
+        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
+          <Eyebrow className="flex items-center gap-1.5">
             <Anchor className="h-3 w-3" />
             {profile.derived.isIsland
               ? "Island"
               : profile.derived.coastlineKm > 0
                 ? "Coastal"
                 : "Borders"}
-          </div>
+          </Eyebrow>
           <div className="text-foreground mt-0.5 text-sm font-semibold">
             {profile.derived.coastlineKm > 0 ? (
               <span>{profile.derived.coastlineKm.toLocaleString()} km coast</span>
             ) : (
-              <span className="text-amber-600">{profile.neighbors?.length ?? 0} neighbors</span>
+              <span className="text-amber-500">{profile.neighbors?.length ?? 0} neighbors</span>
             )}
           </div>
-        </div>
+        </FacetCard>
 
-        <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
+        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
+          <Eyebrow className="flex items-center gap-1.5">
             <Thermometer className="h-3 w-3" />
             Mean Temp
-          </div>
+          </Eyebrow>
           <div className="text-foreground mt-0.5 text-sm font-semibold">
             {profile.climate.estMeanTempC}°C
           </div>
-        </div>
+        </FacetCard>
 
-        <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
+        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
+          <Eyebrow className="flex items-center gap-1.5">
             <Mountain className="h-3 w-3" />
             Mean Elev
-          </div>
+          </Eyebrow>
           <div className="text-foreground mt-0.5 text-sm font-semibold">
             {profile.elevation.meanElev}m
           </div>
-        </div>
+        </FacetCard>
       </div>
 
       {/* ── Neighbors ── */}
       {profile.neighbors && profile.neighbors.length > 0 && (
         <div>
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          <Eyebrow>
             <MapPin className="mr-1 inline h-3 w-3" />
             Borders ({profile.neighbors.length})
-          </span>
+          </Eyebrow>
           <div className="mt-1 flex flex-wrap gap-1">
             {profile.neighbors.map(
               (n: { id: string; name: string; slug: string | null; sharedBorderKm: number }) => (
-                <span
-                  key={n.id}
-                  className="bg-muted text-foreground/80 hover:text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors"
-                >
+                <Badge key={n.id} variant="secondary">
                   {n.name}
                   {n.sharedBorderKm > 0 && (
                     <span className="text-muted-foreground">
                       {n.sharedBorderKm.toLocaleString()} km
                     </span>
                   )}
-                </span>
+                </Badge>
               )
             )}
           </div>
@@ -257,13 +253,9 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           return (
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  Climate
-                </span>
+                <Eyebrow>Climate</Eyebrow>
                 {climateZones.length > 1 && (
-                  <span className="text-muted-foreground text-xs">
-                    {climateZones.length} zones
-                  </span>
+                  <span className="text-muted-foreground text-xs">{climateZones.length} zones</span>
                 )}
               </div>
 
@@ -296,7 +288,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                     style={{ backgroundColor: getClimateColor(dominant.type) }}
                   />
-                  <span className="text-foreground/80 flex-1 truncate">{dominant.type}</span>
+                  <span className="text-foreground flex-1 truncate">{dominant.type}</span>
                   <span className="text-foreground font-medium tabular-nums">
                     {dominant.percentArea}%
                   </span>
@@ -315,7 +307,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                         className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                         style={{ backgroundColor: getClimateColor(z.type) }}
                       />
-                      <span className="text-foreground/80 flex-1 truncate">{z.type}</span>
+                      <span className="text-foreground flex-1 truncate">{z.type}</span>
                       <span className="text-foreground font-medium tabular-nums">
                         {z.percentArea}%
                       </span>
@@ -341,9 +333,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           return (
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  Elevation
-                </span>
+                <Eyebrow>Elevation</Eyebrow>
                 {elevationZones.length > 1 && (
                   <span className="text-muted-foreground text-xs">
                     {elevationZones.length} zones
@@ -380,7 +370,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                     style={{ backgroundColor: getElevationColor(dominant.name) }}
                   />
-                  <span className="text-foreground/80 flex-1 truncate">{dominant.name}</span>
+                  <span className="text-foreground flex-1 truncate">{dominant.name}</span>
                   <span className="text-foreground font-medium tabular-nums">
                     {dominant.percentArea}%
                   </span>
@@ -402,7 +392,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                         className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                         style={{ backgroundColor: getElevationColor(z.name) }}
                       />
-                      <span className="text-foreground/80 flex-1 truncate">{z.name}</span>
+                      <span className="text-foreground flex-1 truncate">{z.name}</span>
                       <span className="text-foreground font-medium tabular-nums">
                         {z.percentArea}%
                       </span>
@@ -433,9 +423,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
       {/* ── Economic Modifiers ── */}
       <div>
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Geographic Modifiers
-        </span>
+        <Eyebrow>Geographic Modifiers</Eyebrow>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           <ModifierBadge label="GDP" value={profile.economic.gdpModifier} />
           <ModifierBadge label="Trade" value={profile.economic.tradeModifier} />
@@ -446,16 +434,14 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Resources ── */}
       {resources && resources.length > 0 && (
         <div>
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Resources ({resources.length})
-          </span>
+          <Eyebrow>Resources ({resources.length})</Eyebrow>
           <div className="mt-1.5 space-y-1">
             {resources.map((r) => {
               const Icon = RESOURCE_ICONS[r.resourceType] ?? Gem;
               return (
                 <div key={r.id} className="flex items-center gap-2 text-xs">
                   <Icon className="text-muted-foreground h-3 w-3 shrink-0" />
-                  <span className="text-foreground/80 flex-1 truncate">{r.name}</span>
+                  <span className="text-foreground flex-1 truncate">{r.name}</span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-muted-foreground">Qty</span>
                     <div className="bg-muted h-1.5 w-10 rounded-full">
@@ -482,10 +468,10 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Crisis Risk ── */}
       {topRisks.length > 0 && (
         <div>
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
+          <Eyebrow className="flex items-center gap-1.5">
             <AlertTriangle className="h-3 w-3" />
-            Risk Profile
-          </div>
+            Risk profile
+          </Eyebrow>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {topRisks.map(([type, score]) => (
               <RiskBadge key={type} type={type} score={score} />
@@ -495,7 +481,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       )}
 
       {/* ── Dimensions (compact) ── */}
-      <div className="text-muted-foreground border-border/30 flex flex-wrap gap-x-4 gap-y-0.5 border-t pt-2 text-xs">
+      <div className="text-muted-foreground border-border flex flex-wrap gap-x-4 gap-y-0.5 border-t pt-2 text-xs">
         <span>{profile.area.areaKm2.toLocaleString()} km²</span>
         <span>
           {profile.area.nsSpanKm} x {profile.area.ewSpanKm} km

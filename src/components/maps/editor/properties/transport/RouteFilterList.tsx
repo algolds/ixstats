@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { memo } from "react";
 import { Search, EditPencil as Pencil, Trash as Trash2 } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
@@ -104,10 +105,12 @@ export const RouteFilterList = memo(function RouteFilterList({
                     <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                       <span>{style.label}</span>
                       {route.lengthKm !== undefined && (
-                        <span className="font-mono tabular-nums">• {route.lengthKm.toFixed(1)} km</span>
+                        <span className="font-mono tabular-nums">
+                          • {route.lengthKm.toFixed(1)} km
+                        </span>
                       )}
                       {travelDuration && (
-                        <span className="font-mono tabular-nums text-primary font-medium">
+                        <span className="text-primary font-mono font-medium tabular-nums">
                           • {travelDuration}
                         </span>
                       )}
@@ -117,30 +120,34 @@ export const RouteFilterList = memo(function RouteFilterList({
 
                 <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   {onEditRoute && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground h-6 w-6"
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEditRoute(route.id);
                       }}
-                      className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1 transition active:scale-[0.98]"
                       title="Edit Route Path"
                     >
                       <Pencil className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   )}
                   {onDeleteRoute && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive h-6 w-6"
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteRoute(route.id);
                       }}
-                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1 transition active:scale-[0.98]"
                       title="Delete Route"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

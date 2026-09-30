@@ -10,6 +10,7 @@
  * The Quick Update mode preserves existing featureId→countryId linkages automatically.
  */
 
+import { FacetCard } from "~/components/ui/facet-container";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
@@ -280,15 +281,17 @@ function QuickUpdatePanel() {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400">
+        <div className="border-destructive/30 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="text-sm">{error}</span>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive ml-auto"
             onClick={() => setError(null)}
-            className="ml-auto text-red-400/60 hover:text-red-400"
           >
             &times;
-          </button>
+          </Button>
         </div>
       )}
 
@@ -317,12 +320,12 @@ function QuickUpdatePanel() {
             onClick={() => fileInputRef.current?.click()}
             className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               isDragging
-                ? "border-blue-400 bg-blue-500/10"
+                ? "bg-accent border-blue-500"
                 : "border-border bg-muted/30 hover:border-border hover:bg-muted/50"
             }`}
           >
             <FileUp
-              className={`h-10 w-10 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`}
+              className={`h-10 w-10 ${isDragging ? "text-blue-500" : "text-muted-foreground"}`}
             />
             <div className="text-center">
               <p className="text-foreground text-sm font-medium">
@@ -413,7 +416,7 @@ function QuickUpdatePanel() {
           )}
 
           {result.diff?.summary && result.diff.summary.linkagesLost > 0 && (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-400">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 px-4 py-3 text-amber-500">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span className="text-sm">
                 {result.diff.summary.linkagesLost} feature(s) with country linkages will be removed.
@@ -425,9 +428,11 @@ function QuickUpdatePanel() {
             </div>
           )}
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
             onClick={() => setDetailsExpanded(!detailsExpanded)}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm transition-colors"
           >
             {detailsExpanded ? (
               <ChevronDown className="h-4 w-4" />
@@ -435,12 +440,12 @@ function QuickUpdatePanel() {
               <ChevronRight className="h-4 w-4" />
             )}
             Feature details
-          </button>
+          </Button>
 
           {detailsExpanded && result.diff && (
-            <div className="border-border bg-muted/50 max-h-64 overflow-y-auto rounded-lg border">
+            <FacetCard surface="solid" className="max-h-64 overflow-y-auto rounded-lg">
               <table className="w-full text-sm">
-                <thead className="bg-muted text-muted-foreground sticky top-0 text-left text-xs uppercase">
+                <thead className="bg-muted text-muted-foreground sticky top-0 text-left text-xs">
                   <tr>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Feature ID</th>
@@ -500,7 +505,7 @@ function QuickUpdatePanel() {
                   )}
                 </tbody>
               </table>
-            </div>
+            </FacetCard>
           )}
 
           <div className="flex gap-3 pt-2">
@@ -524,14 +529,14 @@ function QuickUpdatePanel() {
 
       {stage === "committing" && (
         <div className="flex flex-col items-center gap-3 py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
           <p className="text-muted-foreground text-sm">Applying update... writing to database</p>
         </div>
       )}
 
       {stage === "done" && result && (
         <div className="flex flex-col items-center gap-4 py-12">
-          <CheckCircle2 className="h-12 w-12 text-emerald-400" />
+          <CheckCircle2 className="h-12 w-12 text-emerald-500" />
           <div className="text-center">
             <h3 className="text-foreground text-lg font-semibold">Update Applied</h3>
             <p className="text-muted-foreground mt-1 text-sm">
@@ -694,7 +699,7 @@ function FullPipelinePanel() {
   const currentIdx = steps.findIndex((s) => s.id === step);
 
   return (
-    <div className="border-border bg-muted/30 rounded-xl border p-6">
+    <FacetCard className="rounded-xl p-6">
       <h3 className="text-foreground mb-4 text-lg font-semibold">Full Pipeline Wizard</h3>
       <p className="text-muted-foreground mb-4 text-xs">
         Multi-step wizard for importing SVG/PNG maps with coordinate calibration. For single-layer
@@ -708,7 +713,7 @@ function FullPipelinePanel() {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
                 i < currentIdx
-                  ? "bg-emerald-500/20 text-emerald-400"
+                  ? "bg-emerald-500/20 text-emerald-500"
                   : i === currentIdx
                     ? "bg-blue-500 text-white"
                     : "bg-muted text-muted-foreground"
@@ -733,7 +738,7 @@ function FullPipelinePanel() {
       </div>
 
       {error && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+        <div className="border-destructive/30 text-destructive mb-4 flex items-start gap-2 rounded-lg border p-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -817,7 +822,7 @@ function FullPipelinePanel() {
 
       {step === "complete" && importResult && (
         <div className="space-y-4 py-4 text-center">
-          <CheckCircle className="mx-auto h-12 w-12 text-emerald-400" />
+          <CheckCircle className="mx-auto h-12 w-12 text-emerald-500" />
           <p className="text-foreground text-lg font-medium">Import Complete</p>
           <p className="text-muted-foreground text-sm">
             {importResult.imported} features imported successfully. Shared vertex index has been
@@ -828,7 +833,7 @@ function FullPipelinePanel() {
       )}
 
       {pipelineResult && <PipelineLog log={pipelineResult.metadata.log} />}
-    </div>
+    </FacetCard>
   );
 }
 
@@ -871,7 +876,7 @@ function PreviewStep({
 }) {
   return (
     <div className="space-y-4">
-      <div className="border-border bg-muted/50 rounded-lg border p-4">
+      <FacetCard surface="solid" className="rounded-lg p-4">
         <h4 className="text-foreground mb-2 text-sm font-medium">Pipeline Results</h4>
         <div className="space-y-1">
           {Object.entries(result.metadata.featureCounts).map(([layer, count]) => (
@@ -881,13 +886,13 @@ function PreviewStep({
             </div>
           ))}
         </div>
-      </div>
+      </FacetCard>
 
       {result.metadata.warnings.length > 0 && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-          <p className="mb-1 text-xs font-medium text-amber-400">Warnings</p>
+        <div className="rounded-lg border border-amber-500/30 p-3">
+          <p className="mb-1 text-xs font-medium text-amber-500">Warnings</p>
           {result.metadata.warnings.map((w, i) => (
-            <p key={i} className="text-xs text-amber-400/80">
+            <p key={i} className="text-xs text-amber-500/80">
               {w}
             </p>
           ))}
@@ -895,10 +900,10 @@ function PreviewStep({
       )}
 
       {!result.validation.valid && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-          <p className="mb-1 text-xs font-medium text-red-400">Validation Errors</p>
+        <div className="border-destructive/30 rounded-lg border p-3">
+          <p className="text-destructive mb-1 text-xs font-medium">Validation Errors</p>
           {result.validation.errors.map((e, i) => (
-            <p key={i} className="text-xs text-red-400/80">
+            <p key={i} className="text-destructive/80 text-xs">
               {e}
             </p>
           ))}
@@ -1084,11 +1089,11 @@ function DiffBadge({
   color: string;
 }) {
   const colorMap: Record<string, string> = {
-    emerald: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    blue: "border-blue-500/30 bg-blue-500/10 text-blue-400",
-    red: "border-red-500/30 bg-red-500/10 text-red-400",
-    slate: "border-border/30 bg-muted/30 text-muted-foreground",
-    amber: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+    emerald: "border-emerald-500/30 text-emerald-500",
+    blue: "border-blue-500/30 text-blue-500",
+    red: "border-destructive/30 text-destructive",
+    slate: "border-border text-muted-foreground",
+    amber: "border-amber-500/30 text-amber-500",
   };
 
   return (
@@ -1114,32 +1119,30 @@ function DiffRow({
   countryName?: string;
 }) {
   const statusConfig = {
-    added: { color: "text-emerald-400", bg: "bg-emerald-500/10", label: "NEW" },
-    modified: { color: "text-blue-400", bg: "bg-blue-500/10", label: "MOD" },
-    removed: { color: "text-red-400", bg: "bg-red-500/10", label: "DEL" },
-    unchanged: { color: "text-muted-foreground", bg: "bg-muted/30", label: "—" },
+    added: { className: "border-emerald-500/30 text-emerald-500", label: "New" },
+    modified: { className: "border-blue-500/30 text-blue-500", label: "Modified" },
+    removed: { className: "border-destructive/30 text-destructive", label: "Removed" },
+    unchanged: { className: "text-muted-foreground", label: "—" },
   };
   const cfg = statusConfig[status];
 
   return (
     <tr className="text-foreground">
       <td className="px-3 py-1.5">
-        <span
-          className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.color}`}
-        >
+        <Badge variant="outline" className={cfg.className}>
           {cfg.label}
-        </span>
+        </Badge>
       </td>
       <td className="text-muted-foreground px-3 py-1.5 font-mono text-xs">{featureId}</td>
       <td className="px-3 py-1.5 text-sm">{displayName}</td>
       <td className="px-3 py-1.5">
         {countryName ? (
-          <span className="inline-flex items-center gap-1 text-xs text-amber-400">
+          <span className="inline-flex items-center gap-1 text-xs text-amber-500">
             <Link2 className="h-3 w-3" />
             {countryName}
           </span>
         ) : (
-          <span className="text-muted-foreground/70 text-xs">—</span>
+          <span className="text-muted-foreground text-xs">—</span>
         )}
       </td>
     </tr>

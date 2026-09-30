@@ -1,5 +1,7 @@
 "use client";
 
+import { FacetTabs } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
 import { useState } from "react";
 import { SystemRestart as Loader2, Palette, OpenNewWindow as ExternalLink } from "iconoir-react";
 import nextDynamic from "next/dynamic";
@@ -32,21 +34,15 @@ export function MapSettingsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
-        {SUB_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setSubTab(tab.id)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-              subTab === tab.id
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FacetTabs
+        tabs={SUB_TABS}
+        activeTab={subTab}
+        onChange={(id) => setSubTab(id as SubTab)}
+        size="md"
+        tone="accent"
+        showTexture={false}
+        className="w-full sm:w-fit"
+      />
 
       {subTab === "statistics" && <MapStatsDashboard />}
       {subTab === "upload" && <SvgUploadManager />}
@@ -57,13 +53,11 @@ export function MapSettingsTab() {
 
 function MapStyleSettingsPanel() {
   return (
-    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+    <FacetCard className="space-y-4 rounded-2xl p-5">
       <div className="flex items-start gap-3">
-        <div className="rounded-xl bg-blue-500/10 p-2.5 text-blue-400">
-          <Palette className="h-5 w-5" />
-        </div>
+        <Palette className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0" aria-hidden />
         <div className="flex-1 space-y-1">
-          <h3 className="text-foreground text-xs font-bold">Visual Style & Theme Editor</h3>
+          <h3 className="text-foreground text-sm font-semibold">Visual style & theme editor</h3>
           <p className="text-muted-foreground max-w-2xl text-xs leading-relaxed">
             Atlas uses the MapLibre GL style specification to define visual layers, fonts, colors,
             and layout configurations. The embedded Maputnik style editor allows you to edit
@@ -88,6 +82,6 @@ function MapStyleSettingsPanel() {
           <ExternalLink className="h-3.5 w-3.5" />
         </Link>
       </div>
-    </div>
+    </FacetCard>
   );
 }

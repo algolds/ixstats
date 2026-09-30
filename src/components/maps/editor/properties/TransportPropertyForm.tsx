@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { Sparks as Sparkles, PathArrow as RouteIcon, MapPin, Xmark as X } from "iconoir-react";
+import { NetworkLeft, PathArrow as RouteIcon, MapPin, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { RouteFilterList } from "./transport/RouteFilterList";
 import { RouteWaypointList } from "./transport/RouteWaypointList";
-import { ProceduralRouteGenerator, type GeneratableRouteType } from "./transport/ProceduralRouteGenerator";
+import {
+  ProceduralRouteGenerator,
+  type GeneratableRouteType,
+} from "./transport/ProceduralRouteGenerator";
 import { RouteNodeInspector } from "./transport/RouteNodeInspector";
 
 interface TransportPropertyFormProps {
@@ -95,10 +98,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   });
 
   const { data: countryRouteData, isLoading: countryLoading } =
-    api.transport.getCountryRoutes.useQuery(
-      { countryId: countryId! },
-      { enabled: !!countryId }
-    );
+    api.transport.getCountryRoutes.useQuery({ countryId: countryId! }, { enabled: !!countryId });
 
   const { data: worldRouteData, isLoading: worldLoading } =
     api.transport.getAllRoutesGeoJSON.useQuery({}, { enabled: !countryId });
@@ -244,7 +244,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Sparkles className="h-3.5 w-3.5" />
+          <NetworkLeft className="h-3.5 w-3.5" aria-hidden />
           <span>Generate</span>
         </button>
       </div>

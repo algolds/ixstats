@@ -14,6 +14,9 @@ import { Clock, Xmark } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { Slider } from "~/components/ui/slider";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
 
 export interface TimelineScrubberProps {
   /** Current scrubber value (epoch ms). `null` = at "now", show live data. */
@@ -89,75 +92,81 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
 
   if (!expanded && isAtNow) {
     return (
-      <button
-        type="button"
-        {...stopMapEvents}
-        onClick={() => setExpanded(true)}
-        aria-expanded={false}
-        className={`bg-card/95 text-muted-foreground ring-border/50 hover:text-foreground focus-visible:ring-ring absolute right-4 bottom-12 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-lg ring-1 backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-none ${className ?? ""}`}
-      >
-        <Clock className="h-3.5 w-3.5" aria-hidden />
-        Timeline
-      </button>
+      <div {...stopMapEvents} className={`absolute right-4 bottom-12 z-20 ${className ?? ""}`}>
+        <FacetContainer depth={2} className="rounded-full">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded(true)}
+            aria-expanded={false}
+            className="text-muted-foreground rounded-full"
+          >
+            <Clock aria-hidden />
+            Timeline
+          </Button>
+        </FacetContainer>
+      </div>
     );
   }
 
   return (
     <div
       {...stopMapEvents}
-      role="group"
-      aria-label="Historical timeline"
-      className={`bg-card/95 ring-border/50 absolute right-4 bottom-12 z-20 w-80 max-w-[calc(100vw-2rem)] rounded-2xl p-4 shadow-2xl ring-1 backdrop-blur-xl ${className ?? ""}`}
+      className={`absolute right-4 bottom-12 z-20 w-80 max-w-[calc(100vw-2rem)] ${className ?? ""}`}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-          Historical Timeline
-        </span>
-        <div className="flex items-center gap-1">
-          {!isAtNow && (
-            <button
+      <FacetContainer
+        depth={2}
+        role="group"
+        aria-label="Historical timeline"
+        className="rounded-2xl p-4"
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <Eyebrow>Historical timeline</Eyebrow>
+          <div className="flex items-center gap-1">
+            {!isAtNow && (
+              <Button type="button" variant="outline" size="xs" onClick={() => onChange(null)}>
+                Return to present
+              </Button>
+            )}
+            <Button
               type="button"
-              onClick={() => onChange(null)}
-              className="border-border bg-muted/50 text-foreground hover:bg-muted focus-visible:ring-ring rounded-md border px-2 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (!isAtNow) onChange(null);
+                setExpanded(false);
+              }}
+              className="text-muted-foreground h-7 w-7 rounded-full"
+              aria-label={isAtNow ? "Close timeline" : "Return to present and close timeline"}
             >
-              Return to present
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              if (!isAtNow) onChange(null);
-              setExpanded(false);
-            }}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring rounded-full p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            aria-label={isAtNow ? "Close timeline" : "Return to present and close timeline"}
-          >
-            <Xmark className="h-3.5 w-3.5" aria-hidden />
-          </button>
+              <Xmark aria-hidden />
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <Slider
-        min={minTime}
-        max={maxTime}
-        step={Math.max(1, Math.floor((maxTime - minTime) / 1000))}
-        value={[draft]}
-        onValueChange={(v) => setDraft(v[0] ?? maxTime)}
-        aria-label="Historical timeline scrubber"
-      />
+        <Slider
+          min={minTime}
+          max={maxTime}
+          step={Math.max(1, Math.floor((maxTime - minTime) / 1000))}
+          value={[draft]}
+          onValueChange={(v) => setDraft(v[0] ?? maxTime)}
+          aria-label="Historical timeline scrubber"
+        />
 
-      <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
-        <span>{IxTime.formatIxTime(minTime)}</span>
-        <span className="mx-2 truncate" title={label}>
-          {label}
-        </span>
-        <span>{IxTime.formatIxTime(maxTime)}</span>
-      </div>
+        <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
+          <span>{IxTime.formatIxTime(minTime)}</span>
+          <span className="mx-2 truncate" title={label}>
+            {label}
+          </span>
+          <span>{IxTime.formatIxTime(maxTime)}</span>
+        </div>
 
-      <p className="text-muted-foreground/80 mt-2 text-xs leading-snug">
-        Shows the political layer as of the selected date. Snapshots reflect editor history;
-        countries without edits show their current border at every date.
-      </p>
+        <p className="text-muted-foreground mt-2 text-xs leading-snug">
+          Shows the political layer as of the selected date. Snapshots reflect editor history;
+          countries without edits show their current border at every date.
+        </p>
+      </FacetContainer>
     </div>
   );
 }

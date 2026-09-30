@@ -1,3 +1,4 @@
+import { FacetContainer } from "~/components/ui/facet-container";
 import React from "react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 
@@ -49,8 +50,13 @@ export function MapHintPill({
   if (!text) return null;
 
   return (
-    <div className="bg-card/95 text-muted-foreground ring-border pointer-events-none absolute bottom-3 left-1/2 z-10 max-w-[90%] -translate-x-1/2 truncate rounded-full px-3 py-1 text-xs shadow-md ring-1 backdrop-blur-sm">
-      {text}
+    <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 max-w-[90%] -translate-x-1/2">
+      <FacetContainer
+        depth={2}
+        className="text-muted-foreground truncate rounded-full px-3 py-1 text-xs"
+      >
+        {text}
+      </FacetContainer>
     </div>
   );
 }

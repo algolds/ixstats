@@ -18,6 +18,9 @@
 
 import React, { useCallback, useMemo, useState, useRef, memo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Tooltip } from "~/components/ui/tooltip";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
 import type { ToolbarItem } from "~/components/maps/editor/plugins/types";
@@ -64,8 +67,8 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
   const activeMode = mode.startsWith("edit-") ? "view" : mode;
 
   const containerClass = horizontal
-    ? "flex h-10 items-center gap-0.5 border-t border-border bg-card px-1"
-    : "flex w-10 flex-col items-center gap-0.5 border-r border-border bg-card py-1";
+    ? "flex h-10 items-center gap-0.5 rounded-none px-1"
+    : "flex h-full w-10 flex-col items-center gap-0.5 rounded-none py-1";
 
   // Dynamically resolve tools from registered plugins (memoized once)
   const sortedTools = useMemo(() => {
@@ -175,7 +178,13 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
   let lastGroup = -1;
 
   return (
-    <div className={`${containerClass} ${disabled ? "pointer-events-none opacity-50" : ""}`}>
+    <FacetContainer
+      depth={1}
+      role="toolbar"
+      aria-label="Editor tools"
+      aria-orientation={horizontal ? "horizontal" : "vertical"}
+      className={`${containerClass} ${disabled ? "pointer-events-none opacity-50" : ""}`}
+    >
       {groupedTools.map((item) => {
         const toolGroup = item.group;
         const showSep = lastGroup !== -1 && toolGroup !== lastGroup;
@@ -206,71 +215,61 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                   if (!open) setActivePopoverGroupId(null);
                 }}
               >
-                <PopoverTrigger asChild>
-                  <button
-                    onClick={() => handleGroupClick(item, activeTool.mode)}
-                    onMouseDown={() => handleMouseDown(item.id)}
-                    onMouseUp={handleMouseUpOrLeave}
-                    onMouseLeave={handleMouseUpOrLeave}
-                    onContextMenu={(e) => handleContextMenu(e, item.id)}
-                    disabled={isToolDisabled}
-                    className={`group relative flex items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out select-none active:scale-[0.98] ${
-                      horizontal ? "h-8 w-8" : "h-9 w-9"
-                    } ${
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    } ${isToolDisabled ? "pointer-events-none opacity-30" : ""}`}
-                    title={titleText}
-                  >
-                    <FallbackIcon className="h-4 w-4" />
-
-                    <div
-                      className={`pointer-events-none absolute right-0.5 bottom-0.5 h-0 w-0 border-[3px] border-transparent border-r-current border-b-current opacity-60`}
-                    />
-
-                    {!isToolDisabled && activePopoverGroupId !== item.id && (
-                      <div
-                        className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
-                          horizontal
-                            ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
-                            : "top-1/2 left-full ml-1.5 -translate-y-1/2"
-                        }`}
-                      >
-                        {activeTool.label}
-                        <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
-                          {activeTool.shortcut}
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                </PopoverTrigger>
+                <Tooltip
+                  content={activeTool.label}
+                  shortcut={activeTool.shortcut}
+                  side={horizontal ? "top" : "right"}
+                  open={isToolDisabled || activePopoverGroupId === item.id ? false : undefined}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={isActive ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => handleGroupClick(item, activeTool.mode)}
+                      onMouseDown={() => handleMouseDown(item.id)}
+                      onMouseUp={handleMouseUpOrLeave}
+                      onMouseLeave={handleMouseUpOrLeave}
+                      onContextMenu={(e) => handleContextMenu(e, item.id)}
+                      disabled={isToolDisabled}
+                      aria-label={titleText}
+                      aria-pressed={isActive}
+                      className={`relative select-none ${horizontal ? "h-8 w-8" : "h-9 w-9"} ${
+                        isActive ? "" : "text-muted-foreground"
+                      } ${isToolDisabled ? "opacity-30" : ""}`}
+                    >
+                      <FallbackIcon aria-hidden />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute right-0.5 bottom-0.5 h-0 w-0 border-[3px] border-transparent border-r-current border-b-current opacity-60"
+                      />
+                    </Button>
+                  </PopoverTrigger>
+                </Tooltip>
                 <PopoverContent
                   side={horizontal ? "top" : "right"}
                   align="center"
                   sideOffset={6}
-                  style={{ transformOrigin: "var(--radix-popover-content-transform-origin)" }}
-                  className="bg-popover/90 border-border/60 text-foreground ring-border/50 z-[100] w-36 rounded-lg border p-1 shadow-xl ring-1 backdrop-blur-xl"
+                  className="w-40 rounded-xl p-1"
                 >
                   <div className="flex flex-col gap-0.5">
                     {item.tools.map((subTool) => {
                       const SubIcon = subTool.icon;
                       const isSubActive = activeMode === subTool.mode;
                       return (
-                        <button
+                        <Button
                           key={subTool.mode}
+                          variant={isSubActive ? "default" : "ghost"}
+                          size="sm"
                           onClick={() => {
                             onModeChange(subTool.mode);
                             setActivePopoverGroupId(null);
                           }}
-                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] ${
-                            isSubActive
-                              ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          className={`w-full justify-between px-2 ${
+                            isSubActive ? "" : "text-muted-foreground"
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            <SubIcon className="h-3.5 w-3.5" />
+                            <SubIcon aria-hidden />
                             <span>{subTool.label}</span>
                           </div>
                           <span
@@ -282,7 +281,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                           >
                             {subTool.shortcut}
                           </span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -307,39 +306,30 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                 ) : (
                   <div className="bg-border my-0.5 h-px w-5" />
                 ))}
-              <button
-                onClick={() => handleSingleClick(tool.mode)}
-                disabled={isToolDisabled}
-                className={`group relative flex items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] ${
-                  horizontal ? "h-8 w-8" : "h-9 w-9"
-                } ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                } ${isToolDisabled ? "pointer-events-none opacity-30" : ""}`}
-                title={titleText}
+              <Tooltip
+                content={tool.label}
+                shortcut={tool.shortcut}
+                side={horizontal ? "top" : "right"}
+                open={isToolDisabled ? false : undefined}
               >
-                <FallbackIcon className="h-4 w-4" />
-
-                {!isToolDisabled && (
-                  <div
-                    className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
-                      horizontal
-                        ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
-                        : "top-1/2 left-full ml-1.5 -translate-y-1/2"
-                    }`}
-                  >
-                    {tool.label}
-                    <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
-                      {tool.shortcut}
-                    </span>
-                  </div>
-                )}
-              </button>
+                <Button
+                  variant={isActive ? "default" : "ghost"}
+                  size="icon"
+                  onClick={() => handleSingleClick(tool.mode)}
+                  disabled={isToolDisabled}
+                  aria-label={titleText}
+                  aria-pressed={isActive}
+                  className={`${horizontal ? "h-8 w-8" : "h-9 w-9"} ${
+                    isActive ? "" : "text-muted-foreground"
+                  } ${isToolDisabled ? "opacity-30" : ""}`}
+                >
+                  <FallbackIcon aria-hidden />
+                </Button>
+              </Tooltip>
             </div>
           );
         }
       })}
-    </div>
+    </FacetContainer>
   );
 });

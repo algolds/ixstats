@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React from "react";
 import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/ui/color-picker";
@@ -38,8 +39,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
   // URL/header limits for large countries → ERR_HTTP2_PROTOCOL_ERROR / 520.)
   const sampleAreaValue = React.useMemo<number | undefined>(() => {
     const geom = form.geometry as
-      | { type?: string; coordinates?: number[][][] | number[][][][] }
-      | undefined;
+      { type?: string; coordinates?: number[][][] | number[][][][] } | undefined;
     if (!geom || !geom.coordinates || geom.type === "Point" || geom.type === "LineString") {
       return undefined;
     }
@@ -116,7 +116,10 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
               }
               className={inputClasses}
             />
-            <button
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
               type="button"
               disabled={sampleAreaValue === undefined}
               onClick={() =>
@@ -125,11 +128,10 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
                   areaSqKm: sampleAreaValue ?? form.areaSqKm,
                 })
               }
-              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors disabled:opacity-50"
             >
               <Ruler className="h-3.5 w-3.5" />
               <span>Auto</span>
-            </button>
+            </Button>
           </div>
           {sampleAreaValue !== undefined && !derivedFromGeometry && (
             <div className="text-muted-foreground text-xs">

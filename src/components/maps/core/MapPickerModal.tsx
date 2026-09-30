@@ -1,13 +1,10 @@
 "use client";
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 import { useEffect, useRef, useCallback, useState } from "react";
-import {
-  Xmark as X,
-  MapPin,
-  SystemRestart as Loader2,
-  WarningTriangle as AlertTriangle,
-  CheckCircle,
-} from "iconoir-react";
+import { MapPin, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Button } from "~/components/ui/button";
@@ -304,34 +301,31 @@ export function MapPickerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="facet-surface facet-refraction flex h-[550px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="facet-modal flex h-[550px] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4 dark:bg-black/20">
-          <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-            <MapPin className="h-5 w-5 text-emerald-400" />
+        <DialogHeader className="border-border border-b px-6 py-4 pr-12">
+          <DialogTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-blue-500" aria-hidden />
             {title}
-          </h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         {/* Content */}
         <div className="bg-map-ocean relative flex-1">
           {isLoading ? (
-            <div className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-              <p className="text-sm text-white/60">Loading map data...</p>
+            <div
+              role="status"
+              className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-3"
+            >
+              <Skeleton className="h-3 w-40 bg-white/10" />
+              <p className="text-sm text-white/70">Loading map data…</p>
             </div>
           ) : !geometry ? (
             <div className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center text-white">
-              <AlertTriangle className="h-10 w-10 text-amber-500" />
+              <AlertTriangle className="h-10 w-10 text-amber-500" aria-hidden />
               <p className="text-sm font-semibold">No map boundary linked</p>
-              <p className="max-w-xs text-xs text-white/50">
+              <p className="max-w-xs text-xs text-white/70">
                 Your country has no boundary coordinates assigned. Contact an administrator to link
                 it.
               </p>
@@ -341,48 +335,58 @@ export function MapPickerModal({
               {/* Map container */}
               <div ref={containerRef} className="absolute inset-0 h-full w-full" />
 
-              {/* Status Bar Overlay */}
+              {/* Status overlay */}
               <div className="pointer-events-none absolute top-4 right-4 left-4 z-10">
-                {selectedCoords ? (
-                  isValid ? (
-                    <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/80 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg backdrop-blur-md">
-                      <CheckCircle className="h-4 w-4 shrink-0" />
-                      <span>
-                        Valid Location: {selectedCoords[1].toFixed(5)}&deg;,{" "}
-                        {selectedCoords[0].toFixed(5)}&deg;
-                      </span>
-                    </div>
+                <FacetContainer
+                  depth={2}
+                  role="status"
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold"
+                >
+                  {selectedCoords ? (
+                    isValid ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
+                        <span className="text-foreground">
+                          Valid location: {selectedCoords[1].toFixed(5)}&deg;,{" "}
+                          {selectedCoords[0].toFixed(5)}&deg;
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="text-destructive h-4 w-4 shrink-0" aria-hidden />
+                        <span className="text-destructive">
+                          These coordinates lie outside your country&apos;s borders.
+                        </span>
+                      </>
+                    )
                   ) : (
-                    <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/80 px-3 py-2 text-xs font-semibold text-red-400 shadow-lg backdrop-blur-md">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                      <span>Warning: Coordinates lie outside your country borders!</span>
-                    </div>
-                  )
-                ) : (
-                  <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs font-semibold text-white/80 shadow-lg backdrop-blur-md">
-                    <MapPin className="h-4 w-4 shrink-0 animate-bounce" />
-                    <span>Click on the map inside your borders to select a point</span>
-                  </div>
-                )}
+                    <>
+                      <MapPin className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
+                      <span className="text-foreground">
+                        Click on the map inside your borders to select a point
+                      </span>
+                    </>
+                  )}
+                </FacetContainer>
               </div>
             </>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-white/10 bg-white/5 px-6 py-4 dark:bg-black/20">
-          <Button variant="ghost" onClick={onClose} className="text-white hover:bg-white/10">
+        <div className="border-border flex items-center justify-end gap-3 border-t px-6 py-4">
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={!selectedCoords || isValid === false || !mapReady}
-            className="bg-emerald-600 font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="bg-blue-600 text-white hover:bg-blue-600/90"
           >
-            Confirm Selection
+            Confirm selection
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

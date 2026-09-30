@@ -1,5 +1,7 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 
@@ -17,23 +19,17 @@ export default function BlazonPanel() {
   };
 
   return (
-    <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
+    <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
       <div className="p-4">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-bold tracking-widest text-amber-500 uppercase">
-            Heraldic Blazon Description
-          </h3>
-          <button
-            onClick={handleCopy}
-            disabled={!blazon}
-            className="rounded bg-white/5 px-2 py-0.5 text-xs font-semibold text-zinc-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-amber-400"
-          >
-            {copied ? "✓ Copied" : "📋 Copy"}
-          </button>
+          <Eyebrow className="block">Heraldic Blazon Description</Eyebrow>
+          <Button variant="outline" size="xs" onClick={handleCopy} disabled={!blazon}>
+            {copied ? "Copied" : "Copy"}
+          </Button>
         </div>
 
-        <div className="rounded-lg border border-white/5 bg-zinc-950/40 p-3">
-          <p className="font-serif text-sm leading-relaxed text-zinc-300 italic">
+        <div className="border-border bg-card/40 rounded-lg border p-3">
+          <p className="text-muted-foreground font-serif text-sm leading-relaxed italic">
             {blazon || "No composition loaded."}
           </p>
         </div>

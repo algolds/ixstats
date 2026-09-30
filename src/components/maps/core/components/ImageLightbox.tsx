@@ -1,33 +1,22 @@
 "use client";
 
 import React from "react";
-import { Xmark as X } from "iconoir-react";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 
 interface ImageLightboxProps {
   src: string;
+  alt?: string;
   onClose: () => void;
 }
 
-export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
+/** Full-screen image viewer on the Dialog primitive (Escape and the close button dismiss it). */
+export function ImageLightbox({ src, alt = "", onClose }: ImageLightboxProps) {
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
-      onClick={onClose}
-      onKeyDown={(e) => e.key === "Escape" && onClose()}
-      tabIndex={0}
-    >
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
-      >
-        <X className="h-5 w-5" />
-      </button>
-      <img
-        src={src}
-        alt=""
-        className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-auto max-w-[90vw] border-0 bg-transparent p-0 shadow-none backdrop-blur-none sm:max-w-[90vw]">
+        <DialogTitle className="sr-only">{alt || "Image"}</DialogTitle>
+        <img src={src} alt={alt} className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -2,14 +2,35 @@
 
 import React, { useState } from "react";
 import { Archery as Crosshair, Navigator as Navigation } from "iconoir-react";
+import { Button, type ButtonProps } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { cn } from "~/lib/utils/cn";
 
-export const btnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] hover:bg-accent hover:text-foreground";
-export const activeBtnClass =
-  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-xs font-medium text-primary shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98]";
-export const dangerBtnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] hover:bg-red-500/10";
-export const labelClass = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
+export type ToolbarButtonTone = "default" | "active" | "danger";
+
+/** The compact action button used in the editor tool-options bar (Facet `Button`, xs). */
+export const ToolbarButton = React.forwardRef<
+  HTMLButtonElement,
+  ButtonProps & { tone?: ToolbarButtonTone }
+>(function ToolbarButton({ tone = "default", className, ...props }, ref) {
+  return (
+    <Button
+      ref={ref}
+      type="button"
+      variant={tone === "active" ? "secondary" : "ghost"}
+      size="xs"
+      aria-pressed={tone === "active" ? true : undefined}
+      className={cn(
+        "h-6 gap-1 px-1.5 [&_svg]:size-3",
+        tone === "default" && "text-muted-foreground",
+        tone === "danger" && "text-destructive hover:bg-destructive/10 hover:text-destructive",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+
 export const dividerClass = "bg-border h-4 w-px";
 export const selectClass =
   "h-6 rounded border border-border bg-background px-1.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary/50";
@@ -43,7 +64,7 @@ export function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: numbe
   };
   return (
     <div className="flex items-center gap-1">
-      <span className={labelClass}>Move to</span>
+      <Eyebrow>Move to</Eyebrow>
       <input
         type="number"
         placeholder="Lng"
@@ -62,9 +83,9 @@ export function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: numbe
         className={`${selectClass} w-16`}
         step="any"
       />
-      <button type="button" onClick={handle} className={btnClass} title="Go">
+      <ToolbarButton onClick={handle} title="Go">
         <Navigation className="h-3 w-3" />
-      </button>
+      </ToolbarButton>
     </div>
   );
 }
@@ -118,7 +139,7 @@ export function CoordinateSnappingControls({
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className={labelClass}>Coord</span>
+      <Eyebrow>Coord</Eyebrow>
       <input
         type="text"
         placeholder="Lng"
@@ -139,37 +160,27 @@ export function CoordinateSnappingControls({
       />
 
       {onTogglePickingLocation && (
-        <button
-          type="button"
+        <ToolbarButton
+          tone={isPickingLocation ? "active" : "default"}
+
           onClick={onTogglePickingLocation}
-          className={isPickingLocation ? activeBtnClass : btnClass}
           title="Reposition with crosshair teleport tool"
         >
           <Crosshair className="h-3 w-3" />
           Teleport
-        </button>
+        </ToolbarButton>
       )}
 
       {onSnapBorder && (
-        <button
-          type="button"
-          onClick={onSnapBorder}
-          className={btnClass}
-          title="Snap to CONTAINING region border"
-        >
+        <ToolbarButton onClick={onSnapBorder} title="Snap to CONTAINING region border">
           Snap to Border
-        </button>
+        </ToolbarButton>
       )}
 
       {onSnapCoast && (
-        <button
-          type="button"
-          onClick={onSnapCoast}
-          className={btnClass}
-          title="Snap to nearest coastline"
-        >
+        <ToolbarButton onClick={onSnapCoast} title="Snap to nearest coastline">
           Snap to Coast
-        </button>
+        </ToolbarButton>
       )}
     </div>
   );

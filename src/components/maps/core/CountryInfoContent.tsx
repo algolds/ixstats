@@ -13,33 +13,12 @@ import { CountryInfoTab } from "./components/CountryInfoTab";
 import { UnclaimedTerritoryView } from "./components/UnclaimedTerritoryView";
 import { formatCompactCurrency, formatCompactNumber } from "~/lib/utils/format-utils";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetTabs } from "~/components/ui/facet";
 
-function PanelTab({
-  label,
-  active,
-  accent,
-  onSelect,
-}: {
-  label: string;
-  active: boolean;
-  accent: string;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onSelect}
-      className={`focus-visible:ring-ring relative px-3 py-2.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset ${
-        active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      {label}
-      {active && <span className={`absolute inset-x-0 bottom-0 h-0.5 rounded-full ${accent}`} />}
-    </button>
-  );
-}
+const COUNTRY_TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "info", label: "Info" },
+];
 
 const GeoProfileContent = dynamic(
   () => import("./GeoProfileContent").then((m) => ({ default: m.GeoProfileContent })),
@@ -73,31 +52,20 @@ export function CountryInfoContent({
   return (
     <>
       {/* Tab bar */}
-      <div
-        role="tablist"
-        aria-label="Country details"
-        className="border-border/50 flex shrink-0 border-b px-4"
-      >
-        <PanelTab
-          label="Overview"
-          active={state.activeTab === "overview"}
-          accent="bg-primary"
-          onSelect={() => state.setActiveTab("overview")}
+      <div className="border-border shrink-0 border-b px-4 py-2">
+        <FacetTabs
+          tabs={
+            state.hasGeoTab
+              ? [...COUNTRY_TABS, { id: "geography", label: "Geography" }]
+              : COUNTRY_TABS
+          }
+          activeTab={state.activeTab}
+          onChange={(id) => state.setActiveTab(id as PanelState["activeTab"])}
+          size="sm"
+          tone="neutral"
+          showTexture={false}
+          className="w-full"
         />
-        <PanelTab
-          label="Info"
-          active={state.activeTab === "info"}
-          accent="bg-amber-500"
-          onSelect={() => state.setActiveTab("info")}
-        />
-        {state.hasGeoTab && (
-          <PanelTab
-            label="Geography"
-            active={state.activeTab === "geography"}
-            accent="bg-emerald-500"
-            onSelect={() => state.setActiveTab("geography")}
-          />
-        )}
       </div>
 
       {/* Body */}

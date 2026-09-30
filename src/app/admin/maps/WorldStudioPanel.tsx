@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
  * to prevent OOM during dev compilation of the entire dependency tree.
  */
 
+import { FacetTabs } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
@@ -80,10 +83,8 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Features
-          </p>
+        <FacetCard className="rounded-2xl p-3.5">
+          <Eyebrow className="block">Total Features</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -91,12 +92,10 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats?.totalFeatures?.toLocaleString() ?? "—"}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Political Regions
-          </p>
+        <FacetCard className="rounded-2xl p-3.5">
+          <Eyebrow className="block">Political Regions</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -104,12 +103,10 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats?.politicalFeatures?.toLocaleString() ?? "—"}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Linked Countries
-          </p>
+        <FacetCard className="rounded-2xl p-3.5">
+          <Eyebrow className="block">Linked Countries</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -117,12 +114,10 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats ? `${stats.linkedFeatures} / ${stats.totalCountries}` : "—"}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Linkage Rate
-          </p>
+        <FacetCard className="rounded-2xl p-3.5">
+          <Eyebrow className="block">Linkage Rate</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -130,25 +125,19 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats ? `${stats.linkageRate}%` : "—"}
             </p>
           )}
-        </div>
+        </FacetCard>
       </div>
 
       {/* Tab navigation */}
-      <div className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-              activeTab === tab.id
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FacetTabs
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as TabId)}
+        size="md"
+        tone="accent"
+        showTexture={false}
+        className="w-full sm:w-fit"
+      />
 
       {/* Tab content */}
       <div className="space-y-4">

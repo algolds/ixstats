@@ -1,5 +1,6 @@
 "use client";
 
+import { FacetContainer } from "~/components/ui/facet-container";
 import React, { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -171,10 +172,10 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
       className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] ${
         item.danger
           ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
-          : "text-foreground/90 hover:bg-accent hover:text-accent-foreground"
+          : "text-foreground hover:bg-accent hover:text-accent-foreground"
       }`}
     >
-      <item.icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
+      <item.icon className="text-muted-foreground h-3.5 w-3.5 shrink-0" aria-hidden />
       <span>{item.label}</span>
     </button>
   );
@@ -182,19 +183,24 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   return createPortal(
     <div
       data-context-menu
-      role="menu"
-      aria-label={`${feature.name} actions`}
-      className="animate-in fade-in zoom-in-95 border-border bg-card/90 fixed z-[9999] min-w-[208px] origin-top-left overflow-hidden rounded-xl border py-1.5 shadow-2xl backdrop-blur-xl duration-100"
+      className="animate-in fade-in zoom-in-95 fixed z-[var(--z-depth-popover)] min-w-[208px] origin-top-left duration-100"
       style={{ left: clampedX, top: clampedY }}
     >
-      {primaryItems.map(renderItem)}
+      <FacetContainer
+        depth={3}
+        role="menu"
+        aria-label={`${feature.name} actions`}
+        className="overflow-hidden rounded-xl py-1.5"
+      >
+        {primaryItems.map(renderItem)}
 
-      {secondaryItems.length > 0 && (
-        <>
-          <div className="bg-border/60 mx-2 my-1 h-px" />
-          {secondaryItems.map(renderItem)}
-        </>
-      )}
+        {secondaryItems.length > 0 && (
+          <>
+            <div className="bg-border mx-2 my-1 h-px" />
+            {secondaryItems.map(renderItem)}
+          </>
+        )}
+      </FacetContainer>
     </div>,
     document.body
   );

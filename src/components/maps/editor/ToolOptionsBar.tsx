@@ -22,12 +22,22 @@ import {
   Cut as Scissors,
   GitMerge,
   ControlSlider as Sliders,
-  Sparks as Sparkles,
+  Plus,
   SelectWindow as LassoSelect,
   PathArrow as Route,
 } from "iconoir-react";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger } from "~/components/ui/popover";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetTabs } from "~/components/ui/facet";
+
+const LASSO_TABS = [
+  { id: "freehand", label: "Freehand" },
+  { id: "rect", label: "Rect" },
+];
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
 import { CityTransformationsPopover } from "./toolbars/options/ScatterToolOptions";
@@ -37,10 +47,7 @@ import {
   CoordinateSnappingControls,
   MoveToCoordsInput,
   ToolLabel,
-  btnClass,
-  activeBtnClass,
-  dangerBtnClass,
-  labelClass,
+  ToolbarButton,
   dividerClass,
   selectClass,
 } from "./toolbars/options/CoordinateSnappingControls";
@@ -171,7 +178,12 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
   if (mode === "split-subdivision") {
     return (
-      <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out">
+      <FacetContainer
+        depth={1}
+        role="toolbar"
+        aria-label="Tool options"
+        className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"
+      >
         <ToolLabel icon={Scissors} label="Split Region" />
         <span className="text-muted-foreground hidden truncate text-xs md:inline">
           {props.selectedFeature?.type === "subdivision"
@@ -182,30 +194,35 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           {props.splitPointsCount ?? 0} pts
         </span>
         <div className={dividerClass} />
-        <button
+        <ToolbarButton
+          tone="active"
           onClick={props.onExecuteSplitSubdivision}
           disabled={
             (props.splitPointsCount ?? 0) < 2 || props.selectedFeature?.type !== "subdivision"
           }
-          className={`${activeBtnClass} disabled:pointer-events-none disabled:opacity-40`}
           title="Split the region along the line (Enter)"
         >
           <Check className="h-3 w-3" /> Split
-        </button>
+        </ToolbarButton>
         {props.onUndoWaypoint && (
-          <button onClick={props.onUndoWaypoint} className={btnClass} title="Undo last split point">
+          <ToolbarButton onClick={props.onUndoWaypoint} title="Undo last split point">
             <Undo2 className="h-3 w-3" /> Undo Point
-          </button>
+          </ToolbarButton>
         )}
-        <button onClick={props.onCancelSplit} className={dangerBtnClass} title="Cancel Split">
+        <ToolbarButton tone="danger" onClick={props.onCancelSplit} title="Cancel Split">
           Cancel
-        </button>
-      </div>
+        </ToolbarButton>
+      </FacetContainer>
     );
   }
 
   return (
-    <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out">
+    <FacetContainer
+      depth={1}
+      role="toolbar"
+      aria-label="Tool options"
+      className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"
+    >
       {/* ── Auto-Create Cities button when gaps/empty highlighting is active ── */}
       {props.showGaps &&
         props.emptyRegionsCount! > 0 &&
@@ -215,13 +232,13 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           mode === "edit-city" ||
           mode === "add-subdivision") && (
           <>
-            <button
+            <ToolbarButton
+              tone="active"
               onClick={props.onCreateCentroidCities}
-              className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-xs text-emerald-500 hover:bg-emerald-500/20"
               title="Create centroid-based cities in all empty regions"
             >
-              <Sparkles className="h-3 w-3" /> Auto-Create Cities ({props.emptyRegionsCount})
-            </button>
+              <Plus aria-hidden /> Auto-create cities ({props.emptyRegionsCount})
+            </ToolbarButton>
             <div className={dividerClass} />
           </>
         )}
@@ -234,41 +251,36 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           </span>
           <div className={dividerClass} />
           {props.onDuplicate && (
-            <button onClick={props.onDuplicate} className={btnClass} title="Duplicate">
+            <ToolbarButton onClick={props.onDuplicate} title="Duplicate">
               <Copy className="h-3 w-3" /> Duplicate
-            </button>
+            </ToolbarButton>
           )}
           {props.onDelete && (
-            <button onClick={props.onDelete} className={dangerBtnClass} title="Delete">
+            <ToolbarButton tone="danger" onClick={props.onDelete} title="Delete">
               <Trash2 className="h-3 w-3" /> Delete
-            </button>
+            </ToolbarButton>
           )}
           {props.selectedCount! > 1 && props.onMergeSelectedSubdivisions && (
-            <button
+            <ToolbarButton
               onClick={props.onMergeSelectedSubdivisions}
-              className={btnClass}
               title="Merge selected subdivisions"
             >
               <GitMerge className="h-3 w-3" /> Merge Regions
-            </button>
+            </ToolbarButton>
           )}
           {props.selectedCitiesCount! > 1 && props.onMergeSelectedCities && (
-            <button
-              onClick={props.onMergeSelectedCities}
-              className={btnClass}
-              title="Merge selected cities"
-            >
+            <ToolbarButton onClick={props.onMergeSelectedCities} title="Merge selected cities">
               <GitMerge className="h-3 w-3" /> Merge Cities
-            </button>
+            </ToolbarButton>
           )}
           {props.selectedCitiesCount! > 0 && props.onScalePopulation && props.onRotateCities && (
             <>
               <div className={dividerClass} />
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className={btnClass} title="Scale population or rotate selected cities">
+                  <ToolbarButton title="Scale population or rotate selected cities">
                     <Sliders className="h-3 w-3" /> City Transformations...
-                  </button>
+                  </ToolbarButton>
                 </PopoverTrigger>
                 <CityTransformationsPopover
                   selectedCitiesCount={props.selectedCitiesCount!}
@@ -283,13 +295,12 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             props.onSplitCity && (
               <>
                 <div className={dividerClass} />
-                <button
+                <ToolbarButton
                   onClick={() => props.onSplitCity!(props.selectedFeature!.id)}
-                  className={btnClass}
                   title="Split city"
                 >
                   <Scissors className="h-3 w-3" /> Split City
-                </button>
+                </ToolbarButton>
               </>
             )}
         </>
@@ -299,7 +310,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {(mode === "add-city" || mode === "edit-city") && (
         <>
           <ToolLabel icon={MapPin} label="City" />
-          <span className={labelClass}>Type</span>
+          <Eyebrow>Type</Eyebrow>
           <select
             value={props.cityType ?? "city"}
             onChange={(e) => props.onCityTypeChange?.(e.target.value)}
@@ -325,23 +336,22 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             <>
               <div className={dividerClass} />
               {props.onDuplicate && (
-                <button onClick={props.onDuplicate} className={btnClass} title="Duplicate city">
+                <ToolbarButton onClick={props.onDuplicate} title="Duplicate city">
                   <Copy className="h-3 w-3" /> Duplicate
-                </button>
+                </ToolbarButton>
               )}
               {props.onSplitCity && props.selectedFeature?.id && (
-                <button
+                <ToolbarButton
                   onClick={() => props.onSplitCity!(props.selectedFeature!.id)}
-                  className={btnClass}
                   title="Split city"
                 >
                   <Scissors className="h-3 w-3" /> Split City
-                </button>
+                </ToolbarButton>
               )}
               {props.onCopyCoords && (
-                <button onClick={props.onCopyCoords} className={btnClass} title="Copy coordinates">
+                <ToolbarButton onClick={props.onCopyCoords} title="Copy coordinates">
                   <MapPin className="h-3 w-3" /> Copy Coords
-                </button>
+                </ToolbarButton>
               )}
               {props.onMoveToCoords && <MoveToCoordsInput onMove={props.onMoveToCoords} />}
               {(props.cityCoordinates ||
@@ -384,7 +394,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {(mode === "add-poi" || mode === "edit-poi") && (
         <>
           <ToolLabel icon={Landmark} label="Point of Interest" />
-          <span className={labelClass}>Category</span>
+          <Eyebrow>Category</Eyebrow>
           <select
             value={props.poiCategory ?? "landmark"}
             onChange={(e) => props.onPoiCategoryChange?.(e.target.value)}
@@ -400,14 +410,14 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             <>
               <div className={dividerClass} />
               {props.onDuplicate && (
-                <button onClick={props.onDuplicate} className={btnClass} title="Duplicate POI">
+                <ToolbarButton onClick={props.onDuplicate} title="Duplicate POI">
                   <Copy className="h-3 w-3" /> Duplicate
-                </button>
+                </ToolbarButton>
               )}
               {props.onCopyCoords && (
-                <button onClick={props.onCopyCoords} className={btnClass} title="Copy coordinates">
+                <ToolbarButton onClick={props.onCopyCoords} title="Copy coordinates">
                   <MapPin className="h-3 w-3" /> Copy Coords
-                </button>
+                </ToolbarButton>
               )}
               {props.onMoveToCoords && <MoveToCoordsInput onMove={props.onMoveToCoords} />}
             </>
@@ -423,21 +433,14 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt =
             subtract.
           </span>
-          <div className="border-border/50 bg-background/80 flex items-center gap-0.5 rounded border p-0.5">
-            {(["freehand", "rect"] as const).map((tool) => (
-              <button
-                key={tool}
-                onClick={() => props.onLassoToolChange?.(tool)}
-                className={`h-5 rounded px-2 text-xs font-medium transition-colors ${
-                  (props.lassoTool ?? "freehand") === tool
-                    ? "bg-primary/15 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tool === "freehand" ? "Freehand" : "Rect"}
-              </button>
-            ))}
-          </div>
+          <FacetTabs
+            tabs={LASSO_TABS}
+            activeTab={props.lassoTool ?? "freehand"}
+            onChange={(tool) => props.onLassoToolChange?.(tool as "freehand" | "rect")}
+            size="sm"
+            tone="neutral"
+            showTexture={false}
+          />
         </>
       )}
 
@@ -454,7 +457,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {mode === "add-route" && (
         <>
           <ToolLabel icon={Route} label="Draw Route" />
-          <span className={labelClass}>Type</span>
+          <Eyebrow>Type</Eyebrow>
           <select
             value={props.routeType ?? "road"}
             onChange={(e) => props.onRouteTypeChange?.(e.target.value)}
@@ -471,22 +474,18 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             {props.routeWaypointsCount ?? 0} waypoints
           </span>
           {props.onUndoRouteWaypoint && (props.routeWaypointsCount ?? 0) > 0 && (
-            <button
-              onClick={props.onUndoRouteWaypoint}
-              className={btnClass}
-              title="Undo last waypoint"
-            >
+            <ToolbarButton onClick={props.onUndoRouteWaypoint} title="Undo last waypoint">
               <Undo2 className="h-3 w-3" /> Undo
-            </button>
+            </ToolbarButton>
           )}
           {props.onClearRouteWaypoints && (props.routeWaypointsCount ?? 0) > 0 && (
-            <button
+            <ToolbarButton
+              tone="danger"
               onClick={props.onClearRouteWaypoints}
-              className={dangerBtnClass}
               title="Clear all waypoints"
             >
               <Trash2 className="h-3 w-3" /> Clear
-            </button>
+            </ToolbarButton>
           )}
         </>
       )}
@@ -495,35 +494,23 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {mode === "edit-route" && (
         <>
           <ToolLabel icon={Route} label="Edit Route" />
-          {props.editingRouteName && (
-            <span className="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-semibold">
-              {props.editingRouteName}
-            </span>
-          )}
+          {props.editingRouteName && <Badge variant="secondary">{props.editingRouteName}</Badge>}
           <span className="text-muted-foreground font-mono text-xs tabular-nums">
             {props.editingRouteNodesCount ?? 0} nodes
           </span>
           <div className={dividerClass} />
           {props.onRouteEditCommit && (
-            <button
-              onClick={props.onRouteEditCommit}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold shadow-sm transition active:scale-[0.98]"
-              title="Save route geometry"
-            >
-              <Check className="h-3 w-3" /> Save Path
-            </button>
+            <Button size="xs" onClick={props.onRouteEditCommit} title="Save route geometry">
+              <Check aria-hidden /> Save path
+            </Button>
           )}
           {props.onRouteEditCancel && (
-            <button
-              onClick={props.onRouteEditCancel}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded px-2 py-1 text-xs font-medium transition active:scale-[0.98]"
-              title="Cancel route editing"
-            >
+            <ToolbarButton onClick={props.onRouteEditCancel} title="Cancel route editing">
               Cancel
-            </button>
+            </ToolbarButton>
           )}
         </>
       )}
-    </div>
+    </FacetContainer>
   );
 });

@@ -11,6 +11,9 @@
  * Renders inline (not a modal) to keep the editor panel compact.
  */
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 import { useState, useRef, useCallback } from "react";
 import {
   Search,
@@ -142,41 +145,43 @@ export function WikiLinkWizard({
   if (value && !isSearching) {
     return (
       <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs dark:bg-emerald-950/30">
-          <Link2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-          <span className="flex-1 truncate font-medium text-emerald-700 dark:text-emerald-300">
-            {value}
-          </span>
-          <button
+        <div className="border-border flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs">
+          <Link2 className="h-3 w-3 text-emerald-500" aria-hidden />
+          <span className="text-foreground flex-1 truncate font-medium">{value}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
             onClick={() => setShowInfobox((v) => !v)}
-            className="rounded p-0.5 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
             title="View infobox data"
           >
             <Search className="h-3 w-3" />
-          </button>
+          </Button>
           {infobox?.pageUrl && (
             <a
               href={infobox.pageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded p-0.5 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-0.5"
               title="Open on wiki"
             >
               <ExternalLink className="h-3 w-3" />
             </a>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-6 w-6"
             onClick={handleUnlink}
-            className="rounded p-0.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
             title="Unlink wiki page"
           >
             <Unlink className="h-3 w-3" />
-          </button>
+          </Button>
         </div>
 
         {/* Infobox preview + import */}
         {showInfobox && (
-          <div className="border-border bg-muted/50 rounded-md border p-2">
+          <FacetCard surface="solid" className="rounded-md p-2">
             {infoboxLoading && (
               <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
                 <Loader2 className="h-3 w-3 animate-spin" /> Parsing infobox...
@@ -191,9 +196,7 @@ export function WikiLinkWizard({
 
             {infobox?.hasInfobox && (
               <>
-                <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  {infobox.templateName}
-                </div>
+                <Eyebrow className="block">{infobox.templateName}</Eyebrow>
                 <div className="mt-1 max-h-32 space-y-0.5 overflow-y-auto">
                   {infobox.fields
                     .filter((f) => f.cleanValue && f.fieldType !== "unknown")
@@ -209,23 +212,25 @@ export function WikiLinkWizard({
                 </div>
 
                 {coordDistance !== null && coordDistance > 50 && (
-                  <div className="mt-1.5 flex items-center gap-1.5 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-500">
                     <AlertTriangle className="h-3 w-3 shrink-0" />
                     Wiki coords are {coordDistance.toLocaleString()} km from map position
                   </div>
                 )}
 
                 {onImport && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-1.5 w-full justify-center"
                     onClick={handleImport}
-                    className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-md bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-600"
                   >
                     <Check className="h-3 w-3" /> Import fields to form
-                  </button>
+                  </Button>
                 )}
               </>
             )}
-          </div>
+          </FacetCard>
         )}
       </div>
     );
@@ -251,7 +256,10 @@ export function WikiLinkWizard({
 
       {/* Search results dropdown */}
       {searchResults && searchResults.results.length > 0 && searchQuery.length >= 2 && (
-        <div className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-y-auto rounded-md border shadow-lg">
+        <FacetCard
+          surface="solid"
+          className="absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-y-auto rounded-md"
+        >
           {searchResults.results.map((r, i) => (
             <button
               key={i}
@@ -267,7 +275,7 @@ export function WikiLinkWizard({
               </div>
             </button>
           ))}
-        </div>
+        </FacetCard>
       )}
 
       {/* No results */}
@@ -282,15 +290,17 @@ export function WikiLinkWizard({
 
       {/* Skip option */}
       {searchQuery.length === 0 && (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground mt-1"
           onClick={() => {
             setIsSearching(false);
             onChange(undefined);
           }}
-          className="text-muted-foreground hover:text-foreground mt-1 text-xs"
         >
           Skip wiki linking
-        </button>
+        </Button>
       )}
     </div>
   );

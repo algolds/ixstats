@@ -4,8 +4,9 @@
  * KeyboardShortcutSheet — Modal overlay listing all map editor keyboard shortcuts.
  */
 
-import React, { useEffect, useRef } from "react";
-import { Xmark as X } from "iconoir-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
 interface ShortcutEntry {
   keys: string;
@@ -97,58 +98,20 @@ interface KeyboardShortcutSheetProps {
 }
 
 export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === overlayRef.current) {
-      onClose();
-    }
-  };
-
+  // Opened from the keyboard (?), so it appears and leaves with no animation (Facet §8).
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={handleOverlayClick}
-      role="presentation"
-    >
-      <div
-        className="border-border bg-card relative mx-4 max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border shadow-2xl"
-        aria-modal="true"
-        aria-labelledby="map-editor-shortcuts-title"
-      >
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="facet-modal max-h-[80vh] gap-0 overflow-y-auto rounded-2xl p-0 duration-0 data-[state=closed]:animate-none data-[state=open]:animate-none sm:max-w-lg">
         {/* Header */}
-        <div className="border-border bg-card sticky top-0 flex items-center justify-between border-b px-5 py-3">
-          <h2 id="map-editor-shortcuts-title" className="text-foreground text-sm font-semibold">
-            Keyboard Shortcuts
-          </h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <DialogHeader className="border-border border-b px-5 py-3 pr-12">
+          <DialogTitle className="text-sm">Keyboard shortcuts</DialogTitle>
+        </DialogHeader>
 
         {/* Content */}
         <div className="space-y-5 p-5">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.title}>
-              <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
-                {group.title}
-              </h3>
+              <Eyebrow className="mb-2 block">{group.title}</Eyebrow>
               <div className="space-y-1">
                 {group.shortcuts.map((shortcut) => (
                   <div
@@ -185,10 +148,10 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
 
         {/* Footer */}
         <div className="border-border text-muted-foreground border-t px-5 py-3 text-center text-xs">
-          Press <kbd className="border-border bg-muted rounded border px-1 text-xs">Esc</kbd> or
-          click outside to close
+          Press <kbd className="border-border bg-muted rounded border px-1 text-xs">Esc</kbd> to
+          close
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

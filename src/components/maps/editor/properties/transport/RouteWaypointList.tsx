@@ -1,5 +1,8 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { memo, useMemo } from "react";
 import {
   Check,
@@ -56,9 +59,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Route Name & Properties
-        </label>
+        <Eyebrow className="block">Route Name & Properties</Eyebrow>
         <input
           type="text"
           placeholder="e.g. Trans-National Highway 1"
@@ -67,9 +68,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
           className="border-border/40 bg-background/50 text-foreground placeholder:text-muted-foreground focus:border-primary w-full rounded-md border px-3 py-1.5 text-xs focus:outline-none"
         />
 
-        <label className="text-muted-foreground block pt-1 text-xs font-semibold tracking-wider uppercase">
-          Route Type
-        </label>
+        <Eyebrow className="block pt-1">Route Type</Eyebrow>
         <select
           value={manualRouteType}
           onChange={(e) => setManualRouteType(e.target.value)}
@@ -86,16 +85,14 @@ export const RouteWaypointList = memo(function RouteWaypointList({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Waypoints ({waypointCount})
-            </span>
+            <Eyebrow>Waypoints ({waypointCount})</Eyebrow>
             {waypointCount >= 2 && (
               <div className="flex items-center gap-1">
-                <span className="border-border/40 bg-muted/40 text-foreground font-mono text-xs tabular-nums rounded px-1.5 py-0.5 border">
+                <span className="border-border/40 bg-muted/40 text-foreground rounded border px-1.5 py-0.5 font-mono text-xs tabular-nums">
                   {liveLengthKm.toFixed(1)} km
                 </span>
                 {liveDuration && (
-                  <span className="border-primary/20 bg-primary/10 text-primary font-mono text-xs tabular-nums rounded px-1.5 py-0.5 border font-medium">
+                  <span className="border-primary/20 bg-primary/10 text-primary rounded border px-1.5 py-0.5 font-mono text-xs font-medium tabular-nums">
                     ~{liveDuration}
                   </span>
                 )}
@@ -104,24 +101,28 @@ export const RouteWaypointList = memo(function RouteWaypointList({
           </div>
           <div className="flex items-center gap-1.5">
             {onUndoWaypoint && waypointCount > 0 && (
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-muted-foreground"
                 type="button"
                 onClick={onUndoWaypoint}
-                className="text-muted-foreground hover:bg-muted flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition active:scale-[0.98]"
                 title="Undo last waypoint"
               >
                 <Undo2 className="h-3 w-3" /> Undo
-              </button>
+              </Button>
             )}
             {onClearWaypoints && waypointCount > 0 && (
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 type="button"
                 onClick={onClearWaypoints}
-                className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition active:scale-[0.98]"
                 title="Clear all waypoints"
               >
                 <Trash2 className="h-3 w-3" /> Clear
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -131,7 +132,10 @@ export const RouteWaypointList = memo(function RouteWaypointList({
             Click on the map or snap to settlements to place path nodes.
           </div>
         ) : (
-          <div className="border-border/30 bg-muted/10 max-h-48 space-y-1 overflow-y-auto rounded-md border p-1.5">
+          <FacetCard
+            surface="solid"
+            className="max-h-48 space-y-1 overflow-y-auto rounded-md p-1.5"
+          >
             {routeWaypoints.map((pt, idx) => (
               <div
                 key={idx}
@@ -146,7 +150,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
                 </span>
               </div>
             ))}
-          </div>
+          </FacetCard>
         )}
       </div>
 
@@ -157,11 +161,12 @@ export const RouteWaypointList = memo(function RouteWaypointList({
       )}
 
       {onFinishRoute && (
-        <button
+        <Button
+          size="sm"
+          className="w-full justify-center"
           type="button"
           disabled={waypointCount < 2 || isSavingManual}
           onClick={() => onFinishRoute(manualRouteType, routeName)}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold shadow transition active:scale-[0.98] disabled:opacity-50"
         >
           {isSavingManual ? (
             <>
@@ -174,7 +179,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               <span>Commit Route ({waypointCount} points)</span>
             </>
           )}
-        </button>
+        </Button>
       )}
     </div>
   );

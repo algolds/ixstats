@@ -26,6 +26,9 @@ import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { formatPopulation } from "~/lib/utils/format-utils";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
 
 interface FeatureInfoPanelProps {
   feature: SelectedFeature;
@@ -47,9 +50,7 @@ function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900/30">
-        <MapPin className="h-5 w-5" />
-      </div>
+      <MapPin className="h-5 w-5 shrink-0 text-blue-500" aria-hidden />
       <div className="min-w-0 flex-1">
         <h3 className="text-foreground truncate text-sm font-semibold">{feature.name}</h3>
         <div className="text-muted-foreground flex gap-2 text-xs">
@@ -86,23 +87,18 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
     <>
       {/* Header — only needed for desktop since mobile has Peek header */}
       {!isMobile && (
-        <div className="border-border/50 flex items-center justify-between border-b px-4 py-3">
+        <div className="border-border flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                isStoryPin ? "bg-wiki/15" : isCity ? "bg-blue-500/15" : "bg-amber-500/15"
-              }`}
-            >
-              {isStoryPin ? (
-                <BookMarked className="h-4 w-4 text-wiki" />
-              ) : isCity ? (
-                <MapPin
-                  className={`h-4 w-4 ${feature.isCapital ? "text-amber-600" : "text-blue-600"}`}
-                />
-              ) : (
-                <Landmark className="h-4 w-4 text-amber-600" />
-              )}
-            </div>
+            {isStoryPin ? (
+              <BookMarked className="text-wiki h-4 w-4 shrink-0" aria-hidden />
+            ) : isCity ? (
+              <MapPin
+                className={`h-4 w-4 shrink-0 ${feature.isCapital ? "text-amber-500" : "text-blue-500"}`}
+                aria-hidden
+              />
+            ) : (
+              <Landmark className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
+            )}
             <div className="min-w-0">
               <h3 className="text-foreground truncate text-base font-semibold">{feature.name}</h3>
               <p className="text-muted-foreground text-xs">
@@ -116,15 +112,17 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
               </p>
             </div>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Close"
             title="Close (Esc)"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring shrink-0 rounded-full p-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            className="text-muted-foreground h-8 w-8 shrink-0 rounded-full"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
       )}
 
@@ -153,34 +151,32 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
         {/* City population */}
         {isCity && feature.population != null && (
-          <div className="bg-muted mb-3 rounded-lg px-3 py-2">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
+          <FacetCard surface="solid" className="mb-3 rounded-lg px-3 py-2">
+            <Eyebrow className="flex items-center gap-1.5">
               <Users className="h-3 w-3" />
               Population
-            </div>
+            </Eyebrow>
             <div className="text-foreground mt-0.5 text-sm font-semibold">
               {formatPopulation(feature.population)}
             </div>
-          </div>
+          </FacetCard>
         )}
 
         {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
-          <div className="bg-muted mb-3 rounded-lg px-3 py-2">
-            <Eyebrow className="block">
-              Description
-            </Eyebrow>
+          <FacetCard surface="solid" className="mb-3 rounded-lg px-3 py-2">
+            <Eyebrow className="block">Description</Eyebrow>
             <p className="text-foreground mt-0.5 text-xs leading-relaxed">{feature.description}</p>
-          </div>
+          </FacetCard>
         )}
 
         {/* Story Pin details */}
         {isStoryPin && (
           <div className="mb-3 space-y-2">
             {(feature.ixTimeYear || feature.eraLabel) && (
-              <div className="flex items-center gap-2 rounded-lg bg-wiki/10 px-3 py-2">
-                <Calendar className="h-3.5 w-3.5 text-wiki" />
-                <span className="text-xs font-medium text-wiki">
+              <div className="text-foreground flex items-center gap-2 text-xs font-medium">
+                <Calendar className="text-wiki h-3.5 w-3.5" aria-hidden />
+                <span>
                   {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
                   {feature.ixTimeYear && feature.eraLabel && " · "}
                   {feature.eraLabel}
@@ -188,18 +184,20 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
               </div>
             )}
             {feature.category && (
-              <span className="inline-block rounded-full bg-wiki/15 px-2 py-0.5 text-xs font-medium text-wiki capitalize">
+              <Badge variant="outline" className="capitalize">
                 {feature.category}
-              </span>
+              </Badge>
             )}
             {onOpenStoryModal && feature.id && (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
                 onClick={() => onOpenStoryModal(feature.id)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-wiki/10 py-2 text-xs font-medium text-wiki transition-colors hover:bg-wiki/20"
               >
-                <BookMarked className="h-3 w-3" />
-                Read Full Story
-              </button>
+                <BookMarked aria-hidden />
+                Read full story
+              </Button>
             )}
           </div>
         )}
@@ -208,33 +206,28 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         <div className="mt-4 flex flex-col gap-2">
           {wikiIntro?.wikiUrl &&
             (wikiIntro.wikiUrl.startsWith("/") || wikiIntro.wikiUrl.includes("/wiki/") ? (
-              <Link
-                href={wikiIntro.wikiUrl}
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
-              >
-                <BookOpen className="h-3 w-3" />
-                Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-              </Link>
+              <Button asChild variant="outline" size="sm">
+                <Link href={wikiIntro.wikiUrl}>
+                  <BookOpen aria-hidden />
+                  Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
+                </Link>
+              </Button>
             ) : (
-              <a
-                href={wikiIntro.wikiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
-              >
-                <BookOpen className="h-3 w-3" />
-                Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              <Button asChild variant="outline" size="sm">
+                <a href={wikiIntro.wikiUrl} target="_blank" rel="noopener noreferrer">
+                  <BookOpen aria-hidden />
+                  Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
+                  <ExternalLink aria-hidden />
+                </a>
+              </Button>
             ))}
           {feature.countrySlug && (
-            <Link
-              href={`/countries/${feature.countrySlug}`}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
-            >
-              View {feature.countryName}
-              <ExternalLink className="h-3 w-3" />
-            </Link>
+            <Button asChild size="sm" className="bg-blue-600 text-white hover:bg-blue-600/90">
+              <Link href={`/countries/${feature.countrySlug}`}>
+                View {feature.countryName}
+                <ExternalLink aria-hidden />
+              </Link>
+            </Button>
           )}
         </div>
       </div>
@@ -252,7 +245,9 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
           style={{ animation: "slideInRight 0.25s ease-out" }}
         >
-          <div className="bg-card h-full shadow-xl">{panelContent}</div>
+          <FacetContainer depth={2} className="h-full rounded-none">
+            {panelContent}
+          </FacetContainer>
         </div>
       )}
 

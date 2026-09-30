@@ -5,6 +5,7 @@
  * import wizard. No overlay — the map behind stays fully visible and interactive.
  */
 
+import { FacetContainer } from "~/components/ui/facet-container";
 import React, { useState, useRef, useCallback, memo, useEffect } from "react";
 import { Menu as GripVertical } from "iconoir-react";
 
@@ -130,7 +131,8 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
 
   return (
     <div
-      className="bg-card/95 ring-border absolute z-20 flex flex-col overflow-hidden rounded-xl shadow-xl ring-1 backdrop-blur-sm"
+      className="absolute z-20"
+
       style={{
         left: pos.x,
         top: pos.y,
@@ -138,35 +140,37 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         height: size.height,
       }}
     >
-      {/* Drag handle — top bar area */}
-      <div
-        onPointerDown={onDragStart}
-        onPointerMove={onDragMove}
-        onPointerUp={onDragEnd}
-        className={`bg-muted/50 flex h-2.5 shrink-0 cursor-grab items-center justify-center ${
-          dragging ? "cursor-grabbing" : ""
-        }`}
-      >
-        <GripVertical className="text-muted-foreground/50 h-3 w-3 rotate-90" />
-      </div>
-
-      {/* Content */}
-      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
-
-      {/* Resize handle — bottom-right corner */}
-      <div
-        onPointerDown={onResizeStart}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeEnd}
-        className="absolute right-0 bottom-0 h-4 w-4 cursor-nwse-resize"
-      >
-        <svg
-          className="text-muted-foreground/40 absolute right-0.5 bottom-0.5 h-2.5 w-2.5"
-          viewBox="0 0 10 10"
+      <FacetContainer depth={2} className="flex h-full flex-col overflow-hidden rounded-xl">
+        {/* Drag handle — top bar area */}
+        <div
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          className={`bg-muted/50 flex h-2.5 shrink-0 cursor-grab items-center justify-center ${
+            dragging ? "cursor-grabbing" : ""
+          }`}
         >
-          <path d="M9 1L1 9M9 5L5 9M9 9L9 9" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      </div>
+          <GripVertical className="text-muted-foreground/50 h-3 w-3 rotate-90" />
+        </div>
+
+        {/* Content */}
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+
+        {/* Resize handle — bottom-right corner */}
+        <div
+          onPointerDown={onResizeStart}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeEnd}
+          className="absolute right-0 bottom-0 h-4 w-4 cursor-nwse-resize"
+        >
+          <svg
+            className="text-muted-foreground/40 absolute right-0.5 bottom-0.5 h-2.5 w-2.5"
+            viewBox="0 0 10 10"
+          >
+            <path d="M9 1L1 9M9 5L5 9M9 9L9 9" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </div>
+      </FacetContainer>
     </div>
   );
 });

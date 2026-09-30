@@ -126,7 +126,7 @@ export const CommitStep = memo(function CommitStep({
               className="border-border mt-0.5 rounded"
             />
             <div>
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+              <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
                 <Replace className="h-3 w-3" />
                 Replace existing subdivisions
               </span>
@@ -143,7 +143,7 @@ export const CommitStep = memo(function CommitStep({
       {importer.importScope !== "cities" &&
         importer.validationReport &&
         !importer.validationReport.valid && (
-          <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <div className="border-border flex items-start gap-2 rounded-lg border px-3 py-2 text-xs text-amber-500">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               Topology issues were detected. You can still import, but provinces may have gaps or

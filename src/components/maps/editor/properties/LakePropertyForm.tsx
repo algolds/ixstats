@@ -1,5 +1,6 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
 import React, { useMemo } from "react";
 import type { NamedLakeFormData, EditorFeature } from "~/hooks/map-editor/editor-types";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
@@ -28,7 +29,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
   const hasGeom = !!activeGeom;
 
   const areaSqKm = useMemo(() => {
-    if (!activeGeom) return (selectedFeature?.properties?.areaSqKm as number | undefined);
+    if (!activeGeom) return selectedFeature?.properties?.areaSqKm as number | undefined;
     if (
       (activeGeom.type === "Polygon" || activeGeom.type === "MultiPolygon") &&
       Array.isArray(activeGeom.coordinates)
@@ -37,7 +38,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
         activeGeom as { type: string; coordinates: number[][][] | number[][][][] }
       );
     }
-    return (selectedFeature?.properties?.areaSqKm as number | undefined);
+    return selectedFeature?.properties?.areaSqKm as number | undefined;
   }, [activeGeom, selectedFeature?.properties?.areaSqKm]);
 
   return (
@@ -70,7 +71,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
         />
       </div>
 
-      <div className="border-border/60 bg-muted/20 rounded-lg border px-3 py-2 text-xs">
+      <FacetCard surface="solid" className="rounded-lg px-3 py-2 text-xs">
         <div className="text-muted-foreground text-left font-medium">
           Polygon Geometry:{" "}
           {hasGeom ? (
@@ -86,7 +87,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
             Use the polygon drawing tool in the map controls to trace the contours of the lake.
           </div>
         )}
-      </div>
+      </FacetCard>
 
       <WikiLinkWizard
         value={form.wikiPageTitle}

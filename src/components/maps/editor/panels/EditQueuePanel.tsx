@@ -7,6 +7,9 @@
  * Admins can approve (apply changes) or reject with a note.
  */
 
+import { Badge } from "~/components/ui/badge";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -143,33 +146,29 @@ export function EditQueuePanel() {
                 <div className="border-border/50 border-t px-4 py-3">
                   {/* Proposed data */}
                   <div className="mb-3">
-                    <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
-                      Proposed Changes
-                    </span>
+                    <Eyebrow className="mb-1 block">Proposed Changes</Eyebrow>
                     <JsonViewer
                       data={edit.proposedData ?? null}
                       defaultExpanded={2}
-                      className="border-border/30 bg-card/20 backdrop-blur-md"
+                      className="border-border bg-card"
                     />
                   </div>
 
                   {/* Current data (if update/delete) */}
                   {edit.currentData && (
                     <div className="mb-3">
-                      <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
-                        Current Data
-                      </span>
+                      <Eyebrow className="mb-1 block">Current Data</Eyebrow>
                       <JsonViewer
                         data={edit.currentData}
                         defaultExpanded={2}
-                        className="border-border/30 bg-card/20 backdrop-blur-md"
+                        className="border-border bg-card"
                       />
                     </div>
                   )}
 
                   {/* Review note (if already reviewed) */}
                   {edit.reviewNote && (
-                    <div className="mb-3 rounded-lg bg-blue-50 p-3 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                    <div className="border-border text-foreground mb-3 rounded-lg border p-3 text-xs">
                       <strong>Review note:</strong> {edit.reviewNote}
                     </div>
                   )}
@@ -185,20 +184,22 @@ export function EditQueuePanel() {
                         rows={2}
                       />
                       <div className="flex gap-2">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleApprove(edit.id)}
                           disabled={approveMutation.isPending}
-                          className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
                         >
                           {approveMutation.isPending ? "Applying..." : "Approve & Apply"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
                           onClick={() => handleReject(edit.id)}
                           disabled={rejectMutation.isPending}
-                          className="rounded-lg bg-red-500 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                         >
                           {rejectMutation.isPending ? "..." : "Reject"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -214,33 +215,26 @@ export function EditQueuePanel() {
 
 function EditTypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    subdivision: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-    city: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    poi: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    border_adjust: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    border_adjust: "border-destructive/30 text-destructive",
   };
 
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${colors[type] ?? "bg-muted text-foreground/80"}`}
-    >
+    <Badge variant="outline" className={`capitalize ${colors[type] ?? ""}`}>
       {type.replace("_", " ")}
-    </span>
+    </Badge>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    pending: "border-amber-500/30 text-amber-500",
+    approved: "border-emerald-500/30 text-emerald-500",
+    rejected: "border-destructive/30 text-destructive",
   };
 
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${colors[status] ?? "bg-muted text-foreground/80"}`}
-    >
+    <Badge variant="outline" className={`capitalize ${colors[status] ?? ""}`}>
       {status}
-    </span>
+    </Badge>
   );
 }

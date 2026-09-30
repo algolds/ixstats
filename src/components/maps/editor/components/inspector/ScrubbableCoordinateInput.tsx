@@ -1,5 +1,7 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Pin as Crosshair } from "iconoir-react";
 
@@ -117,26 +119,23 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground font-medium tracking-wider uppercase text-xs">
-          Coordinates
-        </span>
-        <span className="text-muted-foreground/60 text-xs italic">
-          Drag label or type value
-        </span>
+        <Eyebrow>Coordinates</Eyebrow>
+        <span className="text-muted-foreground text-xs italic">Drag label or type value</span>
       </div>
 
       <div className="flex items-center gap-1.5">
         {/* Longitude */}
-        <div className="border-border/60 bg-muted/20 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary flex flex-1 items-center rounded-lg border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+        <FacetCard
+          surface="solid"
+          className="focus-within:border-primary focus-within:ring-primary flex flex-1 items-center rounded-lg px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1"
+        >
           <span
             onPointerDown={(e) => handlePointerDown("lng", e)}
             onPointerMove={(e) => handlePointerMove("lng", e)}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase select-none transition-colors ${
-              activeScrub === "lng"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase transition-colors select-none ${
+              activeScrub === "lng" ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
             title="Drag horizontally to scrub longitude (Shift for 10x, Alt for 0.1x)"
           >
@@ -151,20 +150,21 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             disabled={disabled || !coordinates}
             className="text-foreground w-full bg-transparent text-right font-mono text-xs tabular-nums focus:outline-none"
           />
-          <span className="text-muted-foreground/60 ml-0.5 text-xs">&deg;</span>
-        </div>
+          <span className="text-muted-foreground ml-0.5 text-xs">&deg;</span>
+        </FacetCard>
 
         {/* Latitude */}
-        <div className="border-border/60 bg-muted/20 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary flex flex-1 items-center rounded-lg border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+        <FacetCard
+          surface="solid"
+          className="focus-within:border-primary focus-within:ring-primary flex flex-1 items-center rounded-lg px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1"
+        >
           <span
             onPointerDown={(e) => handlePointerDown("lat", e)}
             onPointerMove={(e) => handlePointerMove("lat", e)}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase select-none transition-colors ${
-              activeScrub === "lat"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase transition-colors select-none ${
+              activeScrub === "lat" ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
             title="Drag horizontally to scrub latitude (Shift for 10x, Alt for 0.1x)"
           >
@@ -179,8 +179,8 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             disabled={disabled || !coordinates}
             className="text-foreground w-full bg-transparent text-right font-mono text-xs tabular-nums focus:outline-none"
           />
-          <span className="text-muted-foreground/60 ml-0.5 text-xs">&deg;</span>
-        </div>
+          <span className="text-muted-foreground ml-0.5 text-xs">&deg;</span>
+        </FacetCard>
 
         {/* Crosshair Picker */}
         {onTogglePickLocation && (

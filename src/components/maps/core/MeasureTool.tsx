@@ -5,6 +5,8 @@ import { Trash as Trash2 } from "iconoir-react";
 import type { IxWorldMapRef } from "./IxWorldMap";
 import { useMeasureToolState } from "./hooks/useMeasureToolState";
 import { formatDistance } from "./utils/measure-helpers";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 
 export interface MeasureToolRef {
   toggle: () => void;
@@ -33,30 +35,41 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
     <>
       {/* Inline measure button — hidden in headless mode (button rendered by MapControls) */}
       {!headless && (
-        <button
+        <Button
+          variant={active ? "default" : "outline"}
           onClick={handleToggle}
-          className={`flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium shadow-md transition-colors sm:min-h-0 sm:min-w-0 ${
-            active ? "bg-blue-500 text-white" : "bg-card text-foreground hover:bg-accent"
-          }`}
+          aria-pressed={active}
+          className={`min-h-11 sm:min-h-0 ${active ? "bg-blue-500 text-white hover:bg-blue-500/90" : ""}`}
           title="Measure distance (M)"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 aria-hidden />
           Measure
-        </button>
+        </Button>
       )}
 
       {/* Distance readout (fixed to map, below toolbar) */}
       {active && points.length >= 2 && (
-        <div className="bg-card ring-border fixed top-36 left-6 z-30 flex items-center gap-2 rounded-lg px-3 py-2 text-sm shadow-lg ring-1 sm:absolute sm:top-14 sm:left-3">
-          <span className="text-foreground font-semibold">{formatDistance(totalDistance)}</span>
-          <span className="text-muted-foreground">({points.length} pts)</span>
-          <button
-            onClick={clearPoints}
-            className="text-muted-foreground ml-1 rounded p-0.5 hover:text-red-500"
-            title="Clear measurement (Esc)"
+        <div className="fixed top-36 left-6 z-30 sm:absolute sm:top-14 sm:left-3">
+          <FacetContainer
+            depth={2}
+            role="status"
+            className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+            <span className="text-foreground font-semibold tabular-nums">
+              {formatDistance(totalDistance)}
+            </span>
+            <span className="text-muted-foreground">({points.length} pts)</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={clearPoints}
+              className="text-muted-foreground hover:text-destructive h-7 w-7"
+              title="Clear measurement (Esc)"
+              aria-label="Clear measurement"
+            >
+              <Trash2 aria-hidden />
+            </Button>
+          </FacetContainer>
         </div>
       )}
     </>

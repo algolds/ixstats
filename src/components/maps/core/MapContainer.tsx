@@ -8,6 +8,8 @@
 import { useRef, useMemo, useCallback, useState, useEffect, useDeferredValue } from "react";
 import { Xmark, WarningTriangle } from "iconoir-react";
 import dynamic from "next/dynamic";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 import { useIsAdmin, useIsStaff } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
@@ -365,20 +367,14 @@ export function MapContainer({
         className={`bg-background absolute inset-0 flex items-center justify-center p-6 ${className}`}
       >
         <div className="max-w-sm space-y-3 text-center">
-          <div className="bg-destructive/10 text-destructive mx-auto flex h-12 w-12 items-center justify-center rounded-full">
-            <WarningTriangle className="h-6 w-6" aria-hidden />
-          </div>
+          <WarningTriangle className="text-destructive mx-auto h-6 w-6" aria-hidden />
           <p className="text-foreground text-lg font-medium">Couldn&apos;t load the map</p>
           <p className="text-muted-foreground text-sm">
             {error.message || "The map data didn't arrive. Check your connection and try again."}
           </p>
-          <button
-            type="button"
-            onClick={() => void utils.geoCore.getMapBundle.invalidate()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
+          <Button type="button" onClick={() => void utils.geoCore.getMapBundle.invalidate()}>
             Try again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -467,37 +463,35 @@ export function MapContainer({
         <AnalyticsLegend overlayVisibility={overlayVisibility} overlayData={overlayData} />
 
         {showBetaNotice && (
-          <div
+          <FacetContainer
+            depth={2}
             role="note"
-            className="border-border bg-card/95 pointer-events-auto w-full max-w-sm rounded-xl border p-3 shadow-lg backdrop-blur-md dark:border-amber-500/20"
+            className="pointer-events-auto w-full max-w-sm rounded-2xl p-3"
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-2.5">
-              <WarningTriangle
-                className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
-                aria-hidden
-              />
+              <WarningTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
               <div className="min-w-0 flex-1 space-y-1">
-                <h4 className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  Maps private beta
-                </h4>
+                <h4 className="text-foreground text-sm font-semibold">Maps private beta</h4>
                 <p className="text-muted-foreground text-xs leading-relaxed">
                   Explore the world map, terrain and other nations freely. Adding your own borders
                   or claiming territory isn&apos;t open to external players yet.
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={dismissBeta}
-                className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring -m-1 shrink-0 rounded-full p-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="text-muted-foreground -m-1.5 h-8 w-8 shrink-0 rounded-full"
                 aria-label="Dismiss private beta notice"
               >
-                <Xmark className="h-3.5 w-3.5" aria-hidden />
-              </button>
+                <Xmark aria-hidden />
+              </Button>
             </div>
-          </div>
+          </FacetContainer>
         )}
       </div>
 
@@ -637,17 +631,15 @@ export function MapContainer({
       {(webglError || (mapLoadTimeout && !mapEngineReady)) && (
         <div
           role="alert"
-          className="bg-map-ocean absolute inset-0 z-[60] flex items-center justify-center p-6 text-center"
+          className="bg-map-ocean absolute inset-0 z-[var(--z-depth-overlay)] flex items-center justify-center p-6 text-center"
         >
-          <div className="facet-hierarchy-child max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500">
-              <WarningTriangle className="h-8 w-8" aria-hidden />
-            </div>
+          <FacetContainer depth={3} className="max-w-md space-y-6 rounded-2xl p-8">
+            <WarningTriangle className="text-destructive mx-auto h-8 w-8" aria-hidden />
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white">
+              <h3 className="text-foreground text-xl font-semibold">
                 {webglError ? "WebGL Error Detected" : "Map Loading Timeout"}
               </h3>
-              <p className="text-sm text-white/70">
+              <p className="text-muted-foreground text-sm">
                 {webglError
                   ? "WebGL is either disabled, crashed, or not supported by your browser. Please check your hardware acceleration settings."
                   : "The map engine is taking longer than expected to load. This might be due to slow network speeds or database recovery mode."}
@@ -655,23 +647,26 @@ export function MapContainer({
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               {!webglError && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="lg"
                   onClick={() => setMapLoadTimeout(false)}
-                  className="w-full rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
+                  className="w-full sm:flex-1"
                 >
                   Keep waiting
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="button"
+                size="lg"
                 onClick={() => window.location.reload()}
-                className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-lg transition-[background-color,transform] hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none active:scale-[0.98]"
+                className="w-full bg-blue-600 text-white hover:bg-blue-600/90 sm:flex-1"
               >
-                Reload Page
-              </button>
+                Reload page
+              </Button>
             </div>
-          </div>
+          </FacetContainer>
         </div>
       )}
     </div>

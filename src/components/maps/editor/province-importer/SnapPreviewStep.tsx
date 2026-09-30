@@ -1,5 +1,7 @@
 "use client";
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 import React, { memo, useMemo } from "react";
 import { Magnet, Compress as Minimize2 } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
@@ -89,7 +91,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
 
       {/* Vertex count stats */}
       {vertexStats.before > 0 && (
-        <div className="border-border bg-muted/30 rounded-lg border px-3 py-2 text-xs">
+        <FacetCard surface="solid" className="rounded-lg px-3 py-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Original vertices</span>
             <span className="font-medium tabular-nums">{vertexStats.before.toLocaleString()}</span>
@@ -106,17 +108,18 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
               </span>
             </div>
           )}
-        </div>
+        </FacetCard>
       )}
 
-      <button
+      <Button
+        size="sm"
+        className="w-full justify-center"
         onClick={importer.applySnapping}
         disabled={!importer.countryBorder}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40"
       >
         <Magnet className="h-3.5 w-3.5" />
         Apply Snap & Simplify
-      </button>
+      </Button>
 
       <div className="text-muted-foreground text-xs">
         Snapping aligns edges to the country border. Simplification reduces vertices while

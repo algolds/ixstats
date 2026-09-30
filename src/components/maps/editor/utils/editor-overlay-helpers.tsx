@@ -1,47 +1,31 @@
 "use client";
 
-import React, { useState, useEffect, Component, type ReactNode } from "react";
+import React, { Component, type ReactNode } from "react";
 import { Map, WarningCircle as AlertCircle } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 import type { Geometry, Position } from "geojson";
 
 // ── Editor Loading Screen ────────────────────────────────────────────
 
 export function EditorLoadingScreen({ countryName }: { countryName?: string | null }) {
-  const [dots, setDots] = useState("");
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
-    }, 400);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="bg-map-ocean absolute inset-0 z-40 flex items-center justify-center">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
-
-      <div className="relative z-10 flex flex-col items-center gap-6 text-center">
-        {/* Animated rings */}
-        <div className="relative h-24 w-24">
-          <div className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full border-2 border-dashed border-emerald-500/30" />
-          <div className="absolute inset-3 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
-          <div className="absolute inset-6 rounded-full border border-emerald-300/15" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Map className="h-8 w-8 text-emerald-400" />
-          </div>
-        </div>
-
+    <div
+      role="status"
+      className="bg-background absolute inset-0 z-40 flex items-center justify-center p-6"
+    >
+      <FacetContainer depth={2} className="w-full max-w-xs space-y-4 rounded-2xl p-6 text-center">
+        <Map className="text-muted-foreground mx-auto h-6 w-6" aria-hidden />
         <div>
-          <h2 className="text-foreground text-sm font-semibold">Loading Map Editor{dots}</h2>
+          <h2 className="text-foreground text-sm font-semibold">Loading map editor…</h2>
           {countryName && <p className="text-muted-foreground mt-1 text-xs">{countryName}</p>}
         </div>
-
-        <div className="text-muted-foreground/60 flex gap-4 text-xs">
-          <span>Geometry</span>
-          <span>Features</span>
-          <span>Layers</span>
+        <div className="space-y-2" aria-hidden>
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="mx-auto h-3 w-2/3" />
         </div>
-      </div>
+      </FacetContainer>
     </div>
   );
 }
@@ -93,14 +77,15 @@ export class EditorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-          <AlertCircle className="h-5 w-5 text-red-500" />
+          <AlertCircle className="text-destructive h-5 w-5" aria-hidden />
           <p className="text-muted-foreground text-xs">{this.props.name} encountered an error</p>
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="bg-muted text-foreground hover:bg-accent rounded-md px-3 py-1 text-xs font-medium"
           >
             Retry
-          </button>
+          </Button>
         </div>
       );
     }

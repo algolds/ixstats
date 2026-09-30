@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { memo, useEffect } from "react";
 import {
   CheckCircle,
@@ -34,7 +35,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
       </div>
 
       {importer.importScope === "cities" ? (
-        <div className="flex flex-col gap-2 rounded-lg bg-green-500/10 px-3 py-4 text-xs text-green-700 dark:text-green-400">
+        <div className="border-border flex flex-col gap-2 rounded-lg border px-3 py-4 text-xs text-emerald-500">
           <div className="flex items-center gap-2 font-medium">
             <CheckCircle className="h-4 w-4" />
             Ready for City Import
@@ -55,8 +56,8 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
           <div
             className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
               report.valid
-                ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                ? "border border-emerald-500/30 text-emerald-500"
+                : "border border-amber-500/30 text-amber-500"
             }`}
           >
             {report.valid ? (
@@ -102,13 +103,10 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                   {report.gaps.length} Gap{report.gaps.length !== 1 ? "s" : ""}
                 </span>
                 {report.gaps.some((g) => g.autoFixable) && (
-                  <button
-                    onClick={importer.autoFixGaps}
-                    className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-xs font-medium"
-                  >
+                  <Button variant="ghost" size="xs" onClick={importer.autoFixGaps}>
                     <Wrench className="h-3 w-3" />
                     Auto-fix small gaps
-                  </button>
+                  </Button>
                 )}
               </div>
               {report.gaps.slice(0, 5).map((gap, i) => (
@@ -139,13 +137,10 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                   <XCircle className="h-3.5 w-3.5" />
                   {report.overlaps.length} Overlap{report.overlaps.length !== 1 ? "s" : ""}
                 </span>
-                <button
-                  onClick={importer.autoFixOverlaps}
-                  className="text-primary hover:bg-accent flex items-center gap-1 rounded px-2 py-1 text-xs font-medium"
-                >
+                <Button variant="ghost" size="xs" onClick={importer.autoFixOverlaps}>
                   <Wrench className="h-3 w-3" />
                   Resolve overlaps
-                </button>
+                </Button>
               </div>
               {report.overlaps.slice(0, 5).map((overlap, i) => (
                 <div key={i} className="bg-accent rounded px-2 py-1.5 text-xs">
@@ -176,12 +171,9 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             </div>
           )}
 
-          <button
-            onClick={importer.runValidation}
-            className="border-border text-foreground hover:bg-accent w-full rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
-          >
+          <Button variant="outline" size="sm" className="w-full" onClick={importer.runValidation}>
             Re-validate
-          </button>
+          </Button>
         </>
       )}
     </div>

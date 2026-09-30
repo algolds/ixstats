@@ -19,6 +19,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Keyframe as Keyboard, Xmark as X } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
 import type { IxWorldMapRef } from "./IxWorldMap";
 import { MAP_DEFAULTS, type ProjectionMode } from "~/lib/maps/map-config";
 
@@ -167,55 +169,66 @@ export function MapKeyboardControls({
           sidePanelOpen ? "max-sm:hidden sm:right-[25rem]" : ""
         }`}
       >
-        <span className="text-muted-foreground/60 text-right text-xs leading-tight select-none">
+        <span className="text-muted-foreground text-right text-xs leading-tight select-none">
           © 2026 Ixnay
           <br />
           Powered by IxStates
         </span>
         {/* Desktop only — keyboard shortcuts are irrelevant on touch devices */}
-        <button
-          type="button"
-          onClick={() => setShowHelp((v) => !v)}
-          className="bg-card text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring hidden items-center gap-1 rounded-lg px-2 py-1.5 text-xs shadow-md transition-colors focus-visible:ring-2 focus-visible:outline-none sm:flex"
-          title="Keyboard shortcuts (?)"
-          aria-label="Keyboard shortcuts"
-          aria-expanded={showHelp}
-        >
-          <Keyboard className="h-3.5 w-3.5" aria-hidden />
-          <span>?</span>
-        </button>
+        <FacetContainer depth={2} className="hidden rounded-lg sm:block">
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={() => setShowHelp((v) => !v)}
+            className="text-muted-foreground"
+            title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+            aria-expanded={showHelp}
+          >
+            <Keyboard aria-hidden />
+            <span>?</span>
+          </Button>
+        </FacetContainer>
       </div>
 
       {/* Help overlay */}
       {showHelp && (
         <div
-          role="region"
-          aria-label="Keyboard shortcuts"
-          className={`bg-card/95 ring-border absolute right-12 bottom-12 z-20 w-56 rounded-xl p-3 shadow-lg ring-1 backdrop-blur-sm ${
-            sidePanelOpen ? "sm:right-[25rem]" : ""
-          }`}
+          className={`absolute right-12 bottom-12 z-20 w-56 ${sidePanelOpen ? "sm:right-[25rem]" : ""}`}
         >
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-foreground text-xs font-semibold">Keyboard Shortcuts</span>
-            <button
-              type="button"
-              onClick={() => setShowHelp(false)}
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded p-0.5 focus-visible:ring-2 focus-visible:outline-none"
-              aria-label="Close keyboard shortcuts"
-            >
-              <X className="h-3.5 w-3.5" aria-hidden />
-            </button>
-          </div>
-          <div className="space-y-1">
-            {SHORTCUTS.filter((sc) => sc.keys !== "M" || measureAvailable).map(({ keys, desc }) => (
-              <div key={keys} className="flex items-center justify-between text-xs">
-                <kbd className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-xs">
-                  {keys}
-                </kbd>
-                <span className="text-muted-foreground">{desc}</span>
-              </div>
-            ))}
-          </div>
+          <FacetContainer
+            depth={2}
+            role="region"
+            aria-label="Keyboard shortcuts"
+            className="rounded-xl p-3"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-foreground text-sm font-semibold">Keyboard shortcuts</h3>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHelp(false)}
+                className="text-muted-foreground h-7 w-7"
+                aria-label="Close keyboard shortcuts"
+              >
+                <X aria-hidden />
+              </Button>
+            </div>
+            <div className="space-y-1">
+              {SHORTCUTS.filter((sc) => sc.keys !== "M" || measureAvailable).map(
+                ({ keys, desc }) => (
+                  <div key={keys} className="flex items-center justify-between text-xs">
+                    <kbd className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-xs">
+                      {keys}
+                    </kbd>
+                    <span className="text-muted-foreground">{desc}</span>
+                  </div>
+                )
+              )}
+            </div>
+          </FacetContainer>
         </div>
       )}
     </>

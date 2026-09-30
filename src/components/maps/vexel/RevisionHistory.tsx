@@ -1,5 +1,7 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -27,18 +29,18 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
   };
 
   if (isLoading) {
-    return <div className="py-4 text-xs text-zinc-500">Loading version logs...</div>;
+    return <div className="text-muted-foreground py-4 text-xs">Loading version logs...</div>;
   }
 
   if (!revisions || revisions.length === 0) {
-    return <div className="py-4 text-xs text-zinc-600 italic">No revisions registered.</div>;
+    return (
+      <div className="text-muted-foreground py-4 text-xs italic">No revisions registered.</div>
+    );
   }
 
   return (
     <div className="space-y-4">
-      <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
-        Revision History ({revisions.length})
-      </h4>
+      <Eyebrow className="block">Revision History ({revisions.length})</Eyebrow>
 
       <div className="max-h-[300px] space-y-3 overflow-y-auto pr-1">
         {revisions.map((rev, idx) => {
@@ -47,7 +49,7 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
           return (
             <div
               key={rev.id}
-              className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-zinc-950/30 p-2.5 text-xs"
+              className="border-border bg-card/30 flex items-center justify-between gap-4 rounded-lg border p-2.5 text-xs"
             >
               <div className="flex items-center gap-3">
                 {/* Micro preview */}
@@ -56,24 +58,23 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
                 </div>
 
                 <div className="space-y-0.5">
-                  <span className="block font-semibold text-zinc-300">
+                  <span className="text-muted-foreground block font-semibold">
                     Version: {revisions.length - idx}
                   </span>
-                  <span className="block text-xs text-zinc-500">
+                  <span className="text-muted-foreground block text-xs">
                     {new Date(rev.createdAt).toLocaleString()}
                   </span>
                   {rev.revisionNote && (
-                    <p className="text-xs text-zinc-400 italic">Change: {rev.revisionNote}</p>
+                    <p className="text-muted-foreground text-xs italic">
+                      Change: {rev.revisionNote}
+                    </p>
                   )}
                 </div>
               </div>
 
-              <button
-                onClick={() => handleRevert(comp)}
-                className="rounded bg-zinc-800 px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-zinc-700 hover:text-amber-400"
-              >
+              <Button variant="outline" size="xs" onClick={() => handleRevert(comp)}>
                 Restore
-              </button>
+              </Button>
             </div>
           );
         })}
