@@ -4,17 +4,17 @@
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
 **Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer  
 **Primary Action:** `MAP` | **Domain Accent:** Sky Blue (`#0EA5E9` / `--color-blue-500`)  
-**Routes:** `/maps` (players edit their own nation in place), `/admin/maps/editor` (world editor), standalone `maps.ixwiki.com` | **Status:** 📀 Gold Master (100% Ready)  
+**Routes:** `/maps` (players edit their own nation in place), `/admin/maps/editor` (world editor), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map ✅ Live; map editor, pipeline and worldgen 🟡 Partial or 🧪 Labs)  
 
 Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built on **MapLibre GL JS**, it powers interactive vector globe maps, procedural realm generation, grounded manual IxEarth cartography, admin GIS suites, and precision player territory editors.
 
 ### Core Foundation: "Geography is King"
-In IxStates, geography is not a passive cosmetic backdrop—it is the Tier-0 single source of truth driving the entire simulation:
-- **Topological Ground Truth**: Border treaties, territorial integrity, and neighboring adjacency derive directly from PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`).
-- **Climate & Biomes**: Altitude, coastal distance, river basins, and rain shadow topography determine agricultural yields, resource endowments, and economic growth modifiers.
+In IxStates, geography is the source of truth for borders, area and adjacency. Its reach into the economy is narrower than the aspiration:
+- **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is filled only by the admin `rebuildAdjacency` mutation, which nothing calls in production.
+- **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, transport effects (`transport-sync.ts`), the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. `GeographicResource` has no writer.
 - **Dual Pipeline Architecture**: The Atlas Engine unifies two distinct cartographic streams under one high-performance WebGL renderer:
   1. **Grounded Manual IxEarth Pipeline**: Exact affine transformation ($25625 \times 15729$ viewBox $\to$ WGS84 coordinates), manual hypsometric contour stacking, topological seam-locking, and 12 Trewartha climate biomes.
-  2. **Procedural UPG v2 Vector Pipeline**: 100,000-cell Voronoi spatial mesh (`WorldGraph`), 5 Lloyd iterations, coastal hypsometric damping, and Catmull-Rom spline vector subdivision (2 passes for polygons, 3 for rivers).
+  2. **Procedural UPG v2 Vector Pipeline**: ~100,000-seed Voronoi spatial mesh (`WorldGraph`; ~69,000 cells after latitude thinning), 5 Lloyd iterations, coastal hypsometric damping, and Catmull-Rom spline vector subdivision (2 passes for polygons, 3 for rivers).
 
 ---
 
@@ -32,10 +32,10 @@ Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass pars
 └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
 ```
 
-1. **Vector SVG Parsing (`svg-parser.ts`)**: Server-side parsing with `@xmldom/xmldom` and `svg-path-parser`. Extracts Inkscape layer groups (`political`, `rivers`, `lakes`, `altitudes`, `climate`), flattens Bezier curves, and resolves polygon hole winding order.
+1. **Vector SVG Parsing (`svg-parser.ts`)**: Server-side parsing with `@xmldom/xmldom` and `svg-path-parser`. Can extract Inkscape layer groups (`political`, `rivers`, `lakes`, `altitudes`, `climate`), flattens Bezier curves, and resolves polygon hole winding order. The map pipeline (`map-pipeline.ts`) asks only for `political` and `altitudes`; the other layers arrive through per-layer `SvgUploadManager` uploads.
 2. **Affine WGS84 Transformation (`src/lib/flags/svg-coordinate-config.ts`)**: Converts 2D SVG pixel viewBox space (`25625 × 15729` for IxEarth) to geographic coordinates with an isotropic affine transform (~22.77 px per degree).
 3. **Topology Locking (`src/lib/maps/shared-vertex-builder.ts`)**: Merges shared boundary vertices between adjacent nations into a unified vertex lookup topology, preventing tearing or slivers.
-4. **GeoJSON Optimization (`geojson-compress.ts`)**: Visvalingam-Whyatt geometry simplification (`@turf/simplify`), coordinate precision truncation (4 decimal places, $\sim 11\text{m}$, for political borders; 3 for decorative layers), and consecutive duplicate-point removal. Sutherland-Hodgman antimeridian clipping lives in `src/lib/maps/map-utils.ts`.
+4. **GeoJSON Optimization (`geojson-compress.ts`)**: Radial-distance plus Douglas-Peucker geometry simplification (`@turf/simplify`, which comes in through `@turf/turf`), coordinate precision truncation (4 decimal places, $\sim 11\text{m}$, for political borders; 3 for decorative layers), and consecutive duplicate-point removal. Sutherland-Hodgman antimeridian clipping lives in `src/lib/maps/map-utils.ts`.
 
 ---
 
@@ -43,12 +43,13 @@ Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass pars
 
 The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/lib/worldgen/v2/`) generates high-resolution, scientifically accurate fictional world maps:
 
-1. **100,000-Cell Spatial Mesh**: Ultra-dense Voronoi mesh (`WorldGraph`) with 5 Lloyd relaxation iterations.
-2. **Tectonic Plate Simulation**: Continental/oceanic crust assignment, Euler rotation vectors, and convergent/divergent/transform boundary classification.
+1. **~69,000-Cell Spatial Mesh**: Voronoi mesh (`WorldGraph`) with 5 Lloyd relaxation iterations. Seeds are thinned by `cos(latitude)` density (`mesh.ts`), so every seed measured gave about 69,000 cells, not 100,000.
+2. **Tectonic Plate Simulation**: Continental/oceanic crust assignment, 2-D linear plate velocity vectors (`tectonics.ts`; no Euler poles), and convergent/divergent/transform boundary classification.
 3. **Coastal Hypsometric Damping**: Exponentially dampens coastal land elevation within 8 cells of water (`coastDist <= 8`, `coastlines.ts`), preventing glacial peaks on shorelines:
    $$H_{\text{final}} = H_{\text{raw}} \cdot (1.0 - 0.85 \cdot e^{-0.35 \cdot \text{coastDist}})$$
 4. **Unified Hydrology & Biomes**: Coriolis wind simulation, rain shadow calculation, priority-queue depression filling, steepest-descent river tracing, and 12 Trewartha climate biomes.
-5. **Vector Synthesis & Export (`export.ts`)**: Merges cell polygons into rings, then Douglas-Peucker decimation → Catmull-Rom spline subdivision ($\tau = 0.5$; 2 passes for polygons, 3 for river lines) → harmonic noise perturbation, across all 7 vector layers with shared topology.
+5. **Vector Synthesis & Export (`export.ts`)**: Merges cell polygons into rings, then Douglas-Peucker decimation → Catmull-Rom spline subdivision ($\tau = 0.5$; 2 passes for polygons, 3 for river lines) → harmonic noise perturbation, across all 7 vector layers with shared topology inside the generator. After import the layers are independent rows and `SharedVertex` is not read back.
+6. **Status:** Labs only (`/labs/map-pipeline`). Nothing is persisted; the procedural import does not yet produce `Country`, `City` or `Subdivision` rows, and generation runs synchronously on the main Node process (3-28 s). Capital count is fixed at 80 (`politics.ts`); the `countryCountRange`, `useIxWorldTemplate`, `templateStrength`, `climateFidelity` and `languageFamilies` params are accepted and ignored. Worldgen biomes never reach the database, so the 12 Trewartha biomes drive agriculture only in the bbox-estimated profile.
 
 ---
 
@@ -100,9 +101,9 @@ The overlay architecture (`src/lib/maps/overlay-registry.ts`) enables declarativ
 ## MyCountry Tier-0 Single Source of Truth
 
 Geography serves as the foundational data source across the platform:
-- **Spatial Boundaries**: `MapLayer`, `Territory`, `BorderHistory` are authoritative for geometry, area, centroid, bounding box, and PostGIS `ST_Touches` adjacency.
+- **Spatial Boundaries**: `MapLayer` plus the cached geometry columns on `Country` (`src/lib/country-geo/sync.ts`) and `BorderHistory` are authoritative for geometry, area, centroid and bounding box. `Territory` is used only by the demo seed. Adjacency is computed live with PostGIS `ST_Touches`.
 - **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `MapLabel` foreign-key linked to `Country.id`.
-- **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate regional metrics into national indicators.
+- **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate population and GDP only. Bottom-up overwrites the national figures, and with no approved subdivisions it falls back to the sum of city populations.
 
 ---
 
@@ -111,7 +112,7 @@ Geography serves as the foundational data source across the platform:
 - `geo/core/` (`geoCore`) – World map geometry and bundles, country geometry/neighbors, point lookups, geo profiles, overlays, border history, and area/profile recalculation
 - `geo/features/` (`geoFeatures`) – Cities, POIs, subdivisions, story pins, map labels, and named superlatives (`createPeak`, `createNamedRiver`, `createNamedLake`)
 - `geo/editor/` (`geoEditor`) – Border editing mutations, split/merge, linkage, the spatial submission review queue, and the map pipeline (`runPipeline`, `importPipelineResult`, realm-targeted)
-- `geo/admin/` (`geoAdmin`) – SVG uploads, province and city imports
+- `geo/admin/` (`geoAdmin`) – SVG uploads, province and city imports (the province and city imports are country-owner procedures, not admin-only)
 - `geo/sovereignty.ts` (`geoSovereignty`), `geo/wiki.ts` (`geoWiki`) – Sovereignty relations; wiki intros/infobox lookups for features
 - `countryGeo.ts` – Geo bundles and compliance, `sampleTerrainAt`, settlement upserts (`upsertCity`, `upsertSubdivision`), rollup mode, and wiki population
 - `transport/` – Friction-based transit corridor generation, route CRUD, travel-time and national mobility queries

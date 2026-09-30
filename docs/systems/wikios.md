@@ -5,7 +5,7 @@
 **Primary Action:** `PUBLISH` | **Domain Accent:** Slate Cyan (`#06B6D4` / `--color-cyan-500`)  
 **Routes:** `/wiki/*` (reader, `/wiki/[slug]/edit`, `?source=` foreign-wiki pages), `/util/*` (utility pages incl. `/util/repository`), `/stashes` | **Status:** Release Candidate (platform 1.4.0)  
 
-WikiOS is the lore and knowledge operating system for IxStates. Built with native PostgreSQL storage (no direct MariaDB connection; MediaWiki is reached only over its HTTP Action API) and a sub-2ms relational link graph (`wiki_links`), it serves as an active lore platform with visual publishing, bilateral text annotations, reading queues, and editor recognition.
+WikiOS is the lore and knowledge operating system for IxStates. Built with native PostgreSQL storage (no direct MariaDB connection; MediaWiki is reached only over its HTTP Action API, and remains the renderer for templates, Lua and the Main Page) and an indexed relational link graph (`wiki_links`), it serves as an active lore platform with visual publishing, bilateral text annotations, reading queues, and editor recognition.
 
 ---
 
@@ -17,18 +17,18 @@ WikiOS is the lore and knowledge operating system for IxStates. Built with nativ
 ├────────────────────┬────────────────────┬────────────────────┬─────────────────────────┤
 │ 1. Native Reader   │ 2. Margin          │ 3. Canvas Editor   │ 4. Media & Metagame     │
 │ PostgreSQL CRUD,   │ Split-canvas sheet,│ Visual block-based │ Image repository,       │
-│ sub-2ms link graph,│ gutter text pins,  │ rich text editor   │ Wiki Awards medals,     │
+│ indexed link graph,│ gutter text pins,  │ rich text editor   │ Wiki Awards medals,     │
 │ TOC & live embeds  │ bilateral threads  │ with live blocks   │ Stash reading lists     │
 └────────────────────┴────────────────────┴────────────────────┴─────────────────────────┘
 ```
 
 ### Direct database engine (`src/lib/wiki-os/`)
 - **Primary storage.** Articles (`WikiArticle`) and revisions (`WikiRevision`) live in PostgreSQL. All 4,685+ namespace-0 articles and 48,200+ relational link edges are stored natively.
-- **Pre-compiled HTML.** `contentHtml` serves reads directly from PostgreSQL indexes in under 2ms without runtime PHP calls.
-- **Relational link graph (`wiki_links`).** Indexed edges allow instant backlink lookups and red-link detection in <1ms.
-- **Multi-tier search.** Spotlight autocomplete scores exact titles 1.0, title prefixes 0.8, and other trigram matches 0.5; deep search uses a weighted `tsvector` query with snippets (`NativeSearchService`).
-- **Native Media & Asset Engine (`MediaAssetService` & `wiki_assets`).** Full native registry of 7,555+ images, SVG emblems, flags, and media files stored directly in PostgreSQL (`wiki_assets`). 
-  - **Zero Duplication**: Master binaries remain in single-copy storage; PostgreSQL indexes lightweight metadata pointers (`slug`, `width`, `height`, `mimeType`, `@unique md5Hash`).
+- **`contentHtml` cache.** `WikiArticle.contentHtml` is served when present, but `ArticleRepository.saveArticle` stores an empty string unless the caller supplies HTML, so the next read of a saved article renders it again through MediaWiki (`action=parse`, with a timeout). Every read also asks MediaWiki for author data (`http-reader.ts`, uncached). There is no measured sub-2ms, no-PHP read path today: PostgreSQL is authoritative for stored wikitext, revisions and the link graph, not for rendering, templates, Lua, uploads, image bytes or the Main Page.
+- **Relational link graph (`wiki_links`).** Indexed edges allow indexed backlink lookups and red-link detection.
+- **Multi-tier search.** Spotlight autocomplete is a case-insensitive Prisma `contains` on titles that scores exact titles 1.0, prefixes 0.8 and other matches 0.5 (`NativeSearchService`); it is not trigram or typo-tolerant, and there is no `pg_trgm` extension or GIN index on `wiki_articles`. Deep search computes a weighted `tsvector` query with snippets at query time, with no index behind it.
+- **Native Media & Asset Engine (`MediaAssetService` & `wiki_assets`).** Registry of 7,555+ images, SVG emblems, flags, and media files as `wiki_assets` rows. Assets are metadata pointers to images hosted on ixwiki.com; uploads are not served from WikiOS storage. 
+  - **Metadata pointers**: PostgreSQL holds lightweight rows (`slug`, `width`, `height`, `mimeType`, `@unique md5Hash`). `md5Hash` is the MD5 of the filename (`core/media-asset-service.ts`), so it de-duplicates names, not content.
   - **JIT & Save-Time Auto-Registration**: `ArticleRepository.saveArticle` and `/api/mediawiki/ixwiki/[...path]` automatically extract and register new media assets into `wiki_assets` in background (<10ms).
   - **Zero CLS & Immutable Caching**: Serves pre-computed width, height, and thumbnail variants with `Cache-Control: public, max-age=31536000, immutable` for zero cumulative layout shift.
 - **Infobox-first image pipeline (`transformers/image-url.ts`).** Strictly prioritizes genuine infobox logo/image parameters (`| logo =`, `| image =`, `| flag =`, `| coat_of_arms =`) from stored wikitext (`extractLeadImageFromWikitext`). Uses `isNoticeOrUtilityIcon` to block 40+ maintenance/WIP/construction badges (`Under_construction_icon-red.svg`, `Red_piston.svg`, `Ambox_warning_construction.png`). Normalizes mixed-content URLs, protocol-relative paths, and thumb paths to high-res `Special:FilePath` endpoints.
@@ -48,7 +48,7 @@ WikiOS is the lore and knowledge operating system for IxStates. Built with nativ
 
 ### Export worker (`src/lib/wiki-os/adapters/mediawiki/sync-worker.ts`)
 - **Background sync.** Saves complete locally in under 10ms. `MediaWikiExportWorker` (in-process queue) pushes changes upstream through the MediaWiki Action API (`action=edit`) in the background; set `SKIP_MEDIAWIKI_SYNC=true` to disable.
-- **Author attribution.** Authorship is recorded in PostgreSQL (`WikiRevision.author` / `authorId`). Upstream edits are made with the shared bot session; per-user actor patching on classic MediaWiki is not implemented (`updateRevisionActor` is a no-op).
+- **Author attribution.** Authorship is recorded in PostgreSQL (`WikiRevision.author` / `authorId`). Upstream edits are made with the shared bot session (default bot `Heku@WikiOS`, `WIKIOS_MEDIAWIKI_BOT_USER` in `src/env.ts`, a bot password on a personal account; there is no dedicated `WikiOS-Bridge` account); per-user actor patching on classic MediaWiki is not implemented (`updateRevisionActor` is a no-op).
 - **Inbound sync.** Edits made directly on classic MediaWiki are pulled into PostgreSQL by `services/auto-sync-service.ts` (`runAutoSyncCycle`), run by the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
 
 ### Sister-wiki federation (IIWiki and AltHistory)
@@ -57,7 +57,7 @@ WikiOS is the lore and knowledge operating system for IxStates. Built with nativ
 - **Parallel dispatch.** Searching with `wikiSource: "all"` queries all three wikis concurrently with `Promise.all`.
 
 ### Security and edge defense (`src/lib/wiki-os/guardian/`)
-- **Cloudflare Turnstile.** Verifies human edits without CAPTCHAs when the client sends a token (`saveWikitext` accepts an optional `turnstileToken`).
+- **Cloudflare Turnstile.** `saveWikitext` accepts an optional `turnstileToken` and calls `CloudflareGuardian.verifyTurnstile` when one is sent, but the result is ignored and no client sends a token, so it does not block anything today.
 - **Cache purge.** Triggers non-blocking Cloudflare cache purges when pages change.
 - **Abuse filter.** Not implemented: there is no mass-blanking or homoglyph filter in the save path. The editor client blocks saves that lost content (plans 203/301).
 

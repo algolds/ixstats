@@ -3,7 +3,7 @@
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `SIMULATE` | **Domain Accent:** Emerald Green / Amber Gold  
-**Route:** `/mycountry/economy` (Economy Domain) | **Status:** 📀 Gold Master (100% Ready)  
+**Route:** `/mycountry/economy` (Economy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); economy decisions largely do not reach the headline stats  
 
 The Economy system models macroeconomic output, fiscal policy built from 42 atomic tax components, sector performance, labor dynamics, trade flows, and long-range statistical projections.
 
@@ -49,15 +49,18 @@ Defined across `prisma/schema/economy.prisma` (selection):
 ```mermaid
 graph LR
     A[Baseline Indicators] --> B[Atomic Economic Components]
+    B --> G[IxStatsCalculator projection on read]
+    A --> G
+    S[Storyteller Effects] --> G
     B --> C[Tax System & Revenue]
     C --> D[Budget Allocation]
     D --> E[Passive Income Dividend]
-    E --> F[Storyteller Effects & Growth Tick]
-    F --> A
 ```
 
+There is no growth tick and no loop back into the baseline. Headline population and GDP are a projection computed on read by `IxStatsCalculator` (`src/lib/economy/calculations.ts`, `countries/economy.ts`) from the baseline, `baselineDate`, the adjusted growth inputs and `StorytellerEffect` rows. The projection is persisted to the stored `current*` columns only by the admin `forceRecalculation` (`admin/system.ts`); no cron does it, so rankings, vitality and passive income read stale stored values. Tax rates (`economics.updateFiscalSystem`), budget allocation and the fiscal calculators do not feed GDP growth. The tax to budget to dividend chain above is a separate reporting path.
+
 1. **Growth Computation**: Evaluates tier-based growth caps, diminishing returns ($>\$60\text{k}$), active policy multipliers, and embassy trade bonuses.
-2. **Fiscal Balancing**: Computes total revenue against department budgets, calculating national surplus/deficit and debt-to-GDP accumulation.
+2. **Fiscal Balancing** (reference calculation): Computes total revenue against department budgets, calculating national surplus/deficit and debt-to-GDP accumulation.
 3. **Vault Integration**: Economic health and budget weights (`BudgetVaultCalculator`, `src/lib/economy/budget-vault-calculator.ts`) feed the passive-income cron (`passive-income-distribution-cron.ts` → `vaultService.earnCreditsOnce`), rewarding sound economic management.
 4. **Legibility & Auditing**: Stat adjustments routed through `CountryEventSpine` are logged to `CountryChangeLog` and surfaced in the MyCountry canon feed (`mycountry.getCanonFeed`).
 

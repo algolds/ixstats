@@ -57,9 +57,9 @@ sequenceDiagram
     Client-->>Client: Re-render catalog (unlock notification via notificationHooks)
 ```
 
-1. **Progress Evaluation**: `achievementService.checkAndUnlock()` evaluates every definition against the user's country data. It currently runs only from the collector resync (no cron or engine hook calls it).
+1. **Progress Evaluation**: `achievementService.checkAndUnlock()` evaluates every definition against the user's country data. It currently runs only from the collector resync (no cron or engine hook calls it). An event-bus queue and worker exist (`service.ts`) but have no working publishers (7 hooks with no callers). Unlocks are keyed by the Clerk user id and evaluated against the **active** country, so switching nations can unlock the same scale achievements again.
 2. **Collector Resync (v2 Leap)**: On visiting `/achievements`, the client calls `achievements.syncMyCollectorAchievements`, which unlocks any newly met or backfilled milestones.
-3. **Unlock & Payout**: A `UserAchievement` row is inserted and IxCredits are granted once per achievement via `grantBonus()` (`EARN_BONUS`, uncapped: Common 100 → Legendary 2,500 IxC); any `rewardsJson` cards, packs and titles are awarded too. `achievements.unlock` does the same for a named achievement key without evaluating criteria.
+3. **Unlock & Payout**: A `UserAchievement` row is inserted and IxCredits are granted once per achievement via `grantBonus()` (`EARN_BONUS`, uncapped: Common 100 → Legendary 2,500 IxC); any `rewardsJson` cards, packs and titles are awarded too (titles are stored in `UserAchievement.metadata` and are not rendered anywhere). `achievements.unlock` does the same for a named achievement key without evaluating criteria.
 4. **Social Broadcast**: A notification and public activity post are generated for the global feed.
 5. **Leaderboards**: `getLeaderboard` / `getCountryLeaderboard` aggregate unlocks on demand per query (no stored aggregation tables).
 
