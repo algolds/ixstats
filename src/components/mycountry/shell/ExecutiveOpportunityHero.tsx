@@ -14,21 +14,15 @@ import {
   Xmark as X,
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
-import {
-  GHOST_BUTTON,
-  IconTile,
-  PRIMARY_BUTTON,
-  SECONDARY_BUTTON,
-  TONE,
-  type Tone,
-} from "./surface-kit";
+import { STATUS_TEXT, type StatusTone } from "./status-tone";
 
 interface Opportunity {
   id: string;
@@ -40,7 +34,7 @@ interface Opportunity {
   metricValue?: string;
   directiveGoal: string;
   icon: typeof Shield;
-  tone: Tone;
+  tone: StatusTone;
   intentId?: string;
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
 }
@@ -93,7 +87,6 @@ function ExecutiveOpportunityHeroComponent({
 
   const handleDismiss = React.useCallback(
     (id: string) => {
-      soundEffects.whisper();
       setDismissedIds((prev) => {
         const next = prev.includes(id) ? prev : [...prev, id];
         if (typeof window !== "undefined" && storageKey) {
@@ -256,7 +249,7 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal:
           "Establish bilateral economic trade agreement and expand diplomatic alliances",
         icon: Handshake,
-        tone: "diplomacy",
+        tone: "neutral",
         drillKind: { kind: "relations" },
       };
     }
@@ -274,7 +267,7 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal:
           "Implement targeted macroeconomic development directive and tax incentive package",
         icon: TrendingUp,
-        tone: "economy",
+        tone: "neutral",
         drillKind: { kind: "economy" },
       };
     }
@@ -316,95 +309,76 @@ function ExecutiveOpportunityHeroComponent({
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        <FacetCard
-          depth={1}
-          interactive="none"
-          className="relative overflow-hidden rounded-3xl p-4 sm:p-6"
-        >
-          {/* Tone hairline: the only colour on the card besides its glyph and label */}
-          <span
-            aria-hidden="true"
-            className={cn("absolute inset-x-0 top-0 h-0.5 opacity-80", TONE[opportunity.tone].dot)}
-          />
-
-          <button
+        <FacetCard depth={2} interactive="none" className="relative rounded-3xl p-4 sm:p-6">
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
+            data-cuelume-press="whisper"
             onClick={() => handleDismiss(opportunity.id)}
-            className={cn(
-              GHOST_BUTTON,
-              "absolute top-2 right-2 h-11 w-11 rounded-full px-0 sm:top-3 sm:right-3 sm:h-8 sm:w-8"
-            )}
+            className="text-muted-foreground absolute top-2 right-2 size-11 rounded-full sm:top-3 sm:right-3 sm:size-8"
             aria-label="Dismiss this priority for now"
             title="Dismiss for this session"
           >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </button>
+            <X aria-hidden="true" />
+          </Button>
 
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex max-w-2xl min-w-0 gap-4 pr-10">
-              <IconTile icon={Icon} tone={opportunity.tone} size="lg" className="hidden sm:flex" />
-              <div className="min-w-0 space-y-1.5">
-                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                  <span className={cn("font-semibold", TONE[opportunity.tone].text)}>
-                    {opportunity.subtitle}
+            <div className="max-w-2xl min-w-0 space-y-1.5 pr-10">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                <Eyebrow className={cn("flex items-center gap-1.5", STATUS_TEXT[opportunity.tone])}>
+                  <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+                  {opportunity.subtitle}
+                </Eyebrow>
+                {opportunity.metricLabel && opportunity.metricValue && (
+                  <span className="text-muted-foreground tabular-nums">
+                    · {opportunity.metricLabel}{" "}
+                    <span className="text-foreground font-medium">{opportunity.metricValue}</span>
                   </span>
-                  {opportunity.metricLabel && opportunity.metricValue && (
-                    <span className="text-muted-foreground tabular-nums">
-                      · {opportunity.metricLabel}{" "}
-                      <span className="text-foreground font-medium">{opportunity.metricValue}</span>
-                    </span>
-                  )}
-                </p>
-                <h2
-                  id="priority-title"
-                  className="text-foreground text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
-                >
-                  {opportunity.title}
-                </h2>
-                <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">
-                  {opportunity.description}
-                </p>
-              </div>
+                )}
+              </p>
+              <h2
+                id="priority-title"
+                className="text-foreground text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
+              >
+                {opportunity.title}
+              </h2>
+              <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">
+                {opportunity.description}
+              </p>
             </div>
 
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               {isIssue ? (
-                <button
+                <Button
                   type="button"
-                  onClick={() => {
-                    soundEffects.press();
-                    onOpenDrill?.(opportunity.drillKind!);
-                  }}
-                  className={PRIMARY_BUTTON}
+                  onClick={() => onOpenDrill?.(opportunity.drillKind!)}
+                  className="h-11 sm:h-9"
                 >
-                  <Compass aria-hidden="true" className="h-4 w-4" />
+                  <Compass aria-hidden="true" />
                   <span>Open issue brief</span>
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
-                  onClick={() => {
-                    soundEffects.bloom();
-                    onDeclare?.(opportunity.directiveGoal);
-                  }}
-                  className={PRIMARY_BUTTON}
+                  data-cuelume-press="bloom"
+                  onClick={() => onDeclare?.(opportunity.directiveGoal)}
+                  className="h-11 sm:h-9"
                 >
-                  <Command aria-hidden="true" className="h-4 w-4" />
+                  <Command aria-hidden="true" />
                   <span>{opportunity.intentId ? "Follow-up Directive" : "Declare Directive"}</span>
-                </button>
+                </Button>
               )}
               {secondary && (
-                <button
+                <Button
                   type="button"
-                  onClick={() => {
-                    soundEffects.press();
-                    secondary.onClick();
-                  }}
-                  className={SECONDARY_BUTTON}
+                  variant="secondary"
+                  onClick={secondary.onClick}
+                  className="h-11 sm:h-9"
                 >
                   <span>{secondary.label}</span>
-                  <NavArrowRight aria-hidden="true" className="h-4 w-4 opacity-60" />
-                </button>
+                  <NavArrowRight aria-hidden="true" className="opacity-60" />
+                </Button>
               )}
             </div>
           </div>

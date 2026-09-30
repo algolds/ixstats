@@ -34,36 +34,20 @@ export function MobileOptimizationStyles() {
         -webkit-tap-highlight-color: rgba(0,0,0,0);
       }
 
-      /* Mobile-friendly button sizes */
-      @media (max-width: 768px) {
-        .mobile-optimized button {
+      /* Mobile touch targets: 44px minimum height on touch screens. Padding, layout, radius and
+         focus rings are left to the Facet primitives (Button, FacetTabs, Toggle, FacetCard). */
+      @media (max-width: 768px) and (pointer: coarse) {
+        .mobile-optimized button,
+        .mobile-optimized [role="button"] {
           min-height: 44px;
-          min-width: 44px;
-          padding: 12px 16px;
         }
+      }
 
-        .mobile-optimized .facet-hierarchy-child {
-          border-radius: 12px;
-        }
-
-        .mobile-optimized .facet-hierarchy-parent {
-          border-radius: 16px;
-        }
-
+      @media (max-width: 768px) {
         /* Improved scroll performance */
         .mobile-optimized .overflow-y-auto {
           -webkit-overflow-scrolling: touch;
           overscroll-behavior: contain;
-        }
-
-        /* Better touch targets */
-        .mobile-optimized [role="button"],
-        .mobile-optimized button,
-        .mobile-optimized .cursor-pointer {
-          min-height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         /* Reduce motion for battery life */
@@ -73,21 +57,10 @@ export function MobileOptimizationStyles() {
           transition-duration: 0.2s !important;
         }
 
-        /* Optimize grid layouts for mobile */
-        .mobile-optimized .grid {
-          gap: 1rem;
-        }
-
         /* Better text readability */
         .mobile-optimized {
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* Improve focus visibility */
-        .mobile-optimized *:focus {
-          outline: 2px solid rgba(59, 130, 246, 0.5);
-          outline-offset: 2px;
         }
 
         /* Safe area adjustments for notch devices */
@@ -126,14 +99,6 @@ export function MobileOptimizationStyles() {
           animation-iteration-count: 1 !important;
           transition-duration: 0.01ms !important;
           scroll-behavior: auto !important;
-        }
-      }
-
-      /* Dark mode optimizations for mobile */
-      @media (prefers-color-scheme: dark) {
-        .mobile-optimized {
-          /* Better contrast ratios */
-          --glass-opacity: 0.1;
         }
       }
 
@@ -272,10 +237,7 @@ export function useMobilePerformance() {
     };
 
     // Check for slow connection
-    const connection =
-      nav.connection ||
-      nav.mozConnection ||
-      nav.webkitConnection;
+    const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
     const slowConnection =
       connection && (connection.effectiveType === "slow-2g" || connection.effectiveType === "2g");
 

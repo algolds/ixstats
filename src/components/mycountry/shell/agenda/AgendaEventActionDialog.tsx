@@ -10,8 +10,10 @@ import {
 } from "~/components/ui/dialog";
 import { KeyCommand as Command, Compass } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
-import { IconTile, PRIMARY_BUTTON, SECONDARY_BUTTON, TONE } from "../surface-kit";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { STATUS_TEXT } from "../status-tone";
 import type { AgendaEvent, ExecutiveAgendaProps } from "./agendaTypes";
 
 interface AgendaEventActionDialogProps {
@@ -36,18 +38,18 @@ export function AgendaEventActionDialog({
       {selectedEvent && (
         <DialogContent className="max-w-md space-y-5 rounded-3xl p-6">
           <DialogHeader className="space-y-3 text-left">
-            <div className="flex items-center gap-3">
-              <IconTile icon={selectedEvent.icon} tone={selectedEvent.tone} />
-              <p className="text-xs">
-                <span className={cn("font-semibold", TONE[selectedEvent.tone].text)}>
-                  {selectedEvent.statusLabel}
-                </span>
-                <span className="text-muted-foreground tabular-nums">
-                  {" "}
-                  · {selectedEvent.timeLabel}
-                </span>
-              </p>
-            </div>
+            <p className="flex items-center gap-2 text-xs">
+              <selectedEvent.icon
+                aria-hidden="true"
+                className={cn("size-4 shrink-0", STATUS_TEXT[selectedEvent.tone])}
+              />
+              <span className={cn("font-semibold", STATUS_TEXT[selectedEvent.tone])}>
+                {selectedEvent.statusLabel}
+              </span>
+              <span className="text-muted-foreground tabular-nums">
+                · {selectedEvent.timeLabel}
+              </span>
+            </p>
             <DialogTitle className="text-foreground text-lg leading-snug font-semibold tracking-tight">
               {selectedEvent.title}
             </DialogTitle>
@@ -56,62 +58,63 @@ export function AgendaEventActionDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Suggested directive */}
-          <div className="bg-muted/50 space-y-1 rounded-2xl p-4">
-            <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-              <Command aria-hidden="true" className="h-3.5 w-3.5" />
+          {/* Suggested directive: an opaque panel inside the dialog's glass (no stacked blur) */}
+          <FacetContainer depth={3} surface="solid" className="space-y-1 rounded-2xl p-4">
+            <Eyebrow className="flex items-center gap-1.5">
+              <Command aria-hidden="true" className="size-3.5" />
               Suggested directive
-            </p>
+            </Eyebrow>
             <p className="text-foreground text-sm leading-snug">
               &ldquo;{selectedEvent.directiveGoal}&rdquo;
             </p>
-          </div>
+          </FacetContainer>
 
           <div className={cn("flex flex-col gap-2", isIssue && "flex-col-reverse")}>
-            <button
+            <Button
               type="button"
+              variant={isIssue ? "secondary" : "default"}
+              data-cuelume-press="bloom"
               onClick={() => {
-                soundEffects.bloom();
                 const goal = selectedEvent.directiveGoal;
                 onClose();
                 onIssueDirective?.(goal);
               }}
-              className={cn(isIssue ? SECONDARY_BUTTON : PRIMARY_BUTTON, "w-full sm:h-10")}
+              className="h-11 w-full sm:h-10"
             >
-              <Command aria-hidden="true" className="h-4 w-4" />
+              <Command aria-hidden="true" />
               <span>Declare Directive</span>
-            </button>
+            </Button>
 
             {selectedEvent.drillKind ? (
-              <button
+              <Button
                 type="button"
+                variant={isIssue ? "default" : "secondary"}
                 onClick={() => {
-                  soundEffects.press();
                   const drill = selectedEvent.drillKind!;
                   onClose();
                   onOpenDrill?.(drill);
                 }}
-                className={cn(isIssue ? PRIMARY_BUTTON : SECONDARY_BUTTON, "w-full sm:h-10")}
+                className="h-11 w-full sm:h-10"
               >
-                <Compass aria-hidden="true" className="h-4 w-4" />
+                <Compass aria-hidden="true" />
                 <span>
                   {selectedEvent.drillKind.kind === "issue" ? "Open issue brief" : "View details"}
                 </span>
-              </button>
+              </Button>
             ) : selectedEvent.intentId ? (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => {
-                  soundEffects.press();
                   const id = selectedEvent.intentId!;
                   onClose();
                   onOpenIntent?.(id);
                 }}
-                className={cn(SECONDARY_BUTTON, "w-full sm:h-10")}
+                className="h-11 w-full sm:h-10"
               >
-                <Compass aria-hidden="true" className="h-4 w-4" />
+                <Compass aria-hidden="true" />
                 <span>View directive</span>
-              </button>
+              </Button>
             ) : null}
           </div>
         </DialogContent>

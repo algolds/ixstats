@@ -11,6 +11,9 @@ import {
   ClockRotateRight as FileClock,
 } from "iconoir-react";
 import { FacetContainer } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
@@ -19,7 +22,7 @@ import { assetUrl } from "~/lib/base-path";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { DOMAIN_TILES, DomainTileButton } from "../ExecutiveActionCards";
 import { CooldownTimer } from "../ExecutiveHome";
-import { FOCUS_RING, GHOST_BUTTON, PRESSABLE, PRIMARY_BUTTON } from "../surface-kit";
+import { MYCOUNTRY_PRIMARY_ACTION } from "../status-tone";
 import type { CommandNavMode } from "../CommandNavToggle";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
@@ -72,9 +75,10 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
 }
 
 /**
- * The MyCountry header. A large title (flag + country name) with a quiet toolbar and one
- * primary action, then either the four domain destinations (overview) or a segmented
- * section switcher (domain surfaces and the directive console).
+ * The MyCountry header: the shell of the command surface (Facet depth 1). A large title
+ * (flag + country name) with a quiet ghost toolbar and the one MyCountry-gold primary action,
+ * then either the four domain destinations (overview) or a FacetTabs section switcher
+ * (domain surfaces and the directive console).
  */
 export function UnifiedGlassCommandBar({
   mode,
@@ -101,9 +105,16 @@ export function UnifiedGlassCommandBar({
     .map(humanizeEnum)
     .join(" · ");
 
+  const sectionTabs = [
+    { id: "overview", title: "Overview", icon: LayoutGrid },
+    ...DOMAIN_TILES.map(({ id, title, icon }) => ({ id: id as string, title, icon })),
+  ];
+  // In the directive console no section is current, so no tab is selected.
+  const activeTab = isExecutiveMode ? "" : activeSection;
+
   return (
     <FacetContainer
-      depth={2}
+      depth={1}
       interactive="none"
       enableRefraction={false}
       className="relative flex w-full flex-col gap-4 rounded-3xl p-4 sm:gap-5 sm:p-5"
@@ -112,7 +123,7 @@ export function UnifiedGlassCommandBar({
         {/* Large title: flag + country name, with a calm identity footnote */}
         <div className="flex min-w-0 items-center gap-3.5">
           {country?.name ? (
-            <span className="border-border/60 bg-muted/40 flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border sm:h-14 sm:w-20">
+            <span className="border-border bg-muted flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border sm:h-14 sm:w-20">
               <UnifiedCountryFlag
                 countryName={country.name}
                 flagUrl={flagUrl}
@@ -124,10 +135,10 @@ export function UnifiedGlassCommandBar({
             </span>
           ) : null}
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-              MyCountry
+            <p className="flex min-w-0 items-center gap-1.5">
+              <Eyebrow className="text-(--facet-mycountry)">MyCountry</Eyebrow>
               {realmName ? (
-                <span className="text-muted-foreground font-normal"> · {realmName}</span>
+                <span className="text-muted-foreground truncate text-xs">· {realmName}</span>
               ) : null}
             </p>
             <h1 className="text-foreground mt-0.5 truncate text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
@@ -142,46 +153,44 @@ export function UnifiedGlassCommandBar({
         {/* Toolbar: two quiet tools and the one primary action */}
         <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
           <div className="flex items-center gap-1">
-            <Link
-              href={profileHref}
-              className={GHOST_BUTTON}
-              aria-label="Open public profile"
-              title="Open public profile"
-              onClick={() => soundEffects.press()}
+            <Button
+              asChild
+              variant="ghost"
+              className="text-muted-foreground h-11 min-w-11 px-2.5 sm:h-9 sm:min-w-9"
             >
-              <User aria-hidden="true" className="h-4 w-4" />
-              <span className="hidden md:inline">Profile</span>
-            </Link>
-            <button
+              <Link href={profileHref} aria-label="Open public profile" title="Open public profile">
+                <User aria-hidden="true" />
+                <span className="hidden md:inline">Profile</span>
+              </Link>
+            </Button>
+            <Button
               type="button"
-              onClick={() => {
-                soundEffects.press();
-                router.push("/mycountry/editor");
-              }}
-              className={GHOST_BUTTON}
+              variant="ghost"
+              onClick={() => router.push("/mycountry/editor")}
+              className="text-muted-foreground h-11 min-w-11 px-2.5 sm:h-9 sm:min-w-9"
               aria-label="Edit country"
               title="Edit country and territory"
             >
-              <Edit3 aria-hidden="true" className="h-4 w-4" />
+              <Edit3 aria-hidden="true" />
               <span className="hidden md:inline">Edit</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               aria-pressed={isExecutiveMode}
+              data-cuelume-press="bloom"
               onClick={() => {
-                soundEffects.bloom();
                 if (onDeclare) onDeclare();
                 else onChangeMode("executive");
               }}
               className={cn(
-                PRIMARY_BUTTON,
-                "ml-1 flex-1 sm:flex-none",
+                MYCOUNTRY_PRIMARY_ACTION,
+                "ml-1 h-11 flex-1 sm:h-9 sm:flex-none",
                 isExecutiveMode && "ring-offset-background ring-2 ring-amber-500/40 ring-offset-2"
               )}
             >
-              <Command aria-hidden="true" className="h-4 w-4" />
+              <Command aria-hidden="true" />
               <span>Declare Directive</span>
-            </button>
+            </Button>
           </div>
           <div className="text-center sm:text-right">
             <DirectiveStatusLine countryId={country?.id} />
@@ -212,41 +221,33 @@ export function UnifiedGlassCommandBar({
           ))}
         </nav>
       ) : (
-        /* Segmented section switcher */
-        <nav
-          aria-label="MyCountry sections"
-          className="bg-muted/60 flex scrollbar-none gap-0.5 overflow-x-auto rounded-xl p-1"
-        >
-          {[
-            { id: "overview", title: "Overview", icon: LayoutGrid },
-            ...DOMAIN_TILES.map(({ id, title, icon }) => ({ id: id as string, title, icon })),
-          ].map(({ id, title, icon: Icon }) => {
-            const isActive = !isExecutiveMode && activeSection === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-current={isActive ? "page" : undefined}
-                onClick={() => {
-                  soundEffects.press();
-                  if (isExecutiveMode) onChangeMode("home");
-                  onNavigate?.(id);
-                }}
-                className={cn(
-                  "flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium sm:h-9",
-                  PRESSABLE,
-                  FOCUS_RING,
-                  isActive
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
-                <span>{title}</span>
-                {id === "diplomacy" && <InboxCountPill count={diplomacyInboxCount} />}
-              </button>
-            );
-          })}
+        /* Section switcher */
+        <nav aria-label="MyCountry sections" className="-mx-1 scrollbar-none overflow-x-auto px-1">
+          <FacetTabs
+            size="md"
+            tone="mycountry"
+            className="w-max min-w-full"
+            activeTab={activeTab}
+            onChange={(id) => {
+              soundEffects.press();
+              if (isExecutiveMode) onChangeMode("home");
+              onNavigate?.(id);
+            }}
+            tabs={sectionTabs.map(({ id, title, icon }) => ({
+              id,
+              icon,
+              className: "flex-1 min-h-11 sm:min-h-9",
+              label: (
+                <>
+                  {title}
+                  {id === activeTab ? <span className="sr-only"> (current section)</span> : null}
+                </>
+              ),
+              ...(id === "diplomacy" && diplomacyInboxCount > 0
+                ? { badge: diplomacyInboxCount }
+                : {}),
+            }))}
+          />
         </nav>
       )}
     </FacetContainer>

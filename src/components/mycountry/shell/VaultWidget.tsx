@@ -20,6 +20,7 @@ import {
   Download,
   Trophy,
   Cart as ShoppingCart,
+  Coins,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
@@ -30,6 +31,9 @@ import {
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { PreText } from "~/components/ui/pretext";
 import { useTheme } from "~/context/theme-context";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 
 import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -90,27 +94,15 @@ export function VaultWidget() {
 
   return (
     <CutoutCard
-      className={cn(
-        cutoutCardSurfaceClassName,
-        "w-48 overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
-      )}
+      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-2xl")}
       trackPointerHover={false}
       texture="dots"
       textureOpacity={0.05}
     >
-      {/* Sleek Apple-style header bar */}
-      <div className="relative flex items-center justify-between border-b border-amber-500/20 bg-amber-500/10 px-3 py-2.5 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/20 shadow-2xs backdrop-blur-sm">
-            <Wallet className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-          </div>
-          <span className="text-xs font-semibold tracking-tight text-amber-900 dark:text-amber-300">
-            IxVault
-          </span>
-        </div>
-        <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-xs font-medium tracking-wider text-amber-800 uppercase dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
-          Wallet
-        </span>
+      {/* Header: plain glyph in the Vault accent and a sentence-case title */}
+      <div className="border-border flex items-center gap-2 border-b px-3 py-2.5">
+        <Wallet aria-hidden="true" className="size-4 shrink-0 text-amber-600" />
+        <h3 className="text-foreground text-sm font-semibold tracking-tight">IxVault</h3>
       </div>
       <CutoutCardContent className="space-y-2.5 p-3 pt-2.5">
         <div className="space-y-2.5">
@@ -118,26 +110,27 @@ export function VaultWidget() {
             <>
               {/* Balance */}
               <div>
-                <Eyebrow className="block">
-                  IxCredits
-                </Eyebrow>
+                <Eyebrow className="block">IxCredits</Eyebrow>
                 <div className="flex items-center gap-1.5 pt-0.5">
-                  <IxCreditsSymbol className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <p className="text-base font-bold tracking-tight text-amber-700 tabular-nums sm:text-lg dark:text-amber-400">
+                  <IxCreditsSymbol className="size-4 shrink-0 text-amber-600" />
+                  <p className="text-foreground text-base font-bold tracking-tight tabular-nums sm:text-lg">
                     {balanceLoading ? (
-                      <span className="animate-pulse">...</span>
+                      <Skeleton className="h-5 w-16" />
                     ) : (
                       Math.round(balanceData?.credits ?? 0).toLocaleString()
                     )}
                   </p>
                   {passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-pressed={showPassiveIncome}
                       onClick={() => setShowPassiveIncome((prev) => !prev)}
-                      className={`rounded-md p-1 text-blue-600 backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-blue-500/15 focus:ring-1 focus:ring-blue-500/30 focus:outline-none active:scale-[0.92] dark:text-blue-400 ${
-                        showPassiveIncome
-                          ? "bg-blue-500/20 text-blue-700 ring-1 ring-blue-500/30 dark:text-blue-300"
-                          : ""
-                      }`}
+                      className={cn(
+                        "text-muted-foreground ml-auto size-7",
+                        showPassiveIncome && "bg-accent text-foreground"
+                      )}
                       title={
                         showPassiveIncome
                           ? "Hide Treasury Revenue Details"
@@ -149,20 +142,8 @@ export function VaultWidget() {
                           : "Show Treasury Revenue Details"
                       }
                     >
-                      <svg
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </button>
+                      <Coins aria-hidden="true" className="size-3.5" />
+                    </Button>
                   )}
                 </div>
               </div>
@@ -170,9 +151,7 @@ export function VaultWidget() {
               {/* Today's Earnings */}
               {todayEarnings && todayEarnings.sources.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-tight">
-                    Today&apos;s Earnings
-                  </p>
+                  <Eyebrow className="mb-1 block">Today&apos;s earnings</Eyebrow>
                   <div className="space-y-1 text-xs">
                     {todayEarnings.sources.map((source) => (
                       <div
@@ -180,14 +159,14 @@ export function VaultWidget() {
                         className="text-muted-foreground flex justify-between text-xs font-normal tracking-normal"
                       >
                         <span>{source.label}</span>
-                        <span className="font-semibold text-emerald-600 tabular-nums dark:text-emerald-400">
+                        <span className="font-semibold text-emerald-600 tabular-nums">
                           +{Math.round(source.amount).toLocaleString()}
                         </span>
                       </div>
                     ))}
                     <div className="border-border/40 flex justify-between border-t pt-1 text-xs font-medium tracking-tight">
                       <span className="text-foreground">Total</span>
-                      <span className="flex items-center gap-0.5 font-bold text-amber-700 tabular-nums dark:text-amber-400">
+                      <span className="text-foreground flex items-center gap-0.5 font-bold tabular-nums">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {Math.round(todayEarnings.total).toLocaleString()}
                       </span>
@@ -198,22 +177,19 @@ export function VaultWidget() {
 
               {/* Treasury Revenue Projection */}
               {showPassiveIncome && passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
-                <div className="animate-in fade-in slide-in-from-top-1 rounded-xl border border-blue-500/25 bg-blue-500/10 p-2.5 shadow-xs backdrop-blur-md duration-200">
-                  <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    Treasury Revenue
-                  </p>
+                <FacetContainer
+                  depth={3}
+                  surface="solid"
+                  className="animate-in fade-in slide-in-from-top-1 rounded-xl p-2.5 duration-200"
+                >
+                  <Eyebrow className="mb-1 flex items-center gap-1">
+                    <Coins aria-hidden="true" className="size-3" />
+                    Treasury revenue
+                  </Eyebrow>
                   <div className="text-muted-foreground space-y-1 text-xs">
                     <div className="flex justify-between text-xs font-normal tracking-normal">
                       <span>Daily</span>
-                      <span className="flex items-center gap-0.5 font-semibold text-blue-600 tabular-nums dark:text-blue-400">
+                      <span className="text-foreground flex items-center gap-0.5 font-semibold tabular-nums">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {Math.round(passiveIncomeData.dailyDividend).toLocaleString()}
                       </span>
@@ -236,19 +212,18 @@ export function VaultWidget() {
 
                   {/* Budget Multiplier Bonus */}
                   {budgetMultiplierData && (
-                    <div className="mt-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-1.5 backdrop-blur-sm dark:border-amber-500/25">
+                    <div className="border-border mt-1.5 border-t pt-1.5">
                       <div className="flex items-center justify-between text-xs tracking-tight">
-                        <span className="font-medium text-amber-900 dark:text-amber-300">
-                          Budget Bonus
-                        </span>
+                        <span className="text-foreground font-medium">Budget bonus</span>
                         <span
-                          className={`font-semibold tabular-nums ${
+                          className={cn(
+                            "font-semibold tabular-nums",
                             budgetMultiplierData.percentChange > 0
-                              ? "text-emerald-600 dark:text-emerald-400"
+                              ? "text-emerald-600"
                               : budgetMultiplierData.percentChange < 0
-                                ? "text-red-600 dark:text-red-400"
+                                ? "text-destructive"
                                 : "text-muted-foreground"
-                          }`}
+                          )}
                         >
                           {budgetMultiplierData.percentChange > 0 ? "+" : ""}
                           {budgetMultiplierData.percentChange}%
@@ -256,7 +231,7 @@ export function VaultWidget() {
                       </div>
                     </div>
                   )}
-                </div>
+                </FacetContainer>
               )}
             </>
           )}
@@ -279,8 +254,6 @@ export function VaultWidget() {
                   title: "MyVault (Wallet)",
                   icon: Wallet,
                   isActive: pathname === "/vault" || pathname === "/vault/",
-                  activeClass:
-                    "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-300",
                 },
                 {
                   id: "cards" as const,
@@ -294,8 +267,6 @@ export function VaultWidget() {
                     pathname.startsWith("/vault/gallery") ||
                     pathname.startsWith("/vault/lore-gallery") ||
                     pathname.startsWith("/vault/ns-library"),
-                  activeClass:
-                    "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-300",
                 },
                 {
                   id: "marketplace" as const,
@@ -309,8 +280,6 @@ export function VaultWidget() {
                     pathname.startsWith("/vault/packs") ||
                     pathname.startsWith("/vault/trading") ||
                     pathname.startsWith("/vault/market"),
-                  activeClass:
-                    "bg-blue-500/15 border-blue-500/30 text-blue-900 dark:text-blue-300",
                 },
                 {
                   id: "import" as const,
@@ -318,8 +287,6 @@ export function VaultWidget() {
                   title: "NS Importer",
                   icon: Download,
                   isActive: pathname.startsWith("/vault/import"),
-                  activeClass:
-                    "bg-cyan-500/15 border-cyan-500/30 text-cyan-900 dark:text-cyan-300",
                 },
                 {
                   id: "achievements" as const,
@@ -327,8 +294,6 @@ export function VaultWidget() {
                   title: "Achievements",
                   icon: Trophy,
                   isActive: pathname.startsWith("/achievements"),
-                  activeClass:
-                    "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-300",
                 },
               ]
                 .filter((item) => {
@@ -338,36 +303,40 @@ export function VaultWidget() {
                 .map((item) => {
                   const Icon = item.icon;
                   return (
-                    <Link
+                    <Button
                       key={item.id}
-                      href={item.href}
+                      asChild
+                      variant="ghost"
+                      size="sm"
                       className={cn(
-                        "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
+                        "h-8 w-full justify-start gap-2 rounded-xl px-2.5",
                         item.isActive
-                          ? cn("shadow-2xs", item.activeClass)
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"
+                          ? "bg-accent text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <PreText
-                        font="12px Geist, -apple-system, sans-serif"
-                        lineHeight={14}
-                        className="flex-1 truncate text-xs leading-tight font-medium tracking-tight select-none"
-                      >
-                        {item.title}
-                      </PreText>
-                    </Link>
+                      <Link href={item.href} aria-current={item.isActive ? "page" : undefined}>
+                        <Icon
+                          aria-hidden="true"
+                          className={cn("size-3.5 shrink-0", item.isActive && "text-amber-600")}
+                        />
+                        <PreText
+                          font="12px Geist, -apple-system, sans-serif"
+                          lineHeight={14}
+                          className="flex-1 truncate text-xs leading-tight font-medium tracking-tight select-none"
+                        >
+                          {item.title}
+                        </PreText>
+                      </Link>
+                    </Button>
                   );
                 })}
             </div>
           ) : (
             <div className="flex flex-col gap-1.5 pt-0.5">
-              <Link
-                href="/vault"
-                className="block text-center text-xs font-semibold tracking-tight text-amber-700 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:text-amber-800 hover:underline active:scale-[0.97] dark:text-amber-400 dark:hover:text-amber-300"
-              >
-                View Full Vault →
-              </Link>
+              <Button asChild variant="link" size="sm" className="h-auto justify-center p-0">
+                <Link href="/vault">View full vault</Link>
+              </Button>
             </div>
           )}
         </div>

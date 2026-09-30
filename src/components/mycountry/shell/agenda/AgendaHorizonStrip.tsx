@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { FOCUS_RING } from "../surface-kit";
+import { Toggle } from "~/components/ui/toggle";
 import type { AgendaEvent, DayHorizonItem } from "./agendaTypes";
 
 interface AgendaHorizonStripProps {
@@ -12,7 +12,10 @@ interface AgendaHorizonStripProps {
   events: AgendaEvent[];
 }
 
-/** Seven-day week strip (Calendar-style): selected day filled, a dot marks days with items. */
+/**
+ * Seven-day week strip (Calendar-style) built from `<Toggle>`: the selected day is pressed, a
+ * dot marks days with items, and today's label carries the MyCountry accent.
+ */
 export function AgendaHorizonStrip({
   days,
   selectedDayOffset,
@@ -25,27 +28,22 @@ export function AgendaHorizonStrip({
         const isSelected = selectedDayOffset === offset;
         const count = events.filter((e) => e.dayOffset === offset).length;
         return (
-          <button
+          <Toggle
             key={offset}
-            type="button"
-            aria-pressed={isSelected}
+            pressed={isSelected}
             aria-label={`${isToday ? "Today" : dayName} ${dayNum}${
               count > 0 ? `, ${count} item${count === 1 ? "" : "s"}` : ", nothing scheduled"
             }`}
             onClick={() => onSelectDayOffset(offset)}
-            className={cn(
-              "flex min-h-16 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl py-2 transition-colors duration-150 select-none",
-              FOCUS_RING,
-              isSelected ? "bg-foreground text-background" : "hover:bg-muted/60 text-foreground"
-            )}
+            className="data-[state=on]:bg-foreground data-[state=on]:text-background hover:text-foreground h-auto min-h-16 min-w-0 flex-col gap-0.5 rounded-xl px-0 py-2 select-none"
           >
             <span
               className={cn(
-                "text-xs",
+                "text-xs font-normal",
                 isSelected
                   ? "text-background/80"
                   : isToday
-                    ? "font-semibold text-amber-700 dark:text-amber-400"
+                    ? "font-semibold text-(--facet-mycountry)"
                     : "text-muted-foreground"
               )}
             >
@@ -55,11 +53,15 @@ export function AgendaHorizonStrip({
             <span
               aria-hidden="true"
               className={cn(
-                "mt-1 h-1.5 w-1.5 rounded-full",
-                count === 0 ? "bg-transparent" : isSelected ? "bg-background" : "bg-amber-500"
+                "mt-1 size-1.5 rounded-full",
+                count === 0
+                  ? "bg-transparent"
+                  : isSelected
+                    ? "bg-background"
+                    : "bg-muted-foreground"
               )}
             />
-          </button>
+          </Toggle>
         );
       })}
     </div>

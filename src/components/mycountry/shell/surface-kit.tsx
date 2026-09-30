@@ -8,6 +8,10 @@ import { cn } from "~/lib/utils";
  * one focus ring, one accent (amber) for primary actions, semantic tones for status,
  * a sentence-case section header, and a segmented filter. Theme tokens only, so every
  * piece reads in light and dark mode.
+ *
+ * Being retired in favour of the Facet primitives (`<Button>`, `FacetCard` /
+ * `FacetContainer`, `Eyebrow`, `FacetTabs`, `<Toggle>`, plain icons). The overview and shell
+ * chrome no longer import it; delete this file once no importers remain.
  */
 
 /** Keyboard focus ring shared by every pressable in the shell. */

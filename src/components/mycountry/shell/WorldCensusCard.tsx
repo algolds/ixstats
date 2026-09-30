@@ -1,9 +1,14 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
+import {
+  FacetCard,
+  FacetCardContent,
+  FacetCardHeader,
+  FacetContainer,
+} from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { SectionHeader } from "./surface-kit";
 import { api } from "~/trpc/react";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
@@ -40,8 +45,10 @@ export interface WorldCensusListProps {
 export function WorldCensusList({ rankings, isLoading }: WorldCensusListProps) {
   if (isLoading) {
     return (
-      <div
-        className="bg-muted/40 divide-border/60 divide-y overflow-hidden rounded-2xl"
+      <FacetContainer
+        depth={3}
+        surface="solid"
+        className="divide-border divide-y overflow-hidden rounded-2xl"
         aria-busy="true"
         aria-label="Loading census"
       >
@@ -51,53 +58,57 @@ export function WorldCensusList({ rankings, isLoading }: WorldCensusListProps) {
             <Skeleton className="h-5 w-16 rounded-full" />
           </div>
         ))}
-      </div>
+      </FacetContainer>
     );
   }
   if (!rankings || rankings.length === 0) {
     return (
-      <div className="bg-muted/30 rounded-2xl px-4 py-6 text-center">
+      <FacetContainer depth={3} surface="solid" className="rounded-2xl px-4 py-6 text-center">
         <p className="text-foreground text-sm font-medium">No census data yet.</p>
         <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
           Ranks appear once your nation and its realm peers have population and GDP on record.
         </p>
-      </div>
+      </FacetContainer>
     );
   }
   return (
-    <ul className="bg-muted/40 divide-border/60 divide-y overflow-hidden rounded-2xl">
-      {rankings.map((r) => (
-        <li
-          key={r.category}
-          className="flex min-h-11 items-center justify-between gap-3 px-3 py-2 text-sm"
-          title={
-            `${r.category}: #${r.global.position} of ${r.global.total} in the realm` +
-            (r.regional.total > 0
-              ? `, #${r.regional.position} of ${r.regional.total} in ${r.regional.region}`
-              : "") +
-            (r.lowerIsBetter ? " (lower is better)" : "")
-          }
-        >
-          <span className="text-foreground min-w-0 truncate">{r.category}</span>
-          <span className="flex shrink-0 items-center gap-2.5">
-            <span className="text-muted-foreground text-xs tabular-nums">
-              {formatCensusValue(r)}
+    <FacetContainer depth={3} surface="solid" className="overflow-hidden rounded-2xl">
+      <ul className="divide-border divide-y">
+        {rankings.map((r) => (
+          <li
+            key={r.category}
+            className="flex min-h-11 items-center justify-between gap-3 px-3 py-2 text-sm"
+            title={
+              `${r.category}: #${r.global.position} of ${r.global.total} in the realm` +
+              (r.regional.total > 0
+                ? `, #${r.regional.position} of ${r.regional.total} in ${r.regional.region}`
+                : "") +
+              (r.lowerIsBetter ? " (lower is better)" : "")
+            }
+          >
+            <span className="text-foreground min-w-0 truncate">{r.category}</span>
+            <span className="flex shrink-0 items-center gap-2.5">
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {formatCensusValue(r)}
+              </span>
+              {/* A top-three rank is the one meaningful status here: it takes the MyCountry accent. */}
+              <Badge
+                variant="outline"
+                className={cn(
+                  "min-w-14 rounded-full font-semibold tabular-nums",
+                  r.global.position <= 3
+                    ? "border-(--facet-mycountry)/30 text-(--facet-mycountry)"
+                    : "text-foreground"
+                )}
+              >
+                #{r.global.position}
+                <span className="text-muted-foreground font-normal">/{r.global.total}</span>
+              </Badge>
             </span>
-            <span
-              className={cn(
-                "min-w-14 rounded-full px-2 py-0.5 text-center text-xs font-semibold tabular-nums",
-                r.global.position <= 3
-                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                  : "bg-card text-foreground"
-              )}
-            >
-              #{r.global.position}
-              <span className="text-muted-foreground font-normal">/{r.global.total}</span>
-            </span>
-          </span>
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+    </FacetContainer>
   );
 }
 
@@ -114,18 +125,24 @@ export function WorldCensusCard({ countryId }: WorldCensusCardProps) {
 
   return (
     <FacetCard
-      depth={1}
+      depth={2}
       interactive="none"
       role="region"
       aria-labelledby="world-census-title"
-      className="flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
+      className="rounded-3xl"
     >
-      <SectionHeader
-        id="world-census-title"
-        title="World Census"
-        subtitle="Your rank among nations in your realm"
-      />
-      <WorldCensusList rankings={data} isLoading={isLoading} />
+      <FacetCardHeader className="gap-0.5 p-4 pb-0 sm:p-5 sm:pb-0">
+        <h2
+          id="world-census-title"
+          className="text-foreground text-base font-semibold tracking-tight"
+        >
+          World Census
+        </h2>
+        <p className="text-muted-foreground text-xs">Your rank among nations in your realm</p>
+      </FacetCardHeader>
+      <FacetCardContent className="p-4 sm:p-5">
+        <WorldCensusList rankings={data} isLoading={isLoading} />
+      </FacetCardContent>
     </FacetCard>
   );
 }

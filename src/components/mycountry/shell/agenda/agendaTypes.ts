@@ -1,6 +1,6 @@
 import type { Calendar } from "iconoir-react";
 import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
-import type { Tone } from "../surface-kit";
+import type { StatusTone } from "../status-tone";
 
 export interface AgendaEvent {
   id: string;
@@ -13,8 +13,8 @@ export interface AgendaEvent {
   /** Sentence-case status, e.g. "Priority issue". */
   statusLabel: string;
   icon: typeof Calendar;
-  /** Semantic tone for the row's glyph tile and status label. */
-  tone: Tone;
+  /** Status tone for the row's glyph and status label (colour only when it means something). */
+  tone: StatusTone;
   /** Higher sorts first within a day (priority issue 4, open issue 3, directive 2, event 1). */
   priority: number;
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
@@ -29,11 +29,11 @@ export interface DayHorizonItem {
   isToday: boolean;
 }
 
-export function seasonFor(month: number): { name: string; emoji: string } {
-  if (month <= 1 || month === 11) return { name: "Winter", emoji: "❄️" };
-  if (month <= 4) return { name: "Spring", emoji: "🌸" };
-  if (month <= 7) return { name: "Summer", emoji: "☀️" };
-  return { name: "Autumn", emoji: "🍂" };
+export function seasonFor(month: number): { name: string } {
+  if (month <= 1 || month === 11) return { name: "Winter" };
+  if (month <= 4) return { name: "Spring" };
+  if (month <= 7) return { name: "Summer" };
+  return { name: "Autumn" };
 }
 
 export const AGENDA_CATEGORY_LABEL: Record<AgendaEvent["category"], string> = {

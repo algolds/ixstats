@@ -14,36 +14,32 @@ import {
   ScaleFrameEnlarge as Scale,
   NavArrowRight,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import { soundEffects } from "~/lib/sound/cuelume";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
-import {
-  DiplomacyGraphic,
-  DefenseGraphic,
-  PoliticsGraphic,
-  EconomyGraphic,
-} from "./ActionCardGraphics";
-import { FOCUS_RING, IconTile, PRESSABLE, TONE, type Tone } from "./surface-kit";
+import type { StatusTone } from "./status-tone";
 
-/** Canon-feed category → label, glyph and tone (`cls` is the matching icon-tile class). */
+/**
+ * Canon-feed category → label, glyph and status tone. Domains are neutral (glyph + label);
+ * only a crisis (critical) and a directive (MyCountry accent) carry colour.
+ */
 export const CATEGORY_STYLE: Record<
   string,
-  { label: string; icon: React.ComponentType<{ className?: string }>; tone: Tone; cls: string }
+  { label: string; icon: React.ComponentType<{ className?: string }>; tone: StatusTone }
 > = {
-  diplomatic: { label: "Diplomacy", icon: Globe2, tone: "diplomacy", cls: TONE.diplomacy.tile },
-  diplomacy: { label: "Diplomacy", icon: Globe2, tone: "diplomacy", cls: TONE.diplomacy.tile },
-  military: { label: "Defense", icon: Shield, tone: "defense", cls: TONE.defense.tile },
-  defense: { label: "Defense", icon: Shield, tone: "defense", cls: TONE.defense.tile },
-  security: { label: "Defense", icon: Shield, tone: "defense", cls: TONE.defense.tile },
-  governance: { label: "Politics", icon: Landmark, tone: "politics", cls: TONE.politics.tile },
-  economic: { label: "Economy", icon: TrendingUp, tone: "economy", cls: TONE.economy.tile },
-  economy: { label: "Economy", icon: TrendingUp, tone: "economy", cls: TONE.economy.tile },
-  social: { label: "Social", icon: Heart, tone: "info", cls: TONE.info.tile },
-  intent: { label: "Directive", icon: Command, tone: "accent", cls: TONE.accent.tile },
-  crisis: { label: "Crisis", icon: AlertTriangle, tone: "critical", cls: TONE.critical.tile },
-  ledger: { label: "Ledger", icon: Scale, tone: "neutral", cls: TONE.neutral.tile },
+  diplomatic: { label: "Diplomacy", icon: Globe2, tone: "neutral" },
+  diplomacy: { label: "Diplomacy", icon: Globe2, tone: "neutral" },
+  military: { label: "Defense", icon: Shield, tone: "neutral" },
+  defense: { label: "Defense", icon: Shield, tone: "neutral" },
+  security: { label: "Defense", icon: Shield, tone: "neutral" },
+  governance: { label: "Politics", icon: Landmark, tone: "neutral" },
+  economic: { label: "Economy", icon: TrendingUp, tone: "neutral" },
+  economy: { label: "Economy", icon: TrendingUp, tone: "neutral" },
+  social: { label: "Social", icon: Heart, tone: "neutral" },
+  intent: { label: "Directive", icon: Command, tone: "accent" },
+  crisis: { label: "Crisis", icon: AlertTriangle, tone: "critical" },
+  ledger: { label: "Ledger", icon: Scale, tone: "neutral" },
 };
 
 interface CountryPeekData {
@@ -69,9 +65,6 @@ export const DOMAIN_TILES: {
   title: string;
   drillKind: Exclude<V2Drill, { kind: "intent" } | null>;
   icon: React.ComponentType<{ className?: string }>;
-  graphic: React.ComponentType<{ className?: string }>;
-  tone: Tone;
-  badgeCls: string;
   getPeek: (country: CountryPeekData | null | undefined) => string;
 }[] = [
   {
@@ -79,9 +72,6 @@ export const DOMAIN_TILES: {
     title: "Diplomacy",
     drillKind: { kind: "relations" },
     icon: Globe,
-    graphic: DiplomacyGraphic,
-    tone: "diplomacy",
-    badgeCls: TONE.diplomacy.tile,
     getPeek: () => "Relations, embassies and alliances",
   },
   {
@@ -89,9 +79,6 @@ export const DOMAIN_TILES: {
     title: "Defense",
     drillKind: { kind: "defense" },
     icon: HistoricShieldAlt,
-    graphic: DefenseGraphic,
-    tone: "defense",
-    badgeCls: TONE.defense.tile,
     getPeek: () => "Forces, readiness and threats",
   },
   {
@@ -99,9 +86,6 @@ export const DOMAIN_TILES: {
     title: "Politics",
     drillKind: { kind: "politics" },
     icon: Scale,
-    graphic: PoliticsGraphic,
-    tone: "politics",
-    badgeCls: TONE.politics.tile,
     getPeek: (c) => {
       const score = c?.stabilityMetrics?.stabilityScore;
       return typeof score === "number" && Number.isFinite(score)
@@ -114,9 +98,6 @@ export const DOMAIN_TILES: {
     title: "Economy & Budget",
     drillKind: { kind: "economy" },
     icon: TrendingUp,
-    graphic: EconomyGraphic,
-    tone: "economy",
-    badgeCls: TONE.economy.tile,
     getPeek: (c) => {
       const growth = formatGrowthPeek(c);
       return growth ? `GDP growth ${growth}` : "Budget, tax and trade";
@@ -124,7 +105,11 @@ export const DOMAIN_TILES: {
   },
 ];
 
-/** One domain destination: icon tile, title, a real-data peek and a disclosure chevron. */
+/**
+ * One domain destination: a plain glyph, title, a real-data peek and a disclosure chevron.
+ * An outline `<Button>` is the interactive (depth-3) row: opaque, so it never stacks blur on
+ * the glass shell it sits in.
+ */
 export function DomainTileButton({
   tile,
   peek,
@@ -138,31 +123,27 @@ export function DomainTileButton({
 }) {
   const Icon = tile.icon;
   return (
-    <button
+    <Button
       type="button"
-      onClick={() => {
-        soundEffects.press();
-        onSelect();
-      }}
-      className={cn(
-        "group bg-muted/40 hover:bg-muted/70 flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left",
-        PRESSABLE,
-        FOCUS_RING
-      )}
+      variant="outline"
+      onClick={onSelect}
+      className="group h-auto min-h-14 w-full justify-start gap-3 rounded-xl p-3 text-left whitespace-normal"
     >
-      <IconTile icon={Icon} tone={tile.tone} />
+      <Icon aria-hidden="true" className="text-muted-foreground size-5 shrink-0" />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
           <span className="truncate">{tile.title}</span>
           {badge}
         </span>
-        <span className="text-muted-foreground truncate text-xs tabular-nums">{peek}</span>
+        <span className="text-muted-foreground truncate text-xs font-normal tabular-nums">
+          {peek}
+        </span>
       </span>
       <NavArrowRight
         aria-hidden="true"
-        className="text-muted-foreground/60 group-hover:text-muted-foreground h-4 w-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+        className="text-muted-foreground/60 group-hover:text-muted-foreground size-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
       />
-    </button>
+    </Button>
   );
 }
 

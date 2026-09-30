@@ -10,7 +10,14 @@ import {
   ScaleFrameEnlarge as Scale,
   Flash as Zap,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import {
+  FacetCard,
+  FacetCardContent,
+  FacetCardHeader,
+  FacetContainer,
+} from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 import {
@@ -22,13 +29,6 @@ import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
-import {
-  FOCUS_RING,
-  INSET_SURFACE,
-  PRESSABLE,
-  SECONDARY_BUTTON,
-  SectionHeader,
-} from "./surface-kit";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -189,10 +189,8 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       ? Math.min(100, Math.max(0, (civCapData.used / civCapData.capacity) * 100))
       : null;
 
-  const handleOpenBreakdown = () => {
-    soundEffects.bloom();
-    setIsBreakdownOpen(true);
-  };
+  // Buttons carry the Cuelume bloom cue themselves (data-cuelume-press).
+  const handleOpenBreakdown = () => setIsBreakdownOpen(true);
 
   const handleTogglePop = () => {
     soundEffects.toggle();
@@ -202,156 +200,160 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   return (
     <>
       <FacetCard
-        depth={1}
+        depth={2}
         interactive="none"
-        className="flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
+        className="rounded-3xl"
         aria-labelledby="national-standing-title"
         role="region"
       >
-        <SectionHeader
-          id="national-standing-title"
-          title="National standing"
-          subtitle="Your nation's vitals right now"
-          accessory={
-            <button
-              type="button"
-              onClick={handleOpenBreakdown}
-              className={cn(SECONDARY_BUTTON, "h-9 gap-1.5 px-3 sm:h-8")}
-              title="Open the vitality breakdown"
+        <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
+          <div className="min-w-0">
+            <h2
+              id="national-standing-title"
+              className="text-foreground text-base font-semibold tracking-tight"
             >
-              <Activity aria-hidden="true" className="text-muted-foreground h-4 w-4" />
-              <span>{knownRings.length > 0 ? ratingLabelText : "Vitality"}</span>
-              {knownRings.length > 0 && (
-                <span className="text-muted-foreground tabular-nums">{compositeScore}</span>
-              )}
-              <NavArrowRight aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
-            </button>
-          }
-        />
-
-        {/* Vitals: grouped inset tiles with tabular figures */}
-        {country && (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            <div className={cn(INSET_SURFACE, "rounded-xl p-0")}>
-              <button
-                type="button"
-                onClick={handleTogglePop}
-                aria-pressed={showExactPop}
-                className={cn(
-                  "hover:bg-muted/60 flex h-full w-full flex-col items-start gap-1 rounded-xl p-3 text-left",
-                  PRESSABLE,
-                  FOCUS_RING
-                )}
-                title={showExactPop ? "Show compact population" : "Show exact population"}
-              >
-                <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                  <Users aria-hidden="true" className="h-3.5 w-3.5" />
-                  Population
-                </span>
-                <span className="text-foreground text-xl font-semibold tracking-tight tabular-nums">
-                  {formattedPop}
-                </span>
-              </button>
-            </div>
-
-            <VitalTile icon={DollarSign} label="GDP" value={`$${formatCompact(totalGdp)}`} />
-            <VitalTile
-              icon={Heart}
-              label="Approval"
-              value={approvalPct === null ? "—" : `${approvalPct}%`}
-            />
-            <VitalTile
-              icon={Scale}
-              label="Stability"
-              value={stabilityPct === null ? "—" : `${stabilityPct}%`}
-            />
-
-            <div
-              className={cn(
-                INSET_SURFACE,
-                "col-span-2 flex flex-col gap-1 rounded-xl p-3 sm:col-span-1"
-              )}
-              title={civCapBand.title}
-              data-testid="civcap-band"
-            >
-              <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                <Zap aria-hidden="true" className="h-3.5 w-3.5" />
-                CivCap
-              </p>
-              <p
-                className={cn(
-                  "text-xl font-semibold tracking-tight tabular-nums",
-                  civCapData?.overCapacity ? "text-red-600 dark:text-red-400" : "text-foreground"
-                )}
-              >
-                {civCapBand.value}
-              </p>
-              {civCapPct !== null && (
-                <div
-                  className="bg-muted h-1 overflow-hidden rounded-full"
-                  role="meter"
-                  aria-label="Civil service capacity used"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(civCapPct)}
-                >
-                  <div
-                    className={cn(
-                      "h-full rounded-full",
-                      civCapData?.overCapacity ? "bg-red-500" : "bg-amber-500"
-                    )}
-                    style={{ width: `${civCapPct}%` }}
-                  />
-                </div>
-              )}
-            </div>
+              National standing
+            </h2>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              Your nation&apos;s vitals right now
+            </p>
           </div>
-        )}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleOpenBreakdown}
+            data-cuelume-press="bloom"
+            className="h-9 gap-1.5 sm:h-8"
+            title="Open the vitality breakdown"
+          >
+            <Activity aria-hidden="true" className="text-muted-foreground" />
+            <span>{knownRings.length > 0 ? ratingLabelText : "Vitality"}</span>
+            {knownRings.length > 0 && (
+              <span className="text-muted-foreground tabular-nums">{compositeScore}</span>
+            )}
+            <NavArrowRight aria-hidden="true" className="text-muted-foreground size-3.5" />
+          </Button>
+        </FacetCardHeader>
 
-        {/* Vitality rings */}
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {rings.map((ring) => {
-            const known = ringScores[RING_KEYS[ring.id]!] !== null;
-            return (
-              <button
-                key={ring.id}
-                type="button"
-                onClick={handleOpenBreakdown}
-                aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
-                className={cn(
-                  "group/ring hover:bg-muted/40 flex items-center gap-3 rounded-xl p-2 text-left",
-                  PRESSABLE,
-                  FOCUS_RING
-                )}
-              >
-                <HealthRing
-                  value={known ? ring.value : 0}
-                  size={40}
-                  color={known ? ring.color : "#94a3b8"}
-                  label={ring.label}
-                />
-                <div className="min-w-0 flex-1">
-                  <span className="text-muted-foreground group-hover/ring:text-foreground block truncate text-xs transition-colors">
-                    {ring.label}
+        <FacetCardContent className="flex flex-col gap-4 p-4 sm:p-5">
+          {/* Vitals: opaque depth-3 tiles (no stacked blur) with tabular figures */}
+          {country && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              <FacetContainer depth={3} surface="solid" className="rounded-xl p-0">
+                <button
+                  type="button"
+                  onClick={handleTogglePop}
+                  aria-pressed={showExactPop}
+                  className="hover:bg-accent focus-visible:ring-ring flex h-full w-full cursor-pointer flex-col items-start gap-1 rounded-xl p-3 text-left transition-[color,background-color,transform] duration-150 outline-none select-none focus-visible:ring-2 active:scale-[0.98]"
+                  title={showExactPop ? "Show compact population" : "Show exact population"}
+                >
+                  <Eyebrow className="flex items-center gap-1.5">
+                    <Users aria-hidden="true" className="size-3.5" />
+                    Population
+                  </Eyebrow>
+                  <span className="text-foreground text-xl font-semibold tracking-tight tabular-nums">
+                    {formattedPop}
                   </span>
-                  {known ? (
-                    <span className="text-foreground text-sm font-semibold tabular-nums">
-                      {ring.value}
-                      <span className="text-muted-foreground text-xs font-normal">/100</span>
-                    </span>
-                  ) : (
-                    <span
-                      className="text-muted-foreground text-sm font-semibold tabular-nums"
-                      title="No data yet"
-                    >
-                      —
-                    </span>
+                </button>
+              </FacetContainer>
+
+              <VitalTile icon={DollarSign} label="GDP" value={`$${formatCompact(totalGdp)}`} />
+              <VitalTile
+                icon={Heart}
+                label="Approval"
+                value={approvalPct === null ? "—" : `${approvalPct}%`}
+              />
+              <VitalTile
+                icon={Scale}
+                label="Stability"
+                value={stabilityPct === null ? "—" : `${stabilityPct}%`}
+              />
+
+              <FacetContainer
+                depth={3}
+                surface="solid"
+                className="col-span-2 flex flex-col gap-1 rounded-xl p-3 sm:col-span-1"
+                title={civCapBand.title}
+                data-testid="civcap-band"
+              >
+                <Eyebrow className="flex items-center gap-1.5">
+                  <Zap aria-hidden="true" className="size-3.5" />
+                  CivCap
+                </Eyebrow>
+                <p
+                  className={cn(
+                    "text-xl font-semibold tracking-tight tabular-nums",
+                    civCapData?.overCapacity ? "text-destructive" : "text-foreground"
                   )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                >
+                  {civCapBand.value}
+                </p>
+                {civCapPct !== null && (
+                  <div
+                    className="bg-muted h-1 overflow-hidden rounded-full"
+                    role="meter"
+                    aria-label="Civil service capacity used"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(civCapPct)}
+                  >
+                    <div
+                      className={cn(
+                        "h-full rounded-full",
+                        civCapData?.overCapacity ? "bg-destructive" : "bg-(--facet-mycountry)"
+                      )}
+                      style={{ width: `${civCapPct}%` }}
+                    />
+                  </div>
+                )}
+              </FacetContainer>
+            </div>
+          )}
+
+          {/* Vitality rings */}
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {rings.map((ring) => {
+              const known = ringScores[RING_KEYS[ring.id]!] !== null;
+              return (
+                // Native button: the Button primitive would force its icon size onto HealthRing's svg.
+                <button
+                  key={ring.id}
+                  type="button"
+                  onClick={handleOpenBreakdown}
+                  data-cuelume-press="bloom"
+                  aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
+                  className="group/ring hover:bg-accent focus-visible:ring-ring flex cursor-pointer items-center gap-3 rounded-xl p-2 text-left transition-[color,background-color,transform] duration-150 outline-none select-none focus-visible:ring-1 active:scale-[0.98]"
+                >
+                  <HealthRing
+                    value={known ? ring.value : 0}
+                    size={40}
+                    color={known ? ring.color : "#94a3b8"}
+                    label={ring.label}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-muted-foreground group-hover/ring:text-foreground block truncate text-xs transition-colors">
+                      {ring.label}
+                    </span>
+                    {known ? (
+                      <span className="text-foreground text-sm font-semibold tabular-nums">
+                        {ring.value}
+                        <span className="text-muted-foreground text-xs font-normal">/100</span>
+                      </span>
+                    ) : (
+                      <span
+                        className="text-muted-foreground text-sm font-semibold tabular-nums"
+                        title="No data yet"
+                      >
+                        —
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </FacetCardContent>
       </FacetCard>
 
       <VitalityBreakdownModal
@@ -364,7 +366,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   );
 }
 
-/** One static vital: footnote label with glyph over a large tabular figure. */
+/** One static vital: an Eyebrow caption with glyph over a large tabular figure, on an opaque depth-3 tile. */
 function VitalTile({
   icon: Icon,
   label,
@@ -375,15 +377,15 @@ function VitalTile({
   value: string;
 }) {
   return (
-    <div className={cn(INSET_SURFACE, "flex flex-col gap-1 rounded-xl p-3")}>
-      <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-        <Icon aria-hidden="true" className="h-3.5 w-3.5" />
+    <FacetContainer depth={3} surface="solid" className="flex flex-col gap-1 rounded-xl p-3">
+      <Eyebrow className="flex items-center gap-1.5">
+        <Icon aria-hidden="true" className="size-3.5" />
         {label}
-      </p>
+      </Eyebrow>
       <p className="text-foreground truncate text-xl font-semibold tracking-tight tabular-nums">
         {value}
       </p>
-    </div>
+    </FacetContainer>
   );
 }
 

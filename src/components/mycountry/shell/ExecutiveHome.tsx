@@ -3,9 +3,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
-import { SectionHeader } from "./surface-kit";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
@@ -116,32 +115,40 @@ export function ExecutiveHomeComponent({
           />
 
           <FacetCard
-            depth={1}
+            depth={2}
             interactive="none"
             role="region"
             aria-labelledby="recent-activity-title"
-            className="flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
+            className="rounded-3xl"
           >
-            <SectionHeader
-              id="recent-activity-title"
-              title="Recent activity"
-              subtitle="Changes recorded in your national ledger"
-            />
-            {feed.isLoading ? (
-              <div className="space-y-2" aria-busy="true" aria-label="Loading recent activity">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-3 p-2">
-                    <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-3.5 w-3/5" />
-                      <Skeleton className="h-3 w-2/5" />
+            <FacetCardHeader className="gap-0.5 p-4 pb-0 sm:p-5 sm:pb-0">
+              <h2
+                id="recent-activity-title"
+                className="text-foreground text-base font-semibold tracking-tight"
+              >
+                Recent activity
+              </h2>
+              <p className="text-muted-foreground text-xs">
+                Changes recorded in your national ledger
+              </p>
+            </FacetCardHeader>
+            <FacetCardContent className="p-4 sm:p-5">
+              {feed.isLoading ? (
+                <div className="space-y-2" aria-busy="true" aria-label="Loading recent activity">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-2">
+                      <Skeleton className="size-4 shrink-0 rounded" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-3.5 w-3/5" />
+                        <Skeleton className="h-3 w-2/5" />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <ExecutiveRecordFeed items={items} onOpenDrill={onOpenDrill} />
-            )}
+                  ))}
+                </div>
+              ) : (
+                <ExecutiveRecordFeed items={items} onOpenDrill={onOpenDrill} />
+              )}
+            </FacetCardContent>
           </FacetCard>
         </div>
 

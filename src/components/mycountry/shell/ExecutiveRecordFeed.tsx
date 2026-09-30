@@ -10,18 +10,15 @@ import {
   ArrowUpRight,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetTabs } from "~/components/ui/facet";
 import { timeAgo } from "~/lib/format/compact";
 import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
-import { soundEffects } from "~/lib/sound/cuelume";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
-import {
-  FOCUS_RING,
-  GHOST_BUTTON,
-  IconTile,
-  SECONDARY_BUTTON,
-  SegmentedFilter,
-} from "./surface-kit";
+import { STATUS_TEXT } from "./status-tone";
 
 type FeedFilter = "all" | "diplomatic" | "military" | "economic" | "political";
 
@@ -43,6 +40,11 @@ export interface CanonFeedItem {
   deltaValue?: number | null;
   targetField?: string | null;
 }
+
+/** Badge text colour: only a direction of change (or a directive's accent) carries colour. */
+const POSITIVE = "text-emerald-600";
+const NEGATIVE = STATUS_TEXT.critical;
+const NEUTRAL = STATUS_TEXT.neutral;
 
 function formatDeltaValue(val: number | null | undefined): string {
   if (val === null || val === undefined || !isFinite(val)) return "Updated";
@@ -79,18 +81,18 @@ function getUniqueDiagnosticNarrative(
             ? {
                 text: `${deltaStr} increase`,
                 direction: "up",
-                cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+                cls: POSITIVE,
               }
             : isNegative
               ? {
                   text: `${deltaStr} decrease`,
                   direction: "down",
-                  cls: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
+                  cls: NEGATIVE,
                 }
               : {
                   text: "No net change",
                   direction: "neutral",
-                  cls: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
+                  cls: NEUTRAL,
                 }
           : undefined,
     };
@@ -101,7 +103,7 @@ function getUniqueDiagnosticNarrative(
       narrative: `Storyteller directive logged: "${item.title}". The Executive Command Engine calculated real-time state shifts across national ${metaLabel.toLowerCase()} subsystems.`,
       badge: {
         text: "Storyteller effect",
-        cls: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+        cls: STATUS_TEXT.accent,
       },
     };
   }
@@ -111,7 +113,7 @@ function getUniqueDiagnosticNarrative(
       narrative: `Bilateral event "${item.title}" registered in global diplomatic dispatches. Foreign ministry officials report ongoing international standing alignment.`,
       badge: {
         text: "Foreign dispatch",
-        cls: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
+        cls: NEUTRAL,
       },
     };
   }
@@ -121,16 +123,14 @@ function getUniqueDiagnosticNarrative(
       narrative: `Executive resolution enacted: "${item.title}". Cabinet civil service departments have finalized implementation across local administrative channels.`,
       badge: {
         text: "Executive resolution",
-        cls: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
+        cls: NEUTRAL,
       },
     };
   }
 
   if (item.kind === "ledger" && item.targetField) {
     const isPositive = (item.deltaValue ?? 0) > 0;
-    const badgeCls = isPositive
-      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-      : "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20";
+    const badgeCls = isPositive ? POSITIVE : NEGATIVE;
 
     const metricNarratives: Record<string, string> = {
       currentPopulation: isPositive
@@ -172,7 +172,7 @@ function getUniqueDiagnosticNarrative(
 
   return {
     narrative: `Canon event '${item.title}' recorded under the ${metaLabel.toLowerCase()} domain. System state updated successfully.`,
-    badge: { text: "Canon record", cls: "bg-muted text-muted-foreground border-border/40" },
+    badge: { text: "Canon record", cls: NEUTRAL },
   };
 }
 
@@ -226,177 +226,204 @@ export function ExecutiveRecordFeed({
 
   if (items.length === 0) {
     return (
-      <div className="bg-muted/30 flex flex-col items-center rounded-2xl px-6 py-8 text-center">
+      <FacetContainer
+        depth={3}
+        surface="solid"
+        className="flex flex-col items-center rounded-2xl px-6 py-8 text-center"
+      >
         <p className="text-foreground text-sm font-semibold">No activity recorded yet</p>
         <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
           Decisions, directive outcomes and issue consequences are logged here as they change your
           nation.
         </p>
-      </div>
+      </FacetContainer>
     );
   }
 
   return (
     <div className="space-y-3">
-      <SegmentedFilter
-        label="Filter activity"
-        options={FEED_FILTERS}
-        value={filterCat}
-        onChange={(id) => {
-          setFilterCat(id);
-          setExpandedId(null);
-        }}
-        className="self-start"
-      />
+      <div
+        role="group"
+        aria-label="Filter activity"
+        className="max-w-full scrollbar-none overflow-x-auto"
+      >
+        <FacetTabs
+          size="sm"
+          tone="neutral"
+          className="w-max"
+          activeTab={filterCat}
+          onChange={(id) => {
+            setFilterCat(id as FeedFilter);
+            setExpandedId(null);
+          }}
+          tabs={FEED_FILTERS.map((opt) => ({
+            id: opt.id,
+            className: "shrink-0",
+            label: (
+              <>
+                {opt.label}
+                {opt.id === filterCat ? <span className="sr-only"> (selected)</span> : null}
+              </>
+            ),
+          }))}
+        />
+      </div>
 
       <div
         onScroll={handleScroll}
         className="scrollbar-thumb-muted max-h-[520px] scrollbar-thin scrollbar-track-transparent overflow-y-auto"
       >
         {visibleItems.length === 0 ? (
-          <p className="text-muted-foreground bg-muted/30 rounded-2xl px-4 py-6 text-center text-xs">
+          <FacetContainer
+            depth={3}
+            surface="solid"
+            className="text-muted-foreground rounded-2xl px-4 py-6 text-center text-xs"
+          >
             Nothing in this category yet.
-          </p>
+          </FacetContainer>
         ) : (
-          <ul className="bg-muted/40 divide-border/60 divide-y overflow-hidden rounded-2xl">
-            {visibleItems.map((item) => {
-              const meta =
-                (item.category && CATEGORY_STYLE[item.category]) || CATEGORY_STYLE.ledger!;
-              const isExpanded = expandedId === item.id;
-              const drill = getDrillForCategory(item.category || "");
-              const diagnostic = getUniqueDiagnosticNarrative(item, meta.label);
-              const panelId = `record-${item.id}`;
+          <FacetContainer depth={3} surface="solid" className="overflow-hidden rounded-2xl">
+            <ul className="divide-border divide-y">
+              {visibleItems.map((item) => {
+                const meta =
+                  (item.category && CATEGORY_STYLE[item.category]) || CATEGORY_STYLE.ledger!;
+                const isExpanded = expandedId === item.id;
+                const drill = getDrillForCategory(item.category || "");
+                const diagnostic = getUniqueDiagnosticNarrative(item, meta.label);
+                const panelId = `record-${item.id}`;
 
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    aria-expanded={isExpanded}
-                    aria-controls={panelId}
-                    onClick={() => {
-                      soundEffects.droplet();
-                      setExpandedId((prev) => (prev === item.id ? null : item.id));
-                    }}
-                    className={cn(
-                      "group hover:bg-muted/60 flex w-full cursor-pointer items-start gap-3 px-3 py-3 text-left transition-colors duration-150",
-                      FOCUS_RING,
-                      "focus-visible:ring-offset-0 focus-visible:ring-inset",
-                      isExpanded && "bg-muted/60"
-                    )}
-                  >
-                    <IconTile icon={meta.icon} tone={meta.tone} size="sm" className="mt-0.5" />
-                    <span className="min-w-0 flex-1">
-                      <span className="text-foreground block text-sm leading-snug font-medium">
-                        {item.title}
-                      </span>
-                      <span className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
-                        <span>{meta.label}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{timeAgo(item.timestamp)}</span>
-                        {item.kind === "ledger" && item.targetField && (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span className="inline-flex items-center gap-0.5 tabular-nums">
-                              {item.deltaValue && item.deltaValue > 0 ? (
-                                <ArrowUp
-                                  aria-hidden="true"
-                                  className="h-3 w-3 text-emerald-600 dark:text-emerald-400"
-                                />
-                              ) : item.deltaValue && item.deltaValue < 0 ? (
-                                <ArrowDown
-                                  aria-hidden="true"
-                                  className="h-3 w-3 text-red-600 dark:text-red-400"
-                                />
-                              ) : null}
-                              {consequenceFieldLabel(item.targetField)}{" "}
-                              {formatDeltaValue(item.deltaValue)}
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    </span>
-                    <ChevronDown
-                      aria-hidden="true"
+                return (
+                  <li key={item.id}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      data-cuelume-press="droplet"
+                      aria-expanded={isExpanded}
+                      aria-controls={panelId}
+                      onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
                       className={cn(
-                        "text-muted-foreground/60 group-hover:text-muted-foreground mt-1 h-4 w-4 shrink-0 transition-transform duration-150",
-                        isExpanded && "rotate-180"
+                        "group h-auto w-full items-start justify-start gap-3 rounded-none px-3 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset active:scale-100",
+                        isExpanded && "bg-accent"
                       )}
-                    />
-                  </button>
-
-                  {isExpanded && (
-                    <div
-                      id={panelId}
-                      className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-4 pl-13 duration-150"
                     >
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        {diagnostic.badge && (
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium",
-                              diagnostic.badge.cls
-                            )}
-                          >
-                            {diagnostic.badge.direction === "up" && (
-                              <ArrowUp aria-hidden="true" className="h-3 w-3" />
-                            )}
-                            {diagnostic.badge.direction === "down" && (
-                              <ArrowDown aria-hidden="true" className="h-3 w-3" />
-                            )}
-                            <span>{diagnostic.badge.text}</span>
-                          </span>
-                        )}
-                        <span className="text-muted-foreground tabular-nums">
-                          {new Date(item.timestamp).toLocaleString(undefined, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
+                      <meta.icon
+                        aria-hidden="true"
+                        className={cn("mt-0.5 size-4 shrink-0", STATUS_TEXT[meta.tone])}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="text-foreground block text-sm leading-snug font-medium">
+                          {item.title}
                         </span>
-                      </div>
-
-                      <p className="text-foreground/90 text-sm leading-relaxed">
-                        {diagnostic.narrative}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        {onOpenDrill && (
-                          <button
-                            type="button"
-                            onClick={() => onOpenDrill(drill)}
-                            className={cn(SECONDARY_BUTTON, "sm:h-8")}
-                          >
-                            Open {meta.label.toLowerCase()}
-                            <NavArrowRight aria-hidden="true" className="h-4 w-4 opacity-60" />
-                          </button>
-                        )}
-                        <Link
-                          href={createUrl(
-                            countrySlug
-                              ? `/mycountry/changelog?country=${countrySlug}`
-                              : "/mycountry/changelog"
+                        <span className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
+                          <span>{meta.label}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>{timeAgo(item.timestamp)}</span>
+                          {item.kind === "ledger" && item.targetField && (
+                            <>
+                              <span aria-hidden="true">·</span>
+                              <span className="inline-flex items-center gap-0.5 tabular-nums">
+                                {item.deltaValue && item.deltaValue > 0 ? (
+                                  <ArrowUp aria-hidden="true" className={cn("size-3", POSITIVE)} />
+                                ) : item.deltaValue && item.deltaValue < 0 ? (
+                                  <ArrowDown
+                                    aria-hidden="true"
+                                    className={cn("size-3", NEGATIVE)}
+                                  />
+                                ) : null}
+                                {consequenceFieldLabel(item.targetField)}{" "}
+                                {formatDeltaValue(item.deltaValue)}
+                              </span>
+                            </>
                           )}
-                          className={cn(GHOST_BUTTON, "sm:h-8")}
-                        >
-                          Full ledger
-                          <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" />
-                        </Link>
+                        </span>
+                      </span>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={cn(
+                          "text-muted-foreground/60 group-hover:text-muted-foreground mt-1 shrink-0 transition-transform duration-150",
+                          isExpanded && "rotate-180"
+                        )}
+                      />
+                    </Button>
+
+                    {isExpanded && (
+                      <div
+                        id={panelId}
+                        className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-4 pl-10 duration-150"
+                      >
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          {diagnostic.badge && (
+                            <Badge variant="outline" className={diagnostic.badge.cls}>
+                              {diagnostic.badge.direction === "up" && (
+                                <ArrowUp aria-hidden="true" />
+                              )}
+                              {diagnostic.badge.direction === "down" && (
+                                <ArrowDown aria-hidden="true" />
+                              )}
+                              <span>{diagnostic.badge.text}</span>
+                            </Badge>
+                          )}
+                          <span className="text-muted-foreground tabular-nums">
+                            {new Date(item.timestamp).toLocaleString(undefined, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+                          </span>
+                        </div>
+
+                        <p className="text-foreground/90 text-sm leading-relaxed">
+                          {diagnostic.narrative}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          {onOpenDrill && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => onOpenDrill(drill)}
+                              className="h-11 sm:h-8"
+                            >
+                              Open {meta.label.toLowerCase()}
+                              <NavArrowRight aria-hidden="true" className="opacity-60" />
+                            </Button>
+                          )}
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground h-11 sm:h-8"
+                          >
+                            <Link
+                              href={createUrl(
+                                countrySlug
+                                  ? `/mycountry/changelog?country=${countrySlug}`
+                                  : "/mycountry/changelog"
+                              )}
+                            >
+                              Full ledger
+                              <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </FacetContainer>
         )}
 
         {visibleCount < filteredItems.length && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setVisibleCount((prev) => Math.min(filteredItems.length, prev + 10))}
-            className={cn(GHOST_BUTTON, "mt-2 w-full")}
+            className="text-muted-foreground mt-2 h-11 w-full sm:h-9"
           >
             Show more ({filteredItems.length - visibleCount})
-          </button>
+          </Button>
         )}
       </div>
     </div>

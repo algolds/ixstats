@@ -13,6 +13,10 @@ import {
   StatUp as TrendingUp,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetContainer } from "~/components/ui/facet-container";
+import { Tooltip } from "~/components/ui/tooltip";
 import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
@@ -47,47 +51,32 @@ export const NAV_ITEMS: {
   href: string;
   icon: typeof Crown;
   title: string;
-  activeBg: string;
 }[] = [
   {
     id: "economy",
     href: "/mycountry/economy",
     icon: TrendingUp,
     title: "Economy",
-    activeBg: "bg-emerald-500",
   },
   {
     id: "diplomacy",
     href: "/mycountry/diplomacy",
     icon: Users,
     title: "Diplomacy",
-    activeBg: "bg-cyan-500",
   },
   {
     id: "defense",
     href: "/mycountry/defense",
     icon: Shield,
     title: "Defense",
-    activeBg: "bg-red-500",
   },
   {
     id: "politics",
     href: "/mycountry/politics",
     icon: Vote,
     title: "Politics",
-    activeBg: "bg-indigo-500",
   },
 ];
-
-const SECTION_INDICATOR: Record<string, string> = {
-  overview: "bg-amber-300",
-  executive: "bg-amber-300",
-  diplomacy: "bg-cyan-300",
-  defense: "bg-red-300",
-  politics: "bg-indigo-300",
-  economy: "bg-emerald-300",
-  intelligence: "bg-blue-300",
-};
 
 export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   const pathname = stripBasePath(rawPathname);
@@ -111,6 +100,23 @@ interface MyCountrySidebarNavProps {
   notifications?: Partial<Record<string, number>>;
 }
 
+/** The small MyCountry-accent "Premium" chip. */
+function PremiumBadge() {
+  return (
+    <Badge
+      variant="outline"
+      className="border-(--facet-mycountry)/30 px-1 py-0 text-(--facet-mycountry) uppercase"
+    >
+      Premium
+    </Badge>
+  );
+}
+
+/**
+ * MyCountry section navigation on Facet primitives: a depth-1 shell holding ghost `<Button>`
+ * items. The current section is a quiet `bg-accent` fill; colour is kept for status only
+ * (the gold notification dot and Premium chip).
+ */
 export function MyCountrySidebarNav({
   activeSection,
   onNavigate,
@@ -137,357 +143,226 @@ export function MyCountrySidebarNav({
 
   const visibleItems = NAV_ITEMS.filter((item) => !HIDDEN_SECTIONS.has(item.id));
 
+  /** A nav destination: a Button that navigates in place when controlled, else a Link. */
+  const renderItem = (
+    id: MyCountrySection,
+    href: string,
+    className: string,
+    content: React.ReactNode,
+    extra: { "aria-label"?: string; "aria-current"?: "page" } = {}
+  ) =>
+    isControlled ? (
+      <Button
+        key={id}
+        type="button"
+        variant="ghost"
+        onClick={() => onNavigate(id)}
+        className={className}
+        {...extra}
+      >
+        {content}
+      </Button>
+    ) : (
+      <Button key={id} asChild variant="ghost" className={className}>
+        <Link href={href} {...extra}>
+          {content}
+        </Link>
+      </Button>
+    );
+
+  const itemClass = (isActive: boolean) =>
+    cn(isActive ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground");
+
+  const notificationDot = (
+    <span
+      aria-hidden="true"
+      className="ring-background absolute -top-0.5 -right-0.5 size-2 rounded-full bg-(--facet-mycountry) ring-2"
+    />
+  );
+
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
-    const mobileLogoClass =
-      "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-muted-foreground hover:bg-transparent";
-
-    const mobileLogoContent = (
-      <>
-        <CrownIcon className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-        <span className="whitespace-nowrap">Overview</span>
-        {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-xs font-bold tracking-wider text-amber-500/90 uppercase">
-            Premium
-          </span>
-        )}
-      </>
-    );
-
-    const mobileLogo = isControlled ? (
-      <button
-        type="button"
-        onClick={() => {
-          console.log("MyCountry mobile logo clicked");
-          onNavigate("overview");
-        }}
-        className={mobileLogoClass}
-        aria-label="Overview"
-      >
-        {mobileLogoContent}
-      </button>
-    ) : (
-      <Link href="/mycountry" className={mobileLogoClass} aria-label="Overview">
-        {mobileLogoContent}
-      </Link>
-    );
-
-    const mobileEditButton = (
-      <Link
-        href="/mycountry/editor"
-        className="text-muted-foreground/60 rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:text-amber-500 active:scale-95"
-        title="Edit Country Profile"
-      >
-        <Edit2 className="h-3 w-3 shrink-0" />
-      </Link>
-    );
-
     return (
-      <nav className="facet-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
-        <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
-          {mobileLogo}
-          {mobileEditButton}
-          <div className="h-4 w-px shrink-0 bg-white/10" />
+      <FacetContainer
+        depth={1}
+        interactive="none"
+        enableRefraction={false}
+        className="overflow-hidden rounded-xl p-1.5"
+      >
+        <nav
+          aria-label="MyCountry sections"
+          className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto"
+        >
+          {renderItem(
+            "overview",
+            "/mycountry",
+            "text-muted-foreground h-9 shrink-0 gap-1.5 px-3 text-xs",
+            <>
+              <CrownIcon
+                aria-hidden="true"
+                className="size-3.5 shrink-0 text-(--facet-mycountry)"
+              />
+              <span className="whitespace-nowrap">Overview</span>
+              {isPremium && <PremiumBadge />}
+            </>,
+            { "aria-label": "Overview" }
+          )}
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground size-9 shrink-0"
+          >
+            <Link
+              href="/mycountry/editor"
+              title="Edit Country Profile"
+              aria-label="Edit Country Profile"
+            >
+              <Edit2 aria-hidden="true" className="size-3.5" />
+            </Link>
+          </Button>
+          <div aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
           {visibleItems.map((item) => {
             const isActive = item.id === activeId;
-
             const noteCount = notifications?.[item.id] ?? 0;
             const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
-            const cls = cn(
-              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 overflow-hidden",
-              isActive
-                ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            );
-            const dot = noteCount > 0 && !isActive && (
-              <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
-            );
-
-            const content = (
+            return renderItem(
+              item.id,
+              item.href,
+              cn("relative h-9 shrink-0 gap-1.5 px-3 text-xs", itemClass(isActive)),
               <>
-                {isActive && (
-                  <span
-                    className={cn(
-                      "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
-                      SECTION_INDICATOR[item.id] ?? "bg-white/80"
-                    )}
-                  />
-                )}
-                <NavIcon id={item.id} fallback={item.icon} size={14} className="shrink-0" />
+                <NavIcon id={item.id} fallback={item.icon} className="size-3.5 shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
-                {isLocked && <Lock className="h-3 w-3 shrink-0 text-yellow-400/70" />}
-                {dot}
-              </>
-            );
-
-            return isControlled ? (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={cls}
-                aria-current={isActive ? "page" : undefined}
-              >
-                {content}
-              </button>
-            ) : (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={cls}
-                aria-current={isActive ? "page" : undefined}
-              >
-                {content}
-              </Link>
+                {isLocked && <Lock aria-label="Premium" className="size-3 shrink-0" />}
+                {noteCount > 0 && !isActive && notificationDot}
+              </>,
+              isActive ? { "aria-current": "page" } : {}
             );
           })}
-        </div>
-      </nav>
+        </nav>
+      </FacetContainer>
     );
   }
 
   /* ── Expanded desktop: icon + label sidebar ── */
   if (variant === "expanded") {
-    const logoContainerClass =
-      "flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-xs font-medium mb-1.5 border-b border-white/5 text-muted-foreground";
-
-    const logoLinkClass =
-      "relative flex items-center gap-2 cursor-pointer py-1 text-muted-foreground hover:text-muted-foreground hover:bg-transparent";
-
-    const logoLinkContent = (
-      <>
-        <CrownIcon className="h-4 w-4 shrink-0 text-amber-500" />
-        <span className="truncate font-semibold">MyCountry</span>
-        {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-xs font-bold tracking-wider text-amber-500/95 uppercase">
-            Premium
-          </span>
-        )}
-      </>
-    );
-
-    const logoLink = isControlled ? (
-      <button
-        type="button"
-        onClick={() => {
-          onNavigate("overview");
-        }}
-        className={logoLinkClass}
-      >
-        {logoLinkContent}
-      </button>
-    ) : (
-      <Link href="/mycountry" className={logoLinkClass}>
-        {logoLinkContent}
-      </Link>
-    );
-
-    const editButton = (
-      <Link
-        href="/mycountry/editor"
-        className="text-muted-foreground/60 rounded-md p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-amber-500 active:scale-95 dark:hover:bg-white/5"
-        title="Edit Country Profile"
-      >
-        <Edit2 className="h-3.5 w-3.5 shrink-0" />
-      </Link>
-    );
-
     return (
-      <nav className="border-border bg-card/60 dark:bg-card/40 animate-fade-in flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
-        <div className={logoContainerClass}>
-          {logoLink}
-          {editButton}
-        </div>
-        {visibleItems.map((item) => {
-          const isActive = item.id === activeId;
-          const noteCount = notifications?.[item.id] ?? 0;
-          const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
-          const cls = cn(
-            "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 overflow-hidden",
-            isActive
-              ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          );
-          const badge = noteCount > 0 && (
-            <span
-              className={cn(
-                "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-xs leading-none font-bold",
-                isActive ? "bg-white/25 text-white" : "bg-amber-500 text-white"
-              )}
-            >
-              {noteCount}
-            </span>
-          );
-
-          const content = (
-            <>
-              {isActive && (
-                <span
-                  className={cn(
-                    "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
-                    SECTION_INDICATOR[item.id] ?? "bg-white/80"
-                  )}
+      <FacetContainer
+        depth={1}
+        interactive="none"
+        enableRefraction={false}
+        className="flex w-full flex-col gap-1 rounded-xl p-1.5"
+      >
+        <nav aria-label="MyCountry sections" className="flex w-full flex-col gap-1">
+          <div className="border-border mb-1.5 flex w-full items-center justify-between border-b px-1 pb-1">
+            {renderItem(
+              "overview",
+              "/mycountry",
+              "text-foreground h-8 gap-2 px-1.5 text-xs font-semibold",
+              <>
+                <CrownIcon
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-(--facet-mycountry)"
                 />
-              )}
-              <NavIcon id={item.id} fallback={item.icon} size={16} className="shrink-0" />
-              <span className="truncate">{item.title}</span>
-              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-yellow-400/70" />}
-              {!isLocked && badge}
-            </>
-          );
-
-          return isControlled ? (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={cls}
-              aria-current={isActive ? "page" : undefined}
-            >
-              {content}
-            </button>
-          ) : (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={cls}
-              aria-current={isActive ? "page" : undefined}
-            >
-              {content}
-            </Link>
-          );
-        })}
-      </nav>
+                <span className="truncate">MyCountry</span>
+                {isPremium && <PremiumBadge />}
+              </>
+            )}
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground size-8">
+              <Link
+                href="/mycountry/editor"
+                title="Edit Country Profile"
+                aria-label="Edit Country Profile"
+              >
+                <Edit2 aria-hidden="true" className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
+          {visibleItems.map((item) => {
+            const isActive = item.id === activeId;
+            const noteCount = notifications?.[item.id] ?? 0;
+            const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
+            return renderItem(
+              item.id,
+              item.href,
+              cn("h-9 w-full justify-start gap-2 px-2.5 text-xs", itemClass(isActive)),
+              <>
+                <NavIcon id={item.id} fallback={item.icon} className="shrink-0" />
+                <span className="truncate">{item.title}</span>
+                {isLocked && <Lock aria-label="Premium" className="ml-auto size-3.5 shrink-0" />}
+                {!isLocked && noteCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto rounded-full px-1.5 py-0 tabular-nums"
+                  >
+                    {noteCount}
+                  </Badge>
+                )}
+              </>,
+              isActive ? { "aria-current": "page" } : {}
+            );
+          })}
+        </nav>
+      </FacetContainer>
     );
   }
 
   /* ── Desktop: icon rail with tooltip labels ── */
-  const logoRailClass =
-    "group/logo relative flex h-9 w-9 items-center justify-center rounded-lg border-b border-white/5 pb-1.5 mb-1.5 outline-none cursor-pointer text-muted-foreground/80 hover:text-muted-foreground/80 hover:bg-transparent";
-
-  const logoRailContent = (
-    <>
-      <CrownIcon className="h-4 w-4 text-amber-500 transition-transform duration-150" />
-      {/* Tooltip ── appears to the right */}
-      <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/logo:opacity-100">
-        <span>Overview</span>
-        {isPremium && (
-          <span className="rounded bg-amber-500/15 px-1 text-xs font-bold tracking-wider text-amber-500 uppercase">
-            Premium
-          </span>
-        )}
-        {/* Arrow */}
-        <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
-      </span>
-    </>
-  );
-
-  const logoRailHeader = isControlled ? (
-    <button
-      type="button"
-      onClick={() => {
-        console.log("MyCountry rail logo clicked");
-        onNavigate("overview");
-      }}
-      className={logoRailClass}
-      aria-label="Overview"
-    >
-      {logoRailContent}
-    </button>
-  ) : (
-    <Link href="/mycountry" className={logoRailClass} aria-label="Overview">
-      {logoRailContent}
-    </Link>
-  );
-
-  const editRailIcon = (
-    <Link
-      href="/mycountry/editor"
-      className="group/edit text-muted-foreground/65 hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:text-amber-500"
-      aria-label="Edit Country Profile"
-    >
-      <Edit2 className="h-4 w-4 transition-transform duration-150 group-hover/edit:scale-110" />
-      {/* Tooltip — appears to the right */}
-      <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/edit:opacity-100">
-        Edit Profile
-        {/* Arrow */}
-        <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
-      </span>
-    </Link>
-  );
-
   return (
-    <nav className="border-border bg-card/60 dark:bg-card/40 flex flex-col items-center gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
-      {logoRailHeader}
-      {editRailIcon}
-      {visibleItems.map((item) => {
-        const isActive = item.id === activeId;
-        const noteCount = notifications?.[item.id] ?? 0;
-        const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
-
-        const iconEl = (
-          <div
-            className={cn(
-              "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-              isActive
-                ? cn(item.activeBg, "text-white shadow-sm")
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            {isActive && (
-              <span
-                className={cn(
-                  "absolute top-1 bottom-1 left-0 w-0.5 rounded-r-sm",
-                  SECTION_INDICATOR[item.id] ?? "bg-white/80"
-                )}
-              />
-            )}
-            <NavIcon
-              id={item.id}
-              fallback={item.icon}
-              size={18}
-              className={cn(
-                "transition-transform duration-150",
-                !isActive && "group-hover/tip:scale-110"
+    <FacetContainer
+      depth={1}
+      interactive="none"
+      enableRefraction={false}
+      className="rounded-xl p-1.5"
+    >
+      <nav aria-label="MyCountry sections" className="flex flex-col items-center gap-1.5">
+        <Tooltip content={isPremium ? "Overview · Premium" : "Overview"} side="right">
+          {renderItem(
+            "overview",
+            "/mycountry",
+            "text-muted-foreground size-9 p-0",
+            <CrownIcon aria-hidden="true" className="text-(--facet-mycountry)" />,
+            { "aria-label": "Overview" }
+          )}
+        </Tooltip>
+        <Tooltip content="Edit Profile" side="right">
+          <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
+            <Link href="/mycountry/editor" aria-label="Edit Country Profile">
+              <Edit2 aria-hidden="true" />
+            </Link>
+          </Button>
+        </Tooltip>
+        <div aria-hidden="true" className="bg-border h-px w-6" />
+        {visibleItems.map((item) => {
+          const isActive = item.id === activeId;
+          const noteCount = notifications?.[item.id] ?? 0;
+          const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
+          return (
+            <Tooltip
+              key={item.id}
+              content={`${item.title}${isLocked ? " (Premium)" : ""}`}
+              side="right"
+            >
+              {renderItem(
+                item.id,
+                item.href,
+                cn("relative size-9 p-0", itemClass(isActive)),
+                <>
+                  <NavIcon id={item.id} fallback={item.icon} />
+                  {isLocked && (
+                    <Lock aria-hidden="true" className="absolute -right-0.5 -bottom-0.5 size-3" />
+                  )}
+                  {noteCount > 0 && !isActive && !isLocked && notificationDot}
+                </>,
+                {
+                  "aria-label": `${item.title}${isLocked ? " (Premium)" : ""}`,
+                  ...(isActive ? { "aria-current": "page" as const } : {}),
+                }
               )}
-            />
-            {isLocked && (
-              <Lock className="absolute -right-0.5 -bottom-0.5 h-3 w-3 text-yellow-400 drop-shadow" />
-            )}
-            {noteCount > 0 && !isActive && !isLocked && (
-              <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
-            )}
-
-            {/* Tooltip — appears to the right */}
-            <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100">
-              {item.title}
-              {isLocked ? " (Premium)" : ""}
-              {/* Arrow */}
-              <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
-            </span>
-          </div>
-        );
-
-        return isControlled ? (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            aria-label={item.title}
-            aria-current={isActive ? "page" : undefined}
-          >
-            {iconEl}
-          </button>
-        ) : (
-          <Link
-            key={item.id}
-            href={item.href}
-            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            aria-label={item.title}
-            aria-current={isActive ? "page" : undefined}
-          >
-            {iconEl}
-          </Link>
-        );
-      })}
-    </nav>
+            </Tooltip>
+          );
+        })}
+      </nav>
+    </FacetContainer>
   );
 }

@@ -17,14 +17,17 @@ function DemoModeBanner() {
   if (!isDemoActive) return null;
 
   return (
+    // Opaque status bar (no blur); it sits above the depth-2 Facet cards (z 100) as they scroll.
     <div
       role="status"
-      className="sticky top-0 z-50 flex items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/15 px-4 py-2 text-center text-xs font-medium text-amber-800 backdrop-blur-md dark:text-amber-300"
+      className="border-border bg-card text-foreground sticky top-0 z-(--z-depth-overlay) flex items-center justify-center gap-2 border-b px-4 py-2 text-center text-xs font-medium"
     >
-      <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+      <AlertTriangle aria-hidden="true" className="size-3.5 shrink-0 text-orange-600" />
       <span>
-        <span className="font-semibold">Demo mode.</span> You&apos;re viewing seeded demo data;
-        changes aren&apos;t saved.
+        <span className="font-semibold">Demo mode.</span>{" "}
+        <span className="text-muted-foreground">
+          You&apos;re viewing seeded demo data; changes aren&apos;t saved.
+        </span>
       </span>
     </div>
   );
