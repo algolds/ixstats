@@ -59,6 +59,7 @@ describe("PageManagementService.movePage", () => {
     expect(mockCreate.mock.calls[0]?.[0].data).toMatchObject({
       wikitext: "#REDIRECT [[Talk:New name]]",
       redirectTargetSlug: "Talk:New name",
+      summary: null,
     });
     expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({ title: "Talk:New name" });
   });

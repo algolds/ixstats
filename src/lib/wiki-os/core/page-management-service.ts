@@ -96,7 +96,8 @@ export class PageManagementService {
           wikitext: `#REDIRECT [[${newCanonicalTitle}]]`,
           contentHtml: `<div class="redirect-banner">Redirect to <a href="/wiki/${newSlug}">${newCanonicalTitle}</a></div>`,
           redirectTargetSlug: newCanonicalTitle,
-          summary: `Redirected to [[${newCanonicalTitle}]] via page move`,
+          // The move reason belongs on the log entry below, never in the article's excerpt.
+          summary: null,
           authorId: userId,
           lastEditorId: userId,
         },
