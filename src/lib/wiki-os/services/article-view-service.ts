@@ -30,6 +30,8 @@ const RENDER_WAIT_MS = 6_000;
 /** A title Postgres does not have is imported from MediaWiki at most this often. */
 const IMPORT_RETRY_MS = 60_000;
 const MAX_REMEMBERED_IMPORTS = 5_000;
+/** Imports from MediaWiki in flight at once: a crawler asking for made-up titles cannot fan out. */
+const MAX_CONCURRENT_IMPORTS = 4;
 
 /**
  * ponytail: per-process cache of the parts of a view that do not depend on the viewer. Ceiling:
@@ -58,6 +60,7 @@ export interface ArticleView extends Omit<SharedView, "templateKeys"> {
 }
 
 const recentImports = new Map<string, number>();
+let importsRunning = 0;
 
 function toSharedView(bundle: ViewBundle, renderQuality: SharedView["renderQuality"]): SharedView {
   return {
@@ -128,13 +131,24 @@ async function readArticle(
   return head && shared ? { head, shared } : null;
 }
 
+/** Import `title` from MediaWiki: once per title per minute, and never more than a few at a time. */
+async function importFromMediaWiki(title: string): Promise<boolean> {
+  if (importsRunning >= MAX_CONCURRENT_IMPORTS || importedRecently(title)) return false;
+  importsRunning++;
+  try {
+    return await syncSinglePage(title);
+  } finally {
+    importsRunning--;
+  }
+}
+
 /**
  * The article for `title`. When Postgres has no row (or only a stub) it is imported from
- * MediaWiki first: at most once per title per minute, then one more look.
+ * MediaWiki first, then looked at once more.
  */
 async function findArticle(title: string) {
   const found = await readArticle(title);
-  if (found || importedRecently(title) || !(await syncSinglePage(title))) return found;
+  if (found || !(await importFromMediaWiki(title))) return found;
   return readArticle(title);
 }
 

@@ -343,6 +343,31 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
     expect(findArticleForView).toHaveBeenCalledTimes(2);
   });
 
+  it("never has more than a few imports in flight, so made-up titles cannot fan out to MediaWiki", async () => {
+    findArticleForView.mockResolvedValue(null);
+    const releases: Array<() => void> = [];
+    jest.mocked(syncSinglePage).mockImplementation(
+      () => new Promise<boolean>((resolve) => releases.push(() => resolve(false)))
+    );
+
+    const requests = ["Fan 1", "Fan 2", "Fan 3", "Fan 4", "Fan 5", "Fan 6"].map((title) =>
+      caller()
+        .getArticleHtml({ title })
+        .catch((error: { code: string }) => error.code)
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(syncSinglePage).toHaveBeenCalledTimes(4);
+    releases.forEach((release) => release());
+    await expect(Promise.all(requests)).resolves.toEqual(Array(6).fill("NOT_FOUND"));
+    expect(syncSinglePage).toHaveBeenCalledTimes(4);
+
+    // A refused title was not recorded: once a slot is free it is imported.
+    jest.mocked(syncSinglePage).mockResolvedValue(false);
+    await caller().getArticleHtml({ title: "Fan 6" }).catch(() => undefined);
+    expect(syncSinglePage).toHaveBeenCalledTimes(5);
+  });
+
   it("does not look at MediaWiki for a system route or a title it would refuse", async () => {
     await expect(caller().getArticleHtml({ title: "Utilities" })).rejects.toMatchObject({
       code: "NOT_FOUND",
