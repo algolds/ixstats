@@ -60,6 +60,14 @@ describe("ixwiki media proxy", () => {
     [["images", "%2e%2e", "api.php"], ""],
     [["wiki", "Special:FilePath"], ""],
     [["Some", "Foo.png"], ""],
+    [["wiki", "File:"], ""],
+    [["wiki", "File:a", "b.png"], ""],
+    [["wiki", "Category:Flags"], ""],
+    [["thumb.php"], ""],
+    [["thumb.php"], "?width=300"],
+    [["thumb.php"], "?f=a/b.png"],
+    [["thumb.php"], "?f=..%2Fapi.php"],
+    [["thumb.php", "extra"], "?f=Foo.png"],
   ];
 
   it.each(rejectedPaths)("404s %j without fetching MediaWiki", async (path, query) => {
@@ -80,6 +88,63 @@ describe("ixwiki media proxy", () => {
     expect(res.headers.get("cache-control")).toBe(
       "public, max-age=86400, stale-while-revalidate=604800"
     );
+  });
+
+  it("serves images/thumb/... as-is and registers the original file, not the thumbnail", async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
+
+    const res = await call(["images", "thumb", "a", "ab", "Foo.png", "300px-Foo.png"]);
+    await flushAssetRegistration();
+
+    expect(res.status).toBe(200);
+    expect(fetchedUrl(fetchMock.mock.calls[0]![0])).toBe(
+      `${ORIGIN}/images/thumb/a/ab/Foo.png/300px-Foo.png`
+    );
+    expect(mockRegisterAsset).toHaveBeenCalledWith({ filename: "Foo.png", originBaseUrl: ORIGIN });
+  });
+
+  it.each([
+    [["wiki", "File:Foo.png"], "Foo.png"],
+    [["wiki", "Image:Foo.png"], "Foo.png"],
+    [["wiki", "file:Foo_bar.png"], "Foo_bar.png"],
+    [["wiki", "IMAGE:Foo.png"], "Foo.png"],
+    [["wiki", "File%3AFoo.png"], "Foo.png"],
+    [["wiki", "File:Foo%20bar.png"], "Foo%20bar.png"],
+  ] as Array<[string[], string]>)("rewrites %j to wiki/Special:FilePath/<name>", async (path, encodedName) => {
+    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
+
+    const res = await call(path, "?width=200&action=raw");
+
+    expect(res.status).toBe(200);
+    expect(fetchedUrl(fetchMock.mock.calls[0]![0])).toBe(
+      `${ORIGIN}/wiki/Special:FilePath/${encodedName}?width=200`
+    );
+  });
+
+  it("serves thumb.php forwarding only f and a numeric width", async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
+
+    await call(["thumb.php"], "?f=Foo%20bar.png&width=300&action=raw&evil=1");
+    await call(["thumb.php"], "?f=Foo.png&w=120");
+    await call(["thumb.php"], "?f=Foo.png&width=abc&w=90");
+    await call(["thumb.php"], "?f=Foo.png&width=99999");
+
+    const urls = fetchMock.mock.calls.map(([input]) => fetchedUrl(input));
+    expect(urls).toEqual([
+      `${ORIGIN}/thumb.php?f=Foo%20bar.png&width=300`,
+      `${ORIGIN}/thumb.php?f=Foo.png&width=120`,
+      `${ORIGIN}/thumb.php?f=Foo.png&width=90`,
+      `${ORIGIN}/thumb.php?f=Foo.png`,
+    ]);
+  });
+
+  it("registers the thumb.php file as an asset after a 200 image", async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(pngResponse()));
+
+    await call(["thumb.php"], "?f=Foo.png&width=300");
+    await flushAssetRegistration();
+
+    expect(mockRegisterAsset).toHaveBeenCalledWith({ filename: "Foo.png", originBaseUrl: ORIGIN });
   });
 
   it("rewrites a bare file name to wiki/Special:FilePath/<name>", async () => {

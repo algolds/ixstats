@@ -1,11 +1,15 @@
 /**
  * Media proxy for the local ixwiki.com install.
  *
- * SECURITY: this is an image-only proxy, not a general reverse proxy. Only three path shapes are
- * served (`images/...`, `wiki/Special:FilePath/<name>`, or a bare image file name which is rewritten
- * to Special:FilePath); everything else is a 404 and never reaches MediaWiki. Only a numeric `width`
- * query parameter is forwarded, and every success response goes through `imageOnlyResponse`
- * (`image/*` only, 15 MB cap, nosniff).
+ * SECURITY: this is an image-only proxy, not a general reverse proxy. Only these request shapes are
+ * served; everything else is a 404 and never reaches MediaWiki:
+ *   - `images/...` (including `images/thumb/...`)
+ *   - `wiki/Special:FilePath/<name>`
+ *   - `wiki/File:<name>` / `wiki/Image:<name>` (rewritten to Special:FilePath)
+ *   - a bare image file name (rewritten to Special:FilePath)
+ *   - `thumb.php?f=<name>&width=<n>` (only `f` and a numeric `width`/`w` are forwarded)
+ * Other than those, only a numeric `width` query parameter is forwarded, and every success response
+ * goes through `imageOnlyResponse` (`image/*` only, 15 MB cap, nosniff).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
@@ -17,6 +21,9 @@ const corsHeaders = MEDIA_CORS_HEADERS;
 
 const IMAGE_FILE = /\.(?:png|jpe?g|gif|webp|svg|ico|avif)$/i;
 const WIDTH_PARAM = /^\d{1,4}$/;
+/** A `wiki/File:<name>` description-page path; the captured group is the file name. */
+const FILE_PAGE = /^(?:file|image):(.+)$/i;
+const MAX_FILE_NAME_LENGTH = 255;
 const FALLBACK_USER_AGENT = "IxStats/1.4 (https://ixwiki.com; info@ixwiki.com)";
 
 export async function OPTIONS() {
@@ -39,21 +46,62 @@ function safeDecode(segment: string): string {
   }
 }
 
+interface MediaTarget {
+  /** Origin path segments (decoded; `encodePath` re-encodes them). */
+  path: string[];
+  /** The origin query string: empty, or `?` plus whitelisted parameters only. */
+  query: string;
+  /** The file the request is for: a thumb.php `f`, or the last path segment. */
+  fileName: string;
+}
+
+function isUnsafeSegment(segment: string): boolean {
+  return segment === "" || segment === "." || segment === ".." || /[\\/]/.test(segment);
+}
+
+/** The first of `names` whose value is a plain number of at most four digits. */
+function numericParam(params: URLSearchParams, ...names: string[]): string | null {
+  for (const name of names) {
+    const value = params.get(name);
+    if (value && WIDTH_PARAM.test(value)) return value;
+  }
+  return null;
+}
+
+function pathTarget(path: string[], params: URLSearchParams): MediaTarget {
+  const width = numericParam(params, "width");
+  return { path, query: width ? `?width=${width}` : "", fileName: path[path.length - 1] ?? "" };
+}
+
+/** `thumb.php?f=<name>[&width=<n>|&w=<n>]`: nothing but the file name and a numeric width is forwarded. */
+function thumbTarget(params: URLSearchParams): MediaTarget | null {
+  const file = params.get("f")?.trim();
+  if (!file || file.length > MAX_FILE_NAME_LENGTH || /[\\/\x00-\x1F]/.test(file)) return null;
+  const width = numericParam(params, "width", "w");
+  const query = `?f=${encodeURIComponent(file)}${width ? `&width=${width}` : ""}`;
+  return { path: ["thumb.php"], query, fileName: file };
+}
+
 /**
- * Map the requested sub-path onto the origin path it may fetch, or null when it is not a media path.
+ * Map the request onto the origin resource it may fetch, or null when it is not a media request.
  * Segments are decoded first so `%2e%2e` / `%2F` tricks cannot smuggle a traversal past the prefix check.
  */
-function resolveMediaPath(rawSegments: string[]): string[] | null {
+function resolveMediaTarget(rawSegments: string[], params: URLSearchParams): MediaTarget | null {
   const segments = rawSegments.map(safeDecode);
-  if (segments.some((s) => s === "" || s === "." || s === ".." || /[\\/]/.test(s))) return null;
+  if (segments.some(isUnsafeSegment)) return null;
 
   const [first, second, ...rest] = segments;
+  if (segments.length === 1 && first === "thumb.php") return thumbTarget(params);
   if (segments.length === 1 && first && IMAGE_FILE.test(first)) {
-    return ["wiki", "Special:FilePath", first];
+    return pathTarget(["wiki", "Special:FilePath", first], params);
   }
-  if (first === "images" && second) return segments;
-  if (first === "wiki" && second?.toLowerCase() === "special:filepath" && rest.length > 0) {
-    return segments;
+  if (first === "images" && second) return pathTarget(segments, params);
+  if (first === "wiki" && second) {
+    if (rest.length > 0) {
+      return second.toLowerCase() === "special:filepath" ? pathTarget(segments, params) : null;
+    }
+    const fileName = FILE_PAGE.exec(second)?.[1];
+    return fileName ? pathTarget(["wiki", "Special:FilePath", fileName], params) : null;
   }
   return null;
 }
@@ -97,19 +145,15 @@ export async function GET(
 ) {
   try {
     const { path } = await params;
-    const mediaPath = resolveMediaPath(path);
-    if (!mediaPath) return notFound();
-
-    const width = request.nextUrl.searchParams.get("width");
-    const queryString = width && WIDTH_PARAM.test(width) ? `?width=${width}` : "";
+    const target = resolveMediaTarget(path, request.nextUrl.searchParams);
+    if (!target) return notFound();
 
     const baseUrl = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
-    const targetUrl = `${baseUrl}/${encodePath(mediaPath)}${queryString}`;
+    const targetUrl = `${baseUrl}/${encodePath(target.path)}${target.query}`;
 
     // Thumbnail names (`300px-Foo.png`) map back to the original file name.
-    const lastSegment = mediaPath[mediaPath.length - 1] ?? "";
-    const isImageFile = IMAGE_FILE.test(lastSegment);
-    const cleanFilename = lastSegment
+    const isImageFile = IMAGE_FILE.test(target.fileName);
+    const cleanFilename = target.fileName
       .replace(/^(\d+px-)/i, "")
       .replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "")
       .trim();
