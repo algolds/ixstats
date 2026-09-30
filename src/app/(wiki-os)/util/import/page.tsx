@@ -11,6 +11,11 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { withBasePath } from "~/lib/base-path";
+import {
+  contentTypeFor,
+  DEFAULT_MAX_UPLOAD_BYTES,
+  formatLimit,
+} from "~/lib/wiki-os/xml/import-request";
 
 /** The import route's response (`ImportSummary` plus what it echoes back). */
 interface ImportResult {
@@ -23,14 +28,20 @@ interface ImportResult {
   uploadsSkipped: number;
   errors: Array<{ title: string; message: string }>;
   errorCount: number;
+  warnings: Array<{ title: string; message: string }>;
+  warningCount: number;
 }
 
 type Access = "checking" | "admin" | "denied";
 
 const IMPORT_URL = withBasePath("/api/wiki/import");
 
+const tooLargeMessage = (maxBytes: number): string =>
+  `The dump is larger than ${formatLimit(maxBytes)}: import it with bun scripts/wikios-import-xml.ts.`;
+
 export default function WikiImportPage() {
   const [access, setAccess] = useState<Access>("checking");
+  const [maxBytes, setMaxBytes] = useState(DEFAULT_MAX_UPLOAD_BYTES);
   const [file, setFile] = useState<File | null>(null);
   const [dryRun, setDryRun] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -39,21 +50,32 @@ export default function WikiImportPage() {
 
   useEffect(() => {
     fetch(IMPORT_URL)
-      .then((res) => setAccess(res.ok ? "admin" : "denied"))
+      .then(async (res) => {
+        if (!res.ok) return setAccess("denied");
+        const body = (await res.json()) as { maxBytes?: number };
+        if (body.maxBytes) setMaxBytes(body.maxBytes);
+        setAccess("admin");
+      })
       .catch(() => setAccess("denied"));
   }, []);
 
   async function runImport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!file) return;
+    if (file.size > maxBytes) {
+      setError(tooLargeMessage(maxBytes));
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
     try {
-      const form = new FormData();
-      form.append("xml", file);
-      form.append("dryRun", dryRun ? "1" : "0");
-      const res = await fetch(IMPORT_URL, { method: "POST", body: form });
+      // The dump is the request body itself (never a multipart form): the server streams it.
+      const res = await fetch(`${IMPORT_URL}?dryRun=${dryRun}`, {
+        method: "POST",
+        body: file,
+        headers: { "Content-Type": contentTypeFor(file) },
+      });
       const body = (await res.json()) as ImportResult | { error: string };
       if (!res.ok || "error" in body) {
         throw new Error("error" in body ? body.error : `Import failed (${res.status})`);
@@ -84,10 +106,10 @@ export default function WikiImportPage() {
         {access === "admin" && (
           <>
             <p className="text-muted-foreground text-sm">
-              Import a MediaWiki XML dump (export-0.11, up to 100 MB). Revisions keep their
-              MediaWiki ids, times and authors; re-importing a dump changes nothing, and a dump
-              never replaces a page&apos;s newer text. For a whole wiki use{" "}
-              <code>scripts/wikios-import-xml.ts</code>.
+              Import a MediaWiki XML dump (export-0.11, or gzipped), up to {formatLimit(maxBytes)};
+              use <code>bun scripts/wikios-import-xml.ts</code> for larger dumps. Revisions keep
+              their MediaWiki ids, times and authors; re-importing a dump changes nothing, and a
+              dump never replaces a page&apos;s newer text.
             </p>
 
             <form
@@ -99,7 +121,7 @@ export default function WikiImportPage() {
                 <Input
                   id="import-file"
                   type="file"
-                  accept=".xml,application/xml,text/xml"
+                  accept=".xml,.gz,application/xml,text/xml,application/gzip"
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                 />
               </div>
@@ -167,6 +189,22 @@ function ImportSummaryView({ result }: { result: ImportResult }) {
           </div>
         ))}
       </dl>
+      {result.warningCount > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-foreground text-sm font-semibold">
+            {result.warningCount} warning{result.warningCount === 1 ? "" : "s"}
+            {result.warningCount > result.warnings.length &&
+              ` (first ${result.warnings.length} shown)`}
+          </h3>
+          <ul className="text-muted-foreground max-h-64 space-y-1 overflow-auto text-xs">
+            {result.warnings.map((item, index) => (
+              <li key={`${item.title}-${index}`}>
+                <span className="text-foreground font-medium">{item.title}</span>: {item.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {result.errorCount > 0 && (
         <div className="space-y-2">
           <h3 className="text-destructive text-sm font-semibold">

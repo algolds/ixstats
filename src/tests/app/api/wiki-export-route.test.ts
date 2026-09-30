@@ -204,6 +204,32 @@ describe("GET /api/wiki/export?format=xml", () => {
       expect(xml.indexOf("older text")).toBeLessThan(xml.indexOf("alpha text"));
     });
 
+    it.each(["history=true", "history=TRUE", "history=1"])(
+      "%s asks for history, which needs a signed-in user",
+      async (flag) => {
+        seed({ title: "Alpha" });
+
+        expect((await GET(request(`format=xml&pages=Alpha&${flag}`))).status).toBe(401);
+
+        mockAuth.mockResolvedValue({ userId: "user_1" });
+        const res = await GET(request(`format=xml&pages=Alpha&${flag}`));
+        expect(res.status).toBe(200);
+        await res.text();
+      }
+    );
+
+    it.each(["history=0", "history=false", "history=yes", "history="])(
+      "%s is a current-only export, public",
+      async (flag) => {
+        seed({ title: "Alpha" });
+
+        const res = await GET(request(`format=xml&pages=Alpha&${flag}`));
+
+        expect(res.status).toBe(200);
+        await res.text();
+      }
+    );
+
     it("allows at most 50 pages", async () => {
       mockAuth.mockResolvedValue({ userId: "user_1" });
       const fifty = Array.from({ length: 50 }, (_, i) => `Page ${i}`).join("|");

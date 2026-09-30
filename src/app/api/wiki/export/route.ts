@@ -5,7 +5,7 @@
  * portable Markdown (.mdx) file with YAML frontmatter or as a JSON dump.
  *
  * `format=xml` exports MediaWiki's XML dump format (export-0.11), streamed, for the titles in
- * `pages=<title>|<title>…` (at most 500): the current revision of each, or with `history=1` every
+ * `pages=<title>|<title>…` (at most 500): the current revision of each, or with `history=1` (or `true`) every
  * revision (signed-in users only, at most 50 pages). Only PUBLISHED articles are ever exported.
  */
 
@@ -59,7 +59,7 @@ function streamExport(selection: ExportSelection, fileName: string): Response {
 async function xmlExport(req: NextRequest, source: string): Promise<Response> {
   const params = req.nextUrl.searchParams;
   const titles = parseTitleList(params.get("pages") ?? "");
-  const history = params.get("history") === "1";
+  const history = ["1", "true"].includes(params.get("history")?.toLowerCase() ?? "");
 
   if (titles.length === 0) return badRequest("Missing required query param: pages");
   if (titles.length > MAX_XML_PAGES) {
