@@ -291,6 +291,8 @@ export const intentRouter = createTRPCRouter({
             cooldownUntil: now + COOLDOWN_MS,
             createdIxTime: now,
             riskRating: TIER_RISK[input.tier as Tier],
+            // Held against CivCap while the directive executes (lib/government/civcap.ts).
+            civCapCost: pkg.civCapCost,
           },
         });
       } else {
@@ -309,6 +311,8 @@ export const intentRouter = createTRPCRouter({
             cooldownUntil: now + COOLDOWN_MS,
             createdIxTime: now,
             riskRating: TIER_RISK[input.tier as Tier],
+            // Held against CivCap while the directive executes (lib/government/civcap.ts).
+            civCapCost: pkg.civCapCost,
           },
         });
       }

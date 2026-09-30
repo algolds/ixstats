@@ -118,8 +118,10 @@ export interface HeroSnapshotData {
   activityRingsData?: {
     economicVitality?: number;
     populationWellbeing?: number;
-    diplomaticStanding?: number;
-    governmentalEfficiency?: number;
+    /** null when the country has no diplomatic record yet. */
+    diplomaticStanding?: number | null;
+    /** null when the country has no government structure yet. */
+    governmentalEfficiency?: number | null;
   };
   policies?: Array<{ id: string; name: string; category: string; status: string }>;
   meetings?: Array<{ actionItems: Array<{ status: string }> }>;
@@ -229,18 +231,27 @@ function HeroSnapshotPanelsComponent({
           color: getMetricColor(data.activityRingsData.populationWellbeing || 0),
           modal: "vitality" as const,
         },
-        {
-          label: "Diplomatic",
-          value: data.activityRingsData.diplomaticStanding || 0,
-          color: getMetricColor(data.activityRingsData.diplomaticStanding || 0),
-          modal: "vitality" as const,
-        },
-        {
-          label: "Efficiency",
-          value: data.activityRingsData.governmentalEfficiency || 0,
-          color: getMetricColor(data.activityRingsData.governmentalEfficiency || 0),
-          modal: "vitality" as const,
-        },
+        // Diplomatic / Efficiency are left out (not shown as 0) when there is no data.
+        ...(typeof data.activityRingsData.diplomaticStanding === "number"
+          ? [
+              {
+                label: "Diplomatic",
+                value: data.activityRingsData.diplomaticStanding,
+                color: getMetricColor(data.activityRingsData.diplomaticStanding),
+                modal: "vitality" as const,
+              },
+            ]
+          : []),
+        ...(typeof data.activityRingsData.governmentalEfficiency === "number"
+          ? [
+              {
+                label: "Efficiency",
+                value: data.activityRingsData.governmentalEfficiency,
+                color: getMetricColor(data.activityRingsData.governmentalEfficiency),
+                modal: "vitality" as const,
+              },
+            ]
+          : []),
       ]
     : [];
 

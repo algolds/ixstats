@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
 import {
   Trophy,
   Coins,
@@ -13,6 +12,9 @@ import {
   NavArrowRight as ChevronRight,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
+import { formatCensusValue } from "~/components/mycountry/shell/WorldCensusCard";
+import type { Ranking, RankingCategory } from "~/types/mycountry";
 
 export interface RankingItem {
   key: string;
@@ -26,76 +28,54 @@ export interface RankingItem {
 
 interface GlobalPositionRankingsProps {
   countryName: string;
+  /** Loads this country's World Census (realm-scoped) when `rankings` is not passed. */
+  countryId?: string;
   rankings?: RankingItem[];
   onRankClick?: (item: RankingItem) => void;
   onOpenCompare?: () => void;
   className?: string;
 }
 
-const DEFAULT_RANKINGS: RankingItem[] = [
-  {
-    key: "gdp",
-    label: "Gross Domestic Product",
-    rank: 3,
-    totalCountries: 82,
-    valueString: "$40.2 Trillion",
-    icon: Coins,
-    color: "#38bdf8",
-  },
-  {
-    key: "tech",
-    label: "Technology & Innovation",
-    rank: 2,
-    totalCountries: 82,
-    valueString: "Index 88/100",
-    icon: Lightbulb,
-    color: "#818cf8",
-  },
-  {
-    key: "population",
-    label: "Total Population",
-    rank: 4,
-    totalCountries: 82,
-    valueString: "626.2 Million",
-    icon: Users,
-    color: "#34d399",
-  },
-  {
-    key: "military",
-    label: "Military Power",
-    rank: 9,
-    totalCountries: 82,
-    valueString: "Index 72/100",
-    icon: Shield,
-    color: "#f87171",
-  },
-  {
-    key: "diplomacy",
-    label: "Diplomatic Influence",
-    rank: 6,
-    totalCountries: 82,
-    valueString: "Index 68/100",
-    icon: Globe,
-    color: "#c084fc",
-  },
-  {
-    key: "wellbeing",
-    label: "Quality of Life",
-    rank: 12,
-    totalCountries: 82,
-    valueString: "Score 82.4",
-    icon: Star,
-    color: "#fbbf24",
-  },
-];
+const CATEGORY_STYLE: Record<RankingCategory, { icon: typeof Coins; color: string }> = {
+  "GDP per Capita": { icon: Coins, color: "#38bdf8" },
+  "Total GDP": { icon: Coins, color: "#0ea5e9" },
+  "GDP Growth": { icon: Star, color: "#22c55e" },
+  Population: { icon: Users, color: "#34d399" },
+  "Public Approval": { icon: Star, color: "#fbbf24" },
+  Stability: { icon: Shield, color: "#f87171" },
+  "Diplomatic Standing": { icon: Globe, color: "#c084fc" },
+  Infrastructure: { icon: Lightbulb, color: "#818cf8" },
+  "Debt to GDP": { icon: Coins, color: "#fb923c" },
+  "Income Equality": { icon: Users, color: "#2dd4bf" },
+};
+
+/** Map server census rankings (mycountry.getRankings) to display items. */
+export function toRankingItems(rankings: Ranking[]): RankingItem[] {
+  return rankings.map((r) => ({
+    key: r.category,
+    label: r.category,
+    rank: r.global.position,
+    totalCountries: r.global.total,
+    valueString: formatCensusValue(r),
+    icon: CATEGORY_STYLE[r.category]?.icon ?? Star,
+    color: CATEGORY_STYLE[r.category]?.color ?? "#94a3b8",
+  }));
+}
 
 export function GlobalPositionRankings({
   countryName,
-  rankings = DEFAULT_RANKINGS,
+  countryId,
+  rankings: rankingsProp,
   onRankClick,
   onOpenCompare,
   className,
 }: GlobalPositionRankingsProps) {
+  const census = api.mycountry.getRankings.useQuery(
+    { countryId: countryId ?? "" },
+    { enabled: !rankingsProp && !!countryId, staleTime: 300_000 }
+  );
+  const rankings = rankingsProp ?? toRankingItems(census.data ?? []);
+
   return (
     <div
       className={cn(
@@ -110,9 +90,11 @@ export function GlobalPositionRankings({
           </div>
           <div>
             <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-              Global Benchmarks
+              World Census
             </span>
-            <h3 className="text-sm font-bold tracking-tight text-foreground">Global Position</h3>
+            <h3 className="text-sm font-bold tracking-tight text-foreground">
+              {countryName}&apos;s position in its realm
+            </h3>
           </div>
         </div>
 
@@ -128,6 +110,12 @@ export function GlobalPositionRankings({
           </button>
         )}
       </div>
+
+      {rankings.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          {census.isLoading && !!countryId ? "Loading census…" : "No census data yet."}
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {rankings.map((item) => {
@@ -156,6 +144,7 @@ export function GlobalPositionRankings({
                   )}
                 >
                   #{item.rank}
+                  <span className="font-normal text-muted-foreground">/{item.totalCountries}</span>
                 </span>
               </div>
 

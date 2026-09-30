@@ -152,6 +152,7 @@ export function CommandProfileView({ country, slug }: CommandProfileViewProps) {
             <NationalConditionMatrix />
             <GlobalPositionRankings
               countryName={country.name}
+              countryId={country.id}
               onOpenCompare={() => setIsCompareOpen(true)}
             />
           </div>

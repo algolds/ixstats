@@ -18,6 +18,7 @@ import {
   calculateVitalityScores,
   generateRankings,
   getMyCountryCache,
+  loadVitalityExtras,
   setMyCountryCache,
 } from "~/server/shared/mycountry-helpers";
 
@@ -62,8 +63,9 @@ export const myCountryDashboardRouter = createTRPCRouter({
           throw new Error("Country not found");
         }
 
-        // Calculate vitality scores
-        const vitalityScores = calculateVitalityScores(country as any);
+        // Calculate vitality scores (diplomacy + government read from their own tables)
+        const extras = await loadVitalityExtras(country.id);
+        const vitalityScores = calculateVitalityScores(country as any, extras);
 
         const result = {
           ...country,
@@ -116,7 +118,8 @@ export const myCountryDashboardRouter = createTRPCRouter({
           throw new Error("Country not found");
         }
 
-        const vitalityScores = calculateVitalityScores(country as any);
+        const extras = await loadVitalityExtras(country.id);
+        const vitalityScores = calculateVitalityScores(country as any, extras);
 
         const summary: NationalSummary = {
           countryId: country.id,

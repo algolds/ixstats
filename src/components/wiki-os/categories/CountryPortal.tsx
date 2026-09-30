@@ -266,11 +266,19 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function VitalityCard({ label, value, color }: { label: string; value: number; color: string }) {
+function VitalityCard({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number | null;
+  color: string;
+}) {
   return (
     <div className="wikios-portal-vitality-card facet-hierarchy-child">
       <span className="wikios-portal-vitality-value" style={{ color }}>
-        {Math.round(value)}
+        {value === null ? "—" : Math.round(value)}
       </span>
       <span className="wikios-portal-vitality-label">{label}</span>
     </div>
