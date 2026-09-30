@@ -12,7 +12,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { externalApiCache } from "~/lib/cache";
 import { getWiki, MEDIA_CORS_HEADERS, WIKI_USER_AGENT, type WikiConfig } from "../../_config";
-import { imageOnlyResponse, isAllowedMediaUrl } from "../../_media-response";
+import {
+  encodePath,
+  fetchFromAllowedHost,
+  hasMalformedPercentEncoding,
+  imageOnlyResponse,
+  isAllowedMediaUrl,
+  isUnsafeSegment,
+  type ImageRequest,
+} from "../../_media-response";
+import { wikiMediaRateLimitResponse } from "../../_rate-limit";
 
 const corsHeaders = MEDIA_CORS_HEADERS;
 const UA_HEADERS = { "User-Agent": WIKI_USER_AGENT, "Api-User-Agent": WIKI_USER_AGENT };
@@ -21,28 +30,10 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 200, headers: corsHeaders });
 }
 
-const MAX_REDIRECTS = 3;
 const ABSOLUTE_URL = /^https?:/i;
 
-/** Fetch `url`, following redirects only while every hop stays on an allow-listed host. */
-async function fetchFromAllowedHost(url: string): Promise<Response | null> {
-  let target = url;
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    if (!isAllowedMediaUrl(target)) return null;
-    const res = await fetch(target, {
-      headers: UA_HEADERS,
-      redirect: "manual",
-      signal: AbortSignal.timeout(15000),
-    });
-    const location = res.headers.get("Location");
-    if (res.status < 300 || res.status >= 400 || !location) return res;
-    target = new URL(location, target).toString();
-  }
-  return null;
-}
-
 /** Fetch an image through wsrv.nl, falling back to a direct fetch. Only allow-listed hosts are fetched. */
-async function fetchImage(url: string, label: string): Promise<NextResponse> {
+async function fetchImage(url: string, label: string, image: ImageRequest): Promise<NextResponse> {
   if (!isAllowedMediaUrl(url)) return new NextResponse(null, { status: 400, headers: corsHeaders });
 
   const attempts: Array<() => Promise<Response | null>> = [
@@ -51,12 +42,12 @@ async function fetchImage(url: string, label: string): Promise<NextResponse> {
         headers: { "User-Agent": WIKI_USER_AGENT },
         signal: AbortSignal.timeout(15000),
       }),
-    () => fetchFromAllowedHost(url),
+    () => fetchFromAllowedHost(url, UA_HEADERS, 15000),
   ];
   for (const attempt of attempts) {
     try {
       const res = await attempt();
-      if (res?.ok) return await imageOnlyResponse(res);
+      if (res?.ok) return await imageOnlyResponse(res, image);
       console.warn(`[${label} Proxy] Image fetch failed (${res?.status ?? "blocked"}) for ${url}`);
     } catch (err) {
       console.error(`[${label} Proxy] Image fetch error for ${url}:`, err);
@@ -100,10 +91,12 @@ async function resolveViaImageInfo(wiki: WikiConfig, filename: string): Promise<
   return null;
 }
 
-/** Decode a `Special:FilePath` tail to a bare file name (no `|` options, no control characters). */
+/**
+ * Clean a `Special:FilePath` tail to a bare file name (no `|` options, no control characters). The path
+ * was already percent-decoded once by Next, so it is not decoded again: a literal `%41` stays `%41`.
+ */
 function cleanFilename(rawName: string): string {
-  let filename = decodeURIComponent(rawName);
-  if (filename.includes("|")) filename = filename.split("|")[0]!.trim();
+  const filename = rawName.includes("|") ? rawName.split("|")[0]!.trim() : rawName;
   // Strip zero-width and control characters that sneak into filenames.
   return filename.replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "").trim();
 }
@@ -133,10 +126,20 @@ export async function GET(
   const wiki = getWiki(wikiKey);
   if (!wiki) return new NextResponse(null, { status: 404, headers: corsHeaders });
 
+  const limited = await wikiMediaRateLimitResponse(request, `${wikiKey} media`);
+  if (limited) return limited;
+  if (hasMalformedPercentEncoding(request.nextUrl.pathname)) {
+    return new NextResponse(null, { status: 400, headers: corsHeaders });
+  }
+
+  if (path.some(isUnsafeSegment)) return new NextResponse(null, { status: 404, headers: corsHeaders });
+
   try {
     const subpath = path.join("/");
     const search = request.nextUrl.searchParams.toString();
     const queryString = search ? `?${search}` : "";
+    const originPath = encodePath(path);
+    const image: ImageRequest = { headers: request.headers, fileName: path[path.length - 1] };
 
     const filePathMatch = subpath.match(/Special:Filepath\/(.+)$/i);
     if (filePathMatch?.[1]) {
@@ -144,15 +147,15 @@ export async function GET(
       // `Special:Filepath/<url>` is never resolved: only file names go through imageinfo.
       if (ABSOLUTE_URL.test(filename)) return new NextResponse(null, { status: 404, headers: corsHeaders });
       const directUrl = await resolveFilePath(wiki, wikiKey, filename);
-      if (directUrl) return fetchImage(directUrl, wiki.label);
+      if (directUrl) return fetchImage(directUrl, wiki.label, image);
       // Fall through to a direct origin fetch of the Special:FilePath URL.
     }
 
     if (wiki.directImagePrefix && subpath.startsWith(wiki.directImagePrefix)) {
-      return fetchImage(`${wiki.siteUrl}/${subpath}${queryString}`, wiki.label);
+      return fetchImage(`${wiki.siteUrl}/${originPath}${queryString}`, wiki.label, image);
     }
 
-    const response = await fetchFromAllowedHost(`${wiki.siteUrl}/${subpath}${queryString}`);
+    const response = await fetchFromAllowedHost(`${wiki.siteUrl}/${originPath}${queryString}`, UA_HEADERS, 15000);
     if (!response) return new NextResponse(null, { status: 502, headers: corsHeaders });
 
     if (!response.ok) {
@@ -164,7 +167,7 @@ export async function GET(
       return new NextResponse(null, { status: response.status, headers: corsHeaders });
     }
 
-    return await imageOnlyResponse(response);
+    return await imageOnlyResponse(response, image);
   } catch (error) {
     console.error(`[${wiki.label} Proxy] Catch-all error:`, error);
     return new NextResponse("Proxy Error", { status: 500, headers: corsHeaders });
