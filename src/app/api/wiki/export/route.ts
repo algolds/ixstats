@@ -128,15 +128,16 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Generate Markdown with YAML Frontmatter
+  // Generate Markdown with YAML frontmatter. JSON strings are valid YAML double-quoted scalars,
+  // so a title or slug with quotes, colons or line breaks cannot break out of its value.
   const mdxContent = `---
-title: "${article.title.replace(/"/g, '\\"')}"
-slug: "${article.slug}"
-realm: "${article.source}"
-status: "${article.status}"
+title: ${JSON.stringify(article.title)}
+slug: ${JSON.stringify(article.slug)}
+realm: ${JSON.stringify(article.source)}
+status: ${JSON.stringify(article.status)}
 readingTime: ${article.readingTime}
 wordCount: ${article.wordCount}
-exportedAt: "${new Date().toISOString()}"
+exportedAt: ${JSON.stringify(new Date().toISOString())}
 ---
 
 ${article.wikitext || ""}`;

@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import { load as parseYaml } from "js-yaml";
 import { SaxesParser } from "saxes";
 import { NextRequest } from "next/server";
 import {
@@ -254,6 +255,27 @@ describe("GET /api/wiki/export (single article)", () => {
 
     expect((await GET(request("slug=hidden&format=json"))).status).toBe(404);
     expect((await GET(request("format=json"))).status).toBe(400);
+  });
+
+  it("writes frontmatter values that stay inside their YAML scalar, whatever the title holds", async () => {
+    const title = 'He said "hi": a\nb # c --- [d] {e}\\';
+    seed({ title, slug: 'slug: "x"\n---\nfoo: bar', wikitext: "body text" });
+
+    const res = await GET(request(`slug=${encodeURIComponent('slug: "x"\n---\nfoo: bar')}`));
+    const text = await res.text();
+    const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "";
+    const parsed = parseYaml(frontmatter) as Record<string, unknown>;
+
+    expect(parsed).toMatchObject({
+      title,
+      slug: 'slug: "x"\n---\nfoo: bar',
+      realm: "ixwiki",
+      status: "PUBLISHED",
+    });
+    expect(Object.keys(parsed).sort()).toEqual(
+      ["exportedAt", "readingTime", "realm", "slug", "status", "title", "wordCount"].sort()
+    );
+    expect(text.endsWith("body text")).toBe(true);
   });
 
   it("sanitises the Markdown file name", async () => {

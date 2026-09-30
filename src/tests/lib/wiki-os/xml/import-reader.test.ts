@@ -2,7 +2,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createExportWriter, DEFAULT_SITEINFO } from "~/lib/wiki-os/xml/export-writer";
-import { readExport, type ImportEvent, type ImportPage } from "~/lib/wiki-os/xml/import-reader";
+import {
+  MAX_DEPTH,
+  readExport,
+  type ImportEvent,
+  type ImportPage,
+} from "~/lib/wiki-os/xml/import-reader";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import type { XmlRevision } from "~/lib/wiki-os/xml/types";
 
@@ -234,6 +239,63 @@ describe("readExport: bad input", () => {
         },
       ],
     });
+  });
+});
+
+describe("readExport: hostile structure", () => {
+  const revision =
+    "<revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>kept</text></revision>";
+
+  it.each(["__proto__", "constructor", "toString", "hasOwnProperty", "prototype"])(
+    "skips an element called <%s> anywhere without failing or changing the page",
+    async (name) => {
+      const xml =
+        `<mediawiki><${name}>top</${name}><page><${name}><${name}>x</${name}></${name}>` +
+        `<title>Foo</title><ns>0</ns>${revision.replace("<text>", `<${name}>y</${name}><text>`)}` +
+        `</page></mediawiki>`;
+
+      const events = await read(xml);
+
+      expect(pagesOf(events)).toHaveLength(1);
+      expect(pagesOf(events)[0]).toMatchObject({ title: "Foo", ns: 0 });
+      expect(pagesOf(events)[0]?.revisions[0]).toMatchObject({ id: 1, text: "kept" });
+    }
+  );
+
+  it("reads the same page whatever unknown elements wrap its fields", async () => {
+    const xml = `<mediawiki><page><title>Foo</title><wrap><title>NOT THIS</title></wrap>${revision}</page></mediawiki>`;
+
+    expect(pagesOf(await read(xml))[0]?.title).toBe("Foo");
+  });
+
+  const nested = (levels: number) => `${"<a>".repeat(levels)}deep${"</a>".repeat(levels)}`;
+
+  it("accepts nesting up to the limit", async () => {
+    // <mediawiki> is level 1, so MAX_DEPTH - 1 more elements fit.
+    const xml = `<mediawiki>${nested(MAX_DEPTH - 1)}</mediawiki>`;
+
+    await expect(read(xml)).resolves.toEqual([]);
+  });
+
+  it("refuses nesting past the limit", async () => {
+    const xml = `<mediawiki>${nested(MAX_DEPTH)}</mediawiki>`;
+
+    await expect(read(xml)).rejects.toThrow(/deeper than 64 levels/);
+  });
+
+  it("refuses hostile nesting before buffering it, however deep it goes", async () => {
+    const xml = `<mediawiki>${"<a>".repeat(100_000)}`;
+
+    await expect(read(xml)).rejects.toThrow(/deeper than 64 levels/);
+  });
+
+  it("reads a dump with a large unknown block inside a page without keeping its text", async () => {
+    const big = "x".repeat(5_000_000);
+    const xml = `<mediawiki><page><title>Foo</title><ns>0</ns><blob>${big}</blob>${revision}</page></mediawiki>`;
+
+    const events = await read(xml);
+
+    expect(pagesOf(events)[0]?.revisions[0]?.text).toBe("kept");
   });
 });
 

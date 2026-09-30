@@ -18,9 +18,7 @@
  *   bun scripts/wikios-import-xml.ts /tmp/ixwiki.xml.gz --yes
  */
 
-import { createReadStream } from "node:fs";
-import type { Readable } from "node:stream";
-import { createGunzip } from "node:zlib";
+import { openDumpInput } from "../src/lib/wiki-os/xml/dump-input";
 
 const PROGRESS_EVERY = 100;
 const ERRORS_SHOWN = 50;
@@ -62,12 +60,6 @@ function databaseLabel(): string | null {
   }
 }
 
-function openInput(file: string): Readable {
-  if (file === "-") return process.stdin;
-  const stream = createReadStream(file);
-  return file.endsWith(".gz") ? stream.pipe(createGunzip()) : stream;
-}
-
 async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
   if (!args?.file) {
@@ -99,7 +91,7 @@ async function main(): Promise<number> {
   console.error(
     `${args.dryRun ? "Dry run of" : "Importing"} ${args.file} as source "${args.source}"...`
   );
-  const summary = await importExport(readExport(openInput(args.file)), {
+  const summary = await importExport(readExport(openDumpInput(args.file, process.stdin)), {
     source: args.source,
     dryRun: args.dryRun,
     onProgress: (progress) => {

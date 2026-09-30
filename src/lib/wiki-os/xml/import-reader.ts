@@ -8,7 +8,10 @@
  * children of a page are only counted.
  *
  * Reading is by element path below the `<mediawiki>` root, so a `<revision>` child called `<id>`
- * is never confused with the page's own.
+ * is never confused with the page's own. The known paths form a trie walked one step per tag: an
+ * element the trie does not know (and everything inside it) costs nothing and buffers nothing,
+ * element names are only ever used as Map keys (a `<__proto__>` element is just an unknown name),
+ * and nesting deeper than `MAX_DEPTH` is refused.
  */
 
 import { StringDecoder } from "node:string_decoder";
@@ -35,6 +38,8 @@ export type ImportEvent =
 
 /** The root element of every export. */
 const ROOT = "mediawiki";
+/** Deepest element nesting accepted (a real export is 5 levels deep). */
+export const MAX_DEPTH = 64;
 
 interface ContributorDraft {
   username: string | null;
@@ -50,8 +55,8 @@ interface TextDraft {
 }
 
 interface ReaderState {
-  /** Names of the open elements, the root first. */
-  path: string[];
+  /** One entry per open element, the root first: its trie node, or null for an unknown element. */
+  stack: Array<TrieNode | null>;
   /** Text of the element being read (reset by every opening tag). */
   text: string;
   siteinfo: SiteInfo | null;
@@ -67,6 +72,13 @@ interface ReaderState {
 type Attributes = Record<string, string>;
 type OpenHandler = (state: ReaderState, attributes: Attributes) => void;
 type CloseHandler = (state: ReaderState, value: string) => void;
+
+/** A known element path: what to do when it opens and closes, and the known elements inside it. */
+interface TrieNode {
+  children: Map<string, TrieNode>;
+  open?: OpenHandler;
+  close?: CloseHandler;
+}
 
 /** A whole number from an element's text or an attribute; null when it is not one. */
 function parseInteger(value: string | undefined): number | null {
@@ -270,30 +282,61 @@ const CLOSE: Readonly<Record<string, CloseHandler>> = {
   },
 };
 
-/** The element path below the root, "page/revision/id" for `<mediawiki><page><revision><id>`. */
-const relativePath = (path: string[]): string => path.slice(1).join("/");
+/** The trie of every path in `OPEN` and `CLOSE`; its root is the `<mediawiki>` element. */
+function buildTrie(): TrieNode {
+  const root: TrieNode = { children: new Map() };
+  const nodeAt = (path: string): TrieNode => {
+    let node = root;
+    for (const name of path.split("/")) {
+      let child = node.children.get(name);
+      if (!child) {
+        child = { children: new Map() };
+        node.children.set(name, child);
+      }
+      node = child;
+    }
+    return node;
+  };
+  for (const [path, handler] of Object.entries(OPEN)) nodeAt(path).open = handler;
+  for (const [path, handler] of Object.entries(CLOSE)) nodeAt(path).close = handler;
+  return root;
+}
+
+const ROOT_NODE = buildTrie();
+
+/** The trie node of the element `name` opening inside the current one; null when it is unknown. */
+function enterElement(state: ReaderState, name: string): TrieNode | null {
+  const depth = state.stack.length;
+  if (depth >= MAX_DEPTH) {
+    throw new Error(`The dump nests elements deeper than ${MAX_DEPTH} levels`);
+  }
+  if (depth > 0) return state.stack[depth - 1]?.children.get(name) ?? null;
+  if (name !== ROOT) {
+    throw new Error(`Not a MediaWiki export: the root element is <${name}>, not <${ROOT}>`);
+  }
+  return ROOT_NODE;
+}
 
 /** A saxes parser wired to `state`: feed it text, then drain `state.events`. */
 function createParser(state: ReaderState): SaxesParser {
   const parser = new SaxesParser();
   parser.on("opentag", (tag) => {
-    state.path.push(tag.name);
-    if (state.path.length === 1 && tag.name !== ROOT) {
-      throw new Error(`Not a MediaWiki export: the root element is <${tag.name}>, not <${ROOT}>`);
-    }
+    const node = enterElement(state, tag.name);
+    state.stack.push(node);
+    if (!node) return;
     state.text = "";
-    OPEN[relativePath(state.path)]?.(state, tag.attributes);
+    node.open?.(state, tag.attributes);
   });
-  parser.on("text", (text) => {
-    state.text += text;
-  });
-  parser.on("cdata", (text) => {
-    state.text += text;
-  });
+  const collect = (text: string): void => {
+    if (state.stack[state.stack.length - 1]) state.text += text;
+  };
+  parser.on("text", collect);
+  parser.on("cdata", collect);
   parser.on("closetag", () => {
-    CLOSE[relativePath(state.path)]?.(state, state.text);
+    const node = state.stack.pop();
+    if (!node) return;
+    node.close?.(state, state.text);
     state.text = "";
-    state.path.pop();
   });
   return parser;
 }
@@ -323,7 +366,7 @@ export async function* readExport(
   stream: AsyncIterable<string | Uint8Array>
 ): AsyncGenerator<ImportEvent> {
   const state: ReaderState = {
-    path: [],
+    stack: [],
     text: "",
     siteinfo: null,
     namespace: null,
