@@ -155,6 +155,59 @@ model WikiLog {
   @@map("wiki_logs")
 }
 
+/// Explicit MediaWiki-style group membership (sysop, bureaucrat, interface-admin, bot, ...). A row is keyed by
+/// the WikiOS user, or by the MediaWiki username alone while that user has not yet verified a wiki link.
+model WikiUserGroup {
+  id           String    @id @default(cuid())
+  userId       String?
+  wikiUsername String?   // MediaWiki-normalised username (pending link)
+  group        String    // sysop | bureaucrat | interface-admin | bot | autoconfirmed | confirmed | rollbacker
+  expiresAt    DateTime?
+  addedById    String?
+  source       String    @default("wikios") // wikios | mw-import
+  createdAt    DateTime  @default(now())
+
+  @@unique([userId, group])
+  @@unique([wikiUsername, group])
+  @@index([group])
+  @@map("wiki_user_groups")
+}
+
+/// Page protection per action. Title-based so create-protection works for pages that do not exist yet.
+/// The source of truth for protection; WikiArticle.protectionLevel mirrors the `edit` restriction for readers.
+model WikiRestriction {
+  id        String    @id @default(cuid())
+  source    String    @default("ixwiki")
+  title     String    // canonical title
+  action    String    // edit | move | create | upload
+  level     String    // autoconfirmed | sysop
+  expiresAt DateTime?
+  cascade   Boolean   @default(false)
+  setById   String?
+  reason    String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+
+  @@unique([source, title, action])
+  @@map("wiki_restrictions")
+}
+
+/// A block on a WikiOS user and/or a MediaWiki username.
+model WikiBlock {
+  id            String    @id @default(cuid())
+  userId        String?
+  wikiUsername  String?   // block a MediaWiki username that has no WikiOS link yet
+  reason        String?   @db.VarChar(500)
+  expiresAt     DateTime? // null = indefinite
+  allowUserTalk Boolean   @default(true)
+  blockedById   String?
+  source        String    @default("wikios") // wikios | mw-import
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([wikiUsername])
+  @@map("wiki_blocks")
+}
+
 /// Native Directed Link Graph Edge
 model WikiLink {
   id              String       @id @default(cuid())
