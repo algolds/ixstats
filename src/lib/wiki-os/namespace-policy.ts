@@ -2,8 +2,9 @@
 // Which MediaWiki namespaces a WikiOS user may write to.
 //
 // Every WikiOS edit is exported to MediaWiki through one shared bot account (see sync-worker.ts),
-// so MediaWiki's own per-user rights never apply to it. This server-side allowlist is what stops a
-// signed-in user from saving `MediaWiki:Common.js`, `Module:*` or `Template:*` through that account.
+// so MediaWiki's own per-user rights never apply to it. This server-side policy, which `permissions.ts`
+// runs before every action, is what stops a signed-in user from saving `MediaWiki:Common.js`,
+// `Module:*` or `Template:*` through that account. It asks for MediaWiki rights (see `rights.ts`):
 //
 // Ordinary signed-in users may edit:
 //   - main / article namespace (0)
@@ -11,9 +12,14 @@
 //     Category talk (odd ids 1-15); plain discussion text, never executed
 //   - their OWN User: page and its subpages, when they have a verified linked wiki account,
 //     except script/style/data subpages (.js, .css, .json, .less), which are interface pages
-// Everything else requires wiki admin (see isWikiAdmin): Project/IxWiki:, File:, MediaWiki:,
-// Template:, Help:, Category:, Module:, Gadget*, Widget*, MediaWiki/Module/Gadget talk, other
-// users' pages. Special: and Media: are never editable, by anyone.
+// Interface pages need the matching interface-admin right: MediaWiki:*.css/.js/.json need
+// editsitecss/editsitejs/editsitejson, User:*/*.css/.js/.json need editusercss/edituserjs/edituserjson,
+// and the other MediaWiki: pages need editinterface.
+// Everything else needs `editprotected` (the sysop group): Project/IxWiki:, File:, Template:, Help:,
+// Category:, Module:, Gadget*, Widget*, MediaWiki/Module/Gadget talk, other users' pages.
+// Special: and Media: are never editable, by anyone.
+
+import type { Right } from "~/lib/wiki-os/rights";
 
 /** Canonical (lower-cased, space-separated) namespace names and aliases -> namespace id. */
 const NAMESPACE_IDS: ReadonlyMap<string, number> = new Map(
@@ -56,6 +62,18 @@ const USER_EDITABLE_TALK_IDS: ReadonlySet<number> = new Set([1, 3, 5, 7, 11, 13,
 
 /** Subpage suffixes that MediaWiki treats as script/style/data (interface) content. */
 const INTERFACE_SUFFIX = /\.(js|css|json|less)$/i;
+
+/** The right that edits a script (.js), style (.css, .less) or data (.json) page, site-wide or in user space. */
+const INTERFACE_RIGHTS: Readonly<Record<"site" | "user", Readonly<Record<string, Right>>>> = {
+  site: { js: "editsitejs", css: "editsitecss", less: "editsitecss", json: "editsitejson" },
+  user: { js: "edituserjs", css: "editusercss", less: "editusercss", json: "edituserjson" },
+};
+
+/** The right a script/style/data page under `base` needs, or null when `base` is ordinary text. */
+function interfaceRight(base: string, area: "site" | "user"): Right | null {
+  const suffix = INTERFACE_SUFFIX.exec(base)?.[1]?.toLowerCase();
+  return (suffix && INTERFACE_RIGHTS[area][suffix]) || null;
+}
 
 /** Unicode spaces MediaWiki folds into a plain space when normalising titles. */
 const TITLE_SPACES = /[\u00A0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000_]+/g;
@@ -115,53 +133,59 @@ function normalizeUserName(name: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/** Whether the page name `base` (no namespace) is `owner`'s own page or one of its subpages. */
+export function isOwnUserSpace(base: string, owner: string | null): boolean {
+  const rootName = base.split("/")[0] ?? "";
+  return Boolean(owner) && normalizeUserName(rootName) === normalizeUserName(owner ?? "");
+}
+
 export interface EditPolicyIdentity {
-  isAdmin: boolean;
+  /** The caller's rights (see `rightsForGroups`). */
+  rights: ReadonlySet<Right>;
   /** Verified linked MediaWiki account name, or null when the user has no linked account. */
   linkedWikiUsername: string | null;
 }
 
 export type EditPolicyResult = { allowed: true } | { allowed: false; reason: string };
 
-/** Whether `identity` may save `rawTitle` through WikiOS. */
+const ALLOWED: EditPolicyResult = { allowed: true };
+const deny = (reason: string): EditPolicyResult => ({ allowed: false, reason });
+
+/** A user-space page: the owner's own text, an interface page (its right), or an admin's. */
+function checkUserPage(base: string, identity: EditPolicyIdentity): EditPolicyResult {
+  const scriptRight = interfaceRight(base, "user");
+  if (scriptRight) {
+    return identity.rights.has(scriptRight)
+      ? ALLOWED
+      : deny("Only interface administrators can edit user script, style and data pages.");
+  }
+  if (isOwnUserSpace(base, identity.linkedWikiUsername)) return ALLOWED;
+  return identity.rights.has("editprotected")
+    ? ALLOWED
+    : deny("You can only edit your own user page (this needs a linked wiki account).");
+}
+
+/** Whether `identity` may write to `rawTitle` through WikiOS. */
 export function checkEditPolicy(rawTitle: string, identity: EditPolicyIdentity): EditPolicyResult {
+  const isAdmin = identity.rights.has("editprotected");
   const parsed = parseWikiTitle(rawTitle);
   if (!parsed) {
     // Admins may hit a title the parser declines (e.g. one with a character reference); MediaWiki
     // itself still validates it. Everyone else is refused.
-    return identity.isAdmin && rawTitle.trim()
-      ? { allowed: true }
-      : { allowed: false, reason: "That page title is not valid." };
+    return isAdmin && rawTitle.trim() ? ALLOWED : deny("That page title is not valid.");
   }
   const { namespaceId, base } = parsed;
 
-  if (namespaceId < 0) {
-    return { allowed: false, reason: "Special and media pages cannot be edited." };
-  }
-  if (identity.isAdmin) return { allowed: true };
+  if (namespaceId < 0) return deny("Special and media pages cannot be edited.");
+  if (namespaceId === 0 || USER_EDITABLE_TALK_IDS.has(namespaceId)) return ALLOWED;
+  if (namespaceId === 2) return checkUserPage(base, identity);
 
-  if (namespaceId === 0 || USER_EDITABLE_TALK_IDS.has(namespaceId)) return { allowed: true };
-
-  if (namespaceId === 2) {
-    const owner = identity.linkedWikiUsername;
-    const rootName = base.split("/")[0] ?? "";
-    if (owner && normalizeUserName(rootName) === normalizeUserName(owner)) {
-      if (INTERFACE_SUFFIX.test(base)) {
-        return {
-          allowed: false,
-          reason: "Only wiki administrators can edit user script, style and data pages.",
-        };
-      }
-      return { allowed: true };
-    }
-    return {
-      allowed: false,
-      reason: "You can only edit your own user page (this needs a linked wiki account).",
-    };
+  if (namespaceId === 8) {
+    const right = interfaceRight(base, "site") ?? "editinterface";
+    return identity.rights.has(right)
+      ? ALLOWED
+      : deny(`Editing this MediaWiki page needs the ${right} right.`);
   }
 
-  return {
-    allowed: false,
-    reason: "Only wiki administrators can edit pages in this namespace.",
-  };
+  return isAdmin ? ALLOWED : deny("Only wiki administrators can edit pages in this namespace.");
 }

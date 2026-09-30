@@ -9,8 +9,11 @@ jest.mock("~/server/db", () => ({
   db: {
     user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
+    wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
     wikiArticle: { upsert: jest.fn() },
-    wikiRevision: { findFirst: jest.fn(), create: jest.fn() },
+    wikiRevision: { findFirst: jest.fn(), create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     stash: { findFirst: jest.fn(), create: jest.fn() },
     stashItem: { upsert: jest.fn(), deleteMany: jest.fn() },
     lorewardUserStats: { findUnique: jest.fn(), count: jest.fn() },
@@ -104,6 +107,7 @@ const mockDb = db as unknown as {
   user: { findFirst: jest.Mock; update: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
   wikiArticle: { upsert: jest.Mock };
+  wikiRestriction: { findMany: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
   stash: { findFirst: jest.Mock; create: jest.Mock };
   stashItem: { upsert: jest.Mock; deleteMany: jest.Mock };
@@ -124,6 +128,7 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockDb.wikiRestriction.findMany.mockResolvedValue([]);
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
     jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
       article: {} as never,
@@ -154,9 +159,10 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
   });
 
   it("does not let the legacy wikiUsername satisfy an AUTOCONFIRMED protection", async () => {
-    jest
-      .mocked(ArticleRepository.findBySlug)
-      .mockResolvedValue({ protectionLevel: "AUTOCONFIRMED", protectionExpiry: null } as never);
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "PUBLISHED" } as never);
+    mockDb.wikiRestriction.findMany.mockResolvedValue([
+      { action: "edit", level: "autoconfirmed", expiresAt: null },
+    ]);
 
     mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
     await expect(editCaller().saveWikitext({ title: "Guarded", wikitext: "x" })).rejects.toMatchObject({

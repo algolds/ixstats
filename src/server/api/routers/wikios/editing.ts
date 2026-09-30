@@ -6,7 +6,6 @@
  */
 
 import { z } from "zod/v4";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, lightMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
@@ -18,62 +17,32 @@ import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import {
-  canEditProtectedArticle,
-  getWikiAuth,
-  isWikiAdmin,
+  getWikiActorLabel,
+  requireWikiUserId,
   resolveWikiUsername,
   type WikiAuthContext,
-  type WikiAuthIdentity,
 } from "~/lib/wiki-os/auth";
-import { checkEditPolicy } from "~/lib/wiki-os/namespace-policy";
-import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
-import { getVerifiedWikiUsername } from "~/lib/wiki-os/storage";
+import {
+  authorizeAction,
+  requireCanonicalTitle,
+  requireRight,
+} from "~/lib/wiki-os/permissions";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
 /**
- * Throws FORBIDDEN unless the caller may edit `title`: first its namespace (all WikiOS edits reach
- * MediaWiki through one shared bot account, so interface and project namespaces are admin-only;
- * see namespace-policy.ts), then its current protection level.
+ * Throws FORBIDDEN unless the caller may edit `title` (or create it, when it does not exist): not
+ * blocked, allowed in its namespace, past its protection, and holding the right (see
+ * `authorizeAction`). A deleted (archived) page counts as missing, as in MediaWiki.
  */
 async function assertCanEditArticle(
   ctx: WikiAuthContext,
   title: string,
   realm = "ixwiki"
-): Promise<WikiAuthIdentity> {
-  const identity = getWikiAuth(ctx);
-  const verifiedWikiUsername = identity.internalUserId
-    ? await getVerifiedWikiUsername(identity.internalUserId)
-    : null;
-  const policy = checkEditPolicy(title, {
-    isAdmin: identity.isAdmin,
-    linkedWikiUsername: verifiedWikiUsername,
-  });
-  if (!policy.allowed) {
-    throw new TRPCError({ code: "FORBIDDEN", message: policy.reason });
-  }
+): Promise<void> {
   const existing = await ArticleRepository.findBySlug(title, realm);
-  if (!canEditProtectedArticle(existing, identity, verifiedWikiUsername !== null)) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "This page is protected." });
-  }
-  return identity;
-}
-
-/** The canonical title of what the client sent; BAD_REQUEST when MediaWiki would refuse it. */
-function requireCanonicalTitle(rawTitle: string): string {
-  const canon = canonicalizeTitle(rawTitle);
-  if (!canon) throw new TRPCError({ code: "BAD_REQUEST", message: "That page title is not valid." });
-  return canon.title;
-}
-
-/** Archive/restore mirror MediaWiki delete/undelete, which are sysop rights. */
-function assertWikiAdmin(ctx: WikiAuthContext): void {
-  if (!isWikiAdmin(ctx)) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Only wiki administrators can archive or restore pages.",
-    });
-  }
+  const exists = existing !== null && existing.status !== "ARCHIVED";
+  await authorizeAction(ctx, exists ? "edit" : "create", title, realm);
 }
 
 export const wikiosEditingRouter = createTRPCRouter({
@@ -222,7 +191,7 @@ export const wikiosEditingRouter = createTRPCRouter({
     .input(z.object({ title: z.string().min(1).max(500) }))
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
-      await assertCanEditArticle(ctx, title);
+      await authorizeAction(ctx, "rollback", title);
 
       // Read-through: serve from shadow history with MySQL fallback
       const history = await getArticleHistoryShadow(title, 50);
@@ -284,6 +253,8 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await authorizeAction(ctx, "upload", `File:${input.filename.replace(/^(?:File|Image):/i, "")}`);
+
       // Validate file size (10MB max)
       const fileBuffer = Buffer.from(input.fileBase64, "base64");
       if (fileBuffer.length > 10 * 1024 * 1024) {
@@ -345,12 +316,14 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      assertWikiAdmin(ctx);
+      // The right first, so a caller without it learns nothing about which titles are valid.
+      await requireRight(ctx, "undelete");
       const title = requireCanonicalTitle(input.title);
+      await authorizeAction(ctx, "undelete", title);
       const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
       return PageManagementService.restoreArticle(
         title,
-        ctx.auth.userId || "anonymous",
+        { userId: requireWikiUserId(ctx), name: getWikiActorLabel(ctx) },
         input.realm
       );
     }),

@@ -6,6 +6,10 @@ jest.mock("~/server/db", () => ({
   db: {
     user: { findUnique: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
+    wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRevision: { count: jest.fn().mockResolvedValue(0) },
     auditLog: { create: jest.fn() },
   },
   isDatabaseReadOnly: true,
@@ -63,6 +67,7 @@ import {
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { db } from "~/server/db";
 
@@ -70,9 +75,9 @@ const createCaller = createCallerFactory(wikiosEditingRouter);
 
 /** The verified WikiAccountLink of the signed-in user (null = no verified link). */
 const mockVerifiedLink = (username: string | null) =>
-  (db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }).wikiAccountLink.findFirst.mockResolvedValue(
-    username ? { username } : null
-  );
+  (
+    db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }
+  ).wikiAccountLink.findFirst.mockResolvedValue(username ? { username } : null);
 
 const userCtx = (wikiUsername: string | null = null) =>
   createMockRouterContext({
@@ -80,8 +85,15 @@ const userCtx = (wikiUsername: string | null = null) =>
     user: { id: "db1", clerkUserId: "user_1", wikiUsername, role: { name: "user", level: 100 } },
   });
 
-const protectedArticle = (protectionLevel: string) =>
-  ({ protectionLevel, protectionExpiry: null }) as never;
+const existingArticle = () => ({ status: "PUBLISHED" }) as never;
+
+/** The page's title-keyed protection rows (plan 409: the restriction table is the source of truth). */
+const mockRestrictions = (...rows: Array<{ action: string; level: string }>) =>
+  (
+    db as unknown as { wikiRestriction: { findMany: jest.Mock } }
+  ).wikiRestriction.findMany.mockResolvedValue(rows.map((row) => ({ ...row, expiresAt: null })));
+
+beforeEach(() => mockRestrictions());
 
 describe("wikiosEditingRouter.saveWikitext", () => {
   beforeEach(() => {
@@ -89,7 +101,8 @@ describe("wikiosEditingRouter.saveWikitext", () => {
   });
 
   it("forbids saveWikitext on a SYSOP-protected page for a non-admin", async () => {
-    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(protectedArticle("SYSOP"));
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
+    mockRestrictions({ action: "edit", level: "sysop" });
     const caller = createCaller(userCtx("Linked") as never);
 
     await expect(caller.saveWikitext({ title: "Locked", wikitext: "x" })).rejects.toMatchObject({
@@ -102,7 +115,7 @@ describe("wikiosEditingRouter.saveWikitext", () => {
 describe("wikiosEditingRouter page management", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(protectedArticle("ALL"));
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
   });
 
   it("forbids restoreArticle for a non-admin", async () => {
@@ -316,7 +329,7 @@ describe("wikiosEditingRouter preview and restore canonical titles (plan 403)", 
 
     expect(PageManagementService.restoreArticle).toHaveBeenCalledWith(
       "Foo bar",
-      "system_owner_id",
+      { userId: "dbadmin", name: "Admin" },
       "ixwiki"
     );
   });
@@ -329,5 +342,151 @@ describe("wikiosEditingRouter preview and restore canonical titles (plan 403)", 
       createCaller(adminCtx() as never).restoreArticle({ title: "a[b" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(PageManagementService.restoreArticle).not.toHaveBeenCalled();
+  });
+});
+
+describe("wikiosEditingRouter rights (plan 409)", () => {
+  const mockGroups = (...groups: string[]) =>
+    (
+      db as unknown as { wikiUserGroup: { findMany: jest.Mock } }
+    ).wikiUserGroup.findMany.mockResolvedValue(groups.map((group) => ({ group, expiresAt: null })));
+  const mockBlocks = (...rows: Array<{ reason: string | null; allowUserTalk: boolean }>) =>
+    (db as unknown as { wikiBlock: { findMany: jest.Mock } }).wikiBlock.findMany.mockResolvedValue(
+      rows.map((row) => ({ ...row, expiresAt: null }))
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockVerifiedLink(null);
+    mockGroups();
+    mockBlocks();
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
+    jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
+      article: {} as never,
+      revisionId: "rev-1" as never,
+      extractedLinksCount: 0,
+    });
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValue({ wikitext: "old", title: "X", timestamp: "", fromShadow: true });
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [
+        {
+          revid: "r2",
+          user: "bob",
+          timestamp: "",
+          comment: "",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+        },
+        {
+          revid: "r1",
+          user: "amy",
+          timestamp: "",
+          comment: "",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+        },
+      ],
+      hasMore: false,
+      fromShadow: true,
+    });
+    jest.mocked(executeMediaWikiWrite).mockResolvedValue({ success: true, result: {} } as never);
+  });
+
+  it("refuses every write to a blocked user, with the block reason", async () => {
+    mockBlocks({ reason: "vandalism", allowUserTalk: true });
+    const caller = createCaller(userCtx("Linked") as never);
+
+    await expect(caller.saveWikitext({ title: "Caphiria", wikitext: "x" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringMatching(/^blocked: .*vandalism/),
+    });
+    await expect(caller.revertToRevision({ title: "Caphiria", revid: "r1" })).rejects.toMatchObject(
+      {
+        message: expect.stringMatching(/^blocked: /),
+      }
+    );
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+  });
+
+  it("holds create-protection against a new page, and an archived page counts as new", async () => {
+    mockRestrictions({ action: "create", level: "sysop" });
+    const caller = createCaller(userCtx("Linked") as never);
+
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+    await expect(caller.saveWikitext({ title: "Salted", wikitext: "x" })).rejects.toMatchObject({
+      message: expect.stringMatching(/^titleprotected: /),
+    });
+
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
+    await expect(caller.saveWikitext({ title: "Salted", wikitext: "x" })).rejects.toMatchObject({
+      message: expect.stringMatching(/^titleprotected: /),
+    });
+
+    // An existing page is not held by create-protection.
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(existingArticle());
+    await caller.saveWikitext({ title: "Salted", wikitext: "x" });
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+  });
+
+  it("rolls back only for the rollback right", async () => {
+    const caller = createCaller(userCtx("Linked") as never);
+    await expect(caller.rollback({ title: "Caphiria" })).rejects.toMatchObject({
+      message: expect.stringMatching(/^permissiondenied: /),
+    });
+    expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
+
+    mockGroups("rollbacker");
+    await caller.rollback({ title: "Caphiria" });
+    expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds a rollback to the page's edit protection", async () => {
+    mockGroups("rollbacker");
+    mockRestrictions({ action: "edit", level: "sysop" });
+    await expect(
+      createCaller(userCtx("Linked") as never).rollback({ title: "Caphiria" })
+    ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
+  });
+
+  it("uploads only for an autoconfirmed user, and never to a protected File: title", async () => {
+    const upload = { filename: "Flag.png", fileBase64: "AAAA" };
+
+    await expect(createCaller(userCtx(null) as never).uploadFile(upload)).rejects.toMatchObject({
+      message: expect.stringMatching(/^permissiondenied: /),
+    });
+    expect(executeMediaWikiWrite).not.toHaveBeenCalled();
+
+    mockVerifiedLink("Linked");
+    await createCaller(userCtx("Linked") as never).uploadFile(upload);
+    expect(executeMediaWikiWrite).toHaveBeenCalledTimes(1);
+
+    mockRestrictions({ action: "upload", level: "sysop" });
+    await expect(
+      createCaller(userCtx("Linked") as never).uploadFile({ ...upload, filename: "File:Flag.png" })
+    ).rejects.toMatchObject({ message: expect.stringMatching(/^protectedpage: /) });
+    expect(executeMediaWikiWrite).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets the IxStates admin role act as a sysop: edit Template:, roll back, but not edit site JS", async () => {
+    const adminRoleCtx = createMockRouterContext({
+      auth: { userId: "user_2" },
+      user: {
+        id: "db2",
+        clerkUserId: "user_2",
+        wikiUsername: "Mod",
+        role: { name: "admin", level: 10 },
+      },
+    });
+    const caller = createCaller(adminRoleCtx as never);
+
+    await caller.saveWikitext({ title: "Template:Infobox", wikitext: "x" });
+    await caller.rollback({ title: "Caphiria" });
+    await expect(
+      caller.saveWikitext({ title: "MediaWiki:Common.js", wikitext: "x" })
+    ).rejects.toMatchObject({ message: expect.stringMatching(/^namespaceprotected: /) });
   });
 });

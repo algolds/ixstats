@@ -7,7 +7,6 @@
 // See plans/wikios-workstream-c-packaging.md.
 
 import { TRPCError } from "@trpc/server";
-import { isSystemOwner } from "~/lib/auth";
 
 /** Minimal structural shape WikiOS needs from the request context. */
 export interface WikiAuthContext {
@@ -39,8 +38,6 @@ export interface WikiAuthIdentity {
   hasLegacyWikiUsername: boolean;
   /** Active country name if affiliated. */
   countryName: string | null;
-  /** Whether the user is system owner / wiki admin. */
-  isAdmin: boolean;
 }
 
 /** Sanitize a string to be a safe MediaWiki username. */
@@ -87,7 +84,6 @@ export function getWikiAuth(ctx: WikiAuthContext): WikiAuthIdentity {
   const countryName = ctx.user?.country?.name ?? null;
   const wikiUsername = resolveWikiUsername(ctx);
   const hasLegacyWikiUsername = Boolean(ctx.user?.wikiUsername?.trim());
-  const isAdmin = !!userId && isSystemOwner(userId);
 
   return {
     internalUserId,
@@ -95,29 +91,7 @@ export function getWikiAuth(ctx: WikiAuthContext): WikiAuthIdentity {
     wikiUsername,
     hasLegacyWikiUsername,
     countryName,
-    isAdmin,
   };
-}
-
-/**
- * Whether `identity` may edit an article with the given protection.
- * `null` (new page) is editable by anyone signed in; expired protection counts as "ALL";
- * "AUTOCONFIRMED" is approximated as "has a verified linked wiki account" (the caller resolves
- * `hasVerifiedWikiAccount` from `WikiAccountLink`); "SYSOP", "PROTECTED" and unknown levels are
- * admin-only.
- */
-export function canEditProtectedArticle(
-  article: { protectionLevel: string; protectionExpiry: Date | null } | null,
-  identity: WikiAuthIdentity,
-  hasVerifiedWikiAccount: boolean,
-  now: Date = new Date()
-): boolean {
-  if (article === null) return identity.userId !== null;
-  const expired = article.protectionExpiry !== null && article.protectionExpiry < now;
-  const level = expired ? "ALL" : article.protectionLevel;
-  if (level === "ALL") return identity.userId !== null;
-  if (level === "AUTOCONFIRMED") return identity.isAdmin || hasVerifiedWikiAccount;
-  return identity.isAdmin;
 }
 
 /** Require a signed-in user; throws UNAUTHORIZED otherwise. */
@@ -160,9 +134,11 @@ export function getWikiActorLabel(ctx: WikiAuthContext): string {
 }
 
 /**
- * Whether the current user has wiki-admin privileges.
+ * Whether the current user is a wiki administrator: they hold the `editprotected` right, which
+ * comes from the sysop group (explicit, or through their IxStates role). The rights engine is loaded
+ * lazily: it reads this seam's `getWikiAuth`, so a static import would be circular.
  */
-export function isWikiAdmin(ctx: WikiAuthContext): boolean {
-  const { isAdmin } = getWikiAuth(ctx);
-  return isAdmin;
+export async function isWikiAdmin(ctx: WikiAuthContext): Promise<boolean> {
+  const { getWikiPermissions } = await import("~/lib/wiki-os/rights");
+  return (await getWikiPermissions(ctx)).rights.has("editprotected");
 }

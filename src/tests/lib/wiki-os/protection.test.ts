@@ -1,59 +1,70 @@
 /** @jest-environment node */
-jest.mock("~/lib/auth", () => ({
-  __esModule: true,
-  isSystemOwner: () => false,
-}));
+// Plan 409: page protection is the title-keyed `wiki_restrictions` table, enforced by decideAction.
+// These are the scenarios the retired row-level check (WikiArticle.protectionLevel) covered.
+jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
+jest.mock("~/lib/auth", () => ({ __esModule: true, isSystemOwner: () => false }));
 
-import { canEditProtectedArticle, type WikiAuthIdentity } from "~/lib/wiki-os/auth";
+import { decideAction, type PageRestriction } from "~/lib/wiki-os/permissions";
+import { rightsForGroups, type Group, type WikiPermissions } from "~/lib/wiki-os/rights";
 
 const NOW = new Date("2026-09-27T12:00:00Z");
 const PAST = new Date("2026-09-01T00:00:00Z");
 const FUTURE = new Date("2026-12-01T00:00:00Z");
 
-const identity = (overrides: Partial<WikiAuthIdentity>): WikiAuthIdentity => ({
-  internalUserId: "db1",
-  userId: "user_1",
-  wikiUsername: "User_1",
-  hasLegacyWikiUsername: false,
-  countryName: null,
-  isAdmin: false,
-  ...overrides,
+const who = (groups: Group[]): WikiPermissions => ({
+  groups,
+  rights: rightsForGroups(groups),
+  block: null,
+  verifiedWikiUsername: null,
 });
 
-const plain = identity({});
-const legacyUsername = identity({ hasLegacyWikiUsername: true, wikiUsername: "Legacy" });
-const admin = identity({ isAdmin: true });
-const anonymous = identity({ userId: null, internalUserId: null, wikiUsername: null });
+const plain = who(["*", "user"]);
+// The legacy `User.wikiUsername` column grants nothing: such a user is just a plain user.
+const legacyUsername = who(["*", "user"]);
+// A verified wiki link autoconfirms.
+const verified = who(["*", "user", "autoconfirmed"]);
+const admin = who(["*", "user", "sysop"]);
+const anonymous = who(["*"]);
 
-const article = (protectionLevel: string, protectionExpiry: Date | null = null) => ({
-  protectionLevel,
-  protectionExpiry,
-});
+const restriction = (level: string, expiresAt: Date | null = null): PageRestriction[] => [
+  { action: "edit", level, expiresAt },
+];
 
-describe("canEditProtectedArticle", () => {
+describe("page protection (edit restrictions)", () => {
   it.each([
-    ["new page, signed in", null, plain, false, true],
-    ["ALL, signed in", article("ALL"), plain, false, true],
-    ["ALL, anonymous", article("ALL"), anonymous, false, false],
-    ["AUTOCONFIRMED, no verified account", article("AUTOCONFIRMED"), plain, false, false],
+    ["new page, signed in", "create", [], plain, true],
+    ["unprotected, signed in", "edit", [], plain, true],
+    ["unprotected, anonymous", "edit", [], anonymous, false],
     [
-      "AUTOCONFIRMED, legacy wikiUsername but no verified account",
-      article("AUTOCONFIRMED"),
-      legacyUsername,
-      false,
+      "autoconfirmed level, no verified account",
+      "edit",
+      restriction("autoconfirmed"),
+      plain,
       false,
     ],
-    ["AUTOCONFIRMED, verified account", article("AUTOCONFIRMED"), plain, true, true],
-    ["AUTOCONFIRMED, admin", article("AUTOCONFIRMED"), admin, false, true],
-    ["SYSOP, verified non-admin", article("SYSOP"), plain, true, false],
-    ["SYSOP, admin", article("SYSOP"), admin, false, true],
-    ["PROTECTED, verified non-admin", article("PROTECTED"), plain, true, false],
-    ["PROTECTED, admin", article("PROTECTED"), admin, false, true],
-    ["unknown level fails closed", article("SOMETHING_NEW"), plain, true, false],
-    ["unknown level, admin", article("SOMETHING_NEW"), admin, false, true],
-    ["expired SYSOP counts as ALL", article("SYSOP", PAST), plain, false, true],
-    ["unexpired SYSOP", article("SYSOP", FUTURE), plain, false, false],
-  ] as const)("%s", (_label, target, who, verified, expected) => {
-    expect(canEditProtectedArticle(target, who, verified, NOW)).toBe(expected);
+    [
+      "autoconfirmed level, legacy wikiUsername but no verified account",
+      "edit",
+      restriction("autoconfirmed"),
+      legacyUsername,
+      false,
+    ],
+    ["autoconfirmed level, verified account", "edit", restriction("autoconfirmed"), verified, true],
+    ["autoconfirmed level, admin", "edit", restriction("autoconfirmed"), admin, true],
+    ["sysop level, verified non-admin", "edit", restriction("sysop"), verified, false],
+    ["sysop level, admin", "edit", restriction("sysop"), admin, true],
+    ["unknown level fails closed", "edit", restriction("SOMETHING_NEW"), verified, false],
+    ["unknown level, admin", "edit", restriction("SOMETHING_NEW"), admin, true],
+    ["expired sysop level counts as unprotected", "edit", restriction("sysop", PAST), plain, true],
+    ["unexpired sysop level", "edit", restriction("sysop", FUTURE), plain, false],
+  ] as const)("%s", (_label, action, restrictions, permissions, expected) => {
+    const decision = decideAction({
+      action,
+      title: "Caphiria",
+      permissions,
+      restrictions: [...restrictions],
+      now: NOW,
+    });
+    expect(decision.allowed).toBe(expected);
   });
 });

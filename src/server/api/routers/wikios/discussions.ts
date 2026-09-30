@@ -364,7 +364,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     .input(z.object({ threadId: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
-      const admin = isWikiAdmin(ctx);
+      const admin = await isWikiAdmin(ctx);
       const prismaClient = db as any;
 
       const thread = await prismaClient.wikiDiscussionThread.findUnique({

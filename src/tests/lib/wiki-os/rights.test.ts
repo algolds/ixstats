@@ -14,6 +14,7 @@ jest.mock("~/lib/auth", () => ({
   isSystemOwner: (id: string) => id === "user_owner",
 }));
 
+import { isWikiAdmin } from "~/lib/wiki-os/auth";
 import {
   AUTOCONFIRM_AGE_MS,
   AUTOCONFIRM_EDIT_COUNT,
@@ -358,5 +359,20 @@ describe("getWikiPermissions: blocks", () => {
       expiresAt: null,
       allowUserTalk: false,
     });
+  });
+});
+
+describe("isWikiAdmin", () => {
+  it("is true for a sysop (through the admin role or an explicit group) and false for anyone else", async () => {
+    expect(await isWikiAdmin(ctxFor({ role: "admin" }))).toBe(true);
+    expect(await isWikiAdmin(ctxFor({ clerk: "user_owner" }))).toBe(true);
+    expect(await isWikiAdmin(ctxFor())).toBe(false);
+    groupRows = [{ userId: "db1", group: "sysop", expiresAt: null }];
+    expect(await isWikiAdmin(ctxFor())).toBe(true);
+  });
+
+  it("is false for an interface-admin who is not a sysop (editprotected is the admin right)", async () => {
+    groupRows = [{ userId: "db1", group: "interface-admin", expiresAt: null }];
+    expect(await isWikiAdmin(ctxFor())).toBe(false);
   });
 });
