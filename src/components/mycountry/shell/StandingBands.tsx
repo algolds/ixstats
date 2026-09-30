@@ -48,20 +48,17 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     { enabled: !!countryId, refetchInterval: 20_000 }
   );
 
-  // 1. Live Public Approval Rating
+  // 1. Public Approval (Country.publicApproval, 0-100) — moved by issues and directives
   const approvalPct = useMemo(() => {
-    const raw =
-      country?.currentPublicApproval ??
-      country?.approvalRating ??
-      68;
-    return Math.round(raw > 1 ? raw : raw * 100);
-  }, [country?.currentPublicApproval, country?.approvalRating]);
+    const raw = country?.publicApproval;
+    return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
+  }, [country?.publicApproval]);
 
-  // 2. Live Political Stability
+  // 2. Stability (InternalStabilityMetrics.stabilityScore, 0-100); null until it is computed
   const stabilityPct = useMemo(() => {
-    const raw = country?.currentStability ?? country?.stability ?? 0.78;
-    return Math.round(raw > 1 ? raw : raw * 100);
-  }, [country?.currentStability, country?.stability]);
+    const raw = country?.stabilityMetrics?.stabilityScore;
+    return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
+  }, [country?.stabilityMetrics?.stabilityScore]);
 
   // 3. Live Statecraft Civil Capacity Throughput
   const usedSlots = intentStatus.data?.usedThisWeek ?? 0;
@@ -217,7 +214,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                       Approval
                     </span>
                     <span className="text-foreground truncate text-xs leading-tight font-bold tabular-nums">
-                      {approvalPct}%
+                      {approvalPct === null ? "—" : `${approvalPct}%`}
                     </span>
                   </div>
                 </div>
@@ -229,7 +226,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                       Stability
                     </span>
                     <span className="text-foreground truncate text-xs leading-tight font-bold tabular-nums">
-                      {stabilityPct}%
+                      {stabilityPct === null ? "—" : `${stabilityPct}%`}
                     </span>
                   </div>
                 </div>

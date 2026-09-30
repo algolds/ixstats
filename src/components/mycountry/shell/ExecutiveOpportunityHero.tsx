@@ -122,8 +122,9 @@ function ExecutiveOpportunityHeroComponent({
     const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
     const dipStance = country?.diplomaticStance ?? "Active Alliance";
 
-    const rawStab = country?.currentStability ?? country?.stability ?? 0.78;
-    const stabPct = Math.round(rawStab > 1 ? rawStab : rawStab * 100);
+    // InternalStabilityMetrics.stabilityScore (0-100); omitted until it has been computed
+    const rawStab = country?.stabilityMetrics?.stabilityScore;
+    const stabilityNote = typeof rawStab === "number" ? ` (${Math.round(rawStab)}% Stability)` : "";
 
     const rawGrowth = country?.gdpGrowth ?? country?.currentGdpGrowth ?? 0.034;
     const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
@@ -291,7 +292,7 @@ function ExecutiveOpportunityHeroComponent({
         description:
           "National economic telemetry indicates favorable conditions for targeted industrial investment and fiscal policy stimulus.",
         metricLabel: "GDP Growth",
-        metricValue: `+${growthPct}% Growth (${stabPct}% Stability)`,
+        metricValue: `+${growthPct}% Growth${stabilityNote}`,
         directiveGoal:
           "Implement targeted macroeconomic development directive and tax incentive package",
         icon: TrendingUp,

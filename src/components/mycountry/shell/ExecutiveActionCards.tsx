@@ -101,8 +101,7 @@ interface CountryPeekData {
   readiness?: number;
   defensePosture?: string;
   posture?: string;
-  currentStability?: number;
-  stability?: number;
+  stabilityMetrics?: { stabilityScore?: number | null } | null;
   gdpGrowth?: number;
   currentGdpGrowth?: number;
 }
@@ -144,8 +143,10 @@ export const DOMAIN_TILES: {
     graphic: PoliticsGraphic,
     badgeCls: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
     getPeek: (c) => {
-      const raw = c?.currentStability ?? c?.stability ?? 0.78;
-      return `${Math.round(raw > 1 ? raw : raw * 100)}% Stability • Active Cabinet`;
+      const score = c?.stabilityMetrics?.stabilityScore;
+      return typeof score === "number"
+        ? `${Math.round(score)}% Stability • Active Cabinet`
+        : "Stability pending • Active Cabinet";
     },
   },
   {

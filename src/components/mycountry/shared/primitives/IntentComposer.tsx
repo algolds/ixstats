@@ -17,6 +17,7 @@ import {
 import { api } from "~/trpc/react";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import { cn } from "~/lib/utils";
+import { describeConsequenceBadge } from "~/lib/intent/consequence-labels";
 import type { RouterOutputs } from "~/trpc/react";
 import { useCountryData } from "./CountryDataProvider";
 import { DirectivePresetsCatalog, DOMESTIC_SUGGESTIONS } from "./composer/DirectivePresetsCatalog";
@@ -94,7 +95,7 @@ export const IntentComposer = React.memo(function IntentComposer({
 
   const handleSurpriseMe = useCallback(() => {
     const crime = country?.crimeRate ?? 40;
-    const approval = country?.approvalRating ?? 65;
+    const approval = country?.publicApproval ?? 65;
     const readiness = (country as { militaryReadiness?: number | null })?.militaryReadiness ?? 75;
 
     let candidates = DOMESTIC_SUGGESTIONS;
@@ -399,27 +400,34 @@ export const IntentComposer = React.memo(function IntentComposer({
                 )}
 
                 {/* Consequences Badges */}
-                {activePackage?.consequences && activePackage.consequences.length > 0 && (
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {activePackage.consequences.map((cons, idx) => {
-                      const isPositive = cons.operation === "add";
-                      return (
-                        <span
-                          key={idx}
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-xs font-extrabold",
-                            isPositive
-                              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-950 dark:text-emerald-300"
-                              : "border-red-500/40 bg-red-500/15 text-red-950 dark:text-red-300"
-                          )}
-                        >
-                          {isPositive ? "+" : "-"}
-                          {cons.value} {cons.targetField}
+                {activePackage &&
+                  (activePackage.consequences.length > 0 ||
+                    activePackage.gdpGrowthModifier > 0) && (
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {activePackage.consequences.map((cons, idx) => {
+                        const badge = describeConsequenceBadge(cons);
+                        return (
+                          <span
+                            key={idx}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-extrabold tabular-nums",
+                              badge.favorable
+                                ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-950 dark:text-emerald-300"
+                                : "border-red-500/40 bg-red-500/15 text-red-950 dark:text-red-300"
+                            )}
+                          >
+                            {badge.text}
+                          </span>
+                        );
+                      })}
+                      {activePackage.gdpGrowthModifier > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-950 tabular-nums dark:text-emerald-300">
+                          GDP growth rate +{(activePackage.gdpGrowthModifier * 100).toFixed(1)}%
+                          for 1 year
                         </span>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
 
                 {/* Aligned Power Broker Status */}
                 {suggestQuery.data?.broker && (
