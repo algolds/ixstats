@@ -75,9 +75,15 @@ cd "$IXSTATS_DIR"
 # Auto git sync if in production VPS directory
 if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
     log "Production directory detected. Force-syncing with the latest git commit..."
-    CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "v2")
+    CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "master")
     if [ -z "$CURRENT_BRANCH" ]; then
-        CURRENT_BRANCH="v2"
+        CURRENT_BRANCH="master"
+    fi
+    # Production deploys master (rose-garden is nightly, development is stable-experimental;
+    # see docs/processes/contributing.md#branches). Override only on purpose.
+    if [ "$CURRENT_BRANCH" != "master" ] && [ "${ALLOW_NON_MASTER_DEPLOY:-}" != "1" ]; then
+        log "ERROR: Refusing to deploy branch '$CURRENT_BRANCH' to production: check out master, or set ALLOW_NON_MASTER_DEPLOY=1"
+        exit 1
     fi
     log "Fetching $CURRENT_BRANCH from master and resetting --hard to FETCH_HEAD..."
     git fetch master "$CURRENT_BRANCH"
