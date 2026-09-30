@@ -10,6 +10,8 @@ Authoritative index for all active build, deployment, database, audit, diagnosti
 scripts/
 ├── README.md                     # Single authoritative index (this document)
 ├── audit/                        # Architecture guard (audit-arch.ts) & test validation suites (see audit/README.md)
+├── bench/                        # WikiOS vs MediaWiki benchmark (wikios-bench.ts) and its default page list
+├── lib/                          # Shared helpers for the WikiOS bench/parity/round-trip scripts (wikios-harness.ts)
 ├── verification/                 # CI gates: partitioned typecheck runner, Jest quarantine runner, entrypoint check, verify-strict
 ├── docs/                         # Reference-doc synchronizer (docs:sync / docs:check)
 ├── setup/                        # Database seeders, init, backup/restore, asset generators, Clerk/auth checks
@@ -71,6 +73,9 @@ scripts/
 | [`scripts/audit-flag-urls.ts`](audit-flag-urls.ts) | Audits and validates country flag URLs against MediaWiki endpoints (`bun run audit:flags`). |
 | [`scripts/audit-production-urls.ts`](audit-production-urls.ts) | Validates production route 200 HTTP responses (`bun run audit:urls`). |
 | [`scripts/prod-audit.ts`](prod-audit.ts) | Deep production readiness audit suite. |
+| [`scripts/bench/wikios-bench.ts`](bench/wikios-bench.ts) | **WikiOS vs MediaWiki speed**: times article page, `wikios.getArticleHtml`, search and history on both systems (p50/p75, cold/warm, script/CSS weight) over `bench/pages.default.json`; throttled, `IxStats-Builder` UA. `bun scripts/bench/wikios-bench.ts --mw https://ixwiki.com --wikios http://localhost:3000`. |
+| [`scripts/audit/wikios-render-parity.ts`](audit/wikios-render-parity.ts) | **WikiOS render parity**: scores WikiOS HTML against MediaWiki `action=parse` per page (text, links, images, headings, tables, infobox) and lists the templates on the lowest-scoring pages. `bun scripts/audit/wikios-render-parity.ts --mw-api https://ixwiki.com/api.php --wikios http://localhost:3000`. |
+| [`scripts/audit/wikios-roundtrip.ts`](audit/wikios-roundtrip.ts) | **Visual-editor round trip**: runs each page's wikitext (local DB, read-only, or MediaWiki) through the editor's load/save pipeline without edits and reports byte-identical share plus changed lines by construct. `bun scripts/audit/wikios-roundtrip.ts --source db --limit 20`. |
 
 ---
 
