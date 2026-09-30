@@ -15,8 +15,7 @@ import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { AnimatePresence } from "motion/react";
-import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 
 // Hooks
 import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";
@@ -131,103 +130,38 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
   return (
     <div className="space-y-5">
-      {/* ─── Sub-Tab Navigation Bar ─── */}
-      <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
-        <button
-          type="button"
-          data-cuelume-press="soft"
-          onClick={() => {
-            soundEffects.press();
-            setActiveTab("embassies");
-          }}
-          className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-            activeTab === "embassies"
-              ? "border border-amber-500/40 bg-amber-500/20 text-amber-500 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-          )}
-        >
-          <Building2 className="h-4 w-4" />
-          <span>Embassy Network</span>
-          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-xs">
-            {stats.activeEmbassies}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-cuelume-press="soft"
-          onClick={() => {
-            soundEffects.press();
-            setActiveTab("relations");
-          }}
-          className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-            activeTab === "relations"
-              ? "border border-blue-500/40 bg-blue-500/20 text-blue-400 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-          )}
-        >
-          <Handshake className="h-4 w-4" />
-          <span>Bilateral Relations</span>
-          <span className="rounded-full bg-blue-500/20 px-2 py-0.5 font-mono text-xs">
-            {stats.totalRelations}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-cuelume-press="soft"
-          onClick={() => {
-            soundEffects.press();
-            setActiveTab("alliances");
-          }}
-          className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-            activeTab === "alliances"
-              ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-400 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-          )}
-        >
-          <Users className="h-4 w-4" />
-          <span>Alliances & Blocs</span>
-          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 font-mono text-xs">
-            {stats.allianceCount}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-cuelume-press="soft"
-          onClick={() => {
-            soundEffects.press();
-            setActiveTab("exchanges");
-          }}
-          className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-            activeTab === "exchanges"
-              ? "border border-blue-500/40 bg-blue-500/20 text-blue-400 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-          )}
-        >
-          <Palette className="h-4 w-4" />
-          <span>Cultural Exchanges</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("events")}
-          className={cn(
-            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-            activeTab === "events"
-              ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-          )}
-        >
-          <FileText className="h-4 w-4" />
-          <span>Diplomatic Events</span>
-        </button>
-      </div>
+      {/* ─── Sub-Tab Navigation Bar (shared with the other domain sections) ─── */}
+      <SectionTabBar
+        tabs={[
+          {
+            id: "embassies",
+            label: "Embassy Network",
+            icon: Building2,
+            badge: stats.activeEmbassies,
+            activeClassName:
+              "border-amber-500/40 bg-amber-500/20 text-amber-700 dark:text-amber-400",
+          },
+          {
+            id: "relations",
+            label: "Bilateral Relations",
+            icon: Handshake,
+            badge: stats.totalRelations,
+            activeClassName: "border-blue-500/40 bg-blue-500/20 text-blue-700 dark:text-blue-400",
+          },
+          {
+            id: "alliances",
+            label: "Alliances & Blocs",
+            icon: Users,
+            badge: stats.allianceCount,
+            activeClassName: "border-cyan-500/40 bg-cyan-500/20 text-cyan-700 dark:text-cyan-400",
+          },
+          { id: "exchanges", label: "Cultural Exchanges", icon: Palette },
+          { id: "events", label: "Diplomatic Events", icon: FileText },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        activeClassName="border-blue-500/40 bg-blue-500/20 text-blue-700 dark:text-blue-400"
+      />
 
       {/* ─── Tab Content Views ─── */}
       {activeTab === "embassies" && (

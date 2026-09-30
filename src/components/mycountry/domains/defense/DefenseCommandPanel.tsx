@@ -10,8 +10,7 @@ import {
   Group as Users,
   SystemRestart as Loader2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 
 // Lazy-load heavy panels per active tab
 const CommandPanel = dynamic(
@@ -108,29 +107,13 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
 
   return (
     <div className="space-y-4">
-      {/* Facet Segmented Sub-Tab Switcher */}
-      <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            data-cuelume-press="soft"
-            onClick={() => {
-              soundEffects.press();
-              setActiveTab(id);
-            }}
-            className={cn(
-              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              activeTab === id
-                ? "border border-red-500/40 bg-red-500/20 text-red-400 shadow-sm"
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Sub-tab switcher (shared with the other domain sections) */}
+      <SectionTabBar
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        activeClassName="border-red-500/40 bg-red-500/20 text-red-700 dark:text-red-400"
+      />
 
       {activeTab === "branches" && <CommandPanel countryId={countryId} />}
       {activeTab === "threats" && <BorderThreatPanel countryId={countryId} />}

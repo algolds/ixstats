@@ -76,12 +76,12 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   return (
     <Card className="facet-hierarchy-child">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-red-600" />
-          Strategic Readiness Overview
+        <CardTitle className="flex min-w-0 items-center gap-2 leading-snug">
+          <Target className="h-5 w-5 shrink-0 text-red-600" />
+          <span className="min-w-0">Strategic Readiness Overview</span>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Button variant="ghost" size="sm" className="h-6 w-6 shrink-0 p-0">
                 <HelpCircle className="text-muted-foreground hover:text-primary h-4 w-4" />
               </Button>
             </DialogTrigger>
@@ -133,13 +133,13 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
         <CardDescription>Aggregate readiness metrics across all branches</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-3 gap-6">
-          <div className="space-y-1.5">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="min-w-0 space-y-1.5">
+            <div className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs font-semibold">
               <Shield className="h-3.5 w-3.5 shrink-0 text-red-400" />
-              <span className="truncate">Overall Readiness</span>
+              <span className="truncate" title="Overall Readiness">Readiness</span>
             </div>
-            <div className="text-foreground font-mono text-xl font-bold tabular-nums">
+            <div className="text-foreground font-mono text-lg font-bold tabular-nums">
               {Math.min(
                 100,
                 Math.max(
@@ -155,12 +155,12 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
+          <div className="min-w-0 space-y-1.5">
+            <div className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs font-semibold">
               <Activity className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
-              <span className="truncate">Technology Level</span>
+              <span className="truncate" title="Technology Level">Technology</span>
             </div>
-            <div className="text-foreground font-mono text-xl font-bold tabular-nums">
+            <div className="text-foreground font-mono text-lg font-bold tabular-nums">
               {Math.min(
                 100,
                 Math.max(
@@ -176,12 +176,12 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
+          <div className="min-w-0 space-y-1.5">
+            <div className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs font-semibold">
               <Users className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-              <span className="truncate">Force Morale</span>
+              <span className="truncate" title="Force Morale">Morale</span>
             </div>
-            <div className="text-foreground font-mono text-xl font-bold tabular-nums">
+            <div className="text-foreground font-mono text-lg font-bold tabular-nums">
               {Math.min(
                 100,
                 Math.max(0, Math.round(averageMorale > 1 ? averageMorale : averageMorale * 100))
@@ -196,15 +196,15 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
         </div>
 
         {/* Strategic Defense Posture & DEFCON Selectors */}
-        <div className="mt-4 grid grid-cols-1 gap-2.5 border-t border-white/10 pt-3 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-2.5 border-t border-white/10 pt-3">
           {/* DEFCON Level Selector */}
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
-            <div className="mb-1.5 flex items-center justify-between">
+            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1">
               <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 DEFCON Alert Status
               </span>
               <span className={cn("rounded-md border px-1.5 py-0.5 font-mono text-xs font-bold", activeDefcon.cls)}>
-                {activeDefcon.readinessMod} · {activeDefcon.costMod}
+                {activeDefcon.status} · {activeDefcon.readinessMod} · {activeDefcon.costMod}
               </span>
             </div>
             <div className="grid grid-cols-5 gap-1">
@@ -218,15 +218,16 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                     setDefcon(d.level);
                   }}
                   className={cn(
-                    "flex cursor-pointer flex-col items-center justify-center rounded-lg border py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] text-center select-none active:scale-95",
+                    "flex min-w-0 cursor-pointer flex-col items-center justify-center rounded-lg border px-0.5 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] text-center select-none active:scale-95",
                     defcon === d.level
                       ? `${d.cls} font-bold shadow-xs scale-[1.02]`
                       : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
                   )}
                   title={`${d.label}: ${d.status} (${d.costMod}, ${d.readinessMod})`}
                 >
+                  {/* Five columns in the rail are too narrow for the status words; the
+                      selected level's status is shown in the header pill instead. */}
                   <span className="text-xs font-mono font-bold leading-tight">{d.level}</span>
-                  <span className="text-xs font-medium leading-none opacity-80">{d.status}</span>
                 </button>
               ))}
             </div>
@@ -234,7 +235,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
 
           {/* Force Projection Goal */}
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
-            <div className="mb-1.5 flex items-center justify-between">
+            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1">
               <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Force Projection Goal
               </span>
@@ -253,15 +254,15 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                     setProjection(p.id);
                   }}
                   className={cn(
-                    "flex cursor-pointer flex-col items-start rounded-lg border px-2 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
+                    "flex min-w-0 cursor-pointer flex-col items-start rounded-lg border px-2 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
                     projection === p.id
                       ? "border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold shadow-xs"
                       : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
                   )}
                   title={p.desc}
                 >
-                  <span className="text-xs font-semibold leading-tight">{p.label}</span>
-                  <span className="text-xs opacity-70 truncate max-w-full">{p.desc}</span>
+                  <span className="w-full truncate text-xs font-semibold leading-tight">{p.label}</span>
+                  <span className="w-full truncate text-xs opacity-70">{p.desc}</span>
                 </button>
               ))}
             </div>

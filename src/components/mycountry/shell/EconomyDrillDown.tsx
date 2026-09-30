@@ -16,7 +16,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 
 const BudgetManagementDashboard = dynamic(
   () =>
@@ -192,29 +192,13 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
 
   return (
     <div className="space-y-4">
-      {/* Facet Segmented Sub-Tab Switcher — Apple Segmented Control */}
-      <div className="bg-card/60 border-border/40 grid w-full grid-cols-2 gap-1.5 rounded-2xl border p-1.5 shadow-inner backdrop-blur-xl sm:grid-cols-4">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            data-cuelume-press="soft"
-            onClick={() => {
-              soundEffects.press();
-              setActiveTab(id);
-            }}
-            className={cn(
-              "flex w-full cursor-pointer items-center justify-center gap-2 truncate rounded-xl px-3 py-2 text-center text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-              activeTab === id
-                ? "border border-emerald-500/40 bg-emerald-500/20 text-emerald-950 dark:text-emerald-300 shadow-xs"
-                : "text-muted-foreground hover:bg-muted/20 hover:text-foreground border border-transparent"
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Sub-tab switcher (shared with the other domain sections) */}
+      <SectionTabBar
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        activeClassName="border-emerald-500/40 bg-emerald-500/20 text-emerald-950 dark:text-emerald-300"
+      />
 
       {activeTab === "macro" && (
         <div className="space-y-4">
