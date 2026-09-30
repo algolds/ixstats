@@ -13,7 +13,8 @@ comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versionin
 ## 🗺️ Start here
 
 - **What's live** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
-- **What's pending** — [roadmap/pending-features.md](roadmap/pending-features.md) (security findings, broken loops, unfinished and unstarted features, tech debt)
+- **The roadmap** — [roadmap/ROADMAP.md](roadmap/ROADMAP.md) (milestones M0–M7, dependencies, owner decisions)
+- **What's pending** — [roadmap/pending-features.md](roadmap/pending-features.md) (doc-based backlog) · [roadmap/code-audit-2026-09-30.md](roadmap/code-audit-2026-09-30.md) (code-level findings, incl. security and economy exploits)
 - **Platform overview** — [overview/platform.md](overview/platform.md)
 - **Local dev setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
 - **Production deployment** — [operations/deployment.md](operations/deployment.md) · current release runbook: [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md)
@@ -109,7 +110,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | :--- | :--- | :--- | :---: |
 | **Facet** | [reference/facet-design-system.md](reference/facet-design-system.md) | Materials, depth, Radix primitives, Cuelume, motion | ✅ Live |
 | **Halo** | [systems/halo.md](systems/halo.md) | Contextual overlay, plugins, `Cmd+K` palette | ✅ Live |
-| **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) · [app README](../src/app/admin/README.md) | 39 admin sections, reference catalogs, RBAC, audit logging | ✅ Live |
+| **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) · [app README](../src/app/admin/README.md) | 39 admin sections, reference catalogs, RBAC; the audit log currently persists nothing (PL-1) | 🟡 Partial |
 | **Help center** | [systems/help.md](systems/help.md) · [app README](../src/app/help/README.md) | Markdown help in `src/content/help/` | 🟡 Partial |
 
 ### 🧪 Labs

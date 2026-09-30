@@ -2,7 +2,9 @@
 
 **Compiled:** 2026-09-29 from a doc-by-doc audit of `docs/`, the `src/**/README.md` files and the in-app help, each
 claim checked against the code on `rose-garden`.
-**Companion:** [System Status](../systems/SYSTEM_STATUS.md) lists what is live.
+**Companion:** [System Status](../systems/SYSTEM_STATUS.md) lists what is live. **The plan** built from this backlog is
+[ROADMAP.md](ROADMAP.md); a follow-up code-level audit ([code-audit-2026-09-30.md](code-audit-2026-09-30.md)) found
+~130 more items, including 16 security and economy exploits, and corrects several entries below.
 
 Every item here is something a doc promised, planned or assumed that the code does not do today. Items are grouped by
 kind, then by system. "Source" points to the doc that describes the intended behaviour.
@@ -27,22 +29,22 @@ masked in the admin config; sports season and simulation procedures require the 
 
 | Item | Where | Detail |
 |---|---|---|
+| **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](ROADMAP.md#m0--integrity-security--economy-exploits) |
 | Rotate the read-only DB password | `ixstats_readonly` role (plan 325) | The old password is in git history since 2026-05-31; the script no longer contains it, but the credential itself must be changed on the server |
-| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | Waits on removing the nginx/Cloudflare header override |
+| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | The nonce is set only on the response headers, so the page never receives it (PL-2); fix that, test in staging, then remove the nginx/Cloudflare override |
 
 ## 2. Broken or regressed features
 
 | Item | System | Detail |
 |---|---|---|
-| Follow-up elections never resolve | MyCountry › Politics | Plan 312 deleted `registerCandidate`, `scheduleElection` and `simulateElection`; the cron schedules the next election with no candidates ([elections.md](../systems/elections.md)) |
+| Elections and legislation can't work | MyCountry › Politics | Nothing creates a first `Election` or any `ElectionCandidate` outside the demo seed, and seats have no party, so `holdVote` always fails and no bill can pass. Plan 312 deleted `registerCandidate`, `scheduleElection` and `simulateElection` (MC-2, M–L; [elections.md](../systems/elections.md)) |
 | Cabinet meetings can't conclude | MyCountry | `completeMeeting` and the decision/implement mutations were deleted (plans 312/332); meetings are schedule-only |
 | Crafting fails end to end | Vault | `/vault/crafting` sends card IDs where `CardOwnership` IDs are expected; `successRate` 0–1 vs 0–100; seed uses fields and a `MYTHIC` rarity the schema lacks ([cards.md](../systems/cards.md)) |
 | Vexel attach-to-country blanks the coat of arms | Labs › Vexel | Writes an empty `coatOfArms` to `Country` |
 | `/mycountry/map-editor` has no surface | MyCountry | The route falls through to the Executive home |
 | `/admin/calculations` 404s on reload | Admin | No `page.tsx`; works only via client routing |
 | Topic links 404 | ThinkPages | `PostBody.tsx:61` links `/thinkpages/topic/<slug>`, which has no route |
-| Premium check disagrees for owners/admins | Premium | Client ability check passes them; `premiumMiddleware` blocks them |
-| "Cabinet Research" shown with `STATECRAFT_SPINE` off | MyCountry | The action is visible but the recon spine is disabled by default |
+| Premium check disagrees | Premium | Three definitions: `lib/tier-utils.ts` (also counts `premium`/`executive`), `premiumMiddleware`/`getMembershipStatus` (`mycountry_premium` only), and `ability.ts` (also passes owners, admins, staff) |
 | `db.ts` runs `syncAchievements` on import | Platform | Fires whenever the module loads, including in scripts |
 | Defense/Intelligence admin toggles do nothing | Admin › MyCountry | `showDefenseTab` / `showIntelligenceTab` only feed `MyCountrySidebarNav`, which nothing renders; the command bar and mobile menu show both to everyone |
 | Auctions filter offers "Mythic" | Vault | Not a `CardRarity` value |
@@ -62,13 +64,13 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
 - **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../architecture/autosave.md)).
 - **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../systems/calculations.md)).
-- **Delete dead code:** `VitalitySnapshot` (never written) and `src/lib/intelligence/*`.
+- **Delete dead code:** `src/lib/intelligence/calculator.ts` and `live-data-transformers.ts` (~1,480 lines) with the `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models they alone write. `lib/intelligence/cache.ts` and `engine.ts` are live.
 
 ### Atlas & Realms
 - **Map editor inspector** ([2026-09-11 spec](../superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)):
   - coastline/perimeter/transport-density telemetry, Köppen chip, metric/imperial toggle, WikiOS status chip and thumbnail, Narrative Lore card;
   - geometry actions: Snap to River, Calculate Centroid, Simplify Polygon, Snap Vertices to Cities, Smooth Spline;
-  - batch alignment, batch parent assignment, batch delete;
+  - batch alignment and batch parent assignment (batch delete and batch edit already exist);
   - optimistic history updates.
 - **Topology validation:** cross-country gap/overlap checks on save (only PostGIS validity today).
 - **Named rivers/lakes → trade modifiers:** `computeEconomicGeoModifiers` ignores named features.
@@ -76,14 +78,14 @@ masked in the admin config; sports season and simulation procedures require the 
 ### WikiOS
 - **Export durability:** the MediaWiki export queue is in memory and lost on restart; per-user actor attribution is a no-op.
 - **Margin:** `toggleCommentReaction`, `deleteComment`, the Stash tab, and un-hiding the Inspect tab (`WikiMarginDrawer.tsx:157`) ([margin spec](../systems/wikios/wikios-margin-spec.md)).
-- **Stash share links:** `?stash=` is never read.
+- **Stash share links:** `?stash=` is never read, and stashes have no visibility field or public read path (M, schema change).
 - **Guardian:** mass-blanking and homoglyph abuse filter.
 - **Portability:** `transformers/html-transformer.ts` hard-codes `https://ixwiki.com/`.
 - **Duplicate routes:** four dynamic pages exist under both `/wiki` and `/util`.
 
 ### Vault
-- **Packs:** enforce `guaranteedRarity` and `themeFilter`; wire the Keep/List quick actions; add pack artwork and sound assets.
-- **NATION cards:** automatic per-country minting (only daily re-pricing exists).
+- **Packs:** enforce `guaranteedRarity` (set on 16 of 20 packs) and `themeFilter` (the `cardType`/`season` filters already work); wire the Keep/List quick actions; add pack artwork (the sounds are silenced on purpose in favour of Cuelume).
+- **NATION cards:** automatic per-country minting. The `card-values` job (every 6 hours, off by default) does nothing today, because no NATION card has a `countryId`.
 - **Achievements:** background evaluation (today they unlock only when `/achievements` is visited).
 - **NS dump sync:** schedule it (admin-triggered today).
 - **Premium:** real yield multiplier (`isPremium` hard-coded false in `vault-ledger.ts`); enforce tier limits.
@@ -98,8 +100,8 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Vexel:** add to the Labs menu; full external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../specs/vexel-prd.md)).
 
 ### Platform
-- **Rate limiting:** cover more than the ~100 of ~960 procedures limited today; `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../operations/rate-limiting.md)).
-- **Admin audit log:** record all mutations, not only `execute` paths and errors.
+- **Rate limiting:** 347 of 958 procedures use a rate-limited builder, but 274 of those are admin procedures: only 73 non-admin procedures are limited, and 228 protected mutations are not; `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../operations/rate-limiting.md)).
+- **Admin audit log:** it persists nothing today (PL-1): tRPC v11 `next()` returns `{ ok: false }` rather than throwing, and no admin path contains "execute".
 - **Admin cache:** evict/flush (only `getStats` exists).
 - **Help center:** register the unregistered articles and add sections for shipped systems (see §7).
 
@@ -107,14 +109,14 @@ masked in the admin config; sports season and simulation procedures require the 
 
 ### Realms Phases 2–4 ([realms-framework-spec.md](../architecture/realms-framework-spec.md))
 - Public founding application (decisions 6–7)
-- Founder tooling: settings, moderation, removing nations, succession; use the recorded `lastSeenAt` (decisions 20–21)
+- Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` (decisions 20–21). Part of the backend exists (`canModerateRealm`, founder claim review); founders just can't be assigned (AT-8)
 - Archived realms: read-only, excluded from crons and payouts (decision 21)
 - Per-realm ThinkPages feed and a global-feed setting (decision 2)
 - WikiOS front page as a portal to every realm's lore; realm-tagged forum (decision 3)
 - Passport realm/nation switcher and nav chip (decision 22)
-- Per-realm calendar label (`yearOffset`)
+- Per-realm calendar label (no `yearOffset` field exists; needs a new realm settings key)
 - Builder prefill from a claimed nation page (Eurth E-f)
-- Procedural realm generation (`Realm.seed`, `generationParams`, `templateId`, status `generating` are never written)
+- Procedural realm generation: `runPipeline` already accepts a `procedural` source; the wizard option and the `Realm.seed` / `generationParams` writes are missing (M)
 
 ### MyCountry statecraft ([design PRDs](../systems/mycountry-design-philosophy-and-prds.md), [game loops](../systems/statecraft/statecraft-game-loops.md))
 - Intent DAG with Vision / Strategic / Operational layers, `NationalIntent` / `IntentDependency`, Blocked → Proposed (:274, :318, :333)
@@ -166,7 +168,7 @@ masked in the admin config; sports season and simulation procedures require the 
 ### Platform & integrations
 - Hugging Face Space offload for Whisper and an LLM ([huggingface-spaces-guide.md](../operations/huggingface-spaces-guide.md))
 - Browser end-to-end tests (Playwright isn't installed)
-- Telemetry opt-out / global discoverability settings: schema flags exist, UI was removed on 2026-08-24, nothing enforces them
+- Telemetry opt-out / global discoverability settings: the toggles are back in the Privacy panel and nothing enforces them — part of the wider unenforced Privacy & Safety panel (SL-4)
 - WikiOS Stage 3 MediaWiki isolation: nginx lockdown, 301s, `LocalSettings`, internal `WIKIOS_MEDIAWIKI_API` endpoint; namespace-redirect decisions undecided ([stage3 plan](../systems/wikios/wikios-stage3-config-plan.md))
 - WikiOS Workstream C packaging: decouple Clerk, the IxStats DB and templates ([longevity workflow](../systems/wikios/wikios-longevity-workflow.md))
 - Lore-card portfolio boosts ([lore-lifecycle.md](../systems/lore-lifecycle.md))
@@ -176,8 +178,8 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Postgres backup/restore:** `db:backup` and `db:restore` are stubs; production uses `pg_dump` by hand.
 - **`deploy:rollback`:** a v1.2-era script, out of step with the current deploy.
 - **Cron:** enable jobs one at a time via `CRON_ENABLED_JOBS` (none run by default).
-- **Redis in production** and a rate-limit load test.
-- **Drop unused Prisma models** (all of `c15t.prisma` and others): the `chore/drop-unused-prisma-models` branch is unmerged and the migration is operator-gated.
+- **Redis in production** (required: realtime across processes and shared rate limits depend on it) and a rate-limit load test.
+- **Drop unused Prisma models** (all of `c15t.prisma` and others): the `chore/drop-unused-prisma-models` branch is not on origin. The code audit lists 57 fully dead models ([§8](code-audit-2026-09-30.md#8-dead-schema)); the drop is operator-gated and needs backups first.
 - **AuditLog `target` index:** in the schema, but with no migration.
 - **Incident-response runbook:** referenced but missing.
 - **Discord bot admin session:** the bot calls `admin.getSystemStatus` (admin-only); the runbook doesn't cover how it authenticates.
@@ -215,7 +217,7 @@ From the status blocks in [`docs/audits/`](../audits/):
   - `routers/wikios/index.ts` (`search-categories`);
   - `cloudflare-guardian.ts` (Zero-Trust);
   - `useNavigationItems.ts:110` (says Vexel isn't built).
-- **Crafting seed:** the `LIMITED` pack type isn't in the `PackType` constant.
+- **Pack seed:** the `LIMITED` pack type isn't in the `PackType` constant (`prisma/seeds/data/card-packs.json`).
 
 ## 7. Documentation gaps
 

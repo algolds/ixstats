@@ -145,6 +145,19 @@ export class AuctionService {
     // 6. Create auction and lock card (atomic transaction)
     try {
       const auction = await db.$transaction(async (tx) => {
+        // Lock the card ownership first, only if it is still unlocked and ours. Two
+        // concurrent listings of one card both pass the check above; only one wins here.
+        const locked = await tx.cardOwnership.updateMany({
+          where: { id: ownership.id, ownerId: params.userId, isLocked: false },
+          data: { isLocked: true },
+        });
+        if (locked.count !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This card is already listed or locked",
+          });
+        }
+
         const newAuction = await tx.cardAuction.create({
           data: {
             id: `auction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -157,14 +170,6 @@ export class AuctionService {
             isFeatured: params.isFeatured ?? false,
             status: "ACTIVE",
           },
-        });
-
-        // Lock the card ownership
-        await tx.cardOwnership.update({
-          where: {
-            id: ownership.id,
-          },
-          data: { isLocked: true },
         });
 
         return newAuction;
@@ -225,6 +230,12 @@ export class AuctionService {
         { error: String(error) }
       );
 
+      if (error instanceof TRPCError) {
+        throw new TRPCError({
+          code: error.code,
+          message: `${error.message}. Listing fee has been refunded.`,
+        });
+      }
       console.error("[Auction Service] Failed to create auction:", error);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
