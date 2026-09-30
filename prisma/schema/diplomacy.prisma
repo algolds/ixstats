@@ -774,6 +774,7 @@ model AllianceMember {
   votingPower       Float    @default(1.0)
   contributionLevel String   @default("standard") // "minimal", "standard", "high"
   isActive          Boolean  @default(true)
+  status            String   @default("active") // "active", "invited" (pending consent, isActive=false), "declined", "left"
   joinedAt          DateTime @default(now())
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
