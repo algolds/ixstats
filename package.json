@@ -15,6 +15,7 @@
     "audit:coverage": "bun scripts/audit/audit-schema-coverage.ts",
     "audit:flags": "bun scripts/audit-flag-urls.ts",
     "audit:flags:prod": "BASE_PATH=/projects/ixstates bun scripts/audit-flag-urls.ts",
+    "audit:forum-links": "bun scripts/audit/list-forum-links.ts",
     "audit:idor": "bun scripts/audit/audit-country-idor.ts",
     "audit:urls": "bun scripts/audit-production-urls.ts",
     "audit:urls:prod": "BASE_PATH=/projects/ixstates bun scripts/audit-production-urls.ts",
