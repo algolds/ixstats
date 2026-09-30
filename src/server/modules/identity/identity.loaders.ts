@@ -3,6 +3,7 @@
  * unavailable system (MediaWiki, Clerk, a table) never blanks the whole passport.
  */
 import { db } from "~/server/db";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import type {
   AuthoredArticleRow,
   CreatedPageRow,
@@ -93,6 +94,8 @@ export async function loadNativeRevisions(
           ...(identity.user ? [{ authorId: identity.user.id }] : []),
           ...names.flatMap((name) => (name ? [{ author: insensitive(name) }] : [])),
         ],
+        // A deleted page is not part of anyone's public work.
+        article: { status: "PUBLISHED" },
       },
       take: 100,
       orderBy: { createdAt: "desc" },
@@ -107,22 +110,40 @@ export async function loadNativeRevisions(
   );
 }
 
+/** The canonical titles among `rawTitles` that WikiOS has deleted (archived). */
+async function archivedTitles(rawTitles: string[]): Promise<Set<string>> {
+  const titles = rawTitles.flatMap((raw) => canonicalizeTitle(raw)?.title ?? []);
+  if (titles.length === 0) return new Set();
+  const rows = await db.wikiArticle.findMany({
+    where: { source: "ixwiki", status: "ARCHIVED", title: { in: titles } },
+    select: { title: true },
+  });
+  return new Set(rows.map((row) => row.title));
+}
+
 export async function loadDiscussionComments(
   user: IdentityUser | null
 ): Promise<DiscussionCommentRow[]> {
   if (!user) return [];
   return orEmpty(
-    db.wikiDiscussionComment.findMany({
-      where: { OR: [{ userId: user.id }, { userId: user.clerkUserId }] },
-      take: 30,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-        thread: { select: { title: true, articleTitle: true } },
-      },
-    })
+    (async () => {
+      const comments = await db.wikiDiscussionComment.findMany({
+        where: { OR: [{ userId: user.id }, { userId: user.clerkUserId }] },
+        take: 30,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          thread: { select: { title: true, articleTitle: true } },
+        },
+      });
+      // A thread only names its page, so the deleted pages' comments are dropped after the read.
+      const hidden = await archivedTitles([...new Set(comments.map((c) => c.thread.articleTitle))]);
+      return comments.filter(
+        (comment) => !hidden.has(canonicalizeTitle(comment.thread.articleTitle)?.title ?? "")
+      );
+    })()
   );
 }
 
@@ -134,6 +155,8 @@ export async function loadAuthoredArticleRows(
   return orEmpty(
     db.wikiArticle.findMany({
       where: {
+        // A deleted page is not part of anyone's public work.
+        status: "PUBLISHED",
         OR: [
           ...(identity.user
             ? [{ authorId: identity.user.id }, { lastEditorId: identity.user.id }]
