@@ -54,6 +54,9 @@ describe("wikiStandaloneRedirect", () => {
     "/api/wiki/sync-webhook",
     "/api/wikios/inbound-sync",
     "/api/mediawiki/parse",
+    "/api/mediawiki/ixwiki/images/a/ab/Flag.png",
+    "/api/ixtime/current",
+    "/api/onoma/tts",
     "/api.php",
     "/sitemap.xml",
     "/sitemap-0.xml",
@@ -70,6 +73,10 @@ describe("wikiStandaloneRedirect", () => {
     "/fonts/inter.woff2",
     "/images/wikios-banner.png",
     "/images/wikios/banner.png",
+    "/flags/ixnay.svg",
+    "/maplibre/maplibre-gl-worker.mjs",
+    "/maplibre/maplibre-gl-shared.mjs",
+    "/images/flags/placeholder.svg",
     "/opensearch.xml",
   ])("serves %s in WikiOS", (pathname) => {
     expect(wikiStandaloneRedirect(pathname, "?x=1")).toBeNull();
@@ -82,6 +89,13 @@ describe("wikiStandaloneRedirect", () => {
     ["/vault", ""],
     ["/api/health", ""],
     ["/api/sse/map-updates", ""],
+    ["/api/ixtime/set-override", ""],
+    ["/api/onoma/other", ""],
+    ["/maps", "?embed=true&lat=1&lng=2&zoom=3"],
+    ["/images/cards/placeholder-nation.png", ""],
+    ["/sw.js", ""],
+    ["/manifest.json", ""],
+    ["/sounds/cards/card-flip.mp3", ""],
     ["/admin", ""],
   ])("redirects %s to IxStates", (pathname, search) => {
     expect(wikiStandaloneRedirect(pathname, search)).toBe(

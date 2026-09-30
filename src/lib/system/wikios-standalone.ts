@@ -9,7 +9,20 @@
 const MAIN_PAGE_PATH = "/wiki/Main_Page";
 const DEFAULT_IXSTATES_URL = "https://ixwiki.com/projects/ixstats";
 
-/** Request-path prefixes the standalone WikiOS process serves itself. Anything else is IxStates. */
+/**
+ * Request-path prefixes the standalone WikiOS process serves itself. Anything else is IxStates.
+ * Keep scripts/ops/nginx/wikios-takeover.conf in step: nginx only forwards what it lists.
+ *
+ * Runtime requests of WikiOS pages that are not routes (and the code that makes them):
+ * - /api/ixtime/current: the IxTime store (src/stores/ixtime-store.ts), mounted on every page by
+ *   IxTimeProvider in the root layout.
+ * - /api/onoma/tts: the article narrator (src/hooks/useWikiNarrator.ts).
+ * - /maplibre: the MapLibre worker of the country and coordinate map embeds
+ *   (src/lib/maps/load-maplibre.ts).
+ * - /flags and /images/flags: flag files and the flag placeholder (src/lib/flags/local-flag-cache.server.ts,
+ *   src/hooks/useUnifiedFlags.ts).
+ * - /fonts: National/Akzidenz fonts (src/styles/typography.css) and map glyphs (src/lib/base-path.ts).
+ */
 export const WIKIOS_ALLOWED_PREFIXES: readonly string[] = [
   "/wiki",
   "/util",
@@ -18,6 +31,8 @@ export const WIKIOS_ALLOWED_PREFIXES: readonly string[] = [
   "/api/wiki",
   "/api/wikios",
   "/api/mediawiki",
+  "/api/ixtime/current",
+  "/api/onoma/tts",
   "/api.php",
   "/sitemap",
   "/robots.txt",
@@ -28,7 +43,10 @@ export const WIKIOS_ALLOWED_PREFIXES: readonly string[] = [
   "/favicon",
   "/wikios-",
   "/fonts",
+  "/flags",
+  "/maplibre",
   "/images/wikios",
+  "/images/flags",
   "/opensearch",
 ];
 

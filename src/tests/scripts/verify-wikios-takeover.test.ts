@@ -160,6 +160,22 @@ describe("buildExpectations", () => {
     expect(byPath("/projects/ixstats")).toMatchObject({ expectStatus: { not: 404 } });
   });
 
+  it("covers the runtime requests of WikiOS pages that are not routes", () => {
+    expect(byPath("/api/ixtime/current")).toMatchObject({ expectStatus: 200, expectJson: true });
+    expect(byPath("/maps?embed=true")).toMatchObject({
+      expectStatus: 302,
+      expectLocation: "/projects/ixstats/maps?embed=true",
+    });
+    for (const path of [
+      "/maplibre/maplibre-gl-worker.mjs",
+      "/flags/metadata.json",
+      "/images/flags/placeholder.svg",
+      "/fonts/National-Book.otf",
+    ]) {
+      expect(byPath(path)).toMatchObject({ expectStatus: 200, standalone: true });
+    }
+  });
+
   it("checks the render engine on the internal origin only", () => {
     const internal = rows.filter((r) => r.via === "internal");
     expect(internal).toHaveLength(1);
@@ -172,7 +188,7 @@ describe("buildExpectations", () => {
   });
 
   it("adds the /images/ row only when an upload path is given", () => {
-    expect(rows.some((r) => r.path.startsWith("/images/"))).toBe(false);
+    expect(rows.some((r) => r.name === "upload served from /images/")).toBe(false);
     const withImage = buildExpectations({ file: "Example.png", image: "/images/a/ab/Foo.png" });
     expect(withImage.find((r) => r.path === "/images/a/ab/Foo.png")).toMatchObject({
       expectStatus: 200,
@@ -256,6 +272,12 @@ describe("planChecks", () => {
     expect(withoutInternal.map((p) => p.expectation.path)).toEqual([
       "/",
       "/wiki/Main_Page",
+      "/api/ixtime/current",
+      "/maps?embed=true",
+      "/maplibre/maplibre-gl-worker.mjs",
+      "/flags/metadata.json",
+      "/images/flags/placeholder.svg",
+      "/fonts/National-Book.otf",
       "/projects/ixstats",
       "/api.php?action=parse&text=x&contentmodel=wikitext&format=json",
     ]);
@@ -271,9 +293,7 @@ describe("planChecks", () => {
       ])
     );
     expect(withInternal.map((p) => p.origin)).toEqual([
-      "http://127.0.0.1:3560",
-      "http://127.0.0.1:3560",
-      "http://127.0.0.1:3560",
+      ...Array<string>(9).fill("http://127.0.0.1:3560"),
       "http://127.0.0.1:8081",
     ]);
   });

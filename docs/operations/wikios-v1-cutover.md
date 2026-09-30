@@ -209,11 +209,26 @@ edits made by the `wikios-mirror` group are skipped (echo guard). Check after a 
 bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --internal http://127.0.0.1:8081 --standalone
 ```
 
-Expect PASS for `/` (302 to `/wiki/Main_Page`), `/wiki/Main_Page`, `/projects/ixstats` (redirected to IxStates, not 404)
-and the loopback `action=parse`. Then open `http://127.0.0.1:3560/wiki/Main_Page` through an SSH tunnel
-(`ssh -L 3560:127.0.0.1:3560 ixwiki`) with the browser devtools network tab open: **no asset may 404 or
-redirect to IxStates** (the allowed prefixes are `WIKIOS_ALLOWED_PREFIXES` in `src/lib/system/wikios-standalone.ts`;
-the nginx snippet routes a matching set). A missing prefix must be added to both before step 8.
+Expect PASS for `/` (302 to `/wiki/Main_Page`), `/wiki/Main_Page`, the runtime requests WikiOS pages make that are
+not routes (`/api/ixtime/current`, `/maplibre/maplibre-gl-worker.mjs`, `/flags/...`, `/images/flags/placeholder.svg`,
+`/fonts/...`), `/maps?embed=true` (302 to the IxStates map, which is what the article map embeds load),
+`/projects/ixstats` (redirected to IxStates, not 404) and the loopback `action=parse`. Then open
+`http://127.0.0.1:3560/wiki/Main_Page` through an SSH tunnel (`ssh -L 3560:127.0.0.1:3560 ixwiki`) with the browser
+devtools network tab open: **no asset may 404 or redirect to IxStates** (the allowed prefixes are
+`WIKIOS_ALLOWED_PREFIXES` in `src/lib/system/wikios-standalone.ts`; `wikios-takeover.conf` routes the same set). A
+missing prefix must be added to both before step 8.
+
+nginx forwards `= /maps`, `/sign-in`, `/sign-up`, `/sso-callback` and `/sitemap*` to WikiOS, so they shadow a
+MediaWiki article whose title is the same in lower case (MediaWiki capitalises the first letter). Check that none
+exists (read-only, local database `ixwiki`, no table prefix):
+
+```bash
+mysql ixwiki -e "SELECT page_title FROM page WHERE page_namespace = 0 AND (page_title IN ('Maps','Sign-in','Sign-up','Sso-callback') OR page_title LIKE 'Sitemap%')"
+```
+
+Other links WikiOS pages render to IxStates-only routes (`/blurbs`, `/mycountry`, `/dashboard`, `/countries`,
+`/achievements`, `/settings`, `/messages`) are root-relative in the standalone build and are **not** forwarded: on
+ixwiki.com they reach MediaWiki until they are prefixed with the IxStates URL in the app or forwarded in nginx.
 
 **Rollback:** not needed (nothing changed).
 
