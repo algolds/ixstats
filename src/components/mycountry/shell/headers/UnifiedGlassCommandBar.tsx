@@ -18,6 +18,8 @@ import { useTheme } from "~/context/theme-context";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { DOMAIN_TILES } from "../ExecutiveHome";
 import type { CommandNavMode } from "../CommandNavToggle";
+import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
+import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
 
 interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
@@ -37,6 +39,8 @@ export function UnifiedGlassCommandBar({
   const router = useRouter();
   const { compactMode } = useTheme();
   const { country } = useCountryData();
+  // Incoming diplomatic proposals / invitations awaiting an answer (badge on Diplomacy).
+  const { count: diplomacyInboxCount } = useDiplomacyInboxCount(country?.id);
 
   const profileHref = country?.slug ? `/countries/${country.slug}` : "/countries";
 
@@ -138,8 +142,9 @@ export function UnifiedGlassCommandBar({
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5 text-left">
-                  <span className="text-foreground truncate text-xs leading-tight font-bold tracking-tight">
+                  <span className="text-foreground flex items-center gap-1.5 truncate text-xs leading-tight font-bold tracking-tight">
                     {title}
+                    {id === "diplomacy" && <InboxCountPill count={diplomacyInboxCount} />}
                   </span>
                   <span className="text-muted-foreground truncate text-xs leading-tight font-medium tracking-tight">
                     {getPeek(country)}
@@ -191,6 +196,7 @@ export function UnifiedGlassCommandBar({
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   <span>{title}</span>
+                  {id === "diplomacy" && <InboxCountPill count={diplomacyInboxCount} />}
                 </button>
               );
             })}

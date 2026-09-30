@@ -1,0 +1,19 @@
+"use client";
+
+import { cn } from "~/lib/utils";
+
+/** Small count pill for the diplomacy nav / tab; renders nothing when there is nothing to answer. */
+export function InboxCountPill({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-xs leading-none font-bold text-white",
+        className
+      )}
+      aria-label={`${count} diplomatic item${count === 1 ? "" : "s"} awaiting your answer`}
+    >
+      {count}
+    </span>
+  );
+}

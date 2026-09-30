@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   City as Building2,
   Group as Users,
@@ -9,6 +9,7 @@ import {
   Palette,
   Plus,
   SystemRestart as Loader2,
+  MailIn,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
@@ -35,6 +36,10 @@ import { CulturalExchangeProgram } from "./CulturalExchangeProgram";
 // Diplomatic events
 import { DiplomaticEventsHub } from "./DiplomaticEventsHub";
 
+// Proposal / invitation inbox
+import { DiplomacyInbox } from "./inbox/DiplomacyInbox";
+import { useDiplomacyInboxCount } from "./inbox/useDiplomacyInbox";
+
 // Sheets
 import { EmbassyCreatorSheet } from "./EmbassyCreatorSheet";
 import { EmbassyDetailSheet } from "./EmbassyDetailSheet";
@@ -54,12 +59,22 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
   // Sub-tab navigation state
   const [activeTab, setActiveTab] = useState<
-    "embassies" | "relations" | "alliances" | "exchanges" | "events"
+    "inbox" | "embassies" | "relations" | "alliances" | "exchanges" | "events"
   >("embassies");
 
   // Determine ownership
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
   const isOwner = userProfile?.countryId === countryId;
+
+  // Incoming proposals / invitations: open the inbox once on arrival when something is waiting.
+  const inbox = useDiplomacyInboxCount(countryId, isOwner);
+  const autoOpenedInbox = useRef(false);
+  useEffect(() => {
+    if (autoOpenedInbox.current || inbox.isLoading || !isOwner) return;
+    autoOpenedInbox.current = true;
+    // oxlint-disable-next-line
+    if (inbox.count > 0) setActiveTab("inbox");
+  }, [inbox.isLoading, inbox.count, isOwner]);
 
   // Country data
   const { data: country } = api.countries.getByIdBasic.useQuery(
@@ -133,6 +148,18 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {/* ─── Sub-Tab Navigation Bar (shared with the other domain sections) ─── */}
       <SectionTabBar
         tabs={[
+          ...(isOwner
+            ? [
+                {
+                  id: "inbox" as const,
+                  label: "Inbox",
+                  icon: MailIn,
+                  badge: inbox.count > 0 ? inbox.count : undefined,
+                  activeClassName:
+                    "border-cyan-500/40 bg-cyan-500/20 text-cyan-700 dark:text-cyan-400",
+                },
+              ]
+            : []),
           {
             id: "embassies",
             label: "Embassy Network",
@@ -164,6 +191,20 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       />
 
       {/* ─── Tab Content Views ─── */}
+      {activeTab === "inbox" && isOwner && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <MailIn className="h-4 w-4 text-cyan-500" />
+            <h3 className="text-sm font-semibold">Diplomatic Inbox</h3>
+            <SectionHelpIcon
+              title="Diplomatic Inbox"
+              content="Free trade and military alliance proposals and alliance invitations need the other nation's consent. Answer incoming ones here, or withdraw your own while they are pending. Unanswered items expire after 14 days."
+            />
+          </div>
+          <DiplomacyInbox countryId={countryId} />
+        </section>
+      )}
+
       {activeTab === "embassies" && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
