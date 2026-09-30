@@ -67,8 +67,8 @@ updates:
     # Allow Dependabot to rebase PRs
     rebase-strategy: "auto"
 
-    # Target branch
-    target-branch: "master"
+    # Target branch: dependency bumps land on the nightly branch first (see docs/processes/contributing.md)
+    target-branch: "rose-garden"
 
   # GitHub Actions workflows
   - package-ecosystem: "github-actions"
@@ -79,5 +79,6 @@ updates:
     labels:
       - "github-actions"
       - "automated"
+    target-branch: "rose-garden"
     commit-message:
       prefix: "ci"

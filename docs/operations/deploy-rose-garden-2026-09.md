@@ -116,10 +116,13 @@ files are:
 
 ## 5. Deploy
 
+First promote the release on GitHub: merge `rose-garden` into `development`, then `development` into `master`
+(merge PRs, CI green; see [contributing.md](../processes/contributing.md#branches)). Production deploys `master`.
+
 ```bash
 cd /ixwiki/public/projects/ixstats
-git fetch master rose-garden
-git checkout -B rose-garden master/rose-garden     # the deploy script deploys the checkout's current branch
+git fetch master master
+git checkout -B master master/master     # the deploy script deploys the checkout's current branch
 ```
 
 ### 5a. Realms schema + ownership backfill (before the deploy script)
@@ -245,15 +248,17 @@ Once applied, government-component and power-broker bonuses start affecting econ
 
 ## Rollback
 
+The deploy script re-fetches the checked-out branch from the remote and hard-resets to it, so roll back by pushing a
+branch at the commit noted in step 1 (for example `rollback-2026-09`) and deploying it with the non-master override:
+
 ```bash
 cd /ixwiki/public/projects/ixstats
-git checkout -B development <commit noted in step 1>
-./scripts/deploy-production.sh
+git fetch master rollback-2026-09
+git checkout -B rollback-2026-09 master/rollback-2026-09
+ALLOW_NON_MASTER_DEPLOY=1 ./scripts/deploy-production.sh
 ```
 
-The deploy script re-fetches `master/development` and hard-resets to it, so this restores the noted commit only while
-it is still the tip of `development` on the remote. If that branch has moved, push a rollback branch at the noted commit
-and check that out instead.
+Then revert or fix on `master` and deploy `master` again.
 
 The schema changes are additive, so old code runs against them, except the `WikiRevision` dedupe, which removed
 duplicate rows, and the Realms push, which **dropped** `world_configs` and `territory_claims` (old code's admin
