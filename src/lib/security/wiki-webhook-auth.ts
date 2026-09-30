@@ -1,11 +1,6 @@
-import { createHash, timingSafeEqual } from "crypto";
+import { safeEqual } from "./safe-equal";
 
-/** Constant-time comparison. Hashing first gives equal lengths, so no length leak and no throw. */
-export function safeEqual(a: string, b: string): boolean {
-  const ha = createHash("sha256").update(a).digest();
-  const hb = createHash("sha256").update(b).digest();
-  return timingSafeEqual(ha, hb);
-}
+export { safeEqual };
 
 export interface WebhookAuthFailure {
   status: 401 | 503;

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 import type { BotTimeResponse } from "~/types/ixstats";
+import { bearerMatches } from "~/lib/security/safe-equal";
 
 export async function POST(request: Request) {
   try {
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
 
     // Require valid Bearer token if secret is configured, or if in production
     if (botSecret || isProduction) {
-      if (!authHeader || authHeader !== `Bearer ${botSecret}`) {
+      if (!botSecret || !bearerMatches(authHeader, botSecret)) {
         console.warn(
           `[SECURITY] Unauthorized bot sync access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
         );

@@ -32,8 +32,8 @@ Security-relevant items marked ★ were re-checked by hand.
 
 Collected here from the area tables so they can be fixed as one batch. Every one is S or M.
 
-**Status (2026-09-30):** fixes for everything except PL-2 are open for review in [#36](https://github.com/algolds/ixstats/pull/36) (Vault), [#38](https://github.com/algolds/ixstats/pull/38) (authorization)
-and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups). The Fix column links each one; rows stay here until those PRs merge.
+**Status (2026-09-30):** fixes for everything except PL-2 are merged: [#36](https://github.com/algolds/ixstats/pull/36) (Vault), [#38](https://github.com/algolds/ixstats/pull/38) (authorization)
+and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups). The Fix column links each one.
 
 | ID | Exploit | Evidence | Fix |
 |---|---|---|---|
@@ -56,7 +56,8 @@ and [#37](https://github.com/algolds/ixstats/pull/37) (budget year, backups). Th
 
 **After fixing VT-1, VT-2 and VT-6:** audit `vault_transactions` for `SPEND_COSMETIC` / `SPEND_BOOST` rows whose amount doesn't
 match the item price, and for repeated `bonus:ns_deck_import` rows.
-[#36](https://github.com/algolds/ixstats/pull/36) adds the report for this: `bun run audit:vault-exploits` (read-only). Balances are not corrected yet.
+[#36](https://github.com/algolds/ixstats/pull/36) adds the report for this: `bun run audit:vault-exploits` (read-only). Balances are not corrected yet; that needs an
+admin decision on each finding (the report gives the rows and amounts).
 
 ---
 
@@ -223,7 +224,7 @@ match the item price, and for repeated `bonus:ns_deck_import` rows.
 | PL-17 | BUG | `lint:strict` fails on 5 rules-of-hooks errors (`SynergyDisplay`, `DepartmentAtomicSelector`, `PlateMediaElement`). | — | S | M |
 | PL-18 | DEAD | `user-analytics.ts` (730 lines), `image-cache-service`, `AdvancedCacheSystem`, `readOnlyProcedure` and `cleanupOldAuctions` are unused. | — | S | L |
 | PL-19 | DEBT | Env hygiene: 6 declared variables are never read; `.env.example` is missing 50. | `src/env.ts` | S | L |
-| PL-20 | SEC | The audit IP is taken from `x-forwarded-for`; `X-RateLimit-Identifier` echoes the user id; secrets are compared with `!==`. | `trpc/middleware.ts:217`; `proxy.ts:113` | S | L |
+| PL-20 | SEC | The audit IP is taken from `x-forwarded-for`; `X-RateLimit-Identifier` echoes the user id; secrets are compared with `!==`. **Fixed: [#38](https://github.com/algolds/ixstats/pull/38) (audit IP), [#39](https://github.com/algolds/ixstats/pull/39) (secrets, header).** | `trpc/middleware.ts:217`; `proxy.ts:113` | S | L |
 | PL-21 | FLAGGED | `editableByOwner` is never read, so that map permission isn't enforced. | `maps.prisma` | S | M |
 | PL-22 | DEBT | Production logs every Prisma query as an event. | `server/db.ts` | S | L |
 

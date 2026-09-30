@@ -14,7 +14,6 @@ const BASE_PATH = process.env.BASE_PATH || "";
 // Production optimizations enabled
 // oxlint-disable-next-line typescript/no-unused-vars
 const ENABLE_COMPRESSION = process.env.ENABLE_COMPRESSION === "true";
-const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED === "true";
 
 const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
@@ -65,11 +64,7 @@ function isEmbeddablePathFn(pathname: string): boolean {
 /**
  * Add comprehensive security and performance headers to response
  */
-function enhanceResponse(
-  response: NextResponse,
-  req: NextRequest,
-  userId: string | null
-): NextResponse {
+function enhanceResponse(response: NextResponse, req: NextRequest): NextResponse {
   // Single UUID for both nonce and request tracking (one crypto call instead of two)
   const requestId = crypto.randomUUID();
   const nonce = Buffer.from(requestId).toString("base64");
@@ -105,12 +100,6 @@ function enhanceResponse(
       "Strict-Transport-Security",
       "max-age=31536000; includeSubDomains; preload"
     );
-  }
-
-  // Rate limiting identifier header
-  if (RATE_LIMIT_ENABLED && req.nextUrl.pathname.startsWith("/api")) {
-    const identifier = userId || req.headers.get("x-forwarded-for") || "anonymous";
-    response.headers.set("X-RateLimit-Identifier", identifier);
   }
 
   // Request tracking (reuse requestId from above)
@@ -164,7 +153,7 @@ function simpleMiddleware(req: NextRequest) {
   if (standaloneRedirect) return standaloneRedirect;
 
   const response = NextResponse.next();
-  return enhanceResponse(response, req, null);
+  return enhanceResponse(response, req);
 }
 
 // SSE endpoints must bypass Clerk middleware — streaming ReadableStream
@@ -193,7 +182,7 @@ function getClerkMiddleware() {
         // with Clerk's session token/cookie rewriting. Return early with headers only.
         if (SSE_ENDPOINTS.some((p) => req.nextUrl.pathname.startsWith(p))) {
           const response = NextResponse.next();
-          return enhanceResponse(response, req, null);
+          return enhanceResponse(response, req);
         }
 
         // IxWorld standalone route guard
@@ -205,7 +194,7 @@ function getClerkMiddleware() {
         // Allow public routes to pass through without auth
         if (isPublicRoute(req)) {
           const response = NextResponse.next();
-          return enhanceResponse(response, req, userId);
+          return enhanceResponse(response, req);
         }
 
         // For protected routes, check authentication
@@ -255,7 +244,7 @@ function getClerkMiddleware() {
 
         // For all other routes, continue without auth requirement
         const response = NextResponse.next();
-        return enhanceResponse(response, req, userId);
+        return enhanceResponse(response, req);
       });
       console.log("[Middleware] Clerk middleware initialized successfully.");
     } catch (error) {
