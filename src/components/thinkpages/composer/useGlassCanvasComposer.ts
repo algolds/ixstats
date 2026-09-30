@@ -148,9 +148,21 @@ export function useGlassCanvasComposer({
 
   const utils = api.useUtils();
 
+  // A wiki article "repost" (WikiFeedCard / InlineWikiArticlePreview) has no ThinkPages post
+  // behind it: its id is `wiki-<title>`, which would fail the repostOf foreign key. Post it as
+  // an original post that carries the article's blurb link instead.
+  const repostOriginal = repostData?.originalPost as
+    { id?: string | number; content?: string } | undefined;
+  const isWikiRepost =
+    typeof repostOriginal?.id === "string" && repostOriginal.id.startsWith("wiki-");
+  const repostOfId =
+    repostOriginal?.id != null && !isWikiRepost ? String(repostOriginal.id) : undefined;
+  const wikiRepostContent = isWikiRepost ? (repostOriginal?.content ?? "").trim() : "";
+
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      notify.success("Post shared successfully!");
+      // The one success toast for a post or repost (callers' onPost only closes / refreshes).
+      notify.success(repostData ? "Reposted to ThinkPages" : "Post shared successfully!");
       setContent("");
       setPlainText("");
       if (editorRef.current) {
@@ -193,7 +205,8 @@ export function useGlassCanvasComposer({
       !plainText.trim() &&
       selectedVisualizations.length === 0 &&
       selectedImages.length === 0 &&
-      !pollDraft
+      !pollDraft &&
+      !repostData // a repost needs no comment of its own
     ) {
       notify.error("Please add content, a visualization, an image, or a poll");
       return;
@@ -213,7 +226,7 @@ export function useGlassCanvasComposer({
 
     const postData = {
       accountId: account.id,
-      content: content.trim(),
+      content: [content.trim(), wikiRepostContent].filter(Boolean).join("\n\n"),
       hashtags: extractHashtags(plainText),
       mentions: extractMentions(plainText),
       visibility: "public" as const,
@@ -223,7 +236,7 @@ export function useGlassCanvasComposer({
         config: viz.config,
       })),
       mediaUrls: selectedImages,
-      repostOfId: repostData?.originalPost?.id,
+      repostOfId,
       postToDiscord,
       poll: pollDraft
         ? {
@@ -244,6 +257,8 @@ export function useGlassCanvasComposer({
     account?.id,
     createPostMutation,
     repostData,
+    repostOfId,
+    wikiRepostContent,
     postToDiscord,
     pollDraft,
     notify,
